@@ -1,0 +1,31 @@
+CMakeFiles/brotlienc.dir/c/enc/static_dict.c.obj: \
+ C:\sdk\msys64\home\firestarter\brotli-v1.1.1-rc0\c\enc\static_dict.c \
+ C:\sdk\msys64\home\firestarter\brotli-v1.1.1-rc0\c\enc\static_dict.h \
+ C:/sdk/msys64/home/firestarter/brotli-v1.1.1-rc0/c/include/brotli/types.h \
+ C:/sdk/mingw64_1310/lib/gcc/x86_64-w64-mingw32/13.1.0/include/stddef.h \
+ C:/sdk/mingw64_1310/x86_64-w64-mingw32/include/stddef.h \
+ C:/sdk/mingw64_1310/x86_64-w64-mingw32/include/crtdefs.h \
+ C:/sdk/mingw64_1310/x86_64-w64-mingw32/include/corecrt.h \
+ C:/sdk/mingw64_1310/x86_64-w64-mingw32/include/_mingw.h \
+ C:/sdk/mingw64_1310/x86_64-w64-mingw32/include/_mingw_mac.h \
+ C:/sdk/mingw64_1310/x86_64-w64-mingw32/include/_mingw_secapi.h \
+ C:/sdk/mingw64_1310/x86_64-w64-mingw32/include/vadefs.h \
+ C:/sdk/mingw64_1310/x86_64-w64-mingw32/include/sdks/_mingw_ddk.h \
+ C:/sdk/mingw64_1310/lib/gcc/x86_64-w64-mingw32/13.1.0/include/stdint.h \
+ C:/sdk/mingw64_1310/x86_64-w64-mingw32/include/stdint.h \
+ C:/sdk/msys64/home/firestarter/brotli-v1.1.1-rc0/c/common/dictionary.h \
+ C:/sdk/msys64/home/firestarter/brotli-v1.1.1-rc0/c/include/brotli/port.h \
+ C:/sdk/msys64/home/firestarter/brotli-v1.1.1-rc0/c/common/platform.h \
+ C:/sdk/mingw64_1310/x86_64-w64-mingw32/include/string.h \
+ C:/sdk/mingw64_1310/x86_64-w64-mingw32/include/sec_api/string_s.h \
+ C:/sdk/mingw64_1310/x86_64-w64-mingw32/include/sys/types.h \
+ C:/sdk/mingw64_1310/x86_64-w64-mingw32/include/_mingw_off_t.h \
+ C:\sdk\msys64\home\firestarter\brotli-v1.1.1-rc0\c\enc\encoder_dict.h \
+ C:/sdk/msys64/home/firestarter/brotli-v1.1.1-rc0/c/include/brotli/shared_dictionary.h \
+ C:\sdk\msys64\home\firestarter\brotli-v1.1.1-rc0\c\enc\compound_dictionary.h \
+ C:/sdk/msys64/home/firestarter/brotli-v1.1.1-rc0/c/common/constants.h \
+ C:/sdk/msys64/home/firestarter/brotli-v1.1.1-rc0/c/common/platform.h \
+ C:\sdk\msys64\home\firestarter\brotli-v1.1.1-rc0\c\enc\memory.h \
+ C:\sdk\msys64\home\firestarter\brotli-v1.1.1-rc0\c\enc\static_dict_lut.h \
+ C:/sdk/msys64/home/firestarter/brotli-v1.1.1-rc0/c/common/transform.h \
+ C:\sdk\msys64\home\firestarter\brotli-v1.1.1-rc0\c\enc\find_match_length.h

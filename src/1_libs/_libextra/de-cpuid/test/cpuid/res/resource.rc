@@ -1,0 +1,32 @@
+#include <windows.h>
+#include "resource.h"
+
+IDI_APPICON ICON "icon.ico"
+
+// Application manifest.
+CREATEPROCESS_MANIFEST_RESOURCE_ID RT_MANIFEST "app.manifest"
+
+1 VERSIONINFO
+FILEVERSION     1,0,0,0
+PRODUCTVERSION  1,0,0,0
+BEGIN
+  BLOCK "StringFileInfo"
+  BEGIN
+    BLOCK "080904E4"
+    BEGIN
+      VALUE "CompanyName", "Ingenieur Buro Benjamin Hampe"
+      VALUE "FileDescription", "Benni's face on ANSI terminal, not cmd.exe"
+      VALUE "FileVersion", "1.0"
+      VALUE "InternalName", "benni2console"
+      VALUE "LegalCopyright", "Use your face"
+      VALUE "OriginalFilename", "benni2console"
+      VALUE "ProductName", "benni2console"
+      VALUE "ProductVersion", "1.0"
+    END
+  END
+
+  BLOCK "VarFileInfo"
+  BEGIN
+    VALUE "Translation", 0x809, 1252
+  END
+END
