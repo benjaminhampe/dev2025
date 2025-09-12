@@ -1,0 +1,53 @@
+minilzo/t-testmini.o: minilzo/testmini.c \
+ C:/sdk/mingw64_1310/x86_64-w64-mingw32/include/stdio.h \
+ C:/sdk/mingw64_1310/x86_64-w64-mingw32/include/corecrt_stdio_config.h \
+ C:/sdk/mingw64_1310/x86_64-w64-mingw32/include/corecrt.h \
+ C:/sdk/mingw64_1310/x86_64-w64-mingw32/include/_mingw.h \
+ C:/sdk/mingw64_1310/x86_64-w64-mingw32/include/_mingw_mac.h \
+ C:/sdk/mingw64_1310/x86_64-w64-mingw32/include/_mingw_secapi.h \
+ C:/sdk/mingw64_1310/x86_64-w64-mingw32/include/vadefs.h \
+ C:/sdk/mingw64_1310/x86_64-w64-mingw32/include/sdks/_mingw_ddk.h \
+ C:/sdk/mingw64_1310/x86_64-w64-mingw32/include/_mingw_off_t.h \
+ C:/sdk/mingw64_1310/x86_64-w64-mingw32/include/swprintf.inl \
+ C:/sdk/mingw64_1310/x86_64-w64-mingw32/include/sec_api/stdio_s.h \
+ C:/sdk/mingw64_1310/x86_64-w64-mingw32/include/stdlib.h \
+ C:/sdk/mingw64_1310/x86_64-w64-mingw32/include/corecrt_wstdlib.h \
+ C:/sdk/mingw64_1310/lib/gcc/x86_64-w64-mingw32/13.1.0/include/limits.h \
+ C:/sdk/mingw64_1310/lib/gcc/x86_64-w64-mingw32/13.1.0/include/syslimits.h \
+ C:/sdk/mingw64_1310/x86_64-w64-mingw32/include/limits.h \
+ C:/sdk/mingw64_1310/x86_64-w64-mingw32/include/crtdefs.h \
+ C:/sdk/mingw64_1310/x86_64-w64-mingw32/include/sec_api/stdlib_s.h \
+ C:/sdk/mingw64_1310/x86_64-w64-mingw32/include/malloc.h \
+ C:/sdk/mingw64_1310/lib/gcc/x86_64-w64-mingw32/13.1.0/include/mm_malloc.h \
+ C:/sdk/mingw64_1310/x86_64-w64-mingw32/include/errno.h minilzo/minilzo.h \
+ config.h \
+ C:/sdk/mingw64_1310/lib/gcc/x86_64-w64-mingw32/13.1.0/include/stddef.h \
+ C:/sdk/mingw64_1310/x86_64-w64-mingw32/include/stddef.h \
+ include/lzo/lzodefs.h include/lzo/lzoconf.h
+C:/sdk/mingw64_1310/x86_64-w64-mingw32/include/stdio.h:
+C:/sdk/mingw64_1310/x86_64-w64-mingw32/include/corecrt_stdio_config.h:
+C:/sdk/mingw64_1310/x86_64-w64-mingw32/include/corecrt.h:
+C:/sdk/mingw64_1310/x86_64-w64-mingw32/include/_mingw.h:
+C:/sdk/mingw64_1310/x86_64-w64-mingw32/include/_mingw_mac.h:
+C:/sdk/mingw64_1310/x86_64-w64-mingw32/include/_mingw_secapi.h:
+C:/sdk/mingw64_1310/x86_64-w64-mingw32/include/vadefs.h:
+C:/sdk/mingw64_1310/x86_64-w64-mingw32/include/sdks/_mingw_ddk.h:
+C:/sdk/mingw64_1310/x86_64-w64-mingw32/include/_mingw_off_t.h:
+C:/sdk/mingw64_1310/x86_64-w64-mingw32/include/swprintf.inl:
+C:/sdk/mingw64_1310/x86_64-w64-mingw32/include/sec_api/stdio_s.h:
+C:/sdk/mingw64_1310/x86_64-w64-mingw32/include/stdlib.h:
+C:/sdk/mingw64_1310/x86_64-w64-mingw32/include/corecrt_wstdlib.h:
+C:/sdk/mingw64_1310/lib/gcc/x86_64-w64-mingw32/13.1.0/include/limits.h:
+C:/sdk/mingw64_1310/lib/gcc/x86_64-w64-mingw32/13.1.0/include/syslimits.h:
+C:/sdk/mingw64_1310/x86_64-w64-mingw32/include/limits.h:
+C:/sdk/mingw64_1310/x86_64-w64-mingw32/include/crtdefs.h:
+C:/sdk/mingw64_1310/x86_64-w64-mingw32/include/sec_api/stdlib_s.h:
+C:/sdk/mingw64_1310/x86_64-w64-mingw32/include/malloc.h:
+C:/sdk/mingw64_1310/lib/gcc/x86_64-w64-mingw32/13.1.0/include/mm_malloc.h:
+C:/sdk/mingw64_1310/x86_64-w64-mingw32/include/errno.h:
+minilzo/minilzo.h:
+config.h:
+C:/sdk/mingw64_1310/lib/gcc/x86_64-w64-mingw32/13.1.0/include/stddef.h:
+C:/sdk/mingw64_1310/x86_64-w64-mingw32/include/stddef.h:
+include/lzo/lzodefs.h:
+include/lzo/lzoconf.h:

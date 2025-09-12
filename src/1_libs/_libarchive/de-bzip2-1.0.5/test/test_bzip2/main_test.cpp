@@ -1,0 +1,15 @@
+//////////////////////////////////////////////////////////////////////////////
+/// @file main_test.cpp
+/// @author Benjamin Hampe <benjamin.hampe@gmx.de>
+//////////////////////////////////////////////////////////////////////////////
+
+#include <iostream>
+
+#include <bzip2/bzlib.h>
+
+int main( int argc, char** argv )
+{  
+   std::cout << "[Test] #include<bzip2/bzlib.h>\n";
+
+   return 0;
+}
