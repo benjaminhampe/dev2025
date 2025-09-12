@@ -1,0 +1,632 @@
+#pragma once
+#include <H3/H3_Board.h>
+
+struct H3_Game;
+
+
+
+
+//void UIMainMenu_update( H3_Game & game );
+
+//void UIMainMenu_draw( H3_Game & game );
+
+//void UIMainMenu_setVisible( H3_Game & game, bool bVisible );
+
+//void UIMainMenu_hide( H3_Game & game );
+//void UIMainMenu_show( H3_Game & game );
+
+
+#if 0
+void
+UI_updateLayout( H3_Game & game )
+{
+    auto driver = game.m_videoDriver;
+    const int scr_w = driver->getScreenWidth();
+    const int scr_h = driver->getScreenHeight();
+
+    //DE_WARN("1: btn_w(",btn_w,")", "btn_h(",btn_h,"), x(",x,"), y(",y,")")
+    //DE_WARN("2: btn_w(",btn_w,")", "btn_h(",btn_h,"), x(",x,"), y(",y,")")
+
+    const float fScale = 0.01f * game.m_ui.iScalePc;
+    const int p = fScale * 10;
+
+    auto& btnDoDice = UI_get( game, H3_UI::BtnDoDice );
+    auto& btnDoBank = UI_get( game, H3_UI::BtnDoBank );
+    auto& btnDoTrade = UI_get( game, H3_UI::BtnDoTrade );
+    auto& btnDoEndTurn = UI_get( game, H3_UI::BtnDoEndTurn );
+    auto& btnDoCancel = UI_get( game, H3_UI::BtnDoCancel );
+    auto& btnDoBuyCard = UI_get( game, H3_UI::BtnDoBuyCard );
+    auto& btnDoBuyRoad = UI_get( game, H3_UI::BtnDoBuyRoad );
+    auto& btnDoBuyFarm = UI_get( game, H3_UI::BtnDoBuyFarm );
+    auto& btnDoBuyCity = UI_get( game, H3_UI::BtnDoBuyCity );
+
+    btnDoDice.updateSize(fScale);
+    btnDoBank.updateSize(fScale);
+    btnDoTrade.updateSize(fScale);
+    btnDoEndTurn.updateSize(fScale);
+    btnDoCancel.updateSize(fScale);
+    btnDoBuyCard.updateSize(fScale * 2.0f);
+    btnDoBuyRoad.updateSize(fScale);
+    btnDoBuyFarm.updateSize(fScale);
+    btnDoBuyCity.updateSize(fScale);
+
+    int b = btnDoDice.pos.h;
+    int x = scr_w/2 - (btnDoDice.pos.w + p + btnDoDice.pos.w + p);
+    int y = scr_h - b - p;
+    btnDoDice.pos.x = x;
+    btnDoDice.pos.y = y;
+    x += btnDoDice.pos.w + p;
+    btnDoBank.pos.x = x;
+    btnDoBank.pos.y = y;
+    x += btnDoBank.pos.w + p;
+    btnDoTrade.pos.x = x;
+    btnDoTrade.pos.y = y;
+    x += btnDoTrade.pos.w + p;
+    btnDoEndTurn.pos.x = x;
+    btnDoEndTurn.pos.y = y;
+
+    x = scr_w/2 - (btnDoCancel.pos.w + p + btnDoCancel.pos.w + p);
+    y = scr_h - 1 - 2*p - b - btnDoCancel.pos.h;
+    btnDoCancel.pos.x = x;
+    btnDoCancel.pos.y = y;
+    x += btnDoCancel.pos.w + p;
+    y = scr_h - 1 - 2*p - b - btnDoBuyCard.pos.h;
+    btnDoBuyCard.pos.x = x;
+    btnDoBuyCard.pos.y = y;
+    x += btnDoBuyCard.pos.w + p;
+    y = scr_h - 1 - 2*p - b - btnDoBuyRoad.pos.h;
+    btnDoBuyRoad.pos.x = x;
+    btnDoBuyRoad.pos.y = y;
+    x += btnDoBuyRoad.pos.w + p;
+    y = scr_h - 1 - 2*p - b - btnDoBuyFarm.pos.h;
+    btnDoBuyFarm.pos.x = x;
+    btnDoBuyFarm.pos.y = y;
+    x += btnDoBuyFarm.pos.w + p;
+    y = scr_h - 1 - 2*p - b - btnDoBuyCity.pos.h;
+    btnDoBuyCity.pos.x = x;
+    btnDoBuyCity.pos.y = y;
+
+    //   UI_addElem( game, H3_UI::BtnDoRob, H3_UIElem::ImageButton, de::Recti( -100, 68,0,0),
+    //               12, de::Align::TopCenter, int(H3_Tex::DoRob), "DoRob");
+
+/*
+    auto& btnStatVic = UI_get( game, H3_UI::BtnStatVic );
+    btnStatVic.pos = de::Recti(x, y, btn_w, btn_h);
+    x += btn_w + p;
+
+    // Stats
+
+    UI_addElem( game, H3_UI::BtnStatKnightCard, H3_UIElem::Button, de::Recti(x,y,w,h ),
+               6, align, int(H3_Tex::EventCardKnight), "ImgKnightCard");
+    UI_addElem( game, H3_UI::LblStatKnightCard, H3_UIElem::Text, de::Recti(x,t,0,0 ),
+               0, align, 0, "0");
+    x += d;
+    UI_addElem( game, H3_UI::BtnStatPointCard, H3_UIElem::Image, de::Recti(x,y,w,h ),
+               6, align, int(H3_Tex::EventCardPoint), "ImgPointCard");
+    UI_addElem( game, H3_UI::LblStatPointCard, H3_UIElem::Text, de::Recti(x,t,0,0),
+               0, align, 0, "0");
+    x += d;
+    UI_addElem( game, H3_UI::BtnStatA, H3_UIElem::Button, de::Recti( x,y,w,h ),
+               6, align, int(H3_Tex::CardA), "ImgStatA");
+    UI_addElem( game, H3_UI::LblStatA, H3_UIElem::Text, de::Recti(x,t,0,0),
+               0, align, 0, "0");
+    x += d;
+    UI_addElem( game, H3_UI::BtnStatB, H3_UIElem::Button, de::Recti( x,y,w,h ),
+               6, align, int(H3_Tex::CardB), "ImgStatB");
+    UI_addElem( game, H3_UI::LblStatB, H3_UIElem::Text, de::Recti(x,t,0,0),
+               0, align, 0, "0");
+    x += d;
+    UI_addElem( game, H3_UI::BtnStatC, H3_UIElem::Button, de::Recti( x,y,w,h ),
+               6, align, int(H3_Tex::CardC), "ImgStatC");
+    UI_addElem( game, H3_UI::LblStatC, H3_UIElem::Text, de::Recti(x,t,0,0),
+               0, align, 0, "0");
+    x += d;
+    UI_addElem( game, H3_UI::BtnStatD, H3_UIElem::Button, de::Recti( x,y,w,h ),
+               6, align, int(H3_Tex::CardD), "ImgStatD");
+    UI_addElem( game, H3_UI::LblStatD, H3_UIElem::Text, de::Recti(x,t,0,0),
+               0, align, 0, "0");
+    x += d;
+    UI_addElem( game, H3_UI::BtnStatE, H3_UIElem::Button, de::Recti( x,y,w,h ),
+               6, align, int(H3_Tex::CardE), "ImgStatE");
+    UI_addElem( game, H3_UI::LblStatE, H3_UIElem::Text, de::Recti(x,t,0,0),
+               0, align, 0, "0");
+    x += d;
+
+    int d2 = 42;
+    UI_addElem( game, H3_UI::BtnStatVic, H3_UIElem::Image, de::Recti(x,y,0,0 ),
+               0, align, int(H3_Tex::StatVic), "ImgStatVic");
+    UI_addElem( game, H3_UI::LblStatVic, H3_UIElem::Text, de::Recti(x,t,0,0),
+               0, align, 0, "0");
+    x += d2;
+    UI_addElem( game, H3_UI::BtnStatRoad, H3_UIElem::Image, de::Recti(x,y,0,0 ),
+               0, align, int(H3_Tex::StatRoad), "ImgStatRoad");
+    UI_addElem( game, H3_UI::LblStatRoad, H3_UIElem::Text, de::Recti(x,t,0,0),
+               0, align, 0, "0");
+    x += d2;
+    UI_addElem( game, H3_UI::BtnStatFarm, H3_UIElem::Image, de::Recti(x,y,0,0 ),
+               0, align, int(H3_Tex::StatFarm), "ImgStatFarm");
+    UI_addElem( game, H3_UI::LblStatFarm, H3_UIElem::Text, de::Recti(x,t,0,0),
+               0, align, 0, "0");
+    x += d2;
+    UI_addElem( game, H3_UI::BtnStatCity, H3_UIElem::Image, de::Recti(x,y,0,0 ),
+               0, align, int(H3_Tex::StatCity), "ImgStatCity");
+    UI_addElem( game, H3_UI::LblStatCity, H3_UIElem::Text, de::Recti(x,t,0,0),
+               0, align, 0, "0");
+    x += d2;
+    UI_addElem( game, H3_UI::BtnStatCard, H3_UIElem::Image, de::Recti(x,y,0,0 ),
+               0, align, int(H3_Tex::StatCard), "ImgStatCard");
+    UI_addElem( game, H3_UI::LblStatCard, H3_UIElem::Text, de::Recti(x,t,0,0),
+               0, align, 0, "0");
+    // Bonus Army/Road:
+    x += 10;
+    y = 12;
+    d = 128+20;
+    align = de::Align::BottomCenter;
+
+    UI_addElem( game, H3_UI::BtnBonusRoad, H3_UIElem::Image, de::Recti( x,y,128,128 ),
+               64, align, int(H3_Tex::BonusRoad), "ImgBonusRoad");
+    x += d;
+    UI_addElem( game, H3_UI::BtnBonusArmy, H3_UIElem::Image, de::Recti( x,y,128,128 ),
+               64, align, int(H3_Tex::BonusArmy), "ImgBonusArmy");
+
+*/
+}
+#endif
+
+
+/*
+void
+UI_addElem( H3_Game & game, H3_UI::eID id, H3_UIElem::eType typ,
+            de::Recti pos, int radius, de::Align align, int texId, std::string msg,
+            de::Font5x8 const & font, uint32_t textColor, uint32_t fillColor, uint32_t borderColor )
+{
+    game.m_ui.m_elements.emplace_back();
+    H3_UIElem & e = game.m_ui.m_elements.back();
+    e.id = id; // H3_createId();
+    e.name = H3_UI_getString(id);
+    e.align = align;
+    e.typ = typ;
+    e.radius = radius;
+    e.msg = msg;
+    e.font = font;
+    e.textColor = textColor;
+    e.fillColor = fillColor;
+    e.borderColor = borderColor;
+
+    if ( texId > 0 )
+    {
+        e.ref = H3_getTex( game, static_cast<H3_Tex::eID>(texId) );
+        int w = pos.w > 0 ? pos.w : e.ref.w();
+        int h = pos.h > 0 ? pos.h : e.ref.h();
+        e.start_pos = de::Recti(pos.x,pos.y,w,h);
+    }
+    else
+    {
+        auto ts = font.getTextSize( msg );
+        int w = pos.w > 0 ? pos.w : ts.width+20;
+        int h = pos.h > 0 ? pos.h : ts.height+20;
+        e.start_pos = de::Recti(pos.x,pos.y,w,h);
+    }
+
+    e.pos = e.start_pos;
+}
+
+
+int
+UI_find( const H3_Game & game, const H3_UI::eID id )
+{
+    const auto& ui_elems = game.m_ui.m_elements;
+    for ( size_t i = 0; i < ui_elems.size(); ++i )
+    {
+        if ( ui_elems[ i ].id == int( id ) )
+        {
+            return int( i );
+        }
+    }
+    return -1;
+}
+
+H3_UIElem &
+UI_get( H3_Game & game, const H3_UI::eID id, const std::string& caller )
+{
+    int found = UI_find( game, id );
+    if (found < 0)
+    {
+        std::ostringstream o; o << __func__ << " :: Invalid "
+        "elementId(" << int( id ) << "), "
+        "str("<<H3_UI_getString( id ) <<"), caller(" << caller << ")";
+        throw std::runtime_error( o.str() );
+    }
+
+    return game.m_ui.m_elements[ found ];
+}
+
+void
+UI_drawElem( H3_Game & game, H3_UI::eID id )
+{
+    UI_drawElem( game, UI_get( game, id, __func__ ) );
+}
+
+void
+UI_drawElem( H3_Game & game, H3_UIElem & elem )
+{
+    if ( !elem.visible ) return;
+
+    if ( (elem.typ == H3_UIElem::Button) || (elem.typ == H3_UIElem::Text) )
+    {
+        if ( elem.radius < 1 )
+        {
+            H3_draw2DRect( game, elem.pos, elem.fillColor, elem.ref );
+        }
+        else
+        {
+            H3_draw2DRoundRect( game, elem.pos, glm::ivec2(elem.radius, elem.radius), elem.fillColor, elem.ref, 15 );
+        }
+
+        if ( elem.typ == H3_UIElem::Text || (elem.typ == H3_UIElem::Button && elem.ref.empty() ))
+        {
+            int cx = elem.pos.centerX();
+            int cy = elem.pos.centerY();
+            de::Font5x8 font(2,2,1,1,1,1);
+            //de::Font font("garton", 36);
+            H3_drawText( game, cx,cy, elem.msg, elem.textColor, de::Align::Centered, font );
+        }
+    }
+    else
+    {
+        if ( elem.radius < 1 )
+        {
+            H3_draw2DRect( game, elem.pos, elem.fillColor, elem.ref );
+        }
+        else
+        {
+            H3_draw2DRoundRect( game, elem.pos, glm::ivec2(elem.radius, elem.radius), elem.fillColor, elem.ref, 15 );
+        }
+    }
+}
+
+void
+UI_draw( H3_Game & game, bool debug )
+{
+    auto driver = H3_getDriver( game );
+    if (!driver) { DE_ERROR("No driver") return; }
+
+    float fScale = 0.01f * game.m_ui.iScalePc;
+
+    for ( H3_UIElem & elem : game.m_ui.m_elements )
+    {
+        UI_drawElem( game, elem );
+    }
+
+    if ( game.m_ui.m_hoverElement > -1 )
+    {
+        auto & elem = game.m_ui.m_elements[ game.m_ui.m_hoverElement ];
+        H3_draw2DRect( game, elem.pos, 0x6F0000FF );
+    }
+
+    for ( int i = 0; i < game.m_players.size(); ++i )
+    {
+        UI_drawPlayerStats( game, 20,20+100*i, game.m_players[ i ].id );
+    }
+
+    UI_drawRoundStats( game );
+
+    int w = driver->getScreenWidth();
+    int h = driver->getScreenHeight();
+
+    UI_drawInfoPanelTile( game, de::Recti( 20, h-320, 200, 300 ), game.m_hoverTileId );
+    UI_drawInfoPanelCorner( game, de::Recti( 20, h-320, 200, 300 ), game.m_hoverCornerId );
+    UI_drawInfoPanelEdge( game, de::Recti( 20, h-320, 200, 300 ), game.m_hoverEdgeId );
+
+    UI_drawLog( game );
+
+    //auto fontGarton = game.m_fontGarton32;
+    //fontGarton.pixelSize = 2.0f * fScale * fontGarton.pixelSize;
+    //H3_drawText( game, w/2, 0, "Hello Marquee text!!!", 0xFFFFFFFF, de::Align::TopCenter, fontGarton);
+}
+
+void
+UI_create( H3_Game & game )
+{
+    de::Font5x8 menuFont;
+    menuFont.quadWidth = 4;
+    menuFont.quadHeight = 4;
+    menuFont.quadSpacingX = 1;
+    menuFont.quadSpacingY = 1;
+    menuFont.glyphSpacingX = 1;
+    menuFont.glyphSpacingY = 1;
+
+    // Do Buttons 1:
+    UI_addElem( game, H3_UI::BtnDoDice, H3_UIElem::Button, de::Recti(-100, 20,0,0),
+               12, de::Align::TopCenter, int(H3_Tex::DoDice), "DoDice");
+
+    UI_addElem( game, H3_UI::BtnDoBank, H3_UIElem::Button, de::Recti(  0, 20,0,0),
+               12, de::Align::TopCenter, int(H3_Tex::DoBank), "DoBank");
+
+    UI_addElem( game, H3_UI::BtnDoTrade, H3_UIElem::Button, de::Recti( 100, 20,0,0),
+               12, de::Align::TopCenter, int(H3_Tex::DoTrade), "DoTrade");
+
+    UI_addElem( game, H3_UI::BtnDoEndTurn, H3_UIElem::Button, de::Recti( 200, 20,0,0),
+               12, de::Align::TopCenter, int(H3_Tex::DoEndTurn), "DoEndTurn");
+
+    // Do Buttons 2:
+    UI_addElem( game, H3_UI::BtnDoCancel, H3_UIElem::Button, de::Recti( -100, 68 + 10 + 64,0,0),
+               12, de::Align::TopCenter, int(H3_Tex::DoCancel), "DoCancel");
+
+    //   UI_addElem( game, H3_UI::BtnDoRob, H3_UIElem::ImageButton, de::Recti( -100, 68,0,0),
+    //               12, de::Align::TopCenter, int(H3_Tex::DoRob), "DoRob");
+
+    UI_addElem( game, H3_UI::BtnDoBuyCard, H3_UIElem::Button, de::Recti(-100,68,42,64),
+               12, de::Align::TopCenter, int(H3_Tex::DoBuyEventCard), "DoBuyCard");
+
+    UI_addElem( game, H3_UI::BtnDoBuyRoad, H3_UIElem::Button, de::Recti(  0, 68,0,0),
+               12, de::Align::TopCenter, int(H3_Tex::DoBuyRoad), "DoBuyRoad");
+
+    UI_addElem( game, H3_UI::BtnDoBuyFarm, H3_UIElem::Button, de::Recti( 100, 68,0,0),
+               12, de::Align::TopCenter, int(H3_Tex::DoBuyFarm), "DoBuyFarm");
+
+    UI_addElem( game, H3_UI::BtnDoBuyCity, H3_UIElem::Button, de::Recti( 200, 68,0,0),
+               12, de::Align::TopCenter, int(H3_Tex::DoBuyCity), "DoBuyCity");
+
+    // Label
+
+    // Card Stats:
+    int x = -300;
+    int y = 44;
+    int t = 6;
+    int d = 80;
+    int w = 60;
+    int h = 100;
+    de::Align::EAlign align = de::Align::BottomCenter;
+
+    UI_addElem( game, H3_UI::BtnStatKnightCard, H3_UIElem::Button, de::Recti(x,y,w,h ),
+               6, align, int(H3_Tex::EventCardKnight), "ImgKnightCard");
+    UI_addElem( game, H3_UI::LblStatKnightCard, H3_UIElem::Text, de::Recti(x,t,0,0 ),
+               0, align, 0, "0");
+    x += d;
+    UI_addElem( game, H3_UI::BtnStatPointCard, H3_UIElem::Image, de::Recti(x,y,w,h ),
+               6, align, int(H3_Tex::EventCardPoint), "ImgPointCard");
+    UI_addElem( game, H3_UI::LblStatPointCard, H3_UIElem::Text, de::Recti(x,t,0,0),
+               0, align, 0, "0");
+    x += d;
+    UI_addElem( game, H3_UI::BtnStatA, H3_UIElem::Button, de::Recti( x,y,w,h ),
+               6, align, int(H3_Tex::CardA), "ImgStatA");
+    UI_addElem( game, H3_UI::LblStatA, H3_UIElem::Text, de::Recti(x,t,0,0),
+               0, align, 0, "0");
+    x += d;
+    UI_addElem( game, H3_UI::BtnStatB, H3_UIElem::Button, de::Recti( x,y,w,h ),
+               6, align, int(H3_Tex::CardB), "ImgStatB");
+    UI_addElem( game, H3_UI::LblStatB, H3_UIElem::Text, de::Recti(x,t,0,0),
+               0, align, 0, "0");
+    x += d;
+    UI_addElem( game, H3_UI::BtnStatC, H3_UIElem::Button, de::Recti( x,y,w,h ),
+               6, align, int(H3_Tex::CardC), "ImgStatC");
+    UI_addElem( game, H3_UI::LblStatC, H3_UIElem::Text, de::Recti(x,t,0,0),
+               0, align, 0, "0");
+    x += d;
+    UI_addElem( game, H3_UI::BtnStatD, H3_UIElem::Button, de::Recti( x,y,w,h ),
+               6, align, int(H3_Tex::CardD), "ImgStatD");
+    UI_addElem( game, H3_UI::LblStatD, H3_UIElem::Text, de::Recti(x,t,0,0),
+               0, align, 0, "0");
+    x += d;
+    UI_addElem( game, H3_UI::BtnStatE, H3_UIElem::Button, de::Recti( x,y,w,h ),
+               6, align, int(H3_Tex::CardE), "ImgStatE");
+    UI_addElem( game, H3_UI::LblStatE, H3_UIElem::Text, de::Recti(x,t,0,0),
+               0, align, 0, "0");
+    x += d;
+
+    int d2 = 42;
+    UI_addElem( game, H3_UI::BtnStatVic, H3_UIElem::Image, de::Recti(x,y,0,0 ),
+               0, align, int(H3_Tex::StatVic), "ImgStatVic");
+    UI_addElem( game, H3_UI::LblStatVic, H3_UIElem::Text, de::Recti(x,t,0,0),
+               0, align, 0, "0");
+    x += d2;
+    UI_addElem( game, H3_UI::BtnStatRoad, H3_UIElem::Image, de::Recti(x,y,0,0 ),
+               0, align, int(H3_Tex::StatRoad), "ImgStatRoad");
+    UI_addElem( game, H3_UI::LblStatRoad, H3_UIElem::Text, de::Recti(x,t,0,0),
+               0, align, 0, "0");
+    x += d2;
+    UI_addElem( game, H3_UI::BtnStatFarm, H3_UIElem::Image, de::Recti(x,y,0,0 ),
+               0, align, int(H3_Tex::StatFarm), "ImgStatFarm");
+    UI_addElem( game, H3_UI::LblStatFarm, H3_UIElem::Text, de::Recti(x,t,0,0),
+               0, align, 0, "0");
+    x += d2;
+    UI_addElem( game, H3_UI::BtnStatCity, H3_UIElem::Image, de::Recti(x,y,0,0 ),
+               0, align, int(H3_Tex::StatCity), "ImgStatCity");
+    UI_addElem( game, H3_UI::LblStatCity, H3_UIElem::Text, de::Recti(x,t,0,0),
+               0, align, 0, "0");
+    x += d2;
+    UI_addElem( game, H3_UI::BtnStatCard, H3_UIElem::Image, de::Recti(x,y,0,0 ),
+               0, align, int(H3_Tex::StatCard), "ImgStatCard");
+    UI_addElem( game, H3_UI::LblStatCard, H3_UIElem::Text, de::Recti(x,t,0,0),
+               0, align, 0, "0");
+    // Bonus Army/Road:
+    x += 10;
+    y = 12;
+    d = 128+20;
+    align = de::Align::BottomCenter;
+
+    UI_addElem( game, H3_UI::BtnBonusRoad, H3_UIElem::Image, de::Recti( x,y,128,128 ),
+               64, align, int(H3_Tex::BonusRoad), "ImgBonusRoad");
+    x += d;
+    UI_addElem( game, H3_UI::BtnBonusArmy, H3_UIElem::Image, de::Recti( x,y,128,128 ),
+               64, align, int(H3_Tex::BonusArmy), "ImgBonusArmy");
+
+    // Banking DLG items:
+    {
+        align = de::Align::BottomCenter;
+
+        UI_addElem( game, H3_UI::BankLblTitle, H3_UIElem::Text, de::Recti( 20,340,0,0 ),
+                   0, align, 0, "Banking...");
+
+        int y1 = 230;
+        int y2 = 210;
+        int lw = 60;
+        int lh = 12;
+        int x = -140;
+        int d = 80;
+
+        UI_addElem( game, H3_UI::BankBtnA, H3_UIElem::Button, de::Recti( x,y1,60,100 ),
+                   6, align, int(H3_Tex::CardA), "BankBtnA");
+        UI_addElem( game, H3_UI::BankLblA, H3_UIElem::Text, de::Recti( x,y2,lw,lh ),
+                   0, align, 0, "BankLblA");
+        x += d;
+        UI_addElem( game, H3_UI::BankBtnB, H3_UIElem::Button, de::Recti( x,y1,60,100 ),
+                   6, align, int(H3_Tex::CardB), "BankBtnB");
+        UI_addElem( game, H3_UI::BankLblB, H3_UIElem::Text, de::Recti( x,y2,lw,lh ),
+                   0, align, 0, "BankLblB");
+        x += d;
+        UI_addElem( game, H3_UI::BankBtnC, H3_UIElem::Button, de::Recti( x,y1,60,100 ),
+                   6, align, int(H3_Tex::CardC), "BankBtnC");
+        UI_addElem( game, H3_UI::BankLblC, H3_UIElem::Text, de::Recti( x,y2,lw,lh ),
+                   0, align, 0, "BankLblC");
+        x += d;
+        UI_addElem( game, H3_UI::BankBtnD, H3_UIElem::Button, de::Recti( x,y1,60,100 ),
+                   6, align, int(H3_Tex::CardD), "BankBtnD");
+        UI_addElem( game, H3_UI::BankLblD, H3_UIElem::Text, de::Recti( x,y2,lw,lh ),
+                   0, align, 0, "BankLblD");
+        x += d;
+        UI_addElem( game, H3_UI::BankBtnE, H3_UIElem::Button, de::Recti( x,y1,60,100 ),
+                   6, align, int(H3_Tex::CardE), "BankBtnE");
+        UI_addElem( game, H3_UI::BankLblE, H3_UIElem::Text, de::Recti( x,y2,lw,lh ),
+                   0, align, 0, "BankLblE");
+        x += d;
+
+        UI_addElem( game, H3_UI::BankBtnOK, H3_UIElem::Button, de::Recti( -70,160,160,40 ),
+                   8, align, int(0), "OK, pls bank now");
+
+        UI_addElem( game, H3_UI::BankBtnCancel, H3_UIElem::Button, de::Recti( 110,160,160,40 ),
+                   8, align, int(0), "Cancel transaction.");
+    }
+
+    //   UI_addElem( game, H3_UI::BtnBonusArmy, H3_UIElem::ImageLabel, de::Recti( x,y,0,0 ),
+    //               0, align, int(H3_Tex::BonusArmy), "ImgBonusArmy");
+
+}
+
+*/
+
+/*
+
+
+// static
+std::string
+H3_UI_getString( H3_UI::eID t )
+{
+    switch ( t )
+    {
+    // case H3_UI::BtnBenni: return "menu/benni";
+    // case H3_UI::BtnMenuStart: return "menu/start";
+    // case H3_UI::BtnMenuLoad: return "menu/load";
+    // case H3_UI::BtnMenuSave: return "menu/save";
+    // case H3_UI::BtnMenuOptions: return "menu/options";
+    // case H3_UI::BtnMenuExit: return "menu/exit";
+    case H3_UI::BtnDoBuyCard: return "BtnDoBuyCard";
+    case H3_UI::BtnDoBuyRoad: return "BtnDoBuyRoad";
+    case H3_UI::BtnDoBuyFarm: return "BtnDoBuyFarm";
+    case H3_UI::BtnDoBuyCity: return "do/buycity";
+    case H3_UI::BtnDoDice:    return "do/dice";
+    case H3_UI::BtnDoCancel:    return "do/cancel";
+    case H3_UI::BtnDoEndTurn: return "do/endturn";
+    case H3_UI::BtnDoBank:    return "do/bank";
+    case H3_UI::BtnDoTrade:   return "do/trade";
+    //case H3_UI::DoRob:     return "do/rob";
+    //case H3_UI::DoRedo:    return "do/redo";
+    //case H3_UI::DoUndo:    return "do/undo";
+    case H3_UI::StatVic: return "ui/stat/vic/img";
+    case H3_UI::StatCard: return "ui/stat/card/img";
+    case H3_UI::StatRoad: return "ui/stat/road/img";
+    case H3_UI::StatFarm: return "ui/stat/farm/img";
+    case H3_UI::StatCity: return "ui/stat/city/img";
+    case H3_UI::StatA: return "stat/a";
+    case H3_UI::StatB: return "stat/b";
+    case H3_UI::StatC: return "stat/c";
+    case H3_UI::StatD: return "stat/d";
+    case H3_UI::StatE: return "stat/e";
+    case H3_UI::StatKnightCard: return "stat/eventcard/knight";
+    case H3_UI::StatPointCard: return "stat/eventcard/point";
+    case H3_UI::StatInventCard: return "stat/eventcard/invent";
+    case H3_UI::StatBonusRoad: return "stat/bonus/road";
+    case H3_UI::StatBonusArmy: return "stat/bonus/army";
+
+    // case H3_UI::LblStatA: return "lbl/stat/a";
+    // case H3_UI::LblStatB: return "lbl/stat/b";
+    // case H3_UI::LblStatC: return "lbl/stat/c";
+    // case H3_UI::LblStatD: return "lbl/stat/d";
+    // case H3_UI::LblStatE: return "lbl/stat/e";
+    // case H3_UI::LblStatVic: return "lbl/stat/vic";
+    // case H3_UI::LblStatCard: return "lbl/stat/card";
+    // case H3_UI::LblStatRoad: return "lbl/stat/road";
+    // case H3_UI::LblStatFarm: return "lbl/stat/farm";
+    // case H3_UI::LblStatCity: return "lbl/stat/city";
+    // case H3_UI::LblStatKnightCard: return "lbl/stat/knightcard";
+    // case H3_UI::LblStatPointCard: return "lbl/stat/pointcard";
+    // case H3_UI::LblStatInventCard: return "lbl/stat/inventcard";
+
+    default:
+    {
+        std::ostringstream s;
+        s << __func__ << " H3_UI(" << int(t) << ") - Invalid enum";
+        throw std::runtime_error( s.str() );
+    }
+    }
+}
+
+int UI_find( const H3_Game & game, const H3_UI::eID id );
+
+H3_UIElem& UI_get( H3_Game & game, const H3_UI::eID id );
+
+void UI_addElem( H3_Game & game, H3_UI::eID id, H3_UIElem::eType typ, de::Recti pos, int radius = 0,
+    de::Align align = de::Align::TopLeft, int texId = 0, std::string msg = "", de::Font5x8 const & font = de::Font5x8(),
+    uint32_t textColor = 0xFF000000, uint32_t fillColor = 0xFFFFFFFF, uint32_t borderColor = 0xFFEEEEEE );
+
+
+void UI_drawElem( H3_Game & game, H3_UIElem & elem );
+
+void UI_drawElem( H3_Game & game, H3_UI::eID id );
+
+void UI_drawDlgLooseCards( H3_Game & game );
+
+int UI_computeBankRatio( H3_Game & game, int bankingMode );
+void UI_doBanking( H3_Game & game, int bankingMode );
+void UI_cancelBanking( H3_Game & game );
+void UI_finishBanking( H3_Game & game );
+void UI_setBankingVisible( H3_Game & game, bool bVisible );
+void UI_hideBanking( H3_Game & game );
+void UI_showBanking( H3_Game & game );
+
+void UI_setStatsVisible( H3_Game & game, bool bVisible );
+void UI_hideStats( H3_Game & game );
+void UI_showStats( H3_Game & game );
+
+void UI_drawRoundStats( H3_Game & game);
+void UI_drawStatNum( H3_Game & game, int img, de::Recti pos, int value, int icon_width = 0 );
+void UI_drawPlayerStats( H3_Game & game, int px, int py, int playerId );
+
+void UI_drawInfoPanelTile( H3_Game & game, de::Recti pos, const u32 tileId );
+
+void UI_drawInfoPanelCorner( H3_Game & game, de::Recti pos, const u32 cornerId );
+
+void UI_drawInfoPanelEdge( H3_Game & game, de::Recti pos, const u32 edgeId );
+
+void UI_resetLog( H3_Game & game );
+void UI_logCancel( H3_Game & game );
+void UI_logEndTurn( H3_Game & game );
+void UI_logDice( H3_Game & game );
+void UI_logBank( H3_Game & game, H3_Bank in, H3_Bank out );
+void UI_logBuyRoad( H3_Game & game, int edgeId );
+void UI_logBuyFarm( H3_Game & game, int cornerId );
+void UI_logBuyCity( H3_Game & game, int cornerId );
+void UI_logBuyCard( H3_Game & game, int cardType );
+
+void UI_drawLogEndTurn( H3_Game & game, const H3_Action& act, int x, int y );
+void UI_drawLogCancel( H3_Game & game, const H3_Action& act, int x, int y );
+void UI_drawLogDice( H3_Game & game, const H3_Action& act, int x, int y );
+void UI_drawLogBank( H3_Game & game, const H3_Action& act, int x, int y );
+void UI_drawLogBuyCard( H3_Game & game, const H3_Action& act, int x, int y );
+void UI_drawLogBuyRoad( H3_Game & game, const H3_Action& act, int x, int y );
+void UI_drawLogBuyFarm( H3_Game & game, const H3_Action& act, int x, int y );
+void UI_drawLogBuyCity( H3_Game & game, const H3_Action& act, int x, int y );
+void UI_drawLog( H3_Game & game );
+
+*/

@@ -1,0 +1,27 @@
+#include "H3_UI_Renderer.h"
+#include <H3/H3_Game.h>
+#include <H3/details/H3_Tex.h>
+//#include <de_opengl.h>
+
+H3_UI_Renderer::H3_UI_Renderer()
+{
+}
+
+H3_UI_Renderer::~H3_UI_Renderer()
+{
+
+}
+
+void
+H3_UI_Renderer::init( H3_Game & game )
+{
+    m_driver = game.getDriver();
+}
+
+void H3_UI_Renderer::upload(const H3_Game& game)
+{
+}
+
+void H3_UI_Renderer::render()
+{
+}

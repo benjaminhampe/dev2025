@@ -1,0 +1,50 @@
+#pragma once
+#include "Body.h"
+#include "OpenGLBridge.h"
+
+struct SphereMesh
+{
+    static glm::vec3 computeSphereNormal( float lon, float lat );
+
+    void createSphere(int tessLon, int tessLat);
+
+    void upload();
+
+    uint32_t vao = 0;
+    uint32_t vbo = 0;
+    uint32_t ibo = 0;
+
+    std::vector<float> vertices;    // nx,ny,nz,u,v
+    std::vector<uint32_t> indices;
+};
+
+struct PlanetMaterial
+{
+    uint32_t textureId = 0;
+    uint32_t textureId_bump = 0;
+    uint32_t samplerId = 0;
+    float bumpScale = 1.0f;
+    de::TRSf trs;
+    float timeInSec = 0.0f;
+    uint32_t tessMax = 64;
+};
+
+// Normals only tesselated and lighted planet/moon renderer, mesh must be a sphere.
+struct BodyRenderer
+{
+    void init( Bridge* driver );
+
+    void draw( const Body& body );
+
+    Bridge* m_driver;
+
+    GLuint programId = 0;
+    GLint u_modelMatrix = -1;
+    GLint u_viewMatrix = -1;
+    GLint u_projectionMatrix = -1;
+    GLint u_cameraPos = -1;
+    GLint u_diffuseMap = -1;
+    GLint u_diffuseMapSize = -1;
+    GLint u_bumpMap = -1;
+    GLint u_bumpScale = -1;
+};

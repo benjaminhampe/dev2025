@@ -1,0 +1,1518 @@
+#include "H3_UI_MainMenu.h"
+#include "H3_UI.h"
+#include <H3/H3_Game.h>
+#include <H3/details/H3_Tex.h>
+#include <H3/details/H3_Topology.h>
+#include <H3/details/H3_Logic.h>
+
+
+/*
+void UI_drawRoundStats( H3_Game & game)
+{
+    auto driver = &game.m_videoDriver;
+    if ( !driver ) { DE_ERROR("No driver") return; }
+
+    const int w = driver->getScreenWidth();
+    const int h = driver->getScreenHeight();
+    const int mx = game.m_mouseX;
+    const int my = game.m_mouseY;
+    const int p = 10;
+
+    int x = w - p;
+    int y = p;
+    de::Align::EAlign align = de::Align::TopRight;
+
+    de::Font5x8 font1(2,2,1,1,1,1);
+    int ln1 = font1.getTextSize("W").height + p;
+    auto s1 = dbStrJoin("Screen(",w,",",h,")");
+    auto s2 = dbStrJoin("Mouse(",mx,",",my,")");
+    H3_drawText( game, x,y, s1, dbRGBA(255,100,100), align, font1 );
+    y += ln1;
+    H3_drawText( game, x,y, s2, dbRGBA(255,200,100), align, font1 );
+    y += ln1;
+
+    de::Font5x8 font(4,4,1,1,1,1);
+    //de::Font font( "garton", 36 );
+
+    int ln = font.getTextSize("W").height + 10;
+    H3_drawText( game, x,y, dbStrJoin("State = ", H3_State::getString( game.m_state )), 0xFFFFFFFF, align, font );
+    y += ln;
+    H3_drawText( game, x,y, dbStrJoin("Round = ", game.m_round), 0xFFFFFFFF, align, font );
+    y += ln;
+    H3_drawText( game, x,y, dbStrJoin("Turn = ", game.m_turn), 0xFFFFFFFF, align, font );
+    y += ln;
+    H3_drawText( game, x,y, dbStrJoin("Player = ", H3_getCurrentPlayer( game ).name), 0xFFFFFFFF, align, font );
+    y += ln;
+    H3_drawText( game, x,y, dbStrJoin("Dice = ", H3_getCurrentPlayer( game ).dice.sum()), 0xFFFFFFFF, align, font );
+    y += ln;
+    H3_drawDice( game, de::Recti(x - 128-11, y, 64,64), 12, game.m_dice.a );
+    H3_drawDice( game, de::Recti(x - 64-1, y, 64,64), 12, game.m_dice.b );
+    y += 64;
+}
+
+
+// ===========================================================================
+
+void
+UI_addElem( H3_Game & game, H3_UI::eID id, H3_UIElem::eType typ,
+            de::Recti pos, int radius, de::Align align, int texId, std::string msg,
+            de::Font5x8 const & font, uint32_t textColor, uint32_t fillColor, uint32_t borderColor )
+{
+    game.m_ui.m_elements.emplace_back();
+    H3_UIElem & e = game.m_ui.m_elements.back();
+    e.id = id; // H3_createId();
+    e.name = id;
+    e.align = align;
+    e.typ = typ;
+    e.radius = radius;
+    e.msg = msg;
+    e.font = font;
+    e.textColor = textColor;
+    e.fillColor = fillColor;
+    e.borderColor = borderColor;
+
+    if ( texId > 0 )
+    {
+        e.ref = H3_getTex( game, static_cast<H3_Tex::eID>(texId) );
+        int w = pos.w() > 0 ? pos.w() : e.ref.w();
+        int h = pos.h() > 0 ? pos.h() : e.ref.h();
+        e.pos = de::Recti(pos.x(),pos.y(),w,h);
+    }
+    else
+    {
+        auto ts = font.getTextSize( msg );
+        int w = pos.w() > 0 ? pos.w() : ts.width+20;
+        int h = pos.h() > 0 ? pos.h() : ts.height+20;
+        e.start_pos = de::Recti(pos.x(),pos.y(),w,h);
+    }
+
+    e.pos = e.start_pos;
+    //DE_DEBUG( e.toString() )
+}
+
+void
+UI_update( H3_Game & game )
+{
+    UI_hideActions( game );
+    UI_hideStats( game );
+    UIBanking_hide( game );
+
+    bool isMenuVisible = game.m_ui.m_isMenuVisible;
+    UI_get( game, H3_UI::BtnBenni ).visible = isMenuVisible;
+    UI_get( game, H3_UI::BtnMenuStart ).visible = isMenuVisible;
+    UI_get( game, H3_UI::BtnMenuLoad ).visible = isMenuVisible;
+    UI_get( game, H3_UI::BtnMenuSave ).visible = isMenuVisible;
+    UI_get( game, H3_UI::BtnMenuOptions ).visible = isMenuVisible;
+    UI_get( game, H3_UI::BtnMenuExit ).visible = isMenuVisible;
+
+    if ( game.m_ui.m_isMenuVisible )
+    {
+        return;
+    }
+
+}
+
+
+int
+UI_find( const H3_Game & game, const H3_UI::eID id )
+{
+    const auto& ui_elems = game.m_ui.m_elements;
+    for ( size_t i = 0; i < ui_elems.size(); ++i )
+    {
+        if ( ui_elems[ i ].id == int( id ) )
+        {
+            return int( i );
+        }
+    }
+    return -1;
+}
+
+H3_UIElem &
+UI_get( H3_Game & game, const H3_UI::eID id )
+{
+    int found = UI_find( game, id );
+    if (found < 0)
+    {
+        std::ostringstream o; o << __func__ << " :: Invalid "
+        "elementId(" << int( id ) << "), "
+        "str("<<H3_UI::getString( id ) <<")";
+        throw std::runtime_error( o.str() );
+    }
+
+    auto& ui_elems = game.m_ui.m_elements;
+    return ui_elems[ found ];
+}
+
+void
+UI_drawElem( H3_Game & game, H3_UIElem & elem )
+{
+    de::VideoDriver* driver = &game.m_videoDriver;
+    if ( !driver )
+    {
+        DE_ERROR("No driver")
+        return;
+    }
+
+    // Layout
+    int screen_w = driver->getScreenWidth();
+    int screen_h = driver->getScreenHeight();
+
+    elem.pos = de::Align::apply( elem.start_pos, elem.align );
+
+    int x = elem.pos.x();
+    int y = elem.pos.y();
+
+    // Apply horizontal screen align:
+    if ( elem.align & de::Align::Center ){ x += screen_w/2; }
+    else if ( elem.align & de::Align::Right ) { x += screen_w; }
+    else {}
+    // Apply vertical align:
+    if ( elem.align & de::Align::Middle ){ y += screen_h/2; }
+    else if ( elem.align & de::Align::Bottom ){ y += screen_h;   }
+    else {}
+
+    elem.pos.set(x,y,elem.pos.w(),elem.pos.h());
+
+    if ( (elem.typ == H3_UIElem::Button) || (elem.typ == H3_UIElem::Text) )
+    {
+        //DE_DEBUG("DrawButton ", elem.pos)
+
+        if ( elem.radius < 1 )
+        {
+            H3_draw2DRect( game, elem.pos, elem.fillColor, elem.ref );
+        }
+        else
+        {
+            H3_draw2DRoundRect( game, elem.pos, glm::ivec2(elem.radius, elem.radius), elem.fillColor, elem.ref, 15 );
+        }
+
+        if ( elem.typ == H3_UIElem::Text || (elem.typ == H3_UIElem::Button && elem.ref.empty() ))
+        {
+            int cx = elem.pos.getCenterX();
+            int cy = elem.pos.getCenterY();
+            game.m_fontRenderer5x8.draw2DText( cx,cy, elem.msg, elem.textColor, de::Align::Centered );
+        }
+        //de::Font font("garton", 36);
+        //driver->draw2DText( cx, cy, elem.msg, 0xFF000000, de::Align::Centered, font );
+    }
+    else
+    {
+        //DE_DEBUG("DrawOther ", elem.pos)
+
+        if ( elem.radius < 1 )
+        {
+            H3_draw2DRect( game, elem.pos, elem.fillColor, elem.ref );
+        }
+        else
+        {
+            H3_draw2DRoundRect( game, elem.pos, glm::ivec2(elem.radius, elem.radius), elem.fillColor, elem.ref, 15 );
+        }
+    }
+}
+
+void
+UI_drawElem( H3_Game & game, H3_UI::eID id )
+{
+    H3_UIElem & elem = UI_get( game, id );
+    UI_drawElem( game, elem );
+}
+
+
+void
+UI_setActionsVisible( H3_Game & game, bool bVisible )
+{
+    UI_get( game, H3_UI::BtnDoDice ).visible = bVisible;
+    UI_get( game, H3_UI::BtnDoBank ).visible = bVisible;
+    UI_get( game, H3_UI::BtnDoTrade ).visible = bVisible;
+    UI_get( game, H3_UI::BtnDoEndTurn ).visible = bVisible;
+    UI_get( game, H3_UI::BtnDoBuyRoad ).visible = bVisible;
+    UI_get( game, H3_UI::BtnDoBuyFarm ).visible = bVisible;
+    UI_get( game, H3_UI::BtnDoBuyCity ).visible = bVisible;
+    UI_get( game, H3_UI::BtnDoBuyCard ).visible = bVisible;
+    //UI_get( game, H3_UI::BtnDoRob ).visible = bVisible;
+    UI_get( game, H3_UI::BtnDoCancel ).visible = bVisible;
+}
+
+void
+UI_hideActions( H3_Game & game ) { UI_setActionsVisible( game, false ); }
+
+void
+UI_showActions( H3_Game & game ) { UI_setActionsVisible( game, true ); }
+
+void
+UI_setStatsVisible( H3_Game & game, bool bVisible )
+{
+    UI_get( game, H3_UI::BtnStatVic ).visible = bVisible;
+    UI_get( game, H3_UI::BtnStatCard ).visible = bVisible;
+    UI_get( game, H3_UI::BtnStatRoad ).visible = bVisible;
+    UI_get( game, H3_UI::BtnStatFarm ).visible = bVisible;
+    UI_get( game, H3_UI::BtnStatCity ).visible = bVisible;
+    UI_get( game, H3_UI::BtnStatA ).visible = bVisible;
+    UI_get( game, H3_UI::BtnStatB ).visible = bVisible;
+    UI_get( game, H3_UI::BtnStatC ).visible = bVisible;
+    UI_get( game, H3_UI::BtnStatD ).visible = bVisible;
+    UI_get( game, H3_UI::BtnStatE ).visible = bVisible;
+    UI_get( game, H3_UI::BtnBonusRoad ).visible = bVisible;
+    UI_get( game, H3_UI::BtnBonusArmy ).visible = bVisible;
+
+    UI_get( game, H3_UI::LblStatVic ).visible = bVisible;
+    UI_get( game, H3_UI::LblStatCard ).visible = bVisible;
+    UI_get( game, H3_UI::LblStatRoad ).visible = bVisible;
+    UI_get( game, H3_UI::LblStatFarm ).visible = bVisible;
+    UI_get( game, H3_UI::LblStatCity ).visible = bVisible;
+    UI_get( game, H3_UI::LblStatA ).visible = bVisible;
+    UI_get( game, H3_UI::LblStatB ).visible = bVisible;
+    UI_get( game, H3_UI::LblStatC ).visible = bVisible;
+    UI_get( game, H3_UI::LblStatD ).visible = bVisible;
+    UI_get( game, H3_UI::LblStatE ).visible = bVisible;
+
+    UI_get( game, H3_UI::BtnStatKnightCard ).visible = bVisible;
+    UI_get( game, H3_UI::LblStatKnightCard ).visible = bVisible;
+    UI_get( game, H3_UI::BtnStatPointCard ).visible = bVisible;
+    UI_get( game, H3_UI::LblStatPointCard ).visible = bVisible;
+}
+
+void
+UI_hideStats( H3_Game & game ) { UI_setStatsVisible( game, false ); }
+
+void
+UI_showStats( H3_Game & game ) { UI_setStatsVisible( game, true ); }
+
+void UI_drawDlgLooseCards( H3_Game & game )
+{
+    auto driver = &game.m_videoDriver;
+    if ( !driver ) { DE_ERROR("No driver") return; }
+}
+
+int UI_computeBankRatio( H3_Game & game, int bankingMode )
+{
+    H3_Player & player = H3_getCurrentPlayer( game );
+
+    int ratio = 4;
+    if ( player.hasPort3v1 ) ratio = 3;
+
+    if ( bankingMode == 0 && player.hasPortA )
+    {
+        ratio = 2;
+    }
+    if ( bankingMode == 1 && player.hasPortB )
+    {
+        ratio = 2;
+    }
+    if ( bankingMode == 2 && player.hasPortC )
+    {
+        ratio = 2;
+    }
+    if ( bankingMode == 3 && player.hasPortD )
+    {
+        ratio = 2;
+    }
+    if ( bankingMode == 4 && player.hasPortE )
+    {
+        ratio = 2;
+    }
+    return ratio;
+}
+
+void UI_doBanking( H3_Game & game, int bankingMode )
+{
+    if ( game.m_state != H3_State::Idle ) { DE_ERROR("No correct idle state") return; }
+    H3_Player & player = H3_getCurrentPlayer( game );
+
+    int ratio = UI_computeBankRatio( game, bankingMode );
+    if ( game.m_bankingMode == 0 && ratio > player.bank.A )
+    {
+        DE_DEBUG("[Bank] Not enough A(",player.bank.A,")")
+        return;
+    }
+    if ( game.m_bankingMode == 1 && ratio > player.bank.B )
+    {
+        DE_DEBUG("[Bank] Not enough B(",player.bank.B,")")
+        return;
+    }
+    if ( game.m_bankingMode == 2 && ratio > player.bank.C )
+    {
+        DE_DEBUG("[Bank] Not enough C(",player.bank.C,")")
+        return;
+    }
+    if ( game.m_bankingMode == 3 && ratio > player.bank.D )
+    {
+        DE_DEBUG("[Bank] Not enough D(",player.bank.D,")")
+        return;
+    }
+    if ( game.m_bankingMode == 4 && ratio > player.bank.E )
+    {
+        DE_DEBUG("[Bank] Not enough E(",player.bank.E,")")
+        return;
+    }
+
+    DE_DEBUG("[Bank] playerId(", player.id,"), res(",bankingMode,"), ratio(",ratio,")")
+
+    UI_get( game, H3_UI::BankLblA ).msg = "0";
+    UI_get( game, H3_UI::BankLblB ).msg = "0";
+    UI_get( game, H3_UI::BankLblC ).msg = "0";
+    UI_get( game, H3_UI::BankLblD ).msg = "0";
+    UI_get( game, H3_UI::BankLblE ).msg = "0";
+
+    if ( game.m_bankingMode == 0 )
+    {
+        UI_get( game, H3_UI::BankLblA ).msg = std::to_string( ratio );
+    }
+    else if ( game.m_bankingMode == 1 )
+    {
+        UI_get( game, H3_UI::BankLblB ).msg = std::to_string( ratio );
+    }
+    else if ( game.m_bankingMode == 2 )
+    {
+        UI_get( game, H3_UI::BankLblC ).msg = std::to_string( ratio );
+    }
+    else if ( game.m_bankingMode == 3 )
+    {
+        UI_get( game, H3_UI::BankLblD ).msg = std::to_string( ratio );
+    }
+    else if ( game.m_bankingMode == 4 )
+    {
+        UI_get( game, H3_UI::BankLblE ).msg = std::to_string( ratio );
+    }
+
+    game.m_state = H3_State::Banking;
+    game.m_bankingMode = bankingMode;
+    UI_update( game );
+}
+
+void UI_cancelBanking( H3_Game & game )
+{
+    if ( game.m_state == H3_State::Banking )
+    {
+        DE_DEBUG(__func__)
+        game.m_state = H3_State::Idle;
+        game.m_bankingMode = -1;
+        game.m_bankingWish = -1;
+        UI_update( game );
+    }
+}
+
+void UI_finishBanking( H3_Game & game )
+{
+    if ( game.m_state != H3_State::Banking )
+    {
+        DE_ERROR("No correct banking state") return;
+    }
+
+    H3_Player & player = H3_getCurrentPlayer( game );
+    DE_DEBUG("[EndBank] playerId(", player.id,"), bankingMode(",game.m_bankingMode,")")
+
+    int ratio = UI_computeBankRatio( game, game.m_bankingMode );
+    if ( game.m_bankingMode == 0 )
+    {
+        player.bank.A -= ratio;
+    }
+    else if ( game.m_bankingMode == 1 )
+    {
+        player.bank.B -= ratio;
+    }
+    else if ( game.m_bankingMode == 2 )
+    {
+        player.bank.C -= ratio;
+    }
+    else if ( game.m_bankingMode == 3 )
+    {
+        player.bank.D -= ratio;
+    }
+    else if ( game.m_bankingMode == 4 )
+    {
+        player.bank.E -= ratio;
+    }
+
+    if ( game.m_bankingWish == 0 )
+    {
+        player.bank.A++;
+    }
+    else if ( game.m_bankingWish == 1 )
+    {
+        player.bank.B++;
+    }
+    else if ( game.m_bankingWish == 2 )
+    {
+        player.bank.C++;
+    }
+    else if ( game.m_bankingWish == 3 )
+    {
+        player.bank.D++;
+    }
+    else if ( game.m_bankingWish == 4 )
+    {
+        player.bank.E++;
+    }
+
+    game.m_state = H3_State::Idle;
+    game.m_bankingMode = -1;
+    game.m_bankingWish = -1;
+
+    UI_update( game );
+}
+
+
+void UI_setBankingVisible( H3_Game & game, bool bVisible )
+{
+    UI_get( game, H3_UI::BankLblTitle ).visible = bVisible;
+    UI_get( game, H3_UI::BankBtnA ).visible = bVisible;
+    UI_get( game, H3_UI::BankLblA ).visible = bVisible;
+    UI_get( game, H3_UI::BankBtnB ).visible = bVisible;
+    UI_get( game, H3_UI::BankLblB ).visible = bVisible;
+    UI_get( game, H3_UI::BankBtnC ).visible = bVisible;
+    UI_get( game, H3_UI::BankLblC ).visible = bVisible;
+    UI_get( game, H3_UI::BankBtnD ).visible = bVisible;
+    UI_get( game, H3_UI::BankLblD ).visible = bVisible;
+    UI_get( game, H3_UI::BankBtnE ).visible = bVisible;
+    UI_get( game, H3_UI::BankLblE ).visible = bVisible;
+    UI_get( game, H3_UI::BankBtnOK ).visible = bVisible;
+    UI_get( game, H3_UI::BankBtnCancel ).visible = bVisible;
+}
+
+void
+UI_hideBanking( H3_Game & game ) { UI_setBankingVisible( game, false ); }
+
+void
+UI_showBanking( H3_Game & game ) { UI_setBankingVisible( game, true ); }
+
+
+
+
+
+void
+UI_drawStatNum( H3_Game & game, int img, de::Recti pos, int value, int icon_width )
+{
+    auto driver = &game.m_videoDriver;
+    if ( !driver ) { DE_ERROR("No driver") return; }
+
+    de::TexRef tex = H3_getTex( game, H3_Tex::Unknown );
+    if ( img > 0 )
+    {
+        tex = H3_getTex( game, H3_Tex::eID(img) );
+    }
+
+    de::Recti iconPos = pos;
+    //   if ( icon_width > 0 )
+    //   {
+    //      iconPos.w = icon_width;
+    //   }
+    H3_draw2DRect( game, iconPos, 0xFFFFFFFF, tex );
+
+    auto valueStr = std::to_string( value );
+
+    de::Font5x8 font;
+    font.quadWidth = 1.0f;
+    font.quadHeight = 1.0f;
+    font.quadSpacingX = 0.0f;
+    font.quadSpacingY = 0.0f;
+    font.glyphSpacingX = 1.0f;
+    font.glyphSpacingY = 1.0f;
+    auto ts = font.getTextSize( valueStr );
+
+    int msg_x = pos.getX() + pos.getWidth()/2;
+    int msg_y = pos.getY() + pos.getHeight() - 1;
+    de::Recti r_msg( msg_x-2-int(0.5f*ts.width), msg_y-1-int(ts.height), int(ts.width)+2, int(ts.height)+1 );
+
+    H3_draw2DRect( game, r_msg, 0x80000000 );
+    game.m_fontRenderer5x8.draw2DText( msg_x, msg_y, valueStr,
+    0xFFFFFFFF, de::Align::BottomCenter, font );
+}
+
+void
+UI_drawPlayerStats( H3_Game & game, int px, int py, int playerId )
+{
+    auto driver = &game.m_videoDriver;
+    if ( !driver ) { DE_ERROR("No driver") return; }
+    H3_Player & current = H3_getCurrentPlayer( game );
+    H3_Player & player = H3_getPlayer( game, playerId );
+
+    //int p = 20;
+    de::Font fontName( "garton", 26, false, false, true, true, false );
+    //de::Font font( "garton", 12, false, false, true, true, false );
+
+    de::TexRef noTex;
+    // Draw current Player highlight
+    de::Recti r_panel(px,py,280,96);
+    H3_draw2DRoundRect( game, r_panel, glm::ivec2(12,12), 0x40FFFFFF, noTex, 16 );
+
+    // Draw current Player highlight
+    de::Recti r_highlight( r_panel.x()+2, r_panel.y()+2, r_panel.w()-4, r_panel.h()-4 );
+    if ( playerId == current.id )
+    {
+        H3_draw2DRoundRect( game, r_highlight, glm::ivec2(12,12), 0x40FFFFFF, noTex, 16 );
+    }
+
+    // Draw Player background...
+    {
+        de::TexRef ref;
+        int x = r_panel.getX()+8;
+        int y = r_panel.getY()+8;
+        int w = r_panel.getHeight()-16;
+        int h = r_panel.getHeight()-16;
+        de::Recti r_bg( x, y, w, h );
+        H3_draw2DRoundRect( game, r_bg, glm::ivec2(8,8), player.color, ref,16 );
+    }
+
+    // Draw Player Icon
+    {
+        de::TexRef ref; // = H3_getTex( game, player.icon );
+        int x = r_panel.getX()+16;
+        int y = r_panel.getY()+16;
+        int w = 64;
+        int h = 64;
+        de::Recti r_icon( x, y, w, h );
+        H3_draw2DRoundRect( game, r_icon, glm::ivec2(8,8), 0xFFFFFFFF, ref, 16 );
+    }
+
+    // Draw Player Name
+    de::Align::EAlign align = de::Align::TopLeft;
+    {
+        int x = r_panel.getX()+96;
+        int y = r_panel.getY()+8;
+        int w = 100;
+        int h = 28;
+        de::Recti r_name( x, y, w, h );
+        H3_draw2DRoundRect( game, r_name, glm::ivec2(8,8), player.color, noTex, 16 );
+
+
+        x = r_panel.getX()+102;
+        y = r_panel.getY()+10;
+        std::wostringstream s;
+        s << player.name.c_str();
+        //driver->draw2DText( x, y, s.str(), 0xFFFFFFFF, align, fontName );
+    }
+
+    // Draw Player Dice 16 * 16
+    {
+        int x = r_panel.getX()+204;
+        int y = r_panel.getY()+10;
+        int dice1 = player.dice.a;
+        int dice2 = player.dice.b;
+        H3_drawDice( game, de::Recti(x,y, 24,24), 5, dice1, dice2 );
+    }
+
+    {
+        int x = r_panel.getX()+96;
+        int y = r_panel.getY()+36;
+        int w = 162;
+        int h = 52;
+        de::Recti r_stats( x, y, w, h );
+        H3_draw2DRoundRect( game, r_stats, glm::ivec2(8,8), player.color, noTex, 16 );
+    }
+
+    int d = 25;
+    int w = 24;
+    int h = 24;
+    int x = r_panel.getX()+103;
+    int y = r_panel.getY()+38;
+
+    align = de::Align::BottomRight;
+
+    // Draw 24x24 Player Victory Points
+    UI_drawStatNum( game, H3_Tex::StatVic, de::Recti(x,y,w,h), player.victoryPoints, 0); x += d;
+    UI_drawStatNum( game, H3_Tex::StatRoad, de::Recti(x,y,w,h), player.roads.size(), 0); x += d;
+    UI_drawStatNum( game, H3_Tex::StatFarm, de::Recti(x,y,w,h), player.farms.size(), 0); x += d;
+    UI_drawStatNum( game, H3_Tex::StatCity, de::Recti(x,y,w,h), player.citys.size(), 0); x += d;
+    UI_drawStatNum( game, H3_Tex::StatCard, de::Recti(x,y,w,h), player.eventCards.size(), 0); x += d;
+    UI_drawStatNum( game, H3_Tex::EventCardPoint, de::Recti(x,y,w,h), player.pointCards.size(), 16); x += d;
+
+    // <--> ROW 2 <-->
+    x = r_panel.getX()+103;
+    y = r_panel.getY()+62;
+    UI_drawStatNum( game, H3_Tex::CardA, de::Recti(x,y,w,h), player.bank.A, 16); x += d;
+    UI_drawStatNum( game, H3_Tex::CardB, de::Recti(x,y,w,h), player.bank.B, 16); x += d;
+    UI_drawStatNum( game, H3_Tex::CardC, de::Recti(x,y,w,h), player.bank.C, 16); x += d;
+    UI_drawStatNum( game, H3_Tex::CardD, de::Recti(x,y,w,h), player.bank.D, 16); x += d;
+    UI_drawStatNum( game, H3_Tex::CardE, de::Recti(x,y,w,h), player.bank.E, 16); x += d;
+    UI_drawStatNum( game, H3_Tex::EventCardKnight, de::Recti(x,y,w,h), player.knightCards.size(), 16); x += d;
+}
+
+
+
+void
+UI_drawInfoPanelTile( H3_Game & game, de::Recti pos, const u32 tileId )
+{
+    if ( !tileId ) { return; }
+    //auto driver = &game.m_videoDriver;
+    //if ( !driver ) { DE_ERROR("No driver") return; }
+
+    H3_Tile& tile = H3_getTile(game, __func__, tileId);
+
+    uint32_t txtColor = 0xFFFFFFFF;
+
+    de::TexRef noTex;
+    H3_draw2DRoundRect( game, pos, glm::ivec2(12, 12), 0xA0000000, noTex, 13 );
+
+    int w = pos.getWidth();
+    int x = pos.getX() + 20;
+    int y = pos.getY() + 20;
+    int ln = 10;
+
+    auto & dotr = game.m_fontRenderer5x8;
+    dotr.draw2DText( x,y, dbStrJoin(H3_TileType::getString( tile.tileType )," (",tile.i, ",", tile.j,")"), txtColor );
+    if ( tile.chipValue > 0 )
+    {
+        dotr.draw2DText( x+w-40,y, dbStrJoin("Dice = ",tile.chipValue), txtColor, de::Align::TopRight );
+    }
+    y += ln;
+    H3_drawHexagon( game, de::Recti(x+50,y,50,50), 0xFFFFFFFF, H3_getTileTex( game, tile.tileType ), tile.id );
+    dotr.draw2DText( x+w-40,y+25, dbStrJoin(tile.pos), txtColor, de::Align::RightMiddle );
+    y += 50;
+    dotr.draw2DText( x,y, dbStrJoin("angle60 = ",tile.angle60), txtColor );
+    y += ln;
+    dotr.draw2DText( x,y, dbStrJoin("hasRobber = ",tile.hasRobber), txtColor );
+    y += ln;
+
+    // [Info] Next Tiles
+    y += 4;
+    dotr.draw2DText( x,y, dbStrJoin("NextCount = ",tile.next.size()), txtColor );
+    y += ln;
+    for ( size_t i = 0; i < tile.next.size(); ++i )
+    {
+        H3_Tile & n = H3_getTile( game, __func__, tile.next[ i ] );
+        H3_drawHexagon( game, de::Recti(x+28*i,y,24,24), 0xFFFFFFFF, H3_getTileTex( game, n.tileType ), n.id );
+    }
+    y += 28;
+
+    // [Info] Corners
+    dotr.draw2DText( x,y, dbStrJoin("CornerCount = ",tile.corners.size()), txtColor );
+    y += ln;
+    H3_drawCircle( game, de::Recti(x,y,24,24), 0xFFFFFFFF, H3_getTex( game, H3_Tex::ChipS ) );
+    for ( size_t i = 0; i < tile.corners.size(); ++i )
+    {
+        H3_Corner & n = H3_getCorner( game, tile.corners[ i ] );
+        dotr.draw2DText( 30 + x,y, dbStrJoin("Corner[",i,"] = ",n.id), txtColor );
+        y += ln;
+    }
+    if ( tile.corners.size() < 3 )
+    {
+        y += ln * (3 - tile.corners.size());
+    }
+    y += 4;
+
+    // [Info] Edges
+    dotr.draw2DText( x,y, dbStrJoin("EdgeCount = ",tile.edges.size()), txtColor );
+    y += ln;
+    H3_drawCircle( game, de::Recti(x,y,24,24), 0xFFFFFFFF, H3_getTex( game, H3_Tex::ChipW ) );
+    for ( size_t i = 0; i < tile.edges.size(); ++i )
+    {
+        H3_Edge & n = H3_getEdge( game, tile.edges[ i ] );
+        dotr.draw2DText( 30 + x,y, dbStrJoin("Edge[",i,"] = ",n.id), txtColor );
+        y += ln;
+    }
+    if ( tile.edges.size() < 3 )
+    {
+        y += ln * (3 - tile.edges.size());
+    }
+    y += 4;
+}
+
+
+void
+UI_drawInfoPanelCorner( H3_Game & game, de::Recti pos, const u32 cornerId )
+{
+    if ( !cornerId ) { return; }
+    //auto driver = &game.m_videoDriver;
+    //if ( !driver ) { DE_ERROR("No driver") return; }
+
+    H3_Corner& corner = H3_getCorner(game, cornerId);
+
+    uint32_t txtColor = 0xFFFFFFFF;
+    de::TexRef noTex;
+    H3_draw2DRoundRect( game, pos, glm::ivec2(12, 12), 0xA0000000, noTex, 13 );
+
+    int w = pos.getWidth();
+    int x = pos.getX() + 20;
+    int y = pos.getY() + 20;
+    int ln = 10;
+
+    auto & dotr = game.m_fontRenderer5x8;
+    dotr.draw2DText( x,y, dbStrJoin("cornerId = ",corner.id), txtColor );
+    y += ln;
+    H3_drawCircle( game, de::Recti(x,y,48,48), 0xFFFFFFFF, H3_getTex( game, H3_Tex::ChipS ) );
+    dotr.draw2DText( x+w-40,y+24, dbStrJoin(corner.pos()), txtColor, de::Align::RightMiddle );
+    y += 52;
+
+    dotr.draw2DText( x,y, dbStrJoin("NextCount = ",corner.next.size()), txtColor );
+    y += ln;
+    for ( size_t i = 0; i < corner.next.size(); ++i )
+    {
+        H3_Corner & n = H3_getCorner( game, corner.next[ i ] );
+        dotr.draw2DText( x,y, dbStrJoin("Next[",i,"] = ",corner.next[ i ]), txtColor );
+        y += ln;
+    }
+    y += 4;
+
+    dotr.draw2DText( x,y, dbStrJoin("TileCount = ",corner.tiles.size()), txtColor );
+    y += ln;
+    for ( size_t i = 0; i < corner.tiles.size(); ++i )
+    {
+        H3_Tile & n = H3_getTile( game, __func__, corner.tiles[ i ] );
+        H3_drawHexagon( game, de::Recti(x+40*(i+1),y,32,32), 0xFFFFFFFF, H3_getTileTex( game, n.tileType ), n.id );
+    }
+    y += 36;
+
+    dotr.draw2DText( x,y, dbStrJoin("EdgeCount = ",corner.edges.size()), txtColor );
+    y += ln;
+    H3_drawCircle( game, de::Recti(x,y,32,32), 0xFFFFFFFF, H3_getTex( game, H3_Tex::ChipW ) );
+
+    for ( size_t i = 0; i < corner.edges.size(); ++i )
+    {
+        H3_Edge & n = H3_getEdge( game, corner.edges[ i ] );
+        dotr.draw2DText( x+40,y, dbStrJoin("Edge[",i,"] = ",n.id), txtColor );
+        y += ln;
+    }
+
+    if ( corner.edges.size() < 3 )
+    {
+        y += ln * (3 - corner.edges.size());
+    }
+}
+
+void
+UI_drawInfoPanelEdge( H3_Game & game, de::Recti pos, const u32 edgeId )
+{
+    if ( !edgeId ) { return; }
+    //auto driver = &game.m_videoDriver;
+    //if ( !driver ) { DE_ERROR("No driver") return; }
+
+    H3_Edge & edge = H3_getEdge(game, edgeId);
+
+    de::TexRef noTex;
+    uint32_t txtColor = 0xFFFFFFFF;
+
+    H3_draw2DRoundRect( game, pos, glm::ivec2(12, 12), 0xA0000000, noTex, 13 );
+
+    int w = pos.getWidth();
+    int x = pos.getX() + 20;
+    int y = pos.getY() + 20;
+    int ln = 10;
+
+    auto & dotr = game.m_fontRenderer5x8;
+    dotr.draw2DText( x,y, dbStrJoin("edgeId = ",edge.id), txtColor );
+    y += ln;
+    H3_drawCircle( game, de::Recti(x,y,48,48), 0xFFFFFFFF, H3_getTex( game, H3_Tex::ChipW ) );
+    dotr.draw2DText( x+w-40,y+24, dbStrJoin(edge.pos()), txtColor, de::Align::RightMiddle );
+    y += 52;
+
+    dotr.draw2DText( x,y, dbStrJoin("NextCount = ",edge.next.size()), txtColor );
+    y += ln;
+    for ( size_t i = 0; i < edge.next.size(); ++i )
+    {
+        H3_Edge & n = H3_getEdge( game, edge.next[ i ] );
+        dotr.draw2DText( x,y, dbStrJoin("Next[",i,"] = ",edge.next[ i ]), txtColor );
+        y += ln;
+    }
+    y += 4;
+
+    dotr.draw2DText( x,y, dbStrJoin("TileCount = ",edge.tiles.size()), txtColor );
+    y += ln;
+    for ( size_t i = 0; i < edge.tiles.size(); ++i )
+    {
+        H3_Tile & n = H3_getTile( game, __func__, edge.tiles[ i ] );
+        H3_drawHexagon( game, de::Recti(x+40*(i+1),y,32,32), 0xFFFFFFFF, H3_getTileTex( game, n.tileType ), n.id );
+    }
+    y += 36;
+
+    dotr.draw2DText( x,y, dbStrJoin("CornerCount = ",edge.corners.size()), txtColor );
+    y += ln;
+    H3_drawCircle( game, de::Recti(x,y,32,32), 0xFFFFFFFF, H3_getTex( game, H3_Tex::ChipS ) );
+    for ( size_t i = 0; i < edge.corners.size(); ++i )
+    {
+        H3_Corner & n = H3_getCorner( game, edge.corners[ i ] );
+        dotr.draw2DText( x+40,y, dbStrJoin("Corner[",i,"] = ",n.id), txtColor );
+        y += ln;
+    }
+
+    if ( edge.corners.size() < 3 )
+    {
+        y += ln * (3 - edge.corners.size());
+    }
+}
+
+void
+UI_resetLog( H3_Game & game )
+{
+    game.m_actionLog.actions.clear();
+}
+
+void
+UI_logCancel( H3_Game & game )
+{
+    H3_Player & player = H3_getCurrentPlayer( game );
+
+    H3_Action action;
+    action.pts = dbTimeInSeconds();
+    action.playerId = player.id;
+    action.action = int(H3_Tex::DoCancel);
+
+    game.m_actionLog.actions.emplace_back( std::move( action ));
+}
+
+void
+UI_logEndTurn( H3_Game & game )
+{
+    H3_Player & player = H3_getCurrentPlayer( game );
+
+    H3_Action action;
+    action.pts = dbTimeInSeconds();
+    action.playerId = player.id;
+    action.action = int(H3_Tex::DoEndTurn);
+
+    game.m_actionLog.actions.emplace_back( std::move( action ));
+}
+
+void
+UI_logDice( H3_Game & game )
+{
+    H3_Player & player = H3_getCurrentPlayer( game );
+
+    H3_Action action;
+    action.pts = dbTimeInSeconds();
+    action.playerId = player.id;
+    action.action = int(H3_Tex::DoDice);
+    action.object = player.dice.a;
+    action.amount = player.dice.b;
+
+    game.m_actionLog.actions.emplace_back( std::move( action ));
+}
+
+void
+UI_logBank( H3_Game & game, H3_Bank in, H3_Bank out )
+{
+    H3_Player & player = H3_getCurrentPlayer( game );
+
+    H3_Action action;
+    action.pts = dbTimeInSeconds();
+    action.playerId = player.id;
+    action.action = int(H3_Tex::DoDice);
+    action.bankIn = in;
+    action.bankOut = out;
+
+    game.m_actionLog.actions.emplace_back( std::move( action ));
+}
+
+void
+UI_logBuyRoad( H3_Game & game, int edgeId )
+{
+    H3_Player & player = H3_getCurrentPlayer( game );
+
+    H3_Action action;
+    action.pts = dbTimeInSeconds();
+    action.playerId = player.id;
+    action.action = int(H3_Tex::DoBuyRoad);
+    action.object = edgeId;
+
+    game.m_actionLog.actions.emplace_back( std::move( action ));
+}
+
+void
+UI_logBuyFarm( H3_Game & game, int cornerId )
+{
+    H3_Player & player = H3_getCurrentPlayer( game );
+
+    H3_Action action;
+    action.pts = dbTimeInSeconds();
+    action.playerId = player.id;
+    action.action = int(H3_Tex::DoBuyFarm);
+    action.object = cornerId;
+
+    game.m_actionLog.actions.emplace_back( std::move( action ));
+}
+
+void
+UI_logBuyCity( H3_Game & game, int cornerId )
+{
+    H3_Player & player = H3_getCurrentPlayer( game );
+
+    H3_Action action;
+    action.pts = dbTimeInSeconds();
+    action.playerId = player.id;
+    action.action = int(H3_Tex::DoBuyCity);
+    action.object = cornerId;
+
+    game.m_actionLog.actions.emplace_back( std::move( action ));
+}
+
+void
+UI_logBuyCard( H3_Game & game, int cardType )
+{
+    H3_Player & player = H3_getCurrentPlayer( game );
+
+    H3_Action action;
+    action.pts = dbTimeInSeconds();
+    action.playerId = player.id;
+    action.action = int(H3_Tex::DoBuyEventCard);
+    //action.object = edgeId;
+
+    game.m_actionLog.actions.emplace_back( std::move( action ));
+}
+
+void
+UI_drawLogEndTurn( H3_Game & game, const H3_Action& act, int x, int y )
+{
+    H3_Player & player = H3_getPlayer( game, act.playerId );
+
+    H3_draw2DRect( game, de::Recti( x,y, 10,10), player.color );
+    x += 12;
+
+    std::string msg = dbStrJoin("[EndTurn] for ",player.name);
+
+    auto ts = game.m_fontRenderer5x8.getTextSize( msg );
+    game.m_fontRenderer5x8.draw2DText( x,y, msg, 0xFFFFFFFF );
+    x += ts.width + 5;
+}
+
+void
+UI_drawLogCancel( H3_Game & game, const H3_Action& act, int x, int y )
+{
+//   H3_Player & player = H3_getPlayer( game, act.player );
+
+//   auto driver = game.driver;
+//   driver->draw2DRect( de::Recti( x,y, 10,10), player.color );
+//   x += 12;
+
+//   std::ostringstream s;
+//   s << "[Cancel] from " << player.name;
+//   std::string msg = s.str();
+
+//   auto ts = game.m_fontRenderer5x8.getTextSize( msg );
+//   game.m_fontRenderer5x8.draw2DText( x,y, msg, 0xFFFFFFFF );
+//   x += ts.x + 5;
+
+}
+
+void
+UI_drawLogDice( H3_Game & game, const H3_Action& act, int x, int y )
+{
+    H3_Player & player = H3_getPlayer( game, act.playerId );
+
+    H3_draw2DRect( game, de::Recti( x,y, 10,10), player.color );
+    x += 12;
+
+    std::ostringstream o;
+    o << "[Dice] for " << player.name << " with eyes "
+      << act.object << " + " << act.amount;
+    std::string msg = o.str();
+
+    auto ts = game.m_fontRenderer5x8.getTextSize( msg );
+    game.m_fontRenderer5x8.draw2DText( x,y, msg, 0xFFFFFFFF );
+    x += ts.width + 5;
+}
+
+void
+UI_drawLogBank( H3_Game & game, const H3_Action& act, int x, int y )
+{
+    H3_Player & player = H3_getPlayer( game, act.playerId );
+
+    H3_draw2DRect( game, de::Recti( x,y, 10,10), player.color );
+    x += 12;
+
+    std::ostringstream s;
+    s << "[Banking] for " << player.name << " with in "
+    << act.bankIn.toString() << " + " << act.bankOut.toString();
+
+    std::string msg = s.str();
+
+    auto ts = game.m_fontRenderer5x8.getTextSize( msg );
+    game.m_fontRenderer5x8.draw2DText( x,y, msg, 0xFFFFFFFF );
+    x += ts.width + 5;
+}
+
+void
+UI_drawLogBuyCard( H3_Game & game, const H3_Action& act, int x, int y )
+{
+    H3_Player & player = H3_getPlayer( game, act.playerId );
+
+    H3_draw2DRect( game, de::Recti( x,y, 10,10), player.color );
+    x += 12;
+
+    std::ostringstream s;
+    s << "[BuyCard] for " << player.name << " with bank " << player.bank.toString();
+    std::string msg = s.str();
+
+    auto ts = game.m_fontRenderer5x8.getTextSize( msg );
+    game.m_fontRenderer5x8.draw2DText( x,y, msg, 0xFFFFFFFF );
+    x += ts.width + 5;
+
+    //driver->draw2DRoundRect( de::Recti( x,y, 10,10), 1,1,15, player.color );
+}
+void
+UI_drawLogBuyRoad( H3_Game & game, const H3_Action& act, int x, int y )
+{
+    H3_Player & player = H3_getPlayer( game, act.playerId );
+
+    H3_draw2DRect( game, de::Recti( x,y, 10,10), player.color );
+    x += 12;
+
+    std::ostringstream s;
+    s << "[BuyRoad] for " << player.name << " with bank " << player.bank.toString();
+    std::string msg = s.str();
+
+    auto ts = game.m_fontRenderer5x8.getTextSize( msg );
+    game.m_fontRenderer5x8.draw2DText( x,y, msg, 0xFFFFFFFF );
+    x += ts.width + 5;
+}
+
+void
+UI_drawLogBuyFarm( H3_Game & game, const H3_Action& act, int x, int y )
+{
+    H3_Player & player = H3_getPlayer( game, act.playerId );
+
+    H3_draw2DRect( game, de::Recti( x,y, 10,10), player.color );
+    x += 12;
+
+    std::ostringstream o;
+    o << "[BuyFarm] for " << player.name << " with bank " << player.bank.toString();
+    std::string msg = o.str();
+
+    auto ts = game.m_fontRenderer5x8.getTextSize( msg );
+    game.m_fontRenderer5x8.draw2DText( x,y, msg, 0xFFFFFFFF );
+    x += ts.width + 5;
+}
+
+void
+UI_drawLogBuyCity( H3_Game & game, const H3_Action& act, int x, int y )
+{
+    H3_Player & player = H3_getPlayer( game, act.playerId );
+
+    H3_draw2DRect( game, de::Recti( x,y, 10,10), player.color );
+    x += 12;
+
+    std::ostringstream o;
+    o << "[BuyCity] for " << player.name << " with bank " << player.bank.toString();
+    std::string msg = o.str();
+
+    auto ts = game.m_fontRenderer5x8.getTextSize( msg );
+    game.m_fontRenderer5x8.draw2DText( x,y, msg, 0xFFFFFFFF );
+    x += ts.width + 5;
+}
+
+void
+UI_drawLog( H3_Game & game )
+{
+    auto driver = &game.m_videoDriver;
+    int w = driver->getScreenWidth();
+    int h = driver->getScreenHeight();
+    int dx = 300;
+    int dy = 450;
+    int x = w - 1 - dx;
+    int y = (h - dy)/2;
+    int ln = 11;
+    de::TexRef noTex;
+    H3_draw2DRoundRect( game, de::Recti(x,y,dx,dy), glm::ivec2(10,10), 0x80000000, noTex, 15 );
+    x += 10;
+    y += 5;
+    int act_start = std::max( 0, int(game.m_actionLog.actions.size()) - 45 );
+    for ( int i = act_start; i < int(game.m_actionLog.actions.size()); ++i )
+    {
+        H3_Action const & act = game.m_actionLog.actions[ i ];
+        if ( act.action == int(H3_Tex::DoEndTurn) )
+        {
+            UI_drawLogEndTurn( game, act, x, y );
+        }
+        else if ( act.action == int(H3_Tex::DoCancel) )
+        {
+            UI_drawLogCancel( game, act, x, y );
+        }
+        else if ( act.action == int(H3_Tex::DoDice) )
+        {
+            UI_drawLogDice( game, act, x, y );
+        }
+        else if ( act.action == int(H3_Tex::DoBank) )
+        {
+            UI_drawLogBank( game, act, x, y );
+        }
+        else if ( act.action == int(H3_Tex::DoBuyEventCard) )
+        {
+            UI_drawLogBuyCard( game, act, x, y );
+        }
+        else if ( act.action == int(H3_Tex::DoBuyRoad) )
+        {
+            UI_drawLogBuyRoad( game, act, x, y );
+        }
+        else if ( act.action == int(H3_Tex::DoBuyFarm) )
+        {
+            UI_drawLogBuyFarm( game, act, x, y );
+        }
+        else if ( act.action == int(H3_Tex::DoBuyCity) )
+        {
+            UI_drawLogBuyCity( game, act, x, y );
+        }
+        y += ln;
+    }
+}
+
+
+
+void
+UI_drawGame( H3_Game & game, bool debug )
+{
+    auto driver = &game.m_videoDriver;
+    if ( !driver )
+    {
+        DE_ERROR("No driver")
+        return;
+    }
+
+    if (debug)
+    {
+        for (H3_UIElem & elem : game.m_ui.m_elements)
+        {
+            elem.visible = true;
+        }
+    }
+
+    for ( int i = 0; i < game.m_ui.m_elements.size(); ++i )
+    {
+        H3_UIElem & elem = game.m_ui.m_elements[ i ];
+        if ( !elem.visible ) continue;
+        UI_drawElem( game, elem );
+    }
+
+    if ( game.m_ui.m_hoverElement > -1 )
+    {
+        auto & elem = game.m_ui.m_elements[ game.m_ui.m_hoverElement ];
+        H3_draw2DRect( game, elem.pos, 0x6F0000FF );
+    }
+
+    for ( int i = 0; i < game.m_players.size(); ++i )
+    {
+        UI_drawPlayerStats( game, 20,20+100*i, game.m_players[ i ].id );
+    }
+
+    UI_drawRoundStats( game );
+
+    int w = driver->getScreenWidth();
+    int h = driver->getScreenHeight();
+
+    UI_drawInfoPanelTile( game, de::Recti( 20, h-320, 200, 300 ), game.m_hoverTileId );
+    UI_drawInfoPanelCorner( game, de::Recti( 20, h-320, 200, 300 ), game.m_hoverCornerId );
+    UI_drawInfoPanelEdge( game, de::Recti( 20, h-320, 200, 300 ), game.m_hoverEdgeId );
+
+    UI_drawLog( game );
+}
+
+
+void
+PioGame_draw( PioGame & game )
+{
+auto& driver = game.m_Driver;
+if ( !driver )
+{
+return;
+}
+
+auto & camera = game.m_Camera;
+auto & game = game.m_game;
+auto & ui = game.ui;
+
+// Update FPS Camera
+int w = driver->getScreenWidth();
+int h = driver->getScreenHeight();
+camera.setScreenSize( w, h );
+
+int mx = driver->getMouseX();
+int my = driver->getMouseY();
+
+game.m_Time = driver->getTimer();
+
+UI_update( game );
+
+// Main Menu
+if ( ui.isMenuVisible )
+{
+
+driver->beginRender();
+
+Piogame_draw( game, driver );
+UI_drawMenu( game.m_game, driver );
+
+if ( game.m_ShowPerfOverlay )
+{
+driver->draw2DPerfOverlay();
+}
+
+driver->endRender();
+
+glfwSwapBuffers( game.m_Window );
+}
+
+
+// Game
+else
+{
+// Camera speeds
+float moveSpeed = 5.3f;
+float strafeSpeed = moveSpeed;
+float elevateSpeed = moveSpeed;
+float turnSpeed = 0.21f;
+
+auto & keys = game.m_Keys;
+if ( keys[ GLFW_KEY_W ] )        { camera.move( moveSpeed ); }
+if ( keys[ GLFW_KEY_A ] )        { camera.strafe( -strafeSpeed ); }
+if ( keys[ GLFW_KEY_S ] )        { camera.move( -moveSpeed ); }
+if ( keys[ GLFW_KEY_D ] )        { camera.strafe( strafeSpeed ); }
+if ( keys[ GLFW_KEY_UP ] )       { camera.move( moveSpeed ); }
+if ( keys[ GLFW_KEY_LEFT ] )     { camera.strafe( -strafeSpeed ); }
+if ( keys[ GLFW_KEY_DOWN ] )     { camera.move( -moveSpeed ); }
+if ( keys[ GLFW_KEY_RIGHT ] )    { camera.strafe( strafeSpeed ); }
+if ( keys[ GLFW_KEY_PAGE_UP ] )  { camera.elevate( elevateSpeed ); }
+if ( keys[ GLFW_KEY_Y ] )        { camera.elevate( elevateSpeed ); }
+if ( keys[ GLFW_KEY_PAGE_DOWN ]) { camera.elevate( -elevateSpeed ); }
+if ( keys[ GLFW_KEY_X ] )        { camera.elevate( -elevateSpeed ); }
+
+if ( game.m_IsRightPressed )
+{
+if ( game.m_MouseMoveX != 0 )
+{
+camera.yaw( turnSpeed * game.m_MouseMoveX );
+game.m_MouseMoveX = 0;
+}
+if ( game.m_MouseMoveY != 0 )
+{
+camera.pitch( turnSpeed * game.m_MouseMoveY );
+game.m_MouseMoveY = 0;
+}
+}
+
+UI_pick( game.m_game, driver );
+
+// Collision-Detection 3D - only if no collision 2d
+game.m_HitDist = std::numeric_limits< double >::max();
+game.m_HitPos = glm::dvec3(0,0,0);
+game.m_HoverTileIndex = -1;
+game.m_HoverTile = nullptr;
+game.m_HoverCornerIndex = -1;
+game.m_HoverCorner = nullptr;
+game.m_HoverEdgeIndex = -1;
+game.m_HoverEdge = nullptr;
+
+// If no UI element was hit...
+if ( ui.hover < 0 )
+{
+de::Ray3d ray = camera.computeRay( mx, my );
+
+// Intersect Farm/City Waypoints ( corners ):
+if ( game.state == H3_State::PlaceFarm ||
+game.state == H3_State::PlaceCity )
+{
+for ( size_t i = 0; i < game.corners.size(); ++i )
+{
+H3_Corner & corn = game.corners[ i ];
+
+glm::dvec3 hitPos;
+if ( corn.mesh.intersectRay( ray, &hitPos ) )
+{
+double dist = glm::length( hitPos - ray.getPos() );
+if ( game.m_HitDist > dist )
+{
+game.m_HitDist = dist;
+game.m_HitPos = hitPos;
+game.m_HoverCornerIndex = int( i );
+}
+}
+}
+
+if ( game.m_HoverCornerIndex > -1 &&
+game.m_HoverCornerIndex < int( game.corners.size() ) )
+{
+game.m_HoverCorner = &game.corners[ game.m_HoverCornerIndex ];
+}
+}
+
+// Intersect Road Waypoints ( edges ):
+if ( game.state == H3_State::PlaceRoad )
+{
+for ( size_t i = 0; i < game.edges.size(); ++i )
+{
+H3_Edge & edge = game.edges[ i ];
+glm::dvec3 hitPos;
+if ( edge.mesh.intersectRay( ray, &hitPos ) )
+{
+double dist = glm::length( hitPos - ray.getPos() );
+if ( game.m_HitDist > dist )
+{
+game.m_HitDist = dist;
+game.m_HitPos = hitPos;
+game.m_HoverEdgeIndex = int( i );
+}
+}
+}
+
+if ( game.m_HoverEdgeIndex > -1 &&
+game.m_HoverEdgeIndex < int( game.edges.size() ) )
+{
+game.m_HoverEdge = &game.edges[ game.m_HoverEdgeIndex ];
+}
+}
+
+// Intersect tiles:
+auto & tiles = game.tiles;
+for ( size_t i = 0; i < tiles.size(); ++i )
+{
+H3_Tile & tile = tiles[ i ];
+
+glm::dvec3 hitPos;
+if ( tile.mesh.intersectRay( ray, &hitPos ) )
+{
+double dist = glm::length( hitPos - ray.getPos() );
+if ( game.m_HitDist > dist )
+{
+game.m_HitDist = dist;
+game.m_HitPos = hitPos;
+game.m_HoverTileIndex = int( i );
+}
+}
+}
+
+if ( game.m_HoverTileIndex > -1 &&
+game.m_HoverTileIndex < int( tiles.size() ) )
+{
+game.m_HoverTile = &tiles[ game.m_HoverTileIndex ];
+}
+else
+{
+game.m_HoverTile = nullptr;
+}
+
+}
+
+driver->beginRender();
+
+Piogame_draw( game, driver );
+
+game.m_Rainbow.render( driver );
+
+// Draw Hover BBox prioritizes: Edges > Corners > Tiles.
+if ( game.m_HoverEdge )
+{
+driver->draw3DLineBox( game.m_HoverEdge->mesh.BoundingBox, 0xFF0080FF );
+}
+if ( game.m_HoverCorner )
+{
+driver->draw3DLineBox( game.m_HoverCorner->mesh.BoundingBox, 0xFF00C0FF );
+}
+
+if ( game.m_HoverTile )
+{
+driver->draw3DLineBox( game.m_HoverTile->mesh.BoundingBox, 0xFF00F0FF );
+
+float dx = game.m_game.tileSize.x;
+float dy = game.m_game.tileSize.y / 4;
+float dz = game.m_game.tileSize.z;
+de::SMeshBuffer hull = PioMeshFactory::createTileHullMesh( dx,dy,dz, 0x80FFFFFF );
+//hull.Material.setBlend( de::Blend::alphaBlend() );
+auto mbk = driver->getModelMatrix();
+hull.setTexture( 0, driver->getTexture("irr") );
+auto pos = game.m_HoverTile->pos;
+driver->setModelMatrix( glm::translate( glm::dmat4( 1.0 ), glm::dvec3( pos ) ));
+driver->draw3D( hull );
+driver->setModelMatrix( mbk );
+
+}
+
+if (  game.state == H3_State::PlaceRoad ||
+game.state == H3_State::PlaceFarm ||
+game.state == H3_State::PlaceCity )
+{
+de::Ray3d ray = camera.computeRay( mx, my );
+
+de::Plane3d xz_plane(0,1,0,0);
+glm::dvec3 hitPos;
+if ( xz_plane.intersectRay( ray.getPos(), ray.getDir(), hitPos ) )
+{
+H3_Player & player = H3_getCurrentPlayer( game );
+
+float angle = 0.0f;
+if ( game.m_HoverEdge )
+{
+angle = game.m_HoverEdge->angle;
+DE_DEBUG("EdgeAngle = ",angle)
+}
+if ( game.m_HoverCorner )
+{
+angle = game.m_HoverCorner->angle;
+DE_DEBUG("CornerAngle = ",angle)
+}
+double a = glm::radians( angle );
+glm::dmat4 r = glm::rotate( glm::dmat4( 1.0 ), a, glm::dvec3( 0,1,0 ) );
+glm::dmat4 t = glm::translate( glm::dmat4( 1.0 ), glm::dvec3( hitPos ) );
+glm::dmat4 m = t * r;
+
+driver->setModelMatrix( m );
+if ( game.state == H3_State::PlaceRoad )
+{
+driver->draw3D( player.meshRoad );
+}
+else if ( game.state == H3_State::PlaceFarm )
+{
+driver->draw3D( player.meshFarm );
+}
+else if ( game.state == H3_State::PlaceCity )
+{
+driver->draw3D( player.meshCity );
+}
+}
+}
+
+driver->resetModelMatrix();
+
+// Draw game BBox
+if ( game.m_ShowPerfOverlay )
+{
+driver->draw3DLineBox( game.m_game.bbox, 0xFF00B0CF );
+}
+
+// Draw MeshViewer
+driver->draw3D( game.m_MeshViewer.m_Mesh );
+if ( game.m_MeshViewer.m_ShowDebug )
+{
+driver->draw3D( game.m_MeshViewer.m_Debug.debugMesh );
+}
+
+// Draw Game UI
+UI_draw( game, driver );
+
+// Draw PerfOverlay
+if ( game.m_ShowPerfOverlay )
+{
+driver->draw2DPerfOverlay();
+}
+
+driver->endRender();
+
+glfwSwapBuffers( game.m_Window );
+}
+
+// ++framecount;
+
+if ( game.m_Time - game.m_TimeLastTitleUpdate > 0.132 )
+{
+std::ostringstream s;
+s <<
+"FPS(" << driver->getFPS() << "), "
+"Screen(" << driver->getScreenWidth() << ","
+<< driver->getScreenHeight() << "), "
+<< driver->getScreenFormat().toString() << "), "
+"Frames(" << driver->getFrameCount() << "), "
+"Time(" << game.m_Time << "), ";
+
+auto & camera = game.m_Camera;
+//      if ( m_Camera )
+//      {
+s << "Camera-Pos(" << glm::ivec3( camera.getPos()) << ")+";
+s << "Ang(" << glm::ivec3(camera.getAng()) << ")+";
+s << "Dir(" << camera.getDir() << ")+";
+s << "Up(" << camera.getUp() << ")+";
+s << "Right(" << camera.getRight() << ")";
+//      }
+
+glfwSetWindowTitle( game.m_Window, s.str().c_str() );
+
+game.m_TimeLastTitleUpdate = game.m_Time;
+}
+
+}
+*/

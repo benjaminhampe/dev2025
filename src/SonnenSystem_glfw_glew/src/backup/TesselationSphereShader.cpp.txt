@@ -1,0 +1,236 @@
+#include "TesselationSphereShader.h"
+#include "SonSys_Common.h"
+
+// #include <GL/glew.h>
+// #include <GLFW/glfw3.h>
+// #include <iostream>
+// #include <vector>
+// #include <cmath>
+
+namespace {
+
+std::vector<float> vertices;
+std::vector<unsigned int> indices;
+
+GLuint vao = 0;
+GLuint vbo = 0;
+GLuint ebo = 0;
+GLuint program = 0;
+GLint u_modelMatrix = -1;
+GLint u_viewMatrix = -1;
+GLint u_projectionMatrix = -1;
+GLint u_cameraPos = -1;
+
+// Shader sources
+const char* vsSrc = R"(
+    #version 450 core
+
+    layout(location = 0) in vec3 inPosition;
+    layout(location = 1) in vec3 inNormal;
+
+    out vec3 vPosition;
+    out vec3 vNormal;
+    out vec3 vFragPos;
+
+    uniform mat4 u_modelMatrix;
+
+    void main()
+    {
+        vPosition = inPosition;
+        vNormal = inNormal;
+
+        vec4 worldPos = u_modelMatrix * vec4(inPosition, 1.0);
+        vFragPos = worldPos.xyz;
+    }
+)";
+
+const char* tcsSrc = R"(
+    #version 450 core
+    layout(vertices = 3) out;
+    in vec3 vPosition[];
+    in vec3 vNormal[];
+    in vec3 vFragPos[];
+
+    out vec3 tcPosition[];
+    out vec3 tcNormal[];
+
+    uniform mat4 u_viewMatrix;
+    uniform vec3 u_cameraPos;
+    void main()
+    {
+        tcPosition[gl_InvocationID] = vPosition[gl_InvocationID];
+        tcNormal[gl_InvocationID] = vNormal[gl_InvocationID];
+
+        //vec3 viewDir = normalize((u_viewMatrix * vec4(vPosition[gl_InvocationID], 1.0)).xyz);
+        //float facing = dot(vNormal[gl_InvocationID], viewDir);
+        //float tessLevel = 1; // mix(1.0, 16.0, clamp(-facing, 0.0, 1.0));
+
+        float cameraDist = length(vFragPos[gl_InvocationID] - u_cameraPos);
+        float minDist = 0;
+        float maxDist = 50;
+        // float t = clamp( 1.0 - ((cameraDist-minDist) / (maxDist-minDist)), 0.0, 1.0);
+        float t = clamp(cameraDist / maxDist, 0.0, 1.0);
+        float tessLevel = mix(64.0, 1.0, t );
+
+        gl_TessLevelOuter[0] = tessLevel;
+        gl_TessLevelOuter[1] = tessLevel;
+        gl_TessLevelOuter[2] = tessLevel;
+        gl_TessLevelInner[0] = tessLevel;
+    }
+)";
+
+const char* tesSrc = R"(
+    #version 450 core
+    layout(triangles, equal_spacing, cw) in;
+    in vec3 tcPosition[];
+    in vec3 tcNormal[];
+    out vec3 teNormal;
+    out vec3 tePosition;
+    uniform mat4 u_modelMatrix;
+    uniform mat4 u_viewMatrix;
+    uniform mat4 u_projectionMatrix;
+    void main()
+    {
+        vec3 pos = gl_TessCoord.x * tcPosition[0] +
+                   gl_TessCoord.y * tcPosition[1] +
+                   gl_TessCoord.z * tcPosition[2];
+        vec3 norm = normalize(gl_TessCoord.x * tcNormal[0] +
+                              gl_TessCoord.y * tcNormal[1] +
+                              gl_TessCoord.z * tcNormal[2]);
+        tePosition = pos;
+        teNormal = norm;
+        gl_Position = u_projectionMatrix * u_viewMatrix * u_modelMatrix * vec4(pos, 1.0);
+    }
+)";
+
+const char* fsSrc = R"(
+    #version 450 core
+    in vec3 teNormal;
+    out vec4 fragColor;
+    void main()
+    {
+        fragColor = vec4(teNormal * 0.5 + 0.5, 1.0);
+    }
+)";
+
+// Shader compilation helper
+GLuint compileShader(GLenum type, const char* src)
+{
+    GLuint shader = glCreateShader(type);
+    glShaderSource(shader, 1, &src, nullptr);
+    glCompileShader(shader);
+    GLint success;
+    glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
+    if (!success) {
+        char log[512];
+        glGetShaderInfoLog(shader, 512, nullptr, log);
+        DE_ERROR("Shader error: ", log)
+    }
+    return shader;
+}
+
+// Sphere generation
+void generateSphere(std::vector<float>& vertices,
+                    std::vector<unsigned int>& indices,
+                    int rings,
+                    int sectors,
+                    glm::vec3 offset,
+                    glm::vec3 scale)
+{
+    float const R = 1.0f / (rings - 1);
+    float const S = 1.0f / (sectors - 1);
+    for (int r = 0; r < rings; ++r)
+    {
+        for (int s = 0; s < sectors; ++s)
+        {
+            float ny = sin(-M_PI_2 + M_PI * r * R);
+            float nx = cos(2 * M_PI * s * S) * sin(M_PI * r * R);
+            float nz = sin(2 * M_PI * s * S) * sin(M_PI * r * R);
+
+            float y = offset.x + scale.x * nx;
+            float x = offset.y + scale.y * ny;
+            float z = offset.z + scale.z * nz;
+            vertices.push_back(x);
+            vertices.push_back(y);
+            vertices.push_back(z);
+            vertices.push_back(nx); // normal
+            vertices.push_back(ny);
+            vertices.push_back(nz);
+        }
+    }
+    for (int r = 0; r < rings - 1; ++r)
+    {
+        for (int s = 0; s < sectors - 1; ++s)
+        {
+            int i0 = r * sectors + s;
+            int i1 = r * sectors + (s + 1);
+            int i2 = (r + 1) * sectors + (s + 1);
+            int i3 = (r + 1) * sectors + s;
+            indices.push_back(i0);
+            indices.push_back(i1);
+            indices.push_back(i2);
+            indices.push_back(i0);
+            indices.push_back(i2);
+            indices.push_back(i3);
+        }
+    }
+}
+
+} // end namespace
+
+void initTessSphereShader(glm::vec3 offset, glm::vec3 scale)
+{
+    generateSphere(vertices, indices, 32, 64, offset, scale);
+    glGenVertexArrays(1, &vao);
+    glGenBuffers(1, &vbo);
+    glGenBuffers(1, &ebo);
+    glBindVertexArray(vao);
+    glBindBuffer(GL_ARRAY_BUFFER, vbo);
+    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), vertices.data(), GL_STATIC_DRAW);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), indices.data(), GL_STATIC_DRAW);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
+    glEnableVertexAttribArray(1);
+
+    GLuint vs = compileShader(GL_VERTEX_SHADER, vsSrc);
+    GLuint tcs = compileShader(GL_TESS_CONTROL_SHADER, tcsSrc);
+    GLuint tes = compileShader(GL_TESS_EVALUATION_SHADER, tesSrc);
+    GLuint fs = compileShader(GL_FRAGMENT_SHADER, fsSrc);
+
+    program = glCreateProgram();
+    glAttachShader(program, vs);
+    glAttachShader(program, tcs);
+    glAttachShader(program, tes);
+    glAttachShader(program, fs);
+    glLinkProgram(program);
+
+    u_modelMatrix = glGetUniformLocation(program, "u_modelMatrix");
+    u_viewMatrix = glGetUniformLocation(program, "u_viewMatrix");
+    u_projectionMatrix = glGetUniformLocation(program, "u_projectionMatrix");
+    u_cameraPos = glGetUniformLocation(program, "u_cameraPos");
+
+    // DE_INFO("GL_MAX_TESS_GEN_LEVEL = ", glGetInteger( GL_MAX_TESS_GEN_LEVEL ) )
+
+}
+
+void drawTessSphereShader( const de::gpu::Camera& camera )
+{
+    glUseProgram(program);
+    const auto modelMatrix = glm::mat4(1.0f);
+    const auto viewMatrix = glm::mat4(camera.getViewMatrix());
+    const auto projMatrix = glm::mat4(camera.getProjectionMatrix());
+    const auto cameraPos = glm::vec3(camera.getPos());
+    glUniformMatrix4fv(u_modelMatrix, 1, GL_FALSE, glm::value_ptr(modelMatrix));
+    glUniformMatrix4fv(u_viewMatrix, 1, GL_FALSE, glm::value_ptr(viewMatrix));
+    glUniformMatrix4fv(u_projectionMatrix, 1, GL_FALSE, glm::value_ptr(projMatrix));
+    glUniform3fv(u_cameraPos, 1, glm::value_ptr(cameraPos));
+
+    glPatchParameteri(GL_PATCH_VERTICES, 3);
+    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE); // Wireframe mode
+
+    glBindVertexArray(vao);
+    glDrawElements(GL_PATCHES, indices.size(), GL_UNSIGNED_INT, 0);
+
+}

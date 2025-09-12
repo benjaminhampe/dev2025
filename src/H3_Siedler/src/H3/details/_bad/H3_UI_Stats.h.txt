@@ -1,0 +1,194 @@
+#pragma once
+#include <de/gui/Label.h>
+#include <de/gui/Button.h>
+#include <H3/H3_Board.h>
+
+struct H3_Game;
+
+
+// =====================================================================
+struct H3_UI_Stats
+// =====================================================================
+{
+
+    
+/*    
+    
+    enum eID
+    {
+        Unknown = 0,
+
+        BtnStatVic,
+        BtnStatCard,
+        BtnStatRoad,
+        BtnStatFarm,
+        BtnStatCity,
+        BtnStatShip,
+        BtnStatA,
+        BtnStatB,
+        BtnStatC,
+        BtnStatD,
+        BtnStatE,
+        BtnStatKnightCard,
+        BtnStatPointCard,
+        BtnStatInventCard,
+
+        BtnBonusArmy,
+        BtnBonusRoad,
+
+        LblStatVic,
+        LblStatCard,
+        LblStatRoad,
+        LblStatFarm,
+        LblStatCity,
+        LblStatShip,
+        LblStatA,
+        LblStatB,
+        LblStatC,
+        LblStatD,
+        LblStatE,
+        LblStatKnightCard,
+        LblStatPointCard,
+        LblStatInventCard,
+
+        Count
+    };
+    
+*/
+    
+};
+
+
+/*
+ *
+
+void H3_UI_Stats_create( H3_Game & game )
+{
+    de::Font5x8 menuFont;
+    menuFont.quadWidth = 4;
+    menuFont.quadHeight = 4;
+    menuFont.quadSpacingX = 1;
+    menuFont.quadSpacingY = 1;
+    menuFont.glyphSpacingX = 1;
+    menuFont.glyphSpacingY = 1;
+
+    auto driver = H3_getDriver( game );
+    auto env = driver->getGUIEnv();
+    auto par = nullptr;
+    auto &ui = game.m_ui_stats;
+
+    float px = 0.01;
+    float py = 0.85;
+    float pw = 0.3;
+    float ph = 0.14;
+    ui.panel = new de::gui::Panel(env, par, H3_UI::StatPanel, px,py,pw,ph);
+
+    float x = 0.025;
+    float y = 0.025;
+    float w = 0.095;
+    float h = 0.95;
+
+    H3_UI_Stats_add(game, ui.vic, H3_UI::StatVic, H3_Tex::StatVic, x,y,w,h); x += 0.1;
+    H3_UI_Stats_add(game, ui.road, H3_UI::StatRoad, H3_Tex::StatRoad, x,y,w,h); x += 0.1;
+    H3_UI_Stats_add(game, ui.farm, H3_UI::StatFarm, H3_Tex::StatFarm, x,y,w,h); x += 0.1;
+    H3_UI_Stats_add(game, ui.city, H3_UI::StatCity, H3_Tex::StatCity, x,y,w,h); x += 0.1;
+    H3_UI_Stats_add(game, ui.card, H3_UI::StatCard, H3_Tex::StatCard, x,y,w,h); x += 0.1;
+
+    H3_UI_Stats_add(game, ui.a, H3_UI::StatA, H3_Tex::CardA, x,y,w,h); x += 0.1;
+    H3_UI_Stats_add(game, ui.b, H3_UI::StatB, H3_Tex::CardB, x,y,w,h); x += 0.1;
+    H3_UI_Stats_add(game, ui.c, H3_UI::StatC, H3_Tex::CardC, x,y,w,h); x += 0.1;
+    H3_UI_Stats_add(game, ui.d, H3_UI::StatD, H3_Tex::CardD, x,y,w,h); x += 0.1;
+    H3_UI_Stats_add(game, ui.e, H3_UI::StatE, H3_Tex::CardE, x,y,w,h); x += 0.1;
+
+    // Card Stats:
+    int x = -300;
+    int y = 44;
+    int t = 6;
+    int d = 80;
+    int w = 60;
+    int h = 100;
+    de::Align::EAlign align = de::Align::BottomCenter;
+
+    UI_addElem( game, H3_UI::BtnStatA, H3_UIElem::Button, de::Recti( x,y,w,h ),
+               6, align, int(H3_Tex::CardA), "ImgStatA");
+    UI_addElem( game, H3_UI::LblStatA, H3_UIElem::Text, de::Recti(x,t,0,0),
+               0, align, 0, "0");
+    x += d;
+    UI_addElem( game, H3_UI::BtnStatB, H3_UIElem::Button, de::Recti( x,y,w,h ),
+               6, align, int(H3_Tex::CardB), "ImgStatB");
+    UI_addElem( game, H3_UI::LblStatB, H3_UIElem::Text, de::Recti(x,t,0,0),
+               0, align, 0, "0");
+    x += d;
+    UI_addElem( game, H3_UI::BtnStatC, H3_UIElem::Button, de::Recti( x,y,w,h ),
+               6, align, int(H3_Tex::CardC), "ImgStatC");
+    UI_addElem( game, H3_UI::LblStatC, H3_UIElem::Text, de::Recti(x,t,0,0),
+               0, align, 0, "0");
+    x += d;
+    UI_addElem( game, H3_UI::BtnStatD, H3_UIElem::Button, de::Recti( x,y,w,h ),
+               6, align, int(H3_Tex::CardD), "ImgStatD");
+    UI_addElem( game, H3_UI::LblStatD, H3_UIElem::Text, de::Recti(x,t,0,0),
+               0, align, 0, "0");
+    x += d;
+    UI_addElem( game, H3_UI::BtnStatE, H3_UIElem::Button, de::Recti( x,y,w,h ),
+               6, align, int(H3_Tex::CardE), "ImgStatE");
+    UI_addElem( game, H3_UI::LblStatE, H3_UIElem::Text, de::Recti(x,t,0,0),
+               0, align, 0, "0");
+    x += d;
+
+    UI_addElem( game, H3_UI::BtnStatKnightCard, H3_UIElem::Button, de::Recti(x,y,w,h ),
+               6, align, int(H3_Tex::EventCardKnight), "ImgKnightCard");
+    UI_addElem( game, H3_UI::LblStatKnightCard, H3_UIElem::Text, de::Recti(x,t,0,0 ),
+               0, align, 0, "0");
+    x += d;
+    UI_addElem( game, H3_UI::BtnStatPointCard, H3_UIElem::Image, de::Recti(x,y,w,h ),
+               6, align, int(H3_Tex::EventCardPoint), "ImgPointCard");
+    UI_addElem( game, H3_UI::LblStatPointCard, H3_UIElem::Text, de::Recti(x,t,0,0),
+               0, align, 0, "0");
+    x += d;
+
+    int d2 = 42;
+    UI_addElem( game, H3_UI::BtnStatVic, H3_UIElem::Image, de::Recti(x,y,0,0 ),
+               0, align, int(H3_Tex::StatVic), "ImgStatVic");
+    UI_addElem( game, H3_UI::LblStatVic, H3_UIElem::Text, de::Recti(x,t,0,0),
+               0, align, 0, "0");
+    x += d2;
+    UI_addElem( game, H3_UI::BtnStatRoad, H3_UIElem::Image, de::Recti(x,y,0,0 ),
+               0, align, int(H3_Tex::StatRoad), "ImgStatRoad");
+    UI_addElem( game, H3_UI::LblStatRoad, H3_UIElem::Text, de::Recti(x,t,0,0),
+               0, align, 0, "0");
+    x += d2;
+    UI_addElem( game, H3_UI::BtnStatFarm, H3_UIElem::Image, de::Recti(x,y,0,0 ),
+               0, align, int(H3_Tex::StatFarm), "ImgStatFarm");
+    UI_addElem( game, H3_UI::LblStatFarm, H3_UIElem::Text, de::Recti(x,t,0,0),
+               0, align, 0, "0");
+    x += d2;
+    UI_addElem( game, H3_UI::BtnStatCity, H3_UIElem::Image, de::Recti(x,y,0,0 ),
+               0, align, int(H3_Tex::StatCity), "ImgStatCity");
+    UI_addElem( game, H3_UI::LblStatCity, H3_UIElem::Text, de::Recti(x,t,0,0),
+               0, align, 0, "0");
+    x += d2;
+    UI_addElem( game, H3_UI::BtnStatCard, H3_UIElem::Image, de::Recti(x,y,0,0 ),
+               0, align, int(H3_Tex::StatCard), "ImgStatCard");
+    UI_addElem( game, H3_UI::LblStatCard, H3_UIElem::Text, de::Recti(x,t,0,0),
+               0, align, 0, "0");
+    // Bonus Army/Road:
+    x += 10;
+    y = 12;
+    d = 128+20;
+    align = de::Align::BottomCenter;
+
+    UI_addElem( game, H3_UI::BtnBonusRoad, H3_UIElem::Image, de::Recti( x,y,128,128 ),
+               64, align, int(H3_Tex::BonusRoad), "ImgBonusRoad");
+    x += d;
+    UI_addElem( game, H3_UI::BtnBonusArmy, H3_UIElem::Image, de::Recti( x,y,128,128 ),
+               64, align, int(H3_Tex::BonusArmy), "ImgBonusArmy");
+
+}
+
+void UI_drawRoundStats( H3_Game & game);
+void UI_drawStatNum( H3_Game & game, int img, de::Recti pos, int value, int icon_width = 0 );
+void UI_drawPlayerStats( H3_Game & game, int px, int py, int playerId );
+void UI_drawInfoPanelTile( H3_Game & game, de::Recti pos, const u32 tileId );
+void UI_drawInfoPanelCorner( H3_Game & game, de::Recti pos, const u32 cornerId );
+void UI_drawInfoPanelEdge( H3_Game & game, de::Recti pos, const u32 edgeId );
+*/

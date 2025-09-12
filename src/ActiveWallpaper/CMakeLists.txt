@@ -1,0 +1,2 @@
+add_subdirectory(SetActiveWallpaper)
+add_subdirectory(ResetActiveWallpaper)

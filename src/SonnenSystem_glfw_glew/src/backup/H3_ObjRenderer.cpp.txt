@@ -1,0 +1,461 @@
+#include "H3_ObjRenderer.h"
+#include <de_opengl.h>
+#include <de/gpu/GL_debug_layer.h>
+
+// ===========================================================================
+H3_ObjMeshBuffer::H3_ObjMeshBuffer()
+// ===========================================================================
+{
+    m_primitiveType = de::gpu::PrimitiveType::Triangles;
+    m_vao = 0;
+    m_vbo_vertices = 0;
+    m_vbo_indices = 0;
+    m_vbo_instanceMat = 0;
+    m_vbo_instanceColor = 0;
+}
+
+// static
+de::gpu::SMeshBuffer
+H3_ObjMeshBuffer::toSMesh( const H3_ObjMeshBuffer& tmesh )
+{
+    de::gpu::SMeshBuffer smesh;
+
+    //smesh.name = tmesh.name;
+    smesh.primitiveType = tmesh.m_primitiveType;
+
+    smesh.vertices.reserve( tmesh.m_vertices.size() );
+    for ( const auto & v : tmesh.m_vertices)
+    {
+        smesh.vertices.emplace_back( v.pos, v.normal, v.color, v.tex );
+    }
+    smesh.indices.reserve( tmesh.m_indices.size() );
+    for ( const auto & i : tmesh.m_indices)
+    {
+        smesh.indices.emplace_back(i);
+    }
+
+    smesh.recalculateBoundingBox();
+    smesh.material.Lighting = 1;
+    //smesh.material.DiffuseMap = H3_getTex( game, H3_Tex::Wood );
+
+    return smesh;
+}
+
+// static
+H3_ObjMeshBuffer
+H3_ObjMeshBuffer::toTMesh( const de::gpu::SMeshBuffer& smesh )
+{
+    H3_ObjMeshBuffer tmesh;
+
+    //smesh.name = tmesh.name;
+    tmesh.m_primitiveType = smesh.primitiveType;
+    tmesh.m_vertices.reserve( smesh.vertices.size() );
+    tmesh.m_indices.reserve( smesh.indices.size() );
+
+    for ( const auto & v : smesh.vertices)
+    {
+        glm::vec3 t(1,0,0); // tangente
+        glm::vec3 bt(0,1,0); // bitangente
+        tmesh.m_vertices.emplace_back( v.pos, t, bt, v.normal, v.color, v.tex );
+    }
+
+    for ( const auto & i : smesh.indices)
+    {
+        tmesh.m_indices.emplace_back(i);
+    }
+
+    //tmesh.recalculateBoundingBox();
+    //tmesh.material.Lighting = 1;
+    //smesh.material.DiffuseMap = H3_getTex( game, H3_Tex::Wood );
+
+    return tmesh;
+}
+
+
+//
+//     B
+//    / \
+//   /   \
+//  / -Y  \
+// A-------C
+//
+void
+H3_ObjMeshBuffer::addTriangle( glm::vec3 A, glm::vec3 B, glm::vec3 C,
+                              glm::vec2 uvA, glm::vec2 uvB, glm::vec2 uvC )
+{
+    auto n = glm::normalize( glm::cross( B-A, C-A ) );
+    auto t = glm::vec3(1,0,0);
+    auto b = glm::vec3(0,1,0);
+    m_vertices.emplace_back( A, n, t, b, 0xFFFFFFFF, uvA );
+    m_vertices.emplace_back( B, n, t, b, 0xFFFFFFFF, uvB );
+    m_vertices.emplace_back( C, n, t, b, 0xFFFFFFFF, uvC );
+}
+
+//
+// B-------C
+// |       |
+// |  -Y   |
+// |       |
+// A-------D
+//
+void
+H3_ObjMeshBuffer::addQuad( glm::vec3 A, glm::vec3 B, glm::vec3 C, glm::vec3 D,
+                          float u, float v )
+{
+    auto n = glm::normalize( glm::cross( B-A, C-A ) );
+    auto t = glm::vec3(1,0,0);
+    auto b = glm::vec3(0,1,0);
+    m_vertices.emplace_back( A, n, t, b, 0xFFFFFFFF, glm::vec2(0,v) );
+    m_vertices.emplace_back( B, n, t, b, 0xFFFFFFFF, glm::vec2(0,0) );
+    m_vertices.emplace_back( C, n, t, b, 0xFFFFFFFF, glm::vec2(u,0) );
+
+    m_vertices.emplace_back( A, n, t, b, 0xFFFFFFFF, glm::vec2(0,v) );
+    m_vertices.emplace_back( C, n, t, b, 0xFFFFFFFF, glm::vec2(u,0) );
+    m_vertices.emplace_back( D, n, t, b, 0xFFFFFFFF, glm::vec2(u,v) );
+}
+
+
+void
+H3_ObjMeshBuffer::upload()
+{
+    //DE_WARN("Upload ", m_vertices.size(), " vertices.")
+    //DE_WARN("sizeof(Vertex) = ", sizeof(H3_ObjVertex))
+    //DE_WARN("Upload ", m_instanceMat.size(), " modelInstances.")
+    //DE_WARN("Upload ", m_instanceColor.size(), " colorInstances.")
+
+    if (!m_vbo_vertices)
+    {
+        glGenBuffers(1, &m_vbo_vertices);
+        //DE_TRACE("m_vbo_vertices = ",m_vbo_vertices)
+    }
+
+    if (!m_vbo_indices && m_indices.size())
+    {
+        glGenBuffers(1, &m_vbo_indices);
+        //DE_TRACE("m_vbo_indices = ",m_vbo_indices)
+    }
+
+    if (!m_vbo_instanceMat)
+    {
+        glGenBuffers(1, &m_vbo_instanceMat);
+        //DE_TRACE("m_vbo_instanceMat = ",m_vbo_instanceMat)
+    }
+
+    if (!m_vbo_instanceColor)
+    {
+        glGenBuffers(1, &m_vbo_instanceColor);
+        //DE_TRACE("m_vbo_instanceColor = ",m_vbo_instanceColor)
+    }
+
+    if (!m_vao)
+    {
+        glGenVertexArrays(1, &m_vao);
+        //DE_TRACE("m_vao = ",m_vao)
+    }
+
+    glBindVertexArray(m_vao);
+
+    // vbo_vertices
+    const auto & vertices = m_vertices;
+    const size_t vertexCount = vertices.size();
+    const size_t vertexSize = sizeof(H3_ObjVertex);
+    const size_t vertexBytes = vertexCount * vertexSize;
+    const uint8_t* pVertices = reinterpret_cast< const uint8_t* >( vertices.data() );
+    //std::cout << "Upload " << vertexBytes << " bytes" << std::endl;
+
+    glBindBuffer(GL_ARRAY_BUFFER, m_vbo_vertices);
+    glBufferData(GL_ARRAY_BUFFER, GLsizeiptr(vertexBytes), pVertices, GL_STATIC_DRAW);
+
+    // a_pos
+    glVertexAttribPointer( 0, 3, GL_FLOAT, GL_FALSE, sizeof(H3_ObjVertex), (void*)(0) );
+    glEnableVertexAttribArray( 0 );
+    // a_normal
+    glVertexAttribPointer( 1, 3, GL_FLOAT, GL_FALSE, sizeof(H3_ObjVertex), (void*)(12) );
+    glEnableVertexAttribArray( 1 );
+    // a_tangent
+    glVertexAttribPointer( 2, 3, GL_FLOAT, GL_FALSE, sizeof(H3_ObjVertex), (void*)(24) );
+    glEnableVertexAttribArray( 2 );
+    // a_bitangent
+    glVertexAttribPointer( 3, 3, GL_FLOAT, GL_FALSE, sizeof(H3_ObjVertex), (void*)(36) );
+    glEnableVertexAttribArray( 3 );
+    // a_color
+    glVertexAttribPointer( 4, 4, GL_UNSIGNED_BYTE, GL_FALSE, sizeof(H3_ObjVertex), (void*)(48) );
+    glEnableVertexAttribArray( 4 );
+    // a_tex
+    glVertexAttribPointer( 5, 2, GL_FLOAT, GL_FALSE, sizeof(H3_ObjVertex), (void*)(52) );
+    glEnableVertexAttribArray( 5 );
+
+    // m_vbo_instanceMat:
+    glBindBuffer(GL_ARRAY_BUFFER, m_vbo_instanceMat);
+    //glBufferData(GL_ARRAY_BUFFER, m_instanceMat.size() * sizeof(glm::mat4), m_instanceMat.data(), GL_STATIC_DRAW);
+    glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void*)(0));
+    glVertexAttribDivisor(6, 1);
+    glEnableVertexAttribArray(6);
+    glVertexAttribPointer(7, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void*)(16));
+    glVertexAttribDivisor(7, 1);
+    glEnableVertexAttribArray(7);
+    glVertexAttribPointer(8, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void*)(32));
+    glVertexAttribDivisor(8, 1);
+    glEnableVertexAttribArray(8);
+    glVertexAttribPointer(9, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void*)(48));
+    glVertexAttribDivisor(9, 1);
+    glEnableVertexAttribArray(9);
+
+    // m_vbo_instanceColor:
+    glBindBuffer(GL_ARRAY_BUFFER, m_vbo_instanceColor);
+    //glBufferData(GL_ARRAY_BUFFER, m_instanceColor.size() * sizeof(uint32_t), m_instanceColor.data(), GL_STATIC_DRAW);
+    glVertexAttribPointer(10, 4, GL_UNSIGNED_BYTE, GL_FALSE, sizeof(uint32_t), (void*)(0));
+    glVertexAttribDivisor(10, 1);
+    glEnableVertexAttribArray(10);
+
+    if (m_vbo_indices)
+    {
+        const auto & indices = m_indices;
+        const size_t indexCount = indices.size();
+        const size_t indexSize = sizeof(uint32_t);
+        const size_t indexBytes = indexCount * indexSize;
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_vbo_indices);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, GLsizeiptr(indexBytes), m_indices.data(), GL_STATIC_DRAW);
+
+        //DE_WARN("Upload ", m_indices.size(), " indices.")
+        //DE_WARN("sizeof(Index) = ", sizeof(uint32_t))
+    }
+
+    glBindVertexArray(0);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    if (m_vbo_indices)
+    {
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+    }
+
+    GL_VALIDATE;
+}
+
+void
+H3_ObjMeshBuffer::uploadInstances()
+{
+    if (m_instanceMat.empty())
+    {
+        return; // Nothing to upload.
+    }
+
+    // m_vbo_instanceMat:
+    glBindBuffer(GL_ARRAY_BUFFER, m_vbo_instanceMat);
+    glBufferData(GL_ARRAY_BUFFER, m_instanceMat.size() * sizeof(glm::mat4), m_instanceMat.data(), GL_STATIC_DRAW);
+
+    // m_vbo_instanceColor:
+    glBindBuffer(GL_ARRAY_BUFFER, m_vbo_instanceColor);
+    glBufferData(GL_ARRAY_BUFFER, m_instanceColor.size() * sizeof(uint32_t), m_instanceColor.data(), GL_STATIC_DRAW);
+}
+
+void
+H3_ObjMeshBuffer::render() const
+{
+    if (m_instanceMat.empty())
+    {
+        return; // Nothing to draw.
+    }
+
+    glBindVertexArray(m_vao);
+
+    const GLenum primType = de::gpu::PrimitiveType::toOpenGL( m_primitiveType );
+    if (m_indices.size() > 0)
+    {
+        glDrawElementsInstanced(primType, GLsizei(m_indices.size()), GL_UNSIGNED_INT, nullptr, m_instanceMat.size());
+    }
+    else
+    {
+        glDrawArraysInstanced(primType, 0, m_vertices.size(), m_instanceMat.size());
+    }
+
+    glBindVertexArray(0);
+    GL_VALIDATE;
+}
+
+
+// ===========================================================================
+H3_ObjShader::H3_ObjShader()
+// ===========================================================================
+{
+    m_shaderId = 0;
+}
+
+//H3_ObjShader::~H3_ObjShader();
+
+void H3_ObjShader::init()
+{
+    if (m_shaderId) return;
+
+    std::string const & shaderName = "H3_ObjShader";
+
+    std::string vs = R"(#version 450
+
+    layout(location = 0) in vec3 a_pos;
+    layout(location = 1) in vec3 a_normal;
+    layout(location = 2) in vec3 a_tangent;
+    layout(location = 3) in vec3 a_bitangent;
+    layout(location = 4) in lowp vec4 a_color;
+    layout(location = 5) in vec2 a_texCoords;
+
+    layout(location = 6) in mat4 a_instanceMat; // (mat4 spans 4 attribute locations)
+    layout(location = 10) in lowp vec4 a_instanceColor;
+
+    uniform mat4 u_projMat;
+    uniform mat4 u_viewMat;
+    //uniform mat3 u_normalMat;
+    uniform vec3 u_lightPos0;
+
+    out vec2 v_texCoords;
+    out vec4 v_color;
+
+    out vec3 v_fragPos;
+    out vec3 v_fragNormal;
+    out vec3 v_fragPosLight0;
+
+    void main()
+    {
+        //const vec4 cMin = vec4( 0,0,0,0 );
+        //const vec4 cMax = vec4( 0,0,0,0 );
+        // Instance color
+        vec4 ci = a_instanceColor / 255.0;
+        // Vertex color
+        vec4 cv = a_color / 255.0;
+        // Combined color
+        v_color = ci * cv;
+        v_texCoords = a_texCoords;
+
+        vec4 fragPos = u_viewMat * a_instanceMat * vec4(a_pos, 1.0);
+
+        gl_Position = u_projMat * fragPos;
+
+        v_fragPos = vec3(fragPos);
+
+        mat3 normalMat = mat3(transpose(inverse(u_viewMat * a_instanceMat)));
+
+        v_fragNormal = normalMat * a_normal; // Only rotation (3x3)
+
+        v_fragPosLight0 = vec3(u_viewMat * vec4(u_lightPos0, 1.0));
+    }
+    )";
+
+    std::string fs = R"(#version 450
+
+    out vec4 fragColor;
+
+    in vec4 v_color;
+    in vec2 v_texCoords;
+
+    in vec3 v_fragPos;
+    in vec3 v_fragNormal;
+    in vec3 v_fragPosLight0;
+
+    uniform sampler2D u_diffuseMap;
+    uniform vec3 u_lightColor0;
+
+    void main()
+    {
+        // ObjectColor:
+        vec4 objectColor = texture(u_diffuseMap, v_texCoords) * v_color;
+
+        // AmbientColor:
+        float ambientStrength = 0.25;
+        vec3 ambientColor = ambientStrength * u_lightColor0;
+
+        // DiffuseColor:
+        vec3 normal = normalize(v_fragNormal);
+        vec3 lightDir0 = normalize(v_fragPosLight0 - v_fragPos);
+        float diff0 = max(dot(normal, lightDir0), 0.0);
+        vec3 diffuseColor = u_lightColor0 * diff0;
+
+        // SpecularColor:
+        float specularStrength = 0.5;
+        vec3 viewDir = normalize(-v_fragPos);
+        vec3 reflectDir0 = reflect(-lightDir0, normal);
+        float spec0 = pow(max(dot(viewDir, reflectDir0), 0.0), 32);
+        vec3 specularColor = specularStrength * spec0 * u_lightColor0;
+
+        // Result:
+        fragColor = objectColor * vec4(ambientColor + diffuseColor + specularColor,1.0);
+    }
+    )";
+
+    m_shaderId = de::gpu::GT_createShader( shaderName.c_str(), vs.c_str(), fs.c_str() );
+    m_uloc_diffuseMap = glGetUniformLocation(m_shaderId, "u_diffuseMap");
+    m_uloc_projMat = glGetUniformLocation(m_shaderId, "u_projMat");
+    m_uloc_viewMat = glGetUniformLocation(m_shaderId, "u_viewMat");
+    //m_uloc_normalMat = glGetUniformLocation(m_shaderId, "u_normalMat");
+    m_uloc_lightPos0 = glGetUniformLocation(m_shaderId, "u_lightPos0");
+    m_uloc_lightColor0 = glGetUniformLocation(m_shaderId, "u_lightColor0");
+}
+
+void H3_ObjShader::setMaterial( const de::gpu::TexRef& ref, const de::gpu::Camera & camera )
+{
+    if (!m_shaderId) { DE_ERROR("No shaderId") return; }
+
+    if (!ref.tex) { DE_ERROR("No tex") return; }
+
+    // ==== Shader ====
+    glUseProgram( m_shaderId );
+
+    // [Uniform] projMat + viewMat
+    //glm::mat3 normalMat = glm::mat3(1.0f);
+    glm::mat4 projMat = camera.getProjectionMatrix();
+    glm::mat4 viewMat = camera.getViewMatrix();
+    //normalMat = glm::mat3( glm::transpose( glm::inverse( viewMat * modelMat ) ) );
+    glUniformMatrix4fv(m_uloc_projMat, 1, GL_FALSE, glm::value_ptr( projMat ));
+    glUniformMatrix4fv(m_uloc_viewMat, 1, GL_FALSE, glm::value_ptr( viewMat ));
+
+    // [Uniform] u_diffuseMap
+    int stage = 0;
+    glActiveTexture(GL_TEXTURE0 + stage);
+    glBindTexture(ref.tex->target(), ref.tex->id());
+    applySamplerOptions(ref.tex->so());
+    glUniform1i(m_uloc_diffuseMap, 0);
+    GL_VALIDATE
+
+    // [Uniform] u_lightPos0 + u_lightColor0
+    const auto & l0 = m_lights.at(0);
+    glUniform3fv(m_uloc_lightPos0, 1, glm::value_ptr( l0.pos ));
+    glUniform3fv(m_uloc_lightColor0, 1, glm::value_ptr( l0.color ));
+
+    de::gpu::Culling cull_old = de::gpu::Culling::query();
+    de::gpu::Culling cull_new = de::gpu::Culling::disabled();
+    de::gpu::Culling::apply( cull_old, cull_new );
+
+    de::gpu::Blend blend_old = de::gpu::Blend::query();
+    de::gpu::Blend blend_new = de::gpu::Blend::disabled();
+    de::gpu::Blend::apply( blend_old, blend_new );
+}
+
+void H3_ObjShader::unsetMaterial()
+{
+    // m_driver->useTexture(m_texWood, 0);
+}
+
+// ===========================================================================
+H3_ObjRenderer::H3_ObjRenderer()
+// ===========================================================================
+{
+}
+
+// H3_ObjRenderer::~H3_ObjRenderer() { }
+
+void
+H3_ObjRenderer::init()
+{
+    m_shader.init();
+}
+
+void H3_ObjRenderer::render( const H3_ObjMeshBuffer& mesh,
+                             const de::gpu::TexRef& ref,
+                             const de::gpu::Camera & camera )
+{
+    if (mesh.m_instanceMat.empty())
+    {
+        return; // Nothing to draw.
+    }
+
+    m_shader.setMaterial( ref, camera );
+    mesh.render();
+    m_shader.unsetMaterial();
+}

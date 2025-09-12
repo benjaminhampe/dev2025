@@ -1,0 +1,568 @@
+#include "eBT_PlanetRenderer.h"
+
+void PlanetRenderer::init( Bridge* driver )
+{
+    GLuint vs = de::gpu::GT_compileShader("vs2", GL_VERTEX_SHADER, vsSrc);
+    GLuint tcs = de::gpu::GT_compileShader("tcs2", GL_TESS_CONTROL_SHADER, tcsSrc);
+    GLuint tes = de::gpu::GT_compileShader("tes2", GL_TESS_EVALUATION_SHADER, tesSrc);
+    GLuint fs = de::gpu::GT_compileShader("fs2", GL_FRAGMENT_SHADER, fsKubischeInterpolationSrc);
+
+    program = glCreateProgram();
+    glAttachShader(program, vs);
+    glAttachShader(program, tcs);
+    glAttachShader(program, tes);
+    glAttachShader(program, fs);
+    glLinkProgram(program);
+
+    u_modelMatrix = glGetUniformLocation(program, "u_modelMatrix");
+    u_viewMatrix = glGetUniformLocation(program, "u_viewMatrix");
+    u_projectionMatrix = glGetUniformLocation(program, "u_projectionMatrix");
+    u_cameraPos = glGetUniformLocation(program, "u_cameraPos");
+    u_diffuseMap = glGetUniformLocation(program, "u_diffuseMap");
+    u_diffuseMapSize = glGetUniformLocation(program, "u_diffuseMapSize");
+    u_bumpMap = glGetUniformLocation(program, "u_bumpMap");
+    u_bumpScale = glGetUniformLocation(program, "u_bumpScale");
+}
+
+void PlanetRenderer::draw( de::gpu::Camera& camera
+                           de::)
+{
+    glUseProgram(program);
+    const auto modelMatrix = glm::mat4(1.0f);
+    const auto viewMatrix = glm::mat4(camera.getViewMatrix());
+    const auto projMatrix = glm::mat4(camera.getProjectionMatrix());
+    const auto cameraPos = glm::vec3(camera.getPos());
+    glUniformMatrix4fv(u_modelMatrix, 1, GL_FALSE, glm::value_ptr(modelMatrix));
+    glUniformMatrix4fv(u_viewMatrix, 1, GL_FALSE, glm::value_ptr(viewMatrix));
+    glUniformMatrix4fv(u_projectionMatrix, 1, GL_FALSE, glm::value_ptr(projMatrix));
+    glUniform3fv(u_cameraPos, 1, glm::value_ptr(cameraPos));
+
+    // [Uniform] u_diffuseMap
+    int stage = 0;
+    glActiveTexture(GL_TEXTURE0 + stage);
+    glBindTexture(diffuseMap.tex->target(), diffuseMap.tex->id());
+    applySamplerOptions(diffuseMap.tex->so());
+    glUniform1i(u_diffuseMap, stage);
+    glm::vec2 diffuseMapSize( diffuseMap.tex->w(), diffuseMap.tex->h());
+    glUniform2fv(u_diffuseMapSize, 1, glm::value_ptr(diffuseMapSize));
+
+    // [Uniform] u_bumpMap
+    stage = 1;
+    glActiveTexture(GL_TEXTURE0 + stage);
+    glBindTexture(bumpMap.tex->target(), bumpMap.tex->id());
+    applySamplerOptions(bumpMap.tex->so());
+    glUniform1i(u_bumpMap, stage);
+    glUniform1f(u_bumpScale, bumpScale);
+
+    glPatchParameteri(GL_PATCH_VERTICES, 3);
+    // glPolygonMode(GL_FRONT_AND_BACK, GL_LINE); // Wireframe mode
+    // glPolygonMode(GL_FRONT_AND_BACK, GL_FILL); // Wireframe mode
+    // glEnable(GL_CULL_FACE);
+    // glCullFace(GL_BACK);
+    // glFrontFace(GL_CCW);
+
+    // glEnable(GL_DEPTH_TEST);
+    // glDepthFunc(GL_LESS);
+
+    glBindVertexArray(vao);
+    glDrawElements(GL_PATCHES, indices.size(), GL_UNSIGNED_INT, 0);
+
+}
+
+
+// static
+glm::vec3
+PlanetMesh::computeSphereNormal( float lon, float lat ) // in degrees
+{
+    constexpr float DEG2RAD = M_PI / 180.0;
+    if ( lat >= 89.999f ) { return glm::vec3( 0,1,0 ); } // NorthPole
+    else if ( lat <= -89.999f ) { return glm::vec3( 0,-1,0 ); } // SouthPole
+    float a = lon * DEG2RAD;
+    float b = lat * DEG2RAD;
+    float x = ::cosf( b ) * ::cosf( a );
+    float y = ::sinf( b );
+    float z = ::cosf( b ) * ::sinf( a );
+    return glm::vec3( x,y,z );
+}
+
+// Sphere generation
+void
+PlanetMesh::createSphere(int tessLon, int tessLat)
+{
+    if ( tessLon < 3 ) tessLon = 3;
+    if ( tessLat < 3 ) tessLat = 3;
+
+    // u-step
+    float lonStep = 360.0f / float( tessLon );
+    float lonStart = 0.0f; // Greenwich
+    //float lonEnd = 360.0f;
+    float lonUV = 1.0f / float( tessLon );
+
+    // v-step
+    float latStep = -180.0f / float( tessLat );
+    float latStart = 90.0f;
+    //float latEnd = -90.0f;
+    float latUV = 1.0f / float( tessLat );
+
+    // Predict and reserve memory, indexed quads.
+    //o.moreVertices( 4 * tessLon * tessLat );
+    //o.moreIndices( 6 * tessLon * tessLat );
+    vertices.reserve( (tessLon + 1) * (tessLat + 1) );
+    indices.reserve( tessLon * tessLat * 4 );
+
+    for (size_t j = 0; j <= tessLat; ++j)
+    {
+        for (size_t i = 0; i <= tessLon; ++i)
+        {
+            float lon = lonStart + lonStep * i;
+            float lat = latStart + latStep * j;
+            auto n = computeSphereNormal( lon, lat );
+            //auto p = n * radius + offset;
+            float u = lonUV * i;
+            float v = latUV * j;
+            // vertices.push_back(p.x); // position
+            // vertices.push_back(p.y);
+            // vertices.push_back(p.z);
+            vertices.push_back(n.x); // normal
+            vertices.push_back(n.y);
+            vertices.push_back(n.z);
+            vertices.push_back(u);   // texcoord
+            vertices.push_back(v);
+        }
+    }
+
+    uint32_t stride = tessLon + 1;
+
+    for (size_t j = 0; j < tessLat; ++j)
+    {
+        for (size_t i = 0; i < tessLon; ++i)
+        {
+            // int i0 = r * sectors + s;
+            // int i1 = r * sectors + (s + 1);
+            // int i2 = (r + 1) * sectors + (s + 1);
+            // int i3 = (r + 1) * sectors + s;
+
+            uint32_t i2 = i + 1;
+            uint32_t j2 = j + 1;
+
+            //if (i >= tessLon - 1) { i2 = 0; }
+            //if (j >= tessLat - 1) { j2 = 0; }
+
+            uint32_t a = j * stride + i;
+            uint32_t b = j * stride + i2;
+            uint32_t c = j2 * stride + i2;
+            uint32_t d = j2 * stride + i;
+
+            indices.push_back(a);
+            indices.push_back(b);
+            indices.push_back(c);
+            indices.push_back(a);
+            indices.push_back(c);
+            indices.push_back(d);
+        }
+    }
+}
+
+void
+PlanetMesh::upload()
+{
+    glGenVertexArrays(1, &vao);
+    glGenBuffers(1, &vbo);
+    glGenBuffers(1, &ibo);
+    glBindVertexArray(vao);
+    glBindBuffer(GL_ARRAY_BUFFER, vbo);
+    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), vertices.data(), GL_STATIC_DRAW);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(uint32_t), indices.data(), GL_STATIC_DRAW);
+    // a_pos
+    // glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+    // glEnableVertexAttribArray(0);
+    // a_normal
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(0 * sizeof(float)));
+    glEnableVertexAttribArray(1);
+    // a_texcoord
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+    glEnableVertexAttribArray(2);
+}
+
+
+
+namespace {
+
+// std::vector<float> vertices;
+// std::vector<unsigned int> indices;
+
+// GLuint vao = 0;
+// GLuint vbo = 0;
+// GLuint ebo = 0;
+
+GLuint program = 0;
+GLint u_modelMatrix = -1;
+GLint u_viewMatrix = -1;
+GLint u_projectionMatrix = -1;
+GLint u_cameraPos = -1;
+GLint u_diffuseMap = -1;
+GLint u_diffuseMapSize = -1;
+GLint u_bumpMap = -1;
+GLint u_bumpScale = -1;
+de::gpu::TexRef diffuseMap;
+de::gpu::TexRef bumpMap;
+float bumpScale = 1.0f;
+
+/*
+void generateSphere(std::vector<float>& vertices,
+                    std::vector<unsigned int>& indices,
+                    int tessLon,
+                    int tessLat,
+                    glm::vec3 offset,
+                    glm::vec3 scale)
+{
+    constexpr float DEG2RAD = M_PI / 180.0f;
+    if (tessLon < 3) tessLon = 3;
+    if (tessLat < 2) tessLat = 2;
+
+    glm::vec3 radius = scale * 0.5f;
+
+    // Pole vertices
+    glm::vec3 northPole = offset + glm::vec3(0, radius.y, 0);
+    glm::vec3 southPole = offset + glm::vec3(0, -radius.y, 0);
+    glm::vec3 northNormal = glm::vec3(0, 1, 0);
+    glm::vec3 southNormal = glm::vec3(0, -1, 0);
+
+    // Add north pole vertex
+    vertices.insert(vertices.end(), {
+        northPole.x, northPole.y, northPole.z,
+        northNormal.x, northNormal.y, northNormal.z,
+        0.0f, 0.0f // UV center top
+    });
+
+    // Add south pole vertex
+    vertices.insert(vertices.end(), {
+        southPole.x, southPole.y, southPole.z,
+        southNormal.x, southNormal.y, southNormal.z,
+        0.0f, 1.0f // UV center bottom
+    });
+
+    // Ring vertices
+    for (int j = 1; j < tessLat; ++j)
+    {
+        float lat = 90.0f - j * (180.0f / tessLat);
+        float v = float(j) / tessLat;
+
+        for (int i = 0; i <= tessLon; ++i)
+        {
+            float lon = i * (360.0f / tessLon);
+            float u = float(i) / tessLon;
+
+            float a = lon * DEG2RAD;
+            float b = lat * DEG2RAD;
+
+            float x = cosf(b) * cosf(a);
+            float y = sinf(b);
+            float z = cosf(b) * sinf(a);
+
+            glm::vec3 n = glm::normalize(glm::vec3(x, y, z));
+            glm::vec3 p = offset + n * radius;
+
+            vertices.insert(vertices.end(), {
+                p.x, p.y, p.z,
+                n.x, n.y, n.z,
+                u, v
+            });
+        }
+    }
+
+    int northIndex = 0;
+    int southIndex = 1;
+    int ringStart = 2;
+    int ringStride = tessLon + 1;
+
+    // Top cap
+    for (int i = 0; i < tessLon; ++i)
+    {
+        indices.push_back(northIndex);
+        indices.push_back(ringStart + i);
+        indices.push_back(ringStart + i + 1);
+    }
+
+    // Middle quads
+    for (int j = 0; j < tessLat - 2; ++j)
+    {
+        int rowA = ringStart + j * ringStride;
+        int rowB = rowA + ringStride;
+
+        for (int i = 0; i < tessLon; ++i)
+        {
+            int a = rowA + i;
+            int b = rowA + i + 1;
+            int c = rowB + i + 1;
+            int d = rowB + i;
+
+            indices.push_back(a);
+            indices.push_back(b);
+            indices.push_back(c);
+
+            indices.push_back(a);
+            indices.push_back(c);
+            indices.push_back(d);
+        }
+    }
+
+    // Bottom cap
+    int lastRing = ringStart + (tessLat - 2) * ringStride;
+    for (int i = 0; i < tessLon; ++i)
+    {
+        indices.push_back(lastRing + i);
+        indices.push_back(southIndex);
+        indices.push_back(lastRing + i + 1);
+    }
+}
+*/
+
+} // end namespace
+
+void initTessSphereShader2(
+        glm::vec3 offset,
+        glm::vec3 scale,
+        de::gpu::TexRef map_Kd,
+        de::gpu::TexRef map_bump,
+        float fBumpScale)
+{
+    generateSphere(vertices, indices, 64, 64, offset, scale);
+    glGenVertexArrays(1, &vao);
+    glGenBuffers(1, &vbo);
+    glGenBuffers(1, &ebo);
+    glBindVertexArray(vao);
+    glBindBuffer(GL_ARRAY_BUFFER, vbo);
+    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), vertices.data(), GL_STATIC_DRAW);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), indices.data(), GL_STATIC_DRAW);
+    // a_pos
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
+    // a_normal
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
+    glEnableVertexAttribArray(1);
+    // a_texcoord
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
+    glEnableVertexAttribArray(2);
+
+}
+
+void drawTessSphereShader2( const de::gpu::Camera& camera )
+{
+}
+
+
+std::string 
+eBT_PlanetRenderer::getVertexShaderText()
+{
+    const char* vsSrc = R"(
+        #version 450 core
+
+        layout(location = 0) in vec3 aPos;
+        layout(location = 1) in vec3 aNormal;
+        layout(location = 2) in vec2 aTexCoord;
+
+        out vec3 vPosition;
+        out vec3 vNormal;
+        out vec2 vTexCoord;
+        out vec3 vFragPos;
+
+        uniform mat4 u_modelMatrix;
+
+        void main()
+        {
+            vPosition = aPos;
+            vNormal = aNormal;
+            vTexCoord = aTexCoord;
+            vec4 worldPos = u_modelMatrix * vec4(aPos, 1.0);
+            vFragPos = worldPos.xyz;
+        }
+    )";
+    
+    return vsSrc;
+}
+
+std::string 
+eBT_PlanetRenderer::getTesselationControlShaderText()
+{
+    const char* tcsSrc = R"(
+        #version 450 core
+
+        layout(vertices = 3) out;
+
+        in vec3 vPosition[];
+        in vec3 vNormal[];
+        in vec3 vFragPos[];
+        in vec2 vTexCoord[];
+
+        out vec3 tcPosition[];
+        out vec3 tcNormal[];
+        out vec2 tcTexCoord[];
+
+        uniform mat4 u_viewMatrix;
+        uniform vec3 u_cameraPos;
+
+        void main()
+        {
+            tcPosition[gl_InvocationID] = vPosition[gl_InvocationID];
+            tcNormal[gl_InvocationID] = vNormal[gl_InvocationID];
+            tcTexCoord[gl_InvocationID] = vTexCoord[gl_InvocationID];
+
+            //vec3 viewDir = normalize((u_viewMatrix * vec4(vPosition[gl_InvocationID], 1.0)).xyz);
+            //float facing = dot(vNormal[gl_InvocationID], viewDir);
+            //float tessLevel = 1; // mix(1.0, 16.0, clamp(-facing, 0.0, 1.0));
+
+            float cameraDist = length(vFragPos[gl_InvocationID] - u_cameraPos);
+            float minDist = 0;
+            float maxDist = 50;
+            // float t = clamp( 1.0 - ((cameraDist-minDist) / (maxDist-minDist)), 0.0, 1.0);
+            float t = clamp(cameraDist / maxDist, 0.0, 1.0);
+            float tessLevel = mix(64.0, 1.0, t );
+
+            gl_TessLevelOuter[0] = tessLevel;
+            gl_TessLevelOuter[1] = tessLevel;
+            gl_TessLevelOuter[2] = tessLevel;
+            gl_TessLevelInner[0] = tessLevel;
+        }
+    )";
+    
+    return tcsSrc;
+}
+
+std::string 
+eBT_PlanetRenderer::getTesselationEvaluationShaderText()
+{
+    const char* tesSrc = R"(
+        #version 450 core
+
+        layout(triangles, equal_spacing, cw) in;
+
+        in vec3 tcPosition[];
+        in vec3 tcNormal[];
+        in vec2 tcTexCoord[];
+
+        out vec3 tePosition;
+        out vec3 teNormal;
+        out vec2 teTexCoord;
+
+        uniform mat4 u_modelMatrix;
+        uniform mat4 u_viewMatrix;
+        uniform mat4 u_projectionMatrix;
+
+        uniform sampler2D u_bumpMap;
+        uniform float u_bumpScale;
+
+        void main()
+        {
+            vec3 b = gl_TessCoord; // barycentric
+
+            vec3 pos = b.x * tcPosition[0]
+                     + b.y * tcPosition[1]
+                     + b.z * tcPosition[2];
+
+            vec2 tex = b.x * tcTexCoord[0]
+                     + b.y * tcTexCoord[1]
+                     + b.z * tcTexCoord[2];
+
+            vec3 nrm = normalize(b.x * tcNormal[0] +
+                                 b.y * tcNormal[1] +
+                                 b.z * tcNormal[2]);
+
+            float bumpHeight = u_bumpScale * texture(u_bumpMap, tex).r;
+
+            pos += nrm * bumpHeight;
+
+            tePosition = pos;
+            teNormal = nrm;
+            teTexCoord = tex;
+            gl_Position = u_projectionMatrix * u_viewMatrix * u_modelMatrix * vec4(pos, 1.0);
+        }
+    )";
+
+    return tesSrc;
+}
+
+std::string 
+eBT_PlanetRenderer::getFragmentShaderText()
+{
+    /*
+    const char* fsSrc = R"(
+        #version 450 core
+
+        out vec4 fragColor;
+
+        in vec3 teNormal;
+        in vec2 teTexCoord;
+
+        uniform sampler2D u_diffuseMap;
+        uniform vec2 u_diffuseMapSize; // z. B. vec2(512.0, 512.0)
+
+        void main()
+        {
+            fragColor = texture(u_diffuseMap, teTexCoord);
+            //fragColor = vec4(teTexCoord.x, teTexCoord.y, 0.5, 1.0);
+        }
+    )";
+    */
+    
+    const char* fsKubischeInterpolationSrc = R"(
+        #version 450 core
+
+        out vec4 fragColor;
+
+        in vec3 teNormal;
+        in vec2 teTexCoord;
+
+        uniform sampler2D u_diffuseMap;
+        uniform vec2 u_diffuseMapSize; // z. B. vec2(512.0, 512.0)
+
+        // Bicubic Gewichtung
+        vec4 cubic(float v) {
+            float v2 = v * v;
+            float v3 = v2 * v;
+            return vec4(
+                v * (-v2 + 2.0 * v - 1.0),
+                3.0 * v3 - 5.0 * v2 + 2.0,
+                -3.0 * v3 + 4.0 * v2 + v,
+                v3 - v2
+            ) * 0.5;
+        }
+
+        // Bicubic Sampling
+        vec4 sampleBicubic(sampler2D tex, vec2 uv, vec2 texSize) {
+            vec2 coord = uv * texSize - 0.5;
+            vec2 f = fract(coord);
+            coord -= f;
+
+            vec4 xc = cubic(f.x);
+            vec4 yc = cubic(f.y);
+
+            vec4 result = vec4(0.0);
+            for (int j = 0; j < 4; ++j) {
+                for (int i = 0; i < 4; ++i) {
+                    vec2 offset = (coord + vec2(i - 1.0, j - 1.0)) / texSize;
+                    result += texture(tex, offset) * xc[i] * yc[j];
+                }
+            }
+            return result;
+        }
+
+        void main() {
+            // Zoom-Level bestimmen
+            float zoomFactor = length(vec2(dFdx(teTexCoord).x, dFdy(teTexCoord).y)) * u_diffuseMapSize.x;
+
+            // Schwellenwert: ab Zoom > 1.5 Texel pro Fragment → bicubic
+            bool useBicubic = zoomFactor < 1.5;
+
+            vec4 color = useBicubic
+                ? sampleBicubic(u_diffuseMap, teTexCoord, u_diffuseMapSize)
+                : texture(u_diffuseMap, teTexCoord);
+
+            fragColor = color;
+        }
+    )";
+    
+    return fsKubischeInterpolationSrc;
+}

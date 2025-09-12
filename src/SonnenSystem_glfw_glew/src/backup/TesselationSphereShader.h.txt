@@ -1,0 +1,6 @@
+#pragma once
+#include <de_glm.hpp>
+#include <de/gpu/Camera.h>
+
+void initTessSphereShader(glm::vec3 offset, glm::vec3 scale);
+void drawTessSphereShader( const de::gpu::Camera& camera );

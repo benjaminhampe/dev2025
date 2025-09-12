@@ -1,0 +1,78 @@
+#pragma once
+#include <H3/H3_Board.h>
+
+struct H3_Game;
+
+#pragma pack( push )
+#pragma pack( 1 )
+
+// ===========================================================================
+struct H3_RoadVertex // ParallaxVertex
+// ===========================================================================
+{
+    glm::vec3 pos;
+    glm::vec3 normal;
+    glm::vec3 tangent;
+    glm::vec3 bitangent;
+    uint32_t color;
+    glm::vec2 tex;    // 5*12 = 60 Bytes if packed
+public:
+    H3_RoadVertex()
+        : pos()
+        , normal( 0, 1, 0 ), tangent( 1, 0, 0 ), bitangent( 0, 0, 1 )
+        , color( 0xFFFF00FF ), tex()
+    {}
+    H3_RoadVertex( float x, float y, float z,
+                    float nx, float ny, float nz,
+                    float tx, float ty, float tz,
+                    float bx, float by, float bz,
+                    uint32_t crgba, float u, float v )
+        : pos( x,y,z )
+        , normal( nx,ny,nz ), tangent( tx,ty,tz ), bitangent( bx,by,bz )
+        , color( crgba ), tex( u,v )
+    {}
+    H3_RoadVertex( const glm::vec3 &p,
+                    const glm::vec3 &nrm,
+                    const glm::vec3 &tan,
+                    const glm::vec3 &bitan,
+                    const uint32_t crgba, const glm::vec2 &tex0 )
+        : pos( p )
+        , normal( nrm ), tangent( tan ), bitangent( bitan )
+        , color( crgba ), tex( tex0 )
+    {}
+};
+#pragma pack( pop )
+
+// ===========================================================================
+struct H3_RoadRenderer
+// ===========================================================================
+{
+    de::VideoDriver* m_driver;
+    de::Shader* m_shader;
+    uint32_t m_texture2DArray;
+
+    // Geometry
+    uint32_t m_vao;
+    uint32_t vbo_vertices;
+    uint32_t vbo_indices;
+    uint32_t vbo_instanceMat;
+    std::vector<H3_RoadVertex> m_vertices;  // cube vertices
+    std::vector<uint32_t> m_indices;        // cube indices
+    std::vector<glm::mat4> m_instanceMat;
+    //std::vector<uint8_t> m_instanceLayer;
+
+    H3_RoadRenderer();
+    ~H3_RoadRenderer();
+    
+    void init(de::VideoDriver* driver, const H3_Game& board);
+
+    void initShader();
+    void initTextures();
+    void initGeometry();
+
+    void upload(const H3_Game& board);
+
+    void render(const glm::mat4& projViewMat, glm::vec3 const& u_cameraPos);
+
+};
+

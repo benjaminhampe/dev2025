@@ -1,0 +1,42 @@
+#include "H3_UI_Actions.h"
+#include "H3_UI.h"
+#include <H3/H3_Game.h>
+#include <H3/details/H3_Tex.h>
+#include <H3/details/H3_Topology.h>
+#include <H3/details/H3_Logic.h>
+
+/*
+
+void
+UI_setStatsVisible( H3_Game & game, bool bVisible )
+{
+    UI_get( game, H3_UI::BtnStatVic ).visible = bVisible;
+    UI_get( game, H3_UI::BtnStatCard ).visible = bVisible;
+    UI_get( game, H3_UI::BtnStatRoad ).visible = bVisible;
+    UI_get( game, H3_UI::BtnStatFarm ).visible = bVisible;
+    UI_get( game, H3_UI::BtnStatCity ).visible = bVisible;
+    UI_get( game, H3_UI::BtnStatA ).visible = bVisible;
+    UI_get( game, H3_UI::BtnStatB ).visible = bVisible;
+    UI_get( game, H3_UI::BtnStatC ).visible = bVisible;
+    UI_get( game, H3_UI::BtnStatD ).visible = bVisible;
+    UI_get( game, H3_UI::BtnStatE ).visible = bVisible;
+    UI_get( game, H3_UI::BtnBonusRoad ).visible = bVisible;
+    UI_get( game, H3_UI::BtnBonusArmy ).visible = bVisible;
+
+    UI_get( game, H3_UI::LblStatVic ).visible = bVisible;
+    UI_get( game, H3_UI::LblStatCard ).visible = bVisible;
+    UI_get( game, H3_UI::LblStatRoad ).visible = bVisible;
+    UI_get( game, H3_UI::LblStatFarm ).visible = bVisible;
+    UI_get( game, H3_UI::LblStatCity ).visible = bVisible;
+    UI_get( game, H3_UI::LblStatA ).visible = bVisible;
+    UI_get( game, H3_UI::LblStatB ).visible = bVisible;
+    UI_get( game, H3_UI::LblStatC ).visible = bVisible;
+    UI_get( game, H3_UI::LblStatD ).visible = bVisible;
+    UI_get( game, H3_UI::LblStatE ).visible = bVisible;
+
+    UI_get( game, H3_UI::BtnStatKnightCard ).visible = bVisible;
+    UI_get( game, H3_UI::LblStatKnightCard ).visible = bVisible;
+    UI_get( game, H3_UI::BtnStatPointCard ).visible = bVisible;
+    UI_get( game, H3_UI::LblStatPointCard ).visible = bVisible;
+}
+*/

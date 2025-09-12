@@ -1,0 +1,45 @@
+#pragma once
+#include "Body.h"
+#include "OpenGLBridge.h"
+
+struct eBT_PlanetMesh
+{
+    static glm::vec3 computeSphereNormal( float lon, float lat );
+
+    void createSphere(int tessLon, int tessLat);
+
+    void upload();
+
+    uint32_t vao = 0;
+    uint32_t vbo = 0;
+    uint32_t ibo = 0;
+
+    std::vector<float> vertices;    // nx,ny,nz,u,v
+    std::vector<uint32_t> indices;
+};
+
+// Normals only tesselated and lighted planet/moon renderer, mesh must be a sphere.
+struct eBT_PlanetRenderer
+{
+    void init( Bridge* driver );
+
+    void draw( const Body& body );
+
+private:
+    Bridge* m_driver;
+
+    GLuint programId = 0;
+    GLint u_modelMatrix = -1;
+    GLint u_viewMatrix = -1;
+    GLint u_projectionMatrix = -1;
+    GLint u_cameraPos = -1;
+    GLint u_diffuseMap = -1;
+    GLint u_diffuseMapSize = -1;
+    GLint u_bumpMap = -1;
+    GLint u_bumpScale = -1;
+    
+    static std::string getVertexShaderText();
+    static std::string getTesselationControlShaderText();
+    static std::string getTesselationEvaluationShaderText();
+    static std::string getFragmentShaderText();
+};

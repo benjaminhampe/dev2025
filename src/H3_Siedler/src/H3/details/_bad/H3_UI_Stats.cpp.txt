@@ -1,0 +1,430 @@
+#include "H3_UI_Stats.h"
+#include <H3/H3_Game.h>
+#include <H3/details/H3_Topology.h>
+
+
+
+/*
+void
+UI_drawStatNum( H3_Game & game, int img, de::Recti pos, int value, int icon_width )
+{
+    auto driver = H3_getDriver( game );
+    if ( !driver ) { DE_ERROR("No driver") return; }
+
+    de::TexRef tex = H3_getTex( game, H3_Tex::Unknown );
+    if ( img > 0 )
+    {
+        tex = H3_getTex( game, H3_Tex::eID(img) );
+    }
+
+    de::Recti iconPos = pos;
+    //   if ( icon_width > 0 )
+    //   {
+    //      iconPos.w = icon_width;
+    //   }
+    H3_draw2DRect( game, iconPos, 0xFFFFFFFF, tex );
+
+    auto valueStr = std::to_string( value );
+
+    de::Font5x8 font;
+    font.quadWidth = 2;
+    font.quadHeight = 2;
+    font.quadSpacingX = 0;
+    font.quadSpacingY = 0;
+    font.glyphSpacingX = 1;
+    font.glyphSpacingY = 1;
+    auto ts = font.getTextSize( valueStr );
+
+    int msg_x = pos.x + pos.w/2;
+    int msg_y = pos.y + pos.h - 1;
+    de::Recti r(msg_x - 2 - int(0.5f*ts.width),
+                msg_y - 1 - int(ts.height),
+                int(ts.width) + 2,
+                int(ts.height) + 1 );
+
+    auto font58Renderer = driver->getFontRenderer5x8();
+
+    H3_draw2DRect( game, r, 0x80000000 );
+    font58Renderer->draw2DText( msg_x, msg_y, valueStr,
+    0xFFFFFFFF, de::Align::BottomCenter, font );
+}
+
+void
+UI_drawPlayerStats( H3_Game & game, int px, int py, int playerId )
+{
+    auto driver = &game.m_videoDriver;
+    if ( !driver ) { DE_ERROR("No driver") return; }
+    H3_Player & current = H3_getCurrentPlayer( game );
+    H3_Player & player = H3_getPlayer( game, playerId );
+
+    //int p = 20;
+    de::Font fontName( "garton", 26, false, false, true, true, false );
+    //de::Font font( "garton", 12, false, false, true, true, false );
+
+    de::TexRef noTex;
+    // Draw current Player highlight
+    de::Recti r_panel(px,py,280,96);
+    H3_draw2DRoundRect( game, r_panel, glm::ivec2(12,12), 0x40FFFFFF, noTex, 16 );
+
+    // Draw current Player highlight
+    de::Recti r_highlight( r_panel.x+2, r_panel.y+2, r_panel.w-4, r_panel.h-4 );
+    if ( playerId == current.id )
+    {
+        H3_draw2DRoundRect( game, r_highlight, glm::ivec2(12,12), 0x40FFFFFF, noTex, 16 );
+    }
+
+    // Draw Player background...
+    {
+        de::TexRef ref;
+        int x = r_panel.x+8;
+        int y = r_panel.y+8;
+        int w = r_panel.w-16;
+        int h = r_panel.h-16;
+        de::Recti r_bg( x, y, w, h );
+        H3_draw2DRoundRect( game, r_bg, glm::ivec2(8,8), player.color, ref,16 );
+    }
+
+    // Draw Player Icon
+    {
+        de::TexRef ref = H3_getTex( game, static_cast<H3_Tex::eID>(player.avatar) );
+        int x = r_panel.x+16;
+        int y = r_panel.y+16;
+        int w = 64;
+        int h = 64;
+        de::Recti r_icon( x, y, w, h );
+        H3_draw2DRoundRect( game, r_icon, glm::ivec2(8,8), 0xFFFFFFFF, ref, 16 );
+    }
+
+    // Draw Player Name
+    de::Align::EAlign align = de::Align::TopLeft;
+    {
+        int x = r_panel.x+96;
+        int y = r_panel.y+8;
+        int w = 100;
+        int h = 28;
+        de::Recti r_name( x, y, w, h );
+        H3_draw2DRoundRect( game, r_name, glm::ivec2(8,8), player.color, noTex, 16 );
+
+
+        x = r_panel.x+102;
+        y = r_panel.y+10;
+        std::wostringstream s;
+        s << player.name.c_str();
+        //driver->draw2DText( x, y, s.str(), 0xFFFFFFFF, align, fontName );
+    }
+
+    // Draw Player Dice 16 * 16
+    {
+        int x = r_panel.x+204;
+        int y = r_panel.y+10;
+        int dice1 = player.dice.a;
+        int dice2 = player.dice.b;
+        H3_drawDice( game, de::Recti(x,y, 24,24), 5, dice1, dice2 );
+    }
+
+    {
+        int x = r_panel.x+96;
+        int y = r_panel.y+36;
+        int w = 162;
+        int h = 52;
+        de::Recti r_stats( x, y, w, h );
+        H3_draw2DRoundRect( game, r_stats, glm::ivec2(8,8), player.color, noTex, 16 );
+    }
+
+    int d = 25;
+    int w = 24;
+    int h = 24;
+    int x = r_panel.x+103;
+    int y = r_panel.y+38;
+
+    align = de::Align::BottomRight;
+
+    // Draw 24x24 Player Victory Points
+    UI_drawStatNum( game, H3_Tex::StatVic, de::Recti(x,y,w,h), player.victoryPoints, 0); x += d;
+    UI_drawStatNum( game, H3_Tex::StatRoad, de::Recti(x,y,w,h), player.roads.size(), 0); x += d;
+    UI_drawStatNum( game, H3_Tex::StatFarm, de::Recti(x,y,w,h), player.farms.size(), 0); x += d;
+    UI_drawStatNum( game, H3_Tex::StatCity, de::Recti(x,y,w,h), player.citys.size(), 0); x += d;
+    UI_drawStatNum( game, H3_Tex::StatCard, de::Recti(x,y,w,h), player.eventCards.size(), 0); x += d;
+    UI_drawStatNum( game, H3_Tex::EventCardPoint, de::Recti(x,y,w,h), player.pointCards.size(), 16); x += d;
+
+    // <--> ROW 2 <-->
+    x = r_panel.x+103;
+    y = r_panel.y+62;
+    UI_drawStatNum( game, H3_Tex::CardA, de::Recti(x,y,w,h), player.bank.A, 16); x += d;
+    UI_drawStatNum( game, H3_Tex::CardB, de::Recti(x,y,w,h), player.bank.B, 16); x += d;
+    UI_drawStatNum( game, H3_Tex::CardC, de::Recti(x,y,w,h), player.bank.C, 16); x += d;
+    UI_drawStatNum( game, H3_Tex::CardD, de::Recti(x,y,w,h), player.bank.D, 16); x += d;
+    UI_drawStatNum( game, H3_Tex::CardE, de::Recti(x,y,w,h), player.bank.E, 16); x += d;
+    UI_drawStatNum( game, H3_Tex::EventCardKnight, de::Recti(x,y,w,h), player.knightCards.size(), 16); x += d;
+}
+
+
+void
+UI_drawInfoPanelTile( H3_Game & game, de::Recti pos, const u32 tileId )
+{
+    if ( !tileId ) { return; }
+    //auto driver = &game.m_videoDriver;
+    //if ( !driver ) { DE_ERROR("No driver") return; }
+
+    H3_Tile& tile = H3_getTile(game, __func__, tileId);
+
+    uint32_t txtColor = 0xFFFFFFFF;
+
+    de::TexRef noTex;
+    H3_draw2DRoundRect( game, pos, glm::ivec2(12, 12), 0xA0000000, noTex, 13 );
+
+    int w = pos.w;
+    int x = pos.x + 20;
+    int y = pos.y + 20;
+    int ln = 10;
+
+    auto driver = H3_getDriver( game );
+    auto screenRenderer = driver->getScreenRenderer();
+    auto font58Renderer = driver->getFontRenderer5x8();
+
+    font58Renderer->draw2DText( x,y, dbStr(H3_TileType::getString( tile.tileType )," (",tile.i, ",", tile.j,")"), txtColor );
+    if ( tile.chipValue > 0 )
+    {
+        font58Renderer->draw2DText( x+w-40,y, dbStr("Dice = ",tile.chipValue), txtColor, de::Align::TopRight );
+    }
+    y += ln;
+    H3_drawHexagon( game, de::Recti(x+50,y,50,50), 0xFFFFFFFF, H3_getTileTex( game, tile.tileType ), tile.id );
+    font58Renderer->draw2DText( x+w-40,y+25, dbStr(tile.pos), txtColor, de::Align::RightMiddle );
+    y += 50;
+    font58Renderer->draw2DText( x,y, dbStr("angle60 = ",tile.angle60), txtColor );
+    y += ln;
+    font58Renderer->draw2DText( x,y, dbStr("hasRobber = ",tile.hasRobber), txtColor );
+    y += ln;
+
+    // [Info] Next Tiles
+    y += 4;
+    font58Renderer->draw2DText( x,y, dbStr("NextCount = ",tile.next.size()), txtColor );
+    y += ln;
+    for ( size_t i = 0; i < tile.next.size(); ++i )
+    {
+        H3_Tile & n = H3_getTile( game, __func__, tile.next[ i ] );
+        H3_drawHexagon( game, de::Recti(x+28*i,y,24,24), 0xFFFFFFFF, H3_getTileTex( game, n.tileType ), n.id );
+    }
+    y += 28;
+
+    // [Info] Corners
+    font58Renderer->draw2DText( x,y, dbStr("CornerCount = ",tile.corners.size()), txtColor );
+    y += ln;
+    H3_drawCircle( game, de::Recti(x,y,24,24), 0xFFFFFFFF, H3_getTex( game, H3_Tex::ChipS ) );
+    for ( size_t i = 0; i < tile.corners.size(); ++i )
+    {
+        H3_Corner & n = H3_getCorner( game, tile.corners[ i ] );
+        font58Renderer->draw2DText( 30 + x,y, dbStr("Corner[",i,"] = ",n.id), txtColor );
+        y += ln;
+    }
+    if ( tile.corners.size() < 3 )
+    {
+        y += ln * (3 - tile.corners.size());
+    }
+    y += 4;
+
+    // [Info] Edges
+    font58Renderer->draw2DText( x,y, dbStr("EdgeCount = ",tile.edges.size()), txtColor );
+    y += ln;
+    H3_drawCircle( game, de::Recti(x,y,24,24), 0xFFFFFFFF, H3_getTex( game, H3_Tex::ChipW ) );
+    for ( size_t i = 0; i < tile.edges.size(); ++i )
+    {
+        H3_Edge & n = H3_getEdge( game, tile.edges[ i ] );
+        font58Renderer->draw2DText( 30 + x,y, dbStr("Edge[",i,"] = ",n.id), txtColor );
+        y += ln;
+    }
+    if ( tile.edges.size() < 3 )
+    {
+        y += ln * (3 - tile.edges.size());
+    }
+    y += 4;
+}
+
+
+void
+UI_drawInfoPanelCorner( H3_Game & game, de::Recti pos, const u32 cornerId )
+{
+    if ( !cornerId ) { return; }
+    //auto driver = &game.m_videoDriver;
+    //if ( !driver ) { DE_ERROR("No driver") return; }
+
+    H3_Corner& corner = H3_getCorner(game, cornerId);
+
+    uint32_t txtColor = 0xFFFFFFFF;
+    de::TexRef noTex;
+    H3_draw2DRoundRect( game, pos, glm::ivec2(12, 12), 0xA0000000, noTex, 13 );
+
+    int w = pos.w;
+    int x = pos.x + 20;
+    int y = pos.y + 20;
+    int ln = 10;
+
+    auto driver = H3_getDriver( game );
+    auto screenRenderer = driver->getScreenRenderer();
+    auto font58Renderer = driver->getFontRenderer5x8();
+
+    font58Renderer->draw2DText( x,y, dbStr("cornerId = ",corner.id), txtColor );
+    y += ln;
+    H3_drawCircle( game, de::Recti(x,y,48,48), 0xFFFFFFFF, H3_getTex( game, H3_Tex::ChipS ) );
+    font58Renderer->draw2DText( x+w-40,y+24, dbStr(corner.pos()), txtColor, de::Align::RightMiddle );
+    y += 52;
+
+    font58Renderer->draw2DText( x,y, dbStr("NextCount = ",corner.next.size()), txtColor );
+    y += ln;
+    for ( size_t i = 0; i < corner.next.size(); ++i )
+    {
+        H3_Corner & n = H3_getCorner( game, corner.next[ i ] );
+        font58Renderer->draw2DText( x,y, dbStr("Next[",i,"] = ",corner.next[ i ]), txtColor );
+        y += ln;
+    }
+    y += 4;
+
+    font58Renderer->draw2DText( x,y, dbStr("TileCount = ",corner.tiles.size()), txtColor );
+    y += ln;
+    for ( size_t i = 0; i < corner.tiles.size(); ++i )
+    {
+        H3_Tile & n = H3_getTile( game, __func__, corner.tiles[ i ] );
+        H3_drawHexagon( game, de::Recti(x+40*(i+1),y,32,32), 0xFFFFFFFF, H3_getTileTex( game, n.tileType ), n.id );
+    }
+    y += 36;
+
+    font58Renderer->draw2DText( x,y, dbStr("EdgeCount = ",corner.edges.size()), txtColor );
+    y += ln;
+    H3_drawCircle( game, de::Recti(x,y,32,32), 0xFFFFFFFF, H3_getTex( game, H3_Tex::ChipW ) );
+
+    for ( size_t i = 0; i < corner.edges.size(); ++i )
+    {
+        H3_Edge & n = H3_getEdge( game, corner.edges[ i ] );
+        font58Renderer->draw2DText( x+40,y, dbStr("Edge[",i,"] = ",n.id), txtColor );
+        y += ln;
+    }
+
+    if ( corner.edges.size() < 3 )
+    {
+        y += ln * (3 - corner.edges.size());
+    }
+}
+
+void
+UI_drawInfoPanelEdge( H3_Game & game, de::Recti pos, const u32 edgeId )
+{
+    if ( !edgeId ) { return; }
+    //auto driver = &game.m_videoDriver;
+    //if ( !driver ) { DE_ERROR("No driver") return; }
+
+    H3_Edge & edge = H3_getEdge(game, edgeId);
+
+    de::TexRef noTex;
+    uint32_t txtColor = 0xFFFFFFFF;
+
+    H3_draw2DRoundRect( game, pos, glm::ivec2(12, 12), 0xA0000000, noTex, 13 );
+
+    int w = pos.w;
+    int x = pos.x + 20;
+    int y = pos.y + 20;
+    int ln = 10;
+
+    auto driver = H3_getDriver( game );
+    auto screenRenderer = driver->getScreenRenderer();
+    auto font58Renderer = driver->getFontRenderer5x8();
+
+    font58Renderer->draw2DText( x,y, dbStr("edgeId = ",edge.id), txtColor );
+    y += ln;
+    H3_drawCircle( game, de::Recti(x,y,48,48), 0xFFFFFFFF, H3_getTex( game, H3_Tex::ChipW ) );
+    font58Renderer->draw2DText( x+w-40,y+24, dbStr(edge.pos()), txtColor, de::Align::RightMiddle );
+    y += 52;
+
+    font58Renderer->draw2DText( x,y, dbStr("NextCount = ",edge.next.size()), txtColor );
+    y += ln;
+    for ( size_t i = 0; i < edge.next.size(); ++i )
+    {
+        H3_Edge & n = H3_getEdge( game, edge.next[ i ] );
+        font58Renderer->draw2DText( x,y, dbStr("Next[",i,"] = ",edge.next[ i ]), txtColor );
+        y += ln;
+    }
+    y += 4;
+
+    font58Renderer->draw2DText( x,y, dbStr("TileCount = ",edge.tiles.size()), txtColor );
+    y += ln;
+    for ( size_t i = 0; i < edge.tiles.size(); ++i )
+    {
+        H3_Tile & n = H3_getTile( game, __func__, edge.tiles[ i ] );
+        H3_drawHexagon( game, de::Recti(x+40*(i+1),y,32,32), 0xFFFFFFFF, H3_getTileTex( game, n.tileType ), n.id );
+    }
+    y += 36;
+
+    font58Renderer->draw2DText( x,y, dbStr("CornerCount = ",edge.corners.size()), txtColor );
+    y += ln;
+    H3_drawCircle( game, de::Recti(x,y,32,32), 0xFFFFFFFF, H3_getTex( game, H3_Tex::ChipS ) );
+    for ( size_t i = 0; i < edge.corners.size(); ++i )
+    {
+        H3_Corner & n = H3_getCorner( game, edge.corners[ i ] );
+        font58Renderer->draw2DText( x+40,y, dbStr("Corner[",i,"] = ",n.id), txtColor );
+        y += ln;
+    }
+
+    if ( edge.corners.size() < 3 )
+    {
+        y += ln * (3 - edge.corners.size());
+    }
+}
+
+
+void UI_drawRoundStats( H3_Game & game)
+{
+    auto driver = H3_getDriver( game );
+    if ( !driver ) { DE_ERROR("No driver") return; }
+
+    const int w = driver->getScreenWidth();
+    const int h = driver->getScreenHeight();
+    const int mx = game.m_mouseX;
+    const int my = game.m_mouseY;
+    const int p = 10;
+
+    int x = w - p;
+    int y = p;
+    de::Align::EAlign align = de::Align::TopRight;
+
+    de::Font5x8 font1(2,2,1,1,1,1);
+    int ln1 = font1.getTextSize("W").height + p;
+    auto s1 = dbStr("Screen(",w,",",h,")");
+    auto s2 = dbStr("Mouse(",mx,",",my,")");
+    H3_drawText( game, x,y, s1, dbRGBA(255,100,100), align, font1 );
+    y += ln1;
+    H3_drawText( game, x,y, s2, dbRGBA(255,200,100), align, font1 );
+    y += ln1;
+
+    auto camera = driver->getCamera();
+    if (camera)
+    {
+        auto s1 = dbStr("Camera-Pos(",camera->getPos(),")");
+        auto s2 = dbStr("Camera-Target(",camera->getTarget(),")");
+        auto s3 = dbStr("Camera-Angle(",camera->getAng(),")");
+        H3_drawText( game, x,y, s1, dbRGBA(100,200,100), align, font1 );
+        y += ln1;
+        H3_drawText( game, x,y, s2, dbRGBA(125,215,125), align, font1 );
+        y += ln1;
+        H3_drawText( game, x,y, s3, dbRGBA(145,225,145), align, font1 );
+        y += ln1;
+    }
+
+    de::Font5x8 font(4,4,1,1,1,1);
+    //de::Font font( "garton", 36 );
+
+    int ln = font.getTextSize("W").height + 10;
+    H3_drawText( game, x,y, dbStr("State = ", H3_State::getString( game.m_state )), 0xFFFFFFFF, align, font );
+    y += ln;
+    H3_drawText( game, x,y, dbStr("Round = ", game.m_round), 0xFFFFFFFF, align, font );
+    y += ln;
+    H3_drawText( game, x,y, dbStr("Turn = ", game.m_turn), 0xFFFFFFFF, align, font );
+    y += ln;
+    H3_drawText( game, x,y, dbStr("Player = ", H3_getCurrentPlayer( game ).name), 0xFFFFFFFF, align, font );
+    y += ln;
+    H3_drawText( game, x,y, dbStr("Dice = ", H3_getCurrentPlayer( game ).dice.sum()), 0xFFFFFFFF, align, font );
+    y += ln;
+    H3_drawDice( game, de::Recti(x - 128-11, y, 64,64), 12, game.m_dice.a );
+    H3_drawDice( game, de::Recti(x - 64-1, y, 64,64), 12, game.m_dice.b );
+    //y += 64;
+}
+
+*/

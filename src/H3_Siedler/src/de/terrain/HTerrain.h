@@ -1,0 +1,179 @@
+#pragma once
+#include <de/gpu/VideoDriver.h>
+
+#include <de/terrain/Hillplane.h>
+
+// glm::uint16 float16 = glm::packHalf1x16(1.0f);   // Float -> half
+// float value = glm::unpackHalf1x16(float16);      // Half -> float
+
+namespace de {
+namespace gpu {
+
+/*
+inline uint16_t f32_to_f16( const float value )
+{
+    uint32_t bits = *(uint32_t*)&value;
+    uint16_t sign = (bits >> 16) & 0x8000;
+    int exp = ((bits >> 23) & 0xFF) - 127 + 15;
+    uint16_t mant = (bits >> 13) & 0x3FF;
+    exp = std::clamp( exp, 0, 31 );
+    return sign | (exp << 10) | mant;
+}
+
+inline float f16_to_f32( const uint16_t half )
+{
+    uint32_t sign = (half & 0x8000) << 16;
+    int exp = ((half >> 10) & 0x1F) - 15 + 127;
+    uint32_t mant = (half & 0x3FF) << 13;
+    uint32_t bits = sign | (exp << 23) | mant;
+    return *(float*)&bits;
+}
+*/
+
+#pragma pack( push )
+#pragma pack( 1 )
+
+// ===========================================================================
+struct HVertex // 6 Bytes if packed
+// ===========================================================================
+{
+    int16_t m_x;  // 2 Bytes
+    int16_t m_y;  // 2 Bytes
+    int16_t m_z;  // 2 Bytes
+    int16_t m_nx; // 2 Bytes
+    int16_t m_ny; // 2 Bytes
+    int16_t m_nz; // 2 Bytes
+    int16_t m_u;  // 2 Bytes
+    int16_t m_v;  // 2 Bytes = 16 Bytes
+
+    // HVertex()
+    //     : m_x(0)
+    //     , m_y(0)
+    //     , m_z(0)
+    //     , m_nx(0)
+    //     , m_ny(0)
+    //     , m_nz(0)
+    //     , m_u(0)
+    //     , m_v(0)
+    // {}
+
+    // HVertex( float x, float y, float z, float nx, float ny, float nz, float u, float v )
+    //     : m_x( glm::packSnorm1x16( x ) )
+    //     , m_y( glm::packSnorm1x16( y ) )
+    //     , m_z( glm::packSnorm1x16( z ) )
+    //     , m_nx(glm::packSnorm1x16( nx ))
+    //     , m_ny(glm::packSnorm1x16( ny ))
+    //     , m_nz(glm::packSnorm1x16( nz ))
+    //     , m_u( glm::packSnorm1x16( u ) )
+    //     , m_v( glm::packSnorm1x16( v ) )
+    // {}
+
+    HVertex( const glm::vec3& pos, const glm::vec3& normal, const glm::vec2& tex )
+        : m_x( glm::packSnorm1x16( pos.x ) )
+        , m_y( glm::packSnorm1x16( pos.y ) )
+        , m_z( glm::packSnorm1x16( pos.z ) )
+        , m_nx(glm::packSnorm1x16( normal.x ) )
+        , m_ny(glm::packSnorm1x16( normal.y ) )
+        , m_nz(glm::packSnorm1x16( normal.z ) )
+        , m_u( glm::packSnorm1x16( tex.x ) )
+        , m_v( glm::packSnorm1x16( tex.y ) )
+    {}
+
+    HVertex( const HVertex& o )
+        : m_x( o.m_x )
+        , m_y( o.m_y )
+        , m_z( o.m_z )
+        , m_nx(o.m_nx )
+        , m_ny(o.m_ny )
+        , m_nz(o.m_nz )
+        , m_u( o.m_u )
+        , m_v( o.m_v )
+    {}
+
+    float x() const { return glm::unpackSnorm1x16( m_x ); }
+    float y() const { return glm::unpackSnorm1x16( m_y ); }
+    float z() const { return glm::unpackSnorm1x16( m_z ); }
+    float nx() const{ return glm::unpackSnorm1x16( m_nx); }
+    float ny() const{ return glm::unpackSnorm1x16( m_ny); }
+    float nz() const{ return glm::unpackSnorm1x16( m_nz); }
+    float u() const { return glm::unpackSnorm1x16( m_u ); }
+    float v() const { return glm::unpackSnorm1x16( m_v ); }
+
+    glm::vec3 pos() const { return glm::vec3( x(), y(), z() ); }
+    glm::vec3 normal() const { return glm::vec3( nx(), ny(), nz() ); }
+    glm::vec2 tex() const { return glm::vec2( u(), v() ); }
+};
+
+#pragma pack( pop )
+
+// ===========================================================================
+struct HMaterial
+// ===========================================================================
+{
+    TexRef diffuseMap;
+};
+
+// ===========================================================================
+struct HMesh
+// ===========================================================================
+{
+    typedef glm::vec2 V2;
+    typedef glm::vec3 V3;
+
+    std::string m_name;
+    Box3f m_boundingBox;
+    HMaterial m_material;
+    std::vector<HVertex> m_vertices;
+    std::vector<uint32_t> m_indices;
+    std::vector<glm::mat4> m_instanceMat;
+
+    // GPU side
+    PrimitiveType m_primitiveType;
+    uint32_t m_vao;
+    uint32_t m_vbo_vertices;
+    uint32_t m_vbo_indices;
+    uint32_t m_vbo_instanceMat;
+
+    HMesh();
+    //~HMesh();
+
+    void upload( bool bForceUpload = false );
+    void draw() const;
+    void addVertex( const HVertex& v );
+    void computeBoundingBox();
+    size_t computeByteConsumption() const;
+    std::string str( bool withMaterial = false ) const;
+
+    static HMesh fromSMesh( const SMeshBuffer & smesh );
+
+};
+
+// ===========================================================================
+struct HMeshRenderer
+// ===========================================================================
+{
+    VideoDriver* m_driver;
+    Shader* m_shader;
+
+    int m_uloc_diffuseMap;
+    int m_uloc_projMat;
+    int m_uloc_viewMat;
+    //int m_uloc_normalMat;
+    int m_uloc_lightPos0;
+    int m_uloc_lightColor0;
+
+    HMeshRenderer();
+    //~HMeshRenderer();
+
+    void init( VideoDriver * driver );
+    void draw( const HMesh & hmesh );
+    void setMaterial( const HMaterial & material );
+
+	
+protected:
+	void initShader();
+};
+
+
+} // end namespace gpu.
+} // end namespace de.

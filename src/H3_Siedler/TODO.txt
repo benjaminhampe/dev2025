@@ -1,0 +1,10 @@
+(x) Correct road mesh.
+(x) Correct angle while placing roads.
+( ) Enable user angle while placing farms/cities using MouseWheel
+( ) Disable camera MouseWheel move while placing farms/cities.
+(x) Correct hovering of farms.
+( ) Correct hovering of cities.
+( ) Move 3d dice to the left top
+( ) Use global driver lights for SMaterialRenderer
+(x) Solve bug (invalid cornerId) 
+

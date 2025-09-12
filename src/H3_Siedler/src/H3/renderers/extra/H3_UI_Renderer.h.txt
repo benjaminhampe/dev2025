@@ -1,0 +1,36 @@
+#pragma once
+#include <H3/H3_Board.h>
+
+struct H3_Game;
+
+// ===========================================================================
+struct H3_UI_Renderer
+// ===========================================================================
+{
+    de::gpu::VideoDriver* m_driver;
+
+    std::vector<H3_UIElem> m_elements;
+    /*
+    de::Shader* m_shader;
+    uint32_t m_texture2DArray;
+    uint32_t m_vao;
+    uint32_t m_vbo_vertices;
+    uint32_t m_vbo_indices;
+    uint32_t m_vbo_instanceMat;
+    uint32_t m_vbo_instanceLayer;
+
+    de::SMeshBuffer m_diceMesh;
+    std::vector<glm::mat4> m_instanceMat;
+    std::vector<uint8_t> m_instanceLayer;
+    std::vector<uint8_t> m_instanceAngle60;
+*/
+    H3_UI_Renderer();
+    ~H3_UI_Renderer();
+    
+    void init( H3_Game & game );
+
+    void upload( const H3_Game& game);
+
+    void render();
+};
+

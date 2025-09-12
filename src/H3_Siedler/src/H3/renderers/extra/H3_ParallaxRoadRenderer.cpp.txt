@@ -1,0 +1,621 @@
+#include "H3_RoadRenderer.h"
+#include <H3/H3_Game.h>
+#include <de_opengl.h>
+
+H3_RoadRenderer::H3_RoadRenderer()
+{
+    m_shader = nullptr;
+    m_vao = 0;
+    vbo_vertices = 0;
+    vbo_indices = 0;
+    vbo_instanceMat = 0;
+    m_texture2DArray = 0;
+}
+
+H3_RoadRenderer::~H3_RoadRenderer()
+{
+
+}
+
+void
+H3_RoadRenderer::init(de::VideoDriver* driver, const H3_Game & board)
+{
+    m_driver = driver;
+    initShader();
+    initTextures();
+    initGeometry();
+}
+
+void
+H3_RoadRenderer::initShader()
+{
+    if (!m_driver) { DE_ERROR("No driver") return; }
+
+    if (m_shader) { return; }
+
+    std::string const & shaderName = "RoadParallaxShader";
+
+    std::string vs = R"(
+
+    // precision highp float;
+
+        layout(location = 0) in vec3 a_pos;
+        layout(location = 1) in vec3 a_normal;
+        layout(location = 2) in vec3 a_tangent;
+        layout(location = 3) in vec3 a_bitangent;
+        layout(location = 4) in lowp vec4 a_color;
+        layout(location = 5) in vec2 a_texCoord;
+        layout(location = 6) in mat4 a_modelMat; // (mat4 spans 4 attribute locations)
+        //layout(location = 10) in float a_instanceLayer; // index into texture2DArray
+
+        uniform mat4 u_projViewMat;
+        uniform mat4 u_modelMat;
+
+        uniform vec3 u_cameraPos;
+        uniform vec3 u_lightPos;
+
+        out VS_OUT {
+            vec3 FragPos;
+            vec2 TexCoords;
+            vec3 TangentLightPos;
+            vec3 TangentViewPos;
+            vec3 TangentFragPos;
+        } vs_out;
+
+        // out vec3 v_pos;
+        // out vec3 v_normal;
+        out vec2 v_texCoord;
+        // out vec4 v_color;
+        // flat out int v_texLayer;
+
+        void main()
+        {
+            vs_out.FragPos = vec3(a_modelMat * vec4(a_pos, 1.0));
+            vs_out.TexCoords = a_texCoord;
+
+            vec3 T = normalize(mat3(a_modelMat) * a_tangent);
+            vec3 B = normalize(mat3(a_modelMat) * a_bitangent);
+            vec3 N = normalize(mat3(a_modelMat) * a_normal);
+            mat3 TBN = transpose(mat3(T, B, N));
+
+            vs_out.TangentLightPos = TBN * u_lightPos;
+            vs_out.TangentViewPos  = TBN * u_cameraPos;
+            vs_out.TangentFragPos  = TBN * vs_out.FragPos;
+
+            //gl_Position = projection * view * a_modelMat * vec4(aPos, 1.0);
+
+            // v_pos = a_pos;
+            // v_normal = a_normal;
+            // v_color = clamp( vec4( a_color ) / 255.0, vec4( 0,0,0,0 ), vec4( 1,1,1,1 ) );
+            // v_texCoord = a_texCoord;
+            // v_texLayer = int(a_instanceLayer);
+            gl_Position = u_projViewMat * a_modelMat * vec4(a_pos, 1.0);
+        }
+    )";
+
+    std::string fs = R"(
+
+    out vec4 fragColor;
+
+    //in vec3 v_pos;
+    //in vec3 v_normal;
+    //in vec4 v_color;
+    //in vec2 v_texCoord;
+    //flat in int v_texLayer;
+
+    in VS_OUT {
+        vec3 FragPos;
+        vec2 TexCoords;
+        vec3 TangentLightPos;
+        vec3 TangentViewPos;
+        vec3 TangentFragPos;
+    } fs_in;
+
+    uniform sampler2DArray u_tex; // 0 = diffuseMap, 1 = normalBumpMap
+
+    uniform float u_bumpScale;
+
+    vec2 ParallaxMapping(vec2 origTexCoords, vec3 viewDir)
+    {
+        // number of depth layers
+        const float minLayers = 8;
+        const float maxLayers = 32;
+        float numLayers = mix(maxLayers, minLayers, abs(dot(vec3(0.0, 0.0, 1.0), viewDir)));
+        // calculate the size of each layer
+        float layerDepth = 1.0 / numLayers;
+        // depth of current layer
+        float currentLayerDepth = 0.0;
+        // the amount to shift the texture coordinates per layer (from vector P)
+        vec2 P = viewDir.xy / viewDir.z * u_bumpScale;
+        vec2 deltaTexCoords = P / numLayers;
+
+        // get initial values
+        vec2  texCoords     = origTexCoords;
+        //float depthMapValue = texture(depthMap, texCoords).r;
+        float depthMapValue = texture(u_tex, vec3(texCoords,1.0)).a;
+
+        while(currentLayerDepth < depthMapValue)
+        {
+            // shift texture coordinates along direction of P
+            texCoords -= deltaTexCoords;
+            // get depthmap value at current texture coordinates
+            //depthMapValue = texture(depthMap, texCoords).r;
+            depthMapValue = texture(u_tex, vec3(texCoords,1.0)).a;
+            // get depth of next layer
+            currentLayerDepth += layerDepth;
+        }
+
+        // get texture coordinates before collision (reverse operations)
+        vec2 prevTexCoords = texCoords + (deltaTexCoords * 0.1);
+
+        // get depth after and before collision for linear interpolation
+        float afterDepth  = depthMapValue - currentLayerDepth;
+        // float beforeDepth = texture(depthMap, prevTexCoords).r - currentLayerDepth + layerDepth;
+        float beforeDepth = texture(u_tex, vec3(prevTexCoords,1.0)).a - currentLayerDepth + layerDepth;
+
+        // interpolation of texture coordinates
+        float weight = afterDepth / (afterDepth - beforeDepth);
+        vec2 finalTexCoords = prevTexCoords * weight + texCoords * (1.0 - weight);
+
+        return finalTexCoords;
+    }
+
+    void main()
+    {
+        // offset texture coordinates with Parallax Mapping
+        vec3 viewDir = normalize(fs_in.TangentViewPos - fs_in.TangentFragPos);
+        //vec2 texCoords = fs_in.TexCoords;
+
+        vec2 texCoords = ParallaxMapping(fs_in.TexCoords,  viewDir);
+        if( texCoords.x > 1.0 || texCoords.y > 1.0 ||
+            texCoords.x < 0.0 || texCoords.y < 0.0)
+        {
+            discard;
+        }
+
+        // obtain normal from normal map
+        //vec3 normal = texture(normalMap, texCoords).rgb;
+        vec3 normal = texture(u_tex, vec3(texCoords,1.0)).rgb;
+        normal = normalize(normal * 2.0 - 1.0);
+
+        // get diffuse color
+        vec3 color = texture(u_tex, vec3(texCoords,0.0)).rgb;
+        // ambient
+        vec3 ambient = 0.1 * color;
+        // diffuse
+        vec3 lightDir = normalize(fs_in.TangentLightPos - fs_in.TangentFragPos);
+        float diff = max(dot(lightDir, normal), 0.0);
+        vec3 diffuse = diff * color;
+        // specular
+        vec3 reflectDir = reflect(-lightDir, normal);
+        vec3 halfwayDir = normalize(lightDir + viewDir);
+        float spec = pow(max(dot(normal, halfwayDir), 0.0), 32.0);
+
+        vec3 specular = vec3(0.2) * spec;
+        fragColor = vec4(ambient + diffuse + specular, 1.0);
+    }
+    )";
+
+    m_shader = m_driver->createShader( shaderName, vs, fs );
+}
+
+
+void
+H3_RoadRenderer::initTextures()
+{
+    if (!m_driver) { DE_ERROR("No driver") return; }
+
+    size_t m_imgsize = 1024;
+    size_t m_imglayer = 2;
+
+    //========================================================================
+    //===       Textures: CombiDiffuseAlphaMap + CombiNormalBumpMap
+    //========================================================================
+
+
+    std::string mediaDir = "media/H3/packs/Road_Pebbles_025_SD/";
+
+    std::string uriDiffuseMap = mediaDir + "Pebbles_025_BaseColor.jpg";
+    std::string uriNormalMap = mediaDir + "Pebbles_025_Normal.jpg";
+    std::string uriBumpMap = mediaDir + "Pebbles_025_Height.png";
+
+    // Final CPU side storage:
+    std::vector<de::Image> m_images;
+    m_images.reserve(m_imglayer);
+    m_images.emplace_back();
+    de::Image & imgDiffuseMap = m_images.back();
+    imgDiffuseMap.resize(m_imgsize,m_imgsize,de::PixelFormat::R8G8B8A8);
+    imgDiffuseMap.fill(0xFFFFFFFF);
+    m_images.emplace_back();
+    de::Image & imgNormalBumpMap = m_images.back();
+    imgNormalBumpMap.resize(m_imgsize,m_imgsize,de::PixelFormat::R8G8B8A8);
+    imgNormalBumpMap.fill(0xFFFFFFFF);
+
+    // Load resources from Disk:
+    bool ok = true;
+    de::Image img1;
+    de::Image img2;
+    de::Image img3;
+    if (!dbLoadImage(img1,uriDiffuseMap))
+    {
+        DE_ERROR("Cannot load image1 ", uriDiffuseMap)
+        ok = false;
+    }
+    if (!dbLoadImage(img2,uriNormalMap))
+    {
+        DE_ERROR("Cannot load image2 ", uriNormalMap)
+        ok = false;
+    }
+    if (!dbLoadImage(img3,uriBumpMap))
+    {
+        DE_ERROR("Cannot load image3 ", uriBumpMap)
+        ok = false;
+    }
+    // Process images:
+    if (ok)
+    {
+        // Create combi DiffuseAlphaMap:
+        for (int y = 0; y < int(m_imgsize); ++y)
+        {
+            for (int x = 0; x < int(m_imgsize); ++x)
+            {
+                uint32_t color = img1.getPixel(x,y);
+                dbRGBA_setA(color,255);
+                imgDiffuseMap.setPixel(x,y,color);
+            }
+        }
+        // Create combi NormalBumpMap:
+        for (int y = 0; y < int(m_imgsize); ++y)
+        {
+            for (int x = 0; x < int(m_imgsize); ++x)
+            {
+                const uint32_t color2 = img2.getPixel(x,y);
+                const uint32_t color3 = img3.getPixel(x,y);
+                const uint8_t r = dbRGBA_R(color2); // NormalMap.x
+                const uint8_t g = dbRGBA_G(color2); // NormalMap.y
+                const uint8_t b = dbRGBA_B(color2); // NormalMap.z
+                const uint8_t a = dbRGBA_R(color3); // BumpMap
+                const uint32_t color = dbRGBA(r,g,b,a);
+                imgNormalBumpMap.setPixel(x,y,color);
+            }
+        }
+    }
+
+    // Create big image:
+    de::Image m_image;
+    m_image.resize( m_imgsize, m_imgsize * int(m_images.size()), de::PixelFormat::R8G8B8A8 );
+    int y = 0;
+    for (size_t i = 0; i < m_images.size(); ++i)
+    {
+        de::ImagePainter::drawImage(m_image, m_images[i], 0, y, false);
+        y += m_imgsize;
+    }
+    dbSaveImage(m_image,"H3_roadtex.png");
+
+    // Create textures:
+    if (!m_texture2DArray)
+    {
+        const int w = m_imgsize;
+        const int h = m_imgsize;
+        const int layers = m_images.size();
+
+        glGenTextures(1, &m_texture2DArray);
+        GL_VALIDATE;
+        glActiveTexture(GL_TEXTURE0);
+        GL_VALIDATE;
+        glBindTexture(GL_TEXTURE_2D_ARRAY, m_texture2DArray);
+        GL_VALIDATE;
+        glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_RGBA, w, h, layers, 0, GL_RGBA, GL_UNSIGNED_BYTE, m_image.data());
+        GL_VALIDATE;
+        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        GL_VALIDATE;
+        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        GL_VALIDATE;
+        glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
+        GL_VALIDATE;
+    }
+    m_images.clear();
+}
+
+
+void
+H3_RoadRenderer::initGeometry()
+{
+    de::SMeshBuffer o;
+    //de::SMeshBox::add(mb, glm::vec3(1,1,1), glm::vec3(0,0,0), 0xFFFFFFFF);
+    const uint32_t color = 0xFFFFFFFF;
+    const float dx = 0.5f;
+    const float dy = 0.5f;
+    const float dz = 0.5f;
+
+    auto addQuad = [&]( H3_RoadVertex const & a, H3_RoadVertex const & b,
+             H3_RoadVertex const & c, H3_RoadVertex const & d, bool flip = false )
+    {
+        m_vertices.push_back( a );
+        m_vertices.push_back( b );
+        m_vertices.push_back( c );
+        m_vertices.push_back( d );
+
+        const uint32_t v = m_vertices.size();
+        const uint32_t ia = v-4;
+        const uint32_t ib = v-3;
+        const uint32_t ic = v-2;
+        const uint32_t id = v-1;
+
+        if ( flip )
+        {
+            // abc
+            m_indices.push_back( ia );
+            m_indices.push_back( ic );
+            m_indices.push_back( ib );
+            // acd
+            m_indices.push_back( ia );
+            m_indices.push_back( id );
+            m_indices.push_back( ic );
+        }
+        else
+        {
+            // abc
+            m_indices.push_back( ia );
+            m_indices.push_back( ib );
+            m_indices.push_back( ic );
+            // acd
+            m_indices.push_back( ia );
+            m_indices.push_back( ic );
+            m_indices.push_back( id );
+        }
+    };
+
+    // =========================================================================
+    //
+    //        F-------G                 tex atlas infos         +----+----+---------+
+    //       /|      /|                                         |    |    |         |
+    //      / |  +Y / |                                         |    | +Z |         |
+    //     /  |    /  |                                         |    |    |         |
+    //    /   E---/---H   lookat = -X for plane PX              +----+----+----+----+
+    //   /-X /   / X /    <-------P  EyePos is +X for plane PX  |    |    |    |    |
+    //  /   /   / + /                                           | -X | -Y | +X | +Y |
+    // B-------C   /     +z                                     |    |    |    |    |
+    // |  /    |  /      |  +y                                  +----+----+----+----+
+    // | / -Y  | /       | /                                    |    |    |         |
+    // |/      |/        |/                                     |    | -Z |         |
+    // A-------D         0------> +x                            |    |    |         |
+    //
+    const auto a = glm::vec3( -dx, -dy, -dz );
+    const auto b = glm::vec3( -dx,  dy, -dz );
+    const auto c = glm::vec3(  dx,  dy, -dz );
+    const auto d = glm::vec3(  dx, -dy, -dz );
+    const auto e = glm::vec3( -dx, -dy,  dz );
+    const auto f = glm::vec3( -dx,  dy,  dz );
+    const auto g = glm::vec3(  dx,  dy,  dz );
+    const auto h = glm::vec3(  dx, -dy,  dz );
+
+    {   // Top quad BFGC
+        H3_RoadVertex B( b.x, b.y, b.z, 0,1,0, 1,0,0, 0,0,1, color, 0,1 );
+        H3_RoadVertex F( f.x, f.y, f.z, 0,1,0, 1,0,0, 0,0,1, color, 0,0 );
+        H3_RoadVertex G( g.x, g.y, g.z, 0,1,0, 1,0,0, 0,0,1, color, 1,0 );
+        H3_RoadVertex C( c.x, c.y, c.z, 0,1,0, 1,0,0, 0,0,1, color, 1,1 );
+        addQuad( B,F,G,C );
+    }
+    {   // Bottom quad AEHD
+        H3_RoadVertex A( a.x, a.y, a.z, 0,-1,0, 1,0,0, 0,0,1, color, 0,1 );
+        H3_RoadVertex E( e.x, e.y, e.z, 0,-1,0, 1,0,0, 0,0,1, color, 0,0 );
+        H3_RoadVertex H( h.x, h.y, h.z, 0,-1,0, 1,0,0, 0,0,1, color, 1,0 );
+        H3_RoadVertex D( d.x, d.y, d.z, 0,-1,0, 1,0,0, 0,0,1, color, 1,1 );
+        addQuad( A,E,H,D );
+    }
+
+    {   // Front quad ABCD
+        H3_RoadVertex A( a.x, a.y, a.z, 0,0,-1, 1,0,0, 0,1,0, color, 0,1 );
+        H3_RoadVertex B( b.x, b.y, b.z, 0,0,-1, 1,0,0, 0,1,0, color, 0,0 );
+        H3_RoadVertex C( c.x, c.y, c.z, 0,0,-1, 1,0,0, 0,1,0, color, 1,0 );
+        H3_RoadVertex D( d.x, d.y, d.z, 0,0,-1, 1,0,0, 0,1,0, color, 1,1 );
+        addQuad( A,B,C,D );
+    }
+    {   // Back quad HGFE
+        H3_RoadVertex E( e.x, e.y, e.z, 0,0,1, -1,0,0, 0,1,0, color, 0,1 );
+        H3_RoadVertex F( f.x, f.y, f.z, 0,0,1, -1,0,0, 0,1,0, color, 0,0 );
+        H3_RoadVertex G( g.x, g.y, g.z, 0,0,1, -1,0,0, 0,1,0, color, 1,0 );
+        H3_RoadVertex H( h.x, h.y, h.z, 0,0,1, -1,0,0, 0,1,0, color, 1,1 );
+        addQuad( H,G,F,E );
+    }
+
+    {   // Right quad DCGH
+        H3_RoadVertex D( d.x, d.y, d.z, 1,0,0, 0,1,0, 0,0,1, color, 0,1 );
+        H3_RoadVertex C( c.x, c.y, c.z, 1,0,0, 0,1,0, 0,0,1, color, 0,0 );
+        H3_RoadVertex G( g.x, g.y, g.z, 1,0,0, 0,1,0, 0,0,1, color, 1,0 );
+        H3_RoadVertex H( h.x, h.y, h.z, 1,0,0, 0,1,0, 0,0,1, color, 1,1 );
+        addQuad( D,C,G,H );
+    }
+    {   // Left quad EFBA
+        H3_RoadVertex E( e.x, e.y, e.z, -1,0,0, 0,1,0, 0,0,1, color, 0,1 );
+        H3_RoadVertex F( f.x, f.y, f.z, -1,0,0, 0,1,0, 0,0,1, color, 0,0 );
+        H3_RoadVertex B( b.x, b.y, b.z, -1,0,0, 0,1,0, 0,0,1, color, 1,0 );
+        H3_RoadVertex A( a.x, a.y, a.z, -1,0,0, 0,1,0, 0,0,1, color, 1,1 );
+        addQuad( E,F,B,A );
+    }
+
+
+
+}
+
+void H3_RoadRenderer::upload(const H3_Game& board)
+{
+    const auto & g_tiles = board.m_tiles;
+    const auto & g_edges = board.m_edges;
+
+    const size_t n = g_edges.size();
+
+    //========================================================================
+    // CPU Memory:
+    //========================================================================
+
+    // Instance Data (Transform Matrices)
+    m_instanceMat.clear();
+    m_instanceMat.reserve(n);
+    //m_instanceLayer.clear();
+    //m_instanceLayer.reserve(n);
+
+    // Collect Edges
+    for (const auto& edge : g_edges)
+    {
+        H3_TRS trs;
+        trs.pos = edge.trs.pos + glm::vec3(0,board.m_cfg.roadSize.y,0);
+        trs.rotate = edge.trs.rotate;
+        trs.scale = board.m_cfg.roadSize;
+        trs.update();
+        m_instanceMat.push_back( trs.trs );
+    }
+
+    //========================================================================
+    // GPU Memory:
+    //========================================================================
+
+    if (!vbo_vertices)
+    {
+        glGenBuffers(1, &vbo_vertices); GL_VALIDATE;
+        DE_TRACE("vbo_vertices = ",vbo_vertices)
+    }
+
+    if (!vbo_indices && m_indices.size())
+    {
+        glGenBuffers(1, &vbo_indices); GL_VALIDATE;
+        DE_TRACE("vbo_indices = ",vbo_indices)
+    }
+
+    if (!vbo_instanceMat)
+    {
+        glGenBuffers(1, &vbo_instanceMat); GL_VALIDATE;
+        DE_TRACE("vbo_instanceMat = ",vbo_instanceMat)
+    }
+
+    if (!m_vao)
+    {
+        glGenVertexArrays(1, &m_vao); GL_VALIDATE;
+        DE_TRACE("m_vao = ",m_vao)
+    }
+
+    glBindVertexArray(m_vao); GL_VALIDATE;
+
+    DE_WARN("Upload ", m_vertices.size(), " vertices.")
+    DE_WARN("sizeof(Vertex) = ", sizeof(H3_RoadVertex))
+
+    // vbo_vertices
+    const auto & vertices = m_vertices;
+    const size_t vertexCount = vertices.size();
+    const size_t vertexSize = sizeof(H3_RoadVertex);
+    const size_t vertexBytes = vertexCount * vertexSize;
+    const uint8_t* pVertices = reinterpret_cast< const uint8_t* >( vertices.data() );
+    //std::cout << "Upload " << vertexBytes << " bytes" << std::endl;
+
+    glBindBuffer(GL_ARRAY_BUFFER, vbo_vertices); GL_VALIDATE;
+    glBufferData(GL_ARRAY_BUFFER, GLsizeiptr(vertexBytes), pVertices, GL_STATIC_DRAW); GL_VALIDATE;
+
+    // a_pos
+    glVertexAttribPointer( 0, 3, GL_FLOAT, GL_FALSE, sizeof(H3_RoadVertex), (void*)(0) ); GL_VALIDATE;
+    glEnableVertexAttribArray( 0 ); GL_VALIDATE;
+    // a_normal
+    glVertexAttribPointer( 1, 3, GL_FLOAT, GL_FALSE, sizeof(H3_RoadVertex), (void*)(12) ); GL_VALIDATE;
+    glEnableVertexAttribArray( 1 ); GL_VALIDATE;
+    // a_tangent
+    glVertexAttribPointer( 2, 3, GL_FLOAT, GL_FALSE, sizeof(H3_RoadVertex), (void*)(24) ); GL_VALIDATE;
+    glEnableVertexAttribArray( 2 ); GL_VALIDATE;
+    // a_bitangent
+    glVertexAttribPointer( 3, 3, GL_FLOAT, GL_FALSE, sizeof(H3_RoadVertex), (void*)(36) ); GL_VALIDATE;
+    glEnableVertexAttribArray( 3 ); GL_VALIDATE;
+    // a_color
+    glVertexAttribPointer( 4, 4, GL_UNSIGNED_BYTE, GL_FALSE, sizeof(H3_RoadVertex), (void*)(48) ); GL_VALIDATE;
+    glEnableVertexAttribArray( 4 ); GL_VALIDATE;
+    // a_tex
+    glVertexAttribPointer( 5, 2, GL_FLOAT, GL_FALSE, sizeof(H3_RoadVertex), (void*)(52) ); GL_VALIDATE;
+    glEnableVertexAttribArray( 5 ); GL_VALIDATE;
+
+    // vbo_instanceMat:
+    glBindBuffer(GL_ARRAY_BUFFER, vbo_instanceMat); GL_VALIDATE;
+    glBufferData(GL_ARRAY_BUFFER, m_instanceMat.size() * sizeof(glm::mat4), m_instanceMat.data(), GL_STATIC_DRAW); GL_VALIDATE;
+    glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void*)(0)); GL_VALIDATE;
+    glVertexAttribDivisor(6, 1); GL_VALIDATE;
+    glEnableVertexAttribArray(6); GL_VALIDATE;
+    glVertexAttribPointer(7, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void*)(16)); GL_VALIDATE;
+    glVertexAttribDivisor(7, 1); GL_VALIDATE;
+    glEnableVertexAttribArray(7); GL_VALIDATE;
+    glVertexAttribPointer(8, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void*)(32)); GL_VALIDATE;
+    glVertexAttribDivisor(8, 1); GL_VALIDATE;
+    glEnableVertexAttribArray(8); GL_VALIDATE;
+    glVertexAttribPointer(9, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void*)(48)); GL_VALIDATE;
+    glVertexAttribDivisor(9, 1); GL_VALIDATE;
+    glEnableVertexAttribArray(9); GL_VALIDATE;
+    DE_WARN("Upload ", m_instanceMat.size(), " modelInstances.")
+
+    if (vbo_indices)
+    {
+        const auto & indices = m_indices;
+        const size_t indexCount = indices.size();
+        const size_t indexSize = sizeof(uint32_t);
+        const size_t indexBytes = indexCount * indexSize;
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbo_indices);
+        GL_VALIDATE;
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, GLsizeiptr(indexBytes), m_indices.data(), GL_STATIC_DRAW);
+        GL_VALIDATE;
+
+        DE_WARN("Upload ", m_indices.size(), " indices.")
+        DE_WARN("sizeof(Index) = ", sizeof(uint32_t))
+    }
+
+    glBindVertexArray(0); GL_VALIDATE;
+    glBindBuffer(GL_ARRAY_BUFFER, 0); GL_VALIDATE;
+    if (vbo_indices)
+    {
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0); GL_VALIDATE;
+    }
+}
+
+void H3_RoadRenderer::render( glm::mat4 const & u_projViewMat, glm::vec3 const& u_cameraPos )
+{
+    if (!m_vao)
+    {
+        return;
+    }
+
+    float u_bumpScale = 0.1f;
+    glm::vec3 u_lightPos(100, 200, 100);
+    //glm::vec3 u_cameraPos(100, 200, 100);
+
+    de::State state;
+    state.culling = de::Culling::disabled();
+    state.blend = de::Blend::disabled();
+    m_driver->setState( state );
+
+    glUseProgram(m_shader->id); GL_VALIDATE;
+
+    glActiveTexture(GL_TEXTURE0); GL_VALIDATE;
+    glBindTexture(GL_TEXTURE_2D_ARRAY, m_texture2DArray); GL_VALIDATE;
+    m_shader->setInt( "u_tex", 0 );
+
+    m_shader->setMat4f( "u_projViewMat", u_projViewMat );
+
+    m_shader->setVec3f( "u_lightPos", u_lightPos );
+
+    m_shader->setVec3f( "u_cameraPos", u_cameraPos );
+
+    m_shader->setVec1f( "u_bumpScale", u_bumpScale );
+
+    glBindVertexArray(m_vao); GL_VALIDATE;
+
+    //GLenum const primType = de::PrimitiveType::toOpenGL( PrimitiveType: );
+    GLenum const primType = GL_TRIANGLES;
+    if (m_indices.size() > 0)
+    {
+        glDrawElementsInstanced(primType, GLsizei(m_indices.size()), GL_UNSIGNED_INT, nullptr, m_instanceMat.size());
+    }
+    else
+    {
+        glDrawArraysInstanced(primType, 0, m_vertices.size(), m_instanceMat.size());
+    }
+    GL_VALIDATE;
+
+    glBindVertexArray(0);
+    GL_VALIDATE;
+    glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
+    GL_VALIDATE;
+}

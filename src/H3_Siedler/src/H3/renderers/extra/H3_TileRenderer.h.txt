@@ -1,0 +1,32 @@
+#pragma once
+#include <H3/H3_Board.h>
+
+struct H3_Game;
+
+// ===========================================================================
+struct H3_TileRenderer
+// ===========================================================================
+{
+    de::gpu::VideoDriver* m_driver;
+    de::gpu::Shader* m_shader;
+    int m_locProjViewMat;
+    int m_locDiffuseMapArray;
+    uint32_t m_texture2DArray;
+    uint32_t m_vao;
+    uint32_t m_vbo_instanceMat;
+    uint32_t m_vbo_instanceLayer;
+    uint32_t m_vbo_instanceAngle60;
+    std::vector<glm::mat4> m_instanceMat;
+    std::vector<uint8_t> m_instanceLayer;
+    std::vector<uint8_t> m_instanceAngle60;
+    H3_TileRenderer();
+    ~H3_TileRenderer();
+    
+    void init( H3_Game& game );
+    void initShader();
+    void initGeometry();
+    void initTexture();
+
+    void upload(const H3_Game& game);
+    void render();
+};
