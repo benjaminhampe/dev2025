@@ -1,0 +1,8 @@
+C:/sdk/msys64/home/firestarter/nanosvg/benni/CMakeFiles/nanosvg.dir
+C:/sdk/msys64/home/firestarter/nanosvg/benni/CMakeFiles/nanosvgrast.dir
+C:/sdk/msys64/home/firestarter/nanosvg/benni/CMakeFiles/edit_cache.dir
+C:/sdk/msys64/home/firestarter/nanosvg/benni/CMakeFiles/rebuild_cache.dir
+C:/sdk/msys64/home/firestarter/nanosvg/benni/CMakeFiles/list_install_components.dir
+C:/sdk/msys64/home/firestarter/nanosvg/benni/CMakeFiles/install.dir
+C:/sdk/msys64/home/firestarter/nanosvg/benni/CMakeFiles/install/local.dir
+C:/sdk/msys64/home/firestarter/nanosvg/benni/CMakeFiles/install/strip.dir

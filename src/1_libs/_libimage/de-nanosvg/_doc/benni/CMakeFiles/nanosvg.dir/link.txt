@@ -1,0 +1,2 @@
+C:\sdk\mingw64_1310\bin\ar.exe qc libnanosvg.a CMakeFiles/nanosvg.dir/nanosvg.c.obj
+C:\sdk\mingw64_1310\bin\ranlib.exe libnanosvg.a

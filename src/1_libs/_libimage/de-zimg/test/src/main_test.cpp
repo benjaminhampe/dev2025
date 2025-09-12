@@ -1,0 +1,15 @@
+//////////////////////////////////////////////////////////////////////////////
+/// @file main_test_delib.cpp
+/// @author Benjamin Hampe <benjamin.hampe@gmx.de>
+//////////////////////////////////////////////////////////////////////////////
+
+#include <zimg/zimg.h>
+
+#include <iostream>
+
+int main( int argc, char** argv )
+{  
+   std::cout << "[Test] #include <zimg/zimg.h>\n";
+
+   return 0;
+}

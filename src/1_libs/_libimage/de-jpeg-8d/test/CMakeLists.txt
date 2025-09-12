@@ -1,0 +1,1 @@
+add_subdirectory(test_jpeg8d)

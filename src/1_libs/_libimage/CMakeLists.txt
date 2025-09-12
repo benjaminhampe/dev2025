@@ -1,35 +1,35 @@
 add_subdirectory(de-openexr-3.3.2)
-# # Math
-# add_subdirectory(de-glm-4.20.8)
-# # Xml
-# add_subdirectory(de-tinyxml2)
-# #add_subdirectory(de-expat-3.2.2)
-# # Images
-# add_subdirectory(de-png-1.6.23)
-# add_subdirectory(de-jpeg-8d)
-# add_subdirectory(de-webp-1.1.0)
-# add_subdirectory(de-dds-image)
-# # Fonts
-# add_subdirectory(de-freetype-2.10.0)
-# add_subdirectory(de-fontawesome)
+# Math
+add_subdirectory(de-glm-4.20.8)
+# Xml
+add_subdirectory(de-tinyxml2)
+#add_subdirectory(de-expat-3.2.2)
+# Images
+add_subdirectory(de-png-1.6.23)
+add_subdirectory(de-jpeg-8d)
+add_subdirectory(de-webp-1.1.0)
+add_subdirectory(de-dds-image)
+# Fonts
+add_subdirectory(de-freetype-2.10.0)
+add_subdirectory(de-fontawesome)
 
-# ### Supported but deactivated for faster compile:
-# add_subdirectory(de-giflib-5.2.1)
-# add_subdirectory(de-tiff-4.0.4)
-# add_subdirectory(de-jpeg-9e)
-# add_subdirectory(de-stb_image)
-# add_subdirectory(de-stb_truetype)
+### Supported but deactivated for faster compile:
+add_subdirectory(de-giflib-5.2.1)
+add_subdirectory(de-tiff-4.0.4)
+add_subdirectory(de-jpeg-9e)
+add_subdirectory(de-stb_image)
+add_subdirectory(de-stb_truetype)
 
-# add_subdirectory(de-nlohmann-json-3.12.0)
-# add_subdirectory(de-nanosvg)
+add_subdirectory(de-nlohmann-json-3.12.0)
+add_subdirectory(de-nanosvg)
 
-# add_subdirectory(de-expat-3.2.2)
-# add_subdirectory(de-rapidjson)
+add_subdirectory(de-expat-3.2.2)
+add_subdirectory(de-rapidjson)
 
-### WorkInProgress:
-#add_subdirectory(de-zimg.7z)
-#add_subdirectory(de-lunasvg.7z)
-# add_subdirectory(de-zimg)
+## WorkInProgress:
+# add_subdirectory(de-zimg.7z)
+# add_subdirectory(de-lunasvg.7z)
+add_subdirectory(de-zimg)
 
 
 
