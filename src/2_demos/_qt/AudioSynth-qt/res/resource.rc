@@ -1,0 +1,112 @@
+#include <windows.h>
+#include "resource.h"
+
+aaaa ICON "synth.ico"
+
+// Application manifest.
+CREATEPROCESS_MANIFEST_RESOURCE_ID RT_MANIFEST "app.manifest"
+
+1 VERSIONINFO
+FILEVERSION     1,0,0,0
+PRODUCTVERSION  1,0,0,0
+BEGIN
+  BLOCK "StringFileInfo"
+  BEGIN
+    BLOCK "080904E4"
+    BEGIN
+      VALUE "CompanyName", "Ingenieur Buro Benjamin Hampe"
+      VALUE "FileDescription", "AudioSynth-Live64 MidiInstrument and Vst2PluginHost x64.\nUses Benni DSP chain: LP|HP|BP, Pan, TimeStretch, etc..."
+      VALUE "FileVersion", "1.1"
+      VALUE "InternalName", "AudioSynth-Live64"
+      VALUE "LegalCopyright", "Meins"
+      VALUE "OriginalFilename", "AudioSynth-qt.exe"
+      VALUE "ProductName", "AudioSynth-Live64 VST2.3 Plugin Host"
+      VALUE "ProductVersion", "23.01"
+    END
+  END
+
+  BLOCK "VarFileInfo"
+  BEGIN
+    VALUE "Translation", 0x809, 1252
+  END
+END
+
+
+IDD_ABOUTDIALOG DIALOG DISCARDABLE 0, 0, 239, 66
+STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "VLC"
+FONT 8, "MS Sans Serif"
+BEGIN
+   DEFPUSHBUTTON "&OK",IDOK,174,18,50,14
+   PUSHBUTTON "&Cancel",IDCANCEL,174,35,50,14
+   GROUPBOX "About this program...",IDC_STATIC,7,7,225,52
+   CTEXT "Win32 API example program\r\n\r\n(c) 2022 by Benjamin Hampe <benjaminhampe@gmx.de>",
+         IDC_STATIC,16,18,144,33
+END
+
+/*
+// Our main menu.
+IDR_MAINMENU MENU
+BEGIN
+  POPUP "&File"
+  BEGIN
+    MENUITEM "E&xit",                  ID_FILE_EXIT
+  END
+  POPUP "&Help"
+  BEGIN
+    MENUITEM "&About",                 ID_HELP_ABOUT
+  END
+END
+
+// Executable version information.
+VS_VERSION_INFO    VERSIONINFO
+FILEVERSION        1,0,0,0
+PRODUCTVERSION     1,0,0,0
+FILEFLAGSMASK      VS_FFI_FILEFLAGSMASK
+#ifdef _DEBUG
+  FILEFLAGS        VS_FF_DEBUG | VS_FF_PRERELEASE
+#else
+  FILEFLAGS        0
+#endif
+FILEOS             VOS_NT_WINDOWS32
+FILETYPE           VFT_APP
+FILESUBTYPE        VFT2_UNKNOWN
+BEGIN
+  BLOCK "StringFileInfo"
+  BEGIN
+    BLOCK "080904b0"
+    BEGIN
+      VALUE "CompanyName", "Transmission Zero"
+      VALUE "FileDescription", "Win32 Test application"
+      VALUE "FileVersion", "1.0.0.0"
+      VALUE "InternalName", "Win32App"
+      VALUE "LegalCopyright", "©2016 Transmission Zero"
+      VALUE "OriginalFilename", "Win32App.exe"
+      VALUE "ProductName", "Win32 Test application"
+      VALUE "ProductVersion", "1.0.0.0"
+    END
+  END
+  BLOCK "VarFileInfo"
+  BEGIN
+    VALUE "Translation", 0x809, 1200
+  END
+END
+
+// Our "about" dialog.
+IDD_ABOUTDIALOG DIALOGEX 0, 0, 147, 67
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "About"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+  ICON             IDI_APPICON,IDC_STATIC,7,7,20,20
+  LTEXT            "Win32 Test application.",IDC_STATIC,34,7,86,8
+  LTEXT            "©2016 Transmission Zero",IDC_STATIC,34,17,86,8
+  DEFPUSHBUTTON    "OK",IDOK,90,46,50,14,WS_GROUP
+END
+
+// Our accelerators.
+IDR_ACCELERATOR ACCELERATORS
+BEGIN
+  "A",             ID_HELP_ABOUT,      VIRTKEY, ALT, NOINVERT
+END
+*/

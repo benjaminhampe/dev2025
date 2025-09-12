@@ -1,0 +1,280 @@
+﻿#ifndef G_SYNTH_HPP
+#define G_SYNTH_HPP
+
+#include <QWidget>
+#include <QImage>
+#include <QTimer>
+#include <QPainter>
+#include <QPaintEvent>
+#include <QResizeEvent>
+#include <QMouseEvent>
+#include <QKeyEvent>
+#include <QDebug>
+#include <QThread>
+#include <QSlider>
+#include <QDial>
+#include <QLabel>
+
+#include <QFont5x8.hpp>
+#include <de/audio/dsp/IDspChainElement.hpp>
+
+namespace de {
+namespace audio {
+
+// A note is transfered to the instrument ( RtAudioStream )
+// The note commands several things in the instrument ( e.g. Piano/Organ instrument )
+// like VoiceId, Volume ( velocity ), midiNote ( frequency ) and later other stuff.
+// the note is sent thread safe ( there is a lock but its kept as small as possible )
+// the audio thread locks voices and notes, plays them and makes cleanUp
+// To reduce io with system ( too slow ) we use std::array not std::vector.
+//
+// This approach is kinda v3 of my tries and produces best audio so far,
+// +++ you can play the same note again and again ( PC keyboard still not an instrument )
+// Every note slot gets marked free if (t - m_timeStart > m_adsr.getDuration())
+//
+// The note is synced with the audio thread on first encounter by audio thread
+// This way we always get positive time values t>=0.0. ( prevents bad effects when t < 0 ).
+// Without this correction we would call sendNote() at t = 3.2 [s]
+// and the audio thread later plays it first on t = 3.25 [s] which would result
+// in negative time dt = -0.05 [s] and causes audible clicks at every note start.
+// e.g. starting a hullcurve at sin(-0.22) would result in heavy audible cracks and clicks.
+// =========================================================
+struct IParam
+// =========================================================
+{
+   enum eParam
+   {
+      eP_User = 0,
+      eP_AttackTime,
+      eP_DecayTime,
+      eP_SustainLevel,
+      eP_ReleaseTime,
+      eP_MidiNote,
+      eP_Frequency,
+      eP_Detune,
+   };
+   
+   void* getValue();
+
+   // =========================================================
+   struct Param
+   // =========================================================
+   {
+      uint32_t m_type;
+      uint32_t m_data;
+      Param() : m_type( eP_User ), m_data( 0 )
+      {
+      }
+   };
+
+};
+
+// =========================================================
+struct SynthCommand
+// =========================================================
+{
+   DE_CREATE_LOGGER("de.gsynth.Note")
+   int m_voiceId;    // default: -1 broadcast note to all voices.
+
+  
+   
+   bool m_needADSR;  // default: false = use internal adsr values, true = let synth override ADSR values.
+   int m_velocity;   // midi velocity in range {0,127}
+   int m_midiNote;   // midi note in range {0,127}
+   int m_detune;     // note detune in milli cents [mct] range {-1200000,+1200000} = -+ 12 semitones = -+1 oktave
+   double m_timeStart;
+   de::audio::ADSR m_adsr;
+
+   Note()
+      : m_isPlaying( true )
+      , m_wasPlaying( false ) // false triggers a sync with audio thread stream time,
+      , m_needADSR( true )
+      , m_voiceId( -1 )
+      , m_velocity( 90 )
+      , m_midiNote( 0 )
+      , m_detune( 0 )
+      , m_freq( 440.0f )
+      , m_timeStart( 0 )
+      , m_adsr()
+   {
+      if ( m_needADSR ) DE_DEBUG("Need ADSR")
+   }
+
+   Note( int voiceId, int midiNote, int detune, int velocity )
+      : m_isPlaying( true )
+      , m_wasPlaying( false ) // false triggers a sync with audio thread stream time,
+      , m_needADSR( true )
+      , m_voiceId( voiceId )
+      , m_velocity( velocity )
+      , m_midiNote( midiNote )
+      , m_detune( detune )
+      , m_freq( 0.0f )
+      , m_timeStart( 0 )
+      , m_adsr()
+
+   {
+      if ( m_needADSR ) DE_DEBUG("Need ADSR")
+   }
+
+   Note( int voiceId, int midiNote, int detune, int velocity, de::audio::ADSR const & adsr )
+      : m_isPlaying( true )
+      , m_wasPlaying( false ) // false triggers a sync with audio thread stream time,
+      , m_needADSR( false )
+      , m_voiceId( voiceId )
+      , m_velocity( velocity )
+      , m_midiNote( midiNote )
+      , m_detune( detune )
+      , m_freq( 0.0f )
+      , m_timeStart( 0 )
+      , m_adsr( adsr )
+   {}
+};
+
+// A synth is a ca. 64 voice instrument that sends notes (SynthCommands)
+// thread safe to its internal mixer. Its lock is minimal as possible
+// Lock is needed
+// ===========================================================================
+struct ISynth : public de::audio::IDspChainElement
+// ===========================================================================
+{
+   virtual ~ISynth() = default;
+   virtual void sendNote( Note note ) = 0;
+
+//   virtual de::audio::ADSR const* getADSR() const = 0;
+//   virtual de::audio::ADSR* getADSR() = 0;
+
+   //virtual void noteOn( int voiceId, int midiNote, int velocity = 90 ) = 0;
+   //virtual void noteOff( int voiceId, int midiNote ) = 0;
+};
+
+} // end namespace gsynth
+} // end namespace de
+
+
+// Placed in the DSP chain.
+// Controls volume of one incoming (stereo) audio signal only.
+// ============================================================================
+struct IVoice
+// ============================================================================
+{
+public:
+   virtual ~IVoice() = default;
+
+   de::audio::ADSR const* getADSR() const { return &m_adsr; }
+   de::audio::ADSR* getADSR() { return &m_adsr; }
+
+   uint64_t
+   readSamples(
+      double pts,
+      float* dst,
+      uint32_t dstFrames,
+      uint32_t dstChannels,
+      uint32_t dstRate ) override;
+
+signals:
+public slots:
+   void sendNote( de::gsynth::Note note ) override;
+
+private slots:
+   void on_volumeSine1( int v );
+   void on_detuneSine1( int v );
+   void on_volumeSine2( int v );
+   void on_detuneSine2( int v );
+   void on_volumeSine3( int v );
+   void on_detuneSine3( int v );
+   void on_volumeSine4( int v );
+   void on_detuneSine4( int v );
+   void on_volumeSine5( int v );
+   void on_detuneSine5( int v );
+
+   void on_volumeTriangle( int v );
+   void on_volumeRect( int v );
+   void on_volumeSaw( int v );
+   void on_detuneTriangle( int v );
+   void on_detuneRect( int v );
+   void on_detuneSaw( int v );
+
+   void on_volumeNoise( int v );
+   void on_detuneNoise( int v );
+protected:
+   //void timerEvent( QTimerEvent* event) override;
+   //void paintEvent( QPaintEvent* event ) override;
+
+private:
+   DE_CREATE_LOGGER("GSynth")
+   bool m_isPlaying;
+   int m_volume;
+   std::vector< float > m_inputBuffer;
+   std::vector< float > m_mixerBuffer;
+
+   de::audio::ADSR m_adsr;
+   de::audio::OscSine< float > m_oscSine1;
+   de::audio::OscSine< float > m_oscSine2;
+   de::audio::OscSine< float > m_oscSine3;
+   de::audio::OscSine< float > m_oscSine4;
+   de::audio::OscSine< float > m_oscSine5;
+
+   de::audio::OscTriangle< float > m_oscTriangle;
+   de::audio::OscRect< float > m_oscRect;
+   de::audio::OscSaw< float > m_oscSaw;
+   de::audio::OscNoise< float > m_oscNoise;
+   std::array< de::audio::IOSC<float>*, 9 > m_oscs;
+   //std::vector< IVoice* > m_VoiceTrashList;
+   // Each command triggers a note ( no release event needed, yet, more like single shots )
+   std::array< de::gsynth::Note, 256 > m_NoteList;
+   std::mutex m_NoteListMutex; // std::atomic< bool >
+
+public:
+   struct Item
+   {
+      QLabel* title;
+      QSlider* volumeSlider;
+      QLabel* volumeAmount;
+      QLabel* detuneTitle;
+      QLabel* detuneAmount;
+      QSlider* detuneSlider;
+      int detune = 0;
+   };
+
+private:
+   Item m_sine1;
+   Item m_sine2;
+   Item m_sine3;
+   Item m_sine4;
+   Item m_sine5;
+   Item m_tri;
+   Item m_rect;
+   Item m_saw;
+   Item m_noise;
+   std::array< Item*, 9 > m_items;
+
+
+//   QLabel* m_sineVolumeAmount;
+//   QLabel* m_triVolumeAmount;
+//   QLabel* m_rectVolumeAmount;
+//   QLabel* m_sawVolumeAmount;
+
+//   QSlider* m_sineVolumeSlider;
+//   QSlider* m_triVolumeSlider;
+//   QSlider* m_rectVolumeSlider;
+//   QSlider* m_sawVolumeSlider;
+
+//   QSlider* m_sineDetuneSlider;
+//   QSlider* m_triDetuneSlider;
+//   QSlider* m_rectDetuneSlider;
+//   QSlider* m_sawDetuneSlider;
+
+//   QLabel* m_sineDetuneAmount;
+//   QLabel* m_triDetuneAmount;
+//   QLabel* m_rectDetuneAmount;
+//   QLabel* m_sawDetuneAmount;
+//   GADSR* m_voiceADSR;
+//   GLFO* m_voiceLFO;
+//   GDelay* m_voiceDelay;
+//   GOszilloskop* m_voiceOszilloskop;
+//   GVolume* m_voiceVolume;
+//   GLevelMeter* m_voiceLevelMeter;
+
+};
+
+#endif // G_OSZILLOSKOP_H

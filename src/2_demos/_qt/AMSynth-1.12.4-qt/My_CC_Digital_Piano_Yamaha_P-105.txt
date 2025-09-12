@@ -1,0 +1,135 @@
+Buttons:
+
+deltaTime(0.03), byteCount(3) 0xB0 0x00 0x00
+deltaTime(0), byteCount(3) 0xB0 0x20 0x70
+deltaTime(0.01), byteCount(2) 0xC0 0x00
+deltaTime(0), byteCount(3) 0xB0 0x5B 0x05
+deltaTime(0), byteCount(3) 0xB0 0x07 0x7D
+deltaTime(0.161), byteCount(1) 0xFE
+deltaTime(0.2), byteCount(1) 0xFE
+deltaTime(0.199), byteCount(1) 0xFE
+deltaTime(0.2), byteCount(1) 0xFE
+deltaTime(0.01), byteCount(3) 0xB0 0x00 0x00
+deltaTime(0), byteCount(3) 0xB0 0x20 0x7A
+deltaTime(0), byteCount(2) 0xC0 0x05
+deltaTime(0), byteCount(3) 0xB0 0x5B 0x09
+deltaTime(0), byteCount(3) 0xB0 0x5D 0x14
+deltaTime(0), byteCount(3) 0xB0 0x07 0x71
+deltaTime(0.19), byteCount(1) 0xFE
+deltaTime(0.2), byteCount(1) 0xFE
+deltaTime(0.201), byteCount(1) 0xFE
+deltaTime(0.03), byteCount(3) 0xB0 0x00 0x00
+deltaTime(0), byteCount(3) 0xB0 0x20 0x7A
+deltaTime(0), byteCount(2) 0xC0 0x04
+deltaTime(0), byteCount(3) 0xB0 0x5D 0x19
+deltaTime(0), byteCount(3) 0xB0 0x07 0x78
+deltaTime(0.169), byteCount(1) 0xFE
+deltaTime(0.2), byteCount(1) 0xFE
+deltaTime(0.2), byteCount(1) 0xFE
+deltaTime(0.126), byteCount(3) 0xB0 0x00 0x00
+deltaTime(0), byteCount(3) 0xB0 0x20 0x7A
+deltaTime(0), byteCount(2) 0xC0 0x10
+deltaTime(0), byteCount(3) 0xB0 0x5B 0x0B
+deltaTime(0), byteCount(3) 0xB0 0x5D 0x7F
+deltaTime(0.004), byteCount(3) 0xB0 0x07 0x59
+deltaTime(0.07), byteCount(1) 0xFE
+deltaTime(0.2), byteCount(1) 0xFE
+deltaTime(0.2), byteCount(1) 0xFE
+deltaTime(0.04), byteCount(3) 0xB0 0x00 0x00
+deltaTime(0), byteCount(3) 0xB0 0x20 0x7A
+deltaTime(0), byteCount(2) 0xC0 0x12
+deltaTime(0), byteCount(3) 0xB0 0x07 0x4A
+deltaTime(0.16), byteCount(1) 0xFE
+deltaTime(0.2), byteCount(1) 0xFE
+deltaTime(0.15), byteCount(3) 0xB0 0x00 0x00
+deltaTime(0), byteCount(3) 0xB0 0x20 0x7A
+deltaTime(0), byteCount(2) 0xC0 0x30
+deltaTime(0.01), byteCount(3) 0xB0 0x5B 0x24
+deltaTime(0), byteCount(3) 0xB0 0x5D 0x00
+deltaTime(0), byteCount(3) 0xB0 0x07 0x74
+deltaTime(0.04), byteCount(1) 0xFE
+deltaTime(0.201), byteCount(1) 0xFE
+deltaTime(0.199), byteCount(1) 0xFE
+deltaTime(0.141), byteCount(3) 0xB0 0x00 0x00
+deltaTime(0), byteCount(3) 0xB0 0x20 0x7A
+deltaTime(0), byteCount(2) 0xC0 0x20
+deltaTime(0), byteCount(3) 0xB0 0x5B 0x09
+deltaTime(0), byteCount(3) 0xB0 0x07 0x72
+
+
+Last Button: ( i dont see meaning )
+
+deltaTime(0.14), byteCount(3) 0xB0 0x00 0x00
+deltaTime(0), byteCount(3) 0xB0 0x20 0x7A
+deltaTime(0), byteCount(2) 0xC0 0x21
+deltaTime(0), byteCount(3) 0xB0 0x5B 0x07
+deltaTime(0), byteCount(3) 0xB0 0x07 0x6B
+deltaTime(0.06), byteCount(1) 0xFE
+deltaTime(0.201), byteCount(1) 0xFE
+deltaTime(0.2), byteCount(1) 0xFE
+deltaTime(0.199), byteCount(1) 0xFE
+deltaTime(0.2), byteCount(1) 0xFE
+deltaTime(0.205), byteCount(1) 0xFE
+deltaTime(0.196), byteCount(1) 0xFE
+deltaTime(0.2), byteCount(1) 0xFE
+deltaTime(0.2), byteCount(1) 0xFE
+deltaTime(0.2), byteCount(1) 0xFE
+deltaTime(0.2), byteCount(1) 0xFE
+deltaTime(0.119), byteCount(3) 0xB0 0x00 0x00
+deltaTime(0), byteCount(3) 0xB0 0x20 0x7A
+deltaTime(0), byteCount(2) 0xC0 0x20
+deltaTime(0), byteCount(3) 0xB0 0x5B 0x09
+deltaTime(0), byteCount(3) 0xB0 0x07 0x72
+deltaTime(0.075), byteCount(1) 0xFE
+deltaTime(0.2), byteCount(1) 0xFE
+deltaTime(0.196), byteCount(1) 0xFE
+deltaTime(0.2), byteCount(1) 0xFE
+deltaTime(0.2), byteCount(1) 0xFE
+deltaTime(0.189), byteCount(3) 0xB0 0x00 0x00
+deltaTime(0), byteCount(3) 0xB0 0x20 0x7A
+deltaTime(0), byteCount(2) 0xC0 0x21
+deltaTime(0), byteCount(3) 0xB0 0x5B 0x07
+deltaTime(0), byteCount(3) 0xB0 0x07 0x6B
+deltaTime(0.011), byteCount(1) 0xFE
+deltaTime(0.2), byteCount(1) 0xFE
+deltaTime(0.2), byteCount(1) 0xFE
+deltaTime(0.139), byteCount(3) 0xB0 0x00 0x00
+deltaTime(0), byteCount(3) 0xB0 0x20 0x7A
+deltaTime(0), byteCount(2) 0xC0 0x20
+deltaTime(0), byteCount(3) 0xB0 0x5B 0x09
+deltaTime(0), byteCount(3) 0xB0 0x07 0x72
+deltaTime(0.061), byteCount(1) 0xFE
+deltaTime(0.2), byteCount(1) 0xFE
+deltaTime(0.2), byteCount(1) 0xFE
+deltaTime(0.2), byteCount(1) 0xFE
+deltaTime(0.2), byteCount(1) 0xFE
+deltaTime(0.201), byteCount(1) 0xFE
+deltaTime(0.2), byteCount(1) 0xFE
+deltaTime(0.2), byteCount(1) 0xFE
+deltaTime(0.108), byteCount(3) 0xB0 0x00 0x00
+deltaTime(0), byteCount(3) 0xB0 0x20 0x7A
+deltaTime(0), byteCount(2) 0xC0 0x21
+deltaTime(0.01), byteCount(3) 0xB0 0x5B 0x07
+deltaTime(0), byteCount(3) 0xB0 0x07 0x6B
+
+Sustain Pedal: (Precious message that needs to be implemented, iguess into ADSR release )
+
+deltaTime(0.06), byteCount(3) 0xB0 0x40 0x7F
+deltaTime(0.14), byteCount(1) 0xFE
+deltaTime(0.2), byteCount(1) 0xFE
+deltaTime(0.2), byteCount(1) 0xFE
+deltaTime(0.15), byteCount(3) 0xB0 0x40 0x00
+deltaTime(0.05), byteCount(1) 0xFE
+deltaTime(0.2), byteCount(1) 0xFE
+deltaTime(0.205), byteCount(1) 0xFE
+deltaTime(0.195), byteCount(1) 0xFE
+deltaTime(0.2), byteCount(1) 0xFE
+deltaTime(0.07), byteCount(3) 0xB0 0x40 0x7F
+deltaTime(0.13), byteCount(1) 0xFE
+deltaTime(0.2), byteCount(1) 0xFE
+deltaTime(0.205), byteCount(1) 0xFE
+deltaTime(0.144), byteCount(3) 0xB0 0x40 0x00
+deltaTime(0.05), byteCount(1) 0xFE
+deltaTime(0.201), byteCount(1) 0xFE
+
+Microbrute does not send midi messages for knobs???? WTF??!?!?!?

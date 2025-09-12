@@ -1,0 +1,2 @@
+aaaa ICON "wxHexEditor.ico"
+#include <wx/msw/wx.rc>

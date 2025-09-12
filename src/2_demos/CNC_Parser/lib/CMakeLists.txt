@@ -1,0 +1,2 @@
+add_subdirectory(de_CNC_win32api)
+add_subdirectory(de_CNC_DarkImage)

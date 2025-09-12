@@ -1,0 +1,34 @@
+#ifndef DARKIMAGE_IMAGELOADER_FREEIMAGE_HPP
+#define DARKIMAGE_IMAGELOADER_FREEIMAGE_HPP
+
+#include <de/IImageReader.hpp>
+
+#ifdef DE_IMAGE_CODEC_FREEIMAGE_ENABLED
+
+namespace de {
+namespace image {
+
+class ImageReaderFI : public IImageReader
+{
+public:
+   ImageReaderFI();
+   ~ImageReaderFI();
+
+   bool
+   isSupportedReadExtension( std::string const & ext ) const override
+   {
+      if ( ext == "png" ) return true;
+      return false;
+   }
+
+   Image*
+   load( std::string const & fileName ) override;
+};
+
+} // end namespace image.
+} // end namespace de.
+
+#endif // DE_IMAGE_CODEC_FREEIMAGE_ENABLED
+
+#endif // DARKIMAGE_IMAGELOADER_FREEIMAGE_HPP
+
