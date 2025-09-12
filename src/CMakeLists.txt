@@ -1,6 +1,6 @@
 add_subdirectory(0_tools)
 # add_subdirectory(ActiveWallpaper)
-# add_subdirectory(1_libs)
+add_subdirectory(1_libs)
 # # add_subdirectory(2_demos)
 # # add_subdirectory(BespokeSynth)
 # add_subdirectory(H3_Siedler)
