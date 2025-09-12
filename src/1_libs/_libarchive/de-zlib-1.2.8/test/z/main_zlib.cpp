@@ -1,0 +1,15 @@
+//////////////////////////////////////////////////////////////////////////////
+/// @file main_test.cpp
+/// @author Benjamin Hampe <benjamin.hampe@gmx.de>
+//////////////////////////////////////////////////////////////////////////////
+
+#include <iostream>
+
+#include <zlib/zlib.h>
+
+int main( int argc, char** argv )
+{
+   std::cout << "[Test] #include <zlib/zlib.h>" << std::endl;
+
+   return 0;
+}
