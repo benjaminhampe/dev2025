@@ -1,0 +1,11 @@
+set(APP_NAME test_concaveman)
+project(${APP_NAME}-dev)
+
+if (TARGET ${APP_NAME})
+    message("${BoldRed}[benni] HEADER_GUARD: ${APP_NAME}${ColourReset}")
+else()
+    message("${BoldGreen}[benni] APP: ${APP_NAME}${ColourReset}")
+    add_executable(${APP_NAME} ${CMAKE_CURRENT_LIST_DIR}/test_concaveman.cpp)
+    target_include_directories(${APP_NAME} PRIVATE ${CMAKE_CURRENT_LIST_DIR})
+    target_link_libraries(${APP_NAME} PRIVATE de_concaveman)
+endif()
