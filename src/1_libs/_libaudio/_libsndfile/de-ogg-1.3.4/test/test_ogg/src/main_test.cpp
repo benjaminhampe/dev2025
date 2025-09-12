@@ -1,0 +1,15 @@
+//////////////////////////////////////////////////////////////////////////////
+/// @file main_test.cpp
+/// @author Benjamin Hampe <benjamin.hampe@gmx.de>
+//////////////////////////////////////////////////////////////////////////////
+
+#include <iostream>
+
+#include <ogg/ogg.h>
+
+int main( int argc, char** argv )
+{  
+   std::cout << "[Test] #include <ogg/ogg.h>" << std::endl;
+
+   return 0;
+}

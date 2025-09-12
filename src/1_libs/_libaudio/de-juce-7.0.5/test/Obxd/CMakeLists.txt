@@ -1,0 +1,4 @@
+add_subdirectory(de_Obxd_app)
+add_subdirectory(de_Obxd_vst2)
+add_subdirectory(build_app)
+add_subdirectory(build_vst2)

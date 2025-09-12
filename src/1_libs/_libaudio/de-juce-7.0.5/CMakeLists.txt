@@ -1,0 +1,23 @@
+add_subdirectory(de_juce_core)
+add_subdirectory(de_juce_cryptography)
+add_subdirectory(de_juce_events)
+add_subdirectory(de_juce_graphics)
+add_subdirectory(de_juce_data_structures)
+add_subdirectory(de_juce_audio_basics)
+add_subdirectory(de_juce_audio_formats)
+add_subdirectory(de_juce_gui_basics)
+add_subdirectory(de_juce_gui_extra)
+add_subdirectory(de_juce_audio_devices)
+add_subdirectory(de_juce_dsp)
+add_subdirectory(de_juce_audio_processors)
+add_subdirectory(de_juce_audio_utils)
+add_subdirectory(de_juce_opengl)
+add_subdirectory(de_juce_video)
+add_subdirectory(de_juce_osc)
+add_subdirectory(test)
+
+# add_subdirectory(de_juce_audio_plugin_client)
+# add_subdirectory(de_juce_audio_plugin_client_vst2)
+
+# add_subdirectory(test_Includes)
+

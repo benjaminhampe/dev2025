@@ -1,0 +1,3 @@
+C:\sdk\cmake-3.29.0\bin\cmake.exe -E rm -f CMakeFiles\varispeed-play.dir/objects.a
+C:\sdk\mingw64_1310\bin\ar.exe qc CMakeFiles\varispeed-play.dir/objects.a @CMakeFiles\varispeed-play.dir\objects1.rsp
+C:\sdk\mingw64_1310\bin\gcc.exe -O3 -DNDEBUG -Wl,--whole-archive CMakeFiles\varispeed-play.dir/objects.a -Wl,--no-whole-archive -o varispeed-play.exe -Wl,--out-implib,libvarispeed-play.dll.a -Wl,--major-image-version,0,--minor-image-version,0 @CMakeFiles\varispeed-play.dir\linkLibs.rsp

@@ -1,0 +1,14 @@
+//////////////////////////////////////////////////////////////////////////////
+/// @file main_test_delib.cpp
+/// @author Benjamin Hampe <benjamin.hampe@gmx.de>
+//////////////////////////////////////////////////////////////////////////////
+
+#include <lame/lame.h>
+#include <iostream>
+
+int main( int argc, char** argv )
+{  
+   std::cout << "[Test] #include <lame/lame.h>\n";
+
+   return 0;
+}

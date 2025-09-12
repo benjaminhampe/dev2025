@@ -1,0 +1,4 @@
+add_subdirectory(de_TapSynth_app)
+add_subdirectory(de_TapSynth_vst2)
+add_subdirectory(build_app)
+add_subdirectory(build_vst2)

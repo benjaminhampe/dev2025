@@ -1,0 +1,5 @@
+add_subdirectory(smtg_base)
+add_subdirectory(smtg_sdk_common)
+add_subdirectory(vst3sdk)
+add_subdirectory(vst3sdk_hosting)
+add_subdirectory(vstgui4)

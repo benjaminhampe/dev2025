@@ -1,0 +1,3 @@
+C:\sdk\cmake-3.29.0\bin\cmake.exe -E rm -f CMakeFiles\callback_hang_test.dir/objects.a
+C:\sdk\mingw64_1310\bin\ar.exe qc CMakeFiles\callback_hang_test.dir/objects.a @CMakeFiles\callback_hang_test.dir\objects1.rsp
+C:\sdk\mingw64_1310\bin\gcc.exe -O3 -DNDEBUG -Wl,--whole-archive CMakeFiles\callback_hang_test.dir/objects.a -Wl,--no-whole-archive -o callback_hang_test.exe -Wl,--out-implib,libcallback_hang_test.dll.a -Wl,--major-image-version,0,--minor-image-version,0 @CMakeFiles\callback_hang_test.dir\linkLibs.rsp

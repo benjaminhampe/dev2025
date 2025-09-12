@@ -1,0 +1,6 @@
+add_subdirectory(lib_BasicOSC_app)
+add_subdirectory(lib_BasicOSC_vst2)
+
+
+add_subdirectory(build_app)
+add_subdirectory(build_vst2)

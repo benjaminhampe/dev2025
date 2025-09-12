@@ -1,0 +1,15 @@
+//////////////////////////////////////////////////////////////////////////////
+/// @file main_test.cpp
+/// @author Benjamin Hampe <benjamin.hampe@gmx.de>
+//////////////////////////////////////////////////////////////////////////////
+
+#include <iostream>
+
+#include <opus/opus.h>
+
+int main( int argc, char** argv )
+{  
+   std::cout << "[Test] #include <opus/opus.h>" << std::endl;
+
+   return 0;
+}

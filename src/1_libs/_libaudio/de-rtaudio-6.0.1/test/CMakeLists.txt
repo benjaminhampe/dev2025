@@ -1,0 +1,8 @@
+add_subdirectory(test_rtaudio_record)
+add_subdirectory(test_rtaudio_record2)
+add_subdirectory(test_rtaudio_record3)
+# add_subdirectory(test_rtaudio2)
+# add_subdirectory(test_rtaudio3)
+# add_subdirectory(RtAudioConfigDialog)
+# add_subdirectory(RtAudioConfigDialog-wx)
+# add_subdirectory(RtAudioConfigDialog-qt)

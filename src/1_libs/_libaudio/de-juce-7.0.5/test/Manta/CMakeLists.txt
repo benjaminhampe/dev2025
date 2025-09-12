@@ -1,0 +1,4 @@
+add_subdirectory(lib_Manta_app)
+add_subdirectory(lib_Manta_vst2)
+add_subdirectory(build_app)
+add_subdirectory(build_vst2)

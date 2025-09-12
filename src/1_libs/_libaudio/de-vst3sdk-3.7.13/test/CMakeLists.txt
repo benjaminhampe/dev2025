@@ -1,0 +1,2 @@
+# add_subdirectory(vst3_audiohost)
+add_subdirectory(vst3_plugin_syncdelay)
