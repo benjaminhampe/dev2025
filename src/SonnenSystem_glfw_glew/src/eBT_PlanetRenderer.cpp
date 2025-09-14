@@ -1,7 +1,14 @@
 #include "eBT_PlanetRenderer.h"
 
+eBT_PlanetRenderer::eBT_PlanetRenderer()
+    : m_driver( nullptr )
+{
+
+}
+
 void eBT_PlanetRenderer::init( de::gl::Bridge* driver )
 {
+    m_driver = driver;
     m_meshSphere128x64.create(128,64);
     m_meshSphere128x64.upload();
 
@@ -54,7 +61,7 @@ void eBT_PlanetRenderer::draw( const Body& body )
 
     if (!body.bumpMap.textureId)
     {
-        DE_ERROR("No bumpMap for body ", body.name)
+        //DE_ERROR("No bumpMap for body ", body.name)
         return;
     }
 
@@ -94,7 +101,7 @@ void eBT_PlanetRenderer::draw( const Body& body )
     glUniform1f(u_bumpScale, body.bumpScale);
 
 
-    // glPolygonMode(GL_FRONT_AND_BACK, GL_LINE); // Wireframe mode
+    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE); // Wireframe mode
     // glPolygonMode(GL_FRONT_AND_BACK, GL_FILL); // Wireframe mode
     // glEnable(GL_CULL_FACE);
     // glCullFace(GL_BACK);
@@ -176,10 +183,20 @@ eBT_PlanetRenderer::getTesselationControlShaderText()
             float t = clamp(cameraDist / u_maxDist, 0.0, 1.0);
             float tessLevel = mix(u_maxTess, 1.0, t );
 
-            gl_TessLevelOuter[0] = tessLevel;
-            gl_TessLevelOuter[1] = tessLevel;
-            gl_TessLevelOuter[2] = tessLevel;
-            gl_TessLevelInner[0] = tessLevel;
+            // Example: synchronize outer tessellation levels
+            // gl_TessLevelOuter[0] = tessLevel;
+            // gl_TessLevelOuter[1] = tessLevel;
+            // gl_TessLevelOuter[2] = tessLevel;
+            // gl_TessLevelOuter[3] = tessLevel;
+
+            if (gl_InvocationID == 0)
+            {
+                gl_TessLevelOuter[0] = tessLevel;
+                gl_TessLevelOuter[1] = tessLevel;
+                gl_TessLevelOuter[2] = tessLevel;
+                gl_TessLevelInner[0] = tessLevel; // controls horizontal subdivision
+                //gl_TessLevelInner[1] = tessLevel; // controls vertical subdivision
+            }
         }
     )";
     
@@ -192,6 +209,7 @@ eBT_PlanetRenderer::getTesselationEvaluationShaderText()
     const char* tesSrc = R"(
         #version 450 core
 
+        // layout(quads, equal_spacing, ccw) in;
         layout(triangles, equal_spacing, cw) in;
 
         in vec3 tcPosition[];
@@ -271,7 +289,7 @@ eBT_PlanetRenderer::getFragmentShaderText()
         in vec2 teTexCoord;
 
         uniform sampler2D u_diffuseMap;
-        uniform vec2 u_diffuseMapSize; // z. B. vec2(512.0, 512.0)
+        // uniform vec2 u_diffuseMapSize; // z. B. vec2(512.0, 512.0)
 
         // Bicubic Gewichtung
         vec4 cubic(float v)
@@ -309,7 +327,7 @@ eBT_PlanetRenderer::getFragmentShaderText()
         void main()
         {
             // Get texture size
-            vec2 u_diffuseMapSize = textureSize(u_diffuseMap);
+            vec2 u_diffuseMapSize = vec2(textureSize(u_diffuseMap, 0)); // 0 = base LOD
 
             // Zoom-Level bestimmen
             float ddx = dFdx(teTexCoord).x;

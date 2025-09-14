@@ -1,6 +1,6 @@
 add_subdirectory(de-clipper-6.4.2)
 add_subdirectory(de-concaveman)
-add_subdirectory(de-earcut)
+# add_subdirectory(de-earcut)
 
 add_subdirectory(de-gmp-6.1.2-static)
 add_subdirectory(de-cork)

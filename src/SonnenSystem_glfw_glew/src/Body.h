@@ -98,7 +98,7 @@ struct BodyDatabase
     }
 
     void add(std::string parent, std::string name, float size, float dist,
-             std::string diffuseUri, std::string bumpUri, float bumpScale)
+             std::string diffuseUri, std::string bumpUri)
     {
         de::StringUtil::lowerCase(parent);
         std::string key = name;
@@ -120,26 +120,26 @@ struct BodyDatabase
         body.pos = glm::vec3(dist,0,0);
         body.diffuseUri = diffuseUri;
         body.bumpUri = bumpUri;
-        body.bumpScale = bumpScale;
+        body.bumpScale = 3.5f;
     }
 
     void init(de::gl::Bridge* driver)
     {
-        add("",    "Sun", 700, 0, "0_sun_2k.jpg", "", 1.0f );
-        add("Sun", "Mercury", 100, 500, "1_mercury_8k.webp", "1_mercury_8k_bump.webp", 1.0f );
-        add("Sun", "Venus", 100, 800, "2_venus_8k.webp", "2_venus_8k_bump.webp", 1.0f );
-        add("Sun", "Earth", 100, 1200, "3_0_earth_8k.webp", "3_0_earth_8k_bump.webp", 1.0f );
-        add("Earth", "Moon", 80, 100, "3_1_moon_8k.webp", "3_1_moon_8k_bump.webp", 1.0f );
-      //add("Earth", "Eris", 80, 100, "3_1_moon_8k.webp", "3_1_moon_8k_bump.webp", 1.0f );
-        add("Sun", "Mars", 100, 1500, "4_0_mars_8k.webp", "4_0_mars_8k_bump.webp", 1.0f );
-        add("Mars", "Deimos", 50, 100, "4_1_deimos_8k.png", "4_1_deimos_8k.webp", 1.0f );
-        add("Mars", "Phobos", 50, 100, "4_2_phobos_8k.webp", "", 1.0f );
-        add("Sun", "Jupiter", 200, 1700, "5_0_jupiter_4k.jpg", "5_0_jupiter_4k_bump.jpg", 1.0f );
-        add("Jupiter", "Io", 50, 150, "5_5_io_8k.webp", "5_5_io_8k_bump.webp", 1.0f );
-        add("Jupiter", "Europe", 50, 200, "5_6_europa_8k.webp", "5_6_europa_2k_bump.png", 1.0f );
-        add("Jupiter", "Ganymede", 50, 250, "5_7_ganymede_8k.webp", "", 1.0f );
-        add("Jupiter", "Callisto", 50, 300, "5_8_callisto_8k.webp", "5_8_calisto_4k_bump.png", 1.0f );
-        add("Sun", "Saturn", 100, 2000, "6_0_saturn_4k.png", "6_0_saturn_4k_bump.png", 1.0f );
+        add("",    "Sun", 700, 0, "0_sun_2k.jpg", "" );
+        add("Sun", "Mercury", 100, 500, "1_mercury_8k.webp", "1_mercury_8k_bump.webp" );
+        add("Sun", "Venus", 100, 800, "2_venus_8k.webp", "2_venus_8k_bump.webp" );
+        add("Sun", "Earth", 100, 1200, "3_0_earth_8k.webp", "3_0_earth_8k_bump.webp" );
+        add("Earth", "Moon", 80, 100, "3_1_moon_8k.webp", "3_1_moon_8k_bump.webp" );
+      //add("Earth", "Eris", 80, 100, "3_1_moon_8k.webp", "3_1_moon_8k_bump.webp" );
+        add("Sun", "Mars", 100, 1500, "4_0_mars_8k.webp", "4_0_mars_8k_bump.webp" );
+        add("Mars", "Deimos", 50, 100, "4_1_deimos_8k.png", "4_1_deimos_8k.webp" );
+        add("Mars", "Phobos", 50, 100, "4_2_phobos_8k.webp", "" );
+        add("Sun", "Jupiter", 200, 1700, "5_0_jupiter_4k.jpg", "5_0_jupiter_4k_bump.jpg" );
+        add("Jupiter", "Io", 50, 150, "5_5_io_8k.webp", "5_5_io_8k_bump.webp" );
+        add("Jupiter", "Europe", 50, 200, "5_6_europa_8k.webp", "5_6_europa_2k_bump.png" );
+        add("Jupiter", "Ganymede", 50, 250, "5_7_ganymede_8k.webp", "" );
+        add("Jupiter", "Callisto", 50, 300, "5_8_callisto_8k.webp", "5_8_calisto_4k_bump.png" );
+        add("Sun", "Saturn", 100, 2000, "6_0_saturn_4k.png", "6_0_saturn_4k_bump.png" );
 
         initTextures( driver );
     }
@@ -148,7 +148,7 @@ struct BodyDatabase
     {
         de::gpu::SO so(
             4.0f,
-            de::gpu::SO::Minify::LinearMipmapLinear,
+            de::gpu::SO::Minify::Linear,
             de::gpu::SO::Magnify::Linear,
             de::gpu::SO::Wrap::Repeat,
             de::gpu::SO::Wrap::Repeat,

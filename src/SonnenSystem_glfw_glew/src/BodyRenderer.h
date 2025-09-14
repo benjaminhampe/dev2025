@@ -7,6 +7,8 @@
 // Normals only tesselated and lighted planet/moon renderer, mesh must be a sphere.
 struct BodyRenderer
 {
+    BodyRenderer();
+
     void init( de::gl::Bridge* driver );
 
     void draw( const Body& body );
