@@ -33,7 +33,7 @@ else()
         target_compile_options(${LIB_NAME} PUBLIC -Wno-deprecated-declarations)
     endif()
 
-    target_link_libraries(${LIB_NAME} PUBLIC de_2501)    
+    target_link_libraries(${LIB_NAME} PUBLIC DarkImage_2504)    
     target_link_libraries(${LIB_NAME} PRIVATE de_taglib)
     
 endif()

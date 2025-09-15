@@ -1,3 +1,4 @@
+#include <DarkImage.h>
 #include <windows.h>
 #include <shellapi.h>
 #include <tlhelp32.h>
@@ -9,15 +10,17 @@
 #include <algorithm>
 
 // Path to your local HTML file
-std::wstring htmlPath = L"file:///C:/Users/Benjamin/Desktop/webgl-background.html";
+std::wstring htmlPath = L"file:///";
 std::wstring edgeArgs = L"--app=\"" + htmlPath + L"\"";
 
 // Get a list of all msedge.exe process IDs
-std::vector<DWORD> GetEdgePIDs() {
+std::vector<DWORD> GetEdgePIDs()
+{
     std::vector<DWORD> pids;
     HANDLE snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
     PROCESSENTRY32 pe = { sizeof(pe) };
-    while (Process32Next(snapshot, &pe)) {
+    while (Process32Next(snapshot, &pe))
+    {
         if (_wcsicmp(pe.szExeFile, L"msedge.exe") == 0)
             pids.push_back(pe.th32ProcessID);
     }
@@ -26,8 +29,10 @@ std::vector<DWORD> GetEdgePIDs() {
 }
 
 // Find the new PID by comparing before/after lists
-DWORD FindNewPID(const std::vector<DWORD>& before, const std::vector<DWORD>& after) {
-    for (DWORD pid : after) {
+DWORD FindNewPID(const std::vector<DWORD>& before, const std::vector<DWORD>& after)
+{
+    for (DWORD pid : after)
+    {
         if (std::find(before.begin(), before.end(), pid) == before.end())
             return pid;
     }
@@ -73,7 +78,27 @@ HWND FindWindowByPID(DWORD pid)
 }
 
 
-int main() {
+int main(int argc, char** argv)
+{
+    de::OpenFileParamsW params;
+    params.filter = L"All Files (*.*)\0*.*\0\0\0";
+    std::wstring htmlUri = dbOpenFileDlg( params );
+
+    if (htmlUri.empty())
+    {
+        DE_ERROR("Empty uri")
+        return 0;
+    }
+
+    if (dbExistFile(htmlUri))
+    {
+        DE_ERROR("htmlUri = ",de::StringUtil::to_str(htmlUri))
+        return 0;
+    }
+
+    std::wstring htmlDns = L"file:///";
+    std::wstring htmlPath = htmlDns + de::FileSystem::makeWinPath(htmlUri);
+
     std::vector<DWORD> before = GetEdgePIDs();
 
     // Launch Edge in app mode
@@ -84,13 +109,15 @@ int main() {
 
     std::vector<DWORD> after = GetEdgePIDs();
     DWORD newPID = FindNewPID(before, after);
-    if (!newPID) {
+    if (!newPID)
+    {
         std::cerr << "Failed to detect new Edge process.\n";
         return 1;
     }
 
     HWND hwnd = FindWindowByPID(newPID);
-    if (!hwnd) {
+    if (!hwnd)
+    {
         std::cerr << "Failed to find Edge window.\n";
         return 1;
     }

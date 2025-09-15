@@ -13,7 +13,7 @@ void GCodeParserApp_onWMCreate( HWND hwnd )
    }
    else
    {
-      dbMessageW(L"Error, failed to load icon", L"aaaa");
+        dbMessageBox(L"Error, failed to load icon", L"aaaa");
    }
 
    HMENU hMenu = CreateMenu();
@@ -101,19 +101,7 @@ bool GCodeParserApp_createApp()
    int h = 768; //dbDesktopHeight();
 
    // Make DPI aware window because of stupid effects
-   InitCommonControls();
-
-   INITCOMMONCONTROLSEX icex;
-   icex.dwSize = sizeof(INITCOMMONCONTROLSEX);
-   icex.dwICC = ICC_LISTVIEW_CLASSES
-               | ICC_TREEVIEW_CLASSES
-               | ICC_BAR_CLASSES
-               | ICC_TAB_CLASSES | ICC_UPDOWN_CLASS| ICC_PROGRESS_CLASS
-               | ICC_HOTKEY_CLASS | ICC_ANIMATE_CLASS| ICC_WIN95_CLASSES
-               | ICC_DATE_CLASSES | ICC_USEREX_CLASSES | ICC_COOL_CLASSES
-               | ICC_INTERNET_CLASSES | ICC_PAGESCROLLER_CLASS
-               | ICC_NATIVEFNTCTL_CLASS | ICC_STANDARD_CLASSES| ICC_LINK_CLASS;
-   InitCommonControlsEx(&icex);
+   volatile CommCtlInit commctl;
 
    HBRUSH MyBrush = CreateSolidBrush( RGB( 0, 150, 255 ) );
 

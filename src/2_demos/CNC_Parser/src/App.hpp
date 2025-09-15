@@ -1,6 +1,5 @@
 #pragma once
-#include <de_win32api.hpp>
-#include <de_win32api_CommonDialogs.hpp>
+#include <DarkImage.h>
 #include <CNC_ParserTest.hpp>
 //#include <strsafe.h>
 
@@ -16,6 +15,12 @@
 
 #include <AboutDialog.hpp>
 
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#include <windows.h>
+#include <commdlg.h>
+#include <commctrl.h>
 
 struct GCodeParserApp
 {

@@ -25,11 +25,13 @@
 #include "GSliderV.hpp"
 #include "GGroupV.hpp"
 
+/*
 struct ComInit
 {
    ComInit();
    ~ComInit();
 };
+*/
 
 // ============================================================================
 class GVstEditorWindow : public QWidget

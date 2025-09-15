@@ -107,7 +107,7 @@ else()
    target_link_libraries(${APP_NAME} PUBLIC de_vst2sdk)    # Audio Steinberg VST SDK
    target_link_libraries(${APP_NAME} PUBLIC de_ffmpeg)     # Audio + Video
    
-   target_link_libraries(${APP_NAME} PUBLIC de_2501)
+   target_link_libraries(${APP_NAME} PUBLIC DarkImage_2504)
    
    # target_link_libraries(${APP_NAME} PUBLIC AS_DarkImage)         # 2D
    # target_link_libraries(${APP_NAME} PUBLIC AS_DarkGPU)           # 3D

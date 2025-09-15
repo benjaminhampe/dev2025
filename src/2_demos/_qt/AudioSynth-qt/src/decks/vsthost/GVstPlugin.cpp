@@ -32,8 +32,8 @@ using namespace de::audio;
 //#define CLOSE_HANDLE(x)   if((x)) { CloseHandle(x); x = nullptr; }
 //#define RELEASE(x)        if((x)) { (x)->Release(); x = nullptr; }
 
-ComInit::ComInit()  { CoInitializeEx(nullptr, COINIT_MULTITHREADED); }
-ComInit::~ComInit() { CoUninitialize(); }
+//ComInit::ComInit()  { CoInitializeEx(nullptr, COINIT_MULTITHREADED); }
+//ComInit::~ComInit() { CoUninitialize(); }
 
 GVstPlugin::GVstPlugin( QWidget* parent )
    : QWidget( parent )

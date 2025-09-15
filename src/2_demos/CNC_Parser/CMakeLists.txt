@@ -8,7 +8,7 @@ project(${APP_NAME}-dev)
 if (TARGET ${APP_NAME})
     message("${BoldRed}[benni] HEADER_GUARD: ${APP_NAME}${ColourReset}")
 else()
-    add_subdirectory(lib)
+    # add_subdirectory(lib)
 
     set(APP_SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/src)
     file(GLOB_RECURSE APP_SOURCES "${APP_SOURCE_DIR}/*.[h,c]pp")
@@ -20,8 +20,7 @@ else()
     endif()
     
     message("${BoldGreen}[benni] APP: ${APP_NAME}${ColourReset}")
-    add_executable(${APP_NAME} "")
-    target_sources(${APP_NAME} PRIVATE ${APP_SOURCES})
+    add_executable(${APP_NAME} ${APP_SOURCES})
     
     target_include_directories(${APP_NAME} PRIVATE ${APP_SOURCE_DIR})
 
@@ -30,8 +29,7 @@ else()
         target_compile_options(${APP_NAME} PRIVATE -Wno-unused-value)
     endif()
 
-    include(${CMAKE_SOURCE_DIR}/src/embed_static_runtime.cmake)
-    target_link_libraries(${APP_NAME} PUBLIC de_CNC_win32api)
-    target_link_libraries(${APP_NAME} PUBLIC de_CNC_DarkImage) # for HtmlWriter
+    target_link_libraries(${APP_NAME} PUBLIC DarkImage_2504)
 
+    include(${CMAKE_SOURCE_DIR}/src/embed_static_runtime.cmake)
 endif()

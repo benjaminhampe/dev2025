@@ -38,7 +38,8 @@ GCodeParserApp_eventHandler (HWND hwnd, UINT message, WPARAM wParam, LPARAM lPar
          break;
       case ID_FILE_LOAD:
          {
-            std::string uri = dbOpenFileA();
+            de::OpenFileParamsA params;
+            std::string uri = dbOpenFileDlg( params);
 
             std::string gcode = de::cnc::TextUtil::loadText( uri );
             if ( gcode.size() )
@@ -77,15 +78,15 @@ GCodeParserApp_eventHandler (HWND hwnd, UINT message, WPARAM wParam, LPARAM lPar
          else if (LOWORD(wParam) == ID_BTN_SHOW3D)
          {
             std::wstring msg = getEditBoxTextW( g_app.m_edtFeedSpeed );
-            dbMessageW( msg, L"EditBox FeedSpeed" );
+            dbMessageBox( msg, L"EditBox FeedSpeed" );
          }
          else if (LOWORD(wParam) == ID_BTN_BLUE)
          {
-            dbMessageA("ID_BTN_BLUE","RadioButton");
+            dbMessageBox("ID_BTN_BLUE","RadioButton");
          }
          else if (LOWORD(wParam) == ID_BTN_YELLOW)
          {
-            dbMessageA("ID_BTN_YELLOW","RadioButton");
+            dbMessageBox("ID_BTN_YELLOW","RadioButton");
          }
       }
    } break;

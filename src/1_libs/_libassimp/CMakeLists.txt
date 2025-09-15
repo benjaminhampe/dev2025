@@ -1,7 +1,7 @@
 ### ========== DarkAssimp ==========
 add_subdirectory(de-utf8cpp)
 # add_subdirectory(de-minizip)
-add_subdirectory(de-rapidjson)
+# add_subdirectory(de-rapidjson)
 # add_subdirectory(de-unzip)
 add_subdirectory(de-poly2tri)    # geometry
 add_subdirectory(de-clipper)     # geometry 2d

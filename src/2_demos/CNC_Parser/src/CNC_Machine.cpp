@@ -22,14 +22,14 @@ CNC_Machine::CNC_Machine()
 void
 CNC_Machine::parserStarted( std::string uri, std::string sourceText )
 {
-   m_parseTimeStart = dbSeconds();
+   m_parseTimeStart = dbTimeInSeconds();
    m_uri = uri;                  // for debugging
    m_sourceText = sourceText;    // for debugging
 }
 void
 CNC_Machine::parserEnded()
 {
-   m_parseTimeTotal = dbSeconds() - m_parseTimeStart;
+   m_parseTimeTotal = dbTimeInSeconds() - m_parseTimeStart;
 }
 
 //   void parseG00()
@@ -422,7 +422,7 @@ CNC_Machine::saveMeshJSLines( std::string saveUri )
    }
 
    perf.stop();
-   DE_DEBUG("Save lines mesh JS needed(", perf.toSeconds(),"s), ", saveUri, " with ", js.size(), " bytes.")
+   DE_DEBUG("Save lines mesh JS needed(", perf.ms(),"ms), ", saveUri, " with ", js.size(), " bytes.")
 }
 
 void
@@ -452,7 +452,7 @@ CNC_Machine::saveMeshJSLineStrip( std::string saveUri )
    {
       CNC_ColorVertex const & vertex = m_colorLineStrip[ b ];
       if ( b > 0 ) { o << ","; }
-      o << "0x" << dbStrHex(vertex.color);
+      o << "0x" << de::StringUtil::hex(vertex.color);
       k++;
       if ( k > 16 ) { o << "\n\t"; k = 0; }
    }
@@ -468,7 +468,7 @@ CNC_Machine::saveMeshJSLineStrip( std::string saveUri )
    }
 
    perf.stop();
-   DE_DEBUG("Save lineStrip mesh JS needed(", perf.toSeconds(),"s), ", saveUri, " with ", js.size(), " bytes.")
+   DE_DEBUG("Save lineStrip mesh JS needed(", perf.ms(),"ms), ", saveUri, " with ", js.size(), " bytes.")
 }
 
 // t_in_min
@@ -799,7 +799,7 @@ CNC_Machine::save( std::string loadUri )
    }
 
    perf.stop();
-   DE_DEBUG("Save HTML needed(",perf.toSeconds(),"s), ",
+   DE_DEBUG("Save HTML needed(",perf.ms(),"ms), ",
             htmlUri, " with ", htmlContent.size(), " bytes.")
 
    return htmlUri;

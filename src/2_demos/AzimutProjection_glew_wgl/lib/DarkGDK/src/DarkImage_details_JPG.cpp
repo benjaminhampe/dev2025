@@ -322,11 +322,11 @@ struct JPGWriter
          DE_ERROR("Invalid FILE ptr.")
          return FALSE;
       }
-      if ( !dst->buffer )
-      {
-         DE_ERROR("Invalid dst_buffer_ptr.")
-         return FALSE;
-      }
+      // if ( !dst->buffer )
+      // {
+      //    DE_ERROR("Invalid dst_buffer_ptr.")
+      //    return FALSE;
+      // }
       // for now just exit upon file error
 
       size_t const writtenBytes = ::fwrite( dst->buffer, 1, OUTPUT_BUF_SIZE, dst->file );

@@ -1,6 +1,6 @@
 #pragma once
-#include <DarkImage.hpp>
-#include <de_irrTypes.hpp>
+#include <DarkImage.h>
+//#include <de_irrTypes.hpp>
 #include <fstream>
 #include <iostream>
 #include <iomanip>

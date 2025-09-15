@@ -37,12 +37,8 @@ else()
     target_link_libraries(${APP_NAME} PRIVATE de_glm)
     target_link_libraries(${APP_NAME} PRIVATE de_glew)
     target_link_libraries(${APP_NAME} PRIVATE de_glfw_glew)
-    
-    target_link_libraries(${APP_NAME} PRIVATE de_2504)
-    
-    # target_link_libraries(${APP_NAME} PRIVATE de_stb_image)
-    # target_link_libraries(${APP_NAME} PRIVATE de_stb_truetype)
     target_link_libraries(${APP_NAME} PRIVATE de_imgui)
+    target_link_libraries(${APP_NAME} PRIVATE DarkImage_2504)
     # target_link_libraries(${APP_NAME} PRIVATE rayTracingCore)
 	
     include(${CMAKE_SOURCE_DIR}/src/embed_static_runtime.cmake)

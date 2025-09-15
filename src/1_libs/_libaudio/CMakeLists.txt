@@ -21,12 +21,13 @@ add_subdirectory(de-aften)
 # add_subdirectory(de-jack2-1.9.22) # Many LinkerErrors in SharedMode
 # add_subdirectory(de-jack2-shared)
 add_subdirectory(de-vst3sdk-3.7.13)
-# add_subdirectory(de-ffmpeg-4.3.2-win64-gcc-shared) # Import/Export MP4, AVI, MKV, etc...
 
 # add_subdirectory(de-mpg123-1.23.8) # Got linker error for mpg123_length, dk why.
 # add_subdirectory(de-mpg123-1.32.10) # Got linker error for mpg123_length, dk why.
 # add_subdirectory(de-fmod-1.10)     # Broken? Not really for MinGW/GCC
 # add_subdirectory(de-fmod-2.02.20)  # Broken? Not really for MinGW/GCC
 # add_subdirectory(de-fmod-2.03.03)  # Broken? Not really for MinGW/GCC
+
+# add_subdirectory(de-ffmpeg-4.3.2-win64-gcc-shared) # Import/Export MP4, AVI, MKV, etc...
 
 # add_subdirectory(de-juce-7.0.5) # Big lib, only activate when needed.

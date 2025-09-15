@@ -60,22 +60,11 @@ else()
     target_link_libraries(${APP_NAME} PRIVATE Qt6::Widgets)
     target_link_libraries(${APP_NAME} PRIVATE Qt6::OpenGL)
     target_link_libraries(${APP_NAME} PRIVATE Qt6::OpenGLWidgets)
-	# target_link_libraries(${APP_NAME} PRIVATE de_clipper_642)
-    # target_link_libraries(${APP_NAME} PRIVATE AudioDreamy64_DarkImage)
-    # target_link_libraries(${APP_NAME} PRIVATE de_fontawesome)
-    # target_link_libraries(${APP_NAME} PRIVATE de_tinyxml2)
+
     target_link_libraries(${APP_NAME} PRIVATE de_rtaudio)
     target_link_libraries(${APP_NAME} PRIVATE de_rtmidi)
     target_link_libraries(${APP_NAME} PRIVATE de_glm)
     target_link_libraries(${APP_NAME} PRIVATE de_glew)
-
-
-    # target_link_libraries(${APP_NAME} PRIVATE de_vst2sdk)
-    # target_link_libraries(${APP_NAME} PRIVATE de_fftw3)   # Can be used
     target_link_libraries(${APP_NAME} PRIVATE de_kissfft_cpp) # What i use
-    # target_link_libraries(${APP_NAME} PRIVATE de_soundtouch) # see GSoundTouch impl
-    # target_link_libraries(${APP_NAME} PRIVATE de_sndfile) # Audio
-    # target_link_libraries(${APP_NAME} PRIVATE de_ffmpeg)  # Audio + Video
-    # target_link_libraries(${APP_NAME} PRIVATE de_lame)    # Audio mp3 encoder
-    target_link_libraries(${APP_NAME} PRIVATE de_2504)
+    target_link_libraries(${APP_NAME} PRIVATE DarkImage_2504)
 endif()

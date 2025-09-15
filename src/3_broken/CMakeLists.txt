@@ -1,0 +1,2 @@
+# add_subdirectory(_tutorials_NorbertsTutorials_glew)
+add_subdirectory(AVX_Mandelbrot_de_glew)

@@ -1,12 +1,14 @@
 #include <windows.h>
 #include <iostream>
 
-constexpr LPCWSTR htmlTitle = L"EdgeWallpaper_001";
+constexpr LPCWSTR htmlTitle = L"ActiveWallpaper";
 constexpr UINT CMD_REFRESH_DESKTOP = 0xA220; // undocumented shell command: refresh desktop
 
-int main() {
+int main()
+{
     HWND hwnd = FindWindow(nullptr, htmlTitle);
-    if (!hwnd) {
+    if (!hwnd)
+    {
         std::wcerr << L"Window with title \"" << htmlTitle << L"\" not found.\n";
         return 1;
     }
@@ -14,7 +16,8 @@ int main() {
     PostMessage(hwnd, WM_CLOSE, 0, 0);
 
     HWND progman = FindWindow(L"Progman", nullptr);
-    if (progman) {
+    if (progman)
+    {
         SendMessage(progman, WM_COMMAND, CMD_REFRESH_DESKTOP, 0);
     }
 

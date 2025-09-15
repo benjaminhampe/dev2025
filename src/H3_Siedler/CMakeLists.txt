@@ -46,7 +46,7 @@ else()
     endif()
 	
     include(${CMAKE_SOURCE_DIR}/src/embed_static_runtime.cmake)
-    target_link_libraries(${APP_NAME} PRIVATE de_2504)
+    target_link_libraries(${APP_NAME} PRIVATE DarkImage_2504)
 	# target_link_libraries(${APP_NAME} PRIVATE de_gui_2504)
 	
     if (CMAKE_BUILD_TYPE STREQUAL "Release")

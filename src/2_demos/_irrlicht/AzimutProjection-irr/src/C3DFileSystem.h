@@ -152,7 +152,7 @@ public:
     }
 
     virtual void
-    OnRegisterSceneNode()
+    OnRegisterSceneNode() override
     {
         if (IsVisible) SceneManager->registerNodeForRendering(this);
         ISceneNode::OnRegisterSceneNode();
@@ -160,13 +160,13 @@ public:
 
 
     virtual core::aabbox3d<f32> const &
-    getBoundingBox() const { return m_bbox; }
+    getBoundingBox() const override { return m_bbox; }
 
     virtual u32
-    getMaterialCount() const { return 1; }
+    getMaterialCount() const override { return 1; }
 
     virtual video::SMaterial&
-    getMaterial(u32 i) { return m_tetragon.Material; }
+    getMaterial(u32 i) override { return m_tetragon.Material; }
 };
 
 } // end namespace irr

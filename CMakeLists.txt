@@ -643,11 +643,30 @@ if (WIN32)
     else()
         if(BUILD_SHARED_LIBS OR BENNI_USE_QT) # Get runtime dlls from LLVM Compiler ( clang++ )
 
-            file(GLOB RUNTIME_FILES "${CMAKE_CURRENT_LIST_DIR}/runtime/*")
-            foreach(runtime_file ${RUNTIME_FILES})
-                file(COPY ${runtime_file} DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
-            endforeach()
-            
+            # file(GLOB RUNTIME_FILES "${CMAKE_CURRENT_LIST_DIR}/runtime/*")
+            # foreach(runtime_file ${RUNTIME_FILES})
+            #     file(COPY ${runtime_file} DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
+            # endforeach()
+
+            # Get runtime dlls from LLVM Compiler ( clang++ ) Linux GNU/GCC runtime for windows
+            file(COPY "${BENNI_MINGW_DIR}/bin/libc++.dll" DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} )
+            file(COPY "${BENNI_MINGW_DIR}/bin/libomp.dll" DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
+            file(COPY "${BENNI_MINGW_DIR}/bin/libunwind.dll" DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
+            file(COPY "${BENNI_MINGW_DIR}/bin/libwinpthread-1.dll" DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
+
+            # For debugging only??? Additional 130MB !!!
+            file(COPY "${BENNI_MINGW_DIR}/bin/libLLVM-17.dll" DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
+            file(COPY "${BENNI_MINGW_DIR}/bin/liblldb.dll" DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
+            file(COPY "${BENNI_MINGW_DIR}/bin/libclang-cpp.dll" DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
+            file(COPY "${BENNI_MINGW_DIR}/bin/libclang_rt.asan_dynamic-x86_64.dll" DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
+            file(COPY "${BENNI_MINGW_DIR}/bin/libffi-8.dll" DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
+
+            # Do i need those ever?
+            # ./libpython3.11.dll
+            # ./libpython3.dll
+            # ./opengl32sw.dll
+            # ./d3dcompiler_47.dll
+
             # Get runtime dlls from MinGW Compiler ( g++-7.3.0 or so ) in QtSDK
             # file(COPY "${BENNI_MINGW_DIR}/bin/libgcc_s_seh-1.dll" DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} )  # gcc runtime for windows
             # file(COPY "${BENNI_MINGW_DIR}/bin/libstdc++-6.dll" DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})      # gcc runtime for windows

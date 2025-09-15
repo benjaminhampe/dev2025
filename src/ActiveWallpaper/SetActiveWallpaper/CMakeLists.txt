@@ -6,13 +6,6 @@ if (TARGET ${APP_NAME})
 else()
     # add_subdirectory(lib)
 
-    message("${BoldRed}[benni] Benni asks __MINGW32__=${__MINGW32__} : ${APP_NAME}${ColourReset}")
-
-    if (__MINGW32__)
-    message("${BoldRed}[benni] Compiler gives __MINGW32__ : ${APP_NAME}${ColourReset}")
-    endif()
-
-
     set(APP_SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR})
     set(APP_SOURCES ${APP_SOURCE_DIR}/SetActiveWallpaper.cpp)
 
@@ -41,6 +34,8 @@ else()
         # target_link_options(${APP_NAME} PRIVATE -mwindows)
     endif()
 	
+    target_link_libraries(${APP_NAME} PRIVATE DarkImage_2504)
+
     include(${CMAKE_SOURCE_DIR}/src/embed_static_runtime.cmake)
     
     # if (CMAKE_BUILD_TYPE STREQUAL "Release")

@@ -133,7 +133,7 @@ else()
         target_compile_options(${LIB_NAME} PRIVATE -Wno-sign-compare)
     endif()
     
-    target_link_libraries(${LIB_NAME} PUBLIC de_2501)
+    target_link_libraries(${LIB_NAME} PUBLIC DarkImage_2504)
     target_link_libraries(${LIB_NAME} PUBLIC de_rtaudio_601)
     target_link_libraries(${LIB_NAME} PUBLIC de_rtmidi)
     target_link_libraries(${LIB_NAME} PUBLIC de_fftw3)

@@ -30,7 +30,7 @@ else()
     #target_link_libraries(${LIB_NAME} PUBLIC de_fontawesome) # Font
     #target_link_libraries(${LIB_NAME} PUBLIC de_tinyxml2)    # XML
     # target_link_libraries(${APP_NAME} PRIVATE AS_DarkImage)     # Logger
-    target_link_libraries(${APP_NAME} PRIVATE de_2501)
+    target_link_libraries(${APP_NAME} PRIVATE DarkImage_2504)
     # target_link_libraries(${APP_NAME} PRIVATE DarkAudio)     # Logger
     target_link_libraries(${APP_NAME} PRIVATE de_ffmpeg)     # AudioDecoder + VideoDecoder
     target_link_libraries(${APP_NAME} PRIVATE de_lame)       # AudioEncoder MP3

@@ -20,7 +20,7 @@ else()
     endif()
 
     # ################# Executable ################# #
-    message("${BoldYellow}[benni] APP: ${APP_NAME}${ColourReset}")
+    message("${BoldGreen}[benni] APP: ${APP_NAME}${ColourReset}")
     add_executable(${APP_NAME} "")
     target_sources(${APP_NAME} PRIVATE ${APP_HEADERS} ${APP_SOURCES})
     target_include_directories(${APP_NAME} PRIVATE ${APP_SOURCE_DIR})

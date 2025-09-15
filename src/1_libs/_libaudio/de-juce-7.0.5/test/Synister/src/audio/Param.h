@@ -51,7 +51,7 @@ public:
         if(notifyHost) listener.call(&Listener::paramUIChanged);
     }
     virtual float getUI() const { return get(); }
-    virtual float getDefaultUI() const override { return getDefault(); }
+    virtual float getDefaultUI() const { return getDefault(); }
     virtual String getUIString() const { return getUIString(get()); }
     virtual String getUIString(float v) const { return String::formatted("%f", v); }
     virtual bool hasLabels() const { return false; }

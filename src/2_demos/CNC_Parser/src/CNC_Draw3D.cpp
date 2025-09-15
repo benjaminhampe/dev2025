@@ -49,7 +49,7 @@ CNC_Draw3D::createPreviewImage( int w, int h, std::vector< CNC_ColorVertex > con
    ImagePainter::drawText5x8( img, 20, 80, s.str(), 0xFFDD8088 );
 
    perf.stop();
-   DE_DEBUG("needed(",perf.toSeconds(), "s)")
+   DE_DEBUG("needed(",perf.ms(), "ms)")
 
    return img;
 }
@@ -84,8 +84,8 @@ CNC_Draw3D::createWallpaperImage( int w, int h, int n )
       cx = rand()%w;
       cy = rand()%h;
       int r = 1 + (rand() % (std::min(w,h)/8));
-      u32 color = randomColor( 0x08 );
-      ImagePainter::drawCircle(img,cx,cy,r,color, true );
+      u32 color = randomColorRGB( 0x08 );
+      ImagePainter::drawCircle(img, de::Recti(cx-r,cy-r,2*r,2*r), color, true );
    }
 
    cx = w/2;
@@ -110,12 +110,12 @@ CNC_Draw3D::createWallpaperImage( int w, int h, int n )
       cx = rand()%w;
       cy = rand()%h;
       int r = 1 + (rand() % (std::min(w,h)/2));
-      u32 color = randomColor( 0x40 );
-      ImagePainter::drawCircleBorder(img,cx,cy,r,color, true );
+      u32 color = randomColorRGB( 0x40 );
+      ImagePainter::drawCircleBorder(img, de::Recti(cx-r,cy-r,2*r,2*r), color, true );
    }
 
    perf.stop();
-   DE_DEBUG("Create wallpaper image needed ",perf.toSeconds(), " seconds.")
+   DE_DEBUG("Create wallpaper image needed ",perf.ms(), " ms.")
 
    return img;
 }
