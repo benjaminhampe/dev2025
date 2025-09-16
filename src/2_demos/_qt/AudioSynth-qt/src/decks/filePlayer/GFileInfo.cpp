@@ -1,6 +1,6 @@
 #include "GFileInfo.hpp"
 
-#include <de/audio/GetCoverArt.hpp>
+#include <de/audio/GetCoverArt.h>
 #include <QString>
 
 GFileInfo::GFileInfo( QWidget* parent )

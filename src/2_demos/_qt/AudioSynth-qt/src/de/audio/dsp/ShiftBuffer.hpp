@@ -1,6 +1,4 @@
 #pragma once
-#include <de/Logger.hpp>
-#include <de/Math.hpp>
 #include <de/audio/buffer/SampleType.hpp>
 #include <functional>
 

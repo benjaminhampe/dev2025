@@ -1,5 +1,6 @@
 #include <de/audio/engine/EngineRtAudioStream.hpp>
 
+#if 0
 namespace de {
 namespace audio {
 
@@ -235,3 +236,5 @@ EngineRtAudioStream::rt_audio_callback(
 
 } // end namespace audio.
 } // end namespace de.
+
+#endif

@@ -33,8 +33,8 @@ public:
 signals:
 //   void newSamples( float* samples, uint32_t frameCount, uint32_t channels );
 public slots:
-   void clearInputSignals();
-   void setInputSignal( int i, de::audio::IDspChainElement* input );
+   void clearInputSignals() override;
+   void setInputSignal( int i, de::audio::IDspChainElement* input ) override;
    void setShiftBufferSize( uint32_t dstSamples );
 protected:
    void startUpdateTimer();

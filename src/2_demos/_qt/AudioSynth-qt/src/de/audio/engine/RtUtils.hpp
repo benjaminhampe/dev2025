@@ -1,6 +1,4 @@
-#ifndef DE_AUDIO_RTUTILS_HPP
-#define DE_AUDIO_RTUTILS_HPP
-
+#pragma once
 #include <de/audio/buffer/SampleType.hpp>
 
 #ifndef USE_RTAUDIO
@@ -413,4 +411,3 @@ public:
 
 
 #endif // USE_RTAUDIO
-#endif

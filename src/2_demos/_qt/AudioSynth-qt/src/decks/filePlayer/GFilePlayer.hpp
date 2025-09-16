@@ -246,7 +246,7 @@ private slots:
    // void setInputSignal( de::audio::IDspChainElement* input );
 
 protected:
-   void timerEvent( QTimerEvent* event );
+   void timerEvent( QTimerEvent* event ) override;
    void updateLabels();
    void updateSlider();
    // void timerEvent( QTimerEvent* event) override;

@@ -37,8 +37,8 @@ public:
 
 signals:
 public slots:
-   void clearInputSignals();
-   void setInputSignal( int i, de::audio::IDspChainElement* input );
+   void clearInputSignals() override;
+   void setInputSignal( int i, de::audio::IDspChainElement* input ) override;
 
    void on_btnRecClear(bool);
    void on_btnRecStart(bool);

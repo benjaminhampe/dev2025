@@ -61,7 +61,7 @@ GMasterDeck::GMasterDeck( QWidget* parent )
    m_compressor->dsp()->setInputSignal( 0, m_bassBoost->dsp() );
    m_limiter->dsp()->setInputSignal( 0, m_compressor->dsp() );
    m_waveform->setInputSignal( 0, m_limiter->dsp() );
-   m_spektrum->setInputSignal( m_waveform );
+   m_spektrum->setInputSignal( 0, m_waveform );
    m_volume->setInputSignal( 0, m_spektrum );
    m_levelMeter->dsp()->setInputSignal( 0, m_volume );
    m_menu->setInputSignal( 0, m_levelMeter->dsp() );

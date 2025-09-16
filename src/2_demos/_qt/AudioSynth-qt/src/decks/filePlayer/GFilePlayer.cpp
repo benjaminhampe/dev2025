@@ -1,6 +1,6 @@
 #include "GFilePlayer.hpp"
 
-#include <de/audio/GetCoverArt.hpp>
+#include <de/audio/GetCoverArt.h>
 #include <de/audio/buffer/BufferIO.hpp>
 #include <QString>
 

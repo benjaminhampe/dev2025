@@ -45,9 +45,15 @@ public:
    //~Pan() {}
 
    void
-   clearInputSignals() { m_inputSignal = nullptr; }
+   clearInputSignals() override
+   {
+       m_inputSignal = nullptr;
+   }
    void
-   setInputSignal( int i, IDspChainElement* input ) { m_inputSignal = input; }
+   setInputSignal( int i, IDspChainElement* input ) override
+   {
+       m_inputSignal = input;
+   }
 
    bool isBypassed() const { return m_isBypassed; }
    void setBypassed( bool enabled ) { m_isBypassed = enabled; }

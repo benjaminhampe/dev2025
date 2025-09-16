@@ -1,6 +1,4 @@
 #pragma once
-// #include <QFont5x8.hpp>
-// #include <de/ColorGradient.hpp>
 #include <de/audio/dsp/IDspChainElement.hpp>
 
 namespace de {

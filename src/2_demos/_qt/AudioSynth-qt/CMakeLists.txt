@@ -96,8 +96,8 @@ else()
     target_link_libraries(${APP_NAME} PUBLIC Qt6::OpenGLWidgets)
 
     # target_link_libraries(${APP_NAME} PUBLIC de_gles3)
-    # target_link_libraries(${APP_NAME} PUBLIC de_rtaudio)     # Audio
-    target_link_libraries(${APP_NAME} PUBLIC de_rtaudio_601)    
+    target_link_libraries(${APP_NAME} PUBLIC de_rtaudio)     # Audio
+    # target_link_libraries(${APP_NAME} PUBLIC de_rtaudio_601)
     target_link_libraries(${APP_NAME} PUBLIC de_rtmidi)
     target_link_libraries(${APP_NAME} PUBLIC de_fftw3)
     target_link_libraries(${APP_NAME} PUBLIC de_kissfft)

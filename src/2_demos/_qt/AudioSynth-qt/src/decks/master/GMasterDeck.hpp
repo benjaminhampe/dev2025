@@ -56,8 +56,8 @@ signals:
 //   void newSamples( float* samples, uint32_t frameCount, uint32_t channels );
 
 public slots:
-   void clearInputSignals();
-   void setInputSignal( int i, IDspChainElement* input );
+   void clearInputSignals() override;
+   void setInputSignal( int i, IDspChainElement* input ) override;
    void setMinified(bool minimized) { m_menu->setMinified( minimized ); }
    void setBypassed(bool bypassed) { m_menu->setBypassed( bypassed ); }
    void setExtraMore(bool visible) { m_menu->setExtraMore( visible ); }

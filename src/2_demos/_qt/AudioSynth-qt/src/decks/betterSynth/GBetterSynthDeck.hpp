@@ -52,7 +52,6 @@ public slots:
    void setBypassed(bool bypassed) { m_menu->setBypassed( bypassed ); }
    void setExtraMore(bool visible) { m_menu->setExtraMore( visible ); }
 private:
-   DE_CREATE_LOGGER("GBetterSynthDeck")
    de::audio::BetterSynth m_synth;
    GDeck* m_menu;
    QImageWidget* m_body;

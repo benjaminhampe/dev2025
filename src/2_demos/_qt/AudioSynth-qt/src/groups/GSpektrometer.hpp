@@ -36,12 +36,12 @@ public slots:
 //   void stopUpdateTimer();
 //   void startUpdateTimer();
 
-   void clearInputSignals()
+   void clearInputSignals() override
    {
       m_inputSignal = nullptr;
    }
 
-   void setInputSignal( de::audio::IDspChainElement* input )
+   void setInputSignal( int i, de::audio::IDspChainElement* input ) override
    {
       m_inputSignal = input;
    }

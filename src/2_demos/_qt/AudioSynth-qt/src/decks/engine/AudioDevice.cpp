@@ -153,6 +153,70 @@ AudioDevice::play()
 }
 
 /*
+
+#if RTAudio_501
+   try
+   {
+      m_dac->openStream( &o_params, in_params, RTAUDIO_FLOAT32, m_dacSampleRate,
+         &bufferSize, rt_audio_callback, reinterpret_cast< void* >( this ) );
+      if ( m_dacFrames != bufferSize )
+      {
+         DE_WARN("m_dacFrames(",bufferSize,") != bufferSize(",bufferSize,")")
+         m_dacFrames = bufferSize;
+      }
+
+      uint32_t dacSamples = m_dacFrames * m_outDevChannels;
+      DSP_RESIZE( m_MixBuffer, dacSamples );
+      DSP_RESIZE( m_TmpBuffer, dacSamples );
+      m_dacStreamTime = dbSeconds();
+      m_dac->startStream();
+   }
+   catch ( RtAudioError& e )
+   {
+      m_IsPlaying = false;
+      e.printMessage();
+   }
+#else
+    RtAudioErrorType e = m_dac->openStream( &o_params, in_params,
+                                RTAUDIO_FLOAT32, m_dacSampleRate,
+                                &bufferSize, rt_audio_callback,
+                                reinterpret_cast< void* >( this ) );
+
+    if ( e != RTAUDIO_NO_ERROR )
+    {
+        DE_ERROR("RT_ERROR(",e,")")
+        m_IsPlaying = false;
+    }
+    else
+    {
+        if ( m_dacFrames != bufferSize )
+        {
+            DE_WARN("m_dacFrames(",bufferSize,") != bufferSize(",bufferSize,")")
+            m_dacFrames = bufferSize;
+        }
+
+        uint32_t dacSamples = m_dacFrames * m_outDevChannels;
+        DSP_RESIZE( m_MixBuffer, dacSamples );
+        DSP_RESIZE( m_TmpBuffer, dacSamples );
+        m_dacStreamTime = dbTimeInSeconds();
+        e = m_dac->startStream();
+
+        if ( e != RTAUDIO_NO_ERROR )
+        {
+            DE_ERROR("RT_ERROR2(",e,")")
+            m_IsPlaying = false;
+        }
+        else
+        {
+            double latency = 1000.0 * double( m_dacFrames ) / double( m_dacSampleRate ); // in [ms]
+            DE_DEBUG("PlayAudio EngineRtAudioStream "
+            "dacFrames(", m_dacFrames,"), "
+            "dacSampleRate(",m_dacSampleRate,"), "
+            "bufferLatency(",latency," ms)")
+        }
+    }
+#endif
+
 int
 AudioDevice::getVolume() const { return m_Volume; }
 

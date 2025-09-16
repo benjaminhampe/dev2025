@@ -1,7 +1,4 @@
 #pragma once
-#include <de/audio/dsp/ShiftBuffer.hpp>
-#include <functional>
-//#include <de/audio/dsp/IVoice.hpp>
 #include <de/audio/dsp/ADSR.hpp>
 
 namespace de {
