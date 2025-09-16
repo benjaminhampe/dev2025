@@ -1,21 +1,13 @@
 set(APP_NAME off2obj)
 project(${APP_NAME}-dev)
 
-if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-  set(APP_NAME "${APP_NAME}d")
-endif()
-
-if( BUILD_SHARED EQUAL 0 )
-  set(APP_NAME "${APP_NAME}s") # static suffix
-endif()
-
 if (TARGET ${APP_NAME})
-   message("${BoldBlue}[benni] HEADER_GUARD: ${APP_NAME}${ColourReset}")
+   message("${BoldRed}[benni] HEADER_GUARD: ${APP_NAME}${ColourReset}")
 else()
-   message("${BoldBlue}[benni] APPLICATION: ${APP_NAME}${ColourReset}")
    
    enable_language(RC)
 
+   message("${BoldGreen}[benni] APP: ${APP_NAME}${ColourReset}")
    add_executable(${APP_NAME} off2obj.cpp icon.rc)
    
    target_link_libraries(${APP_NAME} PRIVATE m)

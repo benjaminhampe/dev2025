@@ -1,42 +1,19 @@
-set(LIB_NAME de_clara)
-project(${LIB_NAME} CXX)
+set(LIB_NAME de_catch2) # cmake target name
+project(${LIB_NAME})
 
 if (TARGET ${LIB_NAME})
-    message("${BoldYellow}[benni] HEADER_GUARD: ${LIB_NAME}${ColourReset}")
+	message("${BoldRed}[benni] HEADER_GUARD: ${LIB_NAME}${ColourReset}")
 else()
-    set(LIB_HEADER_DIR ${CMAKE_CURRENT_LIST_DIR}/include)
-    set(LIB_SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/src)
-    set(LIB_HEADERS ${LIB_HEADER_DIR}/clara.hpp)
-    set(LIB_SOURCES ${LIB_SOURCE_DIR}/clara.cpp)
+	set(LIB_INCLUDE_DIR "${CMAKE_CURRENT_LIST_DIR}/include") 
+	# file(GLOB_RECURSE LIB_HEADERS "${LIB_INCLUDE_DIR}/libxml/*.h")
+	# file(GLOB_RECURSE LIB_SOURCES "${LIB_INCLUDE_DIR}/libxml/*.cpp")
 
-    if (WIN32)
-        enable_language(RC)
-        list(APPEND LIB_SOURCES ${LIB_SOURCE_DIR}/res/resource.h)
-        list(APPEND LIB_SOURCES ${LIB_SOURCE_DIR}/res/resource.rc)
-    endif()
-    
-    if (BUILD_SHARED)
-        message("${BoldBlue}[benni] DLL: ${LIB_NAME}${ColourReset}")
-        add_library(${LIB_NAME} SHARED "")
-    else()
-        message("${BoldCyan}[benni] LIB: ${LIB_NAME}${ColourReset}")
-        add_library(${LIB_NAME} STATIC "")
-    endif()
+	message("${BoldYellow}[benni] IFL: ${LIB_NAME}${ColourReset}")
+   
+	add_library(${LIB_NAME} INTERFACE ${LIB_INCLUDE_DIR}/catch2/catch2.hpp)
 
-    target_sources(${LIB_NAME} PUBLIC ${LIB_HEADERS} PRIVATE ${LIB_SOURCES})
+	target_include_directories(${LIB_NAME} INTERFACE ${LIB_INCLUDE_DIR})
 
-    target_include_directories(${LIB_NAME} PUBLIC ${LIB_HEADER_DIR})
-    target_include_directories(${LIB_NAME} PRIVATE ${LIB_SOURCE_DIR})
-
-    if(MSVC)
-    else()
-        # target_compile_options(${LIB_NAME} PRIVATE -Wno-implicit-fallthrough)
-        # target_compile_options(${LIB_NAME} PRIVATE -Wno-maybe-uninitialized)
-        # target_compile_options(${LIB_NAME} PRIVATE -Wno-unused-parameter)
-        # target_compile_options(${LIB_NAME} PRIVATE -Wno-unused-but-set-variable)
-    endif()
-    # file(COPY ${LIB_HEADERS} DESTINATION ${LIB_INCLUDE_DIR}) # For the SDK
-
+	target_compile_definitions(${LIB_NAME} INTERFACE HAVE_LIBCATCH2=1)
+  
 endif()
-
-add_subdirectory(test)

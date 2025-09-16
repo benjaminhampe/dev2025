@@ -1,3 +1,0 @@
-add_subdirectory(libDarkAudio)
-add_subdirectory(libDarkGetCoverArt)
-add_subdirectory(convert2mp3)

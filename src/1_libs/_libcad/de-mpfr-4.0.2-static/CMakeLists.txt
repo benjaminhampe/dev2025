@@ -9,7 +9,7 @@ else()
 #		 message("${BoldBlue}[benni] SHARED_LIBRARY: ${LIB_NAME}${ColourReset}")
 #		 add_library(${LIB_NAME} SHARED "")
 #	else()
-    message("${BoldYellow}[benni] INT: ${LIB_NAME}${ColourReset}")
+    message("${BoldYellow}[benni] IMP: ${LIB_NAME}${ColourReset}")
 	add_library(${LIB_NAME} IMPORTED STATIC)
 #   endif()
 	

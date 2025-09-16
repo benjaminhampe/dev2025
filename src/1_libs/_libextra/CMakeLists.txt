@@ -3,9 +3,13 @@
 # add_subdirectory(_libcad)
 # #add_subdirectory(de-ode-0.16.5)
 
+add_subdirectory(de-catch2)
+add_subdirectory(de-clara)
+# add_subdirectory(de-cpuid)
+
 # GUI
 add_subdirectory(de-fltk-1.3.5)
-add_subdirectory(de-wx-3.1.5)
+# add_subdirectory(de-wx-3.1.5)
 
 # Internet
 add_subdirectory(de-enet-1.3.18)

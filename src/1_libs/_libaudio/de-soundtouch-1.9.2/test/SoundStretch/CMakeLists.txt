@@ -11,7 +11,7 @@ else()
         list(APPEND APP_SOURCES ${CMAKE_CURRENT_LIST_DIR}/icon.rc)
     endif()
     
-    message("${Green}[benni] APP: ${APP_NAME}${ColourReset}")
+    message("${BoldGreen}[benni] APP: ${APP_NAME}${ColourReset}")
     add_executable(${APP_NAME} "")
 
     target_sources(${APP_NAME} PRIVATE ${APP_SOURCES})

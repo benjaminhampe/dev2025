@@ -2,10 +2,10 @@ set(APP_NAME AudioSynth-qt)
 project(${APP_NAME}-dev)
 
 if (TARGET ${APP_NAME})
-   message("${BoldRed}[benni] HEADER_GUARD: ${APP_NAME}${ColourReset}")
+    message("${BoldRed}[benni] HEADER_GUARD: ${APP_NAME}${ColourReset}")
 else()
 
-   add_subdirectory(lib)
+   # add_subdirectory(lib)
 
 # Begin QtSDK5
    set(CMAKE_AUTOMOC ON)
@@ -40,78 +40,75 @@ else()
    # ADD_CUSTOM_COMMAND( TARGET "${APP_NAME}" POST_BUILD COMMAND "echo" "Copying theme.." COMMAND "${CMAKE_COMMAND}" -E copy_directory "${CMAKE_CURRENT_SOURCE_DIR}/themes" "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/themes")
 # Ende QtSDK
 
-   set(APP_SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/src)
-   file(GLOB_RECURSE APP_SOURCES_H "${APP_SOURCE_DIR}/*.h")
-   file(GLOB_RECURSE APP_SOURCES_HPP "${APP_SOURCE_DIR}/*.hpp")
-   file(GLOB_RECURSE APP_SOURCES_CPP "${APP_SOURCE_DIR}/*.cpp")
-   set(APP_SOURCES ${APP_SOURCES_H} ${APP_SOURCES_HPP} ${APP_SOURCES_CPP} ${RESOURCE_FILES})
+    set(APP_SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/src)
+    file(GLOB_RECURSE APP_SOURCES_H "${APP_SOURCE_DIR}/*.h")
+    file(GLOB_RECURSE APP_SOURCES_HPP "${APP_SOURCE_DIR}/*.hpp")
+    file(GLOB_RECURSE APP_SOURCES_CPP "${APP_SOURCE_DIR}/*.cpp")
+    set(APP_SOURCES ${APP_SOURCES_H} ${APP_SOURCES_HPP} ${APP_SOURCES_CPP} ${RESOURCE_FILES})
 
-   if (WIN32)
-      # enable_language(RC)
-      #list(APPEND APP_SOURCES "${CMAKE_CURRENT_LIST_DIR}/res/resource.qrc")
-      list(APPEND APP_SOURCES "${CMAKE_CURRENT_LIST_DIR}/res/resource.h")
-      list(APPEND APP_SOURCES "${CMAKE_CURRENT_LIST_DIR}/res/resource.rc")
-   endif()
+    if (WIN32)
+        # enable_language(RC)
+        #list(APPEND APP_SOURCES "${CMAKE_CURRENT_LIST_DIR}/res/resource.qrc")
+        list(APPEND APP_SOURCES "${CMAKE_CURRENT_LIST_DIR}/res/resource.h")
+        list(APPEND APP_SOURCES "${CMAKE_CURRENT_LIST_DIR}/res/resource.rc")
+    endif()
 
-   message("${BoldGreen}[benni] APP: ${APP_NAME}${ColourReset}")
-   add_executable(${APP_NAME})
-   target_sources(${APP_NAME} PRIVATE ${APP_SOURCES})
-   target_include_directories(${APP_NAME} PRIVATE ${APP_SOURCE_DIR})
-   target_include_directories(${APP_NAME} PRIVATE ${APP_SOURCE_DIR}/widgets)
-   target_include_directories(${APP_NAME} PRIVATE ${APP_SOURCE_DIR}/groups)
-   target_include_directories(${APP_NAME} PRIVATE ${APP_SOURCE_DIR}/decks)
-   target_include_directories(${APP_NAME} PRIVATE ${APP_SOURCE_DIR}/decks/engine)
-   target_include_directories(${APP_NAME} PRIVATE ${APP_SOURCE_DIR}/decks/sequencer)
-   target_include_directories(${APP_NAME} PRIVATE ${APP_SOURCE_DIR}/decks/filePlayer)
-   target_include_directories(${APP_NAME} PRIVATE ${APP_SOURCE_DIR}/decks/midi)
-   target_include_directories(${APP_NAME} PRIVATE ${APP_SOURCE_DIR}/decks/mixer)
-   target_include_directories(${APP_NAME} PRIVATE ${APP_SOURCE_DIR}/decks/master)
-   target_include_directories(${APP_NAME} PRIVATE ${APP_SOURCE_DIR}/decks/detuneSynth)
-   target_include_directories(${APP_NAME} PRIVATE ${APP_SOURCE_DIR}/decks/betterSynth)
-   target_include_directories(${APP_NAME} PRIVATE ${APP_SOURCE_DIR}/decks/vsthost)
-   # target_sources(${APP_NAME} PRIVATE ${APP_SOURCES})
-    
+    message("${BoldGreen}[benni] APP: ${APP_NAME}${ColourReset}")
+    add_executable(${APP_NAME} ${APP_SOURCES})
+
+    target_include_directories(${APP_NAME} PRIVATE ${APP_SOURCE_DIR})
+    target_include_directories(${APP_NAME} PRIVATE ${APP_SOURCE_DIR}/widgets)
+    target_include_directories(${APP_NAME} PRIVATE ${APP_SOURCE_DIR}/groups)
+    target_include_directories(${APP_NAME} PRIVATE ${APP_SOURCE_DIR}/decks)
+    target_include_directories(${APP_NAME} PRIVATE ${APP_SOURCE_DIR}/decks/engine)
+    target_include_directories(${APP_NAME} PRIVATE ${APP_SOURCE_DIR}/decks/sequencer)
+    target_include_directories(${APP_NAME} PRIVATE ${APP_SOURCE_DIR}/decks/filePlayer)
+    target_include_directories(${APP_NAME} PRIVATE ${APP_SOURCE_DIR}/decks/midi)
+    target_include_directories(${APP_NAME} PRIVATE ${APP_SOURCE_DIR}/decks/mixer)
+    target_include_directories(${APP_NAME} PRIVATE ${APP_SOURCE_DIR}/decks/master)
+    target_include_directories(${APP_NAME} PRIVATE ${APP_SOURCE_DIR}/decks/detuneSynth)
+    target_include_directories(${APP_NAME} PRIVATE ${APP_SOURCE_DIR}/decks/betterSynth)
+    target_include_directories(${APP_NAME} PRIVATE ${APP_SOURCE_DIR}/decks/vsthost)
+
 	if (MSVC)
     else()
-        target_link_options(${APP_NAME} PRIVATE -mwindows)        
-        target_compile_options(${APP_NAME} PRIVATE -Wno-macro-redefined)
-        target_compile_options(${APP_NAME} PRIVATE -Wno-inconsistent-missing-override)
-        target_compile_options(${APP_NAME} PRIVATE -Wno-deprecated-declarations)
-        target_compile_options(${APP_NAME} PRIVATE -Wno-unused-variable)
-        target_compile_options(${APP_NAME} PRIVATE -Wno-unused-but-set-variable)
-        target_compile_options(${APP_NAME} PRIVATE -Wno-sign-compare)
-        target_compile_options(${APP_NAME} PRIVATE -Wno-unused-function)
-        target_compile_options(${APP_NAME} PRIVATE -Wno-comment)
+        # target_link_options(${APP_NAME} PRIVATE -mwindows)        
+        # target_compile_options(${APP_NAME} PRIVATE -Wno-macro-redefined)
+        # target_compile_options(${APP_NAME} PRIVATE -Wno-inconsistent-missing-override)
+        # target_compile_options(${APP_NAME} PRIVATE -Wno-deprecated-declarations)
+        # target_compile_options(${APP_NAME} PRIVATE -Wno-unused-variable)
+        # target_compile_options(${APP_NAME} PRIVATE -Wno-unused-but-set-variable)
+        # target_compile_options(${APP_NAME} PRIVATE -Wno-sign-compare)
+        # target_compile_options(${APP_NAME} PRIVATE -Wno-unused-function)
+        # target_compile_options(${APP_NAME} PRIVATE -Wno-comment)
+        # target_compile_options(${LIB_NAME} PRIVATE -Wno-strict-aliasing)        
     endif()
-	
-    # include(${CMAKE_SOURCE_DIR}/src/embed_static_runtime.cmake)
 
-   # set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -mwindows")
-   # if (WIN32)  # on Windows:
+    # set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -mwindows")
+    # if (WIN32)  # on Windows:
       # target_link_libraries(${APP_NAME} PUBLIC comctl32 user32 gdi32 kernel32)
-   # else()      # on Linux:
+    # else()      # on Linux:
       # target_link_libraries(${APP_NAME} PUBLIC X11 Xxf86vm Xi Xcursor)
-   # endif()
+    # endif()
 
-   target_link_libraries(${APP_NAME} PUBLIC Qt6::Widgets)
-   target_link_libraries(${APP_NAME} PUBLIC Qt6::OpenGL)
-   target_link_libraries(${APP_NAME} PUBLIC Qt6::OpenGLWidgets)
+    target_link_libraries(${APP_NAME} PUBLIC Qt6::Widgets)
+    target_link_libraries(${APP_NAME} PUBLIC Qt6::OpenGL)
+    target_link_libraries(${APP_NAME} PUBLIC Qt6::OpenGLWidgets)
 
-   # target_link_libraries(${APP_NAME} PUBLIC de_gles3)
-   target_link_libraries(${APP_NAME} PUBLIC de_rtaudio)     # Audio
-   target_link_libraries(${APP_NAME} PUBLIC de_rtmidi)      # General Midi
-   target_link_libraries(${APP_NAME} PUBLIC de_fftw3)       # Audio Spektrum fft
-   target_link_libraries(${APP_NAME} PUBLIC de_kissfft)     # Audio Spektrum fft
-   target_link_libraries(${APP_NAME} PUBLIC de_soundtouch)  # Audio
-   target_link_libraries(${APP_NAME} PUBLIC de_lame)      # Audio mp3 encoder
-   target_link_libraries(${APP_NAME} PUBLIC de_vst2sdk)    # Audio Steinberg VST SDK
-   target_link_libraries(${APP_NAME} PUBLIC de_ffmpeg)     # Audio + Video
-   
-   target_link_libraries(${APP_NAME} PUBLIC DarkImage_2504)
-   
-   # target_link_libraries(${APP_NAME} PUBLIC AS_DarkImage)         # 2D
-   # target_link_libraries(${APP_NAME} PUBLIC AS_DarkGPU)           # 3D
-   target_link_libraries(${APP_NAME} PUBLIC AS_DarkAudio)   # Audio
-   target_link_libraries(${APP_NAME} PUBLIC AS_DarkGetCoverArt)   # Audio Tags
+    # target_link_libraries(${APP_NAME} PUBLIC de_gles3)
+    # target_link_libraries(${APP_NAME} PUBLIC de_rtaudio)     # Audio
+    target_link_libraries(${APP_NAME} PUBLIC de_rtaudio_601)    
+    target_link_libraries(${APP_NAME} PUBLIC de_rtmidi)
+    target_link_libraries(${APP_NAME} PUBLIC de_fftw3)
+    target_link_libraries(${APP_NAME} PUBLIC de_kissfft)
+    target_link_libraries(${APP_NAME} PUBLIC de_kissfft_cpp)
+    target_link_libraries(${APP_NAME} PUBLIC de_soundtouch)
+    target_link_libraries(${APP_NAME} PUBLIC de_lame)
+    target_link_libraries(${APP_NAME} PUBLIC de_vst2sdk)
+    target_link_libraries(${APP_NAME} PUBLIC de_ffmpeg)
+    target_link_libraries(${APP_NAME} PUBLIC DarkImage_2504)
+    target_link_libraries(${APP_NAME} PUBLIC DarkCoverArt_2504)
 
+    # include(${CMAKE_SOURCE_DIR}/src/embed_static_runtime.cmake)
+    
 endif()

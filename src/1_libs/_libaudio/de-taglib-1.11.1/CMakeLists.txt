@@ -66,12 +66,13 @@ else()
     if (MSVC)
 	else()
         #target_compile_options(${LIB_NAME} PRIVATE -fvisibility=hidden)
+        target_compile_options(${LIB_NAME} PRIVATE -ftime-trace)
         target_compile_options(${LIB_NAME} PRIVATE -Wno-deprecated-declarations)
         target_compile_options(${LIB_NAME} PRIVATE -Wno-attributes)
         target_compile_options(${LIB_NAME} PRIVATE -Wno-delete-non-virtual-dtor)
         target_link_libraries(${LIB_NAME} PRIVATE m)
     endif()
-
+ 
     target_link_libraries(${LIB_NAME} PUBLIC de_zlib)
 
 endif()
