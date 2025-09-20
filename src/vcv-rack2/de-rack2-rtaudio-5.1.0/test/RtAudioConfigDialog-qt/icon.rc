@@ -1,0 +1,26 @@
+1 VERSIONINFO
+FILEVERSION     1,0,0,0
+PRODUCTVERSION  1,0,0,0
+BEGIN
+  BLOCK "StringFileInfo"
+  BEGIN
+    BLOCK "080904E4"
+    BEGIN
+      VALUE "CompanyName", "Ingenieur Beauro Benjamin Hampe"
+      VALUE "FileDescription", "Piano3D using QtSDK, libDarkGPU, libDarkImage and libRtAudio"
+      VALUE "FileVersion", "1.0"
+      VALUE "InternalName", "Piano3D"
+      VALUE "LegalCopyright", "Meins"
+      VALUE "OriginalFilename", "Piano3D.exe"
+      VALUE "ProductName", "Piano3D Audio Synthesizer Simulation"
+      VALUE "ProductVersion", "1.0"
+    END
+  END
+
+  BLOCK "VarFileInfo"
+  BEGIN
+    VALUE "Translation", 0x809, 1252
+  END
+END
+
+IDI_ICON1   ICON  DISCARDABLE  "piano.ico"

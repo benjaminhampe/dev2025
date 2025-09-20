@@ -26,6 +26,11 @@ extern "C" {
 
 #define _LIBICONV_VERSION 0x0112    /* version number: (major<<8) + minor */
 
+# define LIBICONV_SHLIB_EXPORTED __attribute__((__visibility__("default")))
+
+extern LIBICONV_SHLIB_EXPORTED int _libiconv_version;
+
+#if 0
 #if 0 && BUILDING_LIBICONV
 # define LIBICONV_SHLIB_EXPORTED __attribute__((__visibility__("default")))
 #elif defined _MSC_VER && BUILDING_LIBICONV
@@ -47,6 +52,7 @@ extern "C" {
 # define LIBICONV_SHLIB_EXPORTED
 #endif
 extern LIBICONV_SHLIB_EXPORTED __declspec (dllimport) int _libiconv_version; /* Likewise */
+#endif
 
 #ifdef __cplusplus
 }

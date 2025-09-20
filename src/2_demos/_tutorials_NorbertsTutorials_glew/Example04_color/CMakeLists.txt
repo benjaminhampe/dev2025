@@ -23,7 +23,7 @@ else()
       list(APPEND APP_SOURCES ${CMAKE_CURRENT_LIST_DIR}/res/resource.rc)
    endif()
 
-   message("${BoldRed}[benni] APPLICATION: ${APP_NAME}${ColourReset}")
+   message("${BoldGreen}[benni] APP: ${APP_NAME}${ColourReset}")
    add_executable(${APP_NAME} "")
    target_sources(${APP_NAME} PRIVATE ${APP_SOURCES})
    target_include_directories(${APP_NAME} PRIVATE ${APP_SOURCE_DIR})

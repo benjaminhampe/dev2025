@@ -1,0 +1,3 @@
+add_subdirectory(de-miniaudio-fs)
+add_subdirectory(ma_test_deviceio)
+add_subdirectory(ma_example_simple_loopback)

@@ -20,5 +20,5 @@ add_subdirectory(de-gmp-mini-6.3.0)
 add_subdirectory(de-zstd-1.5.7)
 add_subdirectory(de-xz-5.8.1-static)
 add_subdirectory(de-mbedtls-3.6.4-static)
-# add_subdirectory(archive-3.8.1)
-
+add_subdirectory(de-pcre2-10.46)
+add_subdirectory(de-archive-3.8.1)

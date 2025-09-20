@@ -21,4 +21,20 @@ else()
 
     target_link_libraries(${APP_NAME} PRIVATE DarkCoverArt_2504) 
 
+    include(${CMAKE_SOURCE_DIR}/src/embed_static_runtime.cmake)
+
+    # if (CMAKE_BUILD_TYPE STREQUAL "Release")
+
+        # # message(STATUS "Building in Release mode, strip symbols")
+        # # --strip-debug : Removes only debugging symbols.
+        # # --strip-unneeded : Removes debug symbols + other unused symbols (may affect debugging).
+        # add_custom_command(
+            # TARGET ${APP_NAME}
+            # POST_BUILD
+            # COMMAND ${CMAKE_OBJCOPY} --strip-unneeded $<TARGET_FILE:${APP_NAME}>
+            # COMMENT "Stripping debug symbols"
+        # )
+
+    # endif()
+
 endif()

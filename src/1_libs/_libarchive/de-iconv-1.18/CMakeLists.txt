@@ -1,3 +1,5 @@
 add_subdirectory(libcharset-1.5)
 add_subdirectory(libicrt)
 add_subdirectory(libiconv-1.18)
+add_subdirectory(iconv)
+add_subdirectory(iconv_no_i18n)

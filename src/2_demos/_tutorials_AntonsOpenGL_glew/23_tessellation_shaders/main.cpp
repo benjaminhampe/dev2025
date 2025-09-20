@@ -190,7 +190,7 @@ int main() {
 		gl_log_err( "ERROR: could not link shader programme GL index %i\n",
 								shader_programme );
 		_print_programme_info_log( shader_programme );
-		return false;
+		return 1;
 	}
 	( is_valid( shader_programme ) );
 

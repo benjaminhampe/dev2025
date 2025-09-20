@@ -3,8 +3,10 @@ add_subdirectory(AVX_Mandelbrot_glfw_glad)
 add_subdirectory(AzimutProjection_glew_wgl)
 add_subdirectory(Raytracing_glfw_glew)
 add_subdirectory(CNC_Parser)
-# add_subdirectory(_tutorials_AntonsOpenGL_glew)
-# add_subdirectory(_tutorials_LearnOpenGL_glad)
+add_subdirectory(_tutorials_AntonsOpenGL_glew)
+add_subdirectory(_tutorials_LearnOpenGL_glad)
+add_subdirectory(_tutorials_NorbertsTutorials_glew) # TODO: repair
+add_subdirectory(AVX_Mandelbrot_de_glew) # TODO: repair
 add_subdirectory(_irrlicht)
 add_subdirectory(ShaderArt_wgl_glew)
 

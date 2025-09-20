@@ -351,7 +351,7 @@
 #endif
 
 #ifndef ZEXTERN
-#  define ZEXTERN extern
+#  define ZEXTERN /* extern */
 #endif
 #ifndef ZEXPORT
 #  define ZEXPORT

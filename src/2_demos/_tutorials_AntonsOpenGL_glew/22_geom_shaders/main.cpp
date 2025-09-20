@@ -183,7 +183,7 @@ int main() {
 		fprintf( stderr, "ERROR: could not link shader programme GL index %i\n",
 						 shader_programme );
 		print_programme_info_log( shader_programme );
-		return false;
+		return 1;
 	}
 	( is_programme_valid( shader_programme ) );
 

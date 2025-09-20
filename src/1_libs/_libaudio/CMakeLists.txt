@@ -31,3 +31,8 @@ add_subdirectory(de-vst3sdk-3.7.13)
 add_subdirectory(de-ffmpeg-4.3.2-win64-gcc-shared) # Import/Export MP4, AVI, MKV, etc...
 
 # add_subdirectory(de-juce-7.0.5) # Big lib, only activate when needed.
+
+# add_subdirectory(de-dr_wav)
+# add_subdirectory(de-dr_flac)
+# add_subdirectory(de-dr_mp3)
+# add_subdirectory(de-miniaudio-0.11.23)

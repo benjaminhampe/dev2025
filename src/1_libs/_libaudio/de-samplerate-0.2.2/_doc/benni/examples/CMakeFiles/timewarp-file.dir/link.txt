@@ -1,3 +1,0 @@
-C:\sdk\cmake-3.29.0\bin\cmake.exe -E rm -f CMakeFiles\timewarp-file.dir/objects.a
-C:\sdk\mingw64_1310\bin\ar.exe qc CMakeFiles\timewarp-file.dir/objects.a @CMakeFiles\timewarp-file.dir\objects1.rsp
-C:\sdk\mingw64_1310\bin\gcc.exe -O3 -DNDEBUG -Wl,--whole-archive CMakeFiles\timewarp-file.dir/objects.a -Wl,--no-whole-archive -o timewarp-file.exe -Wl,--out-implib,libtimewarp-file.dll.a -Wl,--major-image-version,0,--minor-image-version,0 @CMakeFiles\timewarp-file.dir\linkLibs.rsp

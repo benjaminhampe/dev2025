@@ -1,0 +1,7 @@
+#include "binary-io.h"
+#include "progname.h"
+#include "relocatable.h"
+#include "safe-read.h"
+#include "xalloc.h"
+#include "uniwidth.h"
+#include "uniwidth/cjk.h"

@@ -25,8 +25,13 @@ else()
         ${LIB_SOURCE_DIR}/compress.c
         ${LIB_SOURCE_DIR}/crc32.c
         ${LIB_SOURCE_DIR}/deflate.c
-        ${LIB_SOURCE_DIR}/inflate.c
+        ${LIB_SOURCE_DIR}/gzclose.c
+        ${LIB_SOURCE_DIR}/gzlib.c
+        ${LIB_SOURCE_DIR}/gzread.c
+        ${LIB_SOURCE_DIR}/gzwrite.c
+        ${LIB_SOURCE_DIR}/infback.c
         ${LIB_SOURCE_DIR}/inffast.c
+        ${LIB_SOURCE_DIR}/inflate.c
         ${LIB_SOURCE_DIR}/inftrees.c
         ${LIB_SOURCE_DIR}/trees.c
         ${LIB_SOURCE_DIR}/uncompr.c
@@ -42,7 +47,8 @@ else()
     if (BUILD_SHARED)
         message("${BoldBlue}[benni] DLL: ${LIB_NAME}${ColourReset}")
         add_library(${LIB_NAME} SHARED "")
-        target_compile_definitions(${LIB_NAME} PUBLIC -DZLIB_DLL=1)
+        target_compile_definitions(${LIB_NAME} PUBLIC ZLIB_DLL=1)
+        target_compile_definitions(${LIB_NAME} PRIVATE ZLIB_INTERNAL=1)
     else()
         message("${BoldCyan}[benni] LIB: ${LIB_NAME}${ColourReset}")
         add_library(${LIB_NAME} STATIC "")

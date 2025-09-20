@@ -1,3 +1,0 @@
-C:\sdk\cmake-3.29.0\bin\cmake.exe -E rm -f CMakeFiles\src-evaluate.dir/objects.a
-C:\sdk\mingw64_1310\bin\ar.exe qc CMakeFiles\src-evaluate.dir/objects.a @CMakeFiles\src-evaluate.dir\objects1.rsp
-C:\sdk\mingw64_1310\bin\gcc.exe -O3 -DNDEBUG -Wl,--whole-archive CMakeFiles\src-evaluate.dir/objects.a -Wl,--no-whole-archive -o src-evaluate.exe -Wl,--out-implib,libsrc-evaluate.dll.a -Wl,--major-image-version,0,--minor-image-version,0 @CMakeFiles\src-evaluate.dir\linkLibs.rsp

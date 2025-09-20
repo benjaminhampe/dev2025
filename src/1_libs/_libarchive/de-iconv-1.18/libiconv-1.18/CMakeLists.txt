@@ -9,8 +9,10 @@ else()
 	set(LIB_SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/src)
 	set(LIB_HEADERS
 		${LIB_HEADER_DIR}/iconv.h
+        ${LIB_HEADER_DIR}/iconv/config.h
 	)
 	set(LIB_SOURCES
+		# ${LIB_SOURCE_DIR}/iconv_version.c
 		${LIB_SOURCE_DIR}/compat.c		
 		${LIB_SOURCE_DIR}/genaliases.c
 		${LIB_SOURCE_DIR}/genaliases2.c
@@ -74,7 +76,6 @@ else()
 		${LIB_SOURCE_DIR}/cns11643_6.h
 		${LIB_SOURCE_DIR}/cns11643_7.h
 		${LIB_SOURCE_DIR}/cns11643_inv.h
-		${LIB_SOURCE_DIR}/config.h
 		${LIB_SOURCE_DIR}/converters.h
 		${LIB_SOURCE_DIR}/cp1046.h
 		${LIB_SOURCE_DIR}/cp1124.h
@@ -314,7 +315,7 @@ else()
 	message("${BoldCyan}[benni] LIB: ${LIB_NAME}${ColourReset}")
 	add_library(${LIB_NAME} STATIC "")
 	# endif()
-	
+    target_compile_definitions(${LIB_NAME} PUBLIC LIBICONV_DLL=) # reset!
 	target_compile_definitions(${LIB_NAME} PUBLIC HAVE_ICONV=1)
 	target_compile_definitions(${LIB_NAME} PUBLIC BUILDING_LIBICONV=1)
 	target_compile_definitions(${LIB_NAME} PRIVATE HAVE_CONFIG_H=1)
@@ -333,7 +334,7 @@ else()
 	target_include_directories(${LIB_NAME} PUBLIC ${LIB_HEADER_DIR})
 
 	target_include_directories(${LIB_NAME} PRIVATE ${LIB_SOURCE_DIR})
-	# target_include_directories(${LIB_NAME} PRIVATE ${LIB_SOURCE_DIR}/../..) # config.h
+	target_include_directories(${LIB_NAME} PRIVATE ${LIB_HEADER_DIR}/iconv) # config.h
 
 	target_link_libraries(${LIB_NAME} PUBLIC de_iconv_charset)
 	target_link_libraries(${LIB_NAME} PRIVATE de_iconv_icrt)

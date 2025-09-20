@@ -1,10 +1,16 @@
 add_subdirectory(0_tools)
 add_subdirectory(1_libs)
-add_subdirectory(2_demos)
-add_subdirectory(ActiveWallpaper)
-add_subdirectory(H3_Siedler)
+add_subdirectory(raylib)
+
+add_subdirectory(vcv-rack2)
+
+
+
+# add_subdirectory(2_demos)
+# add_subdirectory(ActiveWallpaper)
+# add_subdirectory(H3_Siedler)
+# add_subdirectory(SonnenSystem_glfw_glew)
 # add_subdirectory(F3_FreeLancer)
-add_subdirectory(SonnenSystem_glfw_glew)
 
 # add_subdirectory(minimal_vst2x_host)
 # add_subdirectory(minimal_vst3_host)

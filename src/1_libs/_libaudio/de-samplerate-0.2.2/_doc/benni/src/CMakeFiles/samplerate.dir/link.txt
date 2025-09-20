@@ -1,2 +1,0 @@
-C:\sdk\mingw64_1310\bin\ar.exe qc libsamplerate.a CMakeFiles/samplerate.dir/samplerate.c.obj CMakeFiles/samplerate.dir/src_linear.c.obj CMakeFiles/samplerate.dir/src_sinc.c.obj CMakeFiles/samplerate.dir/src_zoh.c.obj
-C:\sdk\mingw64_1310\bin\ranlib.exe libsamplerate.a

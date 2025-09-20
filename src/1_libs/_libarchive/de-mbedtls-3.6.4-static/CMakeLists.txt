@@ -125,33 +125,61 @@ else()
         # message("${BoldBlue}[benni] DLL: ${LIB_NAME}${ColourReset}")
         # add_library(${LIB_NAME} SHARED IMPORTED GLOBAL) # GLOBAL
     # else()
-        message("${BoldCyan}[benni] LIB: ${LIB_NAME}${ColourReset}")
-        add_library(${LIB_NAME} STATIC IMPORTED GLOBAL) # GLOBAL
+    message("${BoldCyan}[benni] LIB: ${LIB_NAME}${ColourReset}")
+    # add_library(${LIB_NAME} STATIC IMPORTED GLOBAL)
     # endif()
 
-	target_sources(${LIB_NAME} INTERFACE "${LIB_HEADERS}")
+    add_library(${LIB_NAME} INTERFACE)
 
-	target_include_directories(${LIB_NAME} INTERFACE "${LIB_HEADER_DIR}")
+    target_link_libraries(${LIB_NAME} INTERFACE
+        "${CMAKE_CURRENT_LIST_DIR}/lib/libeverest.a"
+        "${CMAKE_CURRENT_LIST_DIR}/lib/libmbedcrypto.a"
+        "${CMAKE_CURRENT_LIST_DIR}/lib/libmbedtls.a"
+        "${CMAKE_CURRENT_LIST_DIR}/lib/libmbedx509.a"
+        "${CMAKE_CURRENT_LIST_DIR}/lib/libp256m.a"
+    )
+
+    target_include_directories(${LIB_NAME} INTERFACE
+        "${CMAKE_CURRENT_LIST_DIR}/include"
+        "${CMAKE_CURRENT_LIST_DIR}/include/everest"
+    )
+
+
+    # set_target_properties(${LIB_NAME} PROPERTIES
+    #     IMPORTED_LOCATION "${CMAKE_CURRENT_LIST_DIR}/lib/libmbedtls.a"
+    #     INTERFACE_LINK_LIBRARIES
+    #         "${CMAKE_CURRENT_LIST_DIR}/lib/libeverest.a"
+    #         "${CMAKE_CURRENT_LIST_DIR}/lib/libmbedcrypto.a"
+    #         "${CMAKE_CURRENT_LIST_DIR}/lib/libmbedx509.a"
+    #         "${CMAKE_CURRENT_LIST_DIR}/lib/libp256m.a"
+    #     INTERFACE_INCLUDE_DIRECTORIES
+    #         "${CMAKE_CURRENT_LIST_DIR}/include"
+    #         "${CMAKE_CURRENT_LIST_DIR}/include/everest"
+    # )
+
+	# target_sources(${LIB_NAME} INTERFACE "${LIB_HEADERS}")
+
+	# target_include_directories(${LIB_NAME} INTERFACE "${LIB_HEADER_DIR}")
 	
-	set_property(TARGET ${LIB_NAME} PROPERTY INTERFACE_INCLUDE_DIRECTORIES "${LIB_HEADER_DIR}")
+	# set_property(TARGET ${LIB_NAME} PROPERTY INTERFACE_INCLUDE_DIRECTORIES "${LIB_HEADER_DIR}")
 	
-	set(LIB_DIR ${CMAKE_CURRENT_LIST_DIR}/lib)
-	set_property(TARGET ${LIB_NAME} PROPERTY IMPORTED_IMPLIB "${LIB_DIR}/libeverest.a")
-	set_property(TARGET ${LIB_NAME} PROPERTY IMPORTED_IMPLIB "${LIB_DIR}/libmbedcrypto.a")
-	set_property(TARGET ${LIB_NAME} PROPERTY IMPORTED_IMPLIB "${LIB_DIR}/libmbedtls.a")
-	set_property(TARGET ${LIB_NAME} PROPERTY IMPORTED_IMPLIB "${LIB_DIR}/libmbedx509.a")
-	set_property(TARGET ${LIB_NAME} PROPERTY IMPORTED_IMPLIB "${LIB_DIR}/libp256m.a")
+	# set(LIB_DIR ${CMAKE_CURRENT_LIST_DIR}/lib)
+	# set_property(TARGET ${LIB_NAME} PROPERTY IMPORTED_IMPLIB "${LIB_DIR}/libeverest.a")
+	# set_property(TARGET ${LIB_NAME} PROPERTY IMPORTED_IMPLIB "${LIB_DIR}/libmbedcrypto.a")
+	# set_property(TARGET ${LIB_NAME} PROPERTY IMPORTED_IMPLIB "${LIB_DIR}/libmbedtls.a")
+	# set_property(TARGET ${LIB_NAME} PROPERTY IMPORTED_IMPLIB "${LIB_DIR}/libmbedx509.a")
+	# set_property(TARGET ${LIB_NAME} PROPERTY IMPORTED_IMPLIB "${LIB_DIR}/libp256m.a")
 
 	# set(BIN_DIR ${CMAKE_CURRENT_LIST_DIR}/bin)
 	# set_property(TARGET ${LIB_NAME} PROPERTY IMPORTED_LOCATION "${BIN_DIR}/audioadapter.dll")
 
-	target_link_libraries(${LIB_NAME} INTERFACE 
-		"${LIB_DIR}/libeverest.a"
-		"${LIB_DIR}/libmbedcrypto.a"
-		"${LIB_DIR}/libmbedtls.a"
-		"${LIB_DIR}/libmbedx509.a"
-		"${LIB_DIR}/libp256m.a"
-	)
+	# target_link_libraries(${LIB_NAME} INTERFACE 
+		# "${LIB_DIR}/libeverest.a"
+		# "${LIB_DIR}/libmbedcrypto.a"
+		# "${LIB_DIR}/libmbedtls.a"
+		# "${LIB_DIR}/libmbedx509.a"
+		# "${LIB_DIR}/libp256m.a"
+	# )
 	
 	target_compile_definitions(${LIB_NAME} INTERFACE HAVE_LIBMBEDCRYPTO=1)
     target_compile_definitions(${LIB_NAME} INTERFACE HAVE_MBEDTLS=1)
