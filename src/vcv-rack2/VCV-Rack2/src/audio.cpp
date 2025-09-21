@@ -118,7 +118,7 @@ void Port::setDriverId(int driverId) {
 			setDeviceId(defaultDeviceId);
 	}
 	catch (Exception& e) {
-		WARN("Audio port could not get default device ID: %s", e.what());
+		RK2_WARN("Audio port could not get default device ID: %s", e.what());
 	}
 }
 
@@ -129,7 +129,7 @@ std::string Port::getDriverName() {
 		return driver->getName();
 	}
 	catch (Exception& e) {
-		WARN("Audio port could not get driver name: %s", e.what());
+		RK2_WARN("Audio port could not get driver name: %s", e.what());
 		return "";
 	}
 }
@@ -145,7 +145,7 @@ std::vector<int> Port::getDeviceIds() {
 		return driver->getDeviceIds();
 	}
 	catch (Exception& e) {
-		WARN("Audio port could not get device IDs: %s", e.what());
+		RK2_WARN("Audio port could not get device IDs: %s", e.what());
 		return {};
 	}
 }
@@ -166,7 +166,7 @@ void Port::setDeviceId(int deviceId) {
 			onStopStream();
 		}
 		catch (Exception& e) {
-			WARN("Audio port could not unsubscribe from device: %s", e.what());
+			RK2_WARN("Audio port could not unsubscribe from device: %s", e.what());
 		}
 	}
 	device = NULL;
@@ -182,7 +182,7 @@ void Port::setDeviceId(int deviceId) {
 			}
 		}
 		catch (Exception& e) {
-			WARN("Audio port could not subscribe to device: %s", e.what());
+			RK2_WARN("Audio port could not subscribe to device: %s", e.what());
 		}
 	}
 }
@@ -194,7 +194,7 @@ int Port::getDeviceNumInputs(int deviceId) {
 		return driver->getDeviceNumInputs(deviceId);
 	}
 	catch (Exception& e) {
-		WARN("Audio port could not get device number of inputs: %s", e.what());
+		RK2_WARN("Audio port could not get device number of inputs: %s", e.what());
 		return 0;
 	}
 }
@@ -206,7 +206,7 @@ int Port::getDeviceNumOutputs(int deviceId) {
 		return driver->getDeviceNumOutputs(deviceId);
 	}
 	catch (Exception& e) {
-		WARN("Audio port could not get device number of outputs: %s", e.what());
+		RK2_WARN("Audio port could not get device number of outputs: %s", e.what());
 		return 0;
 	}
 }
@@ -218,7 +218,7 @@ std::string Port::getDeviceName(int deviceId) {
 		return driver->getDeviceName(deviceId);
 	}
 	catch (Exception& e) {
-		WARN("Audio port could not get device name: %s", e.what());
+		RK2_WARN("Audio port could not get device name: %s", e.what());
 		return 0;
 	}
 }
@@ -230,7 +230,7 @@ std::set<float> Port::getSampleRates() {
 		return device->getSampleRates();
 	}
 	catch (Exception& e) {
-		WARN("Audio port could not get device sample rates: %s", e.what());
+		RK2_WARN("Audio port could not get device sample rates: %s", e.what());
 		return {};
 	}
 }
@@ -242,7 +242,7 @@ float Port::getSampleRate() {
 		return device->getSampleRate();
 	}
 	catch (Exception& e) {
-		WARN("Audio port could not get device sample rate: %s", e.what());
+		RK2_WARN("Audio port could not get device sample rate: %s", e.what());
 		return 0;
 	}
 }
@@ -254,7 +254,7 @@ void Port::setSampleRate(float sampleRate) {
 		device->setSampleRate(sampleRate);
 	}
 	catch (Exception& e) {
-		WARN("Audio port could not set device sample rate: %s", e.what());
+		RK2_WARN("Audio port could not set device sample rate: %s", e.what());
 	}
 }
 
@@ -265,7 +265,7 @@ std::set<int> Port::getBlockSizes() {
 		return device->getBlockSizes();
 	}
 	catch (Exception& e) {
-		WARN("Audio port could not get device block sizes: %s", e.what());
+		RK2_WARN("Audio port could not get device block sizes: %s", e.what());
 		return {};
 	}
 }
@@ -277,7 +277,7 @@ int Port::getBlockSize() {
 		return device->getBlockSize();
 	}
 	catch (Exception& e) {
-		WARN("Audio port could not get device block size: %s", e.what());
+		RK2_WARN("Audio port could not get device block size: %s", e.what());
 		return 0;
 	}
 }
@@ -289,7 +289,7 @@ void Port::setBlockSize(int blockSize) {
 		device->setBlockSize(blockSize);
 	}
 	catch (Exception& e) {
-		WARN("Audio port could not set device block size: %s", e.what());
+		RK2_WARN("Audio port could not set device block size: %s", e.what());
 	}
 }
 
@@ -300,7 +300,7 @@ int Port::getNumInputs() {
 		return math::clamp(device->getNumInputs() - inputOffset, 0, maxInputs);
 	}
 	catch (Exception& e) {
-		WARN("Audio port could not get device number of inputs: %s", e.what());
+		RK2_WARN("Audio port could not get device number of inputs: %s", e.what());
 		return 0;
 	}
 }
@@ -312,7 +312,7 @@ int Port::getNumOutputs() {
 		return math::clamp(device->getNumOutputs() - outputOffset, 0, maxOutputs);
 	}
 	catch (Exception& e) {
-		WARN("Audio port could not get device number of outputs: %s", e.what());
+		RK2_WARN("Audio port could not get device number of outputs: %s", e.what());
 		return 0;
 	}
 }
@@ -327,7 +327,7 @@ json_t* Port::toJson() {
 			json_object_set_new(rootJ, "deviceName", json_string(deviceName.c_str()));
 		}
 		catch (Exception& e) {
-			WARN("Audio port could not get device name: %s", e.what());
+			RK2_WARN("Audio port could not get device name: %s", e.what());
 		}
 	}
 

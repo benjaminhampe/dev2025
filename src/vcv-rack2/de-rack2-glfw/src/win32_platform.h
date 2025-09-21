@@ -62,7 +62,9 @@
 #define DIRECTINPUT_VERSION 0x0800
 
 // GLFW uses OEM cursor resources
+#ifndef OEMRESOURCE
 #define OEMRESOURCE
+#endif
 
 #include <wctype.h>
 #include <windows.h>

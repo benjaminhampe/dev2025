@@ -146,7 +146,7 @@ void Plugin::modulesFromJson(json_t* rootJ) {
 		}
 	}
 	else {
-		WARN("No modules in plugin manifest %s", slug.c_str());
+		RK2_WARN("No modules in plugin manifest %s", slug.c_str());
 	}
 
 	if (!models.empty()) {

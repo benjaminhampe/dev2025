@@ -580,7 +580,7 @@ static void unarchiveToDirectory(const std::string& archivePath, const std::vect
 
 		// Convert relative pathname to absolute based on dirPath
 		fs::path entryPath = fs::u8path(archive_entry_pathname(entry));
-		// DEBUG("entryPath: %s", entryPath.generic_u8string().c_str());
+		// RK2_DEBUG("entryPath: %s", entryPath.generic_u8string().c_str());
 		if (!entryPath.is_relative())
 			throw Exception("Unarchiver does not support absolute tar paths: %s", entryPath.u8string().c_str());
 
@@ -868,7 +868,7 @@ void openBrowser(const std::string& url) {
 	if (url.empty())
 		return;
 
-	INFO("Opening browser URL %s", url.c_str());
+	RK2_INFO("Opening browser URL %s", url.c_str());
 
 	std::string urlL = url;
 	std::thread t([=] {
@@ -892,7 +892,7 @@ void openDirectory(const std::string& path) {
 	if (path.empty())
 		return;
 
-	INFO("Opening directory %s", path.c_str());
+	RK2_INFO("Opening directory %s", path.c_str());
 
 	std::string pathL = path;
 	std::thread t([=] {

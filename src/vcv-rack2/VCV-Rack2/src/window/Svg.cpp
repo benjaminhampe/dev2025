@@ -25,7 +25,7 @@ void Svg::loadFile(const std::string& filename) {
 	handle = nsvgParseFromFile(filename.c_str(), "px", SVG_DPI);
 	if (!handle)
 		throw Exception("Failed to load SVG %s", filename.c_str());
-	INFO("Loaded SVG %s", filename.c_str());
+	RK2_INFO("Loaded SVG %s", filename.c_str());
 }
 
 
@@ -39,7 +39,7 @@ void Svg::loadString(const std::string& str) {
 	std::string strEllip = string::ellipsize(str, 40);
 	if (!handle)
 		throw Exception("Failed to load SVG \"%s\"", strEllip.c_str());
-	INFO("Loaded SVG \"%s\"", strEllip.c_str());
+	RK2_INFO("Loaded SVG \"%s\"", strEllip.c_str());
 }
 
 
@@ -109,7 +109,7 @@ std::shared_ptr<Svg> Svg::load(const std::string& filename) {
 		svg->loadFile(filename);
 	}
 	catch (Exception& e) {
-		WARN("%s", e.what());
+		RK2_WARN("%s", e.what());
 		svg = NULL;
 	}
 	svgCache[filename] = svg;

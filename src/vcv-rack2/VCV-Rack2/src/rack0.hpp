@@ -130,16 +130,6 @@ DEPRECATED inline float randomf() {
 }
 
 ////////////////////
-// logger
-////////////////////
-
-/** Deprecated lowercase log functions */
-#define debug(...) DEBUG(__VA_ARGS__)
-#define info(...) INFO(__VA_ARGS__)
-#define warn(...) WARN(__VA_ARGS__)
-#define fatal(...) FATAL(__VA_ARGS__)
-
-////////////////////
 // asset
 ////////////////////
 

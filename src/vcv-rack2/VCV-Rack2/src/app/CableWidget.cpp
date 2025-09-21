@@ -62,14 +62,14 @@ PlugWidget::PlugWidget() {
 	internal->plugTransform->addChild(internal->plugTint);
 
 	internal->plug = new widget::SvgWidget;
-	internal->plug->setSvg(window::Svg::load(asset::system("res/ComponentLibrary/Plug.svg")));
+	internal->plug->setSvg(window::Svg::load(asset::system("media/Rack2/res/ComponentLibrary/Plug.svg")));
 	internal->plugTint->addChild(internal->plug);
 	internal->plugTransform->setSize(internal->plug->getSize());
 	internal->plugTransform->setPosition(internal->plug->getSize().mult(-0.5));
 	internal->plugTint->setSize(internal->plug->getSize());
 
 	internal->plugPort = new widget::SvgWidget;
-	internal->plugPort->setSvg(window::Svg::load(asset::system("res/ComponentLibrary/PlugPort.svg")));
+	internal->plugPort->setSvg(window::Svg::load(asset::system("media/Rack2/res/ComponentLibrary/PlugPort.svg")));
 	internal->plugPort->setPosition(internal->plugPort->getSize().mult(-0.5));
 	internal->fb->addChild(internal->plugPort);
 

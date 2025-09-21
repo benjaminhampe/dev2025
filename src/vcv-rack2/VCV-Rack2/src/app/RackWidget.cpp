@@ -44,13 +44,13 @@ struct RackWidget::Internal {
 static ModuleWidget* moduleWidgetFromJson(json_t* moduleJ) {
 	plugin::Model* model = plugin::modelFromJson(moduleJ);
 	assert(model);
-	INFO("Creating module %s", model->getFullName().c_str());
+	RK2_INFO("Creating module %s", model->getFullName().c_str());
 	engine::Module* module = model->createModule();
 	assert(module);
 	module->fromJson(moduleJ);
 
 	// Create ModuleWidget
-	INFO("Creating module widget %s", model->getFullName().c_str());
+	RK2_INFO("Creating module widget %s", model->getFullName().c_str());
 	ModuleWidget* moduleWidget = module->model->createModuleWidget(module);
 	assert(moduleWidget);
 	return moduleWidget;
@@ -289,7 +289,7 @@ void RackWidget::mergeJson(json_t* rootJ) {
 		// TODO Legacy v0.6?
 		ModuleWidget* mw = getModule(id);
 		if (!mw) {
-			WARN("Cannot find ModuleWidget %lld", (long long) id);
+			RK2_WARN("Cannot find ModuleWidget %lld", (long long) id);
 			continue;
 		}
 
@@ -321,7 +321,7 @@ void RackWidget::mergeJson(json_t* rootJ) {
 		int64_t id = json_integer_value(idJ);
 		CableWidget* cw = getCable(id);
 		if (!cw) {
-			WARN("Cannot find CableWidget %lld", (long long) id);
+			RK2_WARN("Cannot find CableWidget %lld", (long long) id);
 			continue;
 		}
 
@@ -374,12 +374,12 @@ void RackWidget::fromJson(json_t* rootJ) {
 		// Get Module
 		engine::Module* module = APP->engine->getModule(id);
 		if (!module) {
-			WARN("Cannot find Module %lld", (long long) id);
+			RK2_WARN("Cannot find Module %lld", (long long) id);
 			continue;
 		}
 
 		// Create ModuleWidget
-		INFO("Creating module widget %s", module->model->getFullName().c_str());
+		RK2_INFO("Creating module widget %s", module->model->getFullName().c_str());
 		ModuleWidget* mw = module->model->createModuleWidget(module);
 
 		// pos
@@ -425,7 +425,7 @@ void RackWidget::fromJson(json_t* rootJ) {
 		// Get Cable
 		engine::Cable* cable = APP->engine->getCable(id);
 		if (!cable) {
-			WARN("Cannot find Cable %lld", (long long) id);
+			RK2_WARN("Cannot find Cable %lld", (long long) id);
 			continue;
 		}
 
@@ -494,7 +494,7 @@ static PasteJsonResult RackWidget_pasteJson(RackWidget* that, json_t* rootJ, his
 			mw = moduleWidgetFromJson(moduleJ);
 		}
 		catch (Exception& e) {
-			WARN("%s", e.what());
+			RK2_WARN("%s", e.what());
 			continue;
 		}
 		assert(mw);
@@ -574,7 +574,7 @@ static PasteJsonResult RackWidget_pasteJson(RackWidget* that, json_t* rootJ, his
 				APP->engine->addCable(cable);
 			}
 			catch (Exception& e) {
-				WARN("Cannot paste cable: %s", e.what());
+				RK2_WARN("Cannot paste cable: %s", e.what());
 				delete cable;
 				continue;
 			}
@@ -616,7 +616,7 @@ void RackWidget::pasteModuleJsonAction(json_t* moduleJ) {
 		mw = moduleWidgetFromJson(moduleJ);
 	}
 	catch (Exception& e) {
-		WARN("%s", e.what());
+		RK2_WARN("%s", e.what());
 		return;
 	}
 	assert(mw);
@@ -642,14 +642,14 @@ void RackWidget::pasteModuleJsonAction(json_t* moduleJ) {
 void RackWidget::pasteClipboardAction() {
 	const char* json = glfwGetClipboardString(APP->window->win);
 	if (!json) {
-		WARN("Could not get text from clipboard.");
+		RK2_WARN("Could not get text from clipboard.");
 		return;
 	}
 
 	json_error_t error;
 	json_t* rootJ = json_loads(json, 0, &error);
 	if (!rootJ) {
-		WARN("JSON parsing error at %s %d:%d %s", error.source, error.line, error.column, error.text);
+		RK2_WARN("JSON parsing error at %s %d:%d %s", error.source, error.line, error.column, error.text);
 		return;
 	}
 	DEFER({json_decref(rootJ);});
@@ -1091,7 +1091,7 @@ void RackWidget::loadSelection(std::string path) {
 		throw Exception("Could not load selection file %s", path.c_str());
 	DEFER({std::fclose(file);});
 
-	INFO("Loading selection %s", path.c_str());
+	RK2_INFO("Loading selection %s", path.c_str());
 
 	json_error_t error;
 	json_t* rootJ = json_loadf(file, 0, &error);
@@ -1136,7 +1136,7 @@ void RackWidget::loadSelectionDialog() {
 }
 
 void RackWidget::saveSelection(std::string path) {
-	INFO("Saving selection %s", path.c_str());
+	RK2_INFO("Saving selection %s", path.c_str());
 
 	json_t* rootJ = selectionToJson();
 	assert(rootJ);

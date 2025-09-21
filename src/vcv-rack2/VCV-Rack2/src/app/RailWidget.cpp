@@ -40,14 +40,14 @@ void RailWidget::step() {
 	// Set rail SVG from theme
 	std::shared_ptr<window::Svg> railSvg;
 	if (settings::uiTheme == "light") {
-		railSvg = window::Svg::load(asset::system("res/ComponentLibrary/Rail-light.svg"));
+		railSvg = window::Svg::load(asset::system("media/Rack2/res/ComponentLibrary/Rail-light.svg"));
 	}
 	else if (settings::uiTheme == "hcdark") {
-		railSvg = window::Svg::load(asset::system("res/ComponentLibrary/Rail-hcdark.svg"));
+		railSvg = window::Svg::load(asset::system("media/Rack2/res/ComponentLibrary/Rail-hcdark.svg"));
 	}
 	else {
 		// Dark
-		railSvg = window::Svg::load(asset::system("res/ComponentLibrary/Rail.svg"));
+		railSvg = window::Svg::load(asset::system("media/Rack2/res/ComponentLibrary/Rail.svg"));
 	}
 
 	if (internal->railSw->svg != railSvg) {

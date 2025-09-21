@@ -179,7 +179,7 @@ struct Gate_MIDI : Module {
 struct Gate_MIDIWidget : ModuleWidget {
 	Gate_MIDIWidget(Gate_MIDI* module) {
 		setModule(module);
-		setPanel(createPanel(asset::system("res/Core/Gate_MIDI.svg"), asset::system("res/Core/Gate_MIDI-dark.svg")));
+		setPanel(createPanel(asset::system("media/Rack2/res/Core/Gate_MIDI.svg"), asset::system("media/Rack2/res/Core/Gate_MIDI-dark.svg")));
 
 		addChild(createWidget<ThemedScrew>(Vec(RACK_GRID_WIDTH, 0)));
 		addChild(createWidget<ThemedScrew>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, 0)));

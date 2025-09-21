@@ -128,9 +128,9 @@ static InitCallback loadPluginCallback(Plugin* plugin) {
 /** If path is blank, loads Core */
 static Plugin* loadPlugin(std::string path) {
 	if (path == "")
-		INFO("Loading Core plugin");
+		RK2_INFO("Loading Core plugin");
 	else
-		INFO("Loading plugin from %s", path.c_str());
+		RK2_INFO("Loading plugin from %s", path.c_str());
 
 	Plugin* plugin = new Plugin;
 
@@ -156,7 +156,8 @@ static Plugin* loadPlugin(std::string path) {
 		}
 
 		// Load plugin.json
-		std::string manifestFilename = (path == "") ? asset::system("Core.json") : system::join(path, "plugin.json");
+		std::string manifestFilename = (path == "") ? asset::system("media/Rack2/Core.json") 
+                                                    : system::join(path, "plugin.json");
 		FILE* file = std::fopen(manifestFilename.c_str(), "r");
 		if (!file)
 			throw Exception("Manifest file %s does not exist", manifestFilename.c_str());
@@ -200,12 +201,12 @@ static Plugin* loadPlugin(std::string path) {
 		}
 	}
 	catch (Exception& e) {
-		WARN("Could not load plugin %s: %s", path.c_str(), e.what());
+		RK2_WARN("Could not load plugin %s: %s", path.c_str(), e.what());
 		delete plugin;
 		return NULL;
 	}
 
-	INFO("Loaded plugin %s %s", plugin->slug.c_str(), plugin->version.c_str());
+	RK2_INFO("Loaded plugin %s %s", plugin->slug.c_str(), plugin->version.c_str());
 	plugins.push_back(plugin);
 	return plugin;
 }
@@ -232,12 +233,12 @@ static void extractPackages(std::string path) {
 			continue;
 
 		// Extract package
-		INFO("Extracting package %s", packagePath.c_str());
+		RK2_INFO("Extracting package %s", packagePath.c_str());
 		try {
 			system::unarchiveToDirectory(packagePath, path);
 		}
 		catch (Exception& e) {
-			WARN("Plugin package %s failed to extract: %s", packagePath.c_str(), e.what());
+			RK2_WARN("Plugin package %s failed to extract: %s", packagePath.c_str(), e.what());
 			message += string::f("Could not extract plugin package %s\n", packagePath);
 			continue;
 		}
@@ -271,16 +272,16 @@ void init() {
 
 	// Get user plugins directory
 	if (settings::devMode) {
-		pluginsPath = asset::user("plugins");
+        pluginsPath = asset::user("media/Rack2/plugins");
 	}
 	else {
-		pluginsPath = asset::user("plugins-" + APP_OS + "-" + APP_CPU);
+        pluginsPath = asset::user("media/Rack2/plugins-" + APP_OS + "-" + APP_CPU);
 	}
 
 	// In Rack <2.4.0, plugins dir was "plugins" regardless of arch.
 	// Rename old dir if running x64.
 #if defined ARCH_X64
-	std::string oldPluginsPath = asset::user("plugins");
+    std::string oldPluginsPath = asset::user("media/Rack2/plugins");
 	if (system::isDirectory(oldPluginsPath)) {
 		system::rename(oldPluginsPath, pluginsPath);
 	}
@@ -301,13 +302,13 @@ void init() {
 		std::string fundamentalPackage = getFundamentalPackagePath();
 		std::string fundamentalDir = system::join(pluginsPath, "Fundamental");
 		if (fundamentalPackage != "" && system::isFile(fundamentalPackage)) {
-			INFO("Extracting bundled Fundamental package");
+			RK2_INFO("Extracting bundled Fundamental package");
 			try {
 				system::unarchiveToDirectory(fundamentalPackage.c_str(), pluginsPath.c_str());
 				loadPlugin(fundamentalDir);
 			}
 			catch (Exception& e) {
-				WARN("Could not extract Fundamental package: %s", e.what());
+				RK2_WARN("Could not extract Fundamental package: %s", e.what());
 			}
 		}
 	}
@@ -328,7 +329,7 @@ static void destroyPlugin(Plugin* plugin) {
 			destroyCallback();
 		}
 		catch (Exception& e) {
-			WARN("Could not destroy plugin %s", plugin->slug.c_str());
+			RK2_WARN("Could not destroy plugin %s", plugin->slug.c_str());
 		}
 	}
 
@@ -349,7 +350,7 @@ static void destroyPlugin(Plugin* plugin) {
 void destroy() {
 	while (!plugins.empty()) {
 		Plugin* plugin = plugins.back();
-		INFO("Destroying plugin %s", plugin->name.c_str());
+		RK2_INFO("Destroying plugin %s", plugin->name.c_str());
 		destroyPlugin(plugin);
 		plugins.pop_back();
 	}

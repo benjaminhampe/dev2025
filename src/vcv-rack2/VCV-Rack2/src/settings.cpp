@@ -16,7 +16,7 @@ namespace settings {
 
 
 std::string settingsPath;
-bool devMode = false;
+bool devMode = true;
 bool headless = false;
 bool isPlugin = false;
 bool restart = false;
@@ -571,7 +571,7 @@ void save(std::string path) {
 	if (path.empty())
 		path = settingsPath;
 
-	INFO("Saving settings %s", path.c_str());
+	RK2_INFO("Saving settings %s", path.c_str());
 	json_t* rootJ = toJson();
 	if (!rootJ)
 		return;
@@ -592,7 +592,7 @@ void load(std::string path) {
 	if (path.empty())
 		path = settingsPath;
 
-	INFO("Loading settings %s", path.c_str());
+	RK2_INFO("Loading settings %s", path.c_str());
 	FILE* file = std::fopen(path.c_str(), "r");
 	if (!file)
 		return;

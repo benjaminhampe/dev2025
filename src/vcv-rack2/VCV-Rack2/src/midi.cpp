@@ -219,7 +219,7 @@ std::vector<int> Input::getDeviceIds() {
 		return driver->getInputDeviceIds();
 	}
 	catch (Exception& e) {
-		WARN("MIDI port could not get input device IDs: %s", e.what());
+		RK2_WARN("MIDI port could not get input device IDs: %s", e.what());
 		return {};
 	}
 }
@@ -231,7 +231,7 @@ int Input::getDefaultDeviceId() {
 		return driver->getDefaultInputDeviceId();
 	}
 	catch (Exception& e) {
-		WARN("MIDI port get default input device ID: %s", e.what());
+		RK2_WARN("MIDI port get default input device ID: %s", e.what());
 		return -1;
 	}
 }
@@ -243,7 +243,7 @@ void Input::setDeviceId(int deviceId) {
 			driver->unsubscribeInput(this->deviceId, this);
 		}
 		catch (Exception& e) {
-			WARN("MIDI port could not unsubscribe from input: %s", e.what());
+			RK2_WARN("MIDI port could not unsubscribe from input: %s", e.what());
 		}
 	}
 	device = inputDevice = NULL;
@@ -258,7 +258,7 @@ void Input::setDeviceId(int deviceId) {
 			}
 		}
 		catch (Exception& e) {
-			WARN("MIDI port could not subscribe to input: %s", e.what());
+			RK2_WARN("MIDI port could not subscribe to input: %s", e.what());
 		}
 	}
 }
@@ -270,7 +270,7 @@ std::string Input::getDeviceName(int deviceId) {
 		return driver->getInputDeviceName(deviceId);
 	}
 	catch (Exception& e) {
-		WARN("MIDI port could not get input device name: %s", e.what());
+		RK2_WARN("MIDI port could not get input device name: %s", e.what());
 		return "";
 	}
 }
@@ -376,7 +376,7 @@ std::vector<int> Output::getDeviceIds() {
 		return driver->getOutputDeviceIds();
 	}
 	catch (Exception& e) {
-		WARN("MIDI port could not get output device IDs: %s", e.what());
+		RK2_WARN("MIDI port could not get output device IDs: %s", e.what());
 		return {};
 	}
 }
@@ -388,7 +388,7 @@ void Output::setDeviceId(int deviceId) {
 			driver->unsubscribeOutput(this->deviceId, this);
 		}
 		catch (Exception& e) {
-			WARN("MIDI port could not unsubscribe from output: %s", e.what());
+			RK2_WARN("MIDI port could not unsubscribe from output: %s", e.what());
 		}
 	}
 	device = outputDevice = NULL;
@@ -403,7 +403,7 @@ void Output::setDeviceId(int deviceId) {
 			}
 		}
 		catch (Exception& e) {
-			WARN("MIDI port could not subscribe to output: %s", e.what());
+			RK2_WARN("MIDI port could not subscribe to output: %s", e.what());
 		}
 	}
 }
@@ -415,7 +415,7 @@ int Output::getDefaultDeviceId() {
 		return driver->getDefaultOutputDeviceId();
 	}
 	catch (Exception& e) {
-		WARN("MIDI port get default output device ID: %s", e.what());
+		RK2_WARN("MIDI port get default output device ID: %s", e.what());
 		return -1;
 	}
 }
@@ -427,7 +427,7 @@ std::string Output::getDeviceName(int deviceId) {
 		return driver->getOutputDeviceName(deviceId);
 	}
 	catch (Exception& e) {
-		WARN("MIDI port could not get output device name: %s", e.what());
+		RK2_WARN("MIDI port could not get output device name: %s", e.what());
 		return "";
 	}
 }
@@ -449,13 +449,13 @@ void Output::sendMessage(const Message& message) {
 	if (msg.getStatus() != 0xf && channel >= 0) {
 		msg.setChannel(channel);
 	}
-	// DEBUG("sendMessage %02x %02x %02x", msg.cmd, msg.data1, msg.data2);
+	// RK2_DEBUG("sendMessage %02x %02x %02x", msg.cmd, msg.data1, msg.data2);
 	try {
 		outputDevice->sendMessage(msg);
 	}
 	catch (Exception& e) {
 		// Don't log error because it could flood the log.
-		// WARN("MIDI port could not be sent MIDI message: %s", e.what());
+		// RK2_WARN("MIDI port could not be sent MIDI message: %s", e.what());
 		// TODO Perhaps `setDevice(-1)` if sending message fails?
 	}
 }

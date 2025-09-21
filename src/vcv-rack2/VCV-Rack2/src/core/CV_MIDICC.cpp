@@ -138,7 +138,7 @@ struct CV_MIDICC : Module {
 struct CV_MIDICCWidget : ModuleWidget {
 	CV_MIDICCWidget(CV_MIDICC* module) {
 		setModule(module);
-		setPanel(createPanel(asset::system("res/Core/CV_MIDICC.svg"), asset::system("res/Core/CV_MIDICC-dark.svg")));
+		setPanel(createPanel(asset::system("media/Rack2/res/Core/CV_MIDICC.svg"), asset::system("media/Rack2/res/Core/CV_MIDICC-dark.svg")));
 
 		addChild(createWidget<ThemedScrew>(Vec(RACK_GRID_WIDTH, 0)));
 		addChild(createWidget<ThemedScrew>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, 0)));

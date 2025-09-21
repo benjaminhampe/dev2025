@@ -120,7 +120,7 @@ struct MIDI_CV : Module {
 struct MIDI_CVWidget : ModuleWidget {
 	MIDI_CVWidget(MIDI_CV* module) {
 		setModule(module);
-		setPanel(createPanel(asset::system("res/Core/MIDI_CV.svg"), asset::system("res/Core/MIDI_CV-dark.svg")));
+		setPanel(createPanel(asset::system("media/Rack2/res/Core/MIDI_CV.svg"), asset::system("media/Rack2/res/Core/MIDI_CV-dark.svg")));
 
 		addChild(createWidget<ThemedScrew>(Vec(RACK_GRID_WIDTH, 0)));
 		addChild(createWidget<ThemedScrew>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, 0)));

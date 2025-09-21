@@ -56,7 +56,7 @@ struct AudioPort : audio::Port {
 		deviceNumOutputs = std::min(getNumOutputs(), NUM_AUDIO_INPUTS);
 		deviceSampleRate = getSampleRate();
 
-		// DEBUG("%p: new device block ____________________________", this);
+		// RK2_DEBUG("%p: new device block ____________________________", this);
 		// Claim master module if there is none
 		if (!APP->engine->getMasterModule()) {
 			setMaster();
@@ -71,14 +71,14 @@ struct AudioPort : audio::Port {
 		float engineSampleRate = APP->engine->getSampleRate();
 		float sampleRateRatio = engineSampleRate / deviceSampleRate;
 
-		// DEBUG("%p: %d block, engineOutputBuffer still has %d", this, frames, (int) engineOutputBuffer.size());
+		// RK2_DEBUG("%p: %d block, engineOutputBuffer still has %d", this, frames, (int) engineOutputBuffer.size());
 
 		// Consider engine buffers "too full" if they contain a bit more than the audio device's number of frames, converted to engine sample rate.
 		int maxEngineFrames = (int) std::ceil(frames * sampleRateRatio * 2.0) - 1;
 		// If the engine output buffer is too full, clear it to keep latency low. No need to clear if master because it's always cleared below.
 		if (!isMasterCached && (int) engineOutputBuffer.size() > maxEngineFrames) {
 			engineOutputBuffer.clear();
-			// DEBUG("%p: clearing engine output", this);
+			// RK2_DEBUG("%p: clearing engine output", this);
 		}
 
 		if (deviceNumInputs > 0) {
@@ -424,7 +424,7 @@ struct Audio2Display : LedDisplay {
 				" 0", "-3", "-6", "-12", "-24", "-36",
 			};
 
-			std::string fontPath = asset::system("res/fonts/Nunito-Bold.ttf");
+			std::string fontPath = asset::system("media/Rack2/res/fonts/Nunito-Bold.ttf");
 			std::shared_ptr<Font> font = APP->window->loadFont(fontPath);
 			if (!font)
 				return;
@@ -454,7 +454,8 @@ struct AudioWidget : ModuleWidget {
 		setModule(module);
 
 		if (NUM_AUDIO_INPUTS == 8 && NUM_AUDIO_OUTPUTS == 8) {
-			setPanel(createPanel(asset::system("res/Core/Audio8.svg"), asset::system("res/Core/Audio8-dark.svg")));
+			setPanel(createPanel(asset::system("media/Rack2/res/Core/Audio8.svg"), 
+                                 asset::system("media/Rack2/res/Core/Audio8-dark.svg")));
 
 			addChild(createWidget<ThemedScrew>(Vec(RACK_GRID_WIDTH, 0)));
 			addChild(createWidget<ThemedScrew>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, 0)));
@@ -495,7 +496,8 @@ struct AudioWidget : ModuleWidget {
 			addChild(display);
 		}
 		else if (NUM_AUDIO_INPUTS == 16 && NUM_AUDIO_OUTPUTS == 16) {
-			setPanel(createPanel(asset::system("res/Core/Audio16.svg"), asset::system("res/Core/Audio16-dark.svg")));
+			setPanel(createPanel(asset::system("media/Rack2/res/Core/Audio16.svg"), 
+                                 asset::system("media/Rack2/res/Core/Audio16-dark.svg")));
 
 			addChild(createWidget<ThemedScrew>(Vec(RACK_GRID_WIDTH, 0)));
 			addChild(createWidget<ThemedScrew>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, 0)));
@@ -560,7 +562,7 @@ struct AudioWidget : ModuleWidget {
 			addChild(display);
 		}
 		else if (NUM_AUDIO_INPUTS == 2 && NUM_AUDIO_OUTPUTS == 2) {
-			setPanel(createPanel(asset::system("res/Core/Audio2.svg"), asset::system("res/Core/Audio2-dark.svg")));
+			setPanel(createPanel(asset::system("media/Rack2/res/Core/Audio2.svg"), asset::system("media/Rack2/res/Core/Audio2-dark.svg")));
 
 			addChild(createWidget<ThemedScrew>(Vec(RACK_GRID_WIDTH, 0)));
 			addChild(createWidget<ThemedScrew>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, 0)));

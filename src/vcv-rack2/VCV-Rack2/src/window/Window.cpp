@@ -57,7 +57,7 @@ void Font::loadFile(const std::string& filename, NVGcontext* vg) {
 		std::free(data);
 		throw Exception("Failed to load font %s", filename.c_str());
 	}
-	INFO("Loaded font %s", filename.c_str());
+	RK2_INFO("Loaded font %s", filename.c_str());
 }
 
 
@@ -80,7 +80,7 @@ void Image::loadFile(const std::string& filename, NVGcontext* vg) {
 	handle = nvgCreateImageMem(vg, NVG_IMAGE_REPEATX | NVG_IMAGE_REPEATY, data.data(), data.size());
 	if (handle <= 0)
 		throw Exception("Failed to load image %s", filename.c_str());
-	INFO("Loaded image %s", filename.c_str());
+	RK2_INFO("Loaded image %s", filename.c_str());
 }
 
 
@@ -121,7 +121,7 @@ static void windowPosCallback(GLFWwindow* win, int x, int y) {
 	if (glfwGetWindowMonitor(win))
 		return;
 	settings::windowPos = math::Vec(x, y);
-	// DEBUG("windowPosCallback %d %d", x, y);
+	// RK2_DEBUG("windowPosCallback %d %d", x, y);
 }
 
 
@@ -133,13 +133,13 @@ static void windowSizeCallback(GLFWwindow* win, int width, int height) {
 	if (glfwGetWindowMonitor(win))
 		return;
 	settings::windowSize = math::Vec(width, height);
-	// DEBUG("windowSizeCallback %d %d", width, height);
+	// RK2_DEBUG("windowSizeCallback %d %d", width, height);
 }
 
 
 static void windowMaximizeCallback(GLFWwindow* win, int maximized) {
 	settings::windowMaximized = maximized;
-	// DEBUG("windowMaximizeCallback %d", maximized);
+	// RK2_DEBUG("windowMaximizeCallback %d", maximized);
 }
 
 
@@ -168,7 +168,7 @@ static void cursorPosCallback(GLFWwindow* win, double xpos, double ypos) {
 	math::Vec mouseDelta = mousePos.minus(APP->window->internal->lastMousePos);
 
 	// if (glfwGetInputMode(win, GLFW_CURSOR) != GLFW_CURSOR_NORMAL && std::fabs(mouseDelta.y) > 20.0) {
-	// 	DEBUG("%d (%f, %f) (%f, %f)", APP->window->internal->frame, VEC_ARGS(mousePos), VEC_ARGS(mouseDelta));
+	// 	RK2_DEBUG("%d (%f, %f) (%f, %f)", APP->window->internal->frame, VEC_ARGS(mousePos), VEC_ARGS(mouseDelta));
 	// }
 
 	// Workaround for GLFW warping mouse to a different position when the cursor is locked or unlocked.
@@ -242,7 +242,7 @@ static void dropCallback(GLFWwindow* win, int count, const char** paths) {
 
 
 static void errorCallback(int error, const char* description) {
-	WARN("GLFW error %d: %s", error, description);
+	RK2_WARN("GLFW error %d: %s", error, description);
 }
 
 
@@ -276,7 +276,7 @@ Window::Window() {
 
 	float contentScale;
 	glfwGetWindowContentScale(win, &contentScale, NULL);
-	INFO("Window content scale: %f", contentScale);
+	RK2_INFO("Window content scale: %f", contentScale);
 
 	glfwSetWindowSizeLimits(win, WINDOW_SIZE_MIN.x, WINDOW_SIZE_MIN.y, GLFW_DONT_CARE, GLFW_DONT_CARE);
 	if (settings::windowSize.x > 0 && settings::windowSize.y > 0) {
@@ -328,8 +328,8 @@ Window::Window() {
 	const GLubyte* vendor = glGetString(GL_VENDOR);
 	const GLubyte* renderer = glGetString(GL_RENDERER);
 	const GLubyte* version = glGetString(GL_VERSION);
-	INFO("Renderer: %s %s", vendor, renderer);
-	INFO("OpenGL: %s", version);
+	RK2_INFO("Renderer: %s %s", vendor, renderer);
+	RK2_INFO("OpenGL: %s", version);
 
 	// GLEW generates GL error because it calls glGetString(GL_EXTENSIONS), we'll consume it here.
 	glGetError();
@@ -350,7 +350,7 @@ Window::Window() {
 	}
 
 	// Load UI fonts
-	uiFont = loadFont(asset::system("res/fonts/DejaVuSans.ttf"));
+	uiFont = loadFont(asset::system("media/Rack2/res/fonts/DejaVuSans.ttf"));
 	if (uiFont)
 		bndSetFont(uiFont->handle);
 
@@ -477,7 +477,7 @@ void Window::step() {
 	// t1 = system::getTime();
 
 	if (APP->scene) {
-		// DEBUG("%f %f %d %d", pixelRatio, windowRatio, fbWidth, winWidth);
+		// RK2_DEBUG("%f %f %d %d", pixelRatio, windowRatio, fbWidth, winWidth);
 		// Resize scene
 		APP->scene->box.size = math::Vec(fbWidth, fbHeight).div(pixelRatio);
 
@@ -518,7 +518,7 @@ void Window::step() {
 	}
 
 	// t5 = system::getTime();
-	// DEBUG("pre-step %6.1f step %6.1f draw %6.1f nvgEndFrame %6.1f glfwSwapBuffers %6.1f total %6.1f",
+	// RK2_DEBUG("pre-step %6.1f step %6.1f draw %6.1f nvgEndFrame %6.1f glfwSwapBuffers %6.1f total %6.1f",
 	// 	(t1 - frameTime) * 1e3f,
 	// 	(t2 - t1) * 1e3f,
 	// 	(t3 - t2) * 1e3f,
@@ -579,7 +579,7 @@ void Window::screenshotModules(const std::string& screenshotsDir, float zoom) {
 			if (system::isFile(filename))
 				continue;
 
-			INFO("Screenshotting %s %s to %s", p->slug.c_str(), model->slug.c_str(), filename.c_str());
+			RK2_INFO("Screenshotting %s %s to %s", p->slug.c_str(), model->slug.c_str(), filename.c_str());
 
 			// Create widgets
 			widget::FramebufferWidget* fbw = new widget::FramebufferWidget;
@@ -746,13 +746,13 @@ std::shared_ptr<Font> Window::loadFont(const std::string& filename) {
 	if (!font)
 		return NULL;
 
-	std::shared_ptr<Font> jpFont = loadFontWithoutFallbacks(asset::system("res/fonts/NotoSansJP-Medium.otf"));
+	std::shared_ptr<Font> jpFont = loadFontWithoutFallbacks(asset::system("media/Rack2/res/fonts/NotoSansJP-Medium.otf"));
 	if (jpFont)
 		nvgAddFallbackFontId(vg, font->handle, jpFont->handle);
-	std::shared_ptr<Font> scFont = loadFontWithoutFallbacks(asset::system("res/fonts/NotoSansSC-Medium.otf"));
+	std::shared_ptr<Font> scFont = loadFontWithoutFallbacks(asset::system("media/Rack2/res/fonts/NotoSansSC-Medium.otf"));
 	if (scFont)
 		nvgAddFallbackFontId(vg, font->handle, scFont->handle);
-	std::shared_ptr<Font> emojiFont = loadFontWithoutFallbacks(asset::system("res/fonts/NotoEmoji-Medium.ttf"));
+	std::shared_ptr<Font> emojiFont = loadFontWithoutFallbacks(asset::system("media/Rack2/res/fonts/NotoEmoji-Medium.ttf"));
 	if (emojiFont)
 		nvgAddFallbackFontId(vg, font->handle, emojiFont->handle);
 
@@ -772,7 +772,7 @@ std::shared_ptr<Font> Window::loadFontWithoutFallbacks(const std::string& filena
 		font->loadFile(filename, vg);
 	}
 	catch (Exception& e) {
-		WARN("%s", e.what());
+		RK2_WARN("%s", e.what());
 		font = NULL;
 	}
 	internal->fontCache[filename] = font;
@@ -792,7 +792,7 @@ std::shared_ptr<Image> Window::loadImage(const std::string& filename) {
 		image->loadFile(filename, vg);
 	}
 	catch (Exception& e) {
-		WARN("%s", e.what());
+		RK2_WARN("%s", e.what());
 		image = NULL;
 	}
 	internal->imageCache[filename] = image;

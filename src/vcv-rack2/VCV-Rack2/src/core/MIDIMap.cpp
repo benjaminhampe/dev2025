@@ -136,7 +136,7 @@ struct MIDIMap : Module {
 	}
 
 	void processMessage(const midi::Message& msg) {
-		// DEBUG("MIDI: %01x %01x %02x %02x", msg.getStatus(), msg.getChannel(), msg.getNote(), msg.getValue());
+		// RK2_DEBUG("MIDI: %01x %01x %02x %02x", msg.getStatus(), msg.getChannel(), msg.getNote(), msg.getValue());
 
 		switch (msg.getStatus()) {
 			// cc
@@ -485,7 +485,7 @@ struct MIDIMapDisplay : MidiDisplay {
 struct MIDIMapWidget : ModuleWidget {
 	MIDIMapWidget(MIDIMap* module) {
 		setModule(module);
-		setPanel(createPanel(asset::system("res/Core/MIDIMap.svg"), asset::system("res/Core/MIDIMap-dark.svg")));
+		setPanel(createPanel(asset::system("media/Rack2/res/Core/MIDIMap.svg"), asset::system("media/Rack2/res/Core/MIDIMap-dark.svg")));
 
 		addChild(createWidget<ThemedScrew>(Vec(RACK_GRID_WIDTH, 0)));
 		addChild(createWidget<ThemedScrew>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, 0)));

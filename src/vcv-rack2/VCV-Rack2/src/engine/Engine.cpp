@@ -170,7 +170,7 @@ struct EngineWorker {
 
 	void start() {
 		if (running) {
-			WARN("Engine worker already started");
+			RK2_WARN("Engine worker already started");
 			return;
 		}
 		running = true;
@@ -183,14 +183,14 @@ struct EngineWorker {
 			// int policy;
 			// sched_param param;
 			// if (!pthread_getschedparam(pthread_self(), &policy, &param)) {
-			// 	DEBUG("EngineWorker %d thread launched with policy %d priority %d", that->id, policy, param.sched_priority);
+			// 	RK2_DEBUG("EngineWorker %d thread launched with policy %d priority %d", that->id, policy, param.sched_priority);
 			// }
 
 			that->run();
 			return NULL;
 		}, this);
 		if (err) {
-			WARN("EngineWorker %d thread could not be started: %s", id, strerror(err));
+			RK2_WARN("EngineWorker %d thread could not be started: %s", id, strerror(err));
 		}
 	}
 
@@ -1293,12 +1293,12 @@ void Engine::fromJson(json_t* rootJ) {
 			model = plugin::modelFromJson(moduleJ);
 		}
 		catch (Exception& e) {
-			WARN("Cannot load model: %s", e.what());
+			RK2_WARN("Cannot load model: %s", e.what());
 			continue;
 		}
 
 		// Create module
-		INFO("Creating module %s", model->getFullName().c_str());
+		RK2_INFO("Creating module %s", model->getFullName().c_str());
 		Module* module = model->createModule();
 		assert(module);
 
@@ -1311,7 +1311,7 @@ void Engine::fromJson(json_t* rootJ) {
 			}
 		}
 		catch (Exception& e) {
-			WARN("Cannot load module: %s", e.what());
+			RK2_WARN("Cannot load module: %s", e.what());
 			delete module;
 			continue;
 		}
@@ -1350,7 +1350,7 @@ void Engine::fromJson(json_t* rootJ) {
 			addCable_NoLock(cable);
 		}
 		catch (Exception& e) {
-			WARN("Cannot load cable: %s", e.what());
+			RK2_WARN("Cannot load cable: %s", e.what());
 			delete cable;
 			continue;
 		}

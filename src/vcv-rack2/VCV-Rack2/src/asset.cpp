@@ -38,6 +38,9 @@ std::string getApplicationSupportDir();
 
 
 static void initSystemDir() {
+
+    RK2_INFO("");
+
 	if (!systemDir.empty())
 		return;
 
@@ -92,6 +95,9 @@ static void initSystemDir() {
 
 
 static void initUserDir() {
+
+    RK2_INFO("");
+
 	if (!userDir.empty())
 		return;
 
@@ -104,6 +110,8 @@ static void initUserDir() {
 	const char* envUser = getenv("RACK_USER_DIR");
 	if (envUser) {
 		userDir = envUser;
+        RK2_INFO("Got envUser = %s",envUser);
+
 		return;
 	}
 
@@ -198,6 +206,12 @@ static void initUserDir() {
 void init() {
 	initSystemDir();
 	initUserDir();
+
+
+    RK2_WARN("systemDir = %s",systemDir.c_str());
+    RK2_WARN("userDir = %s",userDir.c_str());
+    RK2_WARN("oldUserDir = %s",oldUserDir.c_str());
+    RK2_WARN("bundlePath = %s",bundlePath.c_str());
 }
 
 

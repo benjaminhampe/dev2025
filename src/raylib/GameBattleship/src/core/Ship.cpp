@@ -1,6 +1,7 @@
 #include "Ship.h"
 #include <string>
-#define DEBUG
+
+// #define DEBUG
 using namespace std;
 
  int Ship::s_nextID = 0;

@@ -170,7 +170,7 @@ void Scene::onDragHover(const DragHoverEvent& e) {
 void Scene::onHoverKey(const HoverKeyEvent& e) {
 	// Key commands that override children
 	if (e.action == GLFW_PRESS || e.action == GLFW_REPEAT) {
-		// DEBUG("key %d '%c' scancode %d keyName '%s' mods %02x", e.key, e.key, e.scancode, e.keyName.c_str(), e.mods);
+		RK2_DEBUG("key %d '%c' scancode %d keyName '%s' mods %02x", e.key, e.key, e.scancode, e.keyName.c_str(), e.mods);
 		if (e.isKeyCommand(GLFW_KEY_N, RACK_MOD_CTRL)) {
 			APP->patch->loadTemplateDialog();
 			e.consume(this);

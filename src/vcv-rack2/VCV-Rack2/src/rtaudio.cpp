@@ -32,9 +32,9 @@ struct RtAudioDriver : audio::Driver {
 		this->api = api;
 		this->name = name;
 
-		INFO("Creating RtAudio %s driver", name.c_str());
+		RK2_INFO("Creating RtAudio %s driver", name.c_str());
 		rtAudio = new RtAudio(api, [](RtAudioErrorType type, const std::string& errorText) {
-			WARN("RtAudio error %d: %s", type, errorText.c_str());
+			RK2_WARN("RtAudio error %d: %s", type, errorText.c_str());
 		});
 
 		rtAudio->showWarnings(false);
@@ -108,9 +108,9 @@ struct RtAudioDevice : audio::Device {
 		this->deviceId = deviceId;
 
 		// Create RtAudio object
-		INFO("Creating RtAudio %s device", driver->getName().c_str());
+		RK2_INFO("Creating RtAudio %s device", driver->getName().c_str());
 		rtAudio = new RtAudio(driver->api, [](RtAudioErrorType type, const std::string& errorText) {
-			WARN("RtAudio error %d: %s", type, errorText.c_str());
+			RK2_WARN("RtAudio error %d: %s", type, errorText.c_str());
 		});
 
 		rtAudio->showWarnings(false);
@@ -175,7 +175,7 @@ struct RtAudioDevice : audio::Device {
 				blockSize = 256;
 		}
 
-		INFO("Opening RtAudio %s device %d: %s (%d in, %d out, %d sample rate, %d block size)", driver->getName().c_str(), deviceId, deviceInfo.name.c_str(), inputParameters.nChannels, outputParameters.nChannels, closestSampleRate, blockSize);
+		RK2_INFO("Opening RtAudio %s device %d: %s (%d in, %d out, %d sample rate, %d block size)", driver->getName().c_str(), deviceId, deviceInfo.name.c_str(), inputParameters.nChannels, outputParameters.nChannels, closestSampleRate, blockSize);
 		if (rtAudio->openStream(
 			outputParameters.nChannels > 0 ? &outputParameters : NULL,
 			inputParameters.nChannels > 0 ? &inputParameters : NULL,
@@ -185,7 +185,7 @@ struct RtAudioDevice : audio::Device {
 		}
 
 		try {
-			INFO("Starting RtAudio %s device %d", driver->getName().c_str(), deviceId);
+			RK2_INFO("Starting RtAudio %s device %d", driver->getName().c_str(), deviceId);
 			if (rtAudio->startStream()) {
 				throw Exception("Failed to start RtAudio %s device %d", driver->getName().c_str(), deviceId);
 			}
@@ -203,11 +203,11 @@ struct RtAudioDevice : audio::Device {
 
 	void closeStream() {
 		if (rtAudio->isStreamRunning()) {
-			INFO("Stopping RtAudio %s device %d", driver->getName().c_str(), deviceId);
+			RK2_INFO("Stopping RtAudio %s device %d", driver->getName().c_str(), deviceId);
 			rtAudio->stopStream();
 		}
 		if (rtAudio->isStreamOpen()) {
-			INFO("Closing RtAudio %s device %d", driver->getName().c_str(), deviceId);
+			RK2_INFO("Closing RtAudio %s device %d", driver->getName().c_str(), deviceId);
 			rtAudio->closeStream();
 		}
 

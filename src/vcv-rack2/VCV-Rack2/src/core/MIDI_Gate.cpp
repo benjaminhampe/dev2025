@@ -193,7 +193,7 @@ struct MIDI_Gate : Module {
 struct MIDI_GateWidget : ModuleWidget {
 	MIDI_GateWidget(MIDI_Gate* module) {
 		setModule(module);
-		setPanel(createPanel(asset::system("res/Core/MIDI_Gate.svg"), asset::system("res/Core/MIDI_Gate-dark.svg")));
+		setPanel(createPanel(asset::system("media/Rack2/res/Core/MIDI_Gate.svg"), asset::system("media/Rack2/res/Core/MIDI_Gate-dark.svg")));
 
 		addChild(createWidget<ThemedScrew>(Vec(RACK_GRID_WIDTH, 0)));
 		addChild(createWidget<ThemedScrew>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, 0)));

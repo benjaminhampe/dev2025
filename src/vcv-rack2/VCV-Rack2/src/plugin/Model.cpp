@@ -40,14 +40,14 @@ void Model::fromJson(json_t* rootJ) {
 			std::string tag = json_string_value(tagJ);
 			int tagId = tag::findId(tag);
 			if (tagId < 0) {
-				// WARN("Module %s/%s has invalid tag \"%s\"", plugin->slug.c_str(), slug.c_str(), tag.c_str());
+				// RK2_WARN("Module %s/%s has invalid tag \"%s\"", plugin->slug.c_str(), slug.c_str(), tag.c_str());
 				continue;
 			}
 
 			// Omit duplicates
 			auto it = std::find(tagIds.begin(), tagIds.end(), tagId);
 			if (it != tagIds.end()) {
-				// WARN("Module %s/%s has duplicate tag \"%s\"", plugin->slug.c_str(), slug.c_str(), tag.c_str());
+				// RK2_WARN("Module %s/%s has duplicate tag \"%s\"", plugin->slug.c_str(), slug.c_str(), tag.c_str());
 				continue;
 			}
 
@@ -88,12 +88,12 @@ std::string Model::getFullName() {
 
 
 std::string Model::getFactoryPresetDirectory() {
-	return asset::plugin(plugin, system::join("presets", slug));
+	return asset::plugin(plugin, system::join("media/Rack2/presets", slug));
 }
 
 
 std::string Model::getUserPresetDirectory() {
-	return asset::user(system::join("presets", plugin->slug, slug));
+	return asset::user(system::join("media/Rack2/presets", plugin->slug, slug));
 }
 
 

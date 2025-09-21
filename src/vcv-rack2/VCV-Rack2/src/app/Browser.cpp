@@ -73,7 +73,7 @@ static void modelDbInit() {
 				model->description,
 				tagStr,
 			};
-			// DEBUG("%s; %s; %s; %s; %s", fields[0].c_str(), fields[1].c_str(), fields[2].c_str(), fields[3].c_str(), fields[4].c_str());
+			RK2_DEBUG("%s; %s; %s; %s; %s", fields[0].c_str(), fields[1].c_str(), fields[2].c_str(), fields[3].c_str(), fields[4].c_str());
 			modelDb.addEntry(model, fields);
 		}
 	}
@@ -90,11 +90,11 @@ static ModuleWidget* chooseModel(plugin::Model* model) {
 	h->name = string::translate("Browser.history.addModule");
 
 	// Create Module and ModuleWidget
-	INFO("Creating module %s", model->getFullName().c_str());
+	RK2_INFO("Creating module %s", model->getFullName().c_str());
 	engine::Module* module = model->createModule();
 	APP->engine->addModule(module);
 
-	INFO("Creating module widget %s", model->getFullName().c_str());
+	RK2_INFO("Creating module widget %s", model->getFullName().c_str());
 	ModuleWidget* moduleWidget = model->createModuleWidget(module);
 
 	APP->scene->rack->deselectAll();
@@ -203,7 +203,7 @@ struct ModelBox : widget::OpaqueWidget {
 		mwc = new ModuleWidgetContainer;
 		fb->addChild(mwc);
 
-		INFO("Creating module widget %s", model->getFullName().c_str());
+		RK2_INFO("Creating module widget %s", model->getFullName().c_str());
 		moduleWidget = model->createModuleWidget(NULL);
 		mwc->addChild(moduleWidget);
 		mwc->box.size = moduleWidget->box.size;
@@ -765,10 +765,10 @@ struct Browser : widget::OpaqueWidget {
 		else {
 			// Score results against search query
 			auto results = modelDb.search(search);
-			// DEBUG("=============");
+			RK2_DEBUG("=============");
 			for (auto& result : results) {
 				prefilteredModelScores[result.key] = result.score;
-				// DEBUG("%s %s\t\t%f", result.key->plugin->slug.c_str(), result.key->slug.c_str(), result.score);
+				RK2_DEBUG("%s %s\t\t%f", result.key->plugin->slug.c_str(), result.key->slug.c_str(), result.score);
 			}
 			// Sort by score
 			sortModels([&](ModelBox* m) {
@@ -823,7 +823,7 @@ struct Browser : widget::OpaqueWidget {
 					if (!mb->visible)
 						continue;
 					count++;
-					DEBUG("Dumping into rack (%d): %s/%s", count, mb->model->plugin->slug.c_str(), mb->model->slug.c_str());
+					RK2_DEBUG("Dumping into rack (%d): %s/%s", count, mb->model->plugin->slug.c_str(), mb->model->slug.c_str());
 					chooseModel(mb->model);
 				}
 				e.consume(this);

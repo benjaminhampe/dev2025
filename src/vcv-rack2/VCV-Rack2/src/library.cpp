@@ -76,7 +76,7 @@ void checkAppUpdate() {
 
 	json_t* resJ = network::requestJson(network::METHOD_GET, versionUrl, reqJ);
 	if (!resJ) {
-		WARN("Request for version failed");
+		RK2_WARN("Request for version failed");
 		return;
 	}
 	DEFER({json_decref(resJ);});
@@ -182,7 +182,7 @@ void checkUpdates() {
 	std::string userUrl = API_URL + "/user";
 	json_t* userResJ = network::requestJson(network::METHOD_GET, userUrl, NULL, getTokenCookies());
 	if (!userResJ) {
-		WARN("Request for user account failed");
+		RK2_WARN("Request for user account failed");
 		updateStatus = string::translate("library.queryAccountFailed");
 		return;
 	}
@@ -191,7 +191,7 @@ void checkUpdates() {
 	json_t* userErrorJ = json_object_get(userResJ, "error");
 	if (userErrorJ) {
 		std::string userError = json_string_value(userErrorJ);
-		WARN("Request for user account error: %s", userError.c_str());
+		RK2_WARN("Request for user account error: %s", userError.c_str());
 		// Unset token
 		settings::token = "";
 		refreshRequested = true;
@@ -205,7 +205,7 @@ void checkUpdates() {
 	json_t* manifestsResJ = network::requestJson(network::METHOD_GET, manifestsUrl, manifestsReq);
 	json_decref(manifestsReq);
 	if (!manifestsResJ) {
-		WARN("Request for library manifests failed");
+		RK2_WARN("Request for library manifests failed");
 		updateStatus = string::translate("library.queryManifestsFailed");
 		return;
 	}
@@ -215,7 +215,7 @@ void checkUpdates() {
 	std::string modulesUrl = API_URL + "/modules";
 	json_t* modulesResJ = network::requestJson(network::METHOD_GET, modulesUrl, NULL, getTokenCookies());
 	if (!modulesResJ) {
-		WARN("Request for user's modules failed");
+		RK2_WARN("Request for user's modules failed");
 		updateStatus = string::translate("library.queryModulesFailed");
 		return;
 	}
@@ -251,7 +251,7 @@ void checkUpdates() {
 		// Get version
 		json_t* versionJ = json_object_get(manifestJ, "version");
 		if (!versionJ) {
-			// WARN("Plugin %s has no version in manifest", pluginSlug.c_str());
+			// RK2_WARN("Plugin %s has no version in manifest", pluginSlug.c_str());
 			continue;
 		}
 		update.version = json_string_value(versionJ);
@@ -375,7 +375,7 @@ void syncUpdate(std::string slug) {
 	updateProgress = 0.f;
 	DEFER({updateProgress = 0.f;});
 
-	INFO("Downloading plugin %s v%s for %s-%s", slug.c_str(), update.version.c_str(), APP_OS.c_str(), APP_CPU.c_str());
+	RK2_INFO("Downloading plugin %s v%s for %s-%s", slug.c_str(), update.version.c_str(), APP_OS.c_str(), APP_CPU.c_str());
 
 	// Get download URL
 	std::string downloadUrl = API_URL + "/download";
@@ -389,7 +389,7 @@ void syncUpdate(std::string slug) {
 
 	// Download plugin package
 	if (!network::requestDownload(downloadUrl, packagePath, &updateProgress, getTokenCookies())) {
-		WARN("Plugin %s download was unsuccessful", slug.c_str());
+		RK2_WARN("Plugin %s download was unsuccessful", slug.c_str());
 		return;
 	}
 

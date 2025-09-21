@@ -345,6 +345,8 @@ else()
 	# on Linux:
 	else()
 		target_link_libraries(${LIB_NAME} PUBLIC X11 Xxf86vm Xi Xcursor)
+
+        target_compile_options(${LIB_NAME} PRIVATE -Wno-pointer-to-int-cast)
 	endif()
 
 	# target_link_libraries(${LIB_NAME} PUBLIC stdc++fs)

@@ -37,6 +37,8 @@ else()
 
     target_include_directories(${APP_NAME} PRIVATE ${APP_SOURCE_DIR})
 
+    target_compile_definitions(${APP_NAME} PRIVATE _RACK_VERSION="2.6.2")
+
     if (MSVC)
     else()
         target_link_options(${APP_NAME} PRIVATE -mwindows)

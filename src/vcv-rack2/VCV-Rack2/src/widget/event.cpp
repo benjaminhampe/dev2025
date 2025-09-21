@@ -74,7 +74,7 @@ std::string getKeyCommandName(int key, int mods) {
 
 
 bool Widget::KeyBaseEvent::isKeyCommand(int key, int mods) const {
-	// DEBUG("this key '%c' %d keyName \"%s\" mods 0x%02x | checked key '%c' %d mods 0x%02x", this->key, this->key, this->keyName.c_str(), this->mods, key, key, mods);
+	// RK2_DEBUG("this key '%c' %d keyName \"%s\" mods 0x%02x | checked key '%c' %d mods 0x%02x", this->key, this->key, this->keyName.c_str(), this->mods, key, key, mods);
 	// Reject if mods don't match
 	if ((this->mods & RACK_MOD_MASK) != mods)
 		return false;
