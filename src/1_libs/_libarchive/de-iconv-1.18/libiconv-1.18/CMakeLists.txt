@@ -339,14 +339,18 @@ else()
 	target_link_libraries(${LIB_NAME} PUBLIC de_iconv_charset)
 	target_link_libraries(${LIB_NAME} PRIVATE de_iconv_icrt)
 	target_link_libraries(${LIB_NAME} PUBLIC m)
+
+    if (MSVC)
+    else()
+        target_compile_options(${LIB_NAME} PRIVATE -Wno-pointer-to-int-cast)
+    endif()
+
 	# on Windows:
 	if (WIN32)
 		target_link_libraries(${LIB_NAME} PUBLIC comctl32 user32 gdi32 kernel32)
 	# on Linux:
 	else()
 		target_link_libraries(${LIB_NAME} PUBLIC X11 Xxf86vm Xi Xcursor)
-
-        target_compile_options(${LIB_NAME} PRIVATE -Wno-pointer-to-int-cast)
 	endif()
 
 	# target_link_libraries(${LIB_NAME} PUBLIC stdc++fs)

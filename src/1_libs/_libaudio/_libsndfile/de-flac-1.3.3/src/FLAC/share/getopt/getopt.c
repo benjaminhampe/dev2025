@@ -312,8 +312,8 @@ static void exchange (char **);
 #endif
 
 static void
-exchange (argv)
-     char **argv;
+exchange (char **argv)
+    // char **argv;
 {
   int bottom = first_nonopt;
   int middle = last_nonopt;
@@ -397,10 +397,10 @@ exchange (argv)
 static const char *share___getopt_initialize (int, char *const *, const char *);
 #endif
 static const char *
-share___getopt_initialize (argc, argv, optstring)
-     int argc;
-     char *const *argv;
-     const char *optstring;
+share___getopt_initialize (int argc, char *const *argv, const char *optstring)
+    // int argc;
+    // char *const *argv;
+    // const char *optstring;
 {
   /* Start processing options with ARGV-element 1 (since ARGV-element 0
      is the program name); the sequence of previously skipped
@@ -521,13 +521,13 @@ share___getopt_initialize (argc, argv, optstring)
    long-named options.  */
 
 int
-share___getopt_internal (argc, argv, optstring, longopts, longind, long_only)
-     int argc;
-     char *const *argv;
-     const char *optstring;
-     const struct share__option *longopts;
-     int *longind;
-     int long_only;
+share___getopt_internal (int argc, char *const *argv, const char *optstring, const struct share__option *longopts, int* longind, int long_only)
+    // int argc;
+    // char *const *argv;
+    // const char *optstring;
+    // const struct share__option *longopts;
+    // int *longind;
+    // int long_only;
 {
   share__optarg = NULL;
 
@@ -976,10 +976,10 @@ share___getopt_internal (argc, argv, optstring, longopts, longind, long_only)
 }
 
 int
-share__getopt (argc, argv, optstring)
-     int argc;
-     char *const *argv;
-     const char *optstring;
+share__getopt (int argc, char *const *argv, const char *optstring)
+    // int argc;
+    // char *const *argv;
+    // const char *optstring;
 {
   return share___getopt_internal (argc, argv, optstring,
 			   (const struct share__option *) 0,

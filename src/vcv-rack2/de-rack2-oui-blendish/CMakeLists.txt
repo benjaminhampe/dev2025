@@ -48,7 +48,7 @@ else()
         # target_compile_options(${LIB_NAME} PRIVATE -Wno-main) # jdmainct.c
     endif()
     
-    target_link_libraries(${LIB_NAME} PUBLIC de_rack2_nanovg)
+    target_link_libraries(${LIB_NAME} PUBLIC de_rack2_nanovg_tint)
     
 
     #	file(COPY ${LIB_HEADERS} DESTINATION ${JPEG_INCLUDE_DIR}) # For the SDK

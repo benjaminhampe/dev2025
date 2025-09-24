@@ -413,7 +413,7 @@ class RtMidiOut : public RtMidi
       An exception is thrown if an error occurs during output or an
       output connection was not previously established.
   */
-  void sendMessage( std::vector<uint8_t> *message );
+  void sendMessage( const std::vector<uint8_t> *message );
 
   //! Set an error callback function to be invoked when an error has occured.
   /*!
@@ -541,7 +541,7 @@ class MidiOutApi : public MidiApi
   MidiOutApi( void );
   virtual ~MidiOutApi( void );
   virtual void sendShortMessage( uint32_t message ) = 0;
-  virtual void sendMessage( std::vector<uint8_t> *message ) = 0;
+  virtual void sendMessage( const std::vector<uint8_t> *message ) = 0;
 };
 
 // **************************************************************** //
@@ -570,7 +570,7 @@ inline void RtMidiOut :: closePort( void ) { rtapi_->closePort(); }
 inline bool RtMidiOut :: isPortOpen() const { return rtapi_->isPortOpen(); }
 inline uint32_t RtMidiOut :: getPortCount( void ) { return rtapi_->getPortCount(); }
 inline std::string RtMidiOut :: getPortName( uint32_t portNumber ) { return rtapi_->getPortName( portNumber ); }
-inline void RtMidiOut :: sendMessage( std::vector<uint8_t> *message ) { reinterpret_cast<MidiOutApi*>(rtapi_)->sendMessage( message ); }
+inline void RtMidiOut :: sendMessage( const std::vector<uint8_t> *message ) { reinterpret_cast<MidiOutApi*>(rtapi_)->sendMessage( message ); }
 inline void RtMidiOut :: sendShortMessage( uint32_t message ) { reinterpret_cast<MidiOutApi*>(rtapi_)->sendShortMessage( message ); }
 inline void RtMidiOut :: setErrorCallback( RtMidiErrorCallback errorCallback ) { rtapi_->setErrorCallback(errorCallback); }
 
@@ -731,7 +731,7 @@ class MidiOutWinMM: public MidiOutApi
   uint32_t getPortCount( void );
   std::string getPortName( uint32_t portNumber );
   void sendShortMessage( uint32_t message );
-  void sendMessage( std::vector<uint8_t> *message );
+  void sendMessage( const std::vector<uint8_t> *message );
 
  protected:
   void initialize( std::string const& clientName );

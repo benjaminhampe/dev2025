@@ -28,24 +28,23 @@ namespace
 std::string
 errorString ()
 {
-    LPSTR       messageBuffer;
-    DWORD       bufferLength;
-    std::string message;
-
     //
     // Call FormatMessage() to allow for message
     // text to be acquired from the system.
     //
+    LPSTR messageBuffer;
+    DWORD bufferLength = FormatMessageA (
+        FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_IGNORE_INSERTS | FORMAT_MESSAGE_FROM_SYSTEM,
+        0,
+        GetLastError(),
+        MAKELANGID (LANG_NEUTRAL, SUBLANG_DEFAULT),
+        (LPSTR) &messageBuffer,
+        0,
+        NULL);
 
-    if (bufferLength = FormatMessageA (
-            FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_IGNORE_INSERTS |
-                FORMAT_MESSAGE_FROM_SYSTEM,
-            0,
-            GetLastError (),
-            MAKELANGID (LANG_NEUTRAL, SUBLANG_DEFAULT),
-            (LPSTR) &messageBuffer,
-            0,
-            NULL))
+    std::string message;
+    
+    if (bufferLength > 0)
     {
         message = messageBuffer;
         LocalFree (messageBuffer);
@@ -58,7 +57,8 @@ errorString ()
 
 Semaphore::Semaphore (unsigned int value)
 {
-    if ((_semaphore = ::CreateSemaphore (0, value, 0x7fffffff, 0)) == 0)
+    _semaphore = ::CreateSemaphore (0, value, 0x7fffffff, 0);
+    if (_semaphore == 0)
     {
         THROW (
             LogicExc,

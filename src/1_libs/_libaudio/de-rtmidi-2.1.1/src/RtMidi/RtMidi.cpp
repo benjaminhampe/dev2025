@@ -2368,7 +2368,7 @@ void MidiOutWinMM :: sendShortMessage( uint32_t message )
    }
 }
 
-void MidiOutWinMM :: sendMessage( std::vector<uint8_t> *message )
+void MidiOutWinMM :: sendMessage( const std::vector<uint8_t> *message )
 {
   if ( !connected_ ) return;
 

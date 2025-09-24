@@ -101,7 +101,9 @@
 #define NOSYSCOMMANDS     // SC_*
 #define NORASTEROPS       // Binary and Tertiary raster ops
 #define NOSHOWWINDOW      // SW_*
+#ifndef OEMRESOURCE
 #define OEMRESOURCE       // OEM Resource values
+#endif
 #define NOATOM            // Atom Manager routines
 #define NOCLIPBOARD       // Clipboard routines
 #define NOCOLOR           // Screen colors

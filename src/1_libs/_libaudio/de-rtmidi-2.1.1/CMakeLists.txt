@@ -46,7 +46,7 @@ else()
     endif()
 
     if (MSVC)
-        set_target_properties(${LIB_NAME} PROPERTIES FOLDER lib/audio)
+        set_target_properties(${LIB_NAME} PROPERTIES FOLDER _libaudio)
     endif()
 
 endif()

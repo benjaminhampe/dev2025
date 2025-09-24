@@ -25,7 +25,15 @@ THE SOFTWARE.
 #ifndef BLENDISH_H
 #define BLENDISH_H
 
-#include <nanovg/nanovg.h>
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#include <nanovg.h>
+
+#ifdef __cplusplus
+};
+#endif
 
 #ifndef NANOVG_H
 #error "nanovg.h must be included first."
@@ -216,6 +224,9 @@ typedef enum BNDcornerFlags {
 #define BND_DISABLED_ALPHA 0.5
 
 enum {
+    // default text size
+    BND_LABEL_FONT_SIZE = 13,
+    
 	// default widget height
 	BND_WIDGET_HEIGHT = 21,
 	// default toolbutton width (if icon only)

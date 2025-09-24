@@ -8,6 +8,8 @@ else()
 	set(LIB_SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/src)
 	set(LIB_HEADERS
 		${LIB_HEADER_DIR}/benni_OpenEXR_Config.h
+        ${LIB_HEADER_DIR}/OpenEXRConfig.h
+        ${LIB_HEADER_DIR}/OpenEXRConfigInternal.h
 	)
 
 	set(LIB_SOURCES	

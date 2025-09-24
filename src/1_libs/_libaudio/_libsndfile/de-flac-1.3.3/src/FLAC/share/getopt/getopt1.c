@@ -80,12 +80,12 @@
 #endif
 
 int
-share__getopt_long (argc, argv, options, long_options, opt_index)
-     int argc;
-     char *const *argv;
-     const char *options;
-     const struct share__option *long_options;
-     int *opt_index;
+share__getopt_long (int argc, char *const *argv, const char *options, const struct share__option *long_options, int *opt_index)
+    // int argc;
+    // char *const *argv;
+    // const char *options;
+    // const struct share__option *long_options;
+    // int *opt_index;
 {
   return share___getopt_internal (argc, argv, options, long_options, opt_index, 0);
 }
@@ -96,12 +96,12 @@ share__getopt_long (argc, argv, options, long_options, opt_index)
    instead.  */
 
 int
-share__getopt_long_only (argc, argv, options, long_options, opt_index)
-     int argc;
-     char *const *argv;
-     const char *options;
-     const struct share__option *long_options;
-     int *opt_index;
+share__getopt_long_only (int argc, char *const *argv, const char *options, const struct share__option *long_options, int *opt_index)
+    // int argc;
+    // char *const *argv;
+    // const char *options;
+    // const struct share__option *long_options;
+    // int *opt_index;
 {
   return share___getopt_internal (argc, argv, options, long_options, opt_index, 1);
 }

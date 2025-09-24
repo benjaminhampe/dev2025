@@ -124,12 +124,14 @@ else()
 
     if (MSVC)
     else()
+        # if (MINGW)
+        #     target_compile_options(${LIB_NAME} PRIVATE -Wno-maybe-uninitialized)
+        # endif()
         target_compile_options(${LIB_NAME} PRIVATE 
             -Wno-implicit-fallthrough
             -Wno-unused-parameter
             -Wno-unused-variable
             -Wno-unused-but-set-variable
-            -Wno-maybe-uninitialized
         )
     endif()
     

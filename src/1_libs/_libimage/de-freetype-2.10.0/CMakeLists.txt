@@ -172,7 +172,7 @@ else()
     if (MSVC)
 	else()
         target_compile_options(${LIB_NAME} PRIVATE -Wno-implicit-fallthrough)
-        target_compile_options(${LIB_NAME} PRIVATE -Wmaybe-uninitialized)
+        target_compile_options(${LIB_NAME} PRIVATE -Wno-uninitialized)
     endif()
     
     target_include_directories(${LIB_NAME} PUBLIC ${LIB_HEADER_DIR}/..)

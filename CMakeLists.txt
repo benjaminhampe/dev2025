@@ -27,6 +27,8 @@ cmake_minimum_required(VERSION 3.14 FATAL_ERROR)
 set(BENNI_USE_QT 1)     # <optional> There are various other libs to build UI
 set(BENNI_USE_NASM 0)   # <broken-now> Very common, for compress, network and audio libs.
 set(BENNI_USE_ASAN 0)   # <broken> MinGW is not ready yet.
+set(BENNI_USE_SIMD_DIAG 1) # Enable compiler output for vectorization success and misses.
+
 set(BENNI_USE_AVX512 0)
 set(BENNI_USE_AVX2 1)
 set(BENNI_USE_FMA3 1)
@@ -112,7 +114,21 @@ enable_language(ASM_NASM)
 set(MY_C_FLAGS "-target x86_64-w64-windows-gnu")
 set(MY_CXX_FLAGS "-target x86_64-w64-windows-gnu")
 set(MY_LD_FLAGS "-fuse-ld=lld")
-	
+
+# Enable compiler messages about SIMD vectorizations and loop unrolling attempts (Misses + Hits).
+if (BENNI_USE_SIMD_DIAG)
+    message("${BoldGreen}[Benni] Use vectorization diagnostics:${ColourReset}")
+    if (MINGW)
+        message("[Benni] Using MinGW -fopt-info-vec")
+        set(MY_C_FLAGS "${MY_C_FLAGS} -fopt-info-vec")
+        set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -fopt-info-vec")
+    else()
+        message("[Benni] Using Clang -Rpass=loop-vectorize -Rpass-missed=loop-vectorize -Rpass-analysis=loop-vectorize")
+        set(MY_C_FLAGS "${MY_C_FLAGS} -Rpass=loop-vectorize -Rpass-missed=loop-vectorize -Rpass-analysis=loop-vectorize")
+        set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -Rpass=loop-vectorize -Rpass-missed=loop-vectorize -Rpass-analysis=loop-vectorize")
+    endif()
+endif()
+
 if(NOT DEFINED BENNI_BUILD_STATIC)
     set(BENNI_BUILD_STATIC 0)
 	message(AUTHOR_WARNING "BENNI_BUILD_STATIC was not defined, so i set it to 0.")

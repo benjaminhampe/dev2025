@@ -109,6 +109,9 @@ else()
 
     if (MSVC)
 	else()
+        # if (MINGW)
+        #     target_compile_options(${LIB_NAME} PRIVATE -Wno-aggressive-loop-optimizations)
+        # endif()
         target_compile_options(${LIB_NAME} PRIVATE 
             -Wno-parentheses
             -Wno-implicit-fallthrough
@@ -117,7 +120,6 @@ else()
             -Wno-sign-compare
             -Wno-unused-but-set-variable
             -Wno-shift-negative-value
-            -Wno-aggressive-loop-optimizations
         )
     endif()
     

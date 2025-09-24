@@ -18,14 +18,14 @@
  * PUBLIC:     u_int32_t, u_int32_t, u_int32_t, u_int8_t *, size_t *));
  */
 int
-__os_io(env, op, fhp, pgno, pgsize, relative, io_len, buf, niop)
-	ENV *env;
-	int op;
-	DB_FH *fhp;
-	db_pgno_t pgno;
-	u_int32_t pgsize, relative, io_len;
-	u_int8_t *buf;
-	size_t *niop;
+__os_io(ENV *env, int op, DB_FH *fhp, db_pgno_t pgno, u_int32_t pgsize, u_int32_t relative, u_int32_t io_len, u_int8_t *buf, size_t *niop)
+    // ENV *env;
+    // int op;
+    // DB_FH *fhp;
+    // db_pgno_t pgno;
+    // u_int32_t pgsize, relative, io_len;
+    // u_int8_t *buf;
+    // size_t *niop;
 {
 #if defined(HAVE_PREAD) && defined(HAVE_PWRITE)
 	DB_ENV *dbenv;
@@ -129,12 +129,12 @@ err:	MUTEX_UNLOCK(env, fhp->mtx_fh);
  * PUBLIC: int __os_read __P((ENV *, DB_FH *, void *, size_t, size_t *));
  */
 int
-__os_read(env, fhp, addr, len, nrp)
-	ENV *env;
-	DB_FH *fhp;
-	void *addr;
-	size_t len;
-	size_t *nrp;
+__os_read(ENV *env, DB_FH *fhp, void *addr, size_t len, size_t *nrp)
+    // ENV *env;
+    // DB_FH *fhp;
+    // void *addr;
+    // size_t len;
+    // size_t *nrp;
 {
 	DB_ENV *dbenv;
 	size_t offset;
@@ -193,12 +193,12 @@ __os_read(env, fhp, addr, len, nrp)
  * PUBLIC: int __os_write __P((ENV *, DB_FH *, void *, size_t, size_t *));
  */
 int
-__os_write(env, fhp, addr, len, nwp)
-	ENV *env;
-	DB_FH *fhp;
-	void *addr;
-	size_t len;
-	size_t *nwp;
+__os_write(ENV *env, DB_FH *fhp, void *addr, size_t len, size_t *nwp)
+    // ENV *env;
+    // DB_FH *fhp;
+    // void *addr;
+    // size_t len;
+    // size_t *nwp;
 {
 	DB_ASSERT(env, F_ISSET(fhp, DB_FH_OPENED) && fhp->fd != -1);
 
@@ -221,12 +221,12 @@ __os_write(env, fhp, addr, len, nwp)
  * PUBLIC:     __P((ENV *, DB_FH *, void *, size_t, size_t *));
  */
 int
-__os_physwrite(env, fhp, addr, len, nwp)
-	ENV *env;
-	DB_FH *fhp;
-	void *addr;
-	size_t len;
-	size_t *nwp;
+__os_physwrite(ENV *env, DB_FH *fhp, void *addr, size_t len, size_t *nwp)
+    // ENV *env;
+    // DB_FH *fhp;
+    // void *addr;
+    // size_t len;
+    // size_t *nwp;
 {
 	DB_ENV *dbenv;
 	size_t offset;

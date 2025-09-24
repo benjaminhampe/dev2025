@@ -36,7 +36,7 @@ else()
 
     target_link_libraries(${APP_NAME} PRIVATE de_glm)
     target_link_libraries(${APP_NAME} PRIVATE de_glew)
-    target_link_libraries(${APP_NAME} PRIVATE de_glfw_glew)
+    target_link_libraries(${APP_NAME} PRIVATE de_glfw)
     target_link_libraries(${APP_NAME} PRIVATE de_imgui)
     target_link_libraries(${APP_NAME} PRIVATE DarkImage_2504)
     # target_link_libraries(${APP_NAME} PRIVATE rayTracingCore)

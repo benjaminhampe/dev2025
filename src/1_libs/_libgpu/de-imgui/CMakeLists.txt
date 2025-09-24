@@ -51,6 +51,6 @@ else()
     # target_link_libraries(${LIB_NAME} PUBLIC de_glew)
     # #target_link_libraries(${LIB_NAME} PUBLIC de_glad)
 
-	target_link_libraries(${LIB_NAME} PUBLIC de_glfw_glew)
+    target_link_libraries(${LIB_NAME} PUBLIC de_glfw)
 
 endif()
