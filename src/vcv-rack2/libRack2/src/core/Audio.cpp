@@ -429,17 +429,25 @@ struct Audio2Display : LedDisplay {
 			if (!font)
 				return;
 
-			nvgSave(args.vg);
-			nvgFontFaceId(args.vg, font->handle);
-			nvgFontSize(args.vg, 11);
-			nvgTextLetterSpacing(args.vg, 0.0);
-			nvgTextAlign(args.vg, NVG_ALIGN_CENTER | NVG_ALIGN_MIDDLE);
-			nvgFillColor(args.vg, nvgRGB(99, 99, 99));
+            // Draw plug lights
+            if (!args.vg)
+            {
+                FATAL("No args.vg");
+            }
+            else
+            {
+                nvgSave(args.vg);
+                nvgFontFaceId(args.vg, font->handle);
+                nvgFontSize(args.vg, 11);
+                nvgTextLetterSpacing(args.vg, 0.0);
+                nvgTextAlign(args.vg, NVG_ALIGN_CENTER | NVG_ALIGN_MIDDLE);
+                nvgFillColor(args.vg, nvgRGB(99, 99, 99));
 
-			for (int i = 0; i < 6; i++) {
-				nvgText(args.vg, 36.0, posY[i], texts[i].c_str(), NULL);
-			}
-			nvgRestore(args.vg);
+                for (int i = 0; i < 6; i++) {
+                    nvgText(args.vg, 36.0, posY[i], texts[i].c_str(), NULL);
+                }
+                nvgRestore(args.vg);
+            }
 		}
 		LedDisplay::drawLayer(args, layer);
 	}

@@ -16,7 +16,7 @@ namespace settings {
 
 
 std::string settingsPath;
-bool devMode = false;
+bool devMode = true;
 bool headless = false;
 bool isPlugin = false;
 bool restart = false;

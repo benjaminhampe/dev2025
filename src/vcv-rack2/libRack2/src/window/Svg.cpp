@@ -139,6 +139,13 @@ static float getLineCrossing(math::Vec p0, math::Vec p1, math::Vec p2, math::Vec
 }
 
 void svgDraw(NVGcontext* vg, NSVGimage* svg) {
+
+    if (!vg)
+    {
+        FATAL("No vg");
+        return;
+    }
+
 	DEBUG_ONLY(printf("new image: %g x %g px\n", svg->width, svg->height);)
 	int shapeIndex = 0;
 	// Iterate shape linked list

@@ -88,10 +88,36 @@ else()
         # endif()
     endif()
     
-    set_target_properties(${LIB_NAME} PROPERTIES
-        OUTPUT_NAME "Fundamental-2.6.2-llvm-win-x64"
-        SUFFIX ".vcvplugin"
+    # set_target_properties(${LIB_NAME} PROPERTIES
+    #     OUTPUT_NAME "Fundamental-2.6.2-llvm-win-x64"
+    #     SUFFIX ".dll"
+    # )
+
+
+
+    add_custom_command(TARGET ${LIB_NAME} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E make_directory "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/z_benni/Fundamental"
+        # Copy .dll
+        COMMAND ${CMAKE_COMMAND} -E copy
+            "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/libFundamental.dll"
+            "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/z_benni/Fundamental/plugin.dll"
+
+        # Compress with tar + zstd
+        # COMMAND tar -cf - "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/z_benni/Fundamental" | zstd -o "${CMAKE_BINARY_DIR}/compressed/myplugin_package.tar.zst"
+        COMMAND ${CMAKE_COMMAND} -E chdir "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}"
+                tar -cf "z_benni/Fundamental.tar" "z_benni/Fundamental"
+        COMMAND zstd -o
+            "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/z_benni/Fundamental.tar.zst"
+            "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/z_benni/Fundamental.tar"
+
+        # Move + rename to final destination
+        COMMAND ${CMAKE_COMMAND} -E make_directory
+            "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/media/Rack2/plugins"
+        COMMAND ${CMAKE_COMMAND} -E rename
+            "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/z_benni/Fundamental.tar.zst"
+            "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/media/Rack2/plugins/Fundamental.vcvplugin"
     )
+
 
     # add_custom_command(TARGET ${LIB_NAME} POST_BUILD
         # COMMAND ${CMAKE_COMMAND} -E copy
@@ -108,7 +134,7 @@ else()
     # target_link_libraries(${LIB_NAME} PUBLIC de_rack2_nanovg)
     
 
-    file(COPY media/Rack2 DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/media)
+    file(COPY media/Fundamental DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/z_benni)
 endif()
 
 # add_subdirectory(test)

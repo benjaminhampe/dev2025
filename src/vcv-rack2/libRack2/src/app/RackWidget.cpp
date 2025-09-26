@@ -86,10 +86,17 @@ struct PlugContainer : widget::TransparentWidget {
 			Widget::draw(args);
 
 			// Draw plug lights
-			nvgSave(args.vg);
-			nvgGlobalTint(args.vg, color::WHITE);
-			Widget::drawLayer(args, 1);
-			nvgRestore(args.vg);
+            if (!args.vg)
+            {
+                FATAL("No args.vg");
+            }
+            else
+            {
+                nvgSave(args.vg);
+                nvgGlobalTint(args.vg, color::WHITE);
+                Widget::drawLayer(args, 1);
+                nvgRestore(args.vg);
+            }
 		}
 	}
 };

@@ -135,35 +135,42 @@ void FramebufferWidget::draw(const DrawArgs& args) {
 		return;
 
 	// Draw framebuffer image, using world coordinates
-	nvgSave(args.vg);
-	nvgResetTransform(args.vg);
+    if (!args.vg)
+    {
+        FATAL("No args.vg");
+    }
+    else
+    {
+        nvgSave(args.vg);
+        nvgResetTransform(args.vg);
 
-	math::Vec scaleRatio = scale.div(internal->fbScale);
-	// DEBUG("%f %f %f %f", scaleRatio.x, scaleRatio.y, offsetF.x, offsetF.y);
+        math::Vec scaleRatio = scale.div(internal->fbScale);
+        // DEBUG("%f %f %f %f", scaleRatio.x, scaleRatio.y, offsetF.x, offsetF.y);
 
-	// DEBUG("%f %f %f %f, %f %f", RECT_ARGS(internal->fbBox), VEC_ARGS(internal->fbSize));
-	// DEBUG("offsetI (%f, %f) fbBox (%f, %f; %f, %f)", VEC_ARGS(offsetI), RECT_ARGS(internal->fbBox));
-	nvgBeginPath(args.vg);
-	nvgRect(args.vg,
-		offsetI.x + internal->fbBox.pos.x * scaleRatio.x,
-		offsetI.y + internal->fbBox.pos.y * scaleRatio.y,
-		internal->fbBox.size.x * scaleRatio.x,
-		internal->fbBox.size.y * scaleRatio.y);
-	NVGpaint paint = nvgImagePattern(args.vg,
-		offsetI.x + internal->fbBox.pos.x * scaleRatio.x,
-		offsetI.y + internal->fbBox.pos.y * scaleRatio.y,
-		internal->fbBox.size.x * scaleRatio.x,
-		internal->fbBox.size.y * scaleRatio.y,
-		0.0, internal->fb->image, 1.0);
-	nvgFillPaint(args.vg, paint);
-	nvgFill(args.vg);
+        // DEBUG("%f %f %f %f, %f %f", RECT_ARGS(internal->fbBox), VEC_ARGS(internal->fbSize));
+        // DEBUG("offsetI (%f, %f) fbBox (%f, %f; %f, %f)", VEC_ARGS(offsetI), RECT_ARGS(internal->fbBox));
+        nvgBeginPath(args.vg);
+        nvgRect(args.vg,
+            offsetI.x + internal->fbBox.pos.x * scaleRatio.x,
+            offsetI.y + internal->fbBox.pos.y * scaleRatio.y,
+            internal->fbBox.size.x * scaleRatio.x,
+            internal->fbBox.size.y * scaleRatio.y);
+        NVGpaint paint = nvgImagePattern(args.vg,
+            offsetI.x + internal->fbBox.pos.x * scaleRatio.x,
+            offsetI.y + internal->fbBox.pos.y * scaleRatio.y,
+            internal->fbBox.size.x * scaleRatio.x,
+            internal->fbBox.size.y * scaleRatio.y,
+            0.0, internal->fb->image, 1.0);
+        nvgFillPaint(args.vg, paint);
+        nvgFill(args.vg);
 
-	// For debugging the bounding box of the framebuffer
-	// nvgStrokeWidth(args.vg, 2.0);
-	// nvgStrokeColor(args.vg, nvgRGBAf(1, 1, 0, 0.5));
-	// nvgStroke(args.vg);
+        // For debugging the bounding box of the framebuffer
+        // nvgStrokeWidth(args.vg, 2.0);
+        // nvgStrokeColor(args.vg, nvgRGBAf(1, 1, 0, 0.5));
+        // nvgStroke(args.vg);
 
-	nvgRestore(args.vg);
+        nvgRestore(args.vg);
+    }
 }
 
 
@@ -171,7 +178,18 @@ void FramebufferWidget::render(math::Vec scale, math::Vec offsetF, math::Rect cl
 	// In case we fail drawing the framebuffer, don't try again the next frame, so reset `dirty` here.
 	dirty = false;
 	NVGcontext* vg = APP->window->vg;
-	NVGcontext* fbVg = APP->window->fbVg;
+    if (!vg)
+    {
+        FATAL("No vg");
+        return;
+    }
+
+    NVGcontext* fbVg = APP->window->vg;
+    if (!fbVg)
+    {
+        FATAL("No fbVg");
+        return;
+    }
 
 	internal->fbScale = scale;
 	internal->fbOffsetF = offsetF;
@@ -231,6 +249,16 @@ void FramebufferWidget::render(math::Vec scale, math::Vec offsetF, math::Rect cl
 	}
 	else {
 		NVGLUframebuffer* fb = internal->fb;
+        if (!fb)
+        {
+            FATAL("No fb");
+            return;
+        }
+        if (!fbVg)
+        {
+            FATAL("No fbVg");
+            return;
+        }
 		// If oversampling, create another framebuffer and copy it to actual size.
 		math::Vec oversampledFbSize = internal->fbSize.mult(oversample).ceil();
 		// DEBUG("Creating %0.fx oversampled framebuffer of size (%f, %f)", oversample, VEC_ARGS(internal->fbSize));
@@ -273,8 +301,15 @@ void FramebufferWidget::render(math::Vec scale, math::Vec offsetF, math::Rect cl
 };
 
 
-void FramebufferWidget::drawFramebuffer() {
-	NVGcontext* vg = APP->window->fbVg;
+void FramebufferWidget::drawFramebuffer()
+{
+    NVGcontext* vg = APP->window->fbVg;
+
+    if (!vg)
+    {
+        FATAL("No vg");
+        return;
+    }
 	nvgSave(vg);
 
 	float pixelRatio = internal->fbSize.x * oversample / internal->fbBox.size.x;

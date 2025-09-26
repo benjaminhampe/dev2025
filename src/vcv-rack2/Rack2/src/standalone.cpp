@@ -184,7 +184,7 @@ int main(int argc, char* argv[]) {
 	}
 
 	// Check existence of the system res/ directory
-	std::string resDir = asset::system("media/Rack2/res");
+	std::string resDir = asset::system("res");
 	if (!system::isDirectory(resDir)) {
 		std::string message = string::f(string::translate("standalone.resDir"), resDir);
 		osdialog_message(OSDIALOG_ERROR, OSDIALOG_OK, message.c_str());

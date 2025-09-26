@@ -298,28 +298,33 @@ void Widget::drawLayer(const DrawArgs& args, int layer) {
 
 
 void Widget::drawChild(Widget* child, const DrawArgs& args, int layer) {
-	DrawArgs childArgs = args;
+    DrawArgs childArgs = args;
 	// Intersect child clip box with self
 	childArgs.clipBox = childArgs.clipBox.intersect(child->box);
 	// Offset clip box by child pos
 	childArgs.clipBox.pos = childArgs.clipBox.pos.minus(child->box.pos);
 
-	nvgSave(args.vg);
-	nvgTranslate(args.vg, child->box.pos.x, child->box.pos.y);
+    if (!args.vg)
+    {
+        FATAL("No args.vg");
+    }
+    else
+    {
+        nvgSave(args.vg);
+        nvgTranslate(args.vg, child->box.pos.x, child->box.pos.y);
 
-	if (layer == 0) {
-		child->draw(childArgs);
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
-		// Call deprecated draw function, which does nothing by default
-		child->draw(args.vg);
-#pragma GCC diagnostic pop
-	}
-	else {
-		child->drawLayer(childArgs, layer);
-	}
+        if (layer == 0) {
+            child->draw(childArgs);
+            // Call deprecated draw function, which does nothing by default
+            child->draw(args.vg);
+        }
+        else
+        {
+            child->drawLayer(childArgs, layer);
+        }
 
-	nvgRestore(args.vg);
+        nvgRestore(args.vg);
+    }
 }
 
 

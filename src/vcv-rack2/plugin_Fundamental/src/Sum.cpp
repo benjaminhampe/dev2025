@@ -62,7 +62,14 @@ struct Sum : Module {
 struct SumDisplay : LedDisplay {
 	Sum* module;
 
-	void drawLayer(const DrawArgs& args, int layer) override {
+    void drawLayer(const DrawArgs& args, int layer) override
+    {
+        if (!args.vg)
+        {
+            FATAL("No args.vg");
+            return;
+        }
+
 		if (layer == 1) {
 			static const std::vector<float> posY = {
 				mm2px(18.068 - 13.039),

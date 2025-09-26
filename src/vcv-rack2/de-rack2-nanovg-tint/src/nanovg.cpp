@@ -300,7 +300,12 @@ NVGcontext* nvgCreateInternal(NVGparams* params, NVGcontext* other)  // Share th
 	FONSparams fontParams;
 	NVGcontext* ctx = (NVGcontext*)malloc(sizeof(NVGcontext));
 	int i;
-	if (ctx == NULL) goto error;
+    if (!ctx)
+    {
+        fprintf( stdout, "No NVGContext");
+        fflush( stdout );
+        exit(1);
+    }
 	memset(ctx, 0, sizeof(NVGcontext));
 
 	ctx->params = *params;
@@ -650,6 +655,13 @@ static void nvg__setPaintColor(NVGpaint* p, NVGcolor color)
 // State handling
 void nvgSave(NVGcontext* ctx)
 {
+    if (!ctx)
+    {
+        fprintf( stdout, "No ctx" );
+        fflush( stdout );
+        return;
+    }
+
 	if (ctx->nstates >= NVG_MAX_STATES)
 		return;
 	if (ctx->nstates > 0)

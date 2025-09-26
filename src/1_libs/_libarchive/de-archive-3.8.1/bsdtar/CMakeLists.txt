@@ -1,4 +1,4 @@
-set(APP_NAME bsdtar)
+set(APP_NAME tar)
 project(${APP_NAME}-dev)
 
 if (TARGET ${APP_NAME})

@@ -254,7 +254,14 @@ struct ScopeDisplay : LedDisplay {
 		}
 	}
 
-	void drawWave(const DrawArgs& args, int wave, int channel, float offset, float gain) {
+    void drawWave(const DrawArgs& args, int wave, int channel, float offset, float gain)
+    {
+        if (!args.vg)
+        {
+            FATAL("No args.vg");
+            return;
+        }
+
 		Scope::Point pointBuffer[BUFFER_SIZE];
 		for (int i = 0; i < BUFFER_SIZE; i++) {
 			pointBuffer[i] = module ? module->pointBuffer[i][wave][channel] : DEMO_POINT_BUFFER[i];
@@ -306,7 +313,16 @@ struct ScopeDisplay : LedDisplay {
 
 	void drawLissajous(const DrawArgs& args, int channel, float offsetX, float gainX, float offsetY, float gainY) {
 		if (!module)
-			return;
+        {
+            //FATAL("No module");
+            return;
+        }
+
+        if (!args.vg)
+        {
+            FATAL("No args.vg");
+            return;
+        }
 
 		Scope::Point pointBufferX[BUFFER_SIZE];
 		Scope::Point pointBufferY[BUFFER_SIZE];

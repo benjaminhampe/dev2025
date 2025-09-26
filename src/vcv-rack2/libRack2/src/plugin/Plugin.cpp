@@ -50,9 +50,10 @@ void Plugin::fromJson(json_t* rootJ) {
 		version = json_string_value(versionJ);
 	if (version == "")
 		throw Exception("No plugin version");
-	if (!string::startsWith(version, APP_VERSION_MAJOR + "."))
+#ifdef NOT_BENNI
+    if (!string::startsWith(version, APP_VERSION_MAJOR + "."))
 		throw Exception("Plugin version %s does not match Rack ABI version %s", version.c_str(), APP_VERSION_MAJOR.c_str());
-
+#endif
 	// name
 	json_t* nameJ = json_object_get(rootJ, "name");
 	if (nameJ)

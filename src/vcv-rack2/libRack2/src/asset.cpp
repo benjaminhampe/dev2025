@@ -37,12 +37,18 @@ std::string getApplicationSupportDir();
 #endif
 
 
-static void initSystemDir() {
+static void initSystemDir()
+{
+    systemDir = system::getWorkingDirectory() + "/media/Rack2";
+
+    WARN("systemDir = %s", systemDir.c_str());
+
+#ifdef NOT_BENNI
 	if (!systemDir.empty())
 		return;
 
 	if (settings::devMode) {
-		systemDir = system::getWorkingDirectory();
+        systemDir = system::getWorkingDirectory();
 		return;
 	}
 
@@ -88,11 +94,17 @@ static void initSystemDir() {
 	// Use the current working directory as the default path on Linux.
 	systemDir = system::getWorkingDirectory();
 #endif
+
+#endif
 }
 
 
-static void initUserDir() {
-	if (!userDir.empty())
+static void initUserDir()
+{
+    userDir = systemDir;
+
+#ifdef NOT_BENNI
+    if (!userDir.empty())
 		return;
 
 	if (settings::devMode) {
@@ -192,6 +204,7 @@ static void initUserDir() {
 
 	// Create user dir if it doesn't exist
 	system::createDirectory(userDir);
+#endif
 }
 
 
@@ -202,18 +215,30 @@ void init() {
 
 
 std::string system(std::string filename) {
-	return system::join(systemDir, filename);
+    auto retval = system::join(systemDir, filename);
+    WARN("retval = %s",retval.c_str());
+    return retval;
 }
 
 
 std::string user(std::string filename) {
-	return system::join(userDir, filename);
+    auto retval = system::join(userDir, filename);
+    WARN("retval = %s",retval.c_str());
+    return retval;
 }
 
 
 std::string plugin(plugin::Plugin* plugin, std::string filename) {
-	assert(plugin);
-	return system::join(plugin->path, filename);
+    if (!plugin)
+    {
+        std::ostringstream o;
+        o << "No plugin, filename = " << filename;
+        throw std::runtime_error(o.str());
+    }
+
+    auto retval = system::join(plugin->path, filename);
+    WARN("retval = %s",retval.c_str());
+    return retval;
 }
 
 

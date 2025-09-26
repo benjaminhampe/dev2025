@@ -9,17 +9,35 @@ namespace ui {
 
 void Tooltip::step() {
 	// Wrap size to contents
-	nvgSave(APP->window->vg);
-	nvgTextLineHeight(APP->window->vg, 1.2);
-	box.size.x = bndLabelWidth(APP->window->vg, -1, text.c_str());
-	box.size.y = bndLabelHeight(APP->window->vg, -1, text.c_str(), INFINITY);
-	// Position near cursor. This assumes that the Tooltip is added to the root widget.
-	box.pos = APP->scene->mousePos.plus(math::Vec(15, 15));
-	// Fit inside parent
-	assert(parent);
-	box = box.nudge(parent->box.zeroPos());
-	nvgRestore(APP->window->vg);
+    if (!APP)
+    {
+        FATAL("No APP");
+        return;
+    }
 
+    if (!APP->window)
+    {
+        FATAL("No APP->window");
+        return;
+    }
+
+    if (!APP->window->vg)
+    {
+        FATAL("No APP->window->vg");
+    }
+    else
+    {
+        nvgSave(APP->window->vg);
+        nvgTextLineHeight(APP->window->vg, 1.2);
+        box.size.x = bndLabelWidth(APP->window->vg, -1, text.c_str());
+        box.size.y = bndLabelHeight(APP->window->vg, -1, text.c_str(), INFINITY);
+        // Position near cursor. This assumes that the Tooltip is added to the root widget.
+        box.pos = APP->scene->mousePos.plus(math::Vec(15, 15));
+        // Fit inside parent
+        assert(parent);
+        box = box.nudge(parent->box.zeroPos());
+        nvgRestore(APP->window->vg);
+    }
 	Widget::step();
 }
 
