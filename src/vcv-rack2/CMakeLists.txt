@@ -17,6 +17,7 @@ add_subdirectory(de-rack2-tinyexpr)
 # add_subdirectory(de-rack2-stb_image)
 add_subdirectory(de-rack2-simde)
 add_subdirectory(libRack2)
+add_subdirectory(plugin_Fundamental)
 add_subdirectory(Rack2)
 
 

@@ -50,8 +50,9 @@ unsigned char* Win32GetClipboardImageData(int* width, int* height, unsigned long
 #define _IA64_
 #endif
 
-
+#ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
+#endif
 // #include <sdkddkver.h>
 // #include <windows.h>
 // #include <winuser.h>

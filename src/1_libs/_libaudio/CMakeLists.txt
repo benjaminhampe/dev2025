@@ -27,6 +27,10 @@ add_subdirectory(de-vst3sdk-3.7.13)
 # add_subdirectory(de-fmod-1.10)     # Broken? Not really for MinGW/GCC
 # add_subdirectory(de-fmod-2.02.20)  # Broken? Not really for MinGW/GCC
 # add_subdirectory(de-fmod-2.03.03)  # Broken? Not really for MinGW/GCC
+add_subdirectory(de-dr_wav-0.14.1)
+add_subdirectory(de-dr_flac-0.13.2)
+add_subdirectory(de-dr_mp3-0.7.2)
+add_subdirectory(de-miniaudio-0.11.23)
 
 add_subdirectory(de-ffmpeg-4.3.2-win64-gcc-shared) # Import/Export MP4, AVI, MKV, etc...
 

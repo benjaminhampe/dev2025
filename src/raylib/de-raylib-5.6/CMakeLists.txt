@@ -76,7 +76,7 @@ else()
     # endif()
 
     # target_link_libraries(${LIB_NAME} PRIVATE de_glad)
-    target_link_libraries(${LIB_NAME} PRIVATE de_raylib_glfw)
+    target_link_libraries(${LIB_NAME} PRIVATE de_glfw)
     target_link_libraries(${LIB_NAME} PRIVATE de_rlgl)
     
     target_link_libraries(${LIB_NAME} PRIVATE de_dr_wav)
