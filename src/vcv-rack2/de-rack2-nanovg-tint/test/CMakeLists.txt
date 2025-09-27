@@ -1,0 +1,2 @@
+add_subdirectory(nanovg_tint_demo_gl3)
+add_subdirectory(nanovg_tint_demo_fbo)

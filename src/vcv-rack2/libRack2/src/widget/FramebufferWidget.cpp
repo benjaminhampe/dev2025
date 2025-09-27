@@ -184,7 +184,7 @@ void FramebufferWidget::render(math::Vec scale, math::Vec offsetF, math::Rect cl
         return;
     }
 
-    NVGcontext* fbVg = APP->window->vg;
+    NVGcontext* fbVg = APP->window->fbVg;
     if (!fbVg)
     {
         FATAL("No fbVg");

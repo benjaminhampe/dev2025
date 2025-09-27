@@ -38,6 +38,7 @@ else()
     target_include_directories(${LIB_NAME} PRIVATE ${LIB_SOURCE_DIR})
 	
     target_compile_definitions(${LIB_NAME} PUBLIC HAVE_LIBNANOVG=1)
+    target_compile_definitions(${LIB_NAME} PUBLIC NANOVG_GLEW=1)
     target_compile_definitions(${LIB_NAME} PUBLIC NANOVG_GL_IMPLEMENTATION=1)
     target_compile_definitions(${LIB_NAME} PUBLIC NANOVG_GL3_IMPLEMENTATION=1)
     target_compile_definitions(${LIB_NAME} PUBLIC NANOVG_GL_USE_UNIFORMBUFFER=1)
@@ -66,4 +67,4 @@ else()
     # file(COPY ${LIB_HEADERS} DESTINATION ${JPEG_INCLUDE_DIR}) # For the SDK
 endif()
 
-# add_subdirectory(test)
+add_subdirectory(test)

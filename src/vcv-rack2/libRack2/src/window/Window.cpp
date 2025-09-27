@@ -341,6 +341,7 @@ Window::Window() {
 	fbVg = nvgCreateSharedGL2(vg, nvgFlags);
 #elif defined NANOVG_GL3
 	vg = nvgCreateGL3(nvgFlags);
+    fbVg = nvgCreateSharedGL3(vg, nvgFlags);
 #elif defined NANOVG_GLES2
 	vg = nvgCreateGLES2(nvgFlags);
 #endif

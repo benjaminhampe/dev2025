@@ -96,21 +96,19 @@ else()
 
 
     add_custom_command(TARGET ${LIB_NAME} POST_BUILD
+        # Create working directory "z_benni/Fundamental"
         COMMAND ${CMAKE_COMMAND} -E make_directory "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/z_benni/Fundamental"
-        # Copy .dll
-        COMMAND ${CMAKE_COMMAND} -E copy
+        # Move libFundamental.dll to working directory Fundamental and rename to plugin.dll
+        COMMAND ${CMAKE_COMMAND} -E rename
             "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/libFundamental.dll"
             "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/z_benni/Fundamental/plugin.dll"
-
-        # Compress with tar + zstd
-        # COMMAND tar -cf - "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/z_benni/Fundamental" | zstd -o "${CMAKE_BINARY_DIR}/compressed/myplugin_package.tar.zst"
-        COMMAND ${CMAKE_COMMAND} -E chdir "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}"
-                tar -cf "z_benni/Fundamental.tar" "z_benni/Fundamental"
+        # Compress directory Fundamental to Fundamental.tar.zst
+        COMMAND ${CMAKE_COMMAND} -E chdir "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/z_benni"
+                tar -cf "Fundamental.tar" "Fundamental"
         COMMAND zstd -o
             "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/z_benni/Fundamental.tar.zst"
             "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/z_benni/Fundamental.tar"
-
-        # Move + rename to final destination
+        # Move Fundamental.tar.zst to final destination and rename to .vcvplugin
         COMMAND ${CMAKE_COMMAND} -E make_directory
             "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/media/Rack2/plugins"
         COMMAND ${CMAKE_COMMAND} -E rename

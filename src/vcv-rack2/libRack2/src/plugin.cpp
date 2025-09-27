@@ -269,13 +269,17 @@ void init() {
 	// Load Core
 	loadPlugin("");
 
+#ifdef NOT_BENNI
 	// Get user plugins directory
 	if (settings::devMode) {
 		pluginsPath = asset::user("plugins");
-	}
+    }
 	else {
 		pluginsPath = asset::user("plugins-" + APP_OS + "-" + APP_CPU);
 	}
+#else
+    pluginsPath = asset::user("plugins");
+#endif
 
 	// In Rack <2.4.0, plugins dir was "plugins" regardless of arch.
 	// Rename old dir if running x64.
