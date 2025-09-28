@@ -3,6 +3,8 @@ add_subdirectory(de-glew-2.1.0)
 add_subdirectory(de-glad-4.2)
 add_subdirectory(de-soil)
 # add_subdirectory(de-nanovg)
+add_subdirectory(de-nanovg-tint)
+add_subdirectory(de-oui-blendish)
 
 # add_subdirectory(de-glfw-3.3.2-glew)
 # add_subdirectory(de-glfw-3.3.2-glad)

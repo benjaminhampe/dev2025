@@ -14,7 +14,7 @@ add_subdirectory(de_juce_audio_utils)
 add_subdirectory(de_juce_opengl)
 add_subdirectory(de_juce_video)
 add_subdirectory(de_juce_osc)
-add_subdirectory(test)
+# add_subdirectory(test) # Moved to 4_juce
 
 # add_subdirectory(de_juce_audio_plugin_client)
 # add_subdirectory(de_juce_audio_plugin_client_vst2)

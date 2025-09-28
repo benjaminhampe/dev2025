@@ -1,4 +1,4 @@
-set(APP_NAME Rack2)
+set(APP_NAME nanovg_tint_demo_fbo)
 project(${APP_NAME})
 
 if (TARGET ${APP_NAME})
@@ -7,7 +7,11 @@ else()
     # add_subdirectory(lib)
 
     set(APP_SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/src)
-    set(APP_SOURCES "${APP_SOURCE_DIR}/standalone.cpp")
+    set(APP_SOURCES 
+        "${APP_SOURCE_DIR}/example_fbo.cpp"
+        "${APP_SOURCE_DIR}/perf.cpp"
+        "${APP_SOURCE_DIR}/perf.h"
+    )
 
     if (WIN32)
         enable_language(RC)
@@ -31,8 +35,9 @@ else()
         # endif()
     endif()
 	
-    target_link_libraries(${APP_NAME} PRIVATE de_rack2)
-    target_link_libraries(${APP_NAME} PRIVATE de_osdialog)
+    target_link_libraries(${APP_NAME} PRIVATE de_nanovg_tint)
+    target_link_libraries(${APP_NAME} PRIVATE de_glew)
+    target_link_libraries(${APP_NAME} PRIVATE de_glfw)
 
     include(${CMAKE_SOURCE_DIR}/src/embed_static_runtime.cmake)
     # if (CMAKE_BUILD_TYPE STREQUAL "Release")
@@ -43,5 +48,5 @@ else()
         # )
     # endif()
 
-    file(COPY media/Rack2 DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/media)
+    file(COPY media/nanovg_tint_demo DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/media)
 endif()

@@ -27,7 +27,7 @@ cmake_minimum_required(VERSION 3.14 FATAL_ERROR)
 set(BENNI_USE_QT 1)     # <optional> There are various other libs to build UI
 set(BENNI_USE_NASM 0)   # <broken-now> Very common, for compress, network and audio libs.
 set(BENNI_USE_ASAN 0)   # <broken> MinGW is not ready yet.
-set(BENNI_USE_SIMD_DIAG 1) # Enable compiler output for vectorization success and misses.
+set(BENNI_USE_SIMD_DIAG 0) # Enable compiler output for vectorization success and misses.
 
 set(BENNI_USE_AVX512 0)
 set(BENNI_USE_AVX2 1)

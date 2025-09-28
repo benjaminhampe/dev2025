@@ -34,7 +34,13 @@ add_subdirectory(de-miniaudio-0.11.23)
 
 add_subdirectory(de-ffmpeg-4.3.2-win64-gcc-shared) # Import/Export MP4, AVI, MKV, etc...
 
-# add_subdirectory(de-juce-7.0.5) # Big lib, only activate when needed.
+# newer bespoke libs:
+# add_subdirectory(de-ableton-link)
+add_subdirectory(de-ableton-push2)
+add_subdirectory(de-tuning-library)
+add_subdirectory(de-oddsound-mts-esp)
+
+add_subdirectory(de-juce-7.0.5) # Big lib, only activate when needed.
 
 # add_subdirectory(de-dr_wav)
 # add_subdirectory(de-dr_flac)
