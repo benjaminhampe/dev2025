@@ -3,7 +3,10 @@
 
 Plugin* pluginInstance;
 
-void init(Plugin* p) {
+extern "C" {
+
+void RACK_DLL_CALL init(rack::plugin::Plugin* p)
+{
 	pluginInstance = p;
 
 	p->addModel(modelVCO);
@@ -46,6 +49,9 @@ void init(Plugin* p) {
 	p->addModel(modelPush);
 	p->addModel(modelSHASR);
 }
+
+}
+
 
 
 MenuItem* createRangeItem(std::string label, float* gain, float* offset) {

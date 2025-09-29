@@ -4,6 +4,8 @@ project(${LIB_NAME})
 if (TARGET ${LIB_NAME})
     message("${BoldYellow}[benni] HEADER_GUARD: ${LIB_NAME}${ColourReset}")
 else()
+    add_subdirectory(lib)
+
     set(LIB_HEADER_DIR ${CMAKE_CURRENT_LIST_DIR}/include)
     set(LIB_SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/src)
     set(LIB_HEADERS
@@ -45,7 +47,7 @@ else()
         target_compile_definitions(${LIB_NAME} PRIVATE BESPOKE_PUSH2_SUPPORT=1)
     endif()
 
-    target_link_libraries(${LIB_NAME} PUBLIC de_bespoke_libusb)
+    target_link_libraries(${LIB_NAME} PUBLIC de_libusb)
 	
     if (MSVC)
         set_target_properties(${LIB_NAME} PROPERTIES FOLDER _bespoke)

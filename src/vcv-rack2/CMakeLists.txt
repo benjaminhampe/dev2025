@@ -17,7 +17,8 @@ add_subdirectory(de-rack2-speexdsp)
 # add_subdirectory(de-rack2-stb_image)
 # add_subdirectory(de-rack2-simde)
 add_subdirectory(libRack2)
-add_subdirectory(plugin_Fundamental)
+add_subdirectory(plugin_01_Fundamental)
+# add_subdirectory(plugin_02_Gemini)
 add_subdirectory(Rack2)
 
 

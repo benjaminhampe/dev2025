@@ -276,6 +276,8 @@ else()
 	target_compile_definitions(${LIB_NAME} PRIVATE HAVE_LIBRACK2=1)
 	
     target_compile_definitions(${LIB_NAME} PRIVATE _RACK_VERSION="2.6.2")
+
+    target_compile_definitions(${LIB_NAME} PRIVATE BUILDING_RACK_DLL=1)
     
     target_link_libraries(${LIB_NAME} PRIVATE de_zlib)
     target_link_libraries(${LIB_NAME} PRIVATE de_archive)

@@ -40,7 +40,7 @@ add_subdirectory(de-ableton-push2)
 add_subdirectory(de-tuning-library)
 add_subdirectory(de-oddsound-mts-esp)
 
-add_subdirectory(de-juce-7.0.5) # Big lib, only activate when needed.
+# add_subdirectory(de-juce-7.0.5) # Big lib, only activate when needed.
 
 # add_subdirectory(de-dr_wav)
 # add_subdirectory(de-dr_flac)

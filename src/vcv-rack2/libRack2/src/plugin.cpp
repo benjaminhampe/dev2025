@@ -31,6 +31,8 @@
 #include <settings.hpp>
 
 
+#include <filesystem>
+
 namespace rack {
 
 namespace core {
@@ -46,11 +48,11 @@ namespace plugin {
 
 
 static void* getSymbol(void* handle, const char* name) {
-	if (!handle)
-		return NULL;
+    if (!handle)
+        return NULL;
 
 #if defined ARCH_WIN
-	return (void*) GetProcAddress((HMODULE) handle, name);
+    return (void*) GetProcAddress((HMODULE) handle, name);
 #else
 	return dlsym(handle, name);
 #endif
@@ -93,7 +95,37 @@ static void* loadLibrary(std::string libraryPath) {
 	return handle;
 }
 
-typedef void (*InitCallback)(Plugin*);
+// INT_PTR (WINAPI *FARPROC)
+
+struct Benni
+{
+    static bool
+    existFile(const std::string& uri)
+    {
+        namespace fs = std::filesystem;
+        return fs::is_regular_file(uri);
+    }
+
+    static std::string
+    getLastErrorStr( DWORD err )
+    {
+        std::string errMsg;
+
+        char* msg = nullptr;
+        FormatMessageA(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+                       nullptr, err, 0, (LPSTR)&msg, 0, nullptr);
+
+        if (msg)
+        {
+            errMsg = msg;
+            LocalFree(msg);
+        }
+
+        return msg;
+    }
+};
+
+typedef void (WINAPI *InitCallback)(::rack::plugin::Plugin*);
 
 static InitCallback loadPluginCallback(Plugin* plugin) {
 	// Load plugin library
@@ -109,17 +141,70 @@ static InitCallback loadPluginCallback(Plugin* plugin) {
 	std::string libraryFilename = "plugin." + libraryExt;
 	std::string libraryPath = system::join(plugin->path, libraryFilename);
 
-	// Check file existence
-	if (!system::isFile(libraryPath))
-		throw Exception("Plugin binary not found at %s", libraryPath.c_str());
+    // // Check file existence
+    // if (!system::isFile(libraryPath))
+    // 	throw Exception("Plugin binary not found at %s", libraryPath.c_str());
 
+    if (!Benni::existFile(libraryPath))
+        throw Exception("Plugin binary not found at %s", libraryPath.c_str());
+
+    InitCallback initCallback = nullptr;
+
+#ifdef _WIN32
+    std::wstring libraryFilenameW = string::UTF8toUTF16(libraryPath);
+    HMODULE hLib = LoadLibraryW(libraryFilenameW.c_str());
+    if (!hLib)
+    {
+        int error = GetLastError();
+        FATAL("No plugin->handle for libraryPath %s: code %d",libraryPath.c_str(), error);
+        auto errorMsg = Benni::getLastErrorStr(error);
+        FATAL("ErrorMsg: %s",errorMsg.c_str());
+        //throw Exception("Failed to load library %s: code %d", libraryPath.c_str(), error);
+        return nullptr;
+    }
+
+    WARN("Got plugin->handle for libraryPath %s",libraryPath.c_str());
+
+    // Get plugin's init() function
+    FARPROC farProc = GetProcAddress(hLib, "init");
+    if (!farProc)
+    {
+        int error = GetLastError();
+        FATAL("No init() function found for libraryPath %s: code %d",libraryPath.c_str(), error);
+        auto errorMsg = Benni::getLastErrorStr(error);
+        FATAL("ErrorMsg: %s",errorMsg.c_str());
+        return nullptr;
+    }
+
+    WARN("Got farProc init() in %s",libraryPath.c_str());
+
+    initCallback = (InitCallback)farProc;
+    if (!initCallback)
+    {
+        FATAL("No (InitCallback)farProc in %s",libraryPath.c_str());        
+        return nullptr;
+    }
+
+    WARN("Got initCallback in %s",libraryPath.c_str());
+
+#else
 	// Load dynamic/shared library
 	plugin->handle = loadLibrary(libraryPath);
+    if (!plugin->handle)
+    {
+        FATAL("No plugin->handle for libraryPath %s",libraryPath.c_str());
+    }
+    else
+    {
+        FATAL("No plugin->handle for libraryPath %s",libraryPath.c_str());
+    }
 
 	// Get plugin's init() function
 	InitCallback initCallback = (InitCallback) getSymbol(plugin->handle, "init");
 	if (!initCallback)
 		throw Exception("Failed to read init() symbol in %s", libraryPath.c_str());
+
+#endif
 
 	return initCallback;
 }
@@ -177,13 +262,19 @@ static Plugin* loadPlugin(std::string path) {
 			throw Exception("Plugin %s is already loaded, not attempting to load it again", plugin->slug.c_str());
 
 		// Call init callback
-		InitCallback initCallback;
+        InitCallback initCallback = nullptr;
 		if (path == "") {
 			initCallback = core::init;
 		}
 		else {
 			initCallback = loadPluginCallback(plugin);
 		}
+
+        if (!initCallback)
+        {
+            throw Exception("No initCallback in Plugin %s", plugin->slug.c_str());
+        }
+
 		initCallback(plugin);
 
 		// Load modules manifest

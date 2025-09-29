@@ -111,9 +111,11 @@ enable_language(ASM_NASM)
 # MMX           -mmmx           __MMX__                 <mmintrin.h>
 
 # <INIT>
-set(MY_C_FLAGS "-target x86_64-w64-windows-gnu")
-set(MY_CXX_FLAGS "-target x86_64-w64-windows-gnu")
-set(MY_LD_FLAGS "-fuse-ld=lld")
+set(MY_C_FLAGS "-target x86_64-w64-windows-gnu -fvisibility=hidden")
+set(MY_CXX_FLAGS "-target x86_64-w64-windows-gnu -fvisibility=hidden")
+set(MY_LD_FLAGS "-fuse-ld=lld -fvisibility=hidden")
+
+# add_compile_options(-fvisibility=hidden)
 
 # Enable compiler messages about SIMD vectorizations and loop unrolling attempts (Misses + Hits).
 if (BENNI_USE_SIMD_DIAG)

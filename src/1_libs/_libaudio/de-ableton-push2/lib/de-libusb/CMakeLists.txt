@@ -1,4 +1,4 @@
-set(LIB_NAME de_bespoke_libusb)
+set(LIB_NAME de_libusb)
 project(${LIB_NAME})
 
 if (TARGET ${LIB_NAME})
