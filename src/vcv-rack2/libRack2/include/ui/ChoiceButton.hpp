@@ -9,7 +9,7 @@ namespace ui {
 
 /** Button with a dropdown icon on its right.
 */
-struct ChoiceButton : Button {
+struct RACK_DLL_API ChoiceButton : Button {
 	void draw(const DrawArgs& args) override;
 };
 

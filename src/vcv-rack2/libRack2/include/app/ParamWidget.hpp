@@ -11,7 +11,7 @@ namespace app {
 
 
 /** Manages an engine::Param on a ModuleWidget. */
-struct ParamWidget : widget::OpaqueWidget {
+struct RACK_DLL_API ParamWidget : widget::OpaqueWidget {
 	struct Internal;
 	Internal* internal;
 

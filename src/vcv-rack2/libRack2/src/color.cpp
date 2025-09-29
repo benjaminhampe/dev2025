@@ -6,7 +6,7 @@ namespace rack {
 namespace color {
 
 
-bool isEqual(NVGcolor a, NVGcolor b) {
+bool RACK_DLL_CALL isEqual(NVGcolor a, NVGcolor b) {
 	for (int i = 0; i < 4; i++) {
 		if (a.rgba[i] != b.rgba[i])
 			return false;
@@ -14,44 +14,44 @@ bool isEqual(NVGcolor a, NVGcolor b) {
 	return true;
 }
 
-NVGcolor clamp(NVGcolor a) {
+NVGcolor RACK_DLL_CALL clamp(NVGcolor a) {
 	for (int i = 0; i < 4; i++)
 		a.rgba[i] = math::clamp(a.rgba[i], 0.f, 1.f);
 	return a;
 }
 
-NVGcolor minus(NVGcolor a, NVGcolor b) {
+NVGcolor RACK_DLL_CALL minus(NVGcolor a, NVGcolor b) {
 	for (int i = 0; i < 3; i++)
 		a.rgba[i] -= b.rgba[i];
 	return a;
 }
 
-NVGcolor plus(NVGcolor a, NVGcolor b) {
+NVGcolor RACK_DLL_CALL plus(NVGcolor a, NVGcolor b) {
 	for (int i = 0; i < 3; i++)
 		a.rgba[i] += b.rgba[i];
 	return a;
 }
 
-NVGcolor mult(NVGcolor a, NVGcolor b) {
+NVGcolor RACK_DLL_CALL mult(NVGcolor a, NVGcolor b) {
 	for (int i = 0; i < 3; i++)
 		a.rgba[i] *= b.rgba[i];
 	return a;
 }
 
-NVGcolor mult(NVGcolor a, float x) {
+NVGcolor RACK_DLL_CALL mult(NVGcolor a, float x) {
 	for (int i = 0; i < 3; i++)
 		a.rgba[i] *= x;
 	return a;
 }
 
-NVGcolor lerp(NVGcolor a, NVGcolor b, float t) {
+NVGcolor RACK_DLL_CALL lerp(NVGcolor a, NVGcolor b, float t) {
 	NVGcolor c;
 	for (int i = 0; i < 4; i++)
 		c.rgba[i] = a.rgba[i] * (1 - t) + b.rgba[i] * t;
 	return c;
 }
 
-NVGcolor screen(NVGcolor a, NVGcolor b) {
+NVGcolor RACK_DLL_CALL screen(NVGcolor a, NVGcolor b) {
 	if (a.a == 0.f)
 		return b;
 	if (b.a == 0.f)
@@ -66,12 +66,12 @@ NVGcolor screen(NVGcolor a, NVGcolor b) {
 	return c;
 }
 
-NVGcolor alpha(NVGcolor a, float alpha) {
+NVGcolor RACK_DLL_CALL alpha(NVGcolor a, float alpha) {
 	a.a *= alpha;
 	return a;
 }
 
-NVGcolor fromHexString(std::string s) {
+NVGcolor RACK_DLL_CALL fromHexString(std::string s) {
 	uint8_t r = 0;
 	uint8_t g = 0;
 	uint8_t b = 0;
@@ -81,7 +81,7 @@ NVGcolor fromHexString(std::string s) {
 	return nvgRGBA(r, g, b, a);
 }
 
-std::string toHexString(NVGcolor c) {
+std::string RACK_DLL_CALL toHexString(NVGcolor c) {
 	uint8_t r = std::round(c.r * 255);
 	uint8_t g = std::round(c.g * 255);
 	uint8_t b = std::round(c.b * 255);

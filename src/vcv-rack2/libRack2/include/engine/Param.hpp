@@ -7,7 +7,7 @@ namespace rack {
 namespace engine {
 
 
-struct Param {
+struct RACK_DLL_API Param {
 	/** Unstable API. Use setValue() and getValue() instead. */
 	float value = 0.f;
 

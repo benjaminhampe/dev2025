@@ -193,7 +193,7 @@ struct TipWindow : widget::OpaqueWidget {
 };
 
 
-widget::Widget* tipWindowCreate() {
+widget::Widget* RACK_DLL_CALL tipWindowCreate() {
 	ui::MenuOverlay* overlay = new ui::MenuOverlay;
 	overlay->bgColor = nvgRGBAf(0, 0, 0, 0.33);
 

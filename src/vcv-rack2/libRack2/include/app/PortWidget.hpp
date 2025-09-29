@@ -11,7 +11,7 @@ namespace app {
 
 
 /** Manages an engine::Port on a ModuleWidget. */
-struct PortWidget : widget::OpaqueWidget {
+struct RACK_DLL_API PortWidget : widget::OpaqueWidget {
 	struct Internal;
 	Internal* internal;
 

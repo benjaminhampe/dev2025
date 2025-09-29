@@ -260,13 +260,13 @@ else()
         # list(APPEND LIB_SOURCES ${CMAKE_CURRENT_LIST_DIR}/res/resource.rc)
     endif()
 
-    if (BUILD_SHARED)
+    # if (BUILD_SHARED)
         message("${BoldBlue}[benni] DLL: ${LIB_NAME}${ColourReset}")
         add_library(${LIB_NAME} SHARED "")	
-    else()
-        message("${BoldCyan}[benni] LIB: ${LIB_NAME}${ColourReset}")
-        add_library(${LIB_NAME} STATIC "")
-    endif()
+    # else()
+    #     message("${BoldCyan}[benni] LIB: ${LIB_NAME}${ColourReset}")
+    #     add_library(${LIB_NAME} STATIC "")
+    # endif()
 
     target_sources(${LIB_NAME} PUBLIC ${LIB_HEADERS} PRIVATE ${LIB_SOURCES})
 

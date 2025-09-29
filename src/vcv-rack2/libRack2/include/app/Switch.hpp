@@ -12,7 +12,7 @@ Increases by 1 each time it is clicked.
 When maxValue is reached, the next click resets to minValue.
 In momentary mode, the value is instead set to maxValue when the mouse is held and minValue when released.
 */
-struct Switch : ParamWidget {
+struct RACK_DLL_API Switch : ParamWidget {
 	struct Internal;
 	Internal* internal;
 

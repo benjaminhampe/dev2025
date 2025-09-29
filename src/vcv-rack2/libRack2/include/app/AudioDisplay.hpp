@@ -10,41 +10,41 @@ namespace rack {
 namespace app {
 
 
-struct AudioDriverChoice : LedDisplayChoice {
+struct RACK_DLL_API AudioDriverChoice : LedDisplayChoice {
 	audio::Port* port;
 	void onAction(const ActionEvent& e) override;
 	void step() override;
 };
 
 
-struct AudioDeviceChoice : LedDisplayChoice {
+struct RACK_DLL_API AudioDeviceChoice : LedDisplayChoice {
 	audio::Port* port;
 	void onAction(const ActionEvent& e) override;
 	void step() override;
 };
 
 
-struct AudioSampleRateChoice : LedDisplayChoice {
+struct RACK_DLL_API AudioSampleRateChoice : LedDisplayChoice {
 	audio::Port* port;
 	void onAction(const ActionEvent& e) override;
 	void step() override;
 };
 
 
-struct AudioBlockSizeChoice : LedDisplayChoice {
+struct RACK_DLL_API AudioBlockSizeChoice : LedDisplayChoice {
 	audio::Port* port;
 	void onAction(const ActionEvent& e) override;
 	void step() override;
 };
 
 
-struct AudioDeviceMenuChoice : AudioDeviceChoice {
+struct RACK_DLL_API AudioDeviceMenuChoice : AudioDeviceChoice {
 	void onAction(const ActionEvent& e) override;
 };
 
 
 /** Designed for Audio-8 and Audio-16 module. */
-struct AudioDisplay : LedDisplay {
+struct RACK_DLL_API AudioDisplay : LedDisplay {
 	AudioDriverChoice* driverChoice;
 	LedDisplaySeparator* driverSeparator;
 	AudioDeviceChoice* deviceChoice;
@@ -57,7 +57,7 @@ struct AudioDisplay : LedDisplay {
 
 
 /** A virtual audio port graphic that displays an audio menu when clicked. */
-struct AudioButton : SvgButton {
+struct RACK_DLL_API AudioButton : SvgButton {
 	audio::Port* port;
 	void setAudioPort(audio::Port* port);
 	void onAction(const ActionEvent& e) override;

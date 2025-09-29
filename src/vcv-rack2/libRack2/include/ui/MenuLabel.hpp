@@ -7,7 +7,7 @@ namespace rack {
 namespace ui {
 
 
-struct MenuLabel : MenuEntry {
+struct RACK_DLL_API MenuLabel : MenuEntry {
 	std::string text;
 
 	void draw(const DrawArgs& args) override;

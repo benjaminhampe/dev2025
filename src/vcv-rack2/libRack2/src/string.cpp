@@ -21,7 +21,7 @@ namespace rack {
 namespace string {
 
 
-std::string f(const char* format, ...) {
+std::string RACK_DLL_CALL f(const char* format, ...) {
 	va_list args;
 	va_start(args, format);
 	std::string s = fV(format, args);
@@ -30,7 +30,7 @@ std::string f(const char* format, ...) {
 }
 
 
-std::string fV(const char* format, va_list args) {
+std::string RACK_DLL_CALL fV(const char* format, va_list args) {
 	// va_lists cannot be reused but we need it twice, so clone args.
 	va_list args2;
 	va_copy(args2, args);
@@ -47,7 +47,7 @@ std::string fV(const char* format, va_list args) {
 }
 
 
-std::string lowercase(const std::string& s) {
+std::string RACK_DLL_CALL lowercase(const std::string& s) {
 	std::string r = s;
 	std::transform(r.begin(), r.end(), r.begin(), [](unsigned char c) {
 		return std::tolower(c);
@@ -56,7 +56,7 @@ std::string lowercase(const std::string& s) {
 }
 
 
-std::string uppercase(const std::string& s) {
+std::string RACK_DLL_CALL uppercase(const std::string& s) {
 	std::string r = s;
 	std::transform(r.begin(), r.end(), r.begin(), [](unsigned char c) {
 		return std::toupper(c);
@@ -65,7 +65,7 @@ std::string uppercase(const std::string& s) {
 }
 
 
-std::string trim(const std::string& s) {
+std::string RACK_DLL_CALL trim(const std::string& s) {
 	const std::string whitespace = " \n\r\t";
 	size_t first = s.find_first_not_of(whitespace);
 	if (first == std::string::npos)
@@ -77,7 +77,7 @@ std::string trim(const std::string& s) {
 }
 
 
-std::string truncate(const std::string& s, size_t maxCodepoints) {
+std::string RACK_DLL_CALL truncate(const std::string& s, size_t maxCodepoints) {
 	if (s.empty() || maxCodepoints == 0)
 		return "";
 
@@ -97,7 +97,7 @@ std::string truncate(const std::string& s, size_t maxCodepoints) {
 }
 
 
-std::string truncatePrefix(const std::string& s, size_t maxCodepoints) {
+std::string RACK_DLL_CALL truncatePrefix(const std::string& s, size_t maxCodepoints) {
 	if (s.empty() || maxCodepoints == 0)
 		return "";
 
@@ -117,7 +117,7 @@ std::string truncatePrefix(const std::string& s, size_t maxCodepoints) {
 }
 
 
-std::string ellipsize(const std::string& s, size_t maxCodepoints) {
+std::string RACK_DLL_CALL ellipsize(const std::string& s, size_t maxCodepoints) {
 	if (maxCodepoints == 0)
 		return "";
 	std::string s2 = truncate(s, maxCodepoints);
@@ -129,7 +129,7 @@ std::string ellipsize(const std::string& s, size_t maxCodepoints) {
 }
 
 
-std::string ellipsizePrefix(const std::string& s, size_t maxCodepoints) {
+std::string RACK_DLL_CALL ellipsizePrefix(const std::string& s, size_t maxCodepoints) {
 	if (maxCodepoints == 0)
 		return "";
 	std::string s2 = truncatePrefix(s, maxCodepoints);
@@ -141,21 +141,21 @@ std::string ellipsizePrefix(const std::string& s, size_t maxCodepoints) {
 }
 
 
-bool startsWith(const std::string& str, const std::string& prefix) {
+bool RACK_DLL_CALL startsWith(const std::string& str, const std::string& prefix) {
 	if (str.size() < prefix.size())
 		return false;
 	return std::equal(prefix.begin(), prefix.end(), str.begin());
 }
 
 
-bool endsWith(const std::string& str, const std::string& suffix) {
+bool RACK_DLL_CALL endsWith(const std::string& str, const std::string& suffix) {
 	if (str.size() < suffix.size())
 		return false;
 	return std::equal(suffix.begin(), suffix.end(), str.end() - suffix.size());
 }
 
 
-std::string toBase64(const uint8_t* data, size_t dataLen) {
+std::string RACK_DLL_CALL toBase64(const uint8_t* data, size_t dataLen) {
 	static const char alphabet[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
 	size_t numBlocks = (dataLen + 2) / 3;
@@ -181,12 +181,12 @@ std::string toBase64(const uint8_t* data, size_t dataLen) {
 }
 
 
-std::string toBase64(const std::vector<uint8_t>& data) {
+std::string RACK_DLL_CALL toBase64(const std::vector<uint8_t>& data) {
 	return toBase64(data.data(), data.size());
 }
 
 
-std::vector<uint8_t> fromBase64(const std::string& str) {
+std::vector<uint8_t> RACK_DLL_CALL fromBase64(const std::string& str) {
 	std::vector<uint8_t> data;
 	uint32_t block = 0;
 	int i = 0;
@@ -252,7 +252,7 @@ bool CaseInsensitiveCompare::operator()(const std::string& a, const std::string&
 }
 
 
-std::vector<std::string> split(const std::string& s, const std::string& separator, size_t maxTokens) {
+std::vector<std::string> RACK_DLL_CALL split(const std::string& s, const std::string& separator, size_t maxTokens) {
 	if (separator.empty())
 		throw Exception("split(): separator cannot be empty string");
 	// Special case of empty string
@@ -281,20 +281,20 @@ std::vector<std::string> split(const std::string& s, const std::string& separato
 }
 
 
-std::string formatTime(const char* format, double timestamp) {
+std::string RACK_DLL_CALL formatTime(const char* format, double timestamp) {
 	time_t t = timestamp;
 	char str[1024];
 	size_t s = std::strftime(str, sizeof(str), format, std::localtime(&t));
 	return std::string(str, s);
 }
 
-std::string formatTimeISO(double timestamp) {
+std::string RACK_DLL_CALL formatTimeISO(double timestamp) {
 	// Windows doesn't support %F or %T, and %z gives the full timezone name instead of offset
 	return formatTime("%Y-%m-%d %H:%M:%S %z", timestamp);
 }
 
 
-std::string UTF32toUTF8(const std::u32string& s32) {
+std::string RACK_DLL_CALL UTF32toUTF8(const std::u32string& s32) {
 	std::string s8;
 	// Pre-allocate maximum possible size
 	s8.reserve(s32.length() * 4);
@@ -333,7 +333,7 @@ std::string UTF32toUTF8(const std::u32string& s32) {
 }
 
 
-std::u32string UTF8toUTF32(const std::string& s8) {
+std::u32string RACK_DLL_CALL UTF8toUTF32(const std::string& s8) {
 	std::u32string s32;
 	// Pre-allocate maximum possible size
 	s32.reserve(s8.size());
@@ -421,7 +421,7 @@ static size_t UTF8CodepointSize(char c) {
 }
 
 
-size_t UTF8NextCodepoint(const std::string& s8, size_t pos) {
+size_t RACK_DLL_CALL UTF8NextCodepoint(const std::string& s8, size_t pos) {
 	// Check out of bounds
 	if (pos >= s8.size())
 		return s8.size();
@@ -449,19 +449,19 @@ static size_t UTF8StartCodepoint(const std::string& s8, size_t pos) {
 }
 
 
-size_t UTF8PrevCodepoint(const std::string& s8, size_t pos) {
+size_t RACK_DLL_CALL UTF8PrevCodepoint(const std::string& s8, size_t pos) {
 	if (pos == 0)
 		return 0;
 	return UTF8StartCodepoint(s8, pos - 1);
 }
 
 
-size_t UTF8Length(const std::string& s8) {
+size_t RACK_DLL_CALL UTF8Length(const std::string& s8) {
 	return UTF8CodepointIndex(s8, s8.size());
 }
 
 
-size_t UTF8CodepointIndex(const std::string& s8, size_t endPos) {
+size_t RACK_DLL_CALL UTF8CodepointIndex(const std::string& s8, size_t endPos) {
 	size_t pos = 0;
 	size_t index = 0;
 	endPos = std::min(endPos, s8.size());
@@ -477,7 +477,7 @@ size_t UTF8CodepointIndex(const std::string& s8, size_t endPos) {
 }
 
 
-size_t UTF8CodepointPos(const std::string& s8, size_t endIndex) {
+size_t RACK_DLL_CALL UTF8CodepointPos(const std::string& s8, size_t endIndex) {
 	size_t pos = 0;
 	size_t index = 0;
 	while (index < endIndex && pos < s8.size()) {
@@ -492,8 +492,8 @@ size_t UTF8CodepointPos(const std::string& s8, size_t endIndex) {
 }
 
 
-#if defined ARCH_WIN
-std::string UTF16toUTF8(const std::wstring& w) {
+#ifdef _WIN32
+std::string RACK_DLL_CALL UTF16toUTF8(const std::wstring& w) {
 	if (w.empty())
 		return "";
 	// Compute length of output buffer
@@ -508,7 +508,7 @@ std::string UTF16toUTF8(const std::wstring& w) {
 }
 
 
-std::wstring UTF8toUTF16(const std::string& s) {
+std::wstring RACK_DLL_CALL UTF8toUTF16(const std::string& s) {
 	if (s.empty())
 		return L"";
 	// Compute length of output buffer
@@ -617,7 +617,7 @@ static void loadTranslations() {
 }
 
 
-std::string translate(const std::string& id) {
+std::string RACK_DLL_CALL translate(const std::string& id) {
 	std::string s = translate(id, settings::language);
 	if (!s.empty())
 		return s;
@@ -630,7 +630,7 @@ std::string translate(const std::string& id) {
 }
 
 
-std::string translate(const std::string& id, const std::string& language) {
+std::string RACK_DLL_CALL translate(const std::string& id, const std::string& language) {
 	const auto it = translations.find(language);
 	if (it == translations.end())
 		return "";
@@ -658,7 +658,7 @@ std::vector<std::string> getLanguages() {
 }
 
 
-void init() {
+void RACK_DLL_CALL init() {
 	loadTranslations();
 }
 

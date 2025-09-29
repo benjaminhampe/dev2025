@@ -10,28 +10,28 @@ namespace rack {
 namespace app {
 
 
-struct MidiDriverChoice : LedDisplayChoice {
+struct RACK_DLL_API MidiDriverChoice : LedDisplayChoice {
 	midi::Port* port;
 	void onAction(const ActionEvent& e) override;
 	void step() override;
 };
 
 
-struct MidiDeviceChoice : LedDisplayChoice {
+struct RACK_DLL_API MidiDeviceChoice : LedDisplayChoice {
 	midi::Port* port;
 	void onAction(const ActionEvent& e) override;
 	void step() override;
 };
 
 
-struct MidiChannelChoice : LedDisplayChoice {
+struct RACK_DLL_API MidiChannelChoice : LedDisplayChoice {
 	midi::Port* port;
 	void onAction(const ActionEvent& e) override;
 	void step() override;
 };
 
 
-struct MidiDisplay : LedDisplay {
+struct RACK_DLL_API MidiDisplay : LedDisplay {
 	MidiDriverChoice* driverChoice;
 	LedDisplaySeparator* driverSeparator;
 	MidiDeviceChoice* deviceChoice;
@@ -42,7 +42,7 @@ struct MidiDisplay : LedDisplay {
 
 
 /** A virtual MIDI port graphic that displays an MIDI menu when clicked. */
-struct MidiButton : SvgButton {
+struct RACK_DLL_API MidiButton : SvgButton {
 	midi::Port* port;
 	void setMidiPort(midi::Port* port);
 	void onAction(const ActionEvent& e) override;

@@ -8,7 +8,7 @@ namespace rack {
 namespace ui {
 
 
-struct TextField : widget::OpaqueWidget {
+struct RACK_DLL_API TextField : widget::OpaqueWidget {
 	std::string text;
 	std::string placeholder;
 	/** Masks text with "*". */

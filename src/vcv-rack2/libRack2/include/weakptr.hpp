@@ -13,7 +13,7 @@ struct WeakHandle {
 
 
 /** Base class for classes that allow `WeakPtr`s to be used. */
-struct WeakBase {
+struct RACK_DLL_API WeakBase {
 	WeakHandle* weakHandle = nullptr;
 
 	~WeakBase() {

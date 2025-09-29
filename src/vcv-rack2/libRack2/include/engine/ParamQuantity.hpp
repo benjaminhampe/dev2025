@@ -18,7 +18,7 @@ struct Module;
 
 If `smoothEnabled` is true, all methods access/modify the Param's target value of the Engine's per-sample smoothing algorithm instead of the immediate value.
 */
-struct ParamQuantity : Quantity {
+struct RACK_DLL_API ParamQuantity : Quantity {
 	Module* module = NULL;
 	int paramId = -1;
 
@@ -118,7 +118,7 @@ struct ParamQuantity : Quantity {
 };
 
 
-struct SwitchQuantity : ParamQuantity {
+struct RACK_DLL_API SwitchQuantity : ParamQuantity {
 	std::vector<std::string> labels;
 
 	std::string getDisplayValueString() override;

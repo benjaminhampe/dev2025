@@ -7,7 +7,7 @@ namespace widget {
 
 
 /** A FramebufferWidget that can be drawn on with OpenGL commands */
-struct OpenGlWidget : FramebufferWidget {
+struct RACK_DLL_API OpenGlWidget : FramebufferWidget {
 	/** Draws every frame by default
 	Override this and call `FramebufferWidget::step()` to restore the default behavior of FramebufferWidget.
 	*/

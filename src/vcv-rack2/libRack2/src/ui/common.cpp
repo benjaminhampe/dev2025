@@ -6,16 +6,16 @@ namespace rack {
 namespace ui {
 
 
-void init() {
+void RACK_DLL_CALL init() {
 	refreshTheme();
 }
 
 
-void destroy() {
+void RACK_DLL_CALL destroy() {
 }
 
 
-void setTheme(NVGcolor bg, NVGcolor fg) {
+void RACK_DLL_CALL setTheme(NVGcolor bg, NVGcolor fg) {
 	BNDwidgetTheme w;
 	w.outlineColor = color::lerp(bg, fg, 0.1);
 	w.itemColor = fg;
@@ -73,7 +73,7 @@ void setTheme(NVGcolor bg, NVGcolor fg) {
 }
 
 
-void refreshTheme() {
+void RACK_DLL_CALL refreshTheme() {
 	if (settings::uiTheme == "light") {
 		setTheme(nvgRGB(0xf0, 0xf0, 0xf0), nvgRGB(0x04, 0x04, 0x04));
 	}

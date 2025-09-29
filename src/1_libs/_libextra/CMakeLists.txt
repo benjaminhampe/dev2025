@@ -9,7 +9,7 @@ add_subdirectory(de-clara)
 # add_subdirectory(de-cpuid)
 
 # GUI
-add_subdirectory(de-fltk-1.3.5)
+# add_subdirectory(de-fltk-1.3.5)
 # add_subdirectory(de-wx-3.1.5)
 
 # # Audio, FFMPEG, MIDI, TAGS, FMOD, FFTs, VST-Plugin SDK, Juce

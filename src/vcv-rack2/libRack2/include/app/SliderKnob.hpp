@@ -7,7 +7,7 @@ namespace rack {
 namespace app {
 
 
-struct SliderKnob : Knob {
+struct RACK_DLL_API SliderKnob : Knob {
 	SliderKnob();
 
 	void onHover(const HoverEvent& e) override;

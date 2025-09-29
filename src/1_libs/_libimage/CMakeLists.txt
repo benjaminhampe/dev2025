@@ -1,4 +1,3 @@
-add_subdirectory(de-openexr-3.3.2)
 # Math
 add_subdirectory(de-glm-4.20.8)
 # Xml
@@ -25,14 +24,16 @@ add_subdirectory(de-fontstash)
 add_subdirectory(de-nlohmann-json-3.12.0)
 add_subdirectory(de-nanosvg)
 
-add_subdirectory(de-expat-3.2.2)
 add_subdirectory(de-rapidjson)
+
+# add_subdirectory(de-expat-3.2.2)
+# add_subdirectory(de-openexr-3.3.2)
+# add_subdirectory(de-zimg)
+
 
 ## WorkInProgress:
 # add_subdirectory(de-zimg.7z)
 # add_subdirectory(de-lunasvg.7z)
-add_subdirectory(de-zimg)
-
 
 
 

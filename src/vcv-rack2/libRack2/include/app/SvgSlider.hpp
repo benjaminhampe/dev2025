@@ -12,7 +12,7 @@ namespace app {
 /** Behaves like a knob but linearly moves an widget::SvgWidget between two points.
 Can be used for horizontal or vertical linear faders.
 */
-struct SvgSlider : app::SliderKnob {
+struct RACK_DLL_API SvgSlider : app::SliderKnob {
 	widget::FramebufferWidget* fb;
 	widget::SvgWidget* background;
 	widget::SvgWidget* handle;

@@ -7,7 +7,7 @@ namespace widget {
 
 
 /** A Widget that does not respond to events and does not pass events to children */
-struct TransparentWidget : Widget {
+struct RACK_DLL_API TransparentWidget : Widget {
 	/** Override behavior to do nothing instead. */
 	void onHover(const HoverEvent& e) override {}
 	void onButton(const ButtonEvent& e) override {}

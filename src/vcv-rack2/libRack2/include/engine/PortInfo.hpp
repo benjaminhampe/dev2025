@@ -10,7 +10,7 @@ namespace engine {
 struct Module;
 
 
-struct PortInfo {
+struct RACK_DLL_API PortInfo {
 	Module* module = NULL;
 	Port::Type type = Port::INPUT;
 	int portId = -1;

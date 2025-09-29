@@ -208,27 +208,27 @@ static void initUserDir()
 }
 
 
-void init() {
+void RACK_DLL_CALL init() {
 	initSystemDir();
 	initUserDir();
 }
 
 
-std::string system(std::string filename) {
+std::string RACK_DLL_CALL system(std::string filename) {
     auto retval = system::join(systemDir, filename);
     WARN("retval = %s",retval.c_str());
     return retval;
 }
 
 
-std::string user(std::string filename) {
+std::string RACK_DLL_CALL user(std::string filename) {
     auto retval = system::join(userDir, filename);
     WARN("retval = %s",retval.c_str());
     return retval;
 }
 
 
-std::string plugin(plugin::Plugin* plugin, std::string filename) {
+std::string RACK_DLL_CALL plugin(plugin::Plugin* plugin, std::string filename) {
     if (!plugin)
     {
         std::ostringstream o;

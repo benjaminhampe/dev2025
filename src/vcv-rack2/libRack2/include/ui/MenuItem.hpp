@@ -9,7 +9,7 @@ namespace rack {
 namespace ui {
 
 
-struct MenuItem : MenuEntry {
+struct RACK_DLL_API MenuItem : MenuEntry {
 	std::string text;
 	std::string rightText;
 	bool disabled = false;
@@ -31,7 +31,7 @@ struct MenuItem : MenuEntry {
 };
 
 
-struct ColorDotMenuItem : MenuItem {
+struct RACK_DLL_API ColorDotMenuItem : MenuItem {
 	NVGcolor color = color::BLACK_TRANSPARENT;
 
 	void draw(const DrawArgs& args) override;

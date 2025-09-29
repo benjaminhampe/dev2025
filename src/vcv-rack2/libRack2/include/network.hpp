@@ -20,8 +20,8 @@ enum Method {
 	METHOD_DELETE,
 };
 
-PRIVATE void init();
-PRIVATE void destroy();
+RACK_DLL_API void RACK_DLL_CALL init();
+RACK_DLL_API void RACK_DLL_CALL destroy();
 /** Requests a JSON API URL over HTTP(S), using the data as the query (GET) or the body (POST, etc)
 Caller must json_decref() if return value is non-NULL.
 */

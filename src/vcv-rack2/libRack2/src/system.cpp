@@ -61,7 +61,7 @@ namespace rack {
 namespace system {
 
 
-std::string join(const std::string& path1, const std::string& path2) {
+std::string RACK_DLL_CALL join(const std::string& path1, const std::string& path2) {
 	return (fs::u8path(path1) / fs::u8path(path2)).generic_u8string();
 }
 
@@ -82,14 +82,14 @@ static void appendEntries(std::vector<std::string>& entries, const fs::path& dir
 }
 
 
-std::vector<std::string> getEntries(const std::string& dirPath, int depth) {
+std::vector<std::string> RACK_DLL_CALL getEntries(const std::string& dirPath, int depth) {
 	std::vector<std::string> entries;
 	appendEntries(entries, fs::u8path(dirPath), depth);
 	return entries;
 }
 
 
-bool exists(const std::string& path) {
+bool RACK_DLL_CALL exists(const std::string& path) {
 	try {
 		return fs::exists(fs::u8path(path));
 	}
@@ -99,7 +99,7 @@ bool exists(const std::string& path) {
 }
 
 
-bool isFile(const std::string& path) {
+bool RACK_DLL_CALL isFile(const std::string& path) {
 	try {
 		return fs::is_regular_file(fs::u8path(path));
 	}
@@ -109,7 +109,7 @@ bool isFile(const std::string& path) {
 }
 
 
-bool isDirectory(const std::string& path) {
+bool RACK_DLL_CALL isDirectory(const std::string& path) {
 	try {
 		return fs::is_directory(fs::u8path(path));
 	}
@@ -119,7 +119,7 @@ bool isDirectory(const std::string& path) {
 }
 
 
-uint64_t getFileSize(const std::string& path) {
+uint64_t RACK_DLL_CALL getFileSize(const std::string& path) {
 	try {
 		return fs::file_size(fs::u8path(path));
 	}
@@ -129,7 +129,7 @@ uint64_t getFileSize(const std::string& path) {
 }
 
 
-bool rename(const std::string& srcPath, const std::string& destPath) {
+bool RACK_DLL_CALL rename(const std::string& srcPath, const std::string& destPath) {
 	try {
 		fs::rename(fs::u8path(srcPath), fs::u8path(destPath));
 		return true;
@@ -140,7 +140,7 @@ bool rename(const std::string& srcPath, const std::string& destPath) {
 }
 
 
-bool copy(const std::string& srcPath, const std::string& destPath) {
+bool RACK_DLL_CALL copy(const std::string& srcPath, const std::string& destPath) {
 	try {
 		fs::copy(fs::u8path(srcPath), fs::u8path(destPath), fs::copy_options::recursive | fs::copy_options::overwrite_existing);
 		return true;
@@ -151,7 +151,7 @@ bool copy(const std::string& srcPath, const std::string& destPath) {
 }
 
 
-bool createDirectory(const std::string& path) {
+bool RACK_DLL_CALL createDirectory(const std::string& path) {
 	try {
 		return fs::create_directory(fs::u8path(path));
 	}
@@ -161,7 +161,7 @@ bool createDirectory(const std::string& path) {
 }
 
 
-bool createDirectories(const std::string& path) {
+bool RACK_DLL_CALL createDirectories(const std::string& path) {
 	try {
 		return fs::create_directories(fs::u8path(path));
 	}
@@ -171,7 +171,7 @@ bool createDirectories(const std::string& path) {
 }
 
 
-bool createSymbolicLink(const std::string& target, const std::string& link) {
+bool RACK_DLL_CALL createSymbolicLink(const std::string& target, const std::string& link) {
 	try {
 		fs::create_symlink(fs::u8path(target), fs::u8path(link));
 		return true;
@@ -182,7 +182,7 @@ bool createSymbolicLink(const std::string& target, const std::string& link) {
 }
 
 
-bool remove(const std::string& path) {
+bool RACK_DLL_CALL remove(const std::string& path) {
 	try {
 		return fs::remove(fs::u8path(path));
 	}
@@ -192,7 +192,7 @@ bool remove(const std::string& path) {
 }
 
 
-int removeRecursively(const std::string& pathStr) {
+int RACK_DLL_CALL removeRecursively(const std::string& pathStr) {
 	fs::path path = fs::u8path(pathStr);
 	try {
 		// Make all entries writable before attempting to remove
@@ -208,7 +208,7 @@ int removeRecursively(const std::string& pathStr) {
 }
 
 
-std::string getWorkingDirectory() {
+std::string RACK_DLL_CALL getWorkingDirectory() {
 	try {
 		return fs::current_path().generic_u8string();
 	}
@@ -218,7 +218,7 @@ std::string getWorkingDirectory() {
 }
 
 
-void setWorkingDirectory(const std::string& path) {
+void RACK_DLL_CALL setWorkingDirectory(const std::string& path) {
 	try {
 		fs::current_path(fs::u8path(path));
 	}
@@ -228,7 +228,7 @@ void setWorkingDirectory(const std::string& path) {
 }
 
 
-std::string getTempDirectory() {
+std::string RACK_DLL_CALL getTempDirectory() {
 	try {
 		return fs::temp_directory_path().generic_u8string();
 	}
@@ -238,7 +238,7 @@ std::string getTempDirectory() {
 }
 
 
-std::string getAbsolute(const std::string& path) {
+std::string RACK_DLL_CALL getAbsolute(const std::string& path) {
 	try {
 		return fs::absolute(fs::u8path(path)).generic_u8string();
 	}
@@ -248,7 +248,7 @@ std::string getAbsolute(const std::string& path) {
 }
 
 
-std::string getCanonical(const std::string& path) {
+std::string RACK_DLL_CALL getCanonical(const std::string& path) {
 	try {
 		return fs::canonical(fs::u8path(path)).generic_u8string();
 	}
@@ -258,7 +258,7 @@ std::string getCanonical(const std::string& path) {
 }
 
 
-std::string getDirectory(const std::string& path) {
+std::string RACK_DLL_CALL getDirectory(const std::string& path) {
 	try {
 		return fs::u8path(path).parent_path().generic_u8string();
 	}
@@ -268,7 +268,7 @@ std::string getDirectory(const std::string& path) {
 }
 
 
-std::string getFilename(const std::string& path) {
+std::string RACK_DLL_CALL getFilename(const std::string& path) {
 	try {
 		return fs::u8path(path).filename().generic_u8string();
 	}
@@ -278,7 +278,7 @@ std::string getFilename(const std::string& path) {
 }
 
 
-std::string getStem(const std::string& path) {
+std::string RACK_DLL_CALL getStem(const std::string& path) {
 	try {
 		return fs::u8path(path).stem().generic_u8string();
 	}
@@ -288,7 +288,7 @@ std::string getStem(const std::string& path) {
 }
 
 
-std::string getExtension(const std::string& path) {
+std::string RACK_DLL_CALL getExtension(const std::string& path) {
 	try {
 		return fs::u8path(path).extension().generic_u8string();
 	}
@@ -298,7 +298,7 @@ std::string getExtension(const std::string& path) {
 }
 
 
-std::vector<uint8_t> readFile(const std::string& path) {
+std::vector<uint8_t> RACK_DLL_CALL readFile(const std::string& path) {
 	std::vector<uint8_t> data;
 	FILE* f = std::fopen(path.c_str(), "rb");
 	if (!f)
@@ -318,7 +318,7 @@ std::vector<uint8_t> readFile(const std::string& path) {
 }
 
 
-uint8_t* readFile(const std::string& path, size_t* size) {
+uint8_t* RACK_DLL_CALL readFile(const std::string& path, size_t* size) {
 	FILE* f = std::fopen(path.c_str(), "rb");
 	if (!f)
 		throw Exception("Cannot read file %s", path.c_str());
@@ -339,7 +339,7 @@ uint8_t* readFile(const std::string& path, size_t* size) {
 }
 
 
-void writeFile(const std::string& path, const std::vector<uint8_t>& data) {
+void RACK_DLL_CALL writeFile(const std::string& path, const std::vector<uint8_t>& data) {
 	FILE* f = std::fopen(path.c_str(), "wb");
 	if (!f)
 		throw Exception("Cannot create file %s", path.c_str());
@@ -484,11 +484,11 @@ static void archiveDirectory(const std::string& archivePath, std::vector<uint8_t
 	}
 }
 
-void archiveDirectory(const std::string& archivePath, const std::string& dirPath, int compressionLevel) {
+void RACK_DLL_CALL archiveDirectory(const std::string& archivePath, const std::string& dirPath, int compressionLevel) {
 	archiveDirectory(archivePath, NULL, dirPath, compressionLevel);
 }
 
-std::vector<uint8_t> archiveDirectory(const std::string& dirPath, int compressionLevel) {
+std::vector<uint8_t> RACK_DLL_CALL archiveDirectory(const std::string& dirPath, int compressionLevel) {
 	std::vector<uint8_t> archiveData;
 	archiveDirectory("", &archiveData, dirPath, compressionLevel);
 	return archiveData;
@@ -640,21 +640,21 @@ static void unarchiveToDirectory(const std::string& archivePath, const std::vect
 	}
 }
 
-void unarchiveToDirectory(const std::string& archivePath, const std::string& dirPath) {
+void RACK_DLL_CALL unarchiveToDirectory(const std::string& archivePath, const std::string& dirPath) {
 	unarchiveToDirectory(archivePath, NULL, dirPath);
 }
 
-void unarchiveToDirectory(const std::vector<uint8_t>& archiveData, const std::string& dirPath) {
+void RACK_DLL_CALL unarchiveToDirectory(const std::vector<uint8_t>& archiveData, const std::string& dirPath) {
 	unarchiveToDirectory("", &archiveData, dirPath);
 }
 
 
-int getLogicalCoreCount() {
+int RACK_DLL_CALL getLogicalCoreCount() {
 	return std::thread::hardware_concurrency();
 }
 
 
-void setThreadName(const std::string& name) {
+void RACK_DLL_CALL setThreadName(const std::string& name) {
 #if defined ARCH_LIN
 	pthread_setname_np(pthread_self(), name.substr(0, 15).c_str());
 #elif defined ARCH_MAC
@@ -665,7 +665,7 @@ void setThreadName(const std::string& name) {
 }
 
 
-std::string getStackTrace() {
+std::string RACK_DLL_CALL getStackTrace() {
 	void* stack[128];
 	int stackLen = LENGTHOF(stack);
 	std::string s;
@@ -762,7 +762,7 @@ static void initTime() {
 }
 
 
-double getTime() {
+double RACK_DLL_CALL getTime() {
 #if defined ARCH_WIN
 	LARGE_INTEGER counter;
 	QueryPerformanceCounter(&counter);
@@ -781,7 +781,7 @@ double getTime() {
 }
 
 
-double getUnixTime() {
+double RACK_DLL_CALL getUnixTime() {
 	// This is not guaranteed to return the time since 1970 in C++11. (It only does in C++20).
 	// However, it does on all platforms I care about.
 	auto duration = std::chrono::system_clock::now().time_since_epoch();
@@ -789,7 +789,7 @@ double getUnixTime() {
 }
 
 
-double getThreadTime() {
+double RACK_DLL_CALL getThreadTime() {
 #if defined ARCH_LIN
 	struct timespec ts;
 	clockid_t cid;
@@ -818,12 +818,12 @@ double getThreadTime() {
 }
 
 
-void sleep(double time) {
+void RACK_DLL_CALL sleep(double time) {
 	std::this_thread::sleep_for(std::chrono::duration<double>(time));
 }
 
 
-std::string getOperatingSystemInfo() {
+std::string RACK_DLL_CALL getOperatingSystemInfo() {
 #if defined ARCH_LIN
 	struct utsname u;
 	uname(&u);
@@ -864,7 +864,7 @@ std::string getOperatingSystemInfo() {
 }
 
 
-void openBrowser(const std::string& url) {
+void RACK_DLL_CALL openBrowser(const std::string& url) {
 	if (url.empty())
 		return;
 
@@ -888,7 +888,7 @@ void openBrowser(const std::string& url) {
 }
 
 
-void openDirectory(const std::string& path) {
+void RACK_DLL_CALL openDirectory(const std::string& path) {
 	if (path.empty())
 		return;
 
@@ -912,7 +912,7 @@ void openDirectory(const std::string& path) {
 }
 
 
-void runProcessDetached(const std::string& path) {
+void RACK_DLL_CALL runProcessDetached(const std::string& path) {
 #if defined ARCH_WIN
 	SHELLEXECUTEINFOW shExInfo;
 	ZeroMemory(&shExInfo, sizeof(shExInfo));
@@ -933,7 +933,7 @@ void runProcessDetached(const std::string& path) {
 }
 
 
-uint32_t getFpuFlags() {
+uint32_t RACK_DLL_CALL getFpuFlags() {
 #if defined ARCH_X64
 	return _mm_getcsr();
 #elif defined ARCH_ARM64
@@ -943,7 +943,7 @@ uint32_t getFpuFlags() {
 #endif
 }
 
-void setFpuFlags(uint32_t flags) {
+void RACK_DLL_CALL setFpuFlags(uint32_t flags) {
 #if defined ARCH_X64
 	_mm_setcsr(flags);
 #elif defined ARCH_ARM64
@@ -952,7 +952,8 @@ void setFpuFlags(uint32_t flags) {
 #endif
 }
 
-void resetFpuFlags() {
+void RACK_DLL_CALL resetFpuFlags()
+{
 	uint32_t flags = getFpuFlags();
 
 #if defined ARCH_X64
@@ -976,7 +977,7 @@ void resetFpuFlags() {
 }
 
 
-void init() {
+void RACK_DLL_CALL init() {
 	initTime();
 }
 

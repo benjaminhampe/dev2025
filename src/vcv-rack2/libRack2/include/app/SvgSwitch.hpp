@@ -11,7 +11,7 @@ namespace app {
 
 
 /** A ParamWidget with multiple frames corresponding to its value */
-struct SvgSwitch : Switch {
+struct RACK_DLL_API SvgSwitch : Switch {
 	struct Internal;
 	Internal* internal;
 

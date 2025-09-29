@@ -11,9 +11,9 @@ namespace rack {
 namespace plugin {
 
 
-PRIVATE void init();
-PRIVATE void destroy();
-PRIVATE void settingsMergeJson(json_t* rootJ);
+RACK_DLL_API void RACK_DLL_CALL init();
+RACK_DLL_API void RACK_DLL_CALL destroy();
+RACK_DLL_API void RACK_DLL_CALL settingsMergeJson(json_t* rootJ);
 
 /** Finds a loaded Plugin by slug. */
 Plugin* getPlugin(const std::string& pluginSlug);

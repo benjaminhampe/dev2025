@@ -8,7 +8,7 @@ namespace ui {
 
 
 /** Positions children in a row/column based on their widths/heights */
-struct SequentialLayout : widget::Widget {
+struct RACK_DLL_API SequentialLayout : widget::Widget {
 	enum Orientation {
 		HORIZONTAL_ORIENTATION,
 		VERTICAL_ORIENTATION,

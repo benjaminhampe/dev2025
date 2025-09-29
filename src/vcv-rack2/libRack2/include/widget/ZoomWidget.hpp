@@ -7,7 +7,7 @@ namespace widget {
 
 
 /** Resizes the scale of appearance and PositionEvents of children. */
-struct ZoomWidget : Widget {
+struct RACK_DLL_API ZoomWidget : Widget {
 	/** Use setZoom() and getZoom() instead of using this variable directly. */
 	float zoom = 1.f;
 

@@ -9,7 +9,7 @@ namespace widget {
 /** Caches its children's draw() result to a framebuffer image.
 When dirty, its children will be re-rendered on the next call to step().
 */
-struct FramebufferWidget : Widget {
+struct RACK_DLL_API FramebufferWidget : Widget {
 	struct Internal;
 	Internal* internal;
 

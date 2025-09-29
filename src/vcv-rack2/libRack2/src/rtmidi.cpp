@@ -397,7 +397,7 @@ struct RtMidiDriver : midi::Driver {
 };
 
 
-void rtmidiInit() {
+void RACK_DLL_CALL rtmidiInit() {
 	std::vector<RtMidi::Api> rtApis;
 	RtMidi::getCompiledApi(rtApis);
 	for (RtMidi::Api api : rtApis) {

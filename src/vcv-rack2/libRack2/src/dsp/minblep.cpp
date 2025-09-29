@@ -7,7 +7,7 @@ namespace rack {
 namespace dsp {
 
 
-void minBlepImpulse(int z, int o, float* output) {
+void RACK_DLL_CALL minBlepImpulse(int z, int o, float* output) {
 	// Symmetric sinc array with `z` zero-crossings on each side
 	int n = 2 * z * o;
 	float* x = new float[n];

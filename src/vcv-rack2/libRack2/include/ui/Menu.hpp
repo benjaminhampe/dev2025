@@ -8,7 +8,7 @@ namespace rack {
 namespace ui {
 
 
-struct Menu : widget::OpaqueWidget {
+struct RACK_DLL_API Menu : widget::OpaqueWidget {
 	Menu* parentMenu = NULL;
 	Menu* childMenu = NULL;
 	/** The entry which created the child menu */

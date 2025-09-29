@@ -7,7 +7,7 @@ namespace rack {
 namespace ui {
 
 
-struct MenuEntry : widget::OpaqueWidget {
+struct RACK_DLL_API MenuEntry : widget::OpaqueWidget {
 	MenuEntry();
 };
 

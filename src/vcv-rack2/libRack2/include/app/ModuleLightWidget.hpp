@@ -12,7 +12,7 @@ namespace app {
 /** A MultiLightWidget that points to a module's Light or a range of lights
 Will access firstLightId, firstLightId + 1, etc. for each added color
 */
-struct ModuleLightWidget : MultiLightWidget {
+struct RACK_DLL_API ModuleLightWidget : MultiLightWidget {
 	struct Internal;
 	Internal* internal;
 

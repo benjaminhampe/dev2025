@@ -9,7 +9,7 @@ namespace rack {
 namespace ui {
 
 
-struct Slider : widget::OpaqueWidget {
+struct RACK_DLL_API Slider : widget::OpaqueWidget {
 	/** Not owned. */
 	Quantity* quantity = NULL;
 

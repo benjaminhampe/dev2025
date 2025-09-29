@@ -20,77 +20,77 @@ namespace settings {
 // Runtime state, not serialized.
 
 /** Path to settings.json */
-extern std::string settingsPath;
-extern bool devMode;
-extern bool headless;
-extern bool isPlugin;
+extern RACK_DLL_API std::string settingsPath;
+extern RACK_DLL_API bool devMode;
+extern RACK_DLL_API bool headless;
+extern RACK_DLL_API bool isPlugin;
 /** Requests to restart the application on exit. */
-extern bool restart;
+extern RACK_DLL_API bool restart;
 
 // Persistent state, serialized to settings.json.
 
 /** ISO 639-1 language code for string translations. */
-extern std::string language;
+extern RACK_DLL_API std::string language;
 /** Launches Rack without loading plugins or the autosave patch. Always set to false when settings are saved. */
-extern bool safeMode;
+extern RACK_DLL_API bool safeMode;
 /** vcvrack.com user token */
-extern std::string token;
+extern RACK_DLL_API std::string token;
 /** Whether the window is maximized */
-extern bool windowMaximized;
+extern RACK_DLL_API bool windowMaximized;
 /** Size of window in pixels */
-extern math::Vec windowSize;
+extern RACK_DLL_API math::Vec windowSize;
 /** Position in window in pixels */
-extern math::Vec windowPos;
+extern RACK_DLL_API math::Vec windowPos;
 /** Reverse the zoom scroll direction */
-extern bool invertZoom;
+extern RACK_DLL_API bool invertZoom;
 /** Mouse wheel zooms instead of pans. */
-extern bool mouseWheelZoom;
+extern RACK_DLL_API bool mouseWheelZoom;
 /** Ratio between UI pixel and physical screen pixel.
 0 for auto.
 */
-extern float pixelRatio;
+extern RACK_DLL_API float pixelRatio;
 /** Name of UI theme, specified in ui::refreshTheme() */
-extern std::string uiTheme;
+extern RACK_DLL_API std::string uiTheme;
 /** Opacity of cables in the range [0, 1] */
-extern float cableOpacity;
+extern RACK_DLL_API float cableOpacity;
 /** Straightness of cables in the range [0, 1]. Unitless and arbitrary. */
-extern float cableTension;
-extern float rackBrightness;
-extern float haloBrightness;
+extern RACK_DLL_API float cableTension;
+extern RACK_DLL_API float rackBrightness;
+extern RACK_DLL_API float haloBrightness;
 /** Allows rack to hide and lock the cursor position when dragging knobs etc. */
-extern bool allowCursorLock;
+extern RACK_DLL_API bool allowCursorLock;
 enum KnobMode {
 	KNOB_MODE_LINEAR,
 	KNOB_MODE_SCALED_LINEAR,
 	KNOB_MODE_ROTARY_ABSOLUTE,
 	KNOB_MODE_ROTARY_RELATIVE,
 };
-extern KnobMode knobMode;
-extern bool knobScroll;
-extern float knobLinearSensitivity;
-extern float knobScrollSensitivity;
-extern float sampleRate;
-extern int threadCount;
-extern bool tooltips;
-extern bool cpuMeter;
-extern bool lockModules;
-extern bool squeezeModules;
-extern bool preferDarkPanels;
+extern RACK_DLL_API KnobMode knobMode;
+extern RACK_DLL_API bool knobScroll;
+extern RACK_DLL_API float knobLinearSensitivity;
+extern RACK_DLL_API float knobScrollSensitivity;
+extern RACK_DLL_API float sampleRate;
+extern RACK_DLL_API int threadCount;
+extern RACK_DLL_API bool tooltips;
+extern RACK_DLL_API bool cpuMeter;
+extern RACK_DLL_API bool lockModules;
+extern RACK_DLL_API bool squeezeModules;
+extern RACK_DLL_API bool preferDarkPanels;
 /** Maximum screen redraw frequency in Hz, or 0 for unlimited. */
-extern float frameRateLimit;
+extern RACK_DLL_API float frameRateLimit;
 /** Interval between autosaves in seconds. */
-extern float autosaveInterval;
-extern bool skipLoadOnLaunch;
-extern std::string lastPatchDirectory;
-extern std::string lastSelectionDirectory;
-extern std::list<std::string> recentPatchPaths;
-extern std::vector<NVGcolor> cableColors;
-extern std::vector<std::string> cableLabels;
-extern bool cableAutoRotate;
-extern bool autoCheckUpdates;
-extern bool verifyHttpsCerts;
-extern bool showTipsOnLaunch;
-extern int tipIndex;
+extern RACK_DLL_API float autosaveInterval;
+extern RACK_DLL_API bool skipLoadOnLaunch;
+extern RACK_DLL_API std::string lastPatchDirectory;
+extern RACK_DLL_API std::string lastSelectionDirectory;
+extern RACK_DLL_API std::list<std::string> recentPatchPaths;
+extern RACK_DLL_API std::vector<NVGcolor> cableColors;
+extern RACK_DLL_API std::vector<std::string> cableLabels;
+extern RACK_DLL_API bool cableAutoRotate;
+extern RACK_DLL_API bool autoCheckUpdates;
+extern RACK_DLL_API bool verifyHttpsCerts;
+extern RACK_DLL_API bool showTipsOnLaunch;
+extern RACK_DLL_API int tipIndex;
 enum BrowserSort {
 	BROWSER_SORT_UPDATED,
 	BROWSER_SORT_LAST_USED,
@@ -99,18 +99,18 @@ enum BrowserSort {
 	BROWSER_SORT_NAME,
 	BROWSER_SORT_RANDOM,
 };
-extern BrowserSort browserSort;
-extern float browserZoom;
-extern json_t* pluginSettingsJ;
+extern RACK_DLL_API BrowserSort browserSort;
+extern RACK_DLL_API float browserZoom;
+extern RACK_DLL_API json_t* pluginSettingsJ;
 
-struct ModuleInfo {
+struct RACK_DLL_API ModuleInfo {
 	bool enabled = true;
 	bool favorite = false;
 	int added = 0;
 	double lastAdded = NAN;
 };
 /** pluginSlug -> (moduleSlug -> ModuleInfo) */
-extern std::map<std::string, std::map<std::string, ModuleInfo>> moduleInfos;
+extern RACK_DLL_API std::map<std::string, std::map<std::string, ModuleInfo>> moduleInfos;
 /** Returns a ModuleInfo if exists for the given slugs.
 */
 ModuleInfo* getModuleInfo(const std::string& pluginSlug, const std::string& moduleSlug);
@@ -120,7 +120,7 @@ ModuleInfo* getModuleInfo(const std::string& pluginSlug, const std::string& modu
 where "true" represents that the user is subscribed to the plugin (all modules and future modules).
 C++ isn't weakly typed, so we need the PluginWhitelist data structure to store this information.
 */
-struct PluginWhitelist {
+struct RACK_DLL_API PluginWhitelist {
 	bool subscribed = false;
 	std::set<std::string> moduleSlugs;
 };
@@ -129,12 +129,12 @@ extern std::map<std::string, PluginWhitelist> moduleWhitelist;
 bool isModuleWhitelisted(const std::string& pluginSlug, const std::string& moduleSlug);
 void resetCables();
 
-PRIVATE void init();
-PRIVATE void destroy();
-PRIVATE json_t* toJson();
-PRIVATE void fromJson(json_t* rootJ);
-PRIVATE void save(std::string path = "");
-PRIVATE void load(std::string path = "");
+RACK_DLL_API void RACK_DLL_CALL init();
+RACK_DLL_API void RACK_DLL_CALL destroy();
+RACK_DLL_API json_t* RACK_DLL_CALL toJson();
+RACK_DLL_API void RACK_DLL_CALL fromJson(json_t* rootJ);
+RACK_DLL_API void RACK_DLL_CALL save(std::string path = "");
+RACK_DLL_API void RACK_DLL_CALL load(std::string path = "");
 
 
 } // namespace settings

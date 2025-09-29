@@ -19,10 +19,10 @@ struct UpdateInfo {
 };
 
 
-PRIVATE void init();
-PRIVATE void destroy();
+RACK_DLL_API void RACK_DLL_CALL init();
+RACK_DLL_API void RACK_DLL_CALL destroy();
 
-PRIVATE void checkAppUpdate();
+RACK_DLL_API void RACK_DLL_CALL checkAppUpdate();
 bool isAppUpdateAvailable();
 
 bool isLoggedIn();

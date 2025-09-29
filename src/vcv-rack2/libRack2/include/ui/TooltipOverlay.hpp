@@ -7,7 +7,7 @@ namespace rack {
 namespace ui {
 
 
-struct TooltipOverlay : widget::TransparentWidget {
+struct RACK_DLL_API TooltipOverlay : widget::TransparentWidget {
 };
 
 

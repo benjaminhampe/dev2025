@@ -8,7 +8,7 @@ namespace app {
 
 
 /** Mixes a list of colors based on a list of brightness values */
-struct MultiLightWidget : LightWidget {
+struct RACK_DLL_API MultiLightWidget : LightWidget {
 	/** Colors of each value state */
 	std::vector<NVGcolor> baseColors;
 

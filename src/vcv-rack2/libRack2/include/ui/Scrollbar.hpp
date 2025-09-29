@@ -8,7 +8,7 @@ namespace ui {
 
 
 /** Parent must be a ScrollWidget */
-struct Scrollbar : widget::OpaqueWidget {
+struct RACK_DLL_API Scrollbar : widget::OpaqueWidget {
 	struct Internal;
 	Internal* internal;
 

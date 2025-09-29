@@ -47,7 +47,7 @@ Context::~Context() {
 
 static thread_local Context* threadContext = NULL;
 
-Context* contextGet() {
+Context* RACK_DLL_CALL contextGet() {
 	return threadContext;
 }
 
@@ -55,7 +55,7 @@ Context* contextGet() {
 #ifdef ARCH_MAC
 __attribute__((optnone))
 #endif
-void contextSet(Context* context) {
+void RACK_DLL_CALL contextSet(Context* context) {
 	threadContext = context;
 }
 

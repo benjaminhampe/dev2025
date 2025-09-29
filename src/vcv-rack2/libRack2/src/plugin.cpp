@@ -353,7 +353,7 @@ static std::string getFundamentalPackagePath() {
 // public API
 ////////////////////
 
-void init() {
+void RACK_DLL_CALL init() {
 	// Don't re-initialize
 	assert(plugins.empty());
 
@@ -441,7 +441,7 @@ static void destroyPlugin(Plugin* plugin) {
 }
 
 
-void destroy() {
+void RACK_DLL_CALL destroy() {
 	while (!plugins.empty()) {
 		Plugin* plugin = plugins.back();
 		INFO("Destroying plugin %s", plugin->name.c_str());
@@ -452,7 +452,7 @@ void destroy() {
 }
 
 
-void settingsMergeJson(json_t* rootJ) {
+void RACK_DLL_CALL settingsMergeJson(json_t* rootJ) {
 	for (Plugin* plugin : plugins) {
 		auto settingsToJson = (decltype(&::settingsToJson)) getSymbol(plugin->handle, "settingsToJson");
 		if (settingsToJson) {

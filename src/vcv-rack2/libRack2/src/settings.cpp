@@ -113,13 +113,13 @@ void resetCables() {
 }
 
 
-void init() {
+void RACK_DLL_CALL init() {
 	settingsPath = asset::user("settings.json");
 	resetCables();
 }
 
 
-void destroy() {
+void RACK_DLL_CALL destroy() {
 	if (pluginSettingsJ) {
 		json_decref(pluginSettingsJ);
 		pluginSettingsJ = NULL;
@@ -127,7 +127,7 @@ void destroy() {
 }
 
 
-json_t* toJson() {
+json_t* RACK_DLL_CALL toJson() {
 	json_t* rootJ = json_object();
 
 	json_object_set_new(rootJ, "language", json_string(language.c_str()));
@@ -290,7 +290,7 @@ json_t* toJson() {
 	return rootJ;
 }
 
-void fromJson(json_t* rootJ) {
+void RACK_DLL_CALL fromJson(json_t* rootJ) {
 	json_t* languageJ = json_object_get(rootJ, "language");
 	if (languageJ)
 		language = json_string_value(languageJ);
@@ -567,7 +567,7 @@ void fromJson(json_t* rootJ) {
 	}
 }
 
-void save(std::string path) {
+void RACK_DLL_CALL save(std::string path) {
 	if (path.empty())
 		path = settingsPath;
 
@@ -588,7 +588,7 @@ void save(std::string path) {
 	system::rename(tmpPath, path);
 }
 
-void load(std::string path) {
+void RACK_DLL_CALL load(std::string path) {
 	if (path.empty())
 		path = settingsPath;
 

@@ -11,7 +11,7 @@ namespace rack {
 
 Often used as a decorator component for `widget::Widget`s that read or write a quantity.
 */
-struct Quantity {
+struct RACK_DLL_API Quantity {
 	virtual ~Quantity() {}
 
 	/** Sets the value directly.

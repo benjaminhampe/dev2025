@@ -11,7 +11,7 @@ namespace app {
 
 
 /** If you don't add these to your ModuleWidget, they will fall out of the rack... */
-struct SvgScrew : widget::Widget {
+struct RACK_DLL_API SvgScrew : widget::Widget {
 	widget::FramebufferWidget* fb;
 	widget::SvgWidget* sw;
 
@@ -23,7 +23,7 @@ struct SvgScrew : widget::Widget {
 DEPRECATED typedef SvgScrew SVGScrew;
 
 
-struct ThemedSvgScrew : SvgScrew {
+struct RACK_DLL_API ThemedSvgScrew : SvgScrew {
 	std::shared_ptr<window::Svg> lightSvg;
 	std::shared_ptr<window::Svg> darkSvg;
 

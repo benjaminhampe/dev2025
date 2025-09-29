@@ -9,17 +9,17 @@ namespace rack {
 namespace app {
 
 
-struct LedDisplay : widget::Widget {
+struct RACK_DLL_API LedDisplay : widget::Widget {
 	void draw(const DrawArgs& args) override;
 	void drawLayer(const DrawArgs& args, int layer) override;
 };
 
-struct LedDisplaySeparator : widget::Widget {
+struct RACK_DLL_API LedDisplaySeparator : widget::Widget {
 	LedDisplaySeparator();
 	void draw(const DrawArgs& args) override;
 };
 
-struct LedDisplayChoice : widget::OpaqueWidget {
+struct RACK_DLL_API LedDisplayChoice : widget::OpaqueWidget {
 	std::string text;
 	std::string fontPath;
 	math::Vec textOffset;
@@ -31,7 +31,7 @@ struct LedDisplayChoice : widget::OpaqueWidget {
 	void onButton(const ButtonEvent& e) override;
 };
 
-struct LedDisplayTextField : ui::TextField {
+struct RACK_DLL_API LedDisplayTextField : ui::TextField {
 	std::string fontPath;
 	math::Vec textOffset;
 	NVGcolor color;

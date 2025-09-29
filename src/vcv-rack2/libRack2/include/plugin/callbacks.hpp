@@ -36,19 +36,6 @@ void settingsFromJson(json_t* rootJ);
 
 #else
 
-
-#ifdef _WIN32
-  #ifdef BUILDING_RACK_DLL
-    #define RACK_DLL_API __declspec(dllexport)
-  #else
-    #define RACK_DLL_API __declspec(dllimport)
-  #endif
-  #define RACK_DLL_CALL __stdcall
-#else
-  #define RACK_DLL_API __attribute__((visibility("default")))
-  #define RACK_DLL_CALL
-#endif
-
 /** Called immediately after loading your plugin.
 
 Use this to save `plugin` to a global variable and add Models to it.

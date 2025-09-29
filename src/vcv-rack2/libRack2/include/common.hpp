@@ -17,6 +17,17 @@
 
 #include <arch.hpp>
 
+#ifdef _WIN32
+  #ifdef BUILDING_RACK_DLL
+    #define RACK_DLL_API __declspec(dllexport)
+  #else
+    #define RACK_DLL_API __declspec(dllimport)
+  #endif
+  #define RACK_DLL_CALL __stdcall
+#else
+  #define RACK_DLL_API __attribute__((visibility("default")))
+  #define RACK_DLL_CALL
+#endif
 
 /** Attribute for deprecated functions and symbols.
 E.g.
@@ -138,7 +149,7 @@ static_assert(sizeof(wchar_t) == 2);
 #define fopen fopen_u8
 
 extern "C" {
-FILE* fopen_u8(const char* filename, const char* mode);
+RACK_DLL_API FILE* RACK_DLL_CALL fopen_u8(const char* filename, const char* mode);
 }
 
 namespace std {
@@ -210,7 +221,7 @@ DeferWrapper<F> deferWrapper(F f) {
 /** An exception explicitly thrown by Rack or a Rack plugin.
 Can be subclassed to throw/catch specific custom exceptions.
 */
-struct Exception : std::exception {
+struct RACK_DLL_API Exception : std::exception {
 	std::string msg;
 
 	// Attribute index 1 refers to `Exception*` argument so use 2.
@@ -257,20 +268,62 @@ const typename C::value_type& get(const C& c, typename C::size_type i, const typ
 
 // config
 
-extern const std::string APP_NAME;
-extern const std::string APP_EDITION;
-extern const std::string APP_EDITION_NAME;
-extern const std::string APP_VERSION_MAJOR;
-extern const std::string APP_VERSION;
-extern const std::string APP_OS;
-extern const std::string APP_OS_NAME;
-extern const std::string APP_CPU;
-extern const std::string APP_CPU_NAME;
-extern const std::string API_URL;
+RACK_DLL_API extern const std::string APP_NAME;
+RACK_DLL_API extern const std::string APP_EDITION;
+RACK_DLL_API extern const std::string APP_EDITION_NAME;
+RACK_DLL_API extern const std::string APP_VERSION_MAJOR;
+RACK_DLL_API extern const std::string APP_VERSION;
+RACK_DLL_API extern const std::string APP_OS;
+RACK_DLL_API extern const std::string APP_OS_NAME;
+RACK_DLL_API extern const std::string APP_CPU;
+RACK_DLL_API extern const std::string APP_CPU_NAME;
+RACK_DLL_API extern const std::string API_URL;
 
 
 } // namespace rack
 
 
 // Logger depends on common.hpp, but it is handy to include it along with common.hpp.
-#include <logger.hpp>
+
+/** Example usage:
+
+    DEBUG("error: %d", errno);
+
+will print something like
+
+    [0.123 debug myfile.cpp:45] error: 67
+*/
+#define DEBUG(format, ...) rack::logger::log(rack::logger::DEBUG_LEVEL, __FILE__, __LINE__, __FUNCTION__, format, ##__VA_ARGS__)
+#define INFO(format, ...) rack::logger::log(rack::logger::INFO_LEVEL, __FILE__, __LINE__, __FUNCTION__, format, ##__VA_ARGS__)
+#define WARN(format, ...) rack::logger::log(rack::logger::WARN_LEVEL, __FILE__, __LINE__, __FUNCTION__, format, ##__VA_ARGS__)
+#define FATAL(format, ...) rack::logger::log(rack::logger::FATAL_LEVEL, __FILE__, __LINE__, __FUNCTION__, format, ##__VA_ARGS__)
+
+
+namespace rack {
+/** Logs messages to a file or the terminal */
+namespace logger {
+
+enum Level {
+    DEBUG_LEVEL,
+    INFO_LEVEL,
+    WARN_LEVEL,
+    FATAL_LEVEL
+};
+
+/** Returns whether logger was successfully initialized. */
+RACK_DLL_API bool RACK_DLL_CALL init();
+RACK_DLL_API void RACK_DLL_CALL destroy();
+/** Do not use this function directly. Use the macros above.
+Thread-safe, meaning messages cannot overlap each other in the log.
+*/
+__attribute__((format(printf, 5, 6)))
+RACK_DLL_API void RACK_DLL_CALL log(Level level, const char* filename, int line, const char* func, const char* format, ...);
+/** Returns whether the last log file failed to end properly, due to a possible crash.
+*/
+RACK_DLL_API bool RACK_DLL_CALL wasTruncated();
+
+RACK_DLL_API extern std::string logPath;
+
+
+} // namespace logger
+} // namespace rack

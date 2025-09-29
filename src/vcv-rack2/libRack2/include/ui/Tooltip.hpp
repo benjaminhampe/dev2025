@@ -7,7 +7,7 @@ namespace rack {
 namespace ui {
 
 
-struct Tooltip : widget::Widget {
+struct RACK_DLL_API Tooltip : widget::Widget {
 	std::string text;
 
 	void step() override;

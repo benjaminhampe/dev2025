@@ -6,7 +6,7 @@ namespace rack {
 namespace engine {
 
 
-struct Light {
+struct RACK_DLL_API Light {
 	/** The square of the brightness.
 	Unstable API. Use set/getBrightness().
 	*/

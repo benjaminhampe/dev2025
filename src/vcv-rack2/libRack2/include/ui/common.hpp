@@ -21,11 +21,11 @@ namespace rack {
 namespace ui {
 
 
-PRIVATE void init();
-PRIVATE void destroy();
-void setTheme(NVGcolor bg, NVGcolor fg);
+RACK_DLL_API void RACK_DLL_CALL init();
+RACK_DLL_API void RACK_DLL_CALL destroy();
+RACK_DLL_API void RACK_DLL_CALL setTheme(NVGcolor bg, NVGcolor fg);
 /** Sets theme from settings. */
-void refreshTheme();
+RACK_DLL_API void RACK_DLL_CALL refreshTheme();
 
 
 } // namespace ui

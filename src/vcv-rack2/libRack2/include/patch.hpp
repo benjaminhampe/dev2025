@@ -10,7 +10,7 @@ namespace patch {
 
 
 /** Handles the Rack patch file state. */
-struct Manager {
+struct RACK_DLL_API Manager {
 	struct Internal;
 	Internal* internal;
 

@@ -9,7 +9,7 @@ namespace ui {
 
 
 /** Handles a container with Scrollbar */
-struct ScrollWidget : widget::OpaqueWidget {
+struct RACK_DLL_API ScrollWidget : widget::OpaqueWidget {
 	struct Internal;
 	Internal* internal;
 

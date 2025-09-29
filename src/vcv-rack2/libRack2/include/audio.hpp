@@ -210,8 +210,8 @@ struct Port {
 };
 
 
-PRIVATE void init();
-PRIVATE void destroy();
+RACK_DLL_API void RACK_DLL_CALL init();
+RACK_DLL_API void RACK_DLL_CALL destroy();
 /** Registers a new audio driver. Takes pointer ownership.
 Driver ID is stored in patches and must be unique. -1 is reserved.
 */

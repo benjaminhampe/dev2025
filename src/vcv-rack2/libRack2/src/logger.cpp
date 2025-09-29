@@ -47,7 +47,7 @@ static bool isTruncated() {
 }
 
 
-bool init() {
+bool RACK_DLL_CALL init() {
 	if (outputFile)
 		return true;
 
@@ -71,7 +71,7 @@ bool init() {
 	return true;
 }
 
-void destroy() {
+void RACK_DLL_CALL destroy() {
 	std::lock_guard<std::mutex> lock(mutex);
 	if (outputFile && outputFile != stderr) {
 		// Print end token so we know if the logger exited cleanly.
@@ -122,14 +122,14 @@ static void logVa(Level level, const char* filename, int line, const char* func,
 	std::fflush(outputFile);
 }
 
-void log(Level level, const char* filename, int line, const char* func, const char* format, ...) {
+void RACK_DLL_CALL log(Level level, const char* filename, int line, const char* func, const char* format, ...) {
 	va_list args;
 	va_start(args, format);
 	logVa(level, filename, line, func, format, args);
 	va_end(args);
 }
 
-bool wasTruncated() {
+bool RACK_DLL_CALL wasTruncated() {
 	return truncated;
 }
 

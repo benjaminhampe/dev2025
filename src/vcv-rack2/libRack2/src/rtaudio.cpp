@@ -334,7 +334,7 @@ static const std::vector<ApiInfo> API_INFOS = {
 };
 
 
-void rtaudioInit() {
+void RACK_DLL_CALL rtaudioInit() {
 	// Get RtAudio's driver list
 	std::vector<RtAudio::Api> apis;
 	RtAudio::getCompiledApi(apis);

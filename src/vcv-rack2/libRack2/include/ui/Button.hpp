@@ -15,7 +15,7 @@ If quantity is set, its value is set to 1.0 when pressed, 0.0 when released.
 
 If text is not set, the quantity label is used.
 */
-struct Button : widget::OpaqueWidget {
+struct RACK_DLL_API Button : widget::OpaqueWidget {
 	std::string text;
 	/** Not owned. Tracks the pressed state of the button.*/
 	Quantity* quantity = NULL;

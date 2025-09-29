@@ -19,7 +19,7 @@ Engine contains a shared mutex that locks when the Engine state is being read or
 Methods that share-lock (stated in their documentation) can be called simultaneously with other share-locking methods.
 Methods that exclusively lock cannot be called simultaneously or recursively with another share-locking or exclusive-locking method.
 */
-struct Engine {
+struct RACK_DLL_API Engine {
 	struct Internal;
 	Internal* internal;
 

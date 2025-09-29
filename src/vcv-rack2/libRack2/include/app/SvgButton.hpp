@@ -10,7 +10,7 @@ namespace rack {
 namespace app {
 
 
-struct SvgButton : widget::OpaqueWidget {
+struct RACK_DLL_API SvgButton : widget::OpaqueWidget {
 	widget::FramebufferWidget* fb;
 	CircularShadow* shadow;
 	widget::SvgWidget* sw;

@@ -9,7 +9,7 @@ namespace rack {
 namespace app {
 
 
-struct RackScrollWidget : ui::ScrollWidget {
+struct RACK_DLL_API RackScrollWidget : ui::ScrollWidget {
 	struct Internal;
 	Internal* internal;
 

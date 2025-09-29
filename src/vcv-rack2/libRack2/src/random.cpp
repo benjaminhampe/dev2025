@@ -10,7 +10,8 @@ namespace random {
 static Xoroshiro128Plus rng;
 
 
-void init() {
+void RACK_DLL_CALL init()
+{
 	// Don't reset state if already seeded
 	if (rng.isSeeded())
 		return;
@@ -28,7 +29,7 @@ void init() {
 }
 
 
-Xoroshiro128Plus& local() {
+Xoroshiro128Plus& RACK_DLL_CALL local() {
 	return rng;
 }
 

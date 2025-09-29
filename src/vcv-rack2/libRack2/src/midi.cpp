@@ -465,10 +465,10 @@ void Output::sendMessage(const Message& message) {
 // midi
 ////////////////////
 
-void init() {
+void RACK_DLL_CALL init() {
 }
 
-void destroy() {
+void RACK_DLL_CALL destroy() {
 	for (auto& pair : drivers) {
 		delete pair.second;
 	}

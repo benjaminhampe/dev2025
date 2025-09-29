@@ -7,7 +7,7 @@ namespace rack {
 namespace app {
 
 
-struct LightWidget : widget::TransparentWidget {
+struct RACK_DLL_API LightWidget : widget::TransparentWidget {
 	NVGcolor bgColor = nvgRGBA(0, 0, 0, 0);
 	NVGcolor color = nvgRGBA(0, 0, 0, 0);
 	NVGcolor borderColor = nvgRGBA(0, 0, 0, 0);

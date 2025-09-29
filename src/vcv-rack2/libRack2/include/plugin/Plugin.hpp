@@ -14,7 +14,7 @@ struct Model;
 
 
 // Subclass this and return a pointer to a new one when init() is called
-struct Plugin {
+struct RACK_DLL_API Plugin {
 	/** List of models contained in this plugin.
 	Add with addModel().
 	*/

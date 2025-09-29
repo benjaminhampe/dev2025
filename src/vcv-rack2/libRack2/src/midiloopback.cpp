@@ -110,7 +110,7 @@ Context::~Context() {
 }
 
 
-void init() {
+void RACK_DLL_CALL init() {
 	Driver* driver = new Driver;
 	midi::addDriver(DRIVER_ID, driver);
 }

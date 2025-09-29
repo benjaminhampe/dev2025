@@ -10,7 +10,7 @@ namespace engine {
 
 
 /** A weak handle to a Param. Managed by Engine */
-struct ParamHandle {
+struct RACK_DLL_API ParamHandle {
 	/** Do not set these directly.
 	Use Engine ParamHandle methods.
 	*/

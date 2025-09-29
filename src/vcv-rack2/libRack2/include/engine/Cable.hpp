@@ -7,7 +7,7 @@ namespace rack {
 namespace engine {
 
 
-struct Cable {
+struct RACK_DLL_API Cable {
 	/** Unique ID for referring to the cable in the engine.
 	Between 0 and 2^53 since this is serialized with JSON.
 	Assigned when added to the engine.

@@ -135,12 +135,12 @@ struct Driver : midi::Driver {
 
 
 
-void init() {
+void RACK_DLL_CALL init() {
 	driver = new Driver;
 	midi::addDriver(DRIVER, driver);
 }
 
-void step() {
+void RACK_DLL_CALL step() {
 	for (int i = 0; i < 16; i++) {
 		if (glfwJoystickPresent(i)) {
 			driver->devices[i].step();

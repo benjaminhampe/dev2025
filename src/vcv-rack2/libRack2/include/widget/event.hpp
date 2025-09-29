@@ -59,7 +59,7 @@ std::string getKeyCommandName(int key, int mods = 0);
 
 
 /** A per-event state shared and writable by all widgets that recursively handle an event. */
-struct EventContext {
+struct RACK_DLL_API EventContext {
 	/** Whether the event should continue recursing to children Widgets. */
 	bool propagating = true;
 	/** Whether the event has been consumed by an event handler and no more handlers should consume the event. */
@@ -70,7 +70,7 @@ struct EventContext {
 
 
 /** Base class for all events. */
-struct BaseEvent {
+struct RACK_DLL_API BaseEvent {
 	EventContext* context = NULL;
 
 	/** Prevents the event from being handled by more Widgets.
@@ -121,7 +121,7 @@ struct BaseEvent {
 };
 
 
-struct EventState {
+struct RACK_DLL_API EventState {
 	Widget* rootWidget = NULL;
 	/** State widgets
 	Don't set these directly unless you know what you're doing. Use the set*() methods instead.

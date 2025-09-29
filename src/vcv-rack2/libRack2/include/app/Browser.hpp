@@ -7,8 +7,8 @@ namespace rack {
 namespace app {
 
 
-PRIVATE void browserInit();
-PRIVATE widget::Widget* browserCreate();
+RACK_DLL_API void RACK_DLL_CALL browserInit();
+RACK_DLL_API widget::Widget* RACK_DLL_CALL browserCreate();
 
 
 } // namespace app

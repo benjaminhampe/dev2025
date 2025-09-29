@@ -7,7 +7,7 @@ namespace rack {
 namespace app {
 
 
-struct CircularShadow : widget::TransparentWidget {
+struct RACK_DLL_API CircularShadow : widget::TransparentWidget {
 	float blurRadius;
 	float opacity;
 

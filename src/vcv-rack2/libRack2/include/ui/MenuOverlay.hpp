@@ -8,7 +8,7 @@ namespace ui {
 
 
 /** Deletes itself from parent when clicked */
-struct MenuOverlay : widget::OpaqueWidget {
+struct RACK_DLL_API MenuOverlay : widget::OpaqueWidget {
 	NVGcolor bgColor;
 
 	MenuOverlay();

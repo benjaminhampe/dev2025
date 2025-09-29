@@ -25,7 +25,7 @@ static std::mutex timeoutMutex;
 static std::condition_variable updateCv;
 
 
-void init() {
+void RACK_DLL_CALL init() {
 	if (!settings::autoCheckUpdates)
 		return;
 	// Dev mode is typically used when Rack or plugins are compiled from source, so updating might overwrite assets.
@@ -51,7 +51,7 @@ void init() {
 }
 
 
-void destroy() {
+void RACK_DLL_CALL destroy() {
 	// Wait until all library threads are finished
 	updateCv.notify_all();
 	std::lock_guard<std::mutex> timeoutLock(timeoutMutex);
@@ -64,7 +64,7 @@ void destroy() {
 }
 
 
-void checkAppUpdate() {
+void RACK_DLL_CALL checkAppUpdate() {
 	if (!appUpdateMutex.try_lock())
 		return;
 	DEFER({appUpdateMutex.unlock();});

@@ -9,7 +9,7 @@ namespace app {
 
 
 /** Implements vertical dragging behavior for ParamWidgets */
-struct Knob : ParamWidget {
+struct RACK_DLL_API Knob : ParamWidget {
 	struct Internal;
 	Internal* internal;
 

@@ -11,7 +11,7 @@ namespace rack {
 namespace app {
 
 
-struct SvgPort : PortWidget {
+struct RACK_DLL_API SvgPort : PortWidget {
 	widget::FramebufferWidget* fb;
 	CircularShadow* shadow;
 	widget::SvgWidget* sw;
@@ -27,7 +27,7 @@ struct SvgPort : PortWidget {
 DEPRECATED typedef SvgPort SVGPort;
 
 
-struct ThemedSvgPort : SvgPort {
+struct RACK_DLL_API ThemedSvgPort : SvgPort {
 	std::shared_ptr<window::Svg> lightSvg;
 	std::shared_ptr<window::Svg> darkSvg;
 

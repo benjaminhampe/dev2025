@@ -31,7 +31,7 @@ namespace plugin {
 /** Type information for a module.
 Factory for Module and ModuleWidget.
 */
-struct Model {
+struct RACK_DLL_API Model {
 	Plugin* plugin = NULL;
 
 	/** Must be unique. Used for saving patches. Never change this after releasing your module.

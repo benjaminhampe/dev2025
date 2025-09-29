@@ -14,7 +14,7 @@ namespace app {
 
 
 /** Manages an engine::Module in the rack. */
-struct ModuleWidget : widget::OpaqueWidget {
+struct RACK_DLL_API ModuleWidget : widget::OpaqueWidget {
 	struct Internal;
 	Internal* internal;
 

@@ -8,7 +8,7 @@ namespace rack {
 namespace ui {
 
 
-struct ProgressBar : widget::Widget {
+struct RACK_DLL_API ProgressBar : widget::Widget {
 	/** Not owned. Stores the progress value and label. */
 	Quantity* quantity = NULL;
 

@@ -26,7 +26,7 @@ namespace engine {
 
 
 /** DSP processor instance for your module. */
-struct Module {
+struct RACK_DLL_API Module {
 	struct Internal;
 	Internal* internal;
 

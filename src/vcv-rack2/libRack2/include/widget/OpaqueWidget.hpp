@@ -9,7 +9,7 @@ namespace widget {
 /** A Widget that stops propagation of all recursive PositionEvents (such as ButtonEvent) but gives a chance for children to consume first.
 Also consumes HoverEvent and ButtonEvent for left-clicks.
 */
-struct OpaqueWidget : Widget {
+struct RACK_DLL_API OpaqueWidget : Widget {
 	void onHover(const HoverEvent& e) override {
 		Widget::onHover(e);
 		e.stopPropagating();

@@ -63,12 +63,12 @@ struct Xoroshiro128Plus {
 
 // Simple global API
 
-void init();
+RACK_DLL_API void RACK_DLL_CALL init();
 
 /** Returns the generator.
 Named "local" because the generator was thread-local in previous versions.
 */
-Xoroshiro128Plus& local();
+RACK_DLL_API Xoroshiro128Plus& RACK_DLL_CALL local();
 
 template <typename T>
 T get() {

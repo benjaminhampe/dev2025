@@ -9,7 +9,7 @@ namespace engine {
 struct Module;
 
 
-struct LightInfo {
+struct RACK_DLL_API LightInfo {
 	Module* module = NULL;
 	int lightId = -1;
 

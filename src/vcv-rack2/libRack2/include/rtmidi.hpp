@@ -5,7 +5,7 @@
 namespace rack {
 
 
-PRIVATE void rtmidiInit();
+RACK_DLL_API void RACK_DLL_CALL rtmidiInit();
 
 
 } // namespace rack

@@ -10,12 +10,12 @@ namespace rack {
 namespace app {
 
 
-struct PanelBorder : widget::TransparentWidget {
+struct RACK_DLL_API PanelBorder : widget::TransparentWidget {
 	void draw(const DrawArgs& args) override;
 };
 
 
-struct SvgPanel : widget::Widget {
+struct RACK_DLL_API SvgPanel : widget::Widget {
 	widget::FramebufferWidget* fb;
 	widget::SvgWidget* sw;
 	PanelBorder* panelBorder;
@@ -30,7 +30,7 @@ struct SvgPanel : widget::Widget {
 DEPRECATED typedef SvgPanel SVGPanel;
 
 
-struct ThemedSvgPanel : SvgPanel {
+struct RACK_DLL_API ThemedSvgPanel : SvgPanel {
 	std::shared_ptr<window::Svg> lightSvg;
 	std::shared_ptr<window::Svg> darkSvg;
 

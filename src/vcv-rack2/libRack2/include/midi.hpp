@@ -13,7 +13,7 @@ namespace rack {
 namespace midi {
 
 
-struct Message {
+struct RACK_DLL_API Message {
 	/** Initialized to 3 empty bytes. */
 	std::vector<uint8_t> bytes;
 	/** The Engine frame timestamp of the Message.
@@ -98,7 +98,7 @@ struct Output;
 
 /** Wraps a MIDI driver API containing any number of MIDI devices.
 */
-struct Driver {
+struct RACK_DLL_API Driver {
 	virtual ~Driver() {}
 	/** Returns the name of the driver. E.g. "ALSA". */
 	virtual std::string getName() {
@@ -154,14 +154,14 @@ Modules and the UI should not interact with this API directly. Use Port instead.
 
 Methods throw `rack::Exception` if the driver API has an exception.
 */
-struct Device {
+struct RACK_DLL_API Device {
 	virtual ~Device() {}
 	virtual std::string getName() {
 		return "";
 	}
 };
 
-struct InputDevice : Device {
+struct RACK_DLL_API InputDevice : Device {
 	std::set<Input*> subscribed;
 	/** Not public. Use Driver::subscribeInput(). */
 	void subscribe(Input* input);
@@ -171,7 +171,7 @@ struct InputDevice : Device {
 	void onMessage(const Message& message);
 };
 
-struct OutputDevice : Device {
+struct RACK_DLL_API OutputDevice : Device {
 	std::set<Output*> subscribed;
 	/** Not public. Use Driver::subscribeOutput(). */
 	void subscribe(Output* output);
@@ -192,7 +192,7 @@ That is, if the active Device throws a `rack::Exception`, it is caught and logge
 
 Use Input or Output subclasses in your module, not Port directly.
 */
-struct Port {
+struct RACK_DLL_API Port {
 	/** For MIDI output, the channel to automatically set outbound messages.
 	If -1, the channel is not overwritten and must be set by MIDI generator.
 
@@ -233,7 +233,7 @@ struct Port {
 };
 
 
-struct Input : Port {
+struct RACK_DLL_API Input : Port {
 	/** Not owned */
 	InputDevice* inputDevice = NULL;
 
@@ -254,7 +254,7 @@ struct Input : Port {
 
 /** An Input port that stores incoming MIDI messages and releases them when ready according to their frame timestamp.
 */
-struct InputQueue : Input {
+struct RACK_DLL_API InputQueue : Input {
 	struct Internal;
 	Internal* internal;
 
@@ -269,7 +269,7 @@ struct InputQueue : Input {
 };
 
 
-struct Output : Port {
+struct RACK_DLL_API Output : Port {
 	/** Not owned */
 	OutputDevice* outputDevice = NULL;
 
@@ -288,8 +288,8 @@ struct Output : Port {
 };
 
 
-PRIVATE void init();
-PRIVATE void destroy();
+RACK_DLL_API void RACK_DLL_CALL init();
+RACK_DLL_API void RACK_DLL_CALL destroy();
 /** Registers a new MIDI driver. Takes pointer ownership. */
 void addDriver(int driverId, Driver* driver);
 std::vector<int> getDriverIds();

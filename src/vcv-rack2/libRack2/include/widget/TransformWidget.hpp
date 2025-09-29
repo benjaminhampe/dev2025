@@ -7,7 +7,7 @@ namespace widget {
 
 
 /** Transforms appearance only, not positions of events */
-struct TransformWidget : Widget {
+struct RACK_DLL_API TransformWidget : Widget {
 	/** The transformation matrix */
 	float transform[6];
 

@@ -32,7 +32,7 @@ namespace window {
 // Constructing these directly will load from the disk each time. Use the load() functions to load from disk and cache them as long as the shared_ptr is held.
 
 /** Text font loaded in a particular Window context. */
-struct Font {
+struct RACK_DLL_API Font {
 	NVGcontext* vg;
 	int handle = -1;
 
@@ -45,7 +45,7 @@ struct Font {
 
 
 /** Bitmap/raster image loaded in a particular Window context. */
-struct Image {
+struct RACK_DLL_API Image {
 	NVGcontext* vg;
 	int handle = -1;
 
@@ -58,7 +58,7 @@ struct Image {
 
 
 /** OS window with OpenGL context. */
-struct Window {
+struct RACK_DLL_API Window {
 	struct Internal;
 	Internal* internal;
 
@@ -132,8 +132,8 @@ struct Window {
 };
 
 
-PRIVATE void init();
-PRIVATE void destroy();
+RACK_DLL_API void RACK_DLL_CALL init();
+RACK_DLL_API void RACK_DLL_CALL destroy();
 
 
 } // namespace window

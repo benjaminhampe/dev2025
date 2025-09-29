@@ -285,25 +285,25 @@ struct Driver : midi::Driver {
 };
 
 
-void init() {
+void RACK_DLL_CALL init() {
 	driver = new Driver;
 	midi::addDriver(DRIVER, driver);
 }
 
-void press(int key) {
+void RACK_DLL_CALL press(int key) {
 	if (!driver)
 		return;
 	driver->onKeyPress(key);
 }
 
-void release(int key) {
+void RACK_DLL_CALL release(int key) {
 	if (!driver)
 		return;
 	driver->onKeyRelease(key);
 }
 
 
-void mouseMove(math::Vec pos) {
+void RACK_DLL_CALL mouseMove(math::Vec pos) {
 	if (!driver)
 		return;
 	driver->onMouseMove(pos);

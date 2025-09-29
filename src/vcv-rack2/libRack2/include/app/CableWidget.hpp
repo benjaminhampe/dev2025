@@ -13,7 +13,7 @@ namespace app {
 struct CableWidget;
 
 
-struct PlugWidget : widget::Widget {
+struct RACK_DLL_API PlugWidget : widget::Widget {
 	struct Internal;
 	Internal* internal;
 
@@ -28,7 +28,7 @@ struct PlugWidget : widget::Widget {
 };
 
 
-struct CableWidget : widget::Widget {
+struct RACK_DLL_API CableWidget : widget::Widget {
 	struct Internal;
 	Internal* internal;
 

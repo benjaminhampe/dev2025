@@ -9,7 +9,7 @@ namespace rack {
 namespace app {
 
 
-struct Scene : widget::OpaqueWidget {
+struct RACK_DLL_API Scene : widget::OpaqueWidget {
 	struct Internal;
 	Internal* internal;
 

@@ -9,7 +9,7 @@ namespace ui {
 
 /** Behaves like a RadioButton and appears with a checkmark beside text.
 */
-struct OptionButton : RadioButton {
+struct RACK_DLL_API OptionButton : RadioButton {
 	void draw(const DrawArgs& args) override;
 };
 

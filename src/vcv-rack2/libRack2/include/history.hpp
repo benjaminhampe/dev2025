@@ -22,13 +22,12 @@ struct CableWidget;
 /** Action history for UI undo/redo */
 namespace history {
 
-
 /** An undo action with an inverse redo action.
 
 Pointers to Modules, Params, etc. are not allowed in Actions because the object they refer to may be deleted and restored.
 Instead, use moduleIds, etc.
 */
-struct Action {
+struct RACK_DLL_API Action {
 	/** Name of the action, lowercase. Used in the phrase "Undo ..." */
 	std::string name;
 	virtual ~Action() {}
@@ -49,7 +48,7 @@ struct InverseAction : TAction {
 
 
 /** Batches multiple actions into one */
-struct ComplexAction : Action {
+struct RACK_DLL_API ComplexAction : Action {
 	/** Ordered by time occurred. Undoing will replay them backwards. */
 	std::vector<Action*> actions;
 	~ComplexAction();
@@ -63,12 +62,12 @@ struct ComplexAction : Action {
 /** An action operating on a module.
 Subclass this to create your own custom actions for your module.
 */
-struct ModuleAction : Action {
+struct RACK_DLL_API ModuleAction : Action {
 	int64_t moduleId = -1;
 };
 
 
-struct ModuleAdd : ModuleAction {
+struct RACK_DLL_API ModuleAdd : ModuleAction {
 	plugin::Model* model = NULL;
 	math::Vec pos;
 	json_t* moduleJ = NULL;
@@ -82,14 +81,14 @@ struct ModuleAdd : ModuleAction {
 };
 
 
-struct ModuleRemove : InverseAction<ModuleAdd> {
+struct RACK_DLL_API ModuleRemove : InverseAction<ModuleAdd> {
 	ModuleRemove() {
 		name = "remove module";
 	}
 };
 
 
-struct ModuleMove : ModuleAction {
+struct RACK_DLL_API ModuleMove : ModuleAction {
 	math::Vec oldPos;
 	math::Vec newPos;
 	void undo() override;
@@ -100,7 +99,7 @@ struct ModuleMove : ModuleAction {
 };
 
 
-struct ModuleBypass : ModuleAction {
+struct RACK_DLL_API ModuleBypass : ModuleAction {
 	bool bypassed = false;
 	void undo() override;
 	void redo() override;
@@ -110,7 +109,7 @@ struct ModuleBypass : ModuleAction {
 };
 
 
-struct ModuleChange : ModuleAction {
+struct RACK_DLL_API ModuleChange : ModuleAction {
 	json_t* oldModuleJ = NULL;
 	json_t* newModuleJ = NULL;
 	ModuleChange() {
@@ -122,7 +121,7 @@ struct ModuleChange : ModuleAction {
 };
 
 
-struct ParamChange : ModuleAction {
+struct RACK_DLL_API ParamChange : ModuleAction {
 	int paramId = -1;
 	float oldValue = 0.f;
 	float newValue = 0.f;
@@ -134,7 +133,7 @@ struct ParamChange : ModuleAction {
 };
 
 
-struct CableAdd : Action {
+struct RACK_DLL_API CableAdd : Action {
 	int64_t cableId = -1;
 	int64_t inputModuleId = -1;
 	int inputId = -1;
@@ -151,14 +150,14 @@ struct CableAdd : Action {
 };
 
 
-struct CableRemove : InverseAction<CableAdd> {
+struct RACK_DLL_API CableRemove : InverseAction<CableAdd> {
 	CableRemove() {
 		name = "remove cable";
 	}
 };
 
 
-struct CableColorChange : Action {
+struct RACK_DLL_API CableColorChange : Action {
 	int64_t cableId = -1;
 	NVGcolor newColor = color::BLACK_TRANSPARENT;
 	NVGcolor oldColor = color::BLACK_TRANSPARENT;
@@ -171,7 +170,7 @@ struct CableColorChange : Action {
 };
 
 
-struct State {
+struct RACK_DLL_API State {
 	struct Internal;
 	Internal* internal;
 

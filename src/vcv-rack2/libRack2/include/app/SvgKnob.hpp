@@ -12,7 +12,7 @@ namespace app {
 
 
 /** A knob which rotates an SVG and caches it in a framebuffer */
-struct SvgKnob : Knob {
+struct RACK_DLL_API SvgKnob : Knob {
 	widget::FramebufferWidget* fb;
 	CircularShadow* shadow;
 	widget::TransformWidget* tw;

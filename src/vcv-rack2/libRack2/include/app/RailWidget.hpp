@@ -7,7 +7,7 @@ namespace rack {
 namespace app {
 
 
-struct RailWidget : widget::TransparentWidget {
+struct RACK_DLL_API RailWidget : widget::TransparentWidget {
 	struct Internal;
 	Internal* internal;
 

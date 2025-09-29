@@ -810,8 +810,7 @@ int& Window::fbCount() {
 	return internal->fbCount;
 }
 
-
-void init() {
+void RACK_DLL_CALL init() {
 	int err;
 
 	// Set up GLFW
@@ -829,7 +828,7 @@ void init() {
 }
 
 
-void destroy() {
+void RACK_DLL_CALL destroy() {
 	glfwTerminate();
 }
 

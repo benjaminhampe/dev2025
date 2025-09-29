@@ -7,7 +7,7 @@ namespace rack {
 namespace ui {
 
 
-struct List : widget::OpaqueWidget {
+struct RACK_DLL_API List : widget::OpaqueWidget {
 	void step() override;
 };
 

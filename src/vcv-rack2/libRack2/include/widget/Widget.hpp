@@ -18,7 +18,7 @@ namespace widget {
 The bounding box of a Widget is a rectangle specified by `box` relative to their parent.
 The appearance is defined by overriding `draw()`, and the behavior is defined by overriding `step()` and `on*()` event handlers.
 */
-struct Widget : WeakBase {
+struct RACK_DLL_API Widget : WeakBase {
 	/** Position relative to parent and size of widget. */
 	math::Rect box = math::Rect(math::Vec(), math::Vec(INFINITY, INFINITY));
 	/** Automatically set when Widget is added as a child to another Widget */
@@ -138,7 +138,7 @@ struct Widget : WeakBase {
 	/** Advances the module by one frame */
 	virtual void step();
 
-	struct DrawArgs {
+    struct DrawArgs {
 		NVGcontext* vg = NULL;
 		/** Local box representing the visible viewport. */
 		math::Rect clipBox;

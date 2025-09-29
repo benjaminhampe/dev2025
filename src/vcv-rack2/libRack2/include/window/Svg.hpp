@@ -37,7 +37,7 @@ inline math::Vec mm2px(math::Vec mm) {
 
 
 /** Scalable Vector Graphics document */
-struct Svg {
+struct RACK_DLL_API Svg {
 	NSVGimage* handle = NULL;
 
 	~Svg();

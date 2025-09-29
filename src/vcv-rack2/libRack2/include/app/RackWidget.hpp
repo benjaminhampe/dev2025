@@ -18,7 +18,7 @@ namespace app {
 
 
 /** Container for ModuleWidget and CableWidget. */
-struct RackWidget : widget::OpaqueWidget {
+struct RACK_DLL_API RackWidget : widget::OpaqueWidget {
 	struct Internal;
 	Internal* internal;
 

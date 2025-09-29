@@ -20,5 +20,5 @@ add_subdirectory(de-imgui)
 add_subdirectory(de-earcut)
 add_subdirectory(de-tinyobjloader-2.0.0)
 
-add_subdirectory(de-irrlicht-1.8.5)
-add_subdirectory(de-irrExt-1.8.5)
+# add_subdirectory(de-irrlicht-1.8.5)
+# add_subdirectory(de-irrExt-1.8.5)

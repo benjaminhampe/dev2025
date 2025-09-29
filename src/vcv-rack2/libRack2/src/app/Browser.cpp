@@ -1060,12 +1060,12 @@ inline void ZoomButton::onAction(const ActionEvent& e) {
 
 
 
-void browserInit() {
+void RACK_DLL_CALL browserInit() {
 	browser::modelDbInit();
 }
 
 
-widget::Widget* browserCreate() {
+widget::Widget* RACK_DLL_CALL browserCreate() {
 	browser::BrowserOverlay* overlay = new browser::BrowserOverlay;
 	overlay->bgColor = nvgRGBAf(0, 0, 0, 0.33);
 

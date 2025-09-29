@@ -7,8 +7,8 @@ namespace rack {
 namespace gamepad {
 
 
-PRIVATE void init();
-PRIVATE void step();
+RACK_DLL_API void RACK_DLL_CALL init();
+RACK_DLL_API void RACK_DLL_CALL step();
 
 
 } // namespace gamepad

@@ -5,7 +5,8 @@
 #if defined ARCH_WIN
 #include <windows.h>
 
-FILE* fopen_u8(const char* filename, const char* mode) {
+FILE* RACK_DLL_CALL fopen_u8(const char* filename, const char* mode)
+{
 	return _wfopen(rack::string::UTF8toUTF16(filename).c_str(), rack::string::UTF8toUTF16(mode).c_str());
 }
 

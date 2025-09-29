@@ -186,7 +186,7 @@ struct Rect;
 
 /** 2-dimensional vector of floats, representing a point on the plane for graphics.
 */
-struct Vec {
+struct RACK_DLL_API Vec {
 	float x = 0.f;
 	float y = 0.f;
 
@@ -298,7 +298,7 @@ struct Vec {
 Mathematically, Rects include points on its left/top edge but *not* its right/bottom edge.
 The infinite Rect (equal to the entire plane) is defined using pos=-inf and size=inf.
 */
-struct Rect {
+struct RACK_DLL_API Rect {
 	Vec pos;
 	Vec size;
 

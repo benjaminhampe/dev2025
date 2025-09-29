@@ -7,7 +7,7 @@ namespace rack {
 namespace ui {
 
 
-struct Label : widget::Widget {
+struct RACK_DLL_API Label : widget::Widget {
 	enum Alignment {
 		LEFT_ALIGNMENT,
 		CENTER_ALIGNMENT,

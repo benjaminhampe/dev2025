@@ -7,7 +7,7 @@ namespace rack {
 namespace ui {
 
 
-struct MenuSeparator : MenuEntry {
+struct RACK_DLL_API MenuSeparator : MenuEntry {
 	MenuSeparator();
 	void draw(const DrawArgs& args) override;
 };

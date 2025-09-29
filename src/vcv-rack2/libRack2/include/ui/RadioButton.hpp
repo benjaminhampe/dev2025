@@ -9,7 +9,7 @@ namespace ui {
 
 /** Toggles a Quantity between 1.0 and 0.0 when clicked.
 */
-struct RadioButton : Button {
+struct RACK_DLL_API RadioButton : Button {
 	void draw(const DrawArgs& args) override;
 	void onDragStart(const DragStartEvent& e) override;
 	void onDragEnd(const DragEndEvent& e) override;

@@ -381,10 +381,10 @@ void Port::fromJson(json_t* rootJ) {
 // audio
 ////////////////////
 
-void init() {
+void RACK_DLL_CALL init() {
 }
 
-void destroy() {
+void RACK_DLL_CALL destroy() {
 	for (auto& pair : drivers) {
 		delete pair.second;
 	}

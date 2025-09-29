@@ -11,7 +11,7 @@ namespace midiloopback {
 struct Device;
 
 
-struct Context {
+struct RACK_DLL_API Context {
 	std::vector<Device*> devices;
 
 	Context();
@@ -19,7 +19,7 @@ struct Context {
 };
 
 
-PRIVATE void init();
+RACK_DLL_API void RACK_DLL_CALL init();
 
 
 } // namespace midiloopback

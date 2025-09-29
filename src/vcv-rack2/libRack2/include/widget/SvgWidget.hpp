@@ -7,7 +7,7 @@ namespace widget {
 
 
 /** Owns and draws a window::Svg */
-struct SvgWidget : Widget {
+struct RACK_DLL_API SvgWidget : Widget {
 	std::shared_ptr<window::Svg> svg;
 
 	SvgWidget();

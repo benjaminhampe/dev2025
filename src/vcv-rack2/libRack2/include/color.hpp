@@ -25,44 +25,44 @@ static const NVGcolor WHITE = nvgRGB(0xff, 0xff, 0xff);
 
 
 /** Returns whether all RGBA color components are equal. */
-bool isEqual(NVGcolor a, NVGcolor b);
+RACK_DLL_API bool RACK_DLL_CALL isEqual(NVGcolor a, NVGcolor b);
 /** Limits RGBA color components between 0 and 1. */
-NVGcolor clamp(NVGcolor a);
+RACK_DLL_API NVGcolor RACK_DLL_CALL clamp(NVGcolor a);
 /** Subtracts RGB color components elementwise.
 Alpha value is copied from `a`.
 */
-NVGcolor minus(NVGcolor a, NVGcolor b);
+RACK_DLL_API NVGcolor RACK_DLL_CALL minus(NVGcolor a, NVGcolor b);
 /** Adds RGB color components elementwise.
 Alpha value is copied from `a`.
 */
-NVGcolor plus(NVGcolor a, NVGcolor b);
+RACK_DLL_API NVGcolor RACK_DLL_CALL plus(NVGcolor a, NVGcolor b);
 /** Multiplies RGB color components elementwise.
 Alpha value is copied from `a`.
 */
-NVGcolor mult(NVGcolor a, NVGcolor b);
+RACK_DLL_API NVGcolor RACK_DLL_CALL mult(NVGcolor a, NVGcolor b);
 /** Multiplies RGB color components by a scalar.
 Alpha value is untouched.
 */
-NVGcolor mult(NVGcolor a, float x);
+RACK_DLL_API NVGcolor RACK_DLL_CALL mult(NVGcolor a, float x);
 /** Interpolates RGBA color components. */
-NVGcolor lerp(NVGcolor a, NVGcolor b, float t);
+RACK_DLL_API NVGcolor RACK_DLL_CALL lerp(NVGcolor a, NVGcolor b, float t);
 /** Screen blending with alpha compositing.
 https://en.wikipedia.org/wiki/Blend_modes#Screen
 */
-NVGcolor screen(NVGcolor a, NVGcolor b);
+RACK_DLL_API NVGcolor RACK_DLL_CALL screen(NVGcolor a, NVGcolor b);
 /** Multiplies alpha value by a scalar.
 RGB color components are untouched.
 */
-NVGcolor alpha(NVGcolor a, float alpha);
+RACK_DLL_API NVGcolor RACK_DLL_CALL alpha(NVGcolor a, float alpha);
 /** Converts from hex string of the form "#RRGGBB" or "#RRGGBBAA".
 Must include "#".
 Returns WHITE on error.
 */
-NVGcolor fromHexString(std::string s);
+RACK_DLL_API NVGcolor RACK_DLL_CALL fromHexString(std::string s);
 /** Converts color to hex string of the form "#RRGGBB" if opaque or "#RRGGBBAA" if alpha < 255.
 Floating point color components are rounded to nearest 8-bit integer.
 */
-std::string toHexString(NVGcolor c);
+RACK_DLL_API std::string RACK_DLL_CALL toHexString(NVGcolor c);
 
 
 } // namespace color
