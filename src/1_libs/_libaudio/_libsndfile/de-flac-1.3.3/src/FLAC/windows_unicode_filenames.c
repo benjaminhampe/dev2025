@@ -33,8 +33,28 @@
 #include <windows.h>
 #include "share/windows_unicode_filenames.h"
 
+/* convert WCHAR stored Unicode string to UTF-8. Caller is responsible for freeing memory */
+char *utf8_from_wchar(const wchar_t *wstr)
+{
+    char *utf8str;
+    int len;
+
+    if (!wstr)
+        return NULL;
+    if ((len = WideCharToMultiByte(CP_UTF8, 0, wstr, -1, NULL, 0, NULL, NULL)) == 0)
+        return NULL;
+    if ((utf8str = (char *)malloc(len)) == NULL)
+        return NULL;
+    if (WideCharToMultiByte(CP_UTF8, 0, wstr, -1, utf8str, len, NULL, NULL) == 0) {
+        free(utf8str);
+        utf8str = NULL;
+    }
+
+    return utf8str;
+}
+
 /* convert UTF-8 back to WCHAR. Caller is responsible for freeing memory */
-static wchar_t *wchar_from_utf8(const char *str)
+wchar_t *wchar_from_utf8(const char *str)
 {
 	wchar_t *widestr;
 	int len;

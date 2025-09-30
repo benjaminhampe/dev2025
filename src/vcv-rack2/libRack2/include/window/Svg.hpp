@@ -59,7 +59,7 @@ struct RACK_DLL_API Svg {
 DEPRECATED typedef Svg SVG;
 
 
-void svgDraw(NVGcontext* vg, NSVGimage* svg);
+RACK_DLL_API void RACK_DLL_CALL svgDraw(NVGcontext* vg, NSVGimage* svg);
 
 
 } // namespace window

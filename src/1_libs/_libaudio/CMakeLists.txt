@@ -1,5 +1,5 @@
 add_subdirectory(de-freeverb)
-add_subdirectory(de-kissfft)                # FFT
+add_subdirectory(de-kissfft-131.1.0)                # FFT
 add_subdirectory(de-kissfft-cpp)                # FFT
 
 add_subdirectory(de-celt-0.11)

@@ -407,6 +407,9 @@ void Window::run() {
 	internal->frame = 0;
 	while (!glfwWindowShouldClose(win)) {
 		step();
+
+        // std::this_thread::yield(); // hint to scheduler to switch threads
+        // std::this_thread::sleep_for(std::chrono::milliseconds(6));
 	}
 }
 
@@ -741,6 +744,8 @@ std::shared_ptr<Font> Window::loadFont(const std::string& filename) {
 	const auto& it = internal->fontCache.find(filename);
 	if (it != internal->fontCache.end())
 		return it->second;
+
+    WARN("Loading font %s", filename.c_str());
 
 	// This redundantly searches the font cache, but it's not a performance issue because it only happens when font is first loaded.
 	std::shared_ptr<Font> font = loadFontWithoutFallbacks(filename);

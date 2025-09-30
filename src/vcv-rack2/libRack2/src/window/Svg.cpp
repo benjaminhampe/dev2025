@@ -138,7 +138,7 @@ static float getLineCrossing(math::Vec p0, math::Vec p1, math::Vec p2, math::Vec
 	return -(d.x * b.y - d.y * b.x) / m;
 }
 
-void svgDraw(NVGcontext* vg, NSVGimage* svg) {
+void RACK_DLL_CALL svgDraw(NVGcontext* vg, NSVGimage* svg) {
 
     if (!vg)
     {

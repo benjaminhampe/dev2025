@@ -142,7 +142,7 @@ static char *read_string(scanner_t *s, va_list *ap, const char *purpose, size_t 
 
         length = strlen(str);
 
-        if (!utf8_check_string(str, length)) {
+        if (!jannson_utf8_check_string(str, length)) {
             set_error(s, "<args>", json_error_invalid_utf8, "Invalid UTF-8 %s", purpose);
             s->has_error = 1;
             return NULL;
@@ -198,7 +198,7 @@ static char *read_string(scanner_t *s, va_list *ap, const char *purpose, size_t 
         return NULL;
     }
 
-    if (!utf8_check_string(strbuff.value, strbuff.length)) {
+    if (!jannson_utf8_check_string(strbuff.value, strbuff.length)) {
         set_error(s, "<args>", json_error_invalid_utf8, "Invalid UTF-8 %s", purpose);
         strbuffer_close(&strbuff);
         s->has_error = 1;

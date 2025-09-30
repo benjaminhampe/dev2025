@@ -8,7 +8,7 @@
 #include "utf.h"
 #include <string.h>
 
-int utf8_encode(int32_t codepoint, char *buffer, size_t *size) {
+int jannson_utf8_encode(int32_t codepoint, char *buffer, size_t *size) {
     if (codepoint < 0)
         return -1;
     else if (codepoint < 0x80) {
@@ -35,7 +35,7 @@ int utf8_encode(int32_t codepoint, char *buffer, size_t *size) {
     return 0;
 }
 
-size_t utf8_check_first(char byte) {
+size_t jannson_utf8_check_first(char byte) {
     unsigned char u = (unsigned char)byte;
 
     if (u < 0x80)
@@ -66,7 +66,7 @@ size_t utf8_check_first(char byte) {
     }
 }
 
-size_t utf8_check_full(const char *buffer, size_t size, int32_t *codepoint) {
+size_t jannson_utf8_check_full(const char *buffer, size_t size, int32_t *codepoint) {
     size_t i;
     int32_t value = 0;
     unsigned char u = (unsigned char)buffer[0];
@@ -113,21 +113,21 @@ size_t utf8_check_full(const char *buffer, size_t size, int32_t *codepoint) {
     return 1;
 }
 
-const char *utf8_iterate(const char *buffer, size_t bufsize, int32_t *codepoint) {
+const char *jannson_utf8_iterate(const char *buffer, size_t bufsize, int32_t *codepoint) {
     size_t count;
     int32_t value;
 
     if (!bufsize)
         return buffer;
 
-    count = utf8_check_first(buffer[0]);
+    count = jannson_utf8_check_first(buffer[0]);
     if (count <= 0)
         return NULL;
 
     if (count == 1)
         value = (unsigned char)buffer[0];
     else {
-        if (count > bufsize || !utf8_check_full(buffer, count, &value))
+        if (count > bufsize || !jannson_utf8_check_full(buffer, count, &value))
             return NULL;
     }
 
@@ -137,18 +137,18 @@ const char *utf8_iterate(const char *buffer, size_t bufsize, int32_t *codepoint)
     return buffer + count;
 }
 
-int utf8_check_string(const char *string, size_t length) {
+int jannson_utf8_check_string(const char *string, size_t length) {
     size_t i;
 
     for (i = 0; i < length; i++) {
-        size_t count = utf8_check_first(string[i]);
+        size_t count = jannson_utf8_check_first(string[i]);
         if (count == 0)
             return 0;
         else if (count > 1) {
             if (count > length - i)
                 return 0;
 
-            if (!utf8_check_full(&string[i], count, NULL))
+            if (!jannson_utf8_check_full(&string[i], count, NULL))
                 return 0;
 
             i += count - 1;

@@ -152,6 +152,8 @@ else()
 
     target_compile_definitions(${LIB_NAME} PUBLIC HAVE_FLAC=1)
 
+    # target_compile_definitions(${LIB_NAME} PUBLIC FLAC__NO_DLL=1)
+
     target_link_libraries(${LIB_NAME} PUBLIC de_ogg)
 
     if (MSVC)

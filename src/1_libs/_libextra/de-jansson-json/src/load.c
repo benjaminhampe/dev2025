@@ -168,7 +168,7 @@ static int stream_get(stream_t *stream, json_error_t *error) {
             /* multi-byte UTF-8 sequence */
             size_t i, count;
 
-            count = utf8_check_first(c);
+            count = jannson_utf8_check_first(c);
             if (!count)
                 goto out;
 
@@ -177,7 +177,7 @@ static int stream_get(stream_t *stream, json_error_t *error) {
             for (i = 1; i < count; i++)
                 stream->buffer[i] = stream->get(stream->data);
 
-            if (!utf8_check_full(stream->buffer, count, NULL))
+            if (!jannson_utf8_check_full(stream->buffer, count, NULL))
                 goto out;
 
             stream->buffer[count] = '\0';
@@ -192,7 +192,7 @@ static int stream_get(stream_t *stream, json_error_t *error) {
         stream->line++;
         stream->last_column = stream->column;
         stream->column = 0;
-    } else if (utf8_check_first(c)) {
+    } else if (jannson_utf8_check_first(c)) {
         /* track the Unicode character column, so increment only if
            this is the first character of a UTF-8 sequence */
         stream->column++;
@@ -215,7 +215,7 @@ static void stream_unget(stream_t *stream, int c) {
     if (c == '\n') {
         stream->line--;
         stream->column = stream->last_column;
-    } else if (utf8_check_first(c))
+    } else if (jannson_utf8_check_first(c))
         stream->column--;
 
     assert(stream->buffer_pos > 0);
@@ -413,7 +413,7 @@ static void lex_scan_string(lex_t *lex, json_error_t *error) {
                     goto out;
                 }
 
-                if (utf8_encode(value, t, &length))
+                if (jannson_utf8_encode(value, t, &length))
                     assert(0);
                 t += length;
             } else {

@@ -16,41 +16,6 @@
 #pragma options opt off
 #endif
 
-#include <stdlib.h>
-#include <string.h>
-#include <limits.h> /* For INT_MAX */
-
-#ifndef DR_WAV_NO_STDIO
-#include <stdio.h>
-#ifndef DR_WAV_NO_WCHAR
-#include <wchar.h>
-#endif
-#endif
-
-/* Standard library stuff. */
-#ifndef DRWAV_ASSERT
-#include <assert.h>
-#define DRWAV_ASSERT(expression)           assert(expression)
-#endif
-#ifndef DRWAV_MALLOC
-#define DRWAV_MALLOC(sz)                   malloc((sz))
-#endif
-#ifndef DRWAV_REALLOC
-#define DRWAV_REALLOC(p, sz)               realloc((p), (sz))
-#endif
-#ifndef DRWAV_FREE
-#define DRWAV_FREE(p)                      free((p))
-#endif
-#ifndef DRWAV_COPY_MEMORY
-#define DRWAV_COPY_MEMORY(dst, src, sz)    memcpy((dst), (src), (sz))
-#endif
-#ifndef DRWAV_ZERO_MEMORY
-#define DRWAV_ZERO_MEMORY(p, sz)           memset((p), 0, (sz))
-#endif
-#ifndef DRWAV_ZERO_OBJECT
-#define DRWAV_ZERO_OBJECT(p)               DRWAV_ZERO_MEMORY((p), sizeof(*p))
-#endif
-
 #define drwav_countof(x)                   (sizeof(x) / sizeof(x[0]))
 #define drwav_align(x, a)                  ((((x) + (a) - 1) / (a)) * (a))
 #define drwav_min(a, b)                    (((a) < (b)) ? (a) : (b))

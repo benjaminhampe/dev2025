@@ -152,7 +152,7 @@ int json_object_set_new(json_t *json, const char *key, json_t *value) {
 }
 
 int json_object_setn_new(json_t *json, const char *key, size_t key_len, json_t *value) {
-    if (!key || !utf8_check_string(key, key_len)) {
+    if (!key || !jannson_utf8_check_string(key, key_len)) {
         json_decref(value);
         return -1;
     }
@@ -753,7 +753,7 @@ json_t *json_string(const char *value) {
 }
 
 json_t *json_stringn(const char *value, size_t len) {
-    if (!value || !utf8_check_string(value, len))
+    if (!value || !jannson_utf8_check_string(value, len))
         return NULL;
 
     return json_stringn_nocheck(value, len);
@@ -807,7 +807,7 @@ int json_string_set(json_t *json, const char *value) {
 }
 
 int json_string_setn(json_t *json, const char *value, size_t len) {
-    if (!value || !utf8_check_string(value, len))
+    if (!value || !jannson_utf8_check_string(value, len))
         return -1;
 
     return json_string_setn_nocheck(json, value, len);
@@ -853,7 +853,7 @@ json_t *json_vsprintf(const char *fmt, va_list ap) {
         goto out;
 
     vsnprintf(buf, (size_t)length + 1, fmt, aq);
-    if (!utf8_check_string(buf, length)) {
+    if (!jannson_utf8_check_string(buf, length)) {
         jsonp_free(buf);
         goto out;
     }

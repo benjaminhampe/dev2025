@@ -13,6 +13,10 @@ namespace app {
 struct RailWidget::Internal {
 	widget::FramebufferWidget* railFb;
 	widget::SvgWidget* railSw;
+
+    // Set rail SVG from theme
+    std::string uiTheme;
+    std::shared_ptr<window::Svg> railSvg;
 };
 
 
@@ -37,23 +41,40 @@ RailWidget::~RailWidget() {
 
 
 void RailWidget::step() {
-	// Set rail SVG from theme
-	std::shared_ptr<window::Svg> railSvg;
-	if (settings::uiTheme == "light") {
-		railSvg = window::Svg::load(asset::system("res/ComponentLibrary/Rail-light.svg"));
-	}
-	else if (settings::uiTheme == "hcdark") {
-		railSvg = window::Svg::load(asset::system("res/ComponentLibrary/Rail-hcdark.svg"));
-	}
-	else {
-		// Dark
-		railSvg = window::Svg::load(asset::system("res/ComponentLibrary/Rail.svg"));
-	}
 
-	if (internal->railSw->svg != railSvg) {
-		internal->railSw->setSvg(railSvg);
-		internal->railFb->setDirty();
-	}
+    bool bNeedLoad = false;
+    if (!internal->railSvg)
+    {
+        bNeedLoad = true;
+    }
+    else
+    {
+        if (internal->uiTheme != settings::uiTheme)
+        {
+            internal->uiTheme = settings::uiTheme;
+            bNeedLoad = true;
+        }
+    }
+
+    if (bNeedLoad)
+    {
+        if (settings::uiTheme == "light") {
+            internal->railSvg = window::Svg::load(asset::system("res/ComponentLibrary/Rail-light.svg"));
+        }
+        else if (settings::uiTheme == "hcdark") {
+            internal->railSvg = window::Svg::load(asset::system("res/ComponentLibrary/Rail-hcdark.svg"));
+        }
+        else {
+            // Dark
+            internal->railSvg = window::Svg::load(asset::system("res/ComponentLibrary/Rail.svg"));
+        }
+
+        //if (internal->railSw->svg != railSvg)
+        //{
+            internal->railSw->setSvg(internal->railSvg);
+            internal->railFb->setDirty();
+        //}
+    }
 
 	TransparentWidget::step();
 }

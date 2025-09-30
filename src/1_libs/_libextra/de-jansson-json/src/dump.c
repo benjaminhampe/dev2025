@@ -107,7 +107,7 @@ static int dump_string(const char *str, size_t len, json_dump_callback_t dump, v
         int length;
 
         while (end < lim) {
-            end = utf8_iterate(pos, lim - pos, &codepoint);
+            end = jannson_utf8_iterate(pos, lim - pos, &codepoint);
             if (!end)
                 return -1;
 

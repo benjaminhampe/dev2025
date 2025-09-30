@@ -1,0 +1,361 @@
+#include "sapphire_chaos_module.hpp"
+#include "sapphire_prog_chaos.hpp"
+
+namespace Sapphire
+{
+    // [Don Cross] I copied this menu editor stuff from Venom source code:
+    // https://github.com/DaveBenham/VenomModules/blob/f94e4d7d3380b387317746049e4983a278bf99f3/src/plugin.hpp#L99
+    // MenuTextField extracted from pachde1 components.hpp
+    // Textfield as menu item, originally adapted from SubmarineFree
+    struct MenuTextField : ui::TextField
+    {
+        std::function<void(std::string)> changeHandler;
+        std::function<void(std::string)> commitHandler;
+        void step() override
+        {
+            // Keep selected
+            APP->event->setSelectedWidget(this);
+            TextField::step();
+        }
+        void setText(const std::string &text)
+        {
+            this->text = text;
+            selectAll();
+        }
+
+        void onChange(const ChangeEvent &e) override
+        {
+            ui::TextField::onChange(e);
+            if (changeHandler)
+            {
+                changeHandler(text);
+            }
+        }
+
+        void onSelectKey(const event::SelectKey &e) override
+        {
+            if (e.action == GLFW_PRESS && (e.key == GLFW_KEY_ENTER || e.key == GLFW_KEY_KP_ENTER))
+            {
+                if (commitHandler)
+                {
+                    commitHandler(text);
+                }
+                ui::MenuOverlay *overlay = getAncestorOfType<ui::MenuOverlay>();
+                overlay->requestDelete();
+                e.consume(this);
+            }
+            if (!e.getTarget())
+                TextField::onSelectKey(e);
+        }
+    };
+
+
+    using ZooModuleBase = Sapphire::Chaos::ChaosModule<ProgOscillator>;
+    struct ZooModule : ZooModuleBase, ProgLogger
+    {
+        int spamCount = 0;
+        std::string formula[ProgOscillator::InputCount];
+        std::string message[ProgOscillator::InputCount];
+
+        explicit ZooModule()
+            : ZooModuleBase()
+        {
+            circuit.logger = this;
+            initialLocationFromMemory = true;
+            offerFactoryPresetsOnChaosKnob = true;
+            addDilateQuantity();
+            addTranslateQuantities();
+            ZooModule_initialize();
+        }
+
+        void ZooModule_initialize()
+        {
+            formula[0] = "0";
+            formula[1] = "0";
+            formula[2] = "0";
+
+            message[0] = "";
+            message[1] = "";
+            message[2] = "";
+
+            dilateQuantity->value = circuit.getDilate();
+            dilateQuantity->changed = false;
+
+            SlopeVector trans = circuit.getTranslate();
+            xTranslateQuantity->value = trans.mx;
+            xTranslateQuantity->changed = false;
+            yTranslateQuantity->value = trans.my;
+            yTranslateQuantity->changed = false;
+            zTranslateQuantity->value = trans.mz;
+            zTranslateQuantity->changed = false;
+
+            circuit.setMorphFactors(SlopeVector(1.0, 1.0, 1.0));
+
+            memory[0] = circuit.getState();
+            updateProgram();
+        }
+
+        void onReset(const ResetEvent& e) override
+        {
+            ZooModuleBase::onReset(e);
+            ZooModule_initialize();
+        }
+
+        json_t* dataToJson() override
+        {
+            json_t* root = ZooModuleBase::dataToJson();
+
+            json_t* program = json_object();
+            json_object_set_new(program, "vx", json_string(formula[0].c_str()));
+            json_object_set_new(program, "vy", json_string(formula[1].c_str()));
+            json_object_set_new(program, "vz", json_string(formula[2].c_str()));
+            json_object_set_new(root, "program", program);
+
+            json_object_set_new(root, "dilate", json_real(circuit.getDilate()));
+            json_object_set_new(root, "speedFactor", json_real(circuit.getSpeedFactor()));
+
+            json_t* jTranslate = json_object();
+            SlopeVector t = circuit.getTranslate();
+            json_object_set_new(jTranslate, "x", json_real(t.mx));
+            json_object_set_new(jTranslate, "y", json_real(t.my));
+            json_object_set_new(jTranslate, "z", json_real(t.mz));
+            json_object_set_new(root, "translate", jTranslate);
+
+            json_t* jMorph = json_object();
+            SlopeVector mf = circuit.getMorphFactors();
+            json_object_set_new(jMorph, "x", json_real(mf.mx));
+            json_object_set_new(jMorph, "y", json_real(mf.my));
+            json_object_set_new(jMorph, "z", json_real(mf.mz));
+            json_object_set_new(root, "morph", jMorph);
+
+            json_t* jparams = json_array();
+            for (int m = 0; m < ProgOscillator::ParamCount; ++m)
+            {
+                json_t* jmap = json_object();
+                json_object_set_new(jmap, "center", json_real(circuit.knobMap[m].center));
+                json_object_set_new(jmap, "spread", json_real(circuit.knobMap[m].spread));
+                if (std::isfinite(circuit.knobMap[m].fallback))
+                    json_object_set_new(jmap, "fallback", json_real(circuit.knobMap[m].fallback));
+                json_array_append(jparams, jmap);
+            }
+            json_object_set_new(root, "params", jparams);
+
+            return root;
+        }
+
+        void jsonLoadSlopeVector(json_t* root, const char *key, SlopeVector& vec)
+        {
+            if (json_t* jv = json_object_get(root, key); json_is_object(jv))
+            {
+                if (json_t* jx = json_object_get(jv, "x"); json_is_number(jx))
+                    vec.mx = json_real_value(jx);
+
+                if (json_t* jy = json_object_get(jv, "y"); json_is_number(jy))
+                    vec.my = json_real_value(jy);
+
+                if (json_t* jz = json_object_get(jv, "z"); json_is_number(jz))
+                    vec.mz = json_real_value(jz);
+            }
+        }
+
+        void dataFromJson(json_t* root) override
+        {
+            ZooModuleBase::dataFromJson(root);
+            if (json_t* program = json_object_get(root, "program"); json_is_object(program))
+            {
+                loadFormula(program, "vx", formula[0]);
+                loadFormula(program, "vy", formula[1]);
+                loadFormula(program, "vz", formula[2]);
+                updateProgram();
+            }
+
+            if (json_t* jdilate = json_object_get(root, "dilate"); json_is_number(jdilate))
+                circuit.setDilate(json_real_value(jdilate));
+
+            if (json_t* jSpeedFactor = json_object_get(root, "speedFactor"); json_is_number(jSpeedFactor))
+                circuit.setSpeedFactor(json_real_value(jSpeedFactor));
+
+            SlopeVector translate = circuit.getTranslate();
+            jsonLoadSlopeVector(root, "translate", translate);
+            circuit.setTranslate(translate);
+            if (xTranslateQuantity) xTranslateQuantity->value = translate.mx;
+            if (yTranslateQuantity) yTranslateQuantity->value = translate.my;
+            if (zTranslateQuantity) zTranslateQuantity->value = translate.mz;
+
+            SlopeVector morphFactors = circuit.getMorphFactors();
+            jsonLoadSlopeVector(root, "morph", morphFactors);
+            circuit.setMorphFactors(morphFactors);
+
+            if (json_t* jparams = json_object_get(root, "params"); json_is_array(jparams))
+            {
+                if (json_array_size(jparams) == ProgOscillator::ParamCount)
+                {
+                    for (int m = 0; m < ProgOscillator::ParamCount; ++m)
+                    {
+                        if (json_t* jmap = json_array_get(jparams, m); json_is_object(jmap))
+                        {
+                            if (json_t* jcenter = json_object_get(jmap, "center"); json_is_number(jcenter))
+                                circuit.knobMap[m].center = json_real_value(jcenter);
+
+                            if (json_t* jspread = json_object_get(jmap, "spread"); json_is_number(jspread))
+                                circuit.knobMap[m].spread = json_real_value(jspread);
+
+                            if (json_t* jfallback = json_object_get(jmap, "fallback"); json_is_number(jfallback))
+                                circuit.knobMap[m].fallback = json_real_value(jfallback);
+                            else
+                                circuit.knobMap[m].fallback = NAN;
+                        }
+                    }
+                }
+            }
+        }
+
+        void loadFormula(json_t* program, const char *key, std::string& text)
+        {
+            if (json_t* j = json_object_get(program, key); json_is_string(j))
+                text = std::string(json_string_value(j));
+        }
+
+        void updateProgram()
+        {
+            circuit.resetProgram();
+
+            bool failure = false;
+            for (int v = 0; v < 3; ++v)
+            {
+                BytecodeResult result = circuit.compile(formula[v]);
+                message[v] = result.message;
+                if (result.failure())
+                    failure = true;     // failure is sticky: keep resetting after any failure
+                if (failure)
+                    circuit.resetProgram();
+            }
+
+            shouldClearTricorder = true;
+        }
+
+        void setInfixFormula(int varIndex, std::string infix)
+        {
+            if (varIndex >= 0 && varIndex < 3)
+            {
+                formula[varIndex] = infix;
+                updateProgram();
+            }
+        }
+
+        MenuItem* makeFormulaEditor(int varIndex, std::string prefix)
+        {
+            assert(varIndex>=0 && varIndex<3);
+
+            std::string caption = prefix;
+            if (message[varIndex].size() > 0)
+                caption += "  *** " + message[varIndex];
+
+            // Based on this example:
+            // https://github.com/DaveBenham/VenomModules/blob/f94e4d7d3380b387317746049e4983a278bf99f3/src/plugin.hpp#L162
+            return createSubmenuItem(
+                caption,
+                formula[varIndex],
+                [=](Menu* menu)
+                {
+                    auto editField = new MenuTextField;
+                    editField->box.size.x = 250;
+                    editField->setText(formula[varIndex]);
+                    editField->commitHandler = [=](std::string text)
+                    {
+                        setInfixFormula(varIndex, text);
+                    };
+                    menu->addChild(editField);
+                }
+            );
+        }
+
+        MenuItem* makeNumericEditor(double* value, std::string caption)
+        {
+            char buf[100];
+            snprintf(buf, sizeof(buf), "%0.16g", *value);
+            std::string text(buf);
+
+            return createSubmenuItem(
+                caption,
+                text,
+                [=](Menu* menu)
+                {
+                    auto editField = new MenuTextField;
+                    editField->box.size.x = 250;
+                    editField->setText(text);
+                    editField->commitHandler = [=](std::string text)
+                    {
+                        double x;
+                        int n = sscanf(text.c_str(), "%lg", &x);
+                        if (n==1 && std::isfinite(x))
+                            *value = x;
+                    };
+                    menu->addChild(editField);
+                }
+            );
+        }
+
+        void addParamEditors(Menu* menu, char symbol, KnobParameterMapping& map)
+        {
+            std::string varname{symbol};
+            menu->addChild(new MenuSeparator);
+            menu->addChild(makeNumericEditor(&map.center, varname + " center"));
+            menu->addChild(makeNumericEditor(&map.spread, varname + " spread"));
+        }
+
+        void addFormulaEditorMenuItems(Menu* menu)
+        {
+            menu->addChild(new MenuSeparator);
+            dilateQuantity->value = circuit.getDilate();
+            menu->addChild(new Chaos::DilateSlider(dilateQuantity));
+            menu->addChild(new Chaos::TranslateSlider(xTranslateQuantity, "x"));
+            menu->addChild(new Chaos::TranslateSlider(yTranslateQuantity, "y"));
+            menu->addChild(new Chaos::TranslateSlider(zTranslateQuantity, "z"));
+            menu->addChild(makeFormulaEditor(0, "vx"));
+            menu->addChild(makeFormulaEditor(1, "vy"));
+            menu->addChild(makeFormulaEditor(2, "vz"));
+
+            const uint32_t mask = circuit.lowercaseVariables();
+            for (int i = 0; i < ProgOscillator::ParamCount; ++i)
+                if (uint32_t c = i + 'a'; BytecodeProgram::IsLowercaseVarUsed(mask, c))
+                    addParamEditors(menu, c, circuit.knobMap[i]);
+        }
+
+        void log(const char* func, const char* what) override
+        {
+            constexpr int spamLimit = 20;
+            if (++spamCount < spamLimit)
+                WARN("EXCEPTION %d/%d : function %s received exception [%s]", spamCount, spamLimit, func, what);
+
+            circuit.resetProgram();
+            resetAttractor();
+        }
+    };
+
+
+    using ZooWidgetBase = Sapphire::Chaos::ChaosWidget<ZooModule>;
+    struct ZooWidget : ZooWidgetBase
+    {
+        ZooModule* zooModule{};
+
+        explicit ZooWidget(ZooModule* module)
+            : ZooWidgetBase(module, "zoo", "res/zoo.svg")
+            , zooModule(module)
+            {}
+
+        void appendContextMenu(Menu* menu) override
+        {
+            ZooWidgetBase::appendContextMenu(menu);
+            if (zooModule)
+            {
+                zooModule->addFormulaEditorMenuItems(menu);
+            }
+        }
+    };
+}
+
+Model* modelSapphireZoo = createSapphireModel<Sapphire::ZooModule, Sapphire::ZooWidget>(
+    "Zoo",
+    Sapphire::ChaosModuleRoles
+);

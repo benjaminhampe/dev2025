@@ -39,6 +39,29 @@
 
 #define UTF8_BUFFER_SIZE 32768
 
+#if 0
+/* convert UTF-8 back to WCHAR. Caller is responsible for freeing memory */
+static wchar_t *wchar_from_utf8(const char *str)
+{
+    wchar_t *widestr;
+    int len;
+
+    if (!str)
+        return NULL;
+    if ((len = MultiByteToWideChar(CP_UTF8, 0, str, -1, NULL, 0)) == 0)
+        return NULL;
+    if ((widestr = (wchar_t *)malloc(len*sizeof(wchar_t))) == NULL)
+        return NULL;
+    if (MultiByteToWideChar(CP_UTF8, 0, str, -1, widestr, len) == 0) {
+        free(widestr);
+        widestr = NULL;
+    }
+
+    return widestr;
+}
+
+#endif
+
 static int local_vsnprintf(char *str, size_t size, const char *fmt, va_list va)
 {
 	int rc;
@@ -58,45 +81,6 @@ static int local_vsnprintf(char *str, size_t size, const char *fmt, va_list va)
 	return rc;
 }
 
-/* convert WCHAR stored Unicode string to UTF-8. Caller is responsible for freeing memory */
-static char *utf8_from_wchar(const wchar_t *wstr)
-{
-	char *utf8str;
-	int len;
-
-	if (!wstr)
-		return NULL;
-	if ((len = WideCharToMultiByte(CP_UTF8, 0, wstr, -1, NULL, 0, NULL, NULL)) == 0)
-		return NULL;
-	if ((utf8str = (char *)malloc(len)) == NULL)
-		return NULL;
-	if (WideCharToMultiByte(CP_UTF8, 0, wstr, -1, utf8str, len, NULL, NULL) == 0) {
-		free(utf8str);
-		utf8str = NULL;
-	}
-
-	return utf8str;
-}
-
-/* convert UTF-8 back to WCHAR. Caller is responsible for freeing memory */
-static wchar_t *wchar_from_utf8(const char *str)
-{
-	wchar_t *widestr;
-	int len;
-
-	if (!str)
-		return NULL;
-	if ((len = MultiByteToWideChar(CP_UTF8, 0, str, -1, NULL, 0)) == 0)
-		return NULL;
-	if ((widestr = (wchar_t *)malloc(len*sizeof(wchar_t))) == NULL)
-		return NULL;
-	if (MultiByteToWideChar(CP_UTF8, 0, str, -1, widestr, len) == 0) {
-		free(widestr);
-		widestr = NULL;
-	}
-
-	return widestr;
-}
 
 /* retrieve WCHAR commandline, expand wildcards and convert everything to UTF-8 */
 int get_utf8_argv(int *argc, char ***argv)

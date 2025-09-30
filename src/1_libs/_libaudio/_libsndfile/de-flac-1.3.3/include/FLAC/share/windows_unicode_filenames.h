@@ -55,6 +55,9 @@ int flac_internal_utime_utf8(const char *filename, struct utimbuf *times);
 int flac_internal_unlink_utf8(const char *filename);
 int flac_internal_rename_utf8(const char *oldname, const char *newname);
 
+char *utf8_from_wchar(const wchar_t *wstr);
+wchar_t *wchar_from_utf8(const char *str);
+
 #ifdef __cplusplus
 } /* extern "C" */
 #endif
