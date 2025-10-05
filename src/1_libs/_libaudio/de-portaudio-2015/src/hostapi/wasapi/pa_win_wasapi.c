@@ -2457,6 +2457,9 @@ static HRESULT CreateAudioClient(PaWasapiStream *pStream, PaWasapiSubStream *pSu
             if (GetWindowsVersion() >= WINDOWS_10_SERVER2016)
                 audioProps.Options = pa_AUDCLNT_STREAMOPTIONS_MATCH_FORMAT;
             break;
+        default:
+            audioProps.Options = pa_AUDCLNT_STREAMOPTIONS_NONE;
+            break;
         }
 
         hr = IAudioClient2_SetClientProperties((IAudioClient2 *)audioClient, (AudioClientProperties *)&audioProps);

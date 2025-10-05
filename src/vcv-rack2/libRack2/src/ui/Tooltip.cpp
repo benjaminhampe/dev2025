@@ -11,19 +11,19 @@ void Tooltip::step() {
 	// Wrap size to contents
     if (!APP)
     {
-        FATAL("No APP");
+        RK_FATAL("No APP");
         return;
     }
 
     if (!APP->window)
     {
-        FATAL("No APP->window");
+        RK_FATAL("No APP->window");
         return;
     }
 
     if (!APP->window->vg)
     {
-        FATAL("No APP->window->vg");
+        RK_FATAL("No APP->window->vg");
     }
     else
     {

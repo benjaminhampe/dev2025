@@ -347,7 +347,7 @@ static void Float32_To_Int32(
         float scaled = *src * 0x7FFFFFFF;
         *dest = lrintf(scaled-0.5f);
 #else
-        double scaled = *src * 0x7FFFFFFF;
+        double scaled = *src * (double)0x7FFFFFFF;
         *dest = (PaInt32) scaled;        
 #endif
         
@@ -404,7 +404,7 @@ static void Float32_To_Int32_Clip(
         PA_CLIP_( scaled, -2147483648.f, 2147483647.f  );
         *dest = lrintf(scaled-0.5f);
 #else
-        double scaled = *src * 0x7FFFFFFF;
+        double scaled = *src * (double)0x7FFFFFFF;
         PA_CLIP_( scaled, -2147483648., 2147483647.  );
         *dest = (PaInt32) scaled;
 #endif
@@ -532,7 +532,7 @@ static void Float32_To_Int24_Clip(
     while( count-- )
     {
         /* convert to 32 bit and drop the low 8 bits */
-        double scaled = *src * 0x7FFFFFFF;
+        double scaled = *src * (double)0x7FFFFFFF;
         PA_CLIP_( scaled, -2147483648., 2147483647.  );
         temp = (PaInt32) scaled;
 

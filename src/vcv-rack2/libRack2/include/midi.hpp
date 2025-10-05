@@ -291,9 +291,9 @@ struct RACK_DLL_API Output : Port {
 RACK_DLL_API void RACK_DLL_CALL init();
 RACK_DLL_API void RACK_DLL_CALL destroy();
 /** Registers a new MIDI driver. Takes pointer ownership. */
-void addDriver(int driverId, Driver* driver);
-std::vector<int> getDriverIds();
-Driver* getDriver(int driverId);
+RACK_DLL_API void RACK_DLL_CALL addDriver(int driverId, Driver* driver);
+RACK_DLL_API std::vector<int> RACK_DLL_CALL getDriverIds();
+RACK_DLL_API Driver* RACK_DLL_CALL getDriver(int driverId);
 
 
 } // namespace midi

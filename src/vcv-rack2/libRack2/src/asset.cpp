@@ -41,7 +41,7 @@ static void initSystemDir()
 {
     systemDir = system::getWorkingDirectory() + "/media/Rack2";
 
-    WARN("systemDir = %s", systemDir.c_str());
+    RK_WARN("systemDir = %s", systemDir.c_str());
 
 #ifdef NOT_BENNI
 	if (!systemDir.empty())
@@ -216,14 +216,14 @@ void RACK_DLL_CALL init() {
 
 std::string RACK_DLL_CALL system(std::string filename) {
     auto retval = system::join(systemDir, filename);
-    WARN("retval = %s",retval.c_str());
+    RK_WARN("retval = %s",retval.c_str());
     return retval;
 }
 
 
 std::string RACK_DLL_CALL user(std::string filename) {
     auto retval = system::join(userDir, filename);
-    WARN("retval = %s",retval.c_str());
+    RK_WARN("retval = %s",retval.c_str());
     return retval;
 }
 
@@ -237,7 +237,7 @@ std::string RACK_DLL_CALL plugin(plugin::Plugin* plugin, std::string filename) {
     }
 
     auto retval = system::join(plugin->path, filename);
-    WARN("retval = %s",retval.c_str());
+    RK_WARN("retval = %s",retval.c_str());
     return retval;
 }
 

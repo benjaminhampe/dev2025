@@ -40,14 +40,14 @@ void Model::fromJson(json_t* rootJ) {
 			std::string tag = json_string_value(tagJ);
 			int tagId = tag::findId(tag);
 			if (tagId < 0) {
-				// WARN("Module %s/%s has invalid tag \"%s\"", plugin->slug.c_str(), slug.c_str(), tag.c_str());
+				// RK_WARN("Module %s/%s has invalid tag \"%s\"", plugin->slug.c_str(), slug.c_str(), tag.c_str());
 				continue;
 			}
 
 			// Omit duplicates
 			auto it = std::find(tagIds.begin(), tagIds.end(), tagId);
 			if (it != tagIds.end()) {
-				// WARN("Module %s/%s has duplicate tag \"%s\"", plugin->slug.c_str(), slug.c_str(), tag.c_str());
+				// RK_WARN("Module %s/%s has duplicate tag \"%s\"", plugin->slug.c_str(), slug.c_str(), tag.c_str());
 				continue;
 			}
 

@@ -28,6 +28,7 @@ Directly including Rack headers other than rack.hpp in your plugin is unsupporte
 #include <network.hpp>
 #include <asset.hpp>
 #include <window/Window.hpp>
+#include <window/Svg.hpp>
 #include <context.hpp>
 #include <audio.hpp>
 #include <midi.hpp>

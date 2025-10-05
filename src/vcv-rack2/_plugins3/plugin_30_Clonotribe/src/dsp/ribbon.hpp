@@ -1,0 +1,58 @@
+#pragma once
+#include <algorithm>
+#include <cmath>
+#include <array>
+
+namespace clonotribe {
+
+class Ribbon {
+public:
+    enum class Mode {
+        KEY = 0, 
+        NARROW = 1, 
+        WIDE = 2
+    };
+
+    Ribbon() = default;
+
+    void setMode(int m) noexcept {
+        mode = static_cast<Mode>(std::clamp(m, 0, 2));
+    }
+    void setOctave(float oct) noexcept { octave = oct; }
+    void setTouching(bool t) noexcept { touching = t; }
+    void setPosition(float pos) noexcept { position = std::clamp(pos, ZERO, ONE); }
+    [[nodiscard]] float getPosition() const noexcept { return position; }
+
+    [[nodiscard]] float getCV() const noexcept {
+        switch (mode) {
+            case Mode::KEY: {
+                int step = static_cast<int>(position * 12.0f);
+                return (static_cast<float>(step) / 12.0f) + octave;
+            }
+            case Mode::NARROW:
+                return position * TWO + octave - ONE;
+            case Mode::WIDE:
+                return position * 5.0f + octave - 2.5f;
+            default:
+                return ZERO;
+        }
+    }
+    [[nodiscard]] float getGate() const noexcept {
+        return touching ? 10.0f : ZERO;
+    }
+    [[nodiscard]] float getGateTimeMod() const noexcept {
+        return position;
+    }
+    [[nodiscard]] float getVolumeAutomation() const noexcept {
+        return (position - HALF) * TWO;
+    }
+    [[nodiscard]] float getDrumRollIntensity() const noexcept {
+        return position;
+    }
+    bool touching = false;
+private:
+    Mode mode = Mode::KEY;
+    float octave = ZERO;
+    float position = ZERO;
+};
+}

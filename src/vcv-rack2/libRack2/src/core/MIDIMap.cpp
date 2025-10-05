@@ -136,7 +136,7 @@ struct MIDIMap : Module {
 	}
 
 	void processMessage(const midi::Message& msg) {
-		// DEBUG("MIDI: %01x %01x %02x %02x", msg.getStatus(), msg.getChannel(), msg.getNote(), msg.getValue());
+		// RK_DEBUG("MIDI: %01x %01x %02x %02x", msg.getStatus(), msg.getChannel(), msg.getNote(), msg.getValue());
 
 		switch (msg.getStatus()) {
 			// cc

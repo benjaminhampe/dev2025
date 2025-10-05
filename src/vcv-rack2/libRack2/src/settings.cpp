@@ -571,7 +571,7 @@ void RACK_DLL_CALL save(std::string path) {
 	if (path.empty())
 		path = settingsPath;
 
-	INFO("Saving settings %s", path.c_str());
+	RK_INFO("Saving settings %s", path.c_str());
 	json_t* rootJ = toJson();
 	if (!rootJ)
 		return;
@@ -592,7 +592,7 @@ void RACK_DLL_CALL load(std::string path) {
 	if (path.empty())
 		path = settingsPath;
 
-	INFO("Loading settings %s", path.c_str());
+	RK_INFO("Loading settings %s", path.c_str());
 	FILE* file = std::fopen(path.c_str(), "r");
 	if (!file)
 		return;

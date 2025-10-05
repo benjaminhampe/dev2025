@@ -1,0 +1,214 @@
+{
+  "slug": "Ahornberg",
+  "version": "2.3.4",
+  "license": "GPL-3.0-or-later",
+  "name": "Ahornberg",
+  "brand": "Ahornberg",
+  "author": "Ahornberg",
+  "authorEmail": "ahornberg@ahornberg.at",
+  "authorUrl": "https://github.com/Ahornberg/Ahornberg-VCV-Modules",
+  "pluginUrl": "https://github.com/Ahornberg/Ahornberg-VCV-Modules",
+  "manualUrl": "https://github.com/Ahornberg/Ahornberg-VCV-Modules/blob/master/README.md",
+  "sourceUrl": "https://github.com/Ahornberg/Ahornberg-VCV-Modules",
+  "changelogUrl": "",
+  "donateUrl": "https://liberapay.com/Ahornberg/donate",
+  "modules": [
+    {
+      "slug": "Tracker",
+      "name": "Tracker",
+      "description": "sequencer with tracker interface",
+	  "hidden": true,
+	  "manualUrl": "https://github.com/Ahornberg/Ahornberg-VCV-Modules/blob/master/manuals/README.md#tracker",
+      "tags": [
+		"Arpeggiator",
+		"Envelope generator",
+	    "Clock generator",
+		"Polyphonic",
+		"Recording",
+		"Sequencer"
+	  ]
+    },
+    {
+      "slug": "TapeRecorder",
+      "name": "Tape Recorder",
+      "description": "micro cassette recorder",
+	  "hidden": false,
+	  "manualUrl": "https://github.com/Ahornberg/Ahornberg-VCV-Modules/blob/master/manuals/README.md#tape-recorder",
+      "tags": [ 
+	    "Clock generator",
+		"Delay",
+		"Polyphonic",
+		"Recording",
+		"Sampler"
+	  ]
+    },
+    {
+      "slug": "TapeRecorderMixer",
+      "name": "Tape Recorder Mixer",
+      "description": "mixer for micro cassette recorder",
+	  "hidden": true,
+	  "manualUrl": "https://github.com/Ahornberg/Ahornberg-VCV-Modules/blob/master/manuals/README.md#tape-recorder-mixer",
+      "tags": [ 
+	    "Attenuator",
+		"Controller",
+		"Expander",
+		"Mixer",
+		"Utility",
+		"Visual",
+		"Voltage-controlled amplifier"
+	  ]
+    },
+    {
+      "slug": "TapeInspector",
+      "name": "Tape Inspector",
+      "description": "visualizes audio on tape",
+	  "hidden": false,
+	  "manualUrl": "https://github.com/Ahornberg/Ahornberg-VCV-Modules/blob/master/manuals/README.md#tape-inspector",
+      "tags": [ 
+		"Expander",
+		"Utility",
+		"Visual"
+	  ]
+    },    {
+      "slug": "FlyingFader",
+      "name": "Flying Fader",
+      "description": "cv-controlled fader",
+	  "hidden": false,
+	  "manualUrl": "https://github.com/Ahornberg/Ahornberg-VCV-Modules/blob/master/manuals/README.md#flying-fader",
+      "tags": [ 
+	    "Attenuator",
+		"Controller",
+		"Polyphonic",
+		"Utility",
+		"Visual",
+		"Voltage-controlled amplifier"
+	  ]
+    },
+	{
+      "slug": "EqualDivision",
+      "name": "Equal Division",
+      "description": "microtonal re-tuner and attenuverter",
+	  "hidden": false,
+	  "manualUrl": "https://github.com/Ahornberg/Ahornberg-VCV-Modules/blob/master/manuals/README.md#equal-division",
+      "tags": [ 
+	    "Attenuator",
+		"Tuner",
+        "Polyphonic"
+	  ]
+    },
+    {
+      "slug": "CVFreqShift",
+      "name": "CV-Frequency Shift",
+      "description": "linear frequency shifter and modulator for note-cv",
+	  "hidden": false,
+	  "manualUrl": "https://github.com/Ahornberg/Ahornberg-VCV-Modules/blob/master/manuals/README.md#cv-frequency-shift",
+      "tags": [ 
+		"Tuner",
+        "Polyphonic"
+	  ]
+    },
+    {
+      "slug": "FunWithFrames",
+      "name": "Fun with Frames",
+      "description": "utility to enhance Regen Modular Frames",
+	  "hidden": false,
+	  "manualUrl": "https://github.com/Ahornberg/Ahornberg-VCV-Modules/blob/master/manuals/README.md#fun-with-frames",
+      "tags": [ 
+		"Utility",
+        "Polyphonic"
+	  ]
+    },
+    {
+      "slug": "MoreFunWithFrames",
+      "name": "More Fun with Frames",
+      "description": "advanced utility to enhance Regen Modular Frames",
+	  "hidden": true,
+	  "manualUrl": "https://github.com/Ahornberg/Ahornberg-VCV-Modules/blob/master/manuals/README.md#more-fun-with-frames",
+      "tags": [ 
+		"Utility"
+	  ]
+    },
+    {
+      "slug": "Metronome",
+      "name": "Metronome",
+	  "hidden": false,
+	  "manualUrl": "https://github.com/Ahornberg/Ahornberg-VCV-Modules/blob/master/manuals/README.md#metronome",
+      "description": "classic rehearsal metronome",
+      "tags": [ 
+	    "Clock generator"
+	  ]
+    },
+    {
+      "slug": "Harmonizer",
+      "name": "Harmonizer",
+      "description": "harmonic and subharmonic CV generator",
+ 	  "hidden": false,
+	  "manualUrl": "https://github.com/Ahornberg/Ahornberg-VCV-Modules/blob/master/manuals/README.md#harmonizer",
+      "tags": [ 
+		"Envelope follower",
+		"Multiple",
+		"Polyphonic",
+		"Tuner"
+	  ]
+    },
+    {
+      "slug": "MIDIController",
+      "name": "MIDI Controller",
+      "description": "MIDI Controller",
+	  "hidden": true,
+	  "manualUrl": "https://github.com/Ahornberg/Ahornberg-VCV-Modules/blob/master/manuals/README.md#midi-controller",
+      "tags": [
+		"External",
+		"MIDI",
+		"Utility"
+	  ]
+    },
+    {
+      "slug": "MIDIPolyExpression",
+      "name": "MIDI Poly Expression",
+      "description": "MIDI MPE to CV",
+	  "hidden": false,
+	  "manualUrl": "https://github.com/Ahornberg/Ahornberg-VCV-Modules/blob/master/manuals/README.md#midi-poly-expression",
+      "tags": [
+		"External",
+		"MIDI",
+		"Polyphonic",
+		"Utility"
+	  ]
+    },
+    {
+      "slug": "XGlide",
+      "name": "X-Glide",
+      "description": "cross-glide between 2 notes",
+	  "hidden": false,
+	  "manualUrl": "https://github.com/Ahornberg/Ahornberg-VCV-Modules/blob/master/manuals/README.md#x-glide",
+      "tags": [
+		"Polyphonic",
+		"Utility"
+	  ]
+    },
+    {
+      "slug": "MIDIOverAudio",
+      "name": "MIDI over Audio",
+      "description": "complement to the MIDI over Audio VST",
+ 	  "hidden": false,
+	  "manualUrl": "https://github.com/Ahornberg/Ahornberg-VCV-Modules/blob/master/manuals/README.md#midi-over-audio",
+      "tags": [ 
+		"External",
+		"MIDI",
+		"Multiple",
+		"Utility"
+	  ]
+    },
+    {
+      "slug": "CopyPastePreset",
+      "name": "Copy Paste Preset",
+      "description": "copy-paste a preset from the module on the left side to the modules on the right side",
+ 	  "hidden": false,
+	  "manualUrl": "https://github.com/Ahornberg/Ahornberg-VCV-Modules/blob/master/manuals/README.md#copy-paste-preset",
+      "tags": [ 
+		"Utility"
+	  ]
+    }
+  ]
+}

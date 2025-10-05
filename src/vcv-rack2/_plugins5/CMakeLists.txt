@@ -1,0 +1,6 @@
+add_subdirectory(plugin_50_alefsbits)
+add_subdirectory(plugin_51_Sickozell)
+add_subdirectory(plugin_52_Voxglitch)
+add_subdirectory(plugin_53_rcm)
+add_subdirectory(plugin_54_Sckitam)
+ # add_subdirectory(plugin_55_4ms)

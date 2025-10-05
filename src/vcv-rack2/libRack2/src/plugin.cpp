@@ -156,47 +156,47 @@ static InitCallback loadPluginCallback(Plugin* plugin) {
     if (!hLib)
     {
         int error = GetLastError();
-        FATAL("No plugin->handle for libraryPath %s: code %d",libraryPath.c_str(), error);
+        RK_FATAL("No plugin->handle for libraryPath %s: code %d",libraryPath.c_str(), error);
         auto errorMsg = Benni::getLastErrorStr(error);
-        FATAL("ErrorMsg: %s",errorMsg.c_str());
+        RK_FATAL("ErrorMsg: %s",errorMsg.c_str());
         //throw Exception("Failed to load library %s: code %d", libraryPath.c_str(), error);
         return nullptr;
     }
 
-    WARN("Got plugin->handle for libraryPath %s",libraryPath.c_str());
+    RK_WARN("Got plugin->handle for libraryPath %s",libraryPath.c_str());
 
     // Get plugin's init() function
     FARPROC farProc = GetProcAddress(hLib, "init");
     if (!farProc)
     {
         int error = GetLastError();
-        FATAL("No init() function found for libraryPath %s: code %d",libraryPath.c_str(), error);
+        RK_FATAL("No init() function found for libraryPath %s: code %d",libraryPath.c_str(), error);
         auto errorMsg = Benni::getLastErrorStr(error);
-        FATAL("ErrorMsg: %s",errorMsg.c_str());
+        RK_FATAL("ErrorMsg: %s",errorMsg.c_str());
         return nullptr;
     }
 
-    WARN("Got farProc init() in %s",libraryPath.c_str());
+    RK_WARN("Got farProc init() in %s",libraryPath.c_str());
 
     initCallback = (InitCallback)farProc;
     if (!initCallback)
     {
-        FATAL("No (InitCallback)farProc in %s",libraryPath.c_str());        
+        RK_FATAL("No (InitCallback)farProc in %s",libraryPath.c_str());        
         return nullptr;
     }
 
-    WARN("Got initCallback in %s",libraryPath.c_str());
+    RK_WARN("Got initCallback in %s",libraryPath.c_str());
 
 #else
 	// Load dynamic/shared library
 	plugin->handle = loadLibrary(libraryPath);
     if (!plugin->handle)
     {
-        FATAL("No plugin->handle for libraryPath %s",libraryPath.c_str());
+        RK_FATAL("No plugin->handle for libraryPath %s",libraryPath.c_str());
     }
     else
     {
-        FATAL("No plugin->handle for libraryPath %s",libraryPath.c_str());
+        RK_FATAL("No plugin->handle for libraryPath %s",libraryPath.c_str());
     }
 
 	// Get plugin's init() function
@@ -213,9 +213,9 @@ static InitCallback loadPluginCallback(Plugin* plugin) {
 /** If path is blank, loads Core */
 static Plugin* loadPlugin(std::string path) {
 	if (path == "")
-		INFO("Loading Core plugin");
+		RK_INFO("Loading Core plugin");
 	else
-		INFO("Loading plugin from %s", path.c_str());
+		RK_INFO("Loading plugin from %s", path.c_str());
 
 	Plugin* plugin = new Plugin;
 
@@ -291,12 +291,12 @@ static Plugin* loadPlugin(std::string path) {
 		}
 	}
 	catch (Exception& e) {
-		WARN("Could not load plugin %s: %s", path.c_str(), e.what());
+		RK_WARN("Could not load plugin %s: %s", path.c_str(), e.what());
 		delete plugin;
 		return NULL;
 	}
 
-	INFO("Loaded plugin %s %s", plugin->slug.c_str(), plugin->version.c_str());
+	RK_INFO("Loaded plugin %s %s", plugin->slug.c_str(), plugin->version.c_str());
 	plugins.push_back(plugin);
 	return plugin;
 }
@@ -323,12 +323,12 @@ static void extractPackages(std::string path) {
 			continue;
 
 		// Extract package
-		INFO("Extracting package %s", packagePath.c_str());
+		RK_INFO("Extracting package %s", packagePath.c_str());
 		try {
 			system::unarchiveToDirectory(packagePath, path);
 		}
 		catch (Exception& e) {
-			WARN("Plugin package %s failed to extract: %s", packagePath.c_str(), e.what());
+			RK_WARN("Plugin package %s failed to extract: %s", packagePath.c_str(), e.what());
 			message += string::f("Could not extract plugin package %s\n", packagePath);
 			continue;
 		}
@@ -396,13 +396,13 @@ void RACK_DLL_CALL init() {
 		std::string fundamentalPackage = getFundamentalPackagePath();
 		std::string fundamentalDir = system::join(pluginsPath, "Fundamental");
 		if (fundamentalPackage != "" && system::isFile(fundamentalPackage)) {
-			INFO("Extracting bundled Fundamental package");
+			RK_INFO("Extracting bundled Fundamental package");
 			try {
 				system::unarchiveToDirectory(fundamentalPackage.c_str(), pluginsPath.c_str());
 				loadPlugin(fundamentalDir);
 			}
 			catch (Exception& e) {
-				WARN("Could not extract Fundamental package: %s", e.what());
+				RK_WARN("Could not extract Fundamental package: %s", e.what());
 			}
 		}
 	}
@@ -423,7 +423,7 @@ static void destroyPlugin(Plugin* plugin) {
 			destroyCallback();
 		}
 		catch (Exception& e) {
-			WARN("Could not destroy plugin %s", plugin->slug.c_str());
+			RK_WARN("Could not destroy plugin %s", plugin->slug.c_str());
 		}
 	}
 
@@ -444,7 +444,7 @@ static void destroyPlugin(Plugin* plugin) {
 void RACK_DLL_CALL destroy() {
 	while (!plugins.empty()) {
 		Plugin* plugin = plugins.back();
-		INFO("Destroying plugin %s", plugin->name.c_str());
+		RK_INFO("Destroying plugin %s", plugin->name.c_str());
 		destroyPlugin(plugin);
 		plugins.pop_back();
 	}

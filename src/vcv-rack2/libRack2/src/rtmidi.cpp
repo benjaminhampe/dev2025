@@ -407,7 +407,7 @@ void RACK_DLL_CALL rtmidiInit() {
 			midi::addDriver(driverId, driver);
 		}
 		catch (Exception& e) {
-			WARN("Could not create RtMidiDriver %d", api);
+			RK_WARN("Could not create RtMidiDriver %d", api);
 		}
 	}
 }

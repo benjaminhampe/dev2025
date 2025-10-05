@@ -286,7 +286,7 @@ typedef struct PaWinDsStream
     UINT                 inputBufferSizeBytes;
 
     
-    int              hostBufferSizeFrames; /* input and output host ringbuffers have the same number of frames */
+    unsigned long    hostBufferSizeFrames; /* input and output host ringbuffers have the same number of frames */
     double           framesWritten;
     double           secondsPerHostByte; /* Used to optimize latency calculation for outTime */
     double           pollingPeriodSeconds;
@@ -1411,7 +1411,7 @@ static PaError IsFormatSupported( struct PaUtilHostApiRepresentation *hostApi,
     PaWinDsDeviceInfo *inputWinDsDeviceInfo, *outputWinDsDeviceInfo;
     PaDeviceInfo *inputDeviceInfo, *outputDeviceInfo;
     int inputChannelCount, outputChannelCount;
-    PaSampleFormat inputSampleFormat, outputSampleFormat;
+    //PaSampleFormat inputSampleFormat, outputSampleFormat;
     PaWinDirectSoundStreamInfo *inputStreamInfo, *outputStreamInfo;
 
     if( inputParameters )
@@ -1420,7 +1420,7 @@ static PaError IsFormatSupported( struct PaUtilHostApiRepresentation *hostApi,
         inputDeviceInfo = &inputWinDsDeviceInfo->inheritedDeviceInfo;
 
         inputChannelCount = inputParameters->channelCount;
-        inputSampleFormat = inputParameters->sampleFormat;
+        //inputSampleFormat = inputParameters->sampleFormat;
 
         /* unless alternate device specification is supported, reject the use of
             paUseHostApiSpecificDeviceSpecification */
@@ -1449,7 +1449,7 @@ static PaError IsFormatSupported( struct PaUtilHostApiRepresentation *hostApi,
         outputDeviceInfo = &outputWinDsDeviceInfo->inheritedDeviceInfo;
 
         outputChannelCount = outputParameters->channelCount;
-        outputSampleFormat = outputParameters->sampleFormat;
+        //outputSampleFormat = outputParameters->sampleFormat;
         
         /* unless alternate device specification is supported, reject the use of
             paUseHostApiSpecificDeviceSpecification */
@@ -1817,9 +1817,9 @@ static void CalculatePollingPeriodFrames( unsigned long hostBufferSizeFrames,
                                     unsigned long *pollingPeriodFrames,
                                     double sampleRate, unsigned long userFramesPerBuffer )
 {
-    unsigned long minimumPollingPeriodFrames = (unsigned long)(sampleRate * PA_DS_MINIMUM_POLLING_PERIOD_SECONDS);
+    //unsigned long minimumPollingPeriodFrames = (unsigned long)(sampleRate * PA_DS_MINIMUM_POLLING_PERIOD_SECONDS);
     unsigned long maximumPollingPeriodFrames = (unsigned long)(sampleRate * PA_DS_MAXIMUM_POLLING_PERIOD_SECONDS);
-    unsigned long pollingJitterFrames = (unsigned long)(sampleRate * PA_DS_POLLING_JITTER_SECONDS);
+    //unsigned long pollingJitterFrames = (unsigned long)(sampleRate * PA_DS_POLLING_JITTER_SECONDS);
 
     *pollingPeriodFrames = max( max(1, userFramesPerBuffer / 4), hostBufferSizeFrames / 16 );
 
@@ -1858,8 +1858,8 @@ static void SetStreamInfoLatencies( PaWinDsStream *stream,
     if( stream->bufferProcessor.outputChannelCount > 0 )
     {
         stream->streamRepresentation.streamInfo.outputLatency =
-                (double)(PaUtil_GetBufferProcessorOutputLatencyFrames(&stream->bufferProcessor)
-                    + (stream->hostBufferSizeFrames - effectiveFramesPerBuffer)) / sampleRate;
+                (double)((long)PaUtil_GetBufferProcessorOutputLatencyFrames(&stream->bufferProcessor)
+                    + ((long)stream->hostBufferSizeFrames - (long)effectiveFramesPerBuffer)) / sampleRate;
     }
     else
     {

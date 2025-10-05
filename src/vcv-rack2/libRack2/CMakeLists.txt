@@ -273,7 +273,10 @@ else()
     target_include_directories(${LIB_NAME} PUBLIC ${LIB_HEADER_DIR})
     target_include_directories(${LIB_NAME} PRIVATE ${LIB_SOURCE_DIR})
 	
-	target_compile_definitions(${LIB_NAME} PRIVATE HAVE_LIBRACK2=1)
+
+    target_compile_definitions(${LIB_NAME} PUBLIC HAVE_LIBRACK2=1)
+
+    target_compile_definitions(${LIB_NAME} PUBLIC RACK_SIMD=1)
 	
     target_compile_definitions(${LIB_NAME} PRIVATE _RACK_VERSION="2.6.2")
 
@@ -304,7 +307,7 @@ else()
     if (MSVC)
         set_target_properties(${LIB_NAME} PROPERTIES FOLDER _libRack2)
     else()
-        target_link_options(${LIB_NAME} PRIVATE -mwindows)
+        # target_link_options(${LIB_NAME} PRIVATE -mwindows)
 
         if (WIN32)
             target_link_libraries(${LIB_NAME} PRIVATE shlwapi) # for PathRemoveFileSpecW

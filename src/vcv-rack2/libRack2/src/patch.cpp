@@ -113,7 +113,7 @@ static bool promptClear(std::string text) {
 
 
 void Manager::save(std::string path) {
-	INFO("Saving patch %s", path.c_str());
+	RK_INFO("Saving patch %s", path.c_str());
 	// Dispatch SaveEvent to modules
 	APP->engine->prepareSave();
 
@@ -135,7 +135,7 @@ void Manager::save(std::string path) {
 	// Set compression level to 1 so that a 500MB/s SSD is almost bottlenecked
 	system::archiveDirectory(path, autosavePath, 1);
 	double endTime = system::getTime();
-	INFO("Archived patch in %lf seconds", (endTime - startTime));
+	RK_INFO("Archived patch in %lf seconds", (endTime - startTime));
 }
 
 
@@ -236,7 +236,7 @@ void Manager::saveTemplateDialog() {
 
 void Manager::saveAutosave() {
 	std::string patchPath = system::join(autosavePath, "patch.json");
-	INFO("Saving autosave %s", patchPath.c_str());
+	RK_INFO("Saving autosave %s", patchPath.c_str());
 	json_t* rootJ = toJson();
 	if (!rootJ)
 		return;
@@ -298,7 +298,7 @@ static bool isPatchLegacyV1(std::string path) {
 
 
 void Manager::load(std::string path) {
-	INFO("Loading patch %s", path.c_str());
+	RK_INFO("Loading patch %s", path.c_str());
 
 	clear();
 	clearAutosave();
@@ -313,7 +313,7 @@ void Manager::load(std::string path) {
 		double startTime = system::getTime();
 		system::unarchiveToDirectory(path, autosavePath);
 		double endTime = system::getTime();
-		INFO("Unarchived patch in %lf seconds", (endTime - startTime));
+		RK_INFO("Unarchived patch in %lf seconds", (endTime - startTime));
 	}
 
 	loadAutosave();
@@ -364,7 +364,7 @@ bool Manager::hasAutosave() {
 
 void Manager::loadAutosave() {
 	std::string patchPath = system::join(autosavePath, "patch.json");
-	INFO("Loading autosave %s", patchPath.c_str());
+	RK_INFO("Loading autosave %s", patchPath.c_str());
 	FILE* file = std::fopen(patchPath.c_str(), "r");
 	if (!file)
 		throw Exception("Could not open autosave patch %s", patchPath.c_str());
@@ -519,7 +519,7 @@ void Manager::fromJson(json_t* rootJ) {
 	if (versionJ)
 		version = json_string_value(versionJ);
 	if (version != APP_VERSION) {
-		INFO("Patch was made with Rack %s, current Rack version is %s", version.c_str(), APP_VERSION.c_str());
+		RK_INFO("Patch was made with Rack %s, current Rack version is %s", version.c_str(), APP_VERSION.c_str());
 	}
 
 	// path
@@ -555,7 +555,7 @@ void Manager::fromJson(json_t* rootJ) {
 		}
 	}
 	catch (Exception& e) {
-		WARN("Cannot load patch: %s", e.what());
+		RK_WARN("Cannot load patch: %s", e.what());
 	}
 	// At this point, ModuleWidgets and CableWidgets should own all Modules and Cables.
 	// TODO Assert this

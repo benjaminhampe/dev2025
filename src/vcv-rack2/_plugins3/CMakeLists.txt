@@ -1,0 +1,3 @@
+add_subdirectory(plugin_30_Clonotribe)
+add_subdirectory(plugin_31_8Mode)
+add_subdirectory(plugin_32_SanguineMutants)

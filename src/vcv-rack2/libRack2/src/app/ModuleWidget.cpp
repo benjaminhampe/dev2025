@@ -537,7 +537,7 @@ bool ModuleWidget::pasteJsonAction(json_t* moduleJ) {
 		fromJson(moduleJ);
 	}
 	catch (Exception& e) {
-		WARN("%s", e.what());
+		RK_WARN("%s", e.what());
 		return false;
 	}
 
@@ -566,14 +566,14 @@ void ModuleWidget::copyClipboard() {
 bool ModuleWidget::pasteClipboardAction() {
 	const char* json = glfwGetClipboardString(APP->window->win);
 	if (!json) {
-		WARN("Could not get text from clipboard.");
+		RK_WARN("Could not get text from clipboard.");
 		return false;
 	}
 
 	json_error_t error;
 	json_t* moduleJ = json_loads(json, 0, &error);
 	if (!moduleJ) {
-		WARN("JSON parsing error at %s %d:%d %s", error.source, error.line, error.column, error.text);
+		RK_WARN("JSON parsing error at %s %d:%d %s", error.source, error.line, error.column, error.text);
 		return false;
 	}
 	DEFER({json_decref(moduleJ);});
@@ -587,7 +587,7 @@ void ModuleWidget::load(std::string filename) {
 		throw Exception("Could not load patch file %s", filename.c_str());
 	DEFER({std::fclose(file);});
 
-	INFO("Loading preset %s", filename.c_str());
+	RK_INFO("Loading preset %s", filename.c_str());
 
 	json_error_t error;
 	json_t* moduleJ = json_loadf(file, 0, &error);
@@ -663,7 +663,7 @@ void ModuleWidget::loadDialog() {
 }
 
 void ModuleWidget::save(std::string filename) {
-	INFO("Saving preset %s", filename.c_str());
+	RK_INFO("Saving preset %s", filename.c_str());
 
 	json_t* moduleJ = toJson();
 	assert(moduleJ);
@@ -827,7 +827,7 @@ void ModuleWidget::cloneAction(bool cloneCables) {
 	engine::Module::jsonStripIds(moduleJ);
 
 	// Clone Module
-	INFO("Creating module %s", model->getFullName().c_str());
+	RK_INFO("Creating module %s", model->getFullName().c_str());
 	engine::Module* clonedModule = model->createModule();
 
 	// Set ID here so we can copy module storage dir
@@ -839,12 +839,12 @@ void ModuleWidget::cloneAction(bool cloneCables) {
 		clonedModule->fromJson(moduleJ);
 	}
 	catch (Exception& e) {
-		WARN("%s", e.what());
+		RK_WARN("%s", e.what());
 	}
 	APP->engine->addModule(clonedModule);
 
 	// Clone ModuleWidget
-	INFO("Creating module widget %s", model->getFullName().c_str());
+	RK_INFO("Creating module widget %s", model->getFullName().c_str());
 	ModuleWidget* clonedModuleWidget = model->createModuleWidget(clonedModule);
 	APP->scene->rack->updateModuleOldPositions();
 	APP->scene->rack->addModule(clonedModuleWidget);

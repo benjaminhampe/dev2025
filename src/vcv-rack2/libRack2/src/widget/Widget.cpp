@@ -306,7 +306,7 @@ void Widget::drawChild(Widget* child, const DrawArgs& args, int layer) {
 
     if (!args.vg)
     {
-        FATAL("No args.vg");
+        RK_FATAL("No args.vg");
     }
     else
     {

@@ -577,7 +577,7 @@ static std::map<std::string, std::map<std::string, std::string>> translations;
 
 
 static void loadTranslations() {
-	INFO("Loading translations");
+	RK_INFO("Loading translations");
 	translations.clear();
 	std::string translationsDir = asset::system("translations");
 
@@ -587,10 +587,10 @@ static void loadTranslations() {
 		std::string language = system::getStem(filename);
 		std::string path = system::join(translationsDir, filename);
 
-		INFO("Loading translation %s from %s", language.c_str(), path.c_str());
+		RK_INFO("Loading translation %s from %s", language.c_str(), path.c_str());
 		FILE* file = std::fopen(path.c_str(), "r");
 		if (!file) {
-			WARN("Cannot open translation file %s", path.c_str());
+			RK_WARN("Cannot open translation file %s", path.c_str());
 			continue;
 		}
 		DEFER({std::fclose(file);});
@@ -598,7 +598,7 @@ static void loadTranslations() {
 		json_error_t error;
 		json_t* rootJ = json_loadf(file, 0, &error);
 		if (!rootJ) {
-			WARN("Translation file %s has invalid JSON at %d:%d %s", path.c_str(), error.line, error.column, error.text);
+			RK_WARN("Translation file %s has invalid JSON at %d:%d %s", path.c_str(), error.line, error.column, error.text);
 			continue;
 		}
 		DEFER({json_decref(rootJ);});
@@ -638,7 +638,7 @@ std::string RACK_DLL_CALL translate(const std::string& id, const std::string& la
 	const auto& translation = it->second;
 	const auto it2 = translation.find(id);
 	if (it2 == translation.end()) {
-		WARN("Translation %s not found for %s", id.c_str(), language.c_str());
+		RK_WARN("Translation %s not found for %s", id.c_str(), language.c_str());
 		return "";
 	}
 	return it2->second;

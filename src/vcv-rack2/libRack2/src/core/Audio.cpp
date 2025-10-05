@@ -56,7 +56,7 @@ struct AudioPort : audio::Port {
 		deviceNumOutputs = std::min(getNumOutputs(), NUM_AUDIO_INPUTS);
 		deviceSampleRate = getSampleRate();
 
-		// DEBUG("%p: new device block ____________________________", this);
+		// RK_DEBUG("%p: new device block ____________________________", this);
 		// Claim master module if there is none
 		if (!APP->engine->getMasterModule()) {
 			setMaster();
@@ -71,14 +71,14 @@ struct AudioPort : audio::Port {
 		float engineSampleRate = APP->engine->getSampleRate();
 		float sampleRateRatio = engineSampleRate / deviceSampleRate;
 
-		// DEBUG("%p: %d block, engineOutputBuffer still has %d", this, frames, (int) engineOutputBuffer.size());
+		// RK_DEBUG("%p: %d block, engineOutputBuffer still has %d", this, frames, (int) engineOutputBuffer.size());
 
 		// Consider engine buffers "too full" if they contain a bit more than the audio device's number of frames, converted to engine sample rate.
 		int maxEngineFrames = (int) std::ceil(frames * sampleRateRatio * 2.0) - 1;
 		// If the engine output buffer is too full, clear it to keep latency low. No need to clear if master because it's always cleared below.
 		if (!isMasterCached && (int) engineOutputBuffer.size() > maxEngineFrames) {
 			engineOutputBuffer.clear();
-			// DEBUG("%p: clearing engine output", this);
+			// RK_DEBUG("%p: clearing engine output", this);
 		}
 
 		if (deviceNumInputs > 0) {
@@ -105,7 +105,7 @@ struct AudioPort : audio::Port {
 	void processBuffer(const float* input, int inputStride, float* output, int outputStride, int frames) override {
 		// Step engine
 		if (isMaster() && requestedEngineFrames > 0) {
-			// DEBUG("%p: %d block, stepping %d", this, frames, requestedEngineFrames);
+			// RK_DEBUG("%p: %d block, stepping %d", this, frames, requestedEngineFrames);
 			APP->engine->stepBlock(requestedEngineFrames);
 		}
 	}
@@ -140,22 +140,22 @@ struct AudioPort : audio::Port {
 			}
 		}
 
-		// DEBUG("%p: %d block, engineInputBuffer left %d", this, frames, (int) engineInputBuffer.size());
+		// RK_DEBUG("%p: %d block, engineInputBuffer left %d", this, frames, (int) engineInputBuffer.size());
 
 		// If the engine input buffer is too full, clear it to keep latency low.
 		int maxEngineFrames = (int) std::ceil(frames * sampleRateRatio * 2.0) - 1;
 		if ((int) engineInputBuffer.size() > maxEngineFrames) {
 			engineInputBuffer.clear();
-			// DEBUG("%p: clearing engine input", this);
+			// RK_DEBUG("%p: clearing engine input", this);
 		}
 
-		// DEBUG("%p %s:\tframes %d requestedEngineFrames %d\toutputBuffer %d engineInputBuffer %d\t", this, isMasterCached ? "master" : "secondary", frames, requestedEngineFrames, engineOutputBuffer.size(), engineInputBuffer.size());
+		// RK_DEBUG("%p %s:\tframes %d requestedEngineFrames %d\toutputBuffer %d engineInputBuffer %d\t", this, isMasterCached ? "master" : "secondary", frames, requestedEngineFrames, engineOutputBuffer.size(), engineInputBuffer.size());
 	}
 
 	void onStartStream() override {
 		engineInputBuffer.clear();
 		engineOutputBuffer.clear();
-		// DEBUG("onStartStream");
+		// RK_DEBUG("onStartStream");
 	}
 
 	void onStopStream() override {
@@ -168,7 +168,7 @@ struct AudioPort : audio::Port {
 		// setMaster(false);
 		if (APP->engine->getMasterModule() == module)
 			APP->engine->setMasterModule_NoLock(NULL);
-		// DEBUG("onStopStream");
+		// RK_DEBUG("onStopStream");
 	}
 };
 
@@ -432,7 +432,7 @@ struct Audio2Display : LedDisplay {
             // Draw plug lights
             if (!args.vg)
             {
-                FATAL("No args.vg");
+                RK_FATAL("No args.vg");
             }
             else
             {

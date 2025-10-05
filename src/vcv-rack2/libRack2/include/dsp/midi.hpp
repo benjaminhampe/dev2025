@@ -363,7 +363,7 @@ struct MidiParser {
 	}
 
 	void processMessage(const midi::Message& msg) {
-		// DEBUG("MIDI: %ld %s", msg.getFrame(), msg.toString().c_str());
+		// RK_DEBUG("MIDI: %ld %s", msg.getFrame(), msg.toString().c_str());
 
 		switch (msg.getStatus()) {
 			// note off

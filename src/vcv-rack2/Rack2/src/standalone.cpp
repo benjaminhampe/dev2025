@@ -46,7 +46,7 @@ static void fatalSignalHandler(int sig) {
 	signal(sig, NULL);
 
 	std::string stackTrace = system::getStackTrace();
-    FATAL("Fatal signal %d. Stack trace:\n%s", sig, stackTrace.c_str());
+    RK_FATAL("Fatal signal %d. Stack trace:\n%s", sig, stackTrace.c_str());
 
 	// Re-raise signal
 	raise(sig);
@@ -150,22 +150,22 @@ int main(int argc, char* argv[]) {
 	}
 
 	// Log environment
-    INFO("%s", appInfo.c_str());
-    INFO("%s", system::getOperatingSystemInfo().c_str());
+    RK_INFO("%s", appInfo.c_str());
+    RK_INFO("%s", system::getOperatingSystemInfo().c_str());
 	std::string argsList;
 	for (int i = 0; i < argc; i++) {
 		argsList += argv[i];
 		argsList += " ";
 	}
-    INFO("Args: %s", argsList.c_str());
+    RK_INFO("Args: %s", argsList.c_str());
 	if (settings::devMode)
-        INFO("Development mode");
-    INFO("System directory: %s", asset::systemDir.c_str());
-    INFO("User directory: %s", asset::userDir.c_str());
+        RK_INFO("Development mode");
+    RK_INFO("System directory: %s", asset::systemDir.c_str());
+    RK_INFO("User directory: %s", asset::userDir.c_str());
 #if defined ARCH_MAC
-    INFO("Bundle path: %s", asset::bundlePath.c_str());
+    RK_INFO("Bundle path: %s", asset::bundlePath.c_str());
 #endif
-    INFO("System time: %s", string::formatTimeISO(system::getUnixTime()).c_str());
+    RK_INFO("System time: %s", string::formatTimeISO(system::getUnixTime()).c_str());
 
 	string::init();
 
@@ -191,9 +191,9 @@ int main(int argc, char* argv[]) {
 		exit(1);
 	}
 
-    INFO("Initializing network");
+    RK_INFO("Initializing network");
 	network::init();
-    INFO("Initializing audio");
+    RK_INFO("Initializing audio");
 	audio::init();
 	rtaudioInit();
 #if defined ARCH_MAC
@@ -202,42 +202,42 @@ int main(int argc, char* argv[]) {
 		osdialog_message(OSDIALOG_ERROR, OSDIALOG_OK, msg.c_str());
 	}
 #endif
-    INFO("Initializing MIDI");
+    RK_INFO("Initializing MIDI");
 	midi::init();
 	rtmidiInit();
 	keyboard::init();
 	gamepad::init();
 	midiloopback::init();
-    INFO("Initializing plugins");
+    RK_INFO("Initializing plugins");
 	plugin::init();
-    INFO("Initializing browser");
+    RK_INFO("Initializing browser");
 	app::browserInit();
-    INFO("Initializing library");
+    RK_INFO("Initializing library");
 	library::init();
 	if (!settings::headless) {
-        INFO("Initializing UI");
+        RK_INFO("Initializing UI");
 		ui::init();
-        INFO("Initializing window");
+        RK_INFO("Initializing window");
 		window::init();
 	}
 
 	// Initialize context
 	contextSet(new Context);
-    INFO("Creating MIDI loopback");
+    RK_INFO("Creating MIDI loopback");
 	APP->midiLoopbackContext = new midiloopback::Context;
-    INFO("Creating engine");
+    RK_INFO("Creating engine");
 	APP->engine = new engine::Engine;
-    INFO("Creating history state");
+    RK_INFO("Creating history state");
 	APP->history = new history::State;
-    INFO("Creating event state");
+    RK_INFO("Creating event state");
 	APP->event = new widget::EventState;
-    INFO("Creating scene");
+    RK_INFO("Creating scene");
 	APP->scene = new app::Scene;
 	APP->event->rootWidget = APP->scene;
-    INFO("Creating patch manager");
+    RK_INFO("Creating patch manager");
 	APP->patch = new patch::Manager;
 	if (!settings::headless) {
-        INFO("Creating window");
+        RK_INFO("Creating window");
 		APP->window = new window::Window;
 	}
 
@@ -268,24 +268,24 @@ int main(int argc, char* argv[]) {
 		getchar();
 	}
 	else if (screenshot) {
-        INFO("Taking screenshots of all modules at %gx zoom", screenshotZoom);
+        RK_INFO("Taking screenshots of all modules at %gx zoom", screenshotZoom);
 		APP->window->screenshotModules(asset::user("screenshots"), screenshotZoom);
 	}
 	else {
-        INFO("Running window");
+        RK_INFO("Running window");
 		APP->window->run();
-        INFO("Stopped window");
+        RK_INFO("Stopped window");
 
-        // INFO("Destroying window");
+        // RK_INFO("Destroying window");
 		// delete APP->window;
 		// APP->window = NULL;
-        // INFO("Re-creating window");
+        // RK_INFO("Re-creating window");
 		// APP->window = new window::Window;
 		// APP->window->run();
 	}
 
 	// Destroy context
-    INFO("Deleting context");
+    RK_INFO("Deleting context");
 	delete APP;
 	contextSet(NULL);
 	if (!settings::headless) {
@@ -294,23 +294,23 @@ int main(int argc, char* argv[]) {
 
 	// Destroy environment
 	if (!settings::headless) {
-        INFO("Destroying window");
+        RK_INFO("Destroying window");
 		window::destroy();
-        INFO("Destroying UI");
+        RK_INFO("Destroying UI");
 		ui::destroy();
 	}
-    INFO("Destroying library");
+    RK_INFO("Destroying library");
 	library::destroy();
-    INFO("Destroying MIDI");
+    RK_INFO("Destroying MIDI");
 	midi::destroy();
-    INFO("Destroying audio");
+    RK_INFO("Destroying audio");
 	audio::destroy();
-    INFO("Destroying plugins");
+    RK_INFO("Destroying plugins");
 	plugin::destroy();
-    INFO("Destroying network");
+    RK_INFO("Destroying network");
 	network::destroy();
 	settings::destroy();
-    INFO("Destroying logger");
+    RK_INFO("Destroying logger");
 	logger::destroy();
 
 	// Restart executable if requested

@@ -43,7 +43,7 @@ set(BENNI_USE_LTO 0)
 set(BENNI_USE_LLD 0) # Parallel Linker
 
 set(BENNI_USE_OMIT_FRAMEPOINTER 0)
-set(BENNI_MINGW_DIR C:/sdk/mingw64_1706_llvm)
+set(BENNI_MINGW_DIR C:/sdk/Qt/Tools/llvm-mingw1706_64)
 set(BENNI_QT6_DIR C:/sdk/Qt/6.9.1/llvm-mingw_64)
 # set(BENNI_MINGW_DIR ${CMAKE_CURRENT_LIST_DIR}/toolchain/mingw1310_64)
 # set(BENNI_QT6_DIR ${CMAKE_CURRENT_LIST_DIR}/toolchain/Qt-6.8.2_mingw_64)

@@ -1,0 +1,273 @@
+{
+  "plugin": "Clonotribe",
+  "model": "Clonotribe",
+  "version": "2.1.0",
+  "params": [
+    {
+      "value": 1.0,
+      "id": 0
+    },
+    {
+      "value": 0.55060255527496338,
+      "id": 1
+    },
+    {
+      "value": 0.0,
+      "id": 2
+    },
+    {
+      "value": 0.38795188069343567,
+      "id": 3
+    },
+    {
+      "value": 0.0,
+      "id": 4
+    },
+    {
+      "value": 0.0,
+      "id": 5
+    },
+    {
+      "value": 0.0,
+      "id": 6
+    },
+    {
+      "value": 0.0,
+      "id": 7
+    },
+    {
+      "value": 0.0,
+      "id": 8
+    },
+    {
+      "value": 0.0,
+      "id": 9
+    },
+    {
+      "value": 0.61445796489715576,
+      "id": 10
+    },
+    {
+      "value": 0.09277111291885376,
+      "id": 11
+    },
+    {
+      "value": 1.0,
+      "id": 12
+    },
+    {
+      "value": 0.078313469886779785,
+      "id": 13
+    },
+    {
+      "value": 0.33132535219192505,
+      "id": 14
+    },
+    {
+      "value": 2.0,
+      "id": 15
+    },
+    {
+      "value": 2.0,
+      "id": 16
+    },
+    {
+      "value": 0.0,
+      "id": 17
+    },
+    {
+      "value": 0.0,
+      "id": 18
+    },
+    {
+      "value": 0.0,
+      "id": 19
+    },
+    {
+      "value": 0.10722889751195908,
+      "id": 20
+    },
+    {
+      "value": 0.0,
+      "id": 21
+    },
+    {
+      "value": 0.0,
+      "id": 22
+    },
+    {
+      "value": 0.0,
+      "id": 23
+    },
+    {
+      "value": 0.0,
+      "id": 24
+    },
+    {
+      "value": 0.0,
+      "id": 25
+    },
+    {
+      "value": 0.0,
+      "id": 26
+    },
+    {
+      "value": 0.0,
+      "id": 27
+    },
+    {
+      "value": 0.0,
+      "id": 28
+    },
+    {
+      "value": 0.0,
+      "id": 29
+    },
+    {
+      "value": 0.0,
+      "id": 30
+    },
+    {
+      "value": 0.0,
+      "id": 31
+    },
+    {
+      "value": 0.0,
+      "id": 32
+    },
+    {
+      "value": 0.0,
+      "id": 33
+    },
+    {
+      "value": 0.0,
+      "id": 34
+    },
+    {
+      "value": 0.24939754605293274,
+      "id": 35
+    }
+  ],
+  "data": {
+    "sequencer": {
+      "sixteenStepMode": false,
+      "currentStep": 0,
+      "recordingStep": 0,
+      "fluxMode": true,
+      "steps": [
+        {
+          "pitch": -2.0250415802001953,
+          "gate": 10.0,
+          "gateTime": 0.80000001192092896,
+          "skipped": false,
+          "muted": false,
+          "accent": false,
+          "glide": true
+        },
+        {
+          "pitch": -2.0250415802001953,
+          "gate": 10.0,
+          "gateTime": 0.80000001192092896,
+          "skipped": false,
+          "muted": true,
+          "accent": true,
+          "glide": false
+        },
+        {
+          "pitch": -1.7310464382171631,
+          "gate": 10.0,
+          "gateTime": 0.80000001192092896,
+          "skipped": false,
+          "muted": false,
+          "accent": true,
+          "glide": true
+        },
+        {
+          "pitch": -2.652902364730835,
+          "gate": 10.0,
+          "gateTime": 0.80000001192092896,
+          "skipped": false,
+          "muted": false,
+          "accent": false,
+          "glide": true
+        },
+        {
+          "pitch": -2.652902364730835,
+          "gate": 10.0,
+          "gateTime": 0.80000001192092896,
+          "skipped": false,
+          "muted": false,
+          "accent": true,
+          "glide": true
+        },
+        {
+          "pitch": -2.652902364730835,
+          "gate": 10.0,
+          "gateTime": 0.80000001192092896,
+          "skipped": false,
+          "muted": true,
+          "accent": true,
+          "glide": false
+        },
+        {
+          "pitch": -1.5610320568084717,
+          "gate": 10.0,
+          "gateTime": 0.80000001192092896,
+          "skipped": false,
+          "muted": true,
+          "accent": false,
+          "glide": true
+        },
+        {
+          "pitch": -1.5610320568084717,
+          "gate": 10.0,
+          "gateTime": 0.80000001192092896,
+          "skipped": false,
+          "muted": false,
+          "accent": false,
+          "glide": true
+        }
+      ],
+      "drumPatterns": [
+        [
+          true,
+          false,
+          true,
+          false,
+          true,
+          false,
+          true,
+          false
+        ],
+        [
+          false,
+          false,
+          true,
+          false,
+          false,
+          false,
+          true,
+          false
+        ],
+        [
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true
+        ]
+      ]
+    },
+    "selectedDrumPart": 0,
+    "selectedStepForEditing": 4,
+    "gateTimesLocked": false,
+    "lfoSampleAndHoldMode": false,
+    "syncHalfTempo": false,
+    "selectedDrumKit": 1,
+    "selectedTempoRange": 2,
+    "selectedNoiseType": 0
+  }
+}
