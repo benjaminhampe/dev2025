@@ -9,13 +9,13 @@ namespace rack {
 namespace library {
 
 
-struct UpdateInfo {
-	std::string name;
-	std::string version;
-	std::string changelogUrl;
-	/** Only defined if plugin does not meet Rack version requirement */
-	std::string minRackVersion;
-	bool downloaded = false;
+struct RACK_DLL_API UpdateInfo {
+    std::string name;
+    std::string version;
+    std::string changelogUrl;
+    /** Only defined if plugin does not meet Rack version requirement */
+    std::string minRackVersion;
+    bool downloaded = false;
 };
 
 
@@ -23,33 +23,33 @@ RACK_DLL_API void RACK_DLL_CALL init();
 RACK_DLL_API void RACK_DLL_CALL destroy();
 
 RACK_DLL_API void RACK_DLL_CALL checkAppUpdate();
-bool isAppUpdateAvailable();
+RACK_DLL_API bool RACK_DLL_CALL isAppUpdateAvailable();
 
-bool isLoggedIn();
-PRIVATE void logIn(std::string email, std::string password);
-PRIVATE void logOut();
-PRIVATE void checkUpdates();
-PRIVATE bool hasUpdates();
-PRIVATE void syncUpdate(std::string slug);
-PRIVATE void syncUpdates();
+RACK_DLL_API bool RACK_DLL_CALL isLoggedIn();
+RACK_DLL_API void RACK_DLL_CALL logIn(std::string email, std::string password);
+RACK_DLL_API void RACK_DLL_CALL logOut();
+RACK_DLL_API void RACK_DLL_CALL checkUpdates();
+RACK_DLL_API bool RACK_DLL_CALL hasUpdates();
+RACK_DLL_API void RACK_DLL_CALL syncUpdate(std::string slug);
+RACK_DLL_API void RACK_DLL_CALL syncUpdates();
 
 
-extern std::string appVersion;
-extern std::string appDownloadUrl;
-extern std::string appChangelogUrl;
+extern RACK_DLL_API std::string appVersion;
+extern RACK_DLL_API std::string appDownloadUrl;
+extern RACK_DLL_API std::string appChangelogUrl;
 
-extern std::string loginStatus;
+extern RACK_DLL_API std::string loginStatus;
 // plugin slug -> UpdateInfo
-extern std::map<std::string, UpdateInfo> updateInfos;
-extern std::string updateStatus;
-extern std::string updateSlug;
-extern float updateProgress;
+extern RACK_DLL_API std::map<std::string, UpdateInfo> updateInfos;
+extern RACK_DLL_API std::string updateStatus;
+extern RACK_DLL_API std::string updateSlug;
+extern RACK_DLL_API float updateProgress;
 /** Whether plugins are currently downloading. */
-extern bool isSyncing;
+extern RACK_DLL_API bool isSyncing;
 /** Whether the UI should ask the user to restart after updating plugins. */
-extern bool restartRequested;
+extern RACK_DLL_API bool restartRequested;
 /** Whether the UI should refresh the plugin updates menu. */
-extern bool refreshRequested;
+extern RACK_DLL_API bool refreshRequested;
 
 
 } // namespace library

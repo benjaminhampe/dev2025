@@ -1,9 +1,7 @@
 #pragma once
-#include <stdarg.h>
-#include <vector>
-
 #include <common.hpp>
-
+#include <cstdarg>
+#include <vector>
 
 namespace rack {
 /** Supplemental `std::string` functions */
@@ -23,9 +21,9 @@ T convertFArg(const T& t) {return t;}
 inline const char* convertFArg(const std::string& s) {return s.c_str();}
 template<typename... Args>
 std::string f(Args... args) {
-	// Allows accessing the original f() above
-	typedef std::string (*FType)(const char* format, ...);
-	return FType(f)(convertFArg(args)...);
+    // Allows accessing the original f() above
+    typedef std::string (*FType)(const char* format, ...);
+    return FType(f)(convertFArg(args)...);
 }
 
 /** Replaces all characters to lowercase letters */
@@ -58,34 +56,34 @@ Throws std::runtime_error if string is invalid.
 RACK_DLL_API std::vector<uint8_t> RACK_DLL_CALL fromBase64(const std::string& str);
 
 struct RACK_DLL_API CaseInsensitiveCompare {
-	/** Returns whether `a < b` using case-insensitive lexical comparison. */
-	bool operator()(const std::string& a, const std::string& b) const;
+    /** Returns whether `a < b` using case-insensitive lexical comparison. */
+    bool operator()(const std::string& a, const std::string& b) const;
 };
 
 /** Joins an container (vector, list, etc) of std::strings with an optional separator string.
 */
 template <typename TContainer>
 std::string join(const TContainer& container, std::string seperator = "") {
-	std::string s;
-	bool first = true;
-	for (const auto& c : container) {
-		if (!first)
-			s += seperator;
-		first = false;
-		s += c;
-	}
-	return s;
+    std::string s;
+    bool first = true;
+    for (const auto& c : container) {
+        if (!first)
+            s += seperator;
+        first = false;
+        s += c;
+    }
+    return s;
 }
 
 /** Splits a string into a vector of tokens.
 If `maxTokens > 0`, limits the number of tokens.
 Tokens do not include the separator string.
 Examples:
-	split("a+b+c", "+") // {"a", "b", "c"}
-	split("abc", "+") // {"abc"}
-	split("a++c", "+") // {"a", "", "c"}
-	split("", "+") // {}
-	split("abc", "") // throws rack::Exception
+    split("a+b+c", "+") // {"a", "b", "c"}
+    split("abc", "+") // {"abc"}
+    split("a++c", "+") // {"a", "", "c"}
+    split("", "+") // {}
+    split("abc", "") // throws rack::Exception
 */
 RACK_DLL_API std::vector<std::string> RACK_DLL_CALL split(const std::string& s, const std::string& seperator, size_t maxTokens = 0);
 
@@ -150,33 +148,33 @@ If neither part can be parsed as an integer (such as "alpha" and "beta"), the pa
 
 For example, the following versions are sorted earliest to latest.
 
-	1.a.0
-	1.b.0
-	1.0.0
-	1.0.1
-	1.2.0
-	1.10.0
-	2.0.0
+    1.a.0
+    1.b.0
+    1.0.0
+    1.0.1
+    1.2.0
+    1.10.0
+    2.0.0
 */
 struct RACK_DLL_API Version {
-	std::vector<std::string> parts;
+    std::vector<std::string> parts;
 
-	Version() {}
-	Version(const std::string& s);
-	Version(const char* s) : Version(std::string(s)) {}
-	operator std::string() const;
-	/** Returns whether this version is earlier than `other`. */
-	bool operator<(const Version& other);
+    Version() {}
+    Version(const std::string& s);
+    Version(const char* s) : Version(std::string(s)) {}
+    operator std::string() const;
+    /** Returns whether this version is earlier than `other`. */
+    bool operator<(const Version& other);
 
-	std::string getMajor() const {
-		return get(parts, 0, "");
-	}
-	std::string getMinor() const {
-		return get(parts, 1, "");
-	}
-	std::string getRevision() const {
-		return get(parts, 2, "");
-	}
+    std::string getMajor() const {
+        return get(parts, 0, "");
+    }
+    std::string getMinor() const {
+        return get(parts, 1, "");
+    }
+    std::string getRevision() const {
+        return get(parts, 2, "");
+    }
 };
 
 

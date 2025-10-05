@@ -1,9 +1,6 @@
 #pragma once
 #include <nanovg.h>
-
-#include <common.hpp>
 #include <string.hpp>
-
 
 namespace rack {
 /** Utilities for `NVGcolor` */

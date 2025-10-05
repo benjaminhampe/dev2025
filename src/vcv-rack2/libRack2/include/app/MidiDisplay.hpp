@@ -11,48 +11,48 @@ namespace app {
 
 
 struct RACK_DLL_API MidiDriverChoice : LedDisplayChoice {
-	midi::Port* port;
-	void onAction(const ActionEvent& e) override;
-	void step() override;
+    midi::Port* port;
+    void onAction(const ActionEvent& e) override;
+    void step() override;
 };
 
 
 struct RACK_DLL_API MidiDeviceChoice : LedDisplayChoice {
-	midi::Port* port;
-	void onAction(const ActionEvent& e) override;
-	void step() override;
+    midi::Port* port;
+    void onAction(const ActionEvent& e) override;
+    void step() override;
 };
 
 
 struct RACK_DLL_API MidiChannelChoice : LedDisplayChoice {
-	midi::Port* port;
-	void onAction(const ActionEvent& e) override;
-	void step() override;
+    midi::Port* port;
+    void onAction(const ActionEvent& e) override;
+    void step() override;
 };
 
 
 struct RACK_DLL_API MidiDisplay : LedDisplay {
-	MidiDriverChoice* driverChoice;
-	LedDisplaySeparator* driverSeparator;
-	MidiDeviceChoice* deviceChoice;
-	LedDisplaySeparator* deviceSeparator;
-	MidiChannelChoice* channelChoice;
-	void setMidiPort(midi::Port* port);
+    MidiDriverChoice* driverChoice;
+    LedDisplaySeparator* driverSeparator;
+    MidiDeviceChoice* deviceChoice;
+    LedDisplaySeparator* deviceSeparator;
+    MidiChannelChoice* channelChoice;
+    void setMidiPort(midi::Port* port);
 };
 
 
 /** A virtual MIDI port graphic that displays an MIDI menu when clicked. */
 struct RACK_DLL_API MidiButton : SvgButton {
-	midi::Port* port;
-	void setMidiPort(midi::Port* port);
-	void onAction(const ActionEvent& e) override;
+    midi::Port* port;
+    void setMidiPort(midi::Port* port);
+    void onAction(const ActionEvent& e) override;
 };
 
 
 /** Appends menu items to the given menu with driver, device, etc.
 Useful alternative to putting a MidiDisplay on your module's panel.
 */
-void appendMidiMenu(ui::Menu* menu, midi::Port* port);
+RACK_DLL_API void RACK_DLL_CALL appendMidiMenu(ui::Menu* menu, midi::Port* port);
 
 
 } // namespace app

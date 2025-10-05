@@ -11,63 +11,63 @@ namespace app {
 
 
 struct RACK_DLL_API AudioDriverChoice : LedDisplayChoice {
-	audio::Port* port;
-	void onAction(const ActionEvent& e) override;
-	void step() override;
+    audio::Port* port;
+    void onAction(const ActionEvent& e) override;
+    void step() override;
 };
 
 
 struct RACK_DLL_API AudioDeviceChoice : LedDisplayChoice {
-	audio::Port* port;
-	void onAction(const ActionEvent& e) override;
-	void step() override;
+    audio::Port* port;
+    void onAction(const ActionEvent& e) override;
+    void step() override;
 };
 
 
 struct RACK_DLL_API AudioSampleRateChoice : LedDisplayChoice {
-	audio::Port* port;
-	void onAction(const ActionEvent& e) override;
-	void step() override;
+    audio::Port* port;
+    void onAction(const ActionEvent& e) override;
+    void step() override;
 };
 
 
 struct RACK_DLL_API AudioBlockSizeChoice : LedDisplayChoice {
-	audio::Port* port;
-	void onAction(const ActionEvent& e) override;
-	void step() override;
+    audio::Port* port;
+    void onAction(const ActionEvent& e) override;
+    void step() override;
 };
 
 
 struct RACK_DLL_API AudioDeviceMenuChoice : AudioDeviceChoice {
-	void onAction(const ActionEvent& e) override;
+    void onAction(const ActionEvent& e) override;
 };
 
 
 /** Designed for Audio-8 and Audio-16 module. */
 struct RACK_DLL_API AudioDisplay : LedDisplay {
-	AudioDriverChoice* driverChoice;
-	LedDisplaySeparator* driverSeparator;
-	AudioDeviceChoice* deviceChoice;
-	LedDisplaySeparator* deviceSeparator;
-	AudioSampleRateChoice* sampleRateChoice;
-	LedDisplaySeparator* sampleRateSeparator;
-	AudioBlockSizeChoice* bufferSizeChoice;
-	void setAudioPort(audio::Port* port);
+    AudioDriverChoice* driverChoice;
+    LedDisplaySeparator* driverSeparator;
+    AudioDeviceChoice* deviceChoice;
+    LedDisplaySeparator* deviceSeparator;
+    AudioSampleRateChoice* sampleRateChoice;
+    LedDisplaySeparator* sampleRateSeparator;
+    AudioBlockSizeChoice* bufferSizeChoice;
+    void setAudioPort(audio::Port* port);
 };
 
 
 /** A virtual audio port graphic that displays an audio menu when clicked. */
 struct RACK_DLL_API AudioButton : SvgButton {
-	audio::Port* port;
-	void setAudioPort(audio::Port* port);
-	void onAction(const ActionEvent& e) override;
+    audio::Port* port;
+    void setAudioPort(audio::Port* port);
+    void onAction(const ActionEvent& e) override;
 };
 
 
 /** Appends menu items to the given menu with driver, device, etc.
 Useful alternative to putting an AudioDisplay on your module's panel.
 */
-void appendAudioMenu(ui::Menu* menu, audio::Port* port);
+RACK_DLL_API void RACK_DLL_CALL appendAudioMenu(ui::Menu* menu, audio::Port* port);
 
 
 } // namespace app

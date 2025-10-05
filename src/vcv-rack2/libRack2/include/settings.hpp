@@ -60,10 +60,10 @@ extern RACK_DLL_API float haloBrightness;
 /** Allows rack to hide and lock the cursor position when dragging knobs etc. */
 extern RACK_DLL_API bool allowCursorLock;
 enum KnobMode {
-	KNOB_MODE_LINEAR,
-	KNOB_MODE_SCALED_LINEAR,
-	KNOB_MODE_ROTARY_ABSOLUTE,
-	KNOB_MODE_ROTARY_RELATIVE,
+    KNOB_MODE_LINEAR,
+    KNOB_MODE_SCALED_LINEAR,
+    KNOB_MODE_ROTARY_ABSOLUTE,
+    KNOB_MODE_ROTARY_RELATIVE,
 };
 extern RACK_DLL_API KnobMode knobMode;
 extern RACK_DLL_API bool knobScroll;
@@ -92,28 +92,28 @@ extern RACK_DLL_API bool verifyHttpsCerts;
 extern RACK_DLL_API bool showTipsOnLaunch;
 extern RACK_DLL_API int tipIndex;
 enum BrowserSort {
-	BROWSER_SORT_UPDATED,
-	BROWSER_SORT_LAST_USED,
-	BROWSER_SORT_MOST_USED,
-	BROWSER_SORT_BRAND,
-	BROWSER_SORT_NAME,
-	BROWSER_SORT_RANDOM,
+    BROWSER_SORT_UPDATED,
+    BROWSER_SORT_LAST_USED,
+    BROWSER_SORT_MOST_USED,
+    BROWSER_SORT_BRAND,
+    BROWSER_SORT_NAME,
+    BROWSER_SORT_RANDOM,
 };
 extern RACK_DLL_API BrowserSort browserSort;
 extern RACK_DLL_API float browserZoom;
 extern RACK_DLL_API json_t* pluginSettingsJ;
 
 struct RACK_DLL_API ModuleInfo {
-	bool enabled = true;
-	bool favorite = false;
-	int added = 0;
-	double lastAdded = NAN;
+    bool enabled = true;
+    bool favorite = false;
+    int added = 0;
+    double lastAdded = NAN;
 };
 /** pluginSlug -> (moduleSlug -> ModuleInfo) */
 extern RACK_DLL_API std::map<std::string, std::map<std::string, ModuleInfo>> moduleInfos;
 /** Returns a ModuleInfo if exists for the given slugs.
 */
-ModuleInfo* getModuleInfo(const std::string& pluginSlug, const std::string& moduleSlug);
+RACK_DLL_API ModuleInfo* RACK_DLL_CALL getModuleInfo(const std::string& pluginSlug, const std::string& moduleSlug);
 
 /** The VCV JSON API returns the data structure
 {pluginSlug: [moduleSlugs] or true}
@@ -121,13 +121,13 @@ where "true" represents that the user is subscribed to the plugin (all modules a
 C++ isn't weakly typed, so we need the PluginWhitelist data structure to store this information.
 */
 struct RACK_DLL_API PluginWhitelist {
-	bool subscribed = false;
-	std::set<std::string> moduleSlugs;
+    bool subscribed = false;
+    std::set<std::string> moduleSlugs;
 };
 extern std::map<std::string, PluginWhitelist> moduleWhitelist;
 
-bool isModuleWhitelisted(const std::string& pluginSlug, const std::string& moduleSlug);
-void resetCables();
+RACK_DLL_API bool RACK_DLL_CALL isModuleWhitelisted(const std::string& pluginSlug, const std::string& moduleSlug);
+RACK_DLL_API void RACK_DLL_CALL resetCables();
 
 RACK_DLL_API void RACK_DLL_CALL init();
 RACK_DLL_API void RACK_DLL_CALL destroy();

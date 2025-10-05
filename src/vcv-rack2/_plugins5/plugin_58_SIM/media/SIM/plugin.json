@@ -1,0 +1,144 @@
+{
+  "slug": "SIM",
+  "name": "SIM",
+  "version": "2.1.2",
+  "license": "BSD-3-Clause",
+  "brand": "SIM",
+  "author": "Dan Sable",
+  "authorEmail": "imdansable@gmail.com",
+  "pluginUrl": "https://github.com/imDanSable/SIM",
+  "manualUrl": "https://github.com/imDanSable/SIM/blob/master/README.md",
+  "changelogUrl": "https://github.com/imDanSable/SIM/blob/master/CHANGELOG.md",
+  "sourceUrl": "https://github.com/imDanSable/SIM",
+  "modules": [
+    {
+      "slug": "Blank",
+      "name": "Blank",
+      "description": "Blank",
+      "tags": [
+        "Blank"
+      ]
+    },
+    {
+      "slug": "Phi",
+      "name": "Phi",
+      "description": "Sequence over a polyphonic input. The sequence properties like glide, start, length, can be modified using expanders.",
+      "manualUrl": "https://github.com/imDanSable/SIM?tab=readme-ov-file#phi",
+      "tags": [
+        "Sequencer",
+        "Arpeggiator"
+      ]
+    },
+    {
+      "slug": "Via",
+      "name": "Via",
+      "description": "Does nothing by itself. The signals passing through Via can be modified using compatible expanders.",
+      "manualUrl": "https://github.com/imDanSable/SIM?tab=readme-ov-file#via",
+      "tags": [
+        "Polyphonic"
+      ]
+    },
+    {
+      "slug": "Arr",
+      "name": "Arr",
+      "description": "An array of quantizable values into a polyphonic signal. Use expanders to add, rotate, insert, remove, or get multiple sub-arrays.",
+      "manualUrl": "https://github.com/imDanSable/SIM?tab=readme-ov-file#arr",
+      "tags": [
+        "Polyphonic",
+        "Quantizer"
+      ]
+    },
+    {
+      "slug": "Coerce",
+      "name": "Coerce",
+      "description": "Quantize an incoming polyphonic signal to voltages of another polyphonic signal.",
+      "manualUrl": "https://github.com/imDanSable/SIM?tab=readme-ov-file#coerce",
+      "tags": [
+        "Quantizer",
+        "Polyphonic"
+      ]
+    },
+    {
+      "slug": "Coerce6",
+      "name": "Coerce6",
+      "description": "Quantize incoming polyphonic signals to voltages of another polyphonic signal.",
+      "manualUrl": "https://github.com/imDanSable/SIM?tab=readme-ov-file#coerce6",
+      "tags": [
+        "Quantizer",
+        "Polyphonic"
+      ]
+    },
+    {
+      "slug": "Spike",
+      "name": "Spike",
+      "description": "Gate sequencer. Modify individual gate duration, gate delay, repetitions, or chance using expanders.",
+      "manualUrl": "https://github.com/imDanSable/SIM?tab=readme-ov-file#spike",
+      "tags": [
+        "Sequencer"
+      ]
+    },
+    {
+      "slug": "ReX",
+      "name": "ReX",
+      "description": "Generic Input expander for several SIM modules. Modifies start and length of the data inside the expandable.",
+      "manualUrl": "https://github.com/imDanSable/SIM?tab=readme-ov-file#rex",
+      "tags": [
+        "Expander"
+      ]
+    },
+    {
+      "slug": "InX",
+      "name": "InX",
+      "description": "Input expander for several SIM modules. Can overwrite, insert or AND or offset data inside the expanded module.",
+      "manualUrl": "https://github.com/imDanSable/SIM?tab=readme-ov-file#inx",
+      "tags": [
+        "Expander"
+      ]
+    },
+    {
+      "slug": "OutX",
+      "name": "OutX",
+      "description": "Output expander for several SIM modules. Can copy or subtract data from the expanded module per channel or normalled.",
+      "manualUrl": "https://github.com/imDanSable/SIM?tab=readme-ov-file#outx",
+      "tags": [
+        "Expander"
+      ]
+    },
+    {
+      "slug": "Bank",
+      "name": "Bank",
+      "description": "An expandable bank of 16 On/Off values. Compatible with SIM expanders.",
+      "manualUrl": "https://github.com/imDanSable/SIM?tab=readme-ov-file#bank",
+      "tags": [
+        "Polyphonic"
+      ]
+    },
+    {
+      "slug": "Tie",
+      "name": "Tie",
+      "description": "A legato",
+      "manualUrl": "https://github.com/imDanSable/SIM?tab=readme-ov-file#tie",
+      "tags": [
+        "Polyphonic"
+      ]
+    },
+    {
+      "slug": "ModX",
+      "name": "ModX",
+      "description": "Modify Glide, Repeats, and chance for Spike and Phi.",
+      "manualUrl": "https://github.com/imDanSable/SIM?tab=readme-ov-file#modx",
+      "tags": [
+        "Expander"
+      ]
+    },
+    {
+      "slug": "GaitX",
+      "name": "GaitX",
+      "description": "Output expander for Phi and Spike. Outputs current step, step phase, and EOC.",
+      "manualUrl": "https://github.com/imDanSable/SIM?tab=readme-ov-file#gaitx",
+      "tags": [
+        "Expander"
+      ]
+    }
+  ]
+}

@@ -1,7 +1,6 @@
 #pragma once
 #include <common.hpp>
 
-
 namespace rack {
 
 
@@ -16,15 +15,15 @@ namespace midiloopback { struct Context; } // namespace midiloopback
 /** Rack instance state
 */
 struct RACK_DLL_API Context {
-	widget::EventState* event = NULL;
-	app::Scene* scene = NULL;
-	engine::Engine* engine = NULL;
-	window::Window* window = NULL;
-	history::State* history = NULL;
-	patch::Manager* patch = NULL;
-	midiloopback::Context* midiLoopbackContext = NULL;
+    widget::EventState* event = NULL;
+    app::Scene* scene = NULL;
+    engine::Engine* engine = NULL;
+    window::Window* window = NULL;
+    history::State* history = NULL;
+    patch::Manager* patch = NULL;
+    midiloopback::Context* midiLoopbackContext = NULL;
 
-	~Context();
+    ~Context();
 };
 
 /** Returns the global Context pointer */
@@ -36,7 +35,7 @@ RACK_DLL_API void RACK_DLL_CALL contextSet(Context* context);
 
 /** Deprecated. Use contextGet() or the APP macro to get the current Context. */
 DEPRECATED inline Context* appGet() {
-	return contextGet();
+    return contextGet();
 }
 
 /** Accesses the global Context pointer. Just an alias for contextGet(). */

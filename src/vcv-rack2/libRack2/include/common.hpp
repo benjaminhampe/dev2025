@@ -268,16 +268,16 @@ const typename C::value_type& get(const C& c, typename C::size_type i, const typ
 
 // config
 
-RACK_DLL_API extern const std::string APP_NAME;
-RACK_DLL_API extern const std::string APP_EDITION;
-RACK_DLL_API extern const std::string APP_EDITION_NAME;
-RACK_DLL_API extern const std::string APP_VERSION_MAJOR;
-RACK_DLL_API extern const std::string APP_VERSION;
-RACK_DLL_API extern const std::string APP_OS;
-RACK_DLL_API extern const std::string APP_OS_NAME;
-RACK_DLL_API extern const std::string APP_CPU;
-RACK_DLL_API extern const std::string APP_CPU_NAME;
-RACK_DLL_API extern const std::string API_URL;
+extern RACK_DLL_API const std::string APP_NAME;
+extern RACK_DLL_API const std::string APP_EDITION;
+extern RACK_DLL_API const std::string APP_EDITION_NAME;
+extern RACK_DLL_API const std::string APP_VERSION_MAJOR;
+extern RACK_DLL_API const std::string APP_VERSION;
+extern RACK_DLL_API const std::string APP_OS;
+extern RACK_DLL_API const std::string APP_OS_NAME;
+extern RACK_DLL_API const std::string APP_CPU;
+extern RACK_DLL_API const std::string APP_CPU_NAME;
+extern RACK_DLL_API const std::string API_URL;
 
 
 } // namespace rack
@@ -330,7 +330,7 @@ RACK_DLL_API void RACK_DLL_CALL log(Level level, const char* filename, int line,
 */
 RACK_DLL_API bool RACK_DLL_CALL wasTruncated();
 
-RACK_DLL_API extern std::string logPath;
+extern RACK_DLL_API std::string logPath;
 
 
 } // namespace logger

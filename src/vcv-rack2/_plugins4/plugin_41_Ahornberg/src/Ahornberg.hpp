@@ -1,4 +1,3 @@
-#define NDEBUG
 #include <assert.h>
 #include <osdialog.h>
 #include <regex>
@@ -36,5 +35,5 @@ extern Model* modelCopyPastePreset;
 #include "util/Drivers.hpp"
 
 #ifndef NDEBUG
-#  include "test/Asserts.hpp"
+//#  include "test/Asserts.hpp"
 #endif
