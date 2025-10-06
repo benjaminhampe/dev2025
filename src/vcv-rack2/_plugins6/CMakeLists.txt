@@ -1,0 +1,5 @@
+add_subdirectory(plugin_60_CharredDesert)
+add_subdirectory(plugin_61_FrozenWasteland)
+add_subdirectory(plugin_62_gtg-rack)
+add_subdirectory(plugin_63_DrumKit)
+add_subdirectory(plugin_64_RPJ)

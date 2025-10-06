@@ -13,7 +13,7 @@ struct RACK_DLL_API Menu : widget::OpaqueWidget {
     BNDcornerFlags cornerFlags = BND_CORNER_NONE;
 
     Menu();
-    ~Menu();
+    ~Menu() override;
     void setChildMenu(Menu* menu);
     void step() override;
     void draw(const DrawArgs& args) override;
