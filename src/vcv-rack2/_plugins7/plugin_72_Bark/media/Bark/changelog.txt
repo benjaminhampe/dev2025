@@ -1,0 +1,107 @@
+---v2.3.1---
+minor fix
+
+---v2.3.0---
+VCV Rack v2 compatibility update
+Various panel updates: preview font
+Various port/param/light descriptions added
+Update components: lights, ports minor changes to some buttons
+Screws now have a random rotation when added to the rack or when relaunching
+
+Trim LFO: 
+Fixed a bug where light stages were flipped in v2.
+Adjusted PW knob size
+Frequency display should show leading 0's more appropately for the unit's of frequency i.e. 120.0000 or 60.00000
+
+Clamp:
+Fixed a bug where the link param would cause an infinite loop to occur making opposite numbers jitter
+
+SHTH:
+Fixed a bug where number of channels would be 0 until you connected a gate
+
+PolyX:
+Moved open volatges to a menu option. 
+Where patches use this to modulate level the menu item will have to be checked for "Levels" to be set correctly on channels not
+connected to PolyX' input ports         
+
+
+---v1.2.5---
+bug fixes on Mac.
+
+---v1.2.4---
+Added 2 new modules, SHTH: A fully polyphonic sample and hold / track and hold. MUD: Low Mid High simple attenuating EQ
+Optimised: Poly Mix, 1Band, Trim LFO.
+PolyX: Added a quick mute all button and changed default channels to 4.
+Trim LFO: Lights now follow selected top wave output (i.e. sin, tri, sqr, saw) and correctly turn green/red to corresponding polar 
+pattern
+-----------------------------
+
+---v1.2.0---
+Added new module EO Sum: Sums poly channels and distrbutes odd / even ch# to individual outputs.
+Trim LFO: Fixed an issue with the triangle wave not set to correct value on snap.
+PolyX: Added context menu option to select max channels, auto channels still sets to 16 channels.
+       Added new components for mute / open states to make them more visable.
+-----------------------------
+
+---v1.1.1---
+Tweaked knob/panel design
+-----------------------------
+
+---v1.1.0---
+All panels and components updated. Note: Trim LFO ports changed position.
+-----------------------------
+
+-------------------------------------------------------------------------------------------------------
+---v1.0.4---
+Bug fix One Band.
+-----------------------------
+
+---v1.0.3---
+Edits on module descriptions.
+Tweaked One Band. Code clean-up.
+Introduced a bug in 1.0.2 where one of the Fine Tune Parameters would not work on Trim LFO BPM: Fixed
+Poly Mix level input should correctly respound to 1 - 10v, previously volume was too low.
+-----------------------------
+
+---v1.0.2---
+Optimised Trim LFO's with simd. Performance halfed.
+Added hidden buttons on labels to Trim LFO' to set parameters quickly. 
+("Bi", "Uni", "Sin", "Saw", "Tri", "Sqr")  "RST" added v0.6.5.
+Poly Mix aux now stereo from mono source. 
+-----------------------------
+
+---v1.0.1---
+Small bugfix on PolyX, green light staying on when cable connected
+-----------------------------
+
+---v1_b1---
+tweaked one band frequency and panel layout
+Added PolyMix, polyphonic mixer
+Added PolyX, Polyphonic merger with mute buttons. Note: see module description in module browser
+Added Clamp
+-----------------------------
+
+---v0.6.6---
+1 band frequency parameter now scales logarithmically (as suggested by Dra Gonas) note: mod input still linear
+-----------------------------
+
+---v0.6.5---
+Slightly tweaked In port colour, red circles on the ports should now look nicer when scale is smaller than 1.1
+Enabled mod inputs on 1 band, also tweaked internal code.
+uploaded new panel for TrimLFO.
+default frequecny is now 2 Hz on Trim LFO.
+added a manual reset button on Trim LFO (both BPM/Hz versions), when you click on the reset label "RST" the phase will be reset.
+-----------------------------
+
+---v0.6.4---
+Trim LFO----
+updated panel
+fixed slider anchor showing at abitrary zoom levels
+
+new modules--
+BMP LFO- Trim LFO with a "BPM" value instead of "Hz". Features include snap enabled knob for Halving/Doubling 
+the frequency value and fine tune.
+
+1 Band- A dual mono 1 band parametric EQ and Amplifier. Features include swaping L/R channels, built in Peak meter, listen to the EQ
+processing, bypass EQ, frequency control via mod source (play the frequencies with a sequencer or LFO), dynamics control with the Gain 
+mod source.

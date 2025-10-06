@@ -1,7 +1,10 @@
-#include "rack.hpp"
+#pragma once
+#include <rack.hpp>
+
+using namespace rack;
 #define VALLEY_VERSION 204
 #define DR_WAV_IMPLEMENTATION
-using namespace rack;
+
 
 #include <iomanip> // setprecision
 #include <sstream> // stringstream

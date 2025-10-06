@@ -42,7 +42,7 @@ Use this to save `plugin` to a global variable and add Models to it.
 Required in plugins.
 */
 extern "C"
-RACK_DLL_API void RACK_DLL_CALL init(rack::plugin::Plugin* plugin);
+RACK_DLL_API void RACK_DLL_CALL init(rack::plugin::Plugin *plugin);
 
 /** Called before your plugin library is unloaded.
 

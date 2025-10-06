@@ -1,0 +1,147 @@
+{
+  "slug": "MUS-X",
+  "name": "MUS-X",
+  "version": "2.1.1",
+  "license": "GPL-3.0-or-later",
+  "brand": "MUS-X",
+  "author": "Dr. Johannes Rauch",
+  "authorEmail": "vcv@mus-x.de",
+  "authorUrl": "http://mus-x.de",
+  "pluginUrl": "https://github.com/Jojosito/MUS-X",
+  "manualUrl": "https://github.com/Jojosito/MUS-X",
+  "sourceUrl": "https://github.com/Jojosito/MUS-X",
+  "donateUrl": "https://www.paypal.com/donate/?hosted_button_id=U5Y8KAXCCMH6N",
+  "changelogUrl": "",
+  "modules": [
+    {
+      "slug": "ADSR",
+      "name": "ADSR",
+      "description": "ADSR envelope generator.",
+      "tags": [
+        "Envelope generator",
+        "Polyphonic"
+      ],
+      "manualUrl": "https://github.com/Jojosito/MUS-X#adsr"
+    },
+    {
+      "slug": "Tuner",
+      "name": "Tuner",
+      "description": "Tune a V/Oct signal by octaves, semitones and cents.",
+      "tags": [
+        "Tuner",
+        "Polyphonic"
+      ],
+      "manualUrl": "https://github.com/Jojosito/MUS-X#tune"
+    },
+    {
+      "slug": "Oscillators",
+      "name": "Oscillators",
+      "description": "Massively oversampled analog oscillator pair with sync, FM and ringmod.",
+      "tags": [
+        "Oscillator",
+        "Low-frequency oscillator",
+        "Polyphonic"
+      ],
+      "manualUrl": "https://github.com/Jojosito/MUS-X#oscillators"
+    },
+    {
+      "slug": "Delay",
+      "name": "Delay",
+      "description": "Bucket-brigade ping-pong delay.",
+      "tags": [
+        "Delay",
+        "Effect"
+      ],
+      "manualUrl": "https://github.com/Jojosito/MUS-X#delay"
+    },
+    {
+      "slug": "OnePole",
+      "name": "OnePole",
+      "description": "Simple one-pole highpass and lowpass filters.",
+      "tags": [
+        "Filter",
+        "Polyphonic"
+      ],
+      "manualUrl": "https://github.com/Jojosito/MUS-X#onepole"
+    },
+    {
+      "slug": "OnePoleLP",
+      "name": "OnePoleLP",
+      "description": "Simple one-pole lowpass filter.",
+      "tags": [
+        "Filter",
+        "Polyphonic"
+      ],
+      "manualUrl": "https://github.com/Jojosito/MUS-X#onepolelp"
+    },
+    {
+      "slug": "Drift",
+      "name": "Drift",
+      "description": "Random constant offset and drift.",
+      "tags": [
+        "Random",
+        "Polyphonic"
+      ],
+      "manualUrl": "https://github.com/Jojosito/MUS-X#drift"
+    },
+    {
+      "slug": "ModMatrix",
+      "name": "Mod Matrix",
+      "description": "MIDI controllable 13x16 Modulation Matrix",
+      "tags": [
+        "Mixer",
+        "Polyphonic",
+        "Utility"
+      ],
+      "manualUrl": "https://github.com/Jojosito/MUS-X#mod-matrix"
+    },
+    {
+      "slug": "LFO",
+      "name": "LFO",
+      "description": "Low frequency oscillator",
+      "tags": [
+        "Low-frequency oscillator",
+        "Polyphonic"
+      ],
+      "manualUrl": "https://github.com/Jojosito/MUS-X#lfo"
+    },
+    {
+      "slug": "Last",
+      "name": "Last",
+      "description": "Output the value of the last moved knob",
+      "tags": [
+        "Utility"
+      ],
+      "manualUrl": "https://github.com/Jojosito/MUS-X#last"
+    },
+    {
+      "slug": "Filter",
+      "name": "Filter",
+      "description": "Collection of virtual analog filters",
+      "tags": [
+        "Filter",
+        "Polyphonic"
+      ],
+      "manualUrl": "https://github.com/Jojosito/MUS-X#filter"
+    },
+    {
+      "slug": "Synth",
+      "name": "Synth",
+      "description": "A virtual-analogue polyphonic synthesizer with 2 oscillators, dual filters and intuitive modulation system",
+      "tags": [
+        "Synth voice",
+        "Polyphonic"
+      ],
+      "manualUrl": "https://github.com/Jojosito/MUS-X#synth"
+    },
+    {
+      "slug": "SplitStack",
+      "name": "Split/Stack",
+      "description": "Utility for splitting or layering two synthesizer parts",
+      "tags": [
+        "Utility"
+      ],
+	  "manualUrl": "https://github.com/Jojosito/MUS-X#spitstack"
+    }
+  ]
+}

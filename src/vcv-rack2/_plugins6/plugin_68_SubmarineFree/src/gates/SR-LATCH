@@ -1,0 +1,39 @@
+{
+	"SR-Type Latch",
+	"316,"
+	S	R	E1	Q1
+	
+	X	X	E0	Q0
+	X	X	DN	Q0
+	ZE	ZE	UP	Q0
+	ZE	ON	UP	ZE
+	ON	X	UP	ON
+,
+	[](const Widget::DrawArgs &args, Vec size) {
+		nvgStrokeColor(args.vg, SUBLIGHTBLUE);
+		nvgBeginPath(args.vg);
+		drawInput1of3(args.vg, 30);
+		drawInput2of3(args.vg, 30);
+		drawInput3of3(args.vg, 30);
+		drawBox(args.vg);
+		drawOutput(args.vg, 60);
+		nvgStrokeWidth(args.vg, 2);
+		nvgStroke(args.vg);
+		nvgFontFaceId(args.vg, gScheme.font()->handle);
+		nvgFontSize(args.vg, 8 * 90 / SVG_DPI);
+		nvgTextAlign(args.vg, NVG_ALIGN_LEFT | NVG_ALIGN_MIDDLE);
+		nvgFillColor(args.vg, SUBLIGHTBLUE);
+		nvgText(args.vg, 32, 20, "S", NULL);
+		nvgText(args.vg, 32, 30, "R", NULL);
+		nvgText(args.vg, 32, 40, ">E", NULL);
+		nvgTextAlign(args.vg, NVG_ALIGN_RIGHT | NVG_ALIGN_MIDDLE);
+		nvgText(args.vg, 58, 30, "Q", NULL);
+	},
+	LAMBDA_HEADER {
+		d = (c ^ c0) & c;
+		a0 &= (~b | ~d);
+		a0 |= (a & d); 
+		c0 = c;
+		return a0;
+	}
+}

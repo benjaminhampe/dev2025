@@ -1,0 +1,24 @@
+{ // NOT Gate
+	"NOT Gate",
+	"113,"
+	A	Q
+	
+	ZE	ON
+	ON	ZE
+	,
+	[](const Widget::DrawArgs &args, Vec size) {
+		nvgStrokeColor(args.vg, SUBLIGHTBLUE);
+		nvgBeginPath(args.vg);
+		drawInput1of1(args.vg, 33.0f);
+		nvgMoveTo(args.vg, 33.0f, 42.0f);
+		nvgLineTo(args.vg, 33.0f, 18.0f);
+		nvgLineTo(args.vg, 53.0f, 30.0f);
+		nvgLineTo(args.vg, 33.0f, 42.0f);
+		drawOutput(args.vg, 53.0f);
+		nvgStrokeWidth(args.vg, 2);
+		nvgStroke(args.vg);
+	},
+	LAMBDA_HEADER {
+		return ~a;
+	}
+}

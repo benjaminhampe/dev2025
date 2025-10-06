@@ -1,0 +1,104 @@
+//SubTag DS TM W4
+
+#include "shared/DS.hpp"
+#include <random>
+#include <chrono>
+
+template <int x>
+struct BB_1 : DS_Module {
+	enum ParamIds {
+		NUM_PARAMS
+	};
+	enum InputIds {
+		INPUT_CLK,
+		INPUT_CV,
+		NUM_INPUTS
+	};
+	enum OutputIds {
+		OUTPUT_1,
+		NUM_OUTPUTS = x
+	};
+	enum LightIds {
+		NUM_LIGHTS
+	};
+	
+	float sample[x] = {};	
+	DS_Schmitt schmittTrigger;
+
+	BB_1() : DS_Module() {
+		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
+		configInput(INPUT_CLK, "Clock");
+		configInput(INPUT_CV, "Signal");
+		for (int i = 0; i < x; i++) {
+			configOutput(OUTPUT_1 + i, "Signal Delayed by " + std::to_string(i + 1) + " ticks");
+		}
+	}
+	void process(const ProcessArgs &args) override {
+		int triggered = true;
+		if (inputs[INPUT_CLK].isConnected()) {
+			triggered = schmittTrigger.redge(this, inputs[INPUT_CLK].getVoltage());
+		}
+		if (triggered) {
+			for (int i = x - 1; i; i--)
+				sample[i] = sample[i - 1];
+			sample[0] = inputs[INPUT_CV].getVoltage();
+		}
+		for (int i = 0; i < x; i++)
+			outputs[OUTPUT_1 + i].setVoltage(sample[i]);
+	}
+	void onRandomize() override {
+		std::default_random_engine generator(std::chrono::system_clock::now().time_since_epoch().count());
+		std::uniform_real_distribution<float> distribution(voltage0, voltage1);	
+		for (int i = 0; i < x; i++) {
+			outputs[OUTPUT_1 + i].setVoltage(sample[i] = distribution(generator)); 
+		}
+	}
+	void onReset() override {
+		for (int i = 0; i < x; i++)
+			outputs[OUTPUT_1 + i].setVoltage(sample[i] = voltage0);
+	}
+};
+
+struct BB120 : SchemeModuleWidget {
+	BB120(BB_1<20> *module) {
+		setModule(module);
+		this->box.size = Vec(60, 380);
+		addChild(new SchemePanel(this->box.size));
+
+		addInput(createInputCentered<BluePort>(Vec(17,31.5), module, BB_1<20>::INPUT_CLK));
+		addInput(createInputCentered<SilverPort>(Vec(44,46.5), module, BB_1<20>::INPUT_CV));
+
+		for (int i = 0; i < 20; i+=2) {
+			int offset = 15 * i;
+
+			addOutput(createOutputCentered<SilverPort>(Vec(16.5,65.5 + offset), module, BB_1<20>::OUTPUT_1 + i));
+			addOutput(createOutputCentered<SilverPort>(Vec(43.5,80.5 + offset), module, BB_1<20>::OUTPUT_1 + i + 1));
+		}
+	}
+	void appendContextMenu(Menu *menu) override {
+		SchemeModuleWidget::appendContextMenu(menu);
+		DS_Module *dsMod = dynamic_cast<DS_Module *>(module);
+		if (dsMod) {
+			dsMod->appendContextMenu(menu);
+		}
+	}
+	void render(NVGcontext *vg, SchemeCanvasWidget *canvas) override {
+		drawBase(vg, "BB-120");
+		nvgStrokeColor(vg, gScheme.getContrast(module));
+		nvgStrokeWidth(vg, 1);
+		nvgLineCap(vg, NVG_ROUND);
+		nvgBeginPath(vg);
+		nvgMoveTo(vg, 43.5, 46.5);
+		nvgLineTo(vg, 16.5, 65.5);
+		nvgLineTo(vg, 43.5, 80.5);
+		for (int i = 0; i < 9; i++) {
+			nvgLineTo(vg, 16.5, 95.5 + i * 30);
+			nvgLineTo(vg, 43.5, 110.5 + i * 30);
+		}
+		nvgStroke(vg);
+		drawText(vg, 43.5, 32, NVG_ALIGN_CENTER | NVG_ALIGN_BASELINE, 8, gScheme.getContrast(module), "IN");
+		drawText(vg, 16.5, 52, NVG_ALIGN_CENTER | NVG_ALIGN_BASELINE, 8, gScheme.getContrast(module), "CLK");
+	}
+};
+
+Model *modelBB120 = createModel<BB_1<20>, BB120>("BB-120");
