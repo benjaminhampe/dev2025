@@ -2,8 +2,12 @@
 
 #include <common.hpp> // for fopen_u8
 
+#ifndef GLEW_STATIC
 #define GLEW_STATIC
+#endif
+#ifndef GLEW_NO_GLU
 #define GLEW_NO_GLU
+#endif
 #include <GL/glew.h>
 
 #include <nanovg.h>

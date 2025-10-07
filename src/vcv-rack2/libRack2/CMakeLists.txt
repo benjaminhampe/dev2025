@@ -2,11 +2,11 @@ set(LIB_NAME de_rack2)
 project(${LIB_NAME})
 
 if (TARGET ${LIB_NAME})
-	message("${BoldYellow}[benni] HEADER_GUARD: ${LIB_NAME}${ColourReset}")
+    message("${BoldYellow}[benni] HEADER_GUARD: ${LIB_NAME}${ColourReset}")
 else()
-	set(LIB_HEADER_DIR ${CMAKE_CURRENT_LIST_DIR}/include)
-	set(LIB_SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/src)
-	set(LIB_HEADERS 
+    set(LIB_HEADER_DIR ${CMAKE_CURRENT_LIST_DIR}/include)
+    set(LIB_SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/src)
+    set(LIB_HEADERS
         ${LIB_HEADER_DIR}/arch.hpp
         ${LIB_HEADER_DIR}/asset.hpp
         ${LIB_HEADER_DIR}/audio.hpp
@@ -38,7 +38,6 @@ else()
         ${LIB_HEADER_DIR}/system.hpp
         ${LIB_HEADER_DIR}/tag.hpp
         ${LIB_HEADER_DIR}/weakptr.hpp
-        
         ${LIB_HEADER_DIR}/app/AudioDisplay.hpp
         ${LIB_HEADER_DIR}/app/Browser.hpp
         ${LIB_HEADER_DIR}/app/CableWidget.hpp
@@ -68,7 +67,6 @@ else()
         ${LIB_HEADER_DIR}/app/SvgSwitch.hpp
         ${LIB_HEADER_DIR}/app/Switch.hpp
         ${LIB_HEADER_DIR}/app/TipWindow.hpp
-
         ${LIB_HEADER_DIR}/dsp/approx.hpp
         ${LIB_HEADER_DIR}/dsp/common.hpp
         ${LIB_HEADER_DIR}/dsp/convert.hpp
@@ -83,7 +81,6 @@ else()
         ${LIB_HEADER_DIR}/dsp/ringbuffer.hpp
         ${LIB_HEADER_DIR}/dsp/vumeter.hpp
         ${LIB_HEADER_DIR}/dsp/window.hpp
-
         ${LIB_HEADER_DIR}/engine/Cable.hpp
         ${LIB_HEADER_DIR}/engine/Engine.hpp
         ${LIB_HEADER_DIR}/engine/Light.hpp
@@ -94,17 +91,14 @@ else()
         ${LIB_HEADER_DIR}/engine/ParamQuantity.hpp
         ${LIB_HEADER_DIR}/engine/Port.hpp
         ${LIB_HEADER_DIR}/engine/PortInfo.hpp
-
         ${LIB_HEADER_DIR}/plugin/callbacks.hpp
         ${LIB_HEADER_DIR}/plugin/Model.hpp
         ${LIB_HEADER_DIR}/plugin/Plugin.hpp
-
         ${LIB_HEADER_DIR}/simd/common.hpp
         ${LIB_HEADER_DIR}/simd/functions.hpp
         ${LIB_HEADER_DIR}/simd/sse_mathfun.h
         ${LIB_HEADER_DIR}/simd/sse_mathfun_extension.h
         ${LIB_HEADER_DIR}/simd/Vector.hpp
-
         ${LIB_HEADER_DIR}/ui/Button.hpp
         ${LIB_HEADER_DIR}/ui/ChoiceButton.hpp
         ${LIB_HEADER_DIR}/ui/common.hpp
@@ -126,7 +120,6 @@ else()
         ${LIB_HEADER_DIR}/ui/TextField.hpp
         ${LIB_HEADER_DIR}/ui/Tooltip.hpp
         ${LIB_HEADER_DIR}/ui/TooltipOverlay.hpp
-
         ${LIB_HEADER_DIR}/widget/event.hpp
         ${LIB_HEADER_DIR}/widget/FramebufferWidget.hpp
         ${LIB_HEADER_DIR}/widget/OpaqueWidget.hpp
@@ -136,11 +129,10 @@ else()
         ${LIB_HEADER_DIR}/widget/TransparentWidget.hpp
         ${LIB_HEADER_DIR}/widget/Widget.hpp
         ${LIB_HEADER_DIR}/widget/ZoomWidget.hpp
-
         ${LIB_HEADER_DIR}/window/Svg.hpp
         ${LIB_HEADER_DIR}/window/Window.hpp
     )
-	set(LIB_SOURCES 
+    set(LIB_SOURCES
         ${LIB_SOURCE_DIR}/asset.cpp
         # ${LIB_SOURCE_DIR}/asset.mm
         ${LIB_SOURCE_DIR}/audio.cpp
@@ -167,7 +159,6 @@ else()
         ${LIB_SOURCE_DIR}/string.cpp
         ${LIB_SOURCE_DIR}/system.cpp
         ${LIB_SOURCE_DIR}/tag.cpp
-
         ${LIB_SOURCE_DIR}/app/AudioDisplay.cpp
         ${LIB_SOURCE_DIR}/app/Browser.cpp
         ${LIB_SOURCE_DIR}/app/CableWidget.cpp
@@ -196,7 +187,6 @@ else()
         ${LIB_SOURCE_DIR}/app/SvgSwitch.cpp
         ${LIB_SOURCE_DIR}/app/Switch.cpp
         ${LIB_SOURCE_DIR}/app/TipWindow.cpp
-
         ${LIB_SOURCE_DIR}/core/Audio.cpp
         ${LIB_SOURCE_DIR}/core/Blank.cpp
         ${LIB_SOURCE_DIR}/core/CV_MIDI.cpp
@@ -209,19 +199,15 @@ else()
         ${LIB_SOURCE_DIR}/core/Notes.cpp
         ${LIB_SOURCE_DIR}/core/plugin.cpp
         ${LIB_SOURCE_DIR}/core/plugin.hpp
-
         ${LIB_SOURCE_DIR}/dsp/minblep.cpp
-
         ${LIB_SOURCE_DIR}/engine/Cable.cpp
         ${LIB_SOURCE_DIR}/engine/Engine.cpp
         ${LIB_SOURCE_DIR}/engine/LightInfo.cpp
         ${LIB_SOURCE_DIR}/engine/Module.cpp
         ${LIB_SOURCE_DIR}/engine/ParamQuantity.cpp
         ${LIB_SOURCE_DIR}/engine/PortInfo.cpp
-
         ${LIB_SOURCE_DIR}/plugin/Model.cpp
         ${LIB_SOURCE_DIR}/plugin/Plugin.cpp
-
         ${LIB_SOURCE_DIR}/ui/Button.cpp
         ${LIB_SOURCE_DIR}/ui/ChoiceButton.cpp
         ${LIB_SOURCE_DIR}/ui/common.cpp
@@ -242,14 +228,12 @@ else()
         ${LIB_SOURCE_DIR}/ui/Slider.cpp
         ${LIB_SOURCE_DIR}/ui/TextField.cpp
         ${LIB_SOURCE_DIR}/ui/Tooltip.cpp
-
         ${LIB_SOURCE_DIR}/widget/event.cpp
         ${LIB_SOURCE_DIR}/widget/FramebufferWidget.cpp
         ${LIB_SOURCE_DIR}/widget/OpenGlWidget.cpp
         ${LIB_SOURCE_DIR}/widget/SvgWidget.cpp
         ${LIB_SOURCE_DIR}/widget/Widget.cpp
         ${LIB_SOURCE_DIR}/widget/ZoomWidget.cpp
-
         ${LIB_SOURCE_DIR}/window/Svg.cpp
         ${LIB_SOURCE_DIR}/window/Window.cpp
     )
@@ -262,7 +246,7 @@ else()
 
     # if (BUILD_SHARED)
         message("${BoldBlue}[benni] DLL: ${LIB_NAME}${ColourReset}")
-        add_library(${LIB_NAME} SHARED "")	
+        add_library(${LIB_NAME} SHARED "")
     # else()
     #     message("${BoldCyan}[benni] LIB: ${LIB_NAME}${ColourReset}")
     #     add_library(${LIB_NAME} STATIC "")
@@ -272,16 +256,12 @@ else()
 
     target_include_directories(${LIB_NAME} PUBLIC ${LIB_HEADER_DIR})
     target_include_directories(${LIB_NAME} PRIVATE ${LIB_SOURCE_DIR})
-	
 
     target_compile_definitions(${LIB_NAME} PUBLIC HAVE_LIBRACK2=1)
-
     target_compile_definitions(${LIB_NAME} PUBLIC RACK_SIMD=1)
-	
     target_compile_definitions(${LIB_NAME} PRIVATE _RACK_VERSION="2.6.2")
-
     target_compile_definitions(${LIB_NAME} PRIVATE BUILDING_RACK_DLL=1)
-    
+
     target_link_libraries(${LIB_NAME} PRIVATE de_zlib)
     target_link_libraries(${LIB_NAME} PRIVATE de_archive)
     target_link_libraries(${LIB_NAME} PUBLIC de_glew)
@@ -303,21 +283,22 @@ else()
     target_link_libraries(${LIB_NAME} PRIVATE de_stb_image_write)
     target_link_libraries(${LIB_NAME} PRIVATE de_openssl_static)
     target_link_libraries(${LIB_NAME} PRIVATE de_curl_shared)
-    
+
     if (MSVC)
         set_target_properties(${LIB_NAME} PROPERTIES FOLDER _libRack2)
     else()
         # target_link_options(${LIB_NAME} PRIVATE -mwindows)
 
+        target_compile_options(${LIB_NAME} PUBLIC -Wno-deprecated-declarations)
         if (WIN32)
             target_link_libraries(${LIB_NAME} PRIVATE shlwapi) # for PathRemoveFileSpecW
             target_link_libraries(${LIB_NAME} PRIVATE dbghelp) # for SymInitialize, SymFromAddr
         endif()
     endif()
-    
-    
+
+
     # target_link_libraries(${LIB_NAME} PUBLIC de_rack2_nanovg)
-    
+
 
     #	file(COPY ${LIB_HEADERS} DESTINATION ${JPEG_INCLUDE_DIR}) # For the SDK
 endif()

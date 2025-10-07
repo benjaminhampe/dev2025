@@ -13,4 +13,7 @@ add_subdirectory(plugin_12_TeknoLogical)
 add_subdirectory(plugin_13_Nozori)
 add_subdirectory(plugin_14_ArhythmeticUnits-Fourier)
 add_subdirectory(plugin_15_Bogaudio)
-
+add_subdirectory(plugin_16_OuroborosModules)
+add_subdirectory(plugin_17_Modular80)
+add_subdirectory(plugin_18_NullPath)
+add_subdirectory(plugin_19_BaconPlugs)

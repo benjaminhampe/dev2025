@@ -1,0 +1,24 @@
+namespace fs = @FS_NAMESPACE@;
+
+#define @FS_DEFINE@ 1
+
+#include <utility>
+
+inline std::string path_to_string(const fs::path& path)
+{
+#ifdef _WIN32
+   return path.u8string();
+#else
+   return path.generic_string();
+#endif
+}
+
+template<typename T>
+inline fs::path string_to_path(T&& path)
+{
+#ifdef _WIN32
+   return fs::u8path(std::forward<T>(path));
+#else
+   return fs::path(std::forward<T>(path));
+#endif
+}

@@ -1,0 +1,73 @@
+{
+    "slug": "OuroborosModules",
+    "name": "OuroborosModules",
+    "version": "2.1.2",
+    "license": "GPL-3.0-or-later",
+    "brand": "Ouroboros Industries",
+    "author": "Chronos \"phantombeta\" Ouroboros",
+    "authorEmail": "",
+    "authorUrl": "https://github.com/Doom2fan",
+    "pluginUrl": "https://github.com/Doom2fan/OuroborosModules",
+    "manualUrl": "https://github.com/Doom2fan/OuroborosModules/wiki",
+    "sourceUrl": "https://github.com/Doom2fan/OuroborosModules",
+    "donateUrl": "",
+    "changelogUrl": "https://github.com/Doom2fan/OuroborosModules/blob/develop/CHANGELOG.md",
+    "modules": [
+        {
+            "slug": "MetaModule",
+            "name": "Meta",
+            "description": "Adds meta features to VCV Rack (Cable sounds, startup pre-muter; Full list in the manual)",
+            "tags": [ "Utility" ],
+            "keywords": "sounds cable_sounds cablesounds premute premuter",
+            "manualUrl": "https://github.com/Doom2fan/OuroborosModules/wiki/Meta"
+        },
+        {
+            "slug": "CableColorModule",
+            "name": "Chroma",
+            "description": "A cable colour manager with labels and support for multiple colour collections",
+            "tags": [ "Utility" ],
+            "keywords": "cable cables color manager",
+            "manualUrl": "https://github.com/Doom2fan/OuroborosModules/wiki/Chroma"
+        },
+        {
+            "slug": "StereoVCAModule",
+            "name": "ST-VCA",
+            "description": "A stereo version of the Fundamental VCA",
+            "tags": [ "Voltage-controlled amplifier", "Polyphonic" ],
+            "keywords": "stereo vca",
+            "manualUrl": "https://github.com/Doom2fan/OuroborosModules/wiki/ST‐VCA"
+        },
+        {
+            "slug": "BernoulliGates",
+            "name": "Bernoulli",
+            "description": "A bank of 8 bernoulli gates",
+            "tags": [ "Random", "Logic", "Switch", "Clock modulator" ],
+            "keywords": "gate gates",
+            "manualUrl": "https://github.com/Doom2fan/OuroborosModules/wiki/Bernoulli"
+        },
+        {
+            "slug": "Median",
+            "name": "Median",
+            "description": "A 3-element voltage sorter, sorts 3 voltages into min, mid and max",
+            "tags": [ "Logic", "Waveshaper", "Polyphonic" ],
+            "keywords": "sort sorting sorter min mid max",
+            "manualUrl": "https://github.com/Doom2fan/OuroborosModules/wiki/Median"
+        },
+        {
+            "slug": "Junction",
+            "name": "Junction",
+            "description": "A switched mult with 8 inputs and 2 outputs. Counterpart to Branch",
+            "tags": [ "Switch", "Multiple", "Utility", "Mixer", "Polyphonic" ],
+            "keywords": "switched mult switchedmult mults switchedmults",
+            "manualUrl": "https://github.com/Doom2fan/OuroborosModules/wiki/Junction"
+        },
+        {
+            "slug": "Branch",
+            "name": "Branch",
+            "description": "A switched mult/router with 2 inputs and 8 outputs. Counterpart to Junction",
+            "tags": [ "Switch", "Multiple", "Utility", "Polyphonic" ],
+            "keywords": "switched mult switchedmult mults switchedmults",
+            "manualUrl": "https://github.com/Doom2fan/OuroborosModules/wiki/Branch"
+        }
+    ]
+}

@@ -1,11 +1,11 @@
 add_subdirectory(de-freeverb)
-add_subdirectory(de-kissfft-131.1.0)                # FFT
-add_subdirectory(de-kissfft-cpp)                # FFT
+add_subdirectory(de-kissfft-131.1.0)    # FFT
+add_subdirectory(de-kissfft-cpp)        # FFT
 
 add_subdirectory(de-celt-0.11)
-add_subdirectory(_libsndfile)       # Import/Export WAV, FLAC, OGG, etc...
-add_subdirectory(de-asiosdk-2.3)    # Steinberg ASIO driver, for RtAudio.
-add_subdirectory(de-vst2sdk)        # Steinberg VSTi plugin importer.
+add_subdirectory(_libsndfile)           # Import/Export WAV, FLAC, OGG, etc...
+add_subdirectory(de-asiosdk-2.3)        # Steinberg ASIO driver, for RtAudio.
+add_subdirectory(de-vst2sdk)            # Steinberg VSTi plugin importer.
 add_subdirectory(de-fftw3-3.3.10-static)    # FFT
 add_subdirectory(de-fftw3f-3.3.10-static)   # FFT
 add_subdirectory(de-rtaudio-5.1.0)      # AudioHardwareBackend
@@ -35,15 +35,10 @@ add_subdirectory(de-miniaudio-0.11.23)
 # add_subdirectory(de-ableton-link)
 # add_subdirectory(de-ableton-push2)
 # add_subdirectory(de-aften)
-# add_subdirectory(de-vst3sdk-3.7.13)
+add_subdirectory(de-vst3sdk-3.7.13)     # Steinberg VSTi plugin importer.
 # add_subdirectory(de-ffmpeg-4.3.2-win64-gcc-shared) # Import/Export MP4, AVI, MKV, etc...
 
 add_subdirectory(de-tuning-library)
 add_subdirectory(de-oddsound-mts-esp)
 
-# add_subdirectory(de-juce-7.0.5) # Big lib, only activate when needed.
-
-# add_subdirectory(de-dr_wav)
-# add_subdirectory(de-dr_flac)
-# add_subdirectory(de-dr_mp3)
-# add_subdirectory(de-miniaudio-0.11.23)
+add_subdirectory(de-juce-7.0.5) # Big lib, only activate when needed.

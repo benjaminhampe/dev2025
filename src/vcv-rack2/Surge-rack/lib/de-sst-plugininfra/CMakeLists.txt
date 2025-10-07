@@ -1,0 +1,94 @@
+set(LIB_NAME de_sst_plugininfra)
+project(${LIB_NAME})
+
+if (TARGET ${LIB_NAME})
+    message("${BoldYellow}[benni] HEADER_GUARD: ${LIB_NAME}${ColourReset}")
+else()
+    set(LIB_HEADER_DIR ${CMAKE_CURRENT_LIST_DIR}/include)
+    set(LIB_SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/src)
+    set(LIB_HEADERS
+        ${LIB_HEADER_DIR}/sst/plugininfra.h
+        ${LIB_HEADER_DIR}/sst/plugininfra/cpufeatures.h
+        ${LIB_HEADER_DIR}/sst/plugininfra/keybindings.h
+        ${LIB_HEADER_DIR}/sst/plugininfra/misc_platform.h
+        ${LIB_HEADER_DIR}/sst/plugininfra/paths.h
+        ${LIB_HEADER_DIR}/sst/plugininfra/userdefaults.h
+    )
+    set(LIB_SOURCES
+        ${LIB_SOURCE_DIR}/paths_subst.cpp
+        ${LIB_SOURCE_DIR}/cpufeatures.cpp
+        ${LIB_SOURCE_DIR}/paths_windows.cpp
+        ${LIB_SOURCE_DIR}/misc_windows.cpp
+    )
+
+    # ./cpufeatures.cpp
+    # ./misc_linux.cpp
+    # ./misc_macos.mm
+    # ./misc_windows.cpp
+    # ./paths_linux.cpp
+    # ./paths_macos.mm
+    # ./paths_subst.cpp.in
+    # ./paths_windows.cpp
+
+
+    # if (WIN32)
+        # enable_language(RC)
+        # list(APPEND LIB_SOURCES ${CMAKE_CURRENT_LIST_DIR}/res/resource.h)
+        # list(APPEND LIB_SOURCES ${CMAKE_CURRENT_LIST_DIR}/res/resource.rc)
+    # endif()
+
+    # if (BUILD_SHARED)
+    #     message("${BoldBlue}[benni] DLL: ${LIB_NAME}${ColourReset}")
+    #     add_library(${LIB_NAME} SHARED "")
+    # else()
+        message("${BoldCyan}[benni] LIB: ${LIB_NAME}${ColourReset}")
+        add_library(${LIB_NAME} STATIC "")
+    # endif()
+
+    target_sources(${LIB_NAME} PUBLIC ${LIB_HEADERS} PRIVATE ${LIB_SOURCES})
+
+    target_compile_definitions(${LIB_NAME} PUBLIC HAVE_LIBSST_PLUGININFRA=1)
+    target_compile_definitions(${LIB_NAME} PRIVATE WINDOWS=1)
+    target_compile_definitions(${LIB_NAME} PUBLIC SST_COMMAND_CTRL_SAME_KEY=1)
+
+    # target_compile_definitions(${LIB_NAME} PUBLIC SURGE_INCLUDE_AIRWINDOWS=1)
+
+    target_include_directories(${LIB_NAME} PUBLIC ${LIB_HEADER_DIR})
+    target_include_directories(${LIB_NAME} PRIVATE ${LIB_SOURCE_DIR})
+    # target_include_directories(${LIB_NAME} PRIVATE ${LIB_HEADER_DIR}/airwindows)
+
+    target_link_libraries(${LIB_NAME} PUBLIC de_tinyxml)
+    target_link_libraries(${LIB_NAME} PRIVATE de_minizip)
+
+    if (MSVC)
+        set_target_properties(${LIB_NAME} PROPERTIES FOLDER _libsystem)
+    else()
+        # target_link_libraries(${LIB_NAME} PUBLIC m)
+        # target_link_libraries(${LIB_NAME} PUBLIC pthread)
+    endif()
+
+    # if (WIN32)
+        # target_compile_definitions(${LIB_NAME} PUBLIC _WIN32_WINNT=0x0602)
+        # target_compile_definitions(${LIB_NAME} PUBLIC __WINDOWS_ASIO__=1)
+        # target_compile_definitions(${LIB_NAME} PUBLIC __WINDOWS_DS__=1)
+        # target_compile_definitions(${LIB_NAME} PUBLIC __WINDOWS_WASAPI__=1)
+        # target_link_libraries(${LIB_NAME} PUBLIC mfplat mf mfuuid wmcodecdspuuid)
+        # #target_link_libraries(${LIB_NAME} PUBLIC mf3216 mapi32 mapistub mdminst imm32)
+        # target_link_libraries(${LIB_NAME} PUBLIC dsound winmm ksuser uuid) # ks ksguid
+        # target_link_libraries(${LIB_NAME} PUBLIC advapi32 ole32 oleaut32 comctl32 kernel32 user32)
+        # target_link_libraries(${LIB_NAME} PUBLIC de_asiosdk)
+    # else()
+        # target_compile_definitions(${LIB_NAME} PUBLIC __LINUX_ALSA__=1)
+        # target_compile_definitions(${LIB_NAME} PUBLIC __UNIX_JACK__=1)
+        # # target_compile_definitions(${LIB_NAME} PUBLIC __LINUX_PULSE__=1)
+        # # target_compile_definitions(${LIB_NAME} PUBLIC __LINUX_OSS__=1)
+        # target_link_libraries(${LIB_NAME} PUBLIC asound)
+        # target_link_libraries(${LIB_NAME} PUBLIC jack)
+        # # target_link_libraries(${LIB_NAME} PUBLIC de_sndfile)
+    # endif()
+
+
+
+endif()
+
+# add_subdirectory(test)

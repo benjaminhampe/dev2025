@@ -1,0 +1,23 @@
+{
+  "plugin": "StochasticTelegraph",
+  "model": "BASICally",
+  "version": "2.0.21",
+  "params": [
+    {
+      "value": 0.0,
+      "id": 0
+    },
+    {
+      "value": 0.0,
+      "id": 1
+    }
+  ],
+  "data": {
+    "text": "' When started or IN8 gets a trigger, the first eight channels\n' in IN1 get randomly assigned to the first eight channels of \n' OUT1, like:\n' 1 -> 3\n' 2 -> 6\n' 3 -> 8\n' 4 -> 4\n' 5 -> 1\n' 6 -> 5\n' 7 -> 2\n' 8 -> 7\n' When IN9 gets a trigger, two of the assignments\n' will randomly trade.\n' If you attach OUT6 to one of the TEXTn ports of a TTY\n' module, you can see the mapping as it changes.\n\nWHEN start() or trigger(IN8)\n  for pos = 1 to 8\n    grab[pos] = pos\n  next\n  ' Initialize the mapping.\n  for pos = 1 to 8\n    pull_pos = floor(random(1, 9 - pos))\n    out_map[pos] = grab[pull_pos]\n    ' Put last value from grab[] into the location\n    ' we just selected from.\n    grab[pull_pos] = grab[9 - pos]\n  next\n  print(OUT6, debug(out_map[], 1, 8)) \nEND WHEN\n\nWHEN trigger(IN9)\n  switch1 = floor(random(1, 9))\n  switch2 = 1 + mod(switch1 + floor(random(0, 7)), 8)\n  temp = out_map[switch1]\n  out_map[switch1] = out_map[switch2]\n  out_map[switch2] = temp\n  print(OUT6, debug(out_map[], 1, 8)) \nEND WHEN\n\nALSO\n  for chan = 1 to 8\n    out1[out_map[chan]] = IN1[chan]\n  NEXTHIGHCPU\nEND ALSO  \n",
+    "width": 31,
+    "allow_error_highlight": 1,
+    "screen_colors": 1095216660480,
+    "title_text": "Rearrange, Switch Two",
+    "font_choice": "fonts/RobotoMono-Regular.ttf"
+  }
+}

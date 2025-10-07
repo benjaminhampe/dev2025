@@ -1,5 +1,5 @@
 add_subdirectory(plugin_20_ValleyRackFree)
-# add_subdirectory(plugin_21_Squinky_broken)
+add_subdirectory(plugin_21_AuraAudio)
 add_subdirectory(plugin_22_SonusModular)
 add_subdirectory(plugin_23_LifeFormModular)
 add_subdirectory(plugin_24_FehlerFabrik)

@@ -1,0 +1,162 @@
+{
+  "slug": "StochasticTelegraph",
+  "name": "Stochastic Telegraph",
+  "version": "2.0.22",
+  "minRackVersion": "2.4.0",
+  "license": "GPL-3.0-or-later",
+  "brand": "Stochastic Telegraph",
+  "author": "Mahlen Morris",
+  "authorEmail": "vcv@stochastictelegraph.com",
+  "authorUrl": "https://www.stochastictelegraph.com",
+  "pluginUrl": "https://github.com/mahlenmorris/VCVRack",
+  "manualUrl": "https://github.com/mahlenmorris/VCVRack/blob/main/README.md",
+  "sourceUrl": "https://github.com/mahlenmorris/VCVRack",
+  "donateUrl": "https://ko-fi.com/stochastictelegraph",
+  "changelogUrl": "",
+  "modules": [
+    {
+      "slug": "BASICally",
+      "name": "BASICally",
+      "description": "Generate sequences, perform math on inputs, and even multitask with a simple BASIC-like language. Can also send Tipsy text messages to modules that support them (e.g., TTY).",
+      "manualUrl": "https://github.com/mahlenmorris/VCVRack/blob/main/README.md#basically",
+      "tags": [
+        "Attenuator",
+        "Function Generator",
+        "Logic",
+        "Polyphonic",
+        "Sequencer",
+        "Sample and hold",
+        "Utility"
+      ]
+    },
+    {
+      "slug": "Drifter",
+      "name": "Drifter",
+      "description": "Varying linear function generator. Makes sequences that change in small (or large) ways. A line defined by X/Y points, each doing a random walk.",
+      "manualUrl": "https://github.com/mahlenmorris/VCVRack/blob/main/README.md#drifter",
+      "tags": [
+        "Random",
+        "Sample and hold",
+        "Sequencer"
+      ]
+    },
+    {
+      "slug": "Fermata",
+      "name": "Fermata",
+      "description": "Write much longer text notes, and various sizes of labels. Fermata is resizable, scrolls, has font, font size, and color choices, and more.",
+      "manualUrl": "https://github.com/mahlenmorris/VCVRack/blob/main/README.md#fermata",
+      "tags": [
+        "Blank",
+        "Utility",
+        "Visual"
+      ]
+    },
+    {
+      "slug": "Fuse",
+      "name": "Fuse",
+      "description": "Counts triggers and blocks/allows a signal after hitting a limit. Useful for timed composition changes, simulating components that break with overuse, or scaling a value based on the number of triggers.",
+      "manualUrl": "https://github.com/mahlenmorris/VCVRack/blob/main/README.md#fuse",
+      "tags": [
+        "Clock modulator",
+        "Utility",
+        "Voltage-controlled amplifier"
+      ]
+    },
+    {
+      "slug": "TTY",
+      "name": "TTY",
+      "description": "Logs values from cables and/or text messages from Tipsy text sources (e.g., BASICally, Memory). Makes monitoring of values or logging far easier. TTY is resizable, scrolls, has font, font size, and color choices, and more.",
+      "manualUrl": "https://github.com/mahlenmorris/VCVRack/blob/main/README.md#tty",
+      "tags": [
+        "Recording",
+        "Utility",
+        "Visual"
+      ]
+    },
+    {
+      "slug": "Memory",
+      "name": "Memory",
+      "description": "The root part of a Memory Ensemble, optimized for audio. What Fixation and Ruminate reads, Embellish and Brainwash write to and Depict displays.",
+      "manualUrl": "https://github.com/mahlenmorris/VCVRack/blob/main/Memory.md#memory",
+      "tags": [
+        "Recording",
+        "Sampler"
+      ]
+    },
+    {
+      "slug": "MemoryCV",
+      "name": "MemoryCV",
+      "description": "The root part of a MemoryCV Ensemble, optimized for control voltage. What Fixation and Ruminate reads, Embellish and Brainwash write to and Depict displays.",
+      "manualUrl": "https://github.com/mahlenmorris/VCVRack/blob/main/Memory.md#memorycv",
+      "tags": [
+        "Recording",
+        "Sampler"
+      ]
+    },
+    {
+      "slug": "Ruminate",
+      "name": "Ruminate",
+      "description": "A playback head within a Memory Ensemble that plays the entire Memory or MemoryCV.",
+      "manualUrl": "https://github.com/mahlenmorris/VCVRack/blob/main/Memory.md#ruminate",
+      "tags": [
+        "Delay",
+        "Expander",
+        "Sampler"
+      ]
+    },
+    {
+      "slug": "Fixation",
+      "name": "Fixation",
+      "description": "Playback head with a Memory Ensemble that repeatedly plays a short part of the Memory or MemoryCV.",
+      "manualUrl": "https://github.com/mahlenmorris/VCVRack/blob/main/Memory.md#fixation",
+      "tags": [
+        "Delay",
+        "Expander",
+        "Sampler"
+      ]
+    },
+    {
+      "slug": "Embellish",
+      "name": "Embellish",
+      "description": "A recording and playback head for a Memory or MemoryCV Ensemble.",
+      "manualUrl": "https://github.com/mahlenmorris/VCVRack/blob/main/Memory.md#embellish",
+      "tags": [
+        "Expander",
+        "Recording",
+        "Sampler"
+      ]
+    },
+    {
+      "slug": "Depict",
+      "name": "Depict",
+      "description": "Visualizes activity of other modules within a Memory Ensemble.",
+      "manualUrl": "https://github.com/mahlenmorris/VCVRack/blob/main/Memory.md#depict",
+      "tags": [
+        "Expander",
+        "Visual"
+      ]
+    },
+    {
+      "slug": "Venn",
+      "name": "Venn",
+      "description": "2D graphical control signals. A single moving or mouse-driven point causes up to 16 circles to output signals based on the point's position within them.",
+      "manualUrl": "https://github.com/mahlenmorris/VCVRack/blob/main/README.md#venn",
+      "tags": [
+        "Controller",
+        "Polyphonic",
+        "Visual"
+      ]
+    },
+    {
+      "slug": "Brainwash",
+      "name": "Brainwash",
+      "description": "Records input and then replaces the contents of a Memory or MemoryCV.",
+      "manualUrl": "https://github.com/mahlenmorris/VCVRack/blob/main/Memory.md#brainwash",
+      "tags": [
+        "Expander",
+        "Recording",
+        "Sampler"
+      ]
+    }
+  ]
+}

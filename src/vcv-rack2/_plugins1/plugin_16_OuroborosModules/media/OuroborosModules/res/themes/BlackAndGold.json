@@ -1,0 +1,161 @@
+{
+    "comment_LICENSE": "CC-BY-SA 3.0",
+
+    "name": "Black and Gold",
+    "styles": {
+        "hidden": {
+            "fill": "none",
+            "stroke": "none"
+        },
+
+        "background-fill": {
+            "fill": "#1f1f1f"
+        },
+
+        "output-fill": {
+            "fill": "#1f1f1f",
+            "stroke": { "color": "#bf9b30", "line_cap": "round", "width": 1.5 }
+        },
+
+        "moduleName": {
+            "fill": "#bf9b30"
+        },
+
+        "text": {
+            "fill": "#bf9b30"
+        },
+
+        "text-output": {
+            "fill": "#bf9b30"
+        },
+
+        "silkscreen": {
+            "fill": "#bf9b30"
+        },
+
+        "silkscreen-out": {
+            "fill": "#bf9b30"
+        },
+
+        "cable-color-display-background": {
+            "fill": "#1f1f1f"
+        },
+
+        "cable-color-display-text": {
+            "fill": "#bf9b30"
+        },
+
+        ".emblem-image": {
+            "fill": "#bf9b30"
+        },
+
+        ".screw-outer": {
+            "fill": { "gradient": [
+                { "index": 0, "color": "#685c12" },
+                { "index": 1, "color": "#7e7016" }
+            ]}
+        },
+
+        ".screw-mid": {
+            "fill": { "gradient": [
+                { "index": 0, "color": "#796b15" },
+                { "index": 1, "color": "#9c8b1c" }
+            ]}
+        },
+
+        ".screw-inner": {
+            "fill": { "gradient": [
+                { "index": 0, "color": "#8b7c19" },
+                { "index": 1, "color": "#a5921d" }
+            ]}
+        },
+
+        ".screw-socket": {
+            "fill": "#685c12",
+            "stroke": "#2b2608"
+        },
+
+        ".jack-outline": {
+            "fill": "#00000000",
+            "fillDisabled": { "gradient": [
+                { "index": 0, "color": "#6f5300" },
+                { "index": 1, "color": "#906c00" }
+            ]}
+        },
+
+        ".jack-nut-outer": {
+            "fill": { "gradient": [
+                { "index": 0, "color": "#bf951a" },
+                { "index": 1, "color": "#fae6af" }
+            ]}
+        },
+
+        ".jack-nut-mid": {
+            "fill": "#f1cd62"
+        },
+
+        ".jack-nut-inner": {
+            "fill": { "gradient": [
+                { "index": 0, "color": "#cda93e" },
+                { "index": 1, "color": "#9a760b" }
+            ]}
+        },
+
+        ".jack-hole-outer": {
+            "fill": { "gradient": [
+                { "index": 0, "color": "#8f8f8f" },
+                { "index": 1, "color": "#d9d9d9" }
+            ]}
+        },
+
+        ".jack-hole-mid": {
+            "fill": "#aaaaaa"
+        },
+
+        ".jack-hole-inner": {
+            "fill": { "gradient": [
+                { "index": 0, "color": "#a8a8a8" },
+                { "index": 1, "color": "#757575" }
+            ]}
+        },
+
+        ".jack-hole-outer-out": {
+            "fill": { "gradient": [
+                { "index": 0, "color": "#3d3d3d" },
+                { "index": 1, "color": "#757575" }
+            ]}
+        },
+
+        ".jack-hole-mid-out": {
+            "fill": "#525252"
+        },
+
+        ".jack-hole-inner-out": {
+            "fill": { "gradient": [
+                { "index": 0, "color": "#696969" },
+                { "index": 1, "color": "#3d3d3d" }
+            ]}
+        },
+
+        ".knob-metal-pointer": {
+            "fill": { "gradient": [
+                { "index": 0, "color": "#373737" },
+                { "index": 1, "color": "#414141" }
+            ]}
+        },
+
+        ".knob-metal-outer": {
+            "fill": { "gradient": [
+                { "index": 0, "color": "#ddc578" },
+                { "index": 1, "color": "#e9d8a5" }
+            ]}
+        },
+
+        ".knob-metal-mid": {
+            "fill": { "gradient": [
+                { "index": 0, "color": "#ab8b2b" },
+                { "index": 1, "color": "#d6b85c" }
+            ]}
+        }
+    }
+}

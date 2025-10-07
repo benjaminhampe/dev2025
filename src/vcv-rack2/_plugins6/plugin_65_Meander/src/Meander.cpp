@@ -4193,7 +4193,7 @@ struct MeanderWidget : ModuleWidget
                     {
                         Vec TextPositionBdim=Vec(TextPosition.x+9, TextPosition.y-4);
                         sprintf(text, "o");
-                        if (doDebug) RK_DEBUG(text);
+                        if (doDebug) RK_DEBUG("%s", text);
                         nvgTextAlign(args.vg,NVG_ALIGN_CENTER|NVG_ALIGN_MIDDLE);
                         nvgFontSize(args.vg, 8);
                         nvgText(args.vg, TextPositionBdim.x, TextPositionBdim.y, text, NULL);

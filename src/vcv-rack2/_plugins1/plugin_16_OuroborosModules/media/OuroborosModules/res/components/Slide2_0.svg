@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Generator: Adobe Illustrator 25.2.3, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->
+
+<svg
+   version="1.0"
+   id="svg18800"
+   x="0px"
+   y="0px"
+   width="12"
+   height="16"
+   viewBox="0 0 12 16"
+   enable-background="new 0 0 15 14.9989"
+   xml:space="preserve"
+   sodipodi:docname="Slide2_0.svg"
+   inkscape:version="1.4.2 (ebf0e94, 2025-05-08)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:xlink="http://www.w3.org/1999/xlink"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg"><defs
+   id="defs6"><linearGradient
+     id="SVGID_1_"
+     gradientUnits="userSpaceOnUse"
+     x1="219.99944"
+     y1="6477.3999"
+     x2="232.99944"
+     y2="6477.3999"
+     gradientTransform="matrix(0,1,1,0,-6469.8999,-219)">
+	<stop
+   offset="0"
+   style="stop-color:#6c6c6c;stop-opacity:1;"
+   id="stop11" />
+	<stop
+   offset="1"
+   style="stop-color:#c7c7c7;stop-opacity:1;"
+   id="stop12" />
+</linearGradient><linearGradient
+     inkscape:collect="always"
+     xlink:href="#linearGradient1"
+     id="linearGradient2"
+     x1="1.852"
+     y1="5.086"
+     x2="1.852"
+     y2="2.7305"
+     gradientUnits="userSpaceOnUse"
+     gradientTransform="matrix(3.3843634,0,0,2.9717684,-1.2678412,-7.1144135)" /><linearGradient
+     id="linearGradient1"
+     inkscape:collect="always"><stop
+       style="stop-color:#323232;stop-opacity:1;"
+       offset="0"
+       id="stop1" /><stop
+       style="stop-color:#4a4a4a;stop-opacity:1;"
+       offset="1"
+       id="stop2" /></linearGradient></defs>
+<sodipodi:namedview
+   bordercolor="#666666"
+   borderopacity="1.0"
+   fit-margin-bottom="0"
+   fit-margin-left="0"
+   fit-margin-right="0"
+   fit-margin-top="0"
+   id="base"
+   inkscape:current-layer="layer4"
+   inkscape:cx="6.0656504"
+   inkscape:cy="7.9991455"
+   inkscape:document-units="px"
+   inkscape:pageopacity="0.0"
+   inkscape:pageshadow="2"
+   inkscape:window-height="1027"
+   inkscape:window-maximized="1"
+   inkscape:window-width="1920"
+   inkscape:window-x="-8"
+   inkscape:window-y="22"
+   inkscape:zoom="45.254834"
+   pagecolor="#ffffff"
+   showgrid="true"
+   units="px"
+   inkscape:showpageshadow="2"
+   inkscape:pagecheckerboard="0"
+   inkscape:deskcolor="#d1d1d1"
+   showguides="false">
+	<inkscape:grid
+   id="grid5"
+   units="px"
+   originx="0"
+   originy="0"
+   spacingx="1"
+   spacingy="1"
+   empcolor="#3f3fff"
+   empopacity="0.25098039"
+   color="#3f3fff"
+   opacity="0.1254902"
+   empspacing="5"
+   enabled="true"
+   visible="true" /></sodipodi:namedview>
+
+
+
+
+
+
+
+<g
+   inkscape:groupmode="layer"
+   id="layer3"
+   inkscape:label="Layer 1"
+   transform="translate(1)"><path
+     id="slide-switch-bg"
+     style="stroke-width:5.24596;paint-order:stroke fill markers"
+     d="M -0.19999999,0 H 10.2 C 10.6432,0 11,0.35680001 11,0.80000001 V 15.2 C 11,15.6432 10.6432,16 10.2,16 H -0.19999999 C -0.64319999,16 -1,15.6432 -1,15.2 V 0.80000001 C -1,0.35680001 -0.64319999,0 -0.19999999,0 Z" /><path
+     id="slide-switch-hole"
+     style="fill:#171717;stroke-width:4.4796;paint-order:stroke fill markers"
+     d="M 0.71001112,1.0000001 H 9.2899889 C 9.683335,1.0000001 10,1.3166651 10,1.7100112 V 14.289989 C 10,14.683335 9.683335,15 9.2899889,15 H 0.71001112 C 0.31666496,15 0,14.683335 0,14.289989 V 1.7100112 C 0,1.3166651 0.31666496,1.0000001 0.71001112,1.0000001 Z" /><g
+     inkscape:groupmode="layer"
+     id="layer4"
+     inkscape:label="Switch"
+     transform="translate(2.9802322e-8,7.0000001)"><path
+       id="rect1"
+       style="display:inline;fill:url(#linearGradient2);stroke-width:0.840408;paint-order:stroke fill markers"
+       d="M -5.9604645e-8,1 H 9.9999999 V 8 H -5.9604645e-8 Z" /><path
+       id="rect1-6"
+       style="fill:#707070;stroke-width:0.297096;paint-order:stroke fill markers"
+       d="M 0,1 H 10 V 1.8748143 H 0 Z" /><path
+       id="rect1-6-8"
+       style="fill:#707070;stroke-width:0.297096;paint-order:stroke fill markers"
+       d="M 0,2.7500002 H 10 V 3.6248145 H 0 Z" /><path
+       id="rect1-6-4-3-3"
+       style="fill:#707070;stroke-width:0.297096;paint-order:stroke fill markers"
+       d="M 0,4.5 H 10 V 5.3748143 H 0 Z" /><path
+       id="rect1-6-4-3-4"
+       style="fill:#707070;stroke-width:0.297096;paint-order:stroke fill markers"
+       d="M 0,6.25 H 10 V 7.1248143 H 0 Z" /></g></g></svg>

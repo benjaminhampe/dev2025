@@ -1,0 +1,22 @@
+{
+  "plugin": "StochasticTelegraph",
+  "model": "BASICally",
+  "version": "2.0.21",
+  "params": [
+    {
+      "value": 0.0,
+      "id": 0
+    },
+    {
+      "value": 0.0,
+      "id": 1
+    }
+  ],
+  "data": {
+    "text": "' A slow SAW that resets when in1 > 3.\nFOR OUT1 = -5 TO 5 STEP .1\n  WAIT 10\nNEXT\n\nWHEN trigger(IN1)\n  RESET\nEND WHEN",
+    "width": 23,
+    "screen_colors": 1095216660480,
+    "title_text": "Broken Saw",
+    "font_choice": "fonts/RobotoMono-Regular.ttf"
+  }
+}

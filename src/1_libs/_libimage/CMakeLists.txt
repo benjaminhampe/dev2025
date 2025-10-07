@@ -1,7 +1,8 @@
 # Math
 add_subdirectory(de-glm-4.20.8)
 # Xml
-add_subdirectory(de-tinyxml2)
+add_subdirectory(de-tinyxml-2.6.2)
+add_subdirectory(de-tinyxml2-8.0.0)
 #add_subdirectory(de-expat-3.2.2)
 # Images
 add_subdirectory(de-png-1.6.23)
