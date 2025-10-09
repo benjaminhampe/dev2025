@@ -1,4 +1,4 @@
-add_subdirectory(plugin_01_Fundamental)
+add_subdirectory(plugin_01_SeasideModular)
 add_subdirectory(plugin_02_Gemini)
 add_subdirectory(plugin_03_MADZINE)
 add_subdirectory(plugin_04_CVfunk-Modules)

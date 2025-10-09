@@ -4,7 +4,7 @@ project(${LIB_NAME})
 if (TARGET ${LIB_NAME})
 	message("${BoldYellow}[benni] HEADER_GUARD: ${LIB_NAME}${ColourReset}")
 else()
-    add_subdirectory(lib)
+    # add_subdirectory(lib)
 
 	set(LIB_SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/src)
     # file(GLOB_RECURSE LIB_SOURCES_HPP ${LIB_SOURCE_DIR}/*.hpp)
@@ -73,7 +73,7 @@ else()
     # target_compile_definitions(${LIB_NAME} PRIVATE _RACK_VERSION="2.6.2")
     
     target_link_libraries(${LIB_NAME} PRIVATE de_rack2)
-    target_link_libraries(${LIB_NAME} PRIVATE de_84_oscpack)
+    target_link_libraries(${LIB_NAME} PRIVATE de_oscpack)
     
     # target_link_libraries(${LIB_NAME} PRIVATE de_samplerate)
     # target_link_libraries(${LIB_NAME} PRIVATE de_dr_wav)

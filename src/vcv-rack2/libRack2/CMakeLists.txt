@@ -290,6 +290,8 @@ else()
         # target_link_options(${LIB_NAME} PRIVATE -mwindows)
 
         target_compile_options(${LIB_NAME} PUBLIC -Wno-deprecated-declarations)
+        target_compile_options(${LIB_NAME} PUBLIC -Wno-ignored-attributes)
+        
         if (WIN32)
             target_link_libraries(${LIB_NAME} PRIVATE shlwapi) # for PathRemoveFileSpecW
             target_link_libraries(${LIB_NAME} PRIVATE dbghelp) # for SymInitialize, SymFromAddr

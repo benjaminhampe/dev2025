@@ -659,7 +659,7 @@ struct SIMDNativeOps<uint64_t>
 
 #endif
 
-JUCE_END_IGNORE_WARNINGS_GCC_LIKE
+// JUCE_END_IGNORE_WARNINGS_GCC_LIKE
 
 } // namespace dsp
 } // namespace juce

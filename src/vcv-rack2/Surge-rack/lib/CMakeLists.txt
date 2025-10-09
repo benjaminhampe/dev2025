@@ -1,6 +1,5 @@
   # PUBLIC
   # fmt
-add_subdirectory(de-fmt)
   # luajit-5.1
 # add_subdirectory(de-luajit-5.1)
   # samplerate
