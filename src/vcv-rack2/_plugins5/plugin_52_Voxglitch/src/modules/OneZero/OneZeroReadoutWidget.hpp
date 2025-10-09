@@ -2,6 +2,8 @@ struct OneZeroReadoutWidget : TransparentWidget
 {
     OneZero *module;
 
+    std::shared_ptr<Font> font;
+
     OneZeroReadoutWidget()
     {
         // box.size = Vec(DRAW_AREA_WIDTH, DRAW_AREA_HEIGHT);
@@ -37,7 +39,11 @@ struct OneZeroReadoutWidget : TransparentWidget
             }
         }
 
-        std::shared_ptr<Font> font = APP->window->loadFont(asset::plugin(pluginInstance, "res/fonts/ShareTechMono-Regular.ttf"));
+        if (!font)
+        {
+            font = APP->window->loadFont(asset::system("res/fonts/ShareTechMono-Regular.ttf"));
+        }
+        
         if (font)
         {
             nvgFontSize(args.vg, 10);

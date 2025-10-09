@@ -9,6 +9,8 @@ struct NoteReadoutWidget : TransparentWidget
 
     float box_pos_x = 0;
     float box_pos_y = 0;
+    
+    std::shared_ptr<Font> font;
 
     NoteReadoutWidget(std::string default_string)
     {
@@ -33,7 +35,11 @@ struct NoteReadoutWidget : TransparentWidget
         nvgFillColor(vg, nvgRGB(0, 0, 0));
         nvgFill(vg);
 
-        std::shared_ptr<Font> font = APP->window->loadFont(asset::plugin(pluginInstance, "res/fonts/ShareTechMono-Regular.ttf"));
+        if (!font)
+        {
+            font = APP->window->loadFont(asset::system("res/fonts/ShareTechMono-Regular.ttf"));
+        }
+    
         if (font)
         {
             // Set common font attributes

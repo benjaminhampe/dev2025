@@ -410,9 +410,15 @@ struct BigSmorphDisplay : TransparentWidget
 
     std::string note, scale;
 
+    std::shared_ptr<Font> font;
+
     void drawMessage(NVGcontext *vg, Vec pos, std::string note, std::string scale)
     {
-        std::shared_ptr<Font> font = (APP->window->loadFont(asset::plugin(pluginInstance, "res/ShareTechMono-Regular.ttf")));
+        if (!font)
+        {
+            font = APP->window->loadFont(asset::system("res/fonts/ShareTechMono-Regular.ttf"));
+        }
+        
         if (font)
         {
             nvgFontSize(vg, 13);

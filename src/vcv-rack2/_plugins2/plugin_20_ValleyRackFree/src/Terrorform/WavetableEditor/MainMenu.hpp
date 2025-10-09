@@ -17,13 +17,15 @@ struct TFormEditMainMenu : TFormMenu {
     TFormEditorButtonStyleSet filledSlotStyle;
     TerrorformWaveBank bank;
     TFormTextField* nameField;
-    
+
     std::vector<bool> slotFilled;
     std::shared_ptr<int> selectedBank;
     bool selectedBankIsFilled;
 
     std::function<void(int, TerrorformWaveBank&)> onGetBankCallback;
     std::function<void(int, const std::string&)> onRenameBankCallback;
+
+    std::shared_ptr<Font> font;
 
     TFormEditMainMenu();
     void step() override;

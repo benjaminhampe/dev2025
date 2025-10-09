@@ -70,7 +70,7 @@ namespace {
         }
         else {
             std::string message = string::f("SubmarineFree WK: JSON parsing error at %s %d:%d %s", error.source, error.line, error.column, error.text);
-            RK_WARN(message.c_str());
+            RK_WARN("%s", message.c_str());
         }
         fclose(file);
     }
@@ -194,7 +194,7 @@ namespace {
 
     void WK_Tunings::loadTuningsFromScala(Plugin *pluginInstance) {
         std::vector<std::string> dirList = system::getEntries(asset::plugin(pluginInstance, "Scala"), 0);
-        for (auto entry : dirList) {
+        for (const auto& entry : dirList) {
             if (system::isDirectory(entry)) continue;
             if (string::lowercase(system::getExtension(entry)).compare(".scl")) continue;
             loadScalaFile(entry);

@@ -71,7 +71,11 @@ void TFormEditorButton::draw(const DrawArgs& args) {
     nvgRect(args.vg, 0, 0, box.size.x, box.size.y);
     nvgStroke(args.vg);
 
-    std::shared_ptr<Font> font = APP->window->loadFont(asset::system("res/fonts/ShareTechMono-Regular.ttf"));
+    if (!font)
+    {
+        font = APP->window->loadFont(asset::system("res/fonts/ShareTechMono-Regular.ttf"));
+    }
+
     if (font) {
         nvgFillColor(args.vg, colors.textColor);
         nvgFontFaceId(args.vg, font->handle);

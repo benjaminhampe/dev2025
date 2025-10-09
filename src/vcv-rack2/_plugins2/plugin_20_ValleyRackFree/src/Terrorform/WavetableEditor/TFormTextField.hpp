@@ -12,6 +12,8 @@ struct TFormTextField : TextField {
 
     std::function<void(const std::string&)> onDeselectCallback;
 
+    std::shared_ptr<Font> font;
+
     TFormTextField();
     void draw(const DrawArgs& args) override;
 
@@ -34,6 +36,8 @@ struct TFormNumberField : TextField {
     int value;
 
     std::function<void()> onChangeCallback;
+
+    std::shared_ptr<Font> font;
 
     TFormNumberField();
     void draw(const DrawArgs& args) override;

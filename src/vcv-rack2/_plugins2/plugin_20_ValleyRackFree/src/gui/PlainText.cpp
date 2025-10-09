@@ -8,7 +8,7 @@ PlainText::PlainText() {
 }
 
 void PlainText::draw(const DrawArgs &args) {
-    std::shared_ptr<Font> font;
+
     if (!fontPath.empty()) {
         font = APP->window->loadFont(asset::plugin(pluginInstance, fontPath));
     }

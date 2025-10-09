@@ -600,6 +600,8 @@ struct DrifterDisplay : LedDisplay {
   // so that it doesn't get allocated every time drawLayer() is called.
   point demo_display_points[DISPLAY_POINT_COUNT];
 
+  std::shared_ptr<Font> font;
+
   DrifterDisplay() {
     fontPath = asset::system("res/fonts/ShareTechMono-Regular.ttf");
   }
@@ -670,7 +672,10 @@ struct DrifterDisplay : LedDisplay {
       nvgStroke(args.vg);
 
       // Draw voltage numbers, to make the IN and OUT range more obvious.
-      std::shared_ptr<Font> font = APP->window->loadFont(fontPath);
+      if (!font)
+      {
+          font = APP->window->loadFont(fontPath);
+      }
       if (font) {
         nvgFontSize(args.vg, 13);
         nvgFontFaceId(args.vg, font->handle);

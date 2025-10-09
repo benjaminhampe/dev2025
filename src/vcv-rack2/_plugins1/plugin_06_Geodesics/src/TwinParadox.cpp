@@ -1109,10 +1109,14 @@ struct TwinParadoxWidget : ModuleWidget {
 		float fontSize;
 		NVGcolor fgColor = nvgRGB(0xea,0xea, 0xea);
 		Vec textPos;
+        std::shared_ptr<Font> font;
 
 		void prepareFont(const DrawArgs& args) {
 			// Get font
-			std::shared_ptr<Font> font = APP->window->loadFont(fontPath);
+			if (!font)
+            {
+                font = APP->window->loadFont(fontPath);
+            }
 			if (!font)
 				return;
 			nvgFontFaceId(args.vg, font->handle);

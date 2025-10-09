@@ -18,6 +18,7 @@ namespace {
 		std::function<void ()> addMenuHandler;
 		std::function<void (int oldPostion, int newPosition)> posHandler;
 		int oldPosition = 0;
+        std::shared_ptr<Font> font;
 		~TD5Text() {
 			if (data)
 				delete(data);
@@ -27,7 +28,10 @@ namespace {
 		}
 		void drawLayer(const DrawArgs &args, int layer) override {
 			if (layer == 1) {
-				std::shared_ptr<Font> font = APP->window->loadFont(asset::system("res/fonts/ShareTechMono-Regular.ttf"));
+                if (!font)
+                {
+                    font = APP->window->loadFont(asset::system("res/fonts/ShareTechMono-Regular.ttf"));
+                }
 				nvgFontFaceId(args.vg, font->handle);
 				nvgFontSize(args.vg, data->fontSize);
 				nvgFillColor(args.vg, data->color);
@@ -173,6 +177,7 @@ struct TD_510 : Module {
 struct TD510 : SchemeModuleWidget {
 	std::vector<TD5Text *> textItems;  
 	SchemePanel *schemePanel;
+    std::shared_ptr<Font> font;
 
 	TD510(TD_510 *module) {
 		setModule(module);
@@ -598,7 +603,10 @@ struct TD510 : SchemeModuleWidget {
 		nvgRect(vg, 4, 15, box.size.x - 8, box.size.y - 30);
 		nvgFill(vg);
 		if (!module) {
-			std::shared_ptr<Font> font = APP->window->loadFont(asset::system("res/fonts/ShareTechMono-Regular.ttf"));
+            if (!font)
+            {
+                font = APP->window->loadFont(asset::system("res/fonts/ShareTechMono-Regular.ttf"));
+            }
 			nvgFontFaceId(vg, font->handle);
 			nvgFontSize(vg, 25);
 			nvgFillColor(vg, SUBLIGHTBLUE);

@@ -22,6 +22,8 @@ struct TFormWaveViewPane : TFormMenu {
     std::function<void(int, TerrorformWaveBank&)> onGetBankCallback;
     std::function<void(int, const std::string&)> onRenameBankCallback;
 
+    std::shared_ptr<Font> font;
+
     TFormWaveViewPane();
     void draw(const DrawArgs& args) override;
     void step() override;

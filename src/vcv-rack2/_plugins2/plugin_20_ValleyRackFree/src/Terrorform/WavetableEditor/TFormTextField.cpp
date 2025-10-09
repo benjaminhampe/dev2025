@@ -1,5 +1,5 @@
 #include "TFormTextField.hpp"
-#include <iostream>
+// #include <iostream>
 
 TFormTextField::TFormTextField() {
     bgColor = nvgRGB(0x00, 0x00, 0x00);
@@ -17,7 +17,11 @@ void TFormTextField::draw(const DrawArgs& args) {
     nvgFill(args.vg);
 
     // Text
-    std::shared_ptr<Font> font = APP->window->loadFont(asset::system("res/fonts/ShareTechMono-Regular.ttf"));
+    if (!font)
+    {
+        font = APP->window->loadFont(asset::system("res/fonts/ShareTechMono-Regular.ttf"));
+    }
+
     if (font) {
         const int maxChars = 9;
         bndSetFont(font->handle);
@@ -120,7 +124,11 @@ void TFormNumberField::draw(const DrawArgs& args) {
     nvgFill(args.vg);
 
     // Text
-    std::shared_ptr<Font> font = APP->window->loadFont(asset::system("res/fonts/ShareTechMono-Regular.ttf"));
+    if (!font)
+    {
+        font = APP->window->loadFont(asset::system("res/fonts/ShareTechMono-Regular.ttf"));
+    }
+
     if (font) {
         const int maxChars = 2;
 

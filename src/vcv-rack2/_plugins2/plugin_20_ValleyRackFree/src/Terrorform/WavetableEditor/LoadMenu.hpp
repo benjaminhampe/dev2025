@@ -35,6 +35,8 @@ struct TFormLoadMenu : TFormMenu {
     std::function<void(int, int)> ingestNewTable;
     std::function<void(int, int, int, int, const std::string&)> onIngestTableCallback;
 
+    std::shared_ptr<Font> font;
+
     TFormLoadMenu();
     void draw(const DrawArgs& args) override;
     void step() override;

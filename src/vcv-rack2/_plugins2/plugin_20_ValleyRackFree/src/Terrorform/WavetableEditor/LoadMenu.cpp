@@ -144,7 +144,11 @@ void TFormLoadMenu::draw(const DrawArgs& args) {
     std::string strDetectedWaves = "Found " + std::to_string(maxWaves) + " waves";
     nvgFillColor(args.vg, nvgRGB(0xEF, 0xEF, 0xEF));
 
-    std::shared_ptr<Font> font = APP->window->loadFont(asset::system("res/fonts/ShareTechMono-Regular.ttf"));
+    if (!font)
+    {
+        font = APP->window->loadFont(asset::system("res/fonts/ShareTechMono-Regular.ttf"));
+    }
+
     if (font) {
         nvgFontFaceId(args.vg, font->handle);
         nvgTextLetterSpacing(args.vg, 0.0);

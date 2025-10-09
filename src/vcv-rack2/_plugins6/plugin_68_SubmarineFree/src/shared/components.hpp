@@ -313,6 +313,8 @@ struct SubText : LedDisplayTextField {
     float fontSize = 12.0f;
     bool textMenu = true;
     bool colorMenu = true;
+    std::function<void()> changeHandler;
+    std::shared_ptr<window::Font> font;
     SubText() {
         color = SUBLIGHTBLUE;
     }
@@ -325,7 +327,6 @@ struct SubText : LedDisplayTextField {
     MenuItem *createBackgroundMenuItem(std::string label, NVGcolor color);
     virtual void foregroundMenu(Menu *menu);
     virtual void backgroundMenu(Menu *menu);
-    std::function<void()> changeHandler;
 };
 
 //////////////////

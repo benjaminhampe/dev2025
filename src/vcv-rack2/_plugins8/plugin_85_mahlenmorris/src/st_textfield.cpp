@@ -196,7 +196,7 @@ void STTextField::draw(const DrawArgs& args) {
   // We'll clear this right away, in case some other event in the system
   // sets it while I'm drawing it.
   is_dirty = false;
- 
+
   if (args.vg != extended.latest_nvg_context) {
     extended.setNvgContext(args.vg);
   }
@@ -215,8 +215,10 @@ void STTextField::draw(const DrawArgs& args) {
     }
 
     // Text
-    std::shared_ptr<window::Font> font = APP->window->loadFont(fontPath);
-
+    if (!font)
+    {
+        font = APP->window->loadFont(fontPath);
+    }
     if (font && font->handle >= 0) {
       bndSetFont(font->handle);
 
@@ -525,7 +527,7 @@ void STTextField::insertText(std::string new_text) {
     this->text->erase(begin, len);
     cursor = selection = begin;
     changed = true;
-  }  
+  }
 
   // Sometimes text pasted from the outside has unprintable characters that mess
   // the display up. Let's remove them.
@@ -628,7 +630,7 @@ void STTextField::createContextMenu() {
 void STTextField::make_additions(TTYQueue *additions) {
   int likely_ending_length = extended.line_map.size() +
                              additions->text_additions.size();
-  bool cursor_at_end = 
+  bool cursor_at_end =
     (cursor + (large_text_mode ? 1 : 0) >= (int) text->size());
   std::string item;
   while (additions->text_additions.pop(item)) {

@@ -312,7 +312,8 @@ struct FuseDisplay : Widget {
   Fuse* module;
   std::string fontPath;
   int ticks_to_keep_text_visible = 0;
-
+  std::shared_ptr<Font> font;
+  
   FuseDisplay() {
     fontPath = asset::system("res/fonts/ShareTechMono-Regular.ttf");
   }
@@ -443,7 +444,10 @@ struct FuseDisplay : Widget {
       }
 
       if (ticks_to_keep_text_visible > 0) {
-        std::shared_ptr<Font> font = APP->window->loadFont(fontPath);
+        if (!font)
+        {
+            font = APP->window->loadFont(fontPath);
+        }
         if (font) {
           // WHITE is really hard to read on YELLOW.
           nvgFillColor(args.vg,

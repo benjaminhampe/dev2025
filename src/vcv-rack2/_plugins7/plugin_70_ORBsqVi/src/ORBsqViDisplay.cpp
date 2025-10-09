@@ -14,6 +14,8 @@ struct ORBsqViDisplay : rack::LedDisplay {
 
 	std::string fontPath = rack::asset::system("res/fonts/ShareTechMono-Regular.ttf");
 
+    std::shared_ptr<rack::Font> font;
+
 	void drawLayer(const DrawArgs& args, int layer) override {
 
 		if (layer == 1 && module) {
@@ -146,7 +148,10 @@ struct ORBsqViDisplay : rack::LedDisplay {
 				nvgStroke(args.vg);
 			}
 
-			std::shared_ptr<rack::Font> font = APP->window->loadFont(fontPath);
+            if (!font)
+            {
+                font = APP->window->loadFont(fontPath);
+            }
 			if (font) {
 				nvgFontSize(args.vg, 12);
 				nvgFontFaceId(args.vg, font->handle);

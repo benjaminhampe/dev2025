@@ -731,6 +731,8 @@ struct XySeqEditDragWidget : OpaqueWidget {
 	std::chrono::time_point<std::chrono::system_clock> timer;
 	bool timerClear;
 
+    std::shared_ptr<Font> font;
+
 	XySeqEditDragWidget() {
 		box.size = Vec(2 * radius, 2 * radius);
 	}
@@ -783,7 +785,10 @@ struct XySeqEditDragWidget : OpaqueWidget {
 			nvgFill(args.vg);
 
 			// Draw label
-			std::shared_ptr<Font> font = APP->window->loadFont(asset::system("res/fonts/ShareTechMono-Regular.ttf"));
+			if (!font)
+            {
+                font = APP->window->loadFont(asset::system("res/fonts/ShareTechMono-Regular.ttf"));
+            }            
 			nvgFontSize(args.vg, fontsize);
 			nvgFontFaceId(args.vg, font->handle);
 			nvgFillColor(args.vg, color);
@@ -870,6 +875,7 @@ struct XySeqEditWidget : OpaqueWidget {
 	int mixParamIdY;
 	int lastSeqId = -1;
 	int lastSeqSelected = -1;
+    std::shared_ptr<Font> font;
 
 	XySeqEditWidget(MODULE* module, int mixParamIdX, int mixParamIdY) {
 		this->module = module;
@@ -920,7 +926,11 @@ struct XySeqEditWidget : OpaqueWidget {
 				nvgStroke(args.vg);
 
 				// Draw "EDIT" text
-				std::shared_ptr<Font> font = APP->window->loadFont(asset::system("res/fonts/ShareTechMono-Regular.ttf"));
+                if (!font)
+                {
+                    font = APP->window->loadFont(asset::system("res/fonts/ShareTechMono-Regular.ttf"));
+                }            
+                
 				nvgFontSize(args.vg, 22);
 				nvgFontFaceId(args.vg, font->handle);
 				nvgTextLetterSpacing(args.vg, -2.2);

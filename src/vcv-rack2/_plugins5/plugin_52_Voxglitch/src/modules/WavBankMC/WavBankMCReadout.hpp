@@ -1,20 +1,24 @@
 struct WavBankMCReadout : TransparentWidget
 {
-	WavBankMC *module;
-	float text_rotation_angle = -M_PI / 2.0f;
-	std::shared_ptr<Font> font;
-	std::string text_to_display = "";
-  bool mouse_lock = false;
-  unsigned int window_start = 0;
-  unsigned int window_end = 0;
-  unsigned int hover_row = 0;
-  bool show_hover_effect = false;
+WavBankMC *module;
+float text_rotation_angle = -M_PI / 2.0f;
+std::shared_ptr<Font> font;
+std::string text_to_display = "";
+bool mouse_lock = false;
+unsigned int window_start = 0;
+unsigned int window_end = 0;
+unsigned int hover_row = 0;
+bool show_hover_effect = false;
 
-	void draw(const DrawArgs &args) override
-	{
+void draw(const DrawArgs &args) override
+{
 
     // Set font information
-    std::shared_ptr<Font> font = APP->window->loadFont(asset::plugin(pluginInstance, "res/fonts/ShareTechMono-Regular.ttf"));
+    if (!font)
+    {
+        font = APP->window->loadFont(asset::system("res/fonts/ShareTechMono-Regular.ttf"));
+    }
+        
     if (font) {
   		nvgFontSize(args.vg, 11);
   		nvgFontFaceId(args.vg, font->handle);

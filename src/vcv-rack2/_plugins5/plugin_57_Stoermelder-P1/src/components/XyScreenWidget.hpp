@@ -498,6 +498,8 @@ struct XyScreenDragWidget : OpaqueWidget {
 	math::Vec dragPos;
 	XyScreenChangeAction<MODULE>* dragAction;
 
+    std::shared_ptr<Font> font;
+
 	XyScreenDragWidget() {
 		box.size = Vec(2 * radius, 2 * radius);
 	}
@@ -619,9 +621,12 @@ struct XyScreenDragWidget : OpaqueWidget {
 			nvgGlobalCompositeOperation(args.vg, NVG_ATOP);
 
 			// Draw text label
-			std::shared_ptr<Font> font = APP->window->loadFont(asset::system("res/fonts/ShareTechMono-Regular.ttf"));
-			nvgFontSize(args.vg, fontsize);
+			if (!font)
+            {
+                font = APP->window->loadFont(asset::system("res/fonts/ShareTechMono-Regular.ttf"));
+            }
 			nvgFontFaceId(args.vg, font->handle);
+			nvgFontSize(args.vg, fontsize);            
 			nvgFillColor(args.vg, textColor);
 			nvgTextBox(args.vg, c.x - 3.f, c.y + 4.f, 120, string::f("%i", id + 1).c_str(), NULL);
 		}

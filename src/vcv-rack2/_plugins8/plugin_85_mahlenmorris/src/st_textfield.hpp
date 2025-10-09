@@ -53,6 +53,8 @@ struct STTextField : OpaqueWidget {
   // draw() clears this flag, since that's a signal that the dirt has been seen.
   bool is_dirty;
 
+  std::shared_ptr<window::Font> font;
+
   STTextField();
 
   // Pulled in from oui-blendish code.

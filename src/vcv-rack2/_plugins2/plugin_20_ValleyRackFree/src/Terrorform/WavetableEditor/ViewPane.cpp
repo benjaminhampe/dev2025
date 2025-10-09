@@ -48,7 +48,11 @@ void TFormWaveViewPane::draw(const DrawArgs& args) {
     std::string strSelectedBank = "Bank: ";
     nvgFillColor(args.vg, nvgRGB(0xEF, 0xEF, 0xEF));
 
-    std::shared_ptr<Font> font = APP->window->loadFont(asset::system("res/fonts/ShareTechMono-Regular.ttf"));
+    if (!font)
+    {
+        font = APP->window->loadFont(asset::system("res/fonts/ShareTechMono-Regular.ttf"));
+    }
+
     if (font) {
         nvgFontFaceId(args.vg, font->handle);
         nvgTextLetterSpacing(args.vg, 0.0);

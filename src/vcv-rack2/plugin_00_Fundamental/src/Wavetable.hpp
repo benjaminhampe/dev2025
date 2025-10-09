@@ -329,6 +329,7 @@ static Wavetable defaultWavetable;
 template <class TModule>
 struct WTDisplay : LedDisplay {
 	TModule* module;
+    std::shared_ptr<Font> font;
 
 	void drawLayer(const DrawArgs& args, int layer) override {
 		nvgScissor(args.vg, RECT_ARGS(args.clipBox));
@@ -342,10 +343,13 @@ struct WTDisplay : LedDisplay {
 			float lastPos = module ? module->lastPos : 0.f;
 
 			// Draw filename text
-			std::string fontPath = asset::system("res/fonts/ShareTechMono-Regular.ttf");
-			std::shared_ptr<Font> font = APP->window->loadFont(fontPath);
-			if (!font)
-				return;
+            if (!font)
+            {
+                auto fontPath = asset::system("res/fonts/ShareTechMono-Regular.ttf");
+                font = APP->window->loadFont(fontPath);
+                if (!font)
+                    return;
+            }    
 			nvgFontSize(args.vg, 13);
 			nvgFontFaceId(args.vg, font->handle);
 			nvgFillColor(args.vg, SCHEME_YELLOW);

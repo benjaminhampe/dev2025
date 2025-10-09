@@ -21,6 +21,7 @@ struct TFormCloneMenuSourcePage : TFormMenu {
     std::vector<std::vector<float>> waveData;
     std::shared_ptr<int> sourceBank;
     TerrorformWaveBank bank;
+    std::shared_ptr<Font> font;
 
     TFormCloneMenuSourcePage();
     void step() override;

@@ -16,7 +16,11 @@ struct LengthReadoutDisplay : TransparentWidget
       text_to_display = std::to_string(module->sequencer.length);
     }
 
-    std::shared_ptr<Font> font = APP->window->loadFont(asset::plugin(pluginInstance, "res/fonts/ShareTechMono-Regular.ttf"));
+    if (!font)
+    {
+        font = APP->window->loadFont(asset::system("res/fonts/ShareTechMono-Regular.ttf"));
+    }
+    
   	if (font) {
       nvgFontSize(vg, 12);
       nvgFontFaceId(vg, font->handle);

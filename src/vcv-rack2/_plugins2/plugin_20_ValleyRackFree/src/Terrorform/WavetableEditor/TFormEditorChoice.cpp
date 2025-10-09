@@ -35,7 +35,7 @@ TFormEditorChoice::TFormEditorChoice() {
 void TFormEditorChoice::onAction(const event::Action &e) {
     Menu* menu = createMenu();
     menu->box.pos = getAbsoluteOffset(Vec(0, box.size.y)).round();
-	menu->box.size.x = box.size.x;
+    menu->box.size.x = box.size.x;
 
     for(size_t i = 0; i < maxItems; ++i) {
         TFormEditorChoiceItem *item = new TFormEditorChoiceItem(i);
@@ -66,7 +66,11 @@ void TFormEditorChoice::draw(const DrawArgs& args) {
     nvgStroke(args.vg);
     nvgClosePath(args.vg);
 
-    std::shared_ptr<Font> font = APP->window->loadFont(asset::system("res/fonts/ShareTechMono-Regular.ttf"));
+    if (!font)
+    {
+        font = APP->window->loadFont(asset::system("res/fonts/ShareTechMono-Regular.ttf"));
+    }
+
     if (font) {
         nvgFontSize(args.vg, 12);
         nvgFontFaceId(args.vg, font->handle);

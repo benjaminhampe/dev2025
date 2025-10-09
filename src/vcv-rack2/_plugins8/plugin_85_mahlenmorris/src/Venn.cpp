@@ -1046,7 +1046,8 @@ struct VennErrorTooltip : ui::Tooltip {
 struct VennErrorWidget : widget::OpaqueWidget {
   std::shared_ptr<VennDriver> driver;
   VennErrorTooltip* tooltip;
-
+  std::shared_ptr<Font> font;
+  
   VennErrorWidget() {
     tooltip = NULL;
   }
@@ -1110,9 +1111,12 @@ struct VennErrorWidget : widget::OpaqueWidget {
               bounding_box.x - 1.0f, bounding_box.y - 1.0f);
       nvgFillColor(args.vg, main_color);
       nvgFill(args.vg);
-      std::string fontPath;
-      fontPath = asset::system("res/fonts/ShareTechMono-Regular.ttf");
-      std::shared_ptr<Font> font = APP->window->loadFont(fontPath);
+      
+      if (!font)
+      {
+          std::string fontPath = asset::system("res/fonts/ShareTechMono-Regular.ttf");
+          font = APP->window->loadFont(fontPath);
+      }
       if (font) {
         nvgFillColor(args.vg,
            (good ? color::BLACK : color::WHITE));

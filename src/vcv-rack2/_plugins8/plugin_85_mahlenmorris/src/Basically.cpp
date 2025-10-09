@@ -1179,6 +1179,7 @@ struct ErrorTooltip : ui::Tooltip {
 struct ErrorWidget : widget::OpaqueWidget {
   Basically* module;
   ErrorTooltip* tooltip;
+  std::shared_ptr<Font> font;
 
   ErrorWidget() {
     tooltip = NULL;
@@ -1247,13 +1248,17 @@ struct ErrorWidget : widget::OpaqueWidget {
               bounding_box.x - 1.0f, bounding_box.y - 1.0f);
       nvgFillColor(args.vg, main_color);
       nvgFill(args.vg);
-      std::string fontPath;
-      if (module) {
-        fontPath = module->getFontPath();
-      } else {
-        fontPath = asset::system("res/fonts/ShareTechMono-Regular.ttf");
+      
+      if (!font)
+      {
+        std::string fontPath;
+        if (module) {
+            fontPath = module->getFontPath();
+        } else {
+            fontPath = asset::system("res/fonts/ShareTechMono-Regular.ttf");
+        }
+        font = APP->window->loadFont(fontPath);
       }
-      std::shared_ptr<Font> font = APP->window->loadFont(fontPath);
       if (font) {
         nvgFillColor(args.vg,  blue_orange ?
            (good ? color::WHITE : color::BLACK) :

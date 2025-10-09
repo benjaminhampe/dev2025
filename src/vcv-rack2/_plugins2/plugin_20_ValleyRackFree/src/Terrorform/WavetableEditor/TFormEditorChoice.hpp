@@ -20,7 +20,6 @@ struct TFormEditorChoice : ChoiceButton {
     std::vector<std::string> items;
     size_t maxItems;
 
-    std::shared_ptr<Font> font;
     NVGcolor boxColor;
     NVGcolor arrowColor;
     NVGcolor textColor;
@@ -30,6 +29,8 @@ struct TFormEditorChoice : ChoiceButton {
     NVGcolor arrowOnLeaveColor;
 
     std::function<void()> onChangeCallback;
+
+    std::shared_ptr<Font> font;
 
     TFormEditorChoice();
     void onAction(const event::Action &e) override;

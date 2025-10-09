@@ -14,7 +14,7 @@
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 struct SvgStepSlider : app::SvgSlider {
-	void onChange(const event::Change& e) override;
+    void onChange(const event::Change& e) override;
 };
 
 struct PlainText : TransparentWidget {
@@ -24,6 +24,7 @@ struct PlainText : TransparentWidget {
     NVGalign horzAlignment;
     NVGalign vertAlignment;
     int size;
+    std::shared_ptr<Font> font;
 
     PlainText();
     void draw(const DrawArgs &args) override;
@@ -44,11 +45,11 @@ struct DynamicMenuItem : MenuItem {
 
 struct DynamicSubMenu : MenuItem {
     Menu* createChildMenu() override;
-	std::vector<std::string> items;
-	size_t itemOffset;
-	size_t* choice;
-	bool showTick;
-	std::function<void(int)> setChoice;
+    std::vector<std::string> items;
+    size_t itemOffset;
+    size_t* choice;
+    bool showTick;
+    std::function<void(int)> setChoice;
 };
 
 struct DynamicMenu : ChoiceButton {
@@ -60,7 +61,7 @@ struct DynamicMenu : ChoiceButton {
     void draw(const DrawArgs &args) override;
 
     size_t _choice = 0;
-	size_t _subMenuGroupSize = 0;
+    size_t _subMenuGroupSize = 0;
     std::vector<std::string> _items;
     std::shared_ptr<std::string> _text;
     bool _isTransparent = false;

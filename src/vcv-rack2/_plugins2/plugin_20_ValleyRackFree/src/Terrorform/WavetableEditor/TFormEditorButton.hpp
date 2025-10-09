@@ -5,7 +5,7 @@
 
 struct TFormEditorButtonColors {
     NVGcolor textColor;
-	NVGcolor bgColor;
+    NVGcolor bgColor;
     NVGcolor borderColor;
 
     TFormEditorButtonColors();
@@ -41,6 +41,8 @@ struct TFormEditorButton : public OpaqueWidget {
     bool respondToMouse;
 
     std::function<void()> onClick;
+
+    std::shared_ptr<Font> font;
 
     TFormEditorButton();
     void draw(const DrawArgs& args) override;

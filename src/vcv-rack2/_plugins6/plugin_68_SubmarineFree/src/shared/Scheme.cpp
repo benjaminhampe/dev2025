@@ -17,7 +17,7 @@ Scheme::Scheme() {
     fclose(file);
     if (!rootJ) {
         std::string message = string::f("Submarine Free Settings: JSON parsing error at %s %d:%d %s", error.source, error.line, error.column, error.text);
-        RK_WARN(message.c_str());
+        RK_WARN("%s", message.c_str());
         return;
     }
     json_t *h1 = json_object_get(rootJ, "flat");

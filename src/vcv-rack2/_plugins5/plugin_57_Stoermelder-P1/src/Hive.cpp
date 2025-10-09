@@ -907,6 +907,7 @@ struct HiveStartPosEditWidget : TransparentWidget, HiveDrawHelper<MODULE> {
 	MODULE* module;
 	int selectedId = -1;
 	math::Vec dragPos;
+    std::shared_ptr<Font> font;
 
 	HiveStartPosEditWidget(MODULE* module) {
 		this->module = module;
@@ -914,7 +915,10 @@ struct HiveStartPosEditWidget : TransparentWidget, HiveDrawHelper<MODULE> {
 	}
 
 	void drawLayer(const DrawArgs& args, int layer) override {
-		std::shared_ptr<Font> font = APP->window->loadFont(asset::system("res/fonts/ShareTechMono-Regular.ttf"));
+		if (!font)
+        {
+            font = APP->window->loadFont(asset::system("res/fonts/ShareTechMono-Regular.ttf"));
+        }
 		if (layer == 1 && module && module->currentState == MODULESTATE::EDIT) {
 			NVGcolor c = color::mult(color::WHITE, 0.7f);
 			float stroke = 1.f;

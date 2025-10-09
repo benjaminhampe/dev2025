@@ -11,9 +11,12 @@ struct WavBankReadout : TransparentWidget
 
     void draw(const DrawArgs &args) override
     {
-
         // Set font information
-        std::shared_ptr<Font> font = APP->window->loadFont(asset::plugin(pluginInstance, "res/fonts/ShareTechMono-Regular.ttf"));
+        if (!font)
+        {
+            font = APP->window->loadFont(asset::system("res/fonts/ShareTechMono-Regular.ttf"));
+        }
+        
         if (font)
         {
             nvgFontSize(args.vg, 11);
