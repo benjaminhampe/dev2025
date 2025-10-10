@@ -49,7 +49,7 @@ int32_t dbRND()
 void dbLogMessage( int logLevel, const std::string& msg,
         const std::string& file, int line, const std::string& func,
         std::thread::id threadId )
-// ===========================================================================              
+// ===========================================================================
 {
     static double g_lineCount = 0;
     g_lineCount++;
@@ -135,7 +135,7 @@ PerfMarker::~PerfMarker()
 // ======= StringUtil ========================================================
 // ===========================================================================
 
-//static 
+//static
 char
 StringUtil::hexLowNibble( uint8_t byte )
 {
@@ -150,14 +150,14 @@ StringUtil::hexLowNibble( uint8_t byte )
     }
 }
 
-//static 
+//static
 char
 StringUtil::hexHighNibble( uint8_t byte )
 {
     return hexLowNibble( byte >> 4 );
 }
 
-//static 
+//static
 std::string
 StringUtil::hex( uint8_t byte )
 {
@@ -166,7 +166,7 @@ StringUtil::hex( uint8_t byte )
     return o.str();
 }
 
-//static 
+//static
 std::string
 StringUtil::hex( uint16_t const color )
 {
@@ -208,7 +208,7 @@ StringUtil::hex( uint64_t color )
     return o.str();
 }
 
-//static 
+//static
 std::string
 StringUtil::hex( uint8_t const* beg, uint8_t const* end )
 {
@@ -223,7 +223,7 @@ StringUtil::hex( uint8_t const* beg, uint8_t const* end )
     return o.str();
 }
 
-//static 
+//static
 std::string
 StringUtil::hex( uint8_t const* beg, uint8_t const* end, size_t nBytesPerRow )
 {
@@ -279,7 +279,7 @@ StringUtil::nanoseconds( double nSeconds )
     return o.str();
 }
 
-//static 
+//static
 std::string
 StringUtil::seconds( double nSeconds )
 {
@@ -310,7 +310,7 @@ StringUtil::seconds( double nSeconds )
     return s.str();
 }
 
-//static 
+//static
 std::string
 StringUtil::bytes( uint64_t nBytes )
 {
@@ -348,7 +348,7 @@ StringUtil::bytes( uint64_t nBytes )
     return o.str();
 }
 
-//static 
+//static
 std::string
 StringUtil::replace( const std::string& txt, const std::string& from, const std::string& to, size_t* nReplacements )
 {
@@ -362,6 +362,19 @@ StringUtil::replace( const std::string& txt, const std::string& from, const std:
 
     if ( to.empty() )
     {
+        if (from.size() == 1)
+        {
+            s.erase(std::remove(s.begin(), s.end(), from.front()), s.end());
+        }
+        else
+        {
+            size_t pos;
+            while ((pos = s.find(from)) != std::string::npos)
+            {
+                s.erase(pos, from.length());
+            }
+        }
+        /*
         size_t pos = s.find( from );
         if ( pos == std::string::npos )
         {
@@ -375,6 +388,7 @@ StringUtil::replace( const std::string& txt, const std::string& from, const std:
                 pos = s.find( from, pos );
             }
         }
+        */
     }
     else
     {
@@ -410,6 +424,19 @@ StringUtil::replace( const std::wstring& txt, const std::wstring& from, const st
 
     if ( to.empty() )
     {
+        if (from.size() == 1)
+        {
+            s.erase(std::remove(s.begin(), s.end(), from.front()), s.end());
+        }
+        else
+        {
+            size_t pos;
+            while ((pos = s.find(from)) != std::string::npos)
+            {
+                s.erase(pos, from.length());
+            }
+        }
+        /*
         size_t pos = s.find( from );
         if ( pos == std::string::npos )
         {
@@ -423,6 +450,7 @@ StringUtil::replace( const std::wstring& txt, const std::wstring& from, const st
                 pos = s.find( from, pos );
             }
         }
+        */
     }
     else
     {
@@ -445,7 +473,7 @@ StringUtil::replace( const std::wstring& txt, const std::wstring& from, const st
     return s;
 }
 
-//static 
+//static
 std::vector< std::string >
 StringUtil::split( const std::string& txt, char searchChar, bool bKeepEmptyLines )
 {
@@ -712,7 +740,7 @@ StringUtil::makeUpper( const std::string & txt, const std::locale & loc )
 }
 
 
-//static 
+//static
 bool
 StringUtil::startsWith( const std::string& str, char c )
 {
@@ -727,7 +755,7 @@ StringUtil::startsWith( const std::wstring& str, wchar_t c )
     return str[ 0 ] == c;
 }
 
-//static 
+//static
 bool
 StringUtil::endsWith( const std::string& str, char c )
 {
@@ -837,7 +865,7 @@ StringUtil::endsWith( const std::wstring& str, const std::wstring& query )
     return impl_StringUtil_endsWith(str,query);
 }
 
-//static 
+//static
 std::string
 StringUtil::joinVector( std::vector< std::string > const & v, const std::string& prefix )
 {
@@ -856,14 +884,14 @@ StringUtil::joinVector( std::vector< std::string > const & v, const std::string&
     return o.str();
 }
 
-//static 
+//static
 std::string
 StringUtil::trim( const std::string& txt, const std::string& filter )
 {
     return trimRight( trimLeft( txt, filter ), filter );
 }
 
-//static 
+//static
 std::string
 StringUtil::trimLeft( const std::string& txt, const std::string& filter )
 {
@@ -906,7 +934,7 @@ StringUtil::trimLeft( const std::string& txt, const std::string& filter )
     }
 }
 
-//static 
+//static
 std::string
 StringUtil::trimRight( const std::string& original, const std::string& filter )
 {
@@ -1875,7 +1903,7 @@ FileSystem::copyFile( std::string src, std::string dst )
       DE_ERROR("Cant copy file(",src,",",dst,")")
       return false;
    }
-   
+
    return true;
 }
 
@@ -1919,8 +1947,39 @@ FileSystem::isAbsolute( const std::wstring & uri )
     return fs::path( uri ).is_absolute();
 }
 
+// static
+std::vector<std::string>
+FileSystem::entries(std::string baseDir,
+        bool recursive,
+        bool withFiles,
+        bool withDirs)
+{
+    std::vector<std::string> collection;
+
+    size_t i = 0;
+
+    entries( baseDir, recursive, withFiles, withDirs,
+            [&]( const std::string & )
+            {
+                i++;
+            });
+
+    if (i > 0)
+    {
+        collection.reserve( i );
+
+        entries( baseDir, recursive, withFiles, withDirs,
+                [&]( const std::string & fileName )
+                {
+                    collection.emplace_back( fileName );
+                });
+    }
+
+    return collection;
+}
+
 bool
-FileSystem::scanDir(std::string baseDir,
+FileSystem::entries(std::string baseDir,
                     bool recursive,
                     bool withFiles,
                     bool withDirs,
@@ -2908,7 +2967,7 @@ Binary::seek( uint64_t byteOffset, int dir )
       DE_DEBUG("Invalid SEEK MODE ", dir )
       return false;
    }
-   
+
 }
 */
 

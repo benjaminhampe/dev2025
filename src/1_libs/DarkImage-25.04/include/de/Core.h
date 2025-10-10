@@ -113,7 +113,7 @@ int32_t dbRND();
 inline std::string dbResetTerminalColors() { return "\033[0m"; }
 
 /// @brief Write ANSI terminal/console color RGB marker. Foreground + Background colors.
-inline std::string dbSetTerminalColors( uint8_t fr, uint8_t fg, uint8_t fb, 
+inline std::string dbSetTerminalColors( uint8_t fr, uint8_t fg, uint8_t fb,
                      uint8_t br, uint8_t bg, uint8_t bb )
 {
    // The (int) casts are necessary to print decimals and not secret control message hex bytes.
@@ -554,11 +554,17 @@ struct FileSystem
     isAbsolute( const std::wstring & uri );
 
     static bool
-    scanDir(std::string baseDir,
+    entries(std::string baseDir,
             bool recursive,
             bool withFiles,
             bool withDirs,
             const std::function< void( const std::string & ) > & onFileName );
+
+    static std::vector<std::string>
+    entries(std::string baseDir,
+            bool recursive,
+            bool withFiles,
+            bool withDirs);
 };
 
 //===================================================================
@@ -615,7 +621,7 @@ struct PerformanceTimer
    bool m_isStarted = false;
 };
 
-        
+
 enum class SeekMode
 {
    SET = 0,
@@ -747,7 +753,7 @@ struct Binary
     bool save( const std::string& uri ) const;
 };
 
-//===================================================================    
+//===================================================================
 struct FileMagic
 //===================================================================
 {

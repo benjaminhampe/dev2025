@@ -1,0 +1,10 @@
+add_subdirectory(_odin_asset2bin)
+
+add_subdirectory(de_juce_odin2_standalone)
+add_subdirectory(build_standalone)
+
+add_subdirectory(de_juce_odin2_vst2)
+add_subdirectory(build_vst2)
+
+add_subdirectory(de_juce_odin2_vst3)
+add_subdirectory(build_vst3)

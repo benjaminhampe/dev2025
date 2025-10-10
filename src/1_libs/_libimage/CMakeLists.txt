@@ -27,9 +27,8 @@ add_subdirectory(de-nanosvg)
 
 add_subdirectory(de-rapidjson)
 
-# add_subdirectory(de-expat-3.2.2)
-# add_subdirectory(de-openexr-3.3.2)
-# add_subdirectory(de-zimg)
+add_subdirectory(de-openexr-3.3.2)
+add_subdirectory(de-zimg)
 
 
 ## WorkInProgress:

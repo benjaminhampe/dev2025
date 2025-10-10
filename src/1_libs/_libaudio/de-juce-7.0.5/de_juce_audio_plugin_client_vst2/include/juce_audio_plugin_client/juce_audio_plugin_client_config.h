@@ -110,10 +110,11 @@
 #ifndef JucePlugin_MaxNumOutputChannels
 #define JucePlugin_MaxNumOutputChannels   2
 #endif
-// , {1, 1}, {2, 2}
-#ifndef JucePlugin_PreferredChannelConfigurations
-#define JucePlugin_PreferredChannelConfigurations {0, 1}
-#endif
+// {0, 1}, {1, 1},
+//struct PluginInOuts   { short numIns, numOuts; };
+//#ifndef JucePlugin_PreferredChannelConfigurations
+//#define JucePlugin_PreferredChannelConfigurations {0, 2}
+//#endif
 #ifndef JucePlugin_IsSynth
 #define JucePlugin_IsSynth                1
 #endif
@@ -144,10 +145,10 @@
 #ifndef JucePlugin_VSTUniqueID
 #define JucePlugin_VSTUniqueID            JucePlugin_PluginCode
 #endif
+// kPlugCategEffect
 #ifndef JucePlugin_VSTCategory
-#define JucePlugin_VSTCategory            kPlugCategEffect
+#define JucePlugin_VSTCategory            kPlugCategSynth
 #endif
-
 #ifndef JucePlugin_AUMainType
 #define JucePlugin_AUMainType             kAudioUnitType_Effect
 #endif

@@ -62,9 +62,9 @@ JUCE_BEGIN_IGNORE_WARNINGS_MSVC (4996 4100)
  #define PRAGMA_ALIGN_SUPPORTED 1
 #endif
 
-#if ! JUCE_MSVC
- #define __cdecl
-#endif
+//#if ! JUCE_MSVC
+// #define __cdecl
+//#endif
 
 JUCE_BEGIN_IGNORE_WARNINGS_GCC_LIKE ("-Wconversion",
                                      "-Wshadow",

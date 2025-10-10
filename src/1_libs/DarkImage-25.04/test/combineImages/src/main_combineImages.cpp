@@ -97,7 +97,7 @@ int main(int argc, char** argv )
 
     bool bAbort = false;
 
-    de::FileSystem::scanDir(loadDir, false, true, false, [&](const std::string& uri)
+    de::FileSystem::entries(loadDir, false, true, false, [&](const std::string& uri)
     {
         if (bAbort)
             return;
@@ -190,7 +190,7 @@ int main(int argc, char** argv )
 
     de::Image img;
 
-    de::FileSystem::scanDir(loadDir, false, true, false, [&](const std::string& uri)
+    de::FileSystem::entries(loadDir, false, true, false, [&](const std::string& uri)
     {
         if (bAbort)
             return;
