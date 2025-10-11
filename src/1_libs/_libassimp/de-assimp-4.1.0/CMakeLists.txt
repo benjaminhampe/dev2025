@@ -45,39 +45,39 @@ else()
     # set(CPACK_COMPONENTS_ALL assimp-bin ${LIBASSIMP_COMPONENT} ${LIBASSIMP-DEV_COMPONENT} assimp-dev)
     set(ASSIMP_LIBRARY_SUFFIX "" CACHE STRING "Suffix to append to library names")
 
-    # Get the current working branch
-    EXECUTE_PROCESS(
-    COMMAND git rev-parse --abbrev-ref HEAD
-    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-    OUTPUT_VARIABLE GIT_BRANCH
-    OUTPUT_STRIP_TRAILING_WHITESPACE
-    ERROR_QUIET
-    )
+    # # Get the current working branch
+    # EXECUTE_PROCESS(
+    # COMMAND git rev-parse --abbrev-ref HEAD
+    # WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    # OUTPUT_VARIABLE GIT_BRANCH
+    # OUTPUT_STRIP_TRAILING_WHITESPACE
+    # ERROR_QUIET
+    # )
 
-    # Get the latest abbreviated commit hash of the working branch
-    EXECUTE_PROCESS(
-    COMMAND git log -1 --format=%h
-    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-    OUTPUT_VARIABLE GIT_COMMIT_HASH
-    OUTPUT_STRIP_TRAILING_WHITESPACE
-    ERROR_QUIET
-    )
+    # # Get the latest abbreviated commit hash of the working branch
+    # EXECUTE_PROCESS(
+    # COMMAND git log -1 --format=%h
+    # WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    # OUTPUT_VARIABLE GIT_COMMIT_HASH
+    # OUTPUT_STRIP_TRAILING_WHITESPACE
+    # ERROR_QUIET
+    # )
 
-    IF (NOT GIT_COMMIT_HASH)
-    set(GIT_COMMIT_HASH 0)
-    ENDIF()
+    # IF (NOT GIT_COMMIT_HASH)
+    # set(GIT_COMMIT_HASH 0)
+    # ENDIF()
 
     set(LIB_HEADER_DIR ${CMAKE_CURRENT_LIST_DIR}/include/assimp)
     
-    CONFIGURE_FILE(
-        ${LIB_HEADER_DIR}/revision.h.in
-        ${LIB_HEADER_DIR}/revision.h
-    )
+    # CONFIGURE_FILE(
+        # ${LIB_HEADER_DIR}/revision.h.in
+        # ${LIB_HEADER_DIR}/revision.h
+    # )
 
-    CONFIGURE_FILE(
-        ${LIB_HEADER_DIR}/config.h.in
-        ${LIB_HEADER_DIR}/config.h
-    )
+    # CONFIGURE_FILE(
+        # ${LIB_HEADER_DIR}/config.h.in
+        # ${LIB_HEADER_DIR}/config.h
+    # )
 
 
     set(LIB_HEADERS

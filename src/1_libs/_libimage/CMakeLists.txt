@@ -23,6 +23,7 @@ add_subdirectory(de-stb_truetype-1.24)
 add_subdirectory(de-fontstash)
 
 add_subdirectory(de-nlohmann-json-3.12.0)
+add_subdirectory(de_nlohmann_json_schema_validator)
 add_subdirectory(de-nanosvg)
 
 add_subdirectory(de-rapidjson)

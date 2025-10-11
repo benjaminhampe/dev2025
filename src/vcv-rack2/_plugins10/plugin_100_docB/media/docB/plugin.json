@@ -1,0 +1,739 @@
+{
+  "slug": "dbRackModules",
+  "name": "dbRackModules",
+  "version": "2.5.0",
+  "license": "GPL-3.0-or-later",
+  "brand": "docB",
+  "author": "docB",
+  "authorEmail": "",
+  "authorUrl": "https://docb.io",
+  "pluginUrl": "https://github.com/docb/dbRackModules",
+  "manualUrl": "https://github.com/docb/dbRackModules",
+  "sourceUrl": "https://github.com/docb/dbRackModules",
+  "donateUrl": "https://www.paypal.com/paypalme/docb222",
+  "changelogUrl": "",
+  "modules": [
+    {
+      "slug": "GeneticTerrain",
+      "name": "GeneticTerrain",
+      "description": "Genetic Wave Terrain Synthesis",
+      "tags": [
+        "Oscillator",
+        "Polyphonic"
+      ]
+    },
+    {
+      "slug": "GeneticSuperTerrain",
+      "name": "GeneticSuperTerrain",
+      "description": "Genetic Wave Terrain Synthesis with Superformula Curves",
+      "tags": [
+        "Oscillator",
+        "Polyphonic"
+      ]
+    },
+    {
+      "slug": "DCBlock",
+      "name": "DCBlock",
+      "description": "A stereo polyphonic dc blocker",
+      "tags": [
+        "Filter",
+        "Polyphonic",
+        "Effect"
+      ]
+    },
+    {
+      "slug": "RndHvs3",
+      "name": "RND-HVS3",
+      "description": "A Random Value Cube",
+      "tags": [
+        "Random"
+      ]
+    },
+    {
+      "slug": "JTScaler",
+      "name": "JTScaler",
+      "description": "Tunes standard V/OCT pitches to Just Intonation Scales",
+      "tags": [
+        "Utility",
+        "Polyphonic"
+      ]
+    },
+    {
+      "slug": "AddSynth",
+      "name": "AddSynth",
+      "description": "A two dimensional additive synth voice",
+      "tags": [
+        "Oscillator"
+      ]
+    },
+    {
+      "slug": "RndH",
+      "name": "RndH",
+      "description": "Polyphonic Random Hold",
+      "tags": [
+        "Random",
+        "Polyphonic"
+      ]
+    },
+    {
+      "slug": "RndC",
+      "name": "RndC",
+      "description": "Polyphonic RandomLFO with cubic interpolation",
+      "tags": [
+        "Polyphonic",
+        "Random"
+      ]
+    },
+    {
+      "slug": "GenScale",
+      "name": "GenScale",
+      "description": "Generates a polyphonic Scale",
+      "tags": [
+        "Polyphonic"
+      ]
+    },
+    {
+      "slug": "JTKeys",
+      "name": "JTKeys",
+      "description": "Just Intonation Keyboard",
+      "tags": [
+        "Utility",
+        "Polyphonic"
+      ],
+      "hidden": true
+    },
+    {
+      "slug": "Hopa",
+      "name": "Hopa",
+      "description": "Hopalong Attractor",
+      "tags": [
+        "Random"
+      ]
+    },
+    {
+      "slug": "Frac",
+      "name": "Frac",
+      "description": "Outputs expansions of integer fractions",
+      "tags": [
+        "Sequencer"
+      ]
+    },
+    {
+      "slug": "HexSeq",
+      "name": "HexSeq",
+      "description": "A Sequencer using compact hexadecimal strings for trigger sequencing",
+      "tags": [
+        "Sequencer"
+      ]
+    },
+    {
+      "slug": "Interface",
+      "name": "Interface",
+      "description": "Create an interface for a selection of connected modules",
+      "tags": [
+        "Utility"
+      ]
+    },
+    {
+      "slug": "HexSeqP",
+      "name": "HexSeqP",
+      "description": "A 16x16x64 Trigger Sequencer",
+      "tags": [
+        "Sequencer",
+        "Polyphonic"
+      ]
+    },
+    {
+      "slug": "MVerb",
+      "name": "MVerb",
+      "description": "5x5 Waveguide Mesh Reverb",
+      "tags": [
+        "Reverb",
+        "Effect"
+      ]
+    },
+    {
+      "slug": "PShift",
+      "name": "PShift",
+      "description": "Pitch Shifter",
+      "tags": [
+        "Effect"
+      ]
+    },
+    {
+      "slug": "FLA",
+      "name": "FLA",
+      "description": "applies integer arithmetic to a CV signal",
+      "hidden": true,
+      "tags": [
+        "Distortion"
+      ]
+    },
+    {
+      "slug": "FLL",
+      "name": "FLL",
+      "description": "applies integer bit operations to a CV signal",
+      "hidden": true,
+      "tags": [
+        "Distortion"
+      ]
+    },
+    {
+      "slug": "Gendy",
+      "name": "Gendy",
+      "description": "Iannis Xenakis GENDYN Simulation",
+      "tags": [
+        "Oscillator",
+        "Polyphonic"
+      ]
+    },
+    {
+      "slug": "RTrig",
+      "name": "RTrig",
+      "description": "Random Deviation Trigger",
+      "tags": [
+        "Random",
+        "Polyphonic"
+      ]
+    },
+    {
+      "slug": "STrig",
+      "name": "STrig",
+      "description": "Polyphonic Schmitt-Trigger",
+      "tags": [
+        "Polyphonic"
+      ]
+    },
+    {
+      "slug": "RSC",
+      "name": "RSC",
+      "description": "Reverb",
+      "tags": [
+        "Reverb",
+        "Effect"
+      ]
+    },
+    {
+      "slug": "Pad",
+      "name": "Pad",
+      "description": "PadSynth",
+      "tags": [
+        "Oscillator",
+        "Polyphonic"
+      ]
+    },
+    {
+      "slug": "Pad2",
+      "name": "Pad2",
+      "description": "PadSynth with smooth control",
+      "tags": [
+        "Oscillator",
+        "Polyphonic"
+      ]
+    },
+    {
+      "slug": "RndG",
+      "name": "RndG",
+      "description": "Random Gates",
+      "tags": [
+        "Random",
+        "Polyphonic"
+      ]
+    },
+    {
+      "slug": "Plotter",
+      "name": "Plotter",
+      "description": "Plots a 2D signal",
+      "tags": [
+        "Visual",
+        "Polyphonic"
+      ]
+    },
+    {
+      "slug": "SuperLFO",
+      "name": "SuperLFO",
+      "description": "2D LFO for superformula curves",
+      "tags": [
+        "Oscillator",
+        "Low-frequency Oscillator",
+        "Polyphonic"
+      ]
+    },
+    {
+      "slug": "HexSeqExp",
+      "name": "HexSeqExp",
+      "description": "Gate, clock and inverted outputs for HexSeq",
+      "tags": [
+        "Expander"
+      ]
+    },
+    {
+      "slug": "PHSR",
+      "name": "PHSR",
+      "description": "Phasor",
+      "tags": [
+        "Oscillator",
+        "Polyphonic"
+      ]
+    },
+    {
+      "slug": "PhS",
+      "name": "PhS",
+      "description": "Phase Shaper",
+      "tags": [
+        "Waveshaper",
+        "Polyphonic"
+      ]
+    },
+    {
+      "slug": "SPL",
+      "name": "SPL",
+      "description": "Spline wave oscillator with phase input",
+      "tags": [
+        "Oscillator",
+        "Polyphonic"
+      ]
+    },
+    {
+      "slug": "PhO",
+      "name": "PhO",
+      "description": "Phase driven additive oscillator",
+      "tags": [
+        "Oscillator",
+        "Polyphonic"
+      ]
+    },
+    {
+      "slug": "Faders",
+      "name": "Faders",
+      "description": "Three polyphonic slider banks with modulation and value grids",
+      "tags": [
+        "Controller",
+        "Polyphonic"
+      ]
+    },
+    {
+      "slug": "YAC",
+      "name": "YAC",
+      "description": "Yet another chorus, this one can be modulated",
+      "tags": [
+        "Chorus"
+      ]
+    },
+    {
+      "slug": "PLC",
+      "name": "PLC",
+      "description": "Poly Controller",
+      "tags": [
+        "Polyphonic"
+      ]
+    },
+    {
+      "slug": "MPad2",
+      "name": "\u00b5Pad2",
+      "description": "Micro Pad2",
+      "tags": [
+        "Oscillator",
+        "Polyphonic"
+      ]
+    },
+    {
+      "slug": "PHSR2",
+      "name": "PHSR2",
+      "description": "Advanced Phasor with Line Segments and FM",
+      "tags": [
+        "Oscillator",
+        "Polyphonic"
+      ]
+    },
+    {
+      "slug": "Ratio",
+      "name": "Ratio",
+      "description": "Ratio scaling for FM",
+      "tags": [
+        "Utility",
+        "Polyphonic"
+      ]
+    },
+    {
+      "slug": "CSOSC",
+      "name": "CSOSC",
+      "description": "Cosine Oscillator",
+      "tags": [
+        "Oscillator",
+        "Polyphonic"
+      ]
+    },
+    {
+      "slug": "EVA",
+      "name": "EVA",
+      "description": "ADSR with integrated VCA",
+      "tags": [
+        "Envelope Generator",
+        "Voltage Controlled Amplifier",
+        "Polyphonic"
+      ]
+    },
+    {
+      "slug": "BWF",
+      "name": "BWF",
+      "description": "A brickwall filter",
+      "tags": [
+        "Effect",
+        "Filter",
+        "Polyphonic"
+      ]
+    },
+    {
+      "slug": "PRB",
+      "name": "PRB",
+      "description": "Parabolic Oscillator",
+      "tags": [
+        "Oscillator",
+        "Polyphonic"
+      ]
+    },
+    {
+      "slug": "Osc2",
+      "name": "Osc2",
+      "description": "Double Sinus Oscillator",
+      "tags": [
+        "Oscillator",
+        "Polyphonic"
+      ]
+    },
+    {
+      "slug": "RndH2",
+      "name": "RndH2",
+      "description": "Random and Hold mk2",
+      "tags": [
+        "Random",
+        "Polyphonic"
+      ]
+    },
+    {
+      "slug": "OFS",
+      "name": "OFS",
+      "description": "CPU friendly polyphonic offset/scaler with polyphonic cv inputs and cv attenuators",
+      "tags": [
+        "Polyphonic",
+        "Attenuator"
+      ]
+    },
+    {
+      "slug": "OFS3",
+      "name": "OFS3",
+      "description": "3x OFS",
+      "tags": [
+        "Polyphonic",
+        "Attenuator"
+      ]
+    },
+    {
+      "slug": "Osc1",
+      "name": "Osc1",
+      "description": "Line segement oscillator with alias suppressing ",
+      "tags": [
+        "Oscillator",
+        "Polyphonic"
+      ]
+    },
+    {
+      "slug": "Osc3",
+      "name": "Osc3",
+      "description": "Step/Line segment oscillator with alias suppressing",
+      "tags": [
+        "Oscillator",
+        "Polyphonic"
+      ]
+    },
+    {
+      "slug": "Osc4",
+      "name": "Osc4",
+      "description": "Classic oscillator with alias suppressing",
+      "tags": [
+        "Oscillator",
+        "Polyphonic"
+      ]
+    },
+    {
+      "slug": "Osc5",
+      "name": "Osc5",
+      "description": "Pulse oscillator with alias suppressing",
+      "tags": [
+        "Oscillator",
+        "Polyphonic"
+      ]
+    },
+    {
+      "slug": "SKF",
+      "name": "SKF",
+      "description": "CPU friendly polyphonic stereo sallen key filter",
+      "tags": [
+        "Filter",
+        "Polyphonic"
+      ]
+    },
+    {
+      "slug": "SPF",
+      "name": "SPF",
+      "description": "CPU friendly polyphonic steiner parker filter",
+      "tags": [
+        "Filter",
+        "Polyphonic"
+      ]
+    },
+    {
+      "slug": "L4P",
+      "name": "L4P",
+      "description": "CPU friendly polyphonic stereo 4 pole filter",
+      "tags": [
+        "Filter",
+        "Polyphonic"
+      ]
+    },
+    {
+      "slug": "USVF",
+      "name": "USVF",
+      "description": "CPU friendly polyphonic unstable state variable filter with overdrive",
+      "tags": [
+        "Filter",
+        "Polyphonic"
+      ]
+    },
+    {
+      "slug": "AP",
+      "name": "AP",
+      "description": "A Polyphonic Allpass Filter",
+      "tags": [
+        "Filter",
+        "Polyphonic"
+      ]
+    },
+    {
+      "slug": "AUX",
+      "name": "AUX",
+      "description": "Polyphonic stereo signal mixer",
+      "tags": [
+        "Mixer",
+        "Polyphonic"
+      ]
+    },
+    {
+      "slug": "JWS",
+      "name": "JWS",
+      "description": "Polyphonic stereo waveshaper using JONG attractor",
+      "tags": [
+        "Waveshaper",
+        "Polyphonic"
+      ]
+    },
+    {
+      "slug": "CHBY",
+      "name": "CHBY",
+      "description": "4 pole Chebyshev type 1 filter",
+      "tags": [
+        "Filter",
+        "Polyphonic"
+      ]
+    },
+    {
+      "slug": "CLP",
+      "name": "CLP",
+      "description": "Clipper/Waveshaper",
+      "tags": [
+        "Waveshaper",
+        "Distortion",
+        "Polyphonic"
+      ]
+    },
+    {
+      "slug": "LWF",
+      "name": "LWF",
+      "description": "Lockhard Wavefolder",
+      "tags": [
+        "Waveshaper",
+        "Polyphonic"
+      ]
+    },
+    {
+      "slug": "DRM",
+      "name": "DRM",
+      "description": "Diode Ring Modulator",
+      "tags": [
+        "Ring modulator",
+        "Polyphonic"
+      ]
+    },
+    {
+      "slug": "CWS",
+      "name": "CWS",
+      "description": "Chebyshev Waveshaper",
+      "tags": [
+        "Polyphonic",
+        "Waveshaper"
+      ]
+    },
+    {
+      "slug": "SWF",
+      "name": "SWF",
+      "description": "Sharp Wavefolder",
+      "tags": [
+        "Waveshaper",
+        "Polyphonic"
+      ]
+    },
+    {
+      "slug": "Osc6",
+      "name": "Osc6",
+      "description": "Komplex Oscillaor using bit logic",
+      "tags": [
+        "Oscillator",
+        "Polyphonic"
+      ]
+    },
+    {
+      "slug": "Osc7",
+      "name": "Osc7",
+      "description": "Komplex Oscillaor providing phase distorted waves",
+      "tags": [
+        "Oscillator",
+        "Polyphonic"
+      ]
+    },
+    {
+      "slug": "Osc8",
+      "name": "Osc8",
+      "description": "Two additive oscillators with linear FM through zero and cross FM",
+      "tags": [
+        "Oscillator",
+        "Polyphonic"
+      ]
+    },
+    {
+      "slug": "Osc9",
+      "name": "Osc9",
+      "description": "Waveshaping Oscillaor",
+      "tags": [
+        "Oscillator",
+        "Polyphonic"
+      ]
+    },
+    {
+      "slug": "Drums",
+      "name": "Drums",
+      "description": "Sampled drums",
+      "tags": [
+        "Drums"
+      ]
+    },
+    {
+      "slug": "PPD",
+      "name": "PPD",
+      "description": "Ping Pong Delay",
+      "tags": [
+        "Delay"
+      ]
+    },
+    {
+      "slug": "FS6",
+      "name": "FS6",
+      "description": "Fast Sine approximations",
+      "tags": [
+        "Oscillator",
+        "Polyphonic"
+      ]
+    },
+    {
+      "slug": "Pulsar",
+      "name": "Pulsar",
+      "description": "Pulsar Synthesis Oscillator",
+      "tags": [
+        "Oscillator",
+        "Polyphonic"
+      ]
+    },
+    {
+      "slug": "OscA1",
+      "name": "OscA1",
+      "description": "Additive Oscillator with up to 256 partials and comb filter",
+      "tags": [
+        "Oscillator",
+        "Polyphonic"
+      ]
+    },
+    {
+      "slug": "OscS",
+      "name": "OscS",
+      "description": "An alias free sawtooth oscillator",
+      "tags": [
+        "Oscillator",
+        "Polyphonic"
+      ]
+    },
+    {
+      "slug": "OscP",
+      "name": "OscP",
+      "description": "An alias free pulsewave oscillator",
+      "tags": [
+        "Oscillator",
+        "Polyphonic"
+      ]
+    },
+    {
+      "slug": "X16",
+      "name": "X16",
+      "description": "Matrix Mixer 16x16 with modulation",
+      "tags": [
+        "Mixer"
+      ]
+    },
+    {
+      "slug": "X8",
+      "name": "X8",
+      "description": "8x8 Matrix Mixer with modulation",
+      "tags": [
+        "Mixer",
+        "Polyphonic"
+      ]
+    },
+    {
+      "slug": "X6",
+      "name": "X6",
+      "description": "6x6 Matrix Mixer with modulation",
+      "tags": [
+        "Mixer",
+        "Polyphonic"
+      ]
+    },
+    {
+      "slug": "X4",
+      "name": "X4",
+      "description": "4x4 Matrix Mixer with modulation",
+      "tags": [
+        "Mixer",
+        "Polyphonic"
+      ]
+    },
+    {
+      "slug": "CVS",
+      "name": "CVS",
+      "description": "CV controlled polyphonic switch, sequencer, crossfader, scanner",
+      "tags": [
+        "Switch",
+        "Mixer",
+        "Sequencer",
+        "Polyphonic"
+      ]
+    },
+    {
+      "slug": "DTrig",
+      "name": "DTrig",
+      "description": "CV change detector",
+      "tags": [
+        "Utility",
+        "Polyphonic"
+      ]
+    }
+  ]
+}

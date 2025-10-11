@@ -2,10 +2,10 @@ set(LIB_NAME de_eurorack)
 project(${LIB_NAME})
 
 if (TARGET ${LIB_NAME})
-	message("${BoldYellow}[benni] HEADER_GUARD: ${LIB_NAME}${ColourReset}")
+    message("${BoldYellow}[benni] HEADER_GUARD: ${LIB_NAME}${ColourReset}")
 else()
-	set(LIB_HEADER_DIR ${CMAKE_CURRENT_LIST_DIR}/include)
-	set(LIB_HEADERS 
+    set(LIB_HEADER_DIR ${CMAKE_CURRENT_LIST_DIR}/include)
+    set(LIB_HEADERS
         ${LIB_HEADER_DIR}/braids/analog_oscillator.h
         ${LIB_HEADER_DIR}/braids/digital_oscillator.h
         ${LIB_HEADER_DIR}/braids/envelope.h
@@ -225,9 +225,9 @@ else()
         ${LIB_HEADER_DIR}/warps/dsp/vocoder.h
         ${LIB_HEADER_DIR}/warps/resources.h
     )
-    
-	set(LIB_SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/src)
-	set(LIB_SOURCES 
+
+    set(LIB_SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/src)
+    set(LIB_SOURCES
         ${LIB_SOURCE_DIR}/braids/analog_oscillator.cc
         ${LIB_SOURCE_DIR}/braids/digital_oscillator.cc
         ${LIB_SOURCE_DIR}/braids/macro_oscillator.cc
@@ -382,10 +382,10 @@ else()
         ${LIB_SOURCE_DIR}/stmlib/dsp/atan.cc
         ${LIB_SOURCE_DIR}/stmlib/dsp/units.cc
         # ${LIB_SOURCE_DIR}/stmlib/utils
-        ${LIB_SOURCE_DIR}/stmlib/utils/random.cc        
+        ${LIB_SOURCE_DIR}/stmlib/utils/random.cc
         )
     endif()
-    
+
     if (WIN32)
         # enable_language(RC)
         # list(APPEND LIB_SOURCES ${CMAKE_CURRENT_LIST_DIR}/res/resource.h)
@@ -406,10 +406,10 @@ else()
 
     target_include_directories(${LIB_NAME} PUBLIC ${LIB_HEADER_DIR})
     target_include_directories(${LIB_NAME} PRIVATE ${LIB_SOURCE_DIR})
-	
+
     target_compile_definitions(${LIB_NAME} PUBLIC NOASM=1)
     # target_compile_definitions(${LIB_NAME} PRIVATE _RACK_VERSION="2.6.2")
-    
+
     target_link_libraries(${LIB_NAME} PRIVATE de_rack2)
     # target_link_libraries(${LIB_NAME} PRIVATE de_samplerate)
     # target_link_libraries(${LIB_NAME} PRIVATE de_dr_wav)

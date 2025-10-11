@@ -8,7 +8,7 @@ add_subdirectory(4_juce)
 # add_subdirectory(SonnenSystem_glfw_glew)
 # add_subdirectory(F3_FreeLancer)
 
-# add_subdirectory(vcv-rack2)
+add_subdirectory(vcv-rack2)
 
 
 # add_subdirectory(minimal_vst2x_host)

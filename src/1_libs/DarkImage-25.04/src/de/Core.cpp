@@ -1480,20 +1480,48 @@ FileSystem::fileSize( const std::wstring & uri )
 
 // static
 std::string
-FileSystem::fileName( const std::string& uri )
+FileSystem::fileName( const std::string& uri, const std::string& relativeToPath )
 {
-   auto fn = fs::path( uri ).filename().string();
-   if ( fn.empty() ) return uri;
-   return fn;
+    if ( relativeToPath.empty() )
+    {
+        auto p1 = fs::path( uri ).filename().string();
+        if ( p1.empty() ) return uri;
+        return p1;
+    }
+    else
+    {
+        const auto p1 = makeAbsolute(uri);
+        const auto p2 = makeAbsolute(relativeToPath);
+        const auto p3 = fs::relative(p1, p2).string();
+        fprintf(stdout,"p1 = %s\n",p1.c_str());
+        fprintf(stdout,"p2 = %s\n",p2.c_str());
+        fprintf(stdout,"p3 = %s\n",p3.c_str());
+        fflush(stdout);
+        return p3;
+    }
 }
 
 // static
 std::wstring
-FileSystem::fileName( const std::wstring& uri )
+FileSystem::fileName( const std::wstring& uri, const std::wstring& relativeToPath )
 {
-    auto fn = fs::path( uri ).filename().wstring();
-    if ( fn.empty() ) return uri;
-    return fn;
+    if ( relativeToPath.empty() )
+    {
+        auto p1 = fs::path( uri ).filename().wstring();
+        if ( p1.empty() ) return uri;
+        return p1;
+    }
+    else
+    {
+        const auto p1 = makeAbsolute(uri);
+        const auto p2 = makeAbsolute(relativeToPath);
+        const auto p3 = fs::relative(p1, p2).wstring();
+        // fprintf(stdout,"p1 = %s\n",p1.c_str());
+        // fprintf(stdout,"p2 = %s\n",p2.c_str());
+        // fprintf(stdout,"p3 = %s\n",p3.c_str());
+        // fflush(stdout);
+        return p3;
+    }
 }
 
 // static
@@ -1633,53 +1661,32 @@ FileSystem::parentDir( const std::wstring& uri )
 std::string
 FileSystem::makeAbsolute( std::string uri, std::string baseDir )
 {
-   std::string s;
+    try
+    {
+        const auto p2 = fs::canonical( fs::absolute( uri ) );
+        return p2.string();
+    }
+    catch ( std::exception & e )
+    {
+        //DE_DEBUG("exception what(",e.what(),"), uri = ",uri )
+        return uri;
+    }
+}
 
-   try
-   {
-      fs::path p;
-
-      makeWinPath( uri );
-      fs::path file( uri );
-      //DE_DEBUG("fs::path(uri) = ",file.string() )
-
-      if ( baseDir.empty() )
-      {
-         p = fs::absolute( file );
-      }
-      else
-      {
-         makeWinPath( baseDir );
-         fs::path dir( baseDir );
-         //DE_DEBUG("fs::path(dir) = ",dir.string() )
-         //p = fs::absolute( file, dir ); // GCC 7
-         p = fs::absolute( file ); // GCC 8+
-      }
-      //fs::path cwd = fs::current_path();
-      //DE_DEBUG("fs::current_path(",cwd.string(),")" )
-
-      //DE_DEBUG("fs::path.absolute(",p.string(),")" )
-
-      p = fs::canonical( p );
-
-      //DE_DEBUG("fs::path.absolute.canonical(",p.string(),")" )
-
-      s = p.string();
-
-      //DE_DEBUG("fs::path.absolute.canonical.string(",s,")" )
-
-      //s = StringUtil::makePosix( s );
-
-      //DE_DEBUG("fs::path.absolute.canonical.string.posix(",s,")" )
-   }
-   catch ( std::exception & e )
-   {
-      //DE_DEBUG("exception what(",e.what(),"), uri = ",uri )
-      s = uri;
-   }
-
-   //DE_DEBUG("makeAbsolute(",uri,") = ",s)
-   return s;
+// static
+std::wstring
+FileSystem::makeAbsolute( std::wstring uri, std::wstring baseDir )
+{
+    try
+    {
+        const auto p2 = fs::canonical( fs::absolute( uri ) );
+        return p2.wstring();
+    }
+    catch ( std::exception & e )
+    {
+        //DE_DEBUG("exception what(",e.what(),"), uri = ",uri )
+        return uri;
+    }
 }
 
 //static

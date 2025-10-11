@@ -9,3 +9,5 @@ add_subdirectory(de-sst-basic-blocks)
 add_subdirectory(de-sst-rackhelpers)
 
 add_subdirectory(de-eurorack)
+
+add_subdirectory(de-DaisySP)

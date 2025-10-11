@@ -491,10 +491,10 @@ struct FileSystem
     fileSize( const std::wstring & uri );
 
     static std::string
-    fileName( const std::string& uri );
+    fileName( const std::string& uri, const std::string& relativeToPath = "" );
 
     static std::wstring
-    fileName( const std::wstring& uri );
+    fileName( const std::wstring& uri, const std::wstring& relativeToPath = L"" );
 
     static std::string
     fileBase( const std::string& uri );
@@ -522,6 +522,9 @@ struct FileSystem
 
     static std::string
     makeAbsolute( std::string uri, std::string baseDir = "" );
+
+    static std::wstring
+    makeAbsolute( std::wstring uri, std::wstring baseDir = L"" );
 
     static std::string
     makeWinPath( const std::string & uri );

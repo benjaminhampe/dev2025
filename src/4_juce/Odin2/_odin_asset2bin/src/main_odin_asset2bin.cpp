@@ -7,6 +7,7 @@ int main(int argc, char** argv)
 
     de::FileSystem::createDirectory(oDir);
 
+    // Binaries for Odin2
     OdinAssetUtil::convertFiles(
         oDir + "/graphics.h",
         iDir + "/graphics");
