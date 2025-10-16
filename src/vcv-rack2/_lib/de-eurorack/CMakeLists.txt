@@ -206,6 +206,7 @@ else()
         # ${LIB_HEADER_DIR}/tides2
         ${LIB_HEADER_DIR}/tides2/poly_slope_generator.h
         # ${LIB_HEADER_DIR}/tides2/ramp
+        ${LIB_HEADER_DIR}/tides2/io_buffer.h
         ${LIB_HEADER_DIR}/tides2/ramp/ramp_extractor.h
         ${LIB_HEADER_DIR}/tides2/ramp/ratio.h
         ${LIB_HEADER_DIR}/tides2/ramp_generator.h

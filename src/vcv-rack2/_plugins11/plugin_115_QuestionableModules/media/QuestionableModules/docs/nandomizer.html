@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+  <title>nanodmizer</title>
+
+  <link href="./style.css" rel="stylesheet">
+  <link href="./bootstrap/bootstrap.min.css" rel="stylesheet">
+  <script src="./bootstrap/bootstrap.min.js"></script>
+  <script src="./script.js"></script>
+
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-FZ9FD6YW4S"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+  
+      gtag('config', 'G-FZ9FD6YW4S');
+    </script>
+
+</head>
+
+    <style>
+
+    </style>
+
+    <body class="bg-secondary">
+
+        <header class="site-header bg-dark">
+          <nav class="container d-flex flex-column flex-md-row justify-content-between">
+            <a href="./index.html">
+              <span class="display-6 fw-bold text-light text-bg">Questionable Modules</span>
+            </a>
+
+            <div class="container py-4 d-grid gap-2 d-md-flex justify-content-md-end">
+              <a href="https://library.vcvrack.com/questionablemodules/nandomizer"><button class="btn btn-light btn-lg" type="button">View in Library</button></a>
+              <a href="https://github.com/isivisi/questionablemodules"><button class="btn btn-light btn-lg" type="button">View Source</button></a>
+            </div>
+            
+          </nav>
+        </header>
+
+        <div class="container mt-2 nosidepad bg-light">
+          <span id="vbutton"></span><script> importHTML("versionbtn.html", document.getElementById("vbutton")) </script>
+          <div class="p-2 mb-4 bg-light text-center">
+            <div class="container-fluid py-5">
+              <h1 class="display-1 fw-bold">Nandomizer</h1>
+              <p class="fs-4">Randomize inputs.</p>
+
+            </div>
+          </div>
+
+          <img src="./images/nandoview.jpg" style="object-fit: cover; width: 100%;"/>
+        </div>
+
+        <div class="container bg-light">
+          
+          <div class="container-fluid py-5">
+            <div class="feature">
+              <p class="">
+                Nandomizer randomly selects a connected input to send to the output every time you trigger the gate.
+              </p>
+
+              <img src="./images/nandomizer.svg" width="100%"/>
+              
+              <p id="Fade"> <inputbadge></inputbadge> <span class="fw-bold">Fade</span> When the gate is triggered and switches input sources this controls how much the previous input fades out. 0.f has no fade and 1.f is full fadeout effect.</p>
+              <p id="Gate"> <triggerbadge></triggerbadge> <span class="fw-bold">Gate</span> triggers the random swap.</p>
+              <p id="Output" class=""> <polyoutputbadge></polyoutputbadge> <span class="fw-bold">Output</span> outputs the current randomly selected input.</p>
+              <p id="Input" class=""> <polyinputbadge></polyinputbadge> <span class="fw-bold">Inputs 1-8</span> are inputs that take in any monophonic value. These will be randomly selected once you send voltage to the gate input.</p>
+
+            </div>
+           </div>
+
+           <div class="container-fluid py-5">
+            <div>
+              <h2>Themes</h2>
+              <p>The modules context menu has a theme submenu where you can change the background to a solid white or black color if you are having trouble with the default background design. </p>
+
+              <h2>Labels</h2>
+              <p>Knob and plug labels can be toggled via the <span class="fw-bold">toggle labels</span> option in the context menu. </p>
+            </div>
+          </div>
+
+          <script src="https://giscus.app/client.js"
+                data-repo="isivisi/questionablemodules"
+                data-repo-id="R_kgDOIioocg"
+                data-category="docs"
+                data-category-id="DIC_kwDOIioocs4CmqPh"
+                data-mapping="title"
+                data-strict="1"
+                data-reactions-enabled="1"
+                data-emit-metadata="0"
+                data-input-position="bottom"
+                data-theme="preferred_color_scheme"
+                data-lang="en"
+                crossorigin="anonymous"
+                async>
+          </script>
+ 
+        </div>   
+        
+        <script> importHTML("footer.html") </script> 
+
+    </body>
+
+</html>

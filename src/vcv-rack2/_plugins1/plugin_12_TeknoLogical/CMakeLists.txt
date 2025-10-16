@@ -2,15 +2,15 @@ set(LIB_NAME plugin_12_TeknoLogical)
 project(${LIB_NAME})
 
 if (TARGET ${LIB_NAME})
-	message("${BoldYellow}[benni] HEADER_GUARD: ${LIB_NAME}${ColourReset}")
+    message("${BoldYellow}[benni] HEADER_GUARD: ${LIB_NAME}${ColourReset}")
 else()
-	set(LIB_SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/src)
-    
+    set(LIB_SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/src)
+
     # file(GLOB_RECURSE LIB_SOURCES_HPP ${LIB_SOURCE_DIR}/*.hpp)
     # file(GLOB_RECURSE LIB_SOURCES_CPP ${LIB_SOURCE_DIR}/*.cpp)
-    # set(LIB_SOURCES ${LIB_SOURCES_HPP} ${LIB_SOURCES_CPP})   
-    
-	set(LIB_SOURCES 
+    # set(LIB_SOURCES ${LIB_SOURCES_HPP} ${LIB_SOURCES_CPP})
+
+    set(LIB_SOURCES
         ${LIB_SOURCE_DIR}/plugin.cpp
         ${LIB_SOURCE_DIR}/plugin.hpp
         ${LIB_SOURCE_DIR}/TL_Bass.cpp
@@ -27,7 +27,7 @@ else()
         ${LIB_SOURCE_DIR}/res/samples/kick.h
         ${LIB_SOURCE_DIR}/res/samples/openhat.h
         ${LIB_SOURCE_DIR}/res/samples/snare.h
-    ) 
+    )
 
     if (WIN32)
         # enable_language(RC)
@@ -48,12 +48,12 @@ else()
     # target_sources(${LIB_NAME} PUBLIC ${LIB_HEADERS} PRIVATE ${LIB_SOURCES})
 
     # target_include_directories(${LIB_NAME} PUBLIC ${LIB_HEADER_DIR})
-    # target_include_directories(${LIB_NAME} PRIVATE ${LIB_SOURCE_DIR})
-	
+    target_include_directories(${LIB_NAME} PRIVATE ${LIB_SOURCE_DIR})
+
     target_compile_definitions(${LIB_NAME} PRIVATE BUILDING_RACK_DLL=1)
-	
+
     # target_compile_definitions(${LIB_NAME} PRIVATE _RACK_VERSION="2.6.2")
-    
+
     target_link_libraries(${LIB_NAME} PRIVATE de_rack2)
     # target_link_libraries(${LIB_NAME} PRIVATE de_samplerate)
     # target_link_libraries(${LIB_NAME} PRIVATE de_dr_wav)

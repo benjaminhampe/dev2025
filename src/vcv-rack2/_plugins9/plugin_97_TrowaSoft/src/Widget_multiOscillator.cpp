@@ -1,11 +1,7 @@
-#include <rack.hpp>
-using namespace rack;
 #include "Widget_multiOscillator.hpp"
 #include "Module_multiOscillator.hpp"
 //#include "Widget_oscCV.hpp" // Just for the channel colors
 /// TODO: Move channel colors into a common file.
-#include "math.hpp"
-#include "trowaSoftComponents.hpp"
 
 #define OSC_WIDGET_HEIGHT		115
 #define OSC_WIDGET_WIDTH		(49 * RACK_GRID_WIDTH)

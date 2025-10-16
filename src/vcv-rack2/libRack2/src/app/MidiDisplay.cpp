@@ -1,6 +1,6 @@
 #include <app/MidiDisplay.hpp>
 #include <ui/MenuSeparator.hpp>
-#include <helpers.hpp>
+#include <rack_helpers.hpp>
 
 
 namespace rack {

@@ -51,4 +51,6 @@ else()
     # target_compile_options(${APP_NAME} PRIVATE -Wno-pedantic)
 
     target_link_libraries(${APP_NAME} PRIVATE de_zstd)
+
+    # target_link_libraries(${APP_NAME} PRIVATE gmon)
 endif()

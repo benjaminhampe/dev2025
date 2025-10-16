@@ -11,7 +11,6 @@
 #define KACOMPONENTS_H
 
 #include "../a_plugin.hpp"  // used for settings
-#include "componentlibrary.hpp"
 #include "PLog.h"
 #include "PUtils.h"
 #ifdef BGFX
@@ -266,7 +265,7 @@ struct KilpatrickKnob : SvgKnob {
             nvgBeginPath(args.vg);
             nvgCircle(args.vg, box.size.x * 0.5, box.size.y * 0.5, armDotSize);
             nvgClosePath(args.vg);
-    		nvgFill(args.vg);
+            nvgFill(args.vg);
             nvgRestore(args.vg);
         }
     }
@@ -371,9 +370,9 @@ struct KilpatrickSlidePot : app::SvgSlider {
     float armDotSize;
     NVGcolor armDotColor;
 
-	KilpatrickSlidePot() {
+    KilpatrickSlidePot() {
         setBackgroundSvg(APP->window->loadSvg(asset::plugin(pluginInstance, "res/components/slider-45mm-bg.svg")));
-		setHandleSvg(APP->window->loadSvg(asset::plugin(pluginInstance, "res/components/slider-knob-black-red.svg")));
+        setHandleSvg(APP->window->loadSvg(asset::plugin(pluginInstance, "res/components/slider-knob-black-red.svg")));
         setTravel(45.0);
         handler = NULL;
         armed = 0;
@@ -391,7 +390,7 @@ struct KilpatrickSlidePot : app::SvgSlider {
             nvgBeginPath(args.vg);
             nvgCircle(args.vg, box.size.x * 0.5, box.size.y * 0.5, armDotSize);
             nvgClosePath(args.vg);
-    		nvgFill(args.vg);
+            nvgFill(args.vg);
             nvgRestore(args.vg);
         }
     }
@@ -446,7 +445,7 @@ struct KilpatrickSlidePot : app::SvgSlider {
 // slide pot black knob with red
 struct KilpatrickSlidePotBlackWhite : KilpatrickSlidePot {
     KilpatrickSlidePotBlackWhite() : KilpatrickSlidePot() {
-		setHandleSvg(APP->window->loadSvg(asset::plugin(pluginInstance, "res/components/slider-knob-black-white.svg")));
+        setHandleSvg(APP->window->loadSvg(asset::plugin(pluginInstance, "res/components/slider-knob-black-white.svg")));
     }
 };
 
@@ -468,13 +467,13 @@ struct KilpatrickLabelHandler {
 struct KilpatrickLabel : widget::TransparentWidget {
     int id;
     KilpatrickLabelHandler *handler;
-	std::string text;
+    std::string text;
     std::string fontFilename;
-	float fontSize;
+    float fontSize;
     float rad;
     int hAlign;
     int vAlign;
-	NVGcolor fgColor;
+    NVGcolor fgColor;
     NVGcolor bgColor;
 
     // create a new label
@@ -497,18 +496,18 @@ struct KilpatrickLabel : widget::TransparentWidget {
         float xPos, yPos;
         float pos[4];
         Widget::draw(args);
-    	nvgBeginPath(args.vg);
-    	nvgRoundedRect(args.vg, 0, 0, box.size.x, box.size.y, rad);
-    	nvgFillColor(args.vg, bgColor);
-    	nvgFill(args.vg);
+        nvgBeginPath(args.vg);
+        nvgRoundedRect(args.vg, 0, 0, box.size.x, box.size.y, rad);
+        nvgFillColor(args.vg, bgColor);
+        nvgFill(args.vg);
         std::shared_ptr<Font> font = APP->window->loadFont(fontFilename);
-    	if(font->handle >= 0) {
+        if(font->handle >= 0) {
             if(handler) {
                 text = handler->updateLabel(id);
             }
             nvgFontFaceId(args.vg, font->handle);
-        	nvgFontSize(args.vg, fontSize);
-        	nvgFillColor(args.vg, fgColor);
+            nvgFontSize(args.vg, fontSize);
+            nvgFillColor(args.vg, fgColor);
             nvgTextAlign(args.vg, hAlign | vAlign);
             nvgTextBoxBounds(args.vg, 0.0, 0.0, box.size.x, text.c_str(), NULL, pos);
             xPos = (box.size.x - pos[2] - pos[0]) * 0.5f;
@@ -517,7 +516,7 @@ struct KilpatrickLabel : widget::TransparentWidget {
         }
     }
 
-	void onButton(const event::Button& e) override {
+    void onButton(const event::Button& e) override {
         if(handler) {
             if(handler->onLabelButton(id, e)) {
                 e.consume(NULL);
@@ -576,10 +575,10 @@ struct KilpatrickFramebufferRGB888 : widget::TransparentWidget {
 
         Widget::draw(args);
         nvgScale(args.vg, imgScale, imgScale);
-    	nvgBeginPath(args.vg);
-    	nvgRoundedRect(args.vg, 0, 0, box.size.x * drawScale, box.size.y * drawScale, rad);
+        nvgBeginPath(args.vg);
+        nvgRoundedRect(args.vg, 0, 0, box.size.x * drawScale, box.size.y * drawScale, rad);
         nvgFillPaint(args.vg, paint);  // fb texture
-    	nvgFill(args.vg);
+        nvgFill(args.vg);
     }
 
     // set the XY drawing position for the screen
@@ -672,10 +671,10 @@ struct KilpatrickFramebufferRGB565 : widget::TransparentWidget, BGfxScreen {
 
         Widget::draw(args);
         nvgScale(args.vg, imgScale, imgScale);
-    	nvgBeginPath(args.vg);
-    	nvgRoundedRect(args.vg, 0, 0, box.size.x * drawScale, box.size.y * drawScale, rad);
+        nvgBeginPath(args.vg);
+        nvgRoundedRect(args.vg, 0, 0, box.size.x * drawScale, box.size.y * drawScale, rad);
         nvgFillPaint(args.vg, paint);  // fb texture
-    	nvgFill(args.vg);
+        nvgFill(args.vg);
     }
 
     // set the XY drawing position for the screen
@@ -809,7 +808,7 @@ struct KALevelmeter {
     void draw(const widget::Widget::DrawArgs& args) {
         float tempf;
 
-		nvgSave(args.vg);
+        nvgSave(args.vg);
         nvgTranslate(args.vg, pos.x, pos.y);
 
         std::shared_ptr<Font> font = APP->window->loadFont(fontFilename);
@@ -873,7 +872,7 @@ struct KALevelmeter {
             nvgFill(args.vg);
         }
 
-		nvgRestore(args.vg);
+        nvgRestore(args.vg);
     }
 };
 
@@ -919,15 +918,15 @@ struct KilpatrickJoystick : widget::OpaqueWidget {
             handler->updateJoystick(id, xPos, -yPos);
         }
 
-    	nvgBeginPath(args.vg);
+        nvgBeginPath(args.vg);
         nvgEllipse(args.vg, (box.size.x * 0.5) + (xPos * controlAreaScale * box.size.x * 0.5),
             (box.size.y * 0.5) + (-yPos * controlAreaScale * box.size.y * 0.5), 10.0, 10.0);
-    	nvgFillColor(args.vg, knobColor);
-    	nvgFill(args.vg);
+        nvgFillColor(args.vg, knobColor);
+        nvgFill(args.vg);
     }
 
     // handle edge snapping
-	void onButton(const event::Button& e) override {
+    void onButton(const event::Button& e) override {
         float posX = ((e.pos.x / box.size.x) * 2.0f) - 1.0f;
         float posY = -(((e.pos.y / box.size.y) * 2.0f) - 1.0f);
 
@@ -999,7 +998,7 @@ struct KilpatrickJoystick : widget::OpaqueWidget {
     }
 
     // dragging
-	void onDragHover(const event::DragHover& e) override {
+    void onDragHover(const event::DragHover& e) override {
         float newX, newY;
         newX = ((e.pos.x / box.size.x) * 2.0f) - 1.0f;
         newY = -(((e.pos.y / box.size.y) * 2.0f) - 1.0f);

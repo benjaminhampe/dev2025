@@ -7,37 +7,37 @@ else()
     set(LIB_HEADER_DIR ${CMAKE_CURRENT_LIST_DIR}/include)
     set(LIB_SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/src)
     set(LIB_HEADERS
-        ${LIB_HEADER_DIR}/arch.hpp
-        ${LIB_HEADER_DIR}/asset.hpp
-        ${LIB_HEADER_DIR}/audio.hpp
-        ${LIB_HEADER_DIR}/color.hpp
-        ${LIB_HEADER_DIR}/common.hpp
-        ${LIB_HEADER_DIR}/componentlibrary.hpp
-        ${LIB_HEADER_DIR}/context.hpp
-        ${LIB_HEADER_DIR}/gamepad.hpp
-        ${LIB_HEADER_DIR}/helpers.hpp
-        ${LIB_HEADER_DIR}/history.hpp
-        ${LIB_HEADER_DIR}/keyboard.hpp
-        ${LIB_HEADER_DIR}/library.hpp
-        ${LIB_HEADER_DIR}/logger.hpp
-        ${LIB_HEADER_DIR}/math.hpp
-        ${LIB_HEADER_DIR}/midi.hpp
-        ${LIB_HEADER_DIR}/midiloopback.hpp
-        ${LIB_HEADER_DIR}/mutex.hpp
-        ${LIB_HEADER_DIR}/network.hpp
-        ${LIB_HEADER_DIR}/patch.hpp
-        ${LIB_HEADER_DIR}/plugin.hpp
-        ${LIB_HEADER_DIR}/Quantity.hpp
+        # ${LIB_HEADER_DIR}/arch.hpp
+        ${LIB_HEADER_DIR}/rack_asset.hpp
+        ${LIB_HEADER_DIR}/rack_audio.hpp
+        ${LIB_HEADER_DIR}/rack_color.hpp
+        ${LIB_HEADER_DIR}/rack_common.hpp
+        ${LIB_HEADER_DIR}/rack_componentlibrary.hpp
+        ${LIB_HEADER_DIR}/rack_context.hpp
+        ${LIB_HEADER_DIR}/rack_gamepad.hpp
+        ${LIB_HEADER_DIR}/rack_helpers.hpp
+        ${LIB_HEADER_DIR}/rack_history.hpp
+        ${LIB_HEADER_DIR}/rack_keyboard.hpp
+        ${LIB_HEADER_DIR}/rack_library.hpp
+        ${LIB_HEADER_DIR}/rack_logger.hpp
+        ${LIB_HEADER_DIR}/rack_math.hpp
+        ${LIB_HEADER_DIR}/rack_midi.hpp
+        ${LIB_HEADER_DIR}/rack_midiloopback.hpp
+        ${LIB_HEADER_DIR}/rack_mutex.hpp
+        ${LIB_HEADER_DIR}/rack_network.hpp
+        ${LIB_HEADER_DIR}/rack_patch.hpp
+        ${LIB_HEADER_DIR}/rack_plugin.hpp
+        ${LIB_HEADER_DIR}/rack_quantity.hpp
         ${LIB_HEADER_DIR}/rack.hpp
         ${LIB_HEADER_DIR}/rack0.hpp
-        ${LIB_HEADER_DIR}/random.hpp
-        ${LIB_HEADER_DIR}/rtaudio.hpp
-        ${LIB_HEADER_DIR}/rtmidi.hpp
-        ${LIB_HEADER_DIR}/settings.hpp
-        ${LIB_HEADER_DIR}/string.hpp
-        ${LIB_HEADER_DIR}/system.hpp
-        ${LIB_HEADER_DIR}/tag.hpp
-        ${LIB_HEADER_DIR}/weakptr.hpp
+        ${LIB_HEADER_DIR}/rack_random.hpp
+        ${LIB_HEADER_DIR}/rack_rtaudio.hpp
+        ${LIB_HEADER_DIR}/rack_rtmidi.hpp
+        ${LIB_HEADER_DIR}/rack_settings.hpp
+        ${LIB_HEADER_DIR}/rack_string.hpp
+        ${LIB_HEADER_DIR}/rack_system.hpp
+        ${LIB_HEADER_DIR}/rack_tag.hpp
+        ${LIB_HEADER_DIR}/rack_weakptr.hpp
         ${LIB_HEADER_DIR}/app/AudioDisplay.hpp
         ${LIB_HEADER_DIR}/app/Browser.hpp
         ${LIB_HEADER_DIR}/app/CableWidget.hpp

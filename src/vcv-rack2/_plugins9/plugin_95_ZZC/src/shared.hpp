@@ -1,4 +1,4 @@
-#include "math.hpp"
+#include <rack_math.hpp>
 #include "dsp/digital.hpp"
 
 #ifndef ZZC_SHARED_H

@@ -1,6 +1,6 @@
 #pragma once
+#include <rack.hpp>
 
-#include "rack.hpp"
 #if ARCH_ARM64
 #include "arm_intrinsics_sub.h"
 #else
@@ -16,11 +16,9 @@
 #pragma warning ( disable: 4244 )
 #endif
 
-#include "math.hpp" 
 #if defined(_MSC_VER)
 #pragma warning (pop)
 #endif
-
 
 #if defined(_MSC_VER)
 #pragma warning (push)
@@ -35,7 +33,7 @@
  * A wrapper around rack's math functions.
  * Mitigates some V1 vs V06 issues.
  */
-namespace sq 
+namespace sq
 {
 
 using RCFilter = ::rack::dsp::RCFilter;

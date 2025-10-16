@@ -1,8 +1,8 @@
 #pragma once
 #include <widget/OpaqueWidget.hpp>
-#include <Quantity.hpp>
+#include <rack_quantity.hpp>
 #include <ui/common.hpp>
-#include <context.hpp>
+#include <rack_context.hpp>
 
 
 namespace rack {
@@ -10,15 +10,15 @@ namespace ui {
 
 
 struct RACK_DLL_API Slider : widget::OpaqueWidget {
-	/** Not owned. */
-	Quantity* quantity = NULL;
+    /** Not owned. */
+    Quantity* quantity = NULL;
 
-	Slider();
-	void draw(const DrawArgs& args) override;
-	void onDragStart(const DragStartEvent& e) override;
-	void onDragMove(const DragMoveEvent& e) override;
-	void onDragEnd(const DragEndEvent& e) override;
-	void onDoubleClick(const DoubleClickEvent& e) override;
+    Slider();
+    void draw(const DrawArgs& args) override;
+    void onDragStart(const DragStartEvent& e) override;
+    void onDragMove(const DragMoveEvent& e) override;
+    void onDragEnd(const DragEndEvent& e) override;
+    void onDoubleClick(const DoubleClickEvent& e) override;
 };
 
 struct RACK_DLL_API LEDLightSliderHorizontal : Slider {

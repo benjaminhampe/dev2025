@@ -1,6 +1,6 @@
-#include <random.hpp>
-#include <math.hpp>
-#include <system.hpp>
+#include <rack_random.hpp>
+#include <rack_math.hpp>
+#include <rack_system.hpp>
 
 
 namespace rack {
@@ -12,25 +12,25 @@ static Xoroshiro128Plus rng;
 
 void RACK_DLL_CALL init()
 {
-	// Don't reset state if already seeded
-	if (rng.isSeeded())
-		return;
+    // Don't reset state if already seeded
+    if (rng.isSeeded())
+        return;
 
-	// Get epoch time for seed
-	double time = system::getUnixTime();
-	uint64_t sec = time;
-	uint64_t nsec = std::fmod(time, 1.0) * 1e9;
-	rng.seed(sec, nsec);
+    // Get epoch time for seed
+    double time = system::getUnixTime();
+    uint64_t sec = time;
+    uint64_t nsec = std::fmod(time, 1.0) * 1e9;
+    rng.seed(sec, nsec);
 
-	// Shift state a few times due to low seed entropy
-	for (int i = 0; i < 4; i++) {
-		rng();
-	}
+    // Shift state a few times due to low seed entropy
+    for (int i = 0; i < 4; i++) {
+        rng();
+    }
 }
 
 
 Xoroshiro128Plus& RACK_DLL_CALL local() {
-	return rng;
+    return rng;
 }
 
 

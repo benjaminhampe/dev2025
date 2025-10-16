@@ -1,10 +1,8 @@
-#include <rack.hpp>
-using namespace rack;
+#include "Module_oscCVExpander.hpp"
 
-#include <random.hpp>
 #include <stdio.h>
 #include "TSOSCCV_Common.hpp"
-#include "Module_oscCVExpander.hpp"
+
 #include "Module_oscCV.hpp"
 #include "Widget_oscCVExpander.hpp"
 #include "Widget_oscCV.hpp"

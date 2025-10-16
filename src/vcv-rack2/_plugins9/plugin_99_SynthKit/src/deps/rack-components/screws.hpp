@@ -1,8 +1,5 @@
 #pragma once
-
-#include "asset.hpp"
 #include "rack.hpp"
-
 using namespace rack;
 
 extern Plugin *pluginInstance;

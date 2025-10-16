@@ -1,6 +1,5 @@
 #pragma once
 #include "../a_plugin.hpp"
-#include "componentlibrary.hpp"
 
 static const NVGcolor SEASIDE_BLUE = nvgRGB(0x00, 0x22, 0x99);
 

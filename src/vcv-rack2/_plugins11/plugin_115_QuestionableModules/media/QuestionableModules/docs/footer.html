@@ -1,0 +1,44 @@
+<footer class="container pb-5 pt-3 text-muted border-top bg-white">
+
+    <div class="row justify-content-end">
+      <div class="col-6">
+        <h5>Questionable Modules</h5>
+        <ul class="list-unstyled">
+          <li>Code License: <a href="./gpl-license.html">GPL-3.0-or-later</a></li>
+          <li>Docs for: <span id="versionLink"></span> </li>
+          <script> importHTML("version.html", document.getElementById("versionLink")) </script>
+        </ul>
+      </div>
+      <div class="col-3">
+        <h5>Documentation</h5>
+        <ul class="list-unstyled">
+          <a href="./slurp.html"><li>SLURP</li></a>
+          <a href="./treequencer.html"><li>Treequencer</li></a>
+          <a href="./nandomizer.html"><li>Nandomizer</li></a>
+          <a href="./discombobulator.html"><li>Discombobulator</li></a>
+          <a href="./greenscreen.html"><li>Greenscreen</li></a>
+          <a href="./nightbin.html"><li>Night-bin</li></a>
+          <a href="./smute.html"><li>Smute</li></a>
+        </ul>
+      </div>
+
+      <div class="col-3">
+        <h5>Other</h5>
+        <ul class="list-unstyled">
+          <a href="https://library.vcvrack.com/questionablemodules"><li>VCVRack Library Page</li></a>
+          <a href="https://isivisi.ca"><li>ISIVISI Software</li></a>
+        </ul>
+      </div>
+
+    </div>
+
+    <div class="row">
+      <div class="col-3"> isivisi © <span id="year"></span> </div>
+    </div>
+    <script> 
+      document.getElementById("year").innerHTML = new Date().getFullYear() 
+      document.getElementById("versionLink").href = "https://github.com/isivisi/questionablemodules/tree/" + DocVersion 
+
+    </script>
+
+  </footer>

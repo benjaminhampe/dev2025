@@ -4,8 +4,8 @@
 #include <condition_variable>
 
 #include "plugin.hpp"
-#include <audio.hpp>
-#include <context.hpp>
+#include <rack_audio.hpp>
+#include <rack_context.hpp>
 
 
 namespace rack {

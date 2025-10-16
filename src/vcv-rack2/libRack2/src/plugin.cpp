@@ -1,4 +1,4 @@
-#include <arch.hpp>
+#include <rack_plugin.hpp>
 
 #include <thread>
 #include <map>
@@ -22,13 +22,12 @@
 #include <osdialog.h>
 #include <jansson.h>
 
-#include <plugin.hpp>
-#include <system.hpp>
-#include <asset.hpp>
-#include <string.hpp>
-#include <context.hpp>
+#include <rack_system.hpp>
+#include <rack_asset.hpp>
+#include <rack_string.hpp>
+#include <rack_context.hpp>
 #include <plugin/callbacks.hpp>
-#include <settings.hpp>
+#include <rack_settings.hpp>
 
 
 #include <filesystem>

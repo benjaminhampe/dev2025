@@ -1,6 +1,4 @@
-#ifndef TSCOLORS_HPP
-#define TSCOLORS_HPP
-
+#pragma once
 #include <rack.hpp>
 using namespace rack;
 
@@ -59,20 +57,18 @@ static const NVGcolor COLOR_TS_C06 = TSColors::COLOR_TS_BLUE;
 static const NVGcolor COLOR_TS_C07 = TSColors::COLOR_TS_DARKPURPLE;
 static const NVGcolor COLOR_TS_C08 = TSColors::COLOR_TS_PANTONEPINK;
 
-	// Colors were PURPLE and PINK, now DARKPURPLE and PANTONEPINK
-	static const int  NUM_CHANNEL_COLORS = 16;
-	static const NVGcolor CHANNEL_COLORS[NUM_CHANNEL_COLORS] = {
-		TSColors::COLOR_TS_C01, TSColors::COLOR_TS_C02, TSColors::COLOR_TS_C03, TSColors::COLOR_TS_C04, 
-		TSColors::COLOR_TS_C05, TSColors::COLOR_TS_C06, TSColors::COLOR_TS_C07, TSColors::COLOR_TS_C08, 
-		TSColors::COLOR_TS_C01, TSColors::COLOR_TS_C02, TSColors::COLOR_TS_C03, TSColors::COLOR_TS_C04, 
-		TSColors::COLOR_TS_C05, TSColors::COLOR_TS_C06, TSColors::COLOR_TS_C07, TSColors::COLOR_TS_C08
-		// TSColors::COLOR_TS_RED, TSColors::COLOR_DARK_ORANGE, TSColors::COLOR_YELLOW, TSColors::COLOR_TS_GREEN,
-		// TSColors::COLOR_CYAN, TSColors::COLOR_TS_BLUE, TSColors::COLOR_TS_DARKPURPLE, TSColors::COLOR_TS_PANTONEPINK,
-		// TSColors::COLOR_TS_RED, TSColors::COLOR_DARK_ORANGE, TSColors::COLOR_YELLOW, TSColors::COLOR_TS_GREEN,
-		// TSColors::COLOR_CYAN, TSColors::COLOR_TS_BLUE, TSColors::COLOR_TS_DARKPURPLE, TSColors::COLOR_TS_PANTONEPINK
-	};
+    // Colors were PURPLE and PINK, now DARKPURPLE and PANTONEPINK
+    static const int  NUM_CHANNEL_COLORS = 16;
+    static const NVGcolor CHANNEL_COLORS[NUM_CHANNEL_COLORS] = {
+        TSColors::COLOR_TS_C01, TSColors::COLOR_TS_C02, TSColors::COLOR_TS_C03, TSColors::COLOR_TS_C04,
+        TSColors::COLOR_TS_C05, TSColors::COLOR_TS_C06, TSColors::COLOR_TS_C07, TSColors::COLOR_TS_C08,
+        TSColors::COLOR_TS_C01, TSColors::COLOR_TS_C02, TSColors::COLOR_TS_C03, TSColors::COLOR_TS_C04,
+        TSColors::COLOR_TS_C05, TSColors::COLOR_TS_C06, TSColors::COLOR_TS_C07, TSColors::COLOR_TS_C08
+        // TSColors::COLOR_TS_RED, TSColors::COLOR_DARK_ORANGE, TSColors::COLOR_YELLOW, TSColors::COLOR_TS_GREEN,
+        // TSColors::COLOR_CYAN, TSColors::COLOR_TS_BLUE, TSColors::COLOR_TS_DARKPURPLE, TSColors::COLOR_TS_PANTONEPINK,
+        // TSColors::COLOR_TS_RED, TSColors::COLOR_DARK_ORANGE, TSColors::COLOR_YELLOW, TSColors::COLOR_TS_GREEN,
+        // TSColors::COLOR_CYAN, TSColors::COLOR_TS_BLUE, TSColors::COLOR_TS_DARKPURPLE, TSColors::COLOR_TS_PANTONEPINK
+    };
 
 
 } // end namespace
-
-#endif // end if not defined

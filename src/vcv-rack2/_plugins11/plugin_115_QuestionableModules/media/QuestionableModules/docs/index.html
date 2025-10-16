@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html>
+
+    <head>
+
+      <link href="./style.css" rel="stylesheet">
+      <link rel="preconnect" href="https://fonts.googleapis.com">
+      <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+      <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@700&amp;display=swap" rel="stylesheet">
+      <link href="./bootstrap/bootstrap.min.css" rel="stylesheet">
+      <script src="./bootstrap/bootstrap.min.js"></script>
+      <script src="./script.js"></script>
+
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-FZ9FD6YW4S"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'G-FZ9FD6YW4S');
+  </script>
+
+    </head>
+
+    <style>
+
+      .slurpbg {
+        background-image: url('./images/slurpview.jpg'); 
+        background-position: calc(0% + 150px) -5px;
+        background-size: 1200px;
+        min-height: 500px;
+
+        text-shadow:1px 1px 15px black;
+      }
+
+      .smallbg {
+        min-height: 250px;
+        margin-bottom: 10px;
+      }
+
+      .screenshot {
+        object-fit: scale-down;
+        height: 250px;
+      }
+
+      .module{
+        margin-bottom: 50px;
+      }
+
+      body {
+        background-color: rgb(37, 40, 46);
+      }
+
+      .bg-darkgrey {
+        background-color: rgb(14, 15, 17);
+      }
+    </style>
+
+    <body>
+
+        <header class="site-header bg-dark">
+          <nav class="container d-flex flex-column flex-md-row justify-content-between">
+            <p>
+            <span class="display-1 fw-bold text-light text-bg-large">Questionable Modules</span>
+            <span class="text-light" id="version">version</span></p>
+
+            <div class="container py-4 d-grid gap-2 d-md-flex justify-content-md-end">
+              <a href="https://library.vcvrack.com/questionablemodules"><button class="btn btn-light btn-lg" type="button">Get in Library</button></a>
+            <a href="https://github.com/isivisi/questionablemodules/releases/latest" class="text-light"><button class="btn btn-primary btn-lg" type="button">Download from Github</button></a> 
+            </div>
+          </nav>
+        </header>
+
+        <div class="container mt-2 py-4">
+
+          <div class="text-light mb-2">
+            
+            <p class="display-6 col-md-8">VCVRack Modules</p>
+            <div style="height: 15px;"></div>
+          </div>
+
+          <div style="height: 50px"></div>
+
+          <div class="row">
+
+            <div class="col-auto module">
+              <a href="slurp.html" style="text-decoration:none;">
+              <div class="row">
+                <div class="col-auto"><img class="screenshot" src="https://library.vcvrack.com/screenshots/200/questionablemodules/quatosc.png"></div>
+                <div class="col-auto">
+                  <h2 class="fw-bold text-white">SLURP</h2>
+                  <p class="col-md-8 fs-5 text-white">Quaternion based oscillation</p>
+                </div>
+              </div>
+              </a>
+            </div>
+
+            <div class="col-auto module">
+              <a href="treequencer.html" style="text-decoration:none;">
+              <div class="row">
+                <div class="col-auto"><img class="screenshot" src="https://library.vcvrack.com/screenshots/200/questionablemodules/treequencer.png"></div>
+                <div class="col-auto">
+                  <h2 class="fw-bold text-white">Treequencer</h2>
+                  <p class="col-md-8 fs-5 text-white">Binary tree based sequencing</p>
+                </div>
+              </div>
+              </a>
+            </div>
+
+            <div class="col-auto module">
+              <a href="greenscreen.html" style="text-decoration:none;">
+              <div class="row">
+                <div class="col-auto"><img class="screenshot" src="https://library.vcvrack.com/screenshots/200/questionablemodules/greenscreen.png"></div>
+                <div class="col-auto">
+                  <h2 class="fw-bold text-white">Greenscreen</h2>
+                  <p class="col-md-8 fs-5 text-white">Background colors</p>
+                </div>
+              </div>
+              </a>
+            </div>
+
+            <div class="col-auto module">
+              <a href="smute.html" style="text-decoration:none;">
+              <div class="row">
+                <div class="col-auto"><img class="screenshot" src="https://library.vcvrack.com/screenshots/200/questionablemodules/smute.png"></div>
+                <div class="col-auto">
+                  <h2 class="fw-bold text-white">Smute</h2>
+                  <p class="col-md-8 fs-5 text-white">Mute buttons that sync with the clock</p>
+                </div>
+              </div>
+              </a>
+            </div>
+
+            <div class="col-auto module">
+              <a href="discombobulator.html" style="text-decoration:none;">
+              <div class="row">
+                <div class="col-auto"><img class="screenshot" src="https://library.vcvrack.com/screenshots/200/questionablemodules/discombobulator.png"></div>
+                <div class="col-auto">
+                  <h2 class="fw-bold text-white">Discombobulator</h2>
+                  <p class="col-md-8 fs-5 text-white">Random inputs and outputs</p>
+                </div>
+              </div>
+              </a>
+            </div>
+
+            <div class="col-auto module">
+              <a href="nandomizer.html" style="text-decoration:none;">
+              <div class="row">
+                <div class="col-auto"><img class="screenshot" src="https://library.vcvrack.com/screenshots/200/questionablemodules/nandomizer.png"></div>
+                <div class="col-auto">
+                  <h2 class="fw-bold text-white">Nandomizer</h2>
+                  <p class="col-md-8 fs-5 text-white">Random inputs</p>
+                </div>
+              </div>
+              </a>
+            </div>
+
+            <div class="col-auto module">
+              <a href="nightbin.html" style="text-decoration:none;">
+              <div class="row">
+                <div class="col-auto"><img class="screenshot" src="https://library.vcvrack.com/screenshots/200/questionablemodules/nightbin.png"></div>
+                <div class="col-auto">
+                  <h2 class="fw-bold text-white">Night-bin</h2>
+                  <p class="col-md-8 fs-5 text-white">Github nightly builds</p>
+                </div>
+              </div>
+              </a>
+            </div>
+            
+          </div>
+
+        </div>
+
+        <div class="w-100 bg-darkgrey">
+          <footer class="container pb-5 pt-5 text-white bg-darkgrey">
+            <div class="d-flex justify-content-between py-4 my-4">
+              <div class=""> <span style="font-family: 'Open Sans', sans-serif;">ISIVISI</span> © <span id="year">2023</span></div>
+              <!--<a href="https://isivisi.ca"><button class="btn btn-light btn-md" type="button"><span style="font-family: 'Open Sans', sans-serif;">ISIVISI</span>.CA</button></a>-->
+            </div>
+          </footer>
+        </div>
+
+    </body>
+
+    <script>
+      document.getElementById("year").innerHTML = new Date().getFullYear() 
+      var version = document.getElementById("version")
+      version.innerHTML = DocVersion
+    </script>
+
+</html>

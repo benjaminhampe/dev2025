@@ -1,0 +1,48 @@
+{
+  "slug": "scanner-darkly-collection-one",
+  "name": "Collection One",
+  "version": "2.0.4",
+  "license": "GPL-3.0-only",
+  "brand": "scanner darkly",
+  "author": "scanner-darkly",
+  "authorEmail": "",
+  "authorUrl": "https://github.com/scanner-darkly",
+  "pluginUrl": "https://github.com/scanner-darkly/vcv-collection-one",
+  "manualUrl": "https://github.com/scanner-darkly/vcv-collection-one/wiki/Orca's-Heart",
+  "sourceUrl": "https://github.com/scanner-darkly/vcv-collection-one",
+  "donateUrl": "",
+  "modules": [
+    {
+      "slug": "SDOrcasHeart",
+      "name": "Orca's Heart",
+      "description": "quad algorithmic sequencer generator",
+      "tags": [
+        "Arpeggiator",
+        "Clock modulator",
+        "Quad",
+        "Sequencer"
+      ]
+    },
+    {
+      "slug": "SDOrcasHeartV2",
+      "name": "Orca's Heart V2",
+      "description": "octo algorithmic sequencer generator",
+      "tags": [
+        "Arpeggiator",
+        "Clock modulator",
+        "Polyphonic",
+        "Quad",
+        "Sequencer"
+      ]
+    },
+    {
+      "slug": "SDLines",
+      "name": "Lines",
+      "description": "polyphonic voltage visualizer",
+      "tags": [
+        "Polyphonic",
+        "Visual"
+      ]
+    }
+  ]
+}

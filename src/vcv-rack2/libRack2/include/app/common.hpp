@@ -1,8 +1,8 @@
 #pragma once
 #include <jansson.h>
 
-#include <common.hpp>
-#include <math.hpp>
+#include <rack_common.hpp>
+#include <rack_math.hpp>
 #include <ui/common.hpp>
 
 

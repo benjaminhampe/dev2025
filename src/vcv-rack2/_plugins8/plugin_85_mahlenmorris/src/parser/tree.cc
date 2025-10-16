@@ -78,7 +78,7 @@ float Expression::Compute() {
     case ARRAY_VARIABLE: {
       int index = (int) floor(subexpressions[0].Compute());
       // IN* and OUT* accesses are different from other arrays.
-      
+
       if (port.port_type == PortPointer::NOT_PORT) {
         if ((index < 0) || (index >= (int) array_ptr->size())) {
           return 0.0f;  // The default value if not in the array.
@@ -165,7 +165,7 @@ std::string Expression::ComputeString() {
     }
     return str_array_ptr->at(index);
   } else if (type == STRINGFUNC) {
-    if (operation == DEBUG) {
+    if (operation == DEBUG_ME) {
       if (subexpressions.size() == 2) {  // An array.
         // Negative array indecies are ignored in BASICally.
         int start = std::max((int) floor(subexpressions[0].Compute()), 0);
@@ -568,7 +568,7 @@ Expression ExpressionFactory::StringVariable(const std::string& var_name, Driver
 Expression ExpressionFactory::DebugId(const std::string &var_name, Driver* driver) {
   Expression ex;
   ex.type = Expression::STRINGFUNC;
-  ex.operation = Expression::DEBUG;
+  ex.operation = Expression::DEBUG_ME;
   ex.name = var_name;
   ex.variable_ptr = driver->GetVarFromName(var_name);
   return ex;
@@ -579,7 +579,7 @@ Expression ExpressionFactory::DebugId(const std::string &var_name,
    const Expression &start, const Expression &end, Driver* driver) {
   Expression ex;
   ex.type = Expression::STRINGFUNC;
-  ex.operation = Expression::DEBUG;
+  ex.operation = Expression::DEBUG_ME;
   ex.name = var_name;
   std::string lower;
   ToLower(var_name, &lower);
@@ -592,7 +592,7 @@ Expression ExpressionFactory::DebugId(const std::string &var_name,
 Expression ExpressionFactory::DebugIdString(const std::string &var_name, Driver* driver) {
   Expression ex;
   ex.type = Expression::STRINGFUNC;
-  ex.operation = Expression::DEBUG;
+  ex.operation = Expression::DEBUG_ME;
   ex.name = var_name;
   ex.str_variable_ptr = driver->GetStringVarFromName(var_name);
   return ex;
@@ -603,7 +603,7 @@ Expression ExpressionFactory::DebugIdString(const std::string &var_name,
    const Expression &start, const Expression &end, Driver* driver) {
   Expression ex;
   ex.type = Expression::STRINGFUNC;
-  ex.operation = Expression::DEBUG;
+  ex.operation = Expression::DEBUG_ME;
   ex.name = var_name;
   std::string lower;
   ToLower(var_name, &lower);
@@ -824,7 +824,7 @@ Line Line::While(const Expression &condition, const Statements &state,
   line.type = WHILE;
   line.expr1 = condition;
   line.statements.push_back(state);
-  return line;    
+  return line;
 }
 
 std::ostream& operator<<(std::ostream& os, Line line) {

@@ -4,10 +4,10 @@
 #define CURL_STATICLIB
 #include <curl/curl.h>
 
-#include <network.hpp>
-#include <system.hpp>
-#include <asset.hpp>
-#include <settings.hpp>
+#include <rack_network.hpp>
+#include <rack_system.hpp>
+#include <rack_asset.hpp>
+#include <rack_settings.hpp>
 
 
 namespace rack {

@@ -1,7 +1,6 @@
 #include <map>
-#include <tag.hpp>
-#include <string.hpp>
-
+#include <rack_tag.hpp>
+#include <rack_string.hpp>
 
 namespace rack {
 namespace tag {

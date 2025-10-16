@@ -11,10 +11,6 @@
 #include <oscpack/osc/OscPacketListener.h>
 #include <oscpack/osc/OscPrintReceivedElements.h>
 #include <thread>
-#include <rack.hpp>
-using namespace rack;
-
-
 #include <iostream>
 #include <sstream>
 #include <iomanip>

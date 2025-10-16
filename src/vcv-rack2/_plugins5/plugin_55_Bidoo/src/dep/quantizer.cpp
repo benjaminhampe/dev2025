@@ -1,5 +1,4 @@
 #include "quantizer.hpp"
-#include <math.hpp>
 
 namespace quantizer {
 

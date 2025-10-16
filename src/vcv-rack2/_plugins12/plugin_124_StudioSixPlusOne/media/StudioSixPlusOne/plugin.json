@@ -1,0 +1,249 @@
+{
+  "slug": "StudioSixPlusOne",
+  "name": "Studio Six Plus One",
+  "version": "2.1.00",
+  "license": "GPL-3.0-or-later",
+  "brand": "Studio Six Plus One",
+  "author": "Studio Six Plus One",
+  "authorEmail": "dave.french3@googlemail.com",
+  "authorUrl": "https://github.com/StudioSixPlusOne",
+  "pluginUrl": "https://github.com/StudioSixPlusOne/rack-modules",
+  "manualUrl": "https://github.com/StudioSixPlusOne/rack-modules/blob/master/README.md",
+  "sourceUrl": "https://github.com/StudioSixPlusOne/rack-modules.git",
+  "donateUrl": "https://paypal.com/paypalme/StudioSixPlusOne",
+  "changelogUrl": "https://github.com/StudioSixPlusOne/rack-modules/blob/master/CHANGELOG.md",
+  "modules": [
+    {
+      "slug": "KSDelay",
+      "name": "Wallenda",
+      "description": "Karplus\u2013Strong Delay with unison",
+      "manualUrl": "https://github.com/StudioSixPlusOne/rack-modules/blob/master/README.md#wallenda",
+      "tags": [
+        "Polyphonic",
+        "Delay",
+        "Effect",
+        "Physical modeling"
+      ]
+    },
+    {
+      "slug": "Maccomo",
+      "name": "Maccomo",
+      "description": "Ladder Filter self oscillating vcf",
+      "manualUrl": "https://github.com/StudioSixPlusOne/rack-modules/blob/master/README.md#maccomo",
+      "tags": [
+        "Polyphonic",
+        "Filter"
+      ]
+    },
+    {
+      "slug": "PolyShiftRegister",
+      "name": "Tyrant",
+      "description": "Polyphonic Shift Register",
+      "manualUrl": "https://github.com/StudioSixPlusOne/rack-modules/blob/master/README.md#tyrant",
+      "tags": [
+        "Polyphonic",
+        "Sample and Hold",
+        "Random"
+      ]
+    },
+    {
+      "slug": "Te",
+      "name": "Te",
+      "description": "Tyrant Expander",
+      "manualUrl": "https://github.com/StudioSixPlusOne/rack-modules/blob/master/README.md#te",
+      "tags": [
+        "Expander"
+      ]
+    },
+    {
+      "slug": "CombFilter",
+      "name": "Massarti",
+      "description": "Comb Filter",
+      "manualUrl": "https://github.com/StudioSixPlusOne/rack-modules/blob/master/README.md#massarti",
+      "tags": [
+        "Polyphonic",
+        "Filter",
+        "Effect"
+      ]
+    },
+    {
+      "slug": "LaLa",
+      "name": "LaLa",
+      "description": "Two way cross over",
+      "manualUrl": "https://github.com/StudioSixPlusOne/rack-modules/blob/master/README.md#lala",
+      "tags": [
+        "Filter",
+        "Polyphonic",
+        "Utility",
+        "Voltage-controlled amplifier"
+      ]
+    },
+    {
+      "slug": "Eva",
+      "name": "Eva",
+      "description": "Mixer",
+      "manualUrl": "https://github.com/StudioSixPlusOne/rack-modules/blob/master/README.md#eva",
+      "tags": [
+        "Mixer",
+        "Voltage-controlled amplifier",
+        "Polyphonic"
+      ]
+    },
+    {
+      "slug": "Zazel",
+      "name": "Zazel",
+      "description": "Parameter Controller for fades and LFO, Ramp generator",
+      "manualUrl": "https://github.com/StudioSixPlusOne/rack-modules/blob/master/README.md#zazel",
+      "tags": [
+        "Clock modulator",
+        "Function generator",
+        "Low-frequency oscillator",
+        "Envelope generator",
+        "Controller"
+      ]
+    },
+    {
+      "slug": "Zilah",
+      "name": "Zilah",
+      "description": "14 bit Midi-CC input",
+      "manualUrl": "https://github.com/StudioSixPlusOne/rack-modules/blob/master/README.md#zilah",
+      "tags": [
+        "MIDI",
+        "external"
+      ]
+    },
+    {
+      "slug": "Iverson",
+      "name": "Iverson",
+      "description": "Trigger Sequencer for use with midi controller",
+      "manualUrl": "https://github.com/StudioSixPlusOne/rack-modules/blob/master/README.md#iverson",
+      "tags": [
+        "Controller",
+        "Sequencer"
+      ]
+    },
+    {
+      "slug": "IversonJr",
+      "name": "IversonJr",
+      "description": "Trigger Sequencer for use with midi controller",
+      "manualUrl": "https://github.com/StudioSixPlusOne/rack-modules/blob/master/README.md#iverson",
+      "tags": [
+        "Controller",
+        "Sequencer"
+      ]
+    },
+    {
+      "slug": "Amburgh",
+      "name": "Amburgh",
+      "description": "Non Linear Filter self oscillating vcf",
+      "manualUrl": "https://github.com/StudioSixPlusOne/rack-modules/blob/master/README.md#Amburgh",
+      "tags": [
+        "Polyphonic",
+        "Filter"
+      ]
+    },
+    {
+      "slug": "Hula",
+      "name": "Hula",
+      "description": "fm VCO unique per instance",
+      "manualUrl": "https://github.com/StudioSixPlusOne/rack-modules/blob/master/README.md#hula",
+      "tags": [
+        "Low-frequency oscillator",
+        "Oscillator",
+        "Polyphonic"
+      ]
+    },
+    {
+      "slug": "Bascom",
+      "name": "Bascom",
+      "description": "Multi form Non Linear Filter self oscillating vcf",
+      "manualUrl": "https://github.com/StudioSixPlusOne/rack-modules/blob/master/README.md#Bascom",
+      "tags": [
+        "Polyphonic",
+        "Filter"
+      ]
+    },
+    {
+      "slug": "BascomExpander",
+      "name": "BascomExpander",
+      "description": "Multi form Non Linear Filter self oscillating vcf",
+      "manualUrl": "https://github.com/StudioSixPlusOne/rack-modules/blob/master/README.md#Bascom",
+      "tags": [
+        "Polyphonic",
+        "Filter"
+      ]
+    },
+    {
+      "slug": "Mix",
+      "name": "Mix",
+      "description": "A simple 5 channel mixer with non linear characters",
+      "manualUrl": "https://github.com/StudioSixPlusOne/rack-modules/blob/master/README.md#Mix",
+      "tags": [
+        "Mixer",
+        "Polyphonic"
+      ]
+    },
+    {
+      "slug": "Bose",
+      "name": "Bose",
+      "description": "Multi output random voltage generator, sample and hold with no input, steady or analog style drooping outputs",
+      "manualUrl": "https://github.com/StudioSixPlusOne/rack-modules/blob/master/README.md#Bose",
+      "tags": [
+        "Polyphonic",
+        "sample and hold",
+        "noise",
+        "random"
+      ]
+    },
+    {
+      "slug": "Duffy",
+      "name": "Duffy",
+      "description": "Transposes incoming voct, the amount increased by a set number of semitones, can be used to traverse the circle of fifths",
+      "manualUrl": "https://github.com/StudioSixPlusOne/rack-modules/blob/master/README.md#Duffy",
+      "tags": [
+        "Polyphonic",
+        "Utility"
+      ]
+    },
+    {
+      "slug": "Farini",
+      "name": "Farini",
+      "description": "Multimode envelope generator and stereo vca, based on CEM3310 AND CEM3360 diy circuits.",
+      "manualUrl": "https://github.com/StudioSixPlusOne/rack-modules/blob/master/README.md#Farini",
+      "tags": [
+        "Envelope generator",
+        "Voltage-controlled amplifier"
+      ]
+    },
+    {
+      "slug": "LalaStereo",
+      "name": "LalaStereo",
+      "description": "Stereo two way crossover",
+      "manualUrl": "https://github.com/StudioSixPlusOne/rack-modules/blob/master/README.md#Lala",
+      "tags": [
+        "Filter",
+        "Polyphonic",
+        "Utility"
+      ]
+    },
+    {
+      "slug": "Thru",
+      "name": "Thru",
+      "description": "Thru module with assignable labels",
+      "manualUrl": "https://github.com/StudioSixPlusOne/rack-modules/blob/master/README.md#Thru",
+      "tags": [
+        "Multiple",
+        "Utility"
+      ]
+    },
+    {
+      "slug": "PatchNotes",
+      "name": "PatchNotes",
+      "description": "Slimline text area for making patch notes",
+      "manualUrl": "https://github.com/StudioSixPlusOne/rack-modules/blob/master/README.md#PatchNotes",
+      "tags": [
+        "Utility"
+      ]
+    }
+  ]
+}

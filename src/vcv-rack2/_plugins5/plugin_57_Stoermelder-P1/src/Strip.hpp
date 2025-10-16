@@ -2,7 +2,6 @@
 #include "a_plugin.hpp"
 #include "helpers/StripIdFixModule.hpp"
 #include <osdialog.h>
-#include <plugin.hpp>
 
 namespace StoermelderPackOne {
 namespace Strip {

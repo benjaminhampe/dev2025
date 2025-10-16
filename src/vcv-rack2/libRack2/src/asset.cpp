@@ -1,4 +1,4 @@
-#include <arch.hpp>
+#include <rack_asset.hpp>
 
 #if defined ARCH_MAC
     #include <CoreFoundation/CoreFoundation.h>
@@ -18,10 +18,9 @@
     #include <pwd.h>
 #endif
 
-#include <asset.hpp>
-#include <system.hpp>
-#include <settings.hpp>
-#include <string.hpp>
+#include <rack_system.hpp>
+#include <rack_settings.hpp>
+#include <rack_string.hpp>
 #include <plugin/Plugin.hpp>
 #include <engine/Module.hpp>
 #include <app/common.hpp>

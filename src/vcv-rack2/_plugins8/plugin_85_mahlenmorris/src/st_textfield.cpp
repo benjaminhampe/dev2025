@@ -1,7 +1,7 @@
 #include "st_textfield.hpp"
 #include <ui/MenuItem.hpp>
-#include <helpers.hpp>
-#include <context.hpp>
+#include <rack_helpers.hpp>
+#include <rack_context.hpp>
 
 struct STTextFieldCopyItem : ui::MenuItem {
   WeakPtr<STTextField> textField;

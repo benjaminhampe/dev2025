@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+  <title>nightbin</title>
+
+  <link href="./style.css" rel="stylesheet">
+  <link href="./bootstrap/bootstrap.min.css" rel="stylesheet">
+  <script src="./bootstrap/bootstrap.min.js"></script>
+  <script src="./script.js"></script>
+
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-FZ9FD6YW4S"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+  
+      gtag('config', 'G-FZ9FD6YW4S');
+    </script>
+
+</head>
+
+    <style>
+
+    </style>
+
+    <body class="bg-secondary">
+
+        <header class="site-header bg-dark">
+          <nav class="container d-flex flex-column flex-md-row justify-content-between">
+            <a href="./index.html">
+              <span class="display-6 fw-bold text-light text-bg">Questionable Modules</span>
+            </a>
+
+            <div class="container py-4 d-grid gap-2 d-md-flex justify-content-md-end">
+              <a href="https://library.vcvrack.com/questionablemodules/nightbin"><button class="btn btn-light btn-lg" type="button">View in Library</button></a>
+              <a href="https://github.com/isivisi/questionablemodules"><button class="btn btn-light btn-lg" type="button">View Source</button></a>
+            </div>
+            
+          </nav>
+        </header>
+
+        <div class="container mt-2 nosidepad bg-light">
+
+          <span id="vbutton"></span><script> importHTML("versionbtn.html", document.getElementById("vbutton")) </script>
+
+          <div class="p-2 mb-4 bg-light text-center">
+            <div class="container-fluid py-5">
+              <h1 class="display-1 fw-bold">Night-bin</h1>
+              <p class="fs-4">Github Nightly Builds.</p>
+
+            </div>
+          </div>
+
+          <img src="./images/nightbinview.jpg" style="object-fit: cover; width: 100%;"/>
+        </div>
+
+        <div class="container bg-light">
+          
+          <div class="container-fluid py-5">
+            <div class="feature">
+              <p class="">
+                Checks nightly updates on github for your plugins.
+              </p>
+              
+              <h2>Menubar</h2>
+              <p>Night-bin adds a new menubar item to the rack ui where you can check for plugin updates. You can remove this by deleting the Night-bin module</p>
+              <p id=""><span class="fw-bold">Github Access Token</span> This is were you input your personal access token aquired from github. You must have a github account to get one of these.</p>
+              <p class="" id=""><span class="fw-bold">This value is not required</span> but will stop you from being rate limited often. You can create an access token here: <a href="https://github.com/settings/tokens">https://github.com/settings/tokens</a>.
+              The only permission it needs is <span class="fw-bold">public_repo</span> to access all public repositories from github on your behalf.</p>
+              <p class="alert alert-danger"><span class="fw-bold">Do not share this token with anyone as it gives them partial access to your account, especially if you add more permissions than required!</span></p>
+              
+              <p id=""><span class="fw-bold">Add / Remove Modules</span> A list of all modules with their source code link set, you can click on one to add  or remove it to your list of plugins to be updated to their Nightly builds.</p>
+              <p id=""><span class="fw-bold">Update All</span> Downloads all available updates, once this is complete you must restart rack to use them</p>
+              <p id=""><span class="fw-bold">Query for Updates</span> Looks to see if any nightly updates are available to download</p>
+
+              <h2>Updates</h2>
+              <p>Clicking on any indivdual module name will download that nightly build specifically.</p>
+
+              <div style="min-height:350px"></div> <!-- Spacer -->
+            
+            </div>
+           </div>  
+
+           <div class="container-fluid py-5">
+            <div>
+              <h2>Developers</h2>
+              <p>For Night-bin to recognize your builds you must have a release using the tag <span class="fw-bold">Nightly</span>. Your downloads should follow the default rack .vcvplugin style: <span class="fw-bold">{slug}-{version}-{os}-{arch}.vcvplugin</span>. Adding the commit hash to your version helps alot!. You can look at a good example of a github action that automates this whole processs here: <a href="https://github.com/baconpaul/BaconPlugs/blob/main/.github/workflows/build-plugin.yml">https://github.com/baconpaul/BaconPlugs/blob/main/.github/workflows/build-plugin.yml</a> This is the workflow I use (mostly). Thank you baconpaul! </p>
+            </div> 
+          </div>
+
+           <div class="container-fluid py-5">
+            <div>
+              <h2>Themes</h2>
+              <p>The modules context menu has a theme submenu where you can change the background to a solid white or black color if you are having trouble with the default background design. </p>
+            </div> 
+          </div>
+
+          <script src="https://giscus.app/client.js"
+                data-repo="isivisi/questionablemodules"
+                data-repo-id="R_kgDOIioocg"
+                data-category="docs"
+                data-category-id="DIC_kwDOIioocs4CmqPh"
+                data-mapping="title"
+                data-strict="1"
+                data-reactions-enabled="1"
+                data-emit-metadata="0"
+                data-input-position="bottom"
+                data-theme="preferred_color_scheme"
+                data-lang="en"
+                crossorigin="anonymous"
+                async>
+        </script>
+ 
+        </div>   
+
+        <script> importHTML("footer.html") </script>
+
+    </body>
+
+</html>

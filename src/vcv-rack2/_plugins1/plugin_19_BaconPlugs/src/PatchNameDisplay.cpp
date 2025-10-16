@@ -3,7 +3,7 @@
 #include "BaconModule.hpp"
 #include "BaconModuleWidget.h"
 
-#include "patch.hpp"
+#include <rack_patch.hpp>
 
 #include <ghc/filesystem.hpp>
 namespace fs = ghc::filesystem;

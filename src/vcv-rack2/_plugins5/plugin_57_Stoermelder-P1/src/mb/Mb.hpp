@@ -1,6 +1,5 @@
 #pragma once
 #include "a_plugin.hpp"
-#include <plugin.hpp>
 
 namespace StoermelderPackOne {
 namespace Mb {
@@ -8,8 +7,8 @@ namespace Mb {
 // Usage data
 
 struct ModelUsage {
-	int usedCount = 0;
-	int64_t usedTimestamp = -std::numeric_limits<int64_t>::infinity();
+    int usedCount = 0;
+    int64_t usedTimestamp = -std::numeric_limits<int64_t>::infinity();
 };
 
 void modelUsageTouch(Model* model);
@@ -28,23 +27,23 @@ extern std::map<Model*, ModelUsage*> modelUsage;
 // Browser overlay
 
 enum class MODE {
-	V06,
-	V1
+    V06,
+    V1
 };
 
 struct BrowserOverlay : widget::OpaqueWidget {
-	Widget* mbWidgetBackup;
-	Widget* mbV06;
-	Widget* mbV1;
+    Widget* mbWidgetBackup;
+    Widget* mbV06;
+    Widget* mbV1;
 
-	MODE* mode;
+    MODE* mode;
 
-	BrowserOverlay();
-	~BrowserOverlay();
+    BrowserOverlay();
+    ~BrowserOverlay();
 
-	void step() override;
-	void draw(const DrawArgs& args) override;
-	void onButton(const event::Button& e) override;
+    void step() override;
+    void draw(const DrawArgs& args) override;
+    void onButton(const event::Button& e) override;
 };
 
 } // namespace Mb

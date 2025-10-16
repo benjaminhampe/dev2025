@@ -6,7 +6,7 @@
 **************************************************************/
 
 #include "../SubmarineFree.hpp"
-#include "color.hpp"
+#include "rack_color.hpp"
 
 SubLightButton::SubLightButton() {
     box.size.x = 16.0f;

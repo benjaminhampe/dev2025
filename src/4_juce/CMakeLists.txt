@@ -1,3 +1,4 @@
+add_subdirectory(de-juce-7.0.5) # Big lib, only activate when needed.
 add_subdirectory(Odin2)
 add_subdirectory(BasicOsc)
 add_subdirectory(Manta)

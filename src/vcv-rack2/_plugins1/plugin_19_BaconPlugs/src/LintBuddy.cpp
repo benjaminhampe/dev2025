@@ -2,8 +2,8 @@
 #include <cstdio>
 #include <fstream>
 
-#include "rack.hpp"
-#include "patch.hpp"
+#include <rack.hpp>
+#include <rack_patch.hpp>
 #include "BaconModule.hpp"
 #include "BaconModuleWidget.h"
 

@@ -1,6 +1,6 @@
 // This source file compiles those annoying implementation-in-header libraries
 
-#include <common.hpp> // for fopen_u8
+#include <rack_common.hpp> // for fopen_u8
 
 #ifndef GLEW_STATIC
 #define GLEW_STATIC

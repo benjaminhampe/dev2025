@@ -41,6 +41,7 @@ set(BENNI_USE_SSE 0)
 set(BENNI_USE_MMX 0)
 set(BENNI_USE_LTO 0)
 set(BENNI_USE_LLD 0) # Parallel Linker
+set(BENNI_USE_GPROF 0) # Perf, cannot link to libgprof.a and gcrt2.0
 
 set(BENNI_USE_OMIT_FRAMEPOINTER 0)
 set(BENNI_MINGW_DIR C:/sdk/Qt/Tools/llvm-mingw1706_64)
@@ -111,11 +112,29 @@ enable_language(ASM_NASM)
 # MMX           -mmmx           __MMX__                 <mmintrin.h>
 
 # <INIT>
-set(MY_C_FLAGS "-target x86_64-w64-windows-gnu -fvisibility=hidden")
-set(MY_CXX_FLAGS "-target x86_64-w64-windows-gnu -fvisibility=hidden")
-set(MY_LD_FLAGS "-fuse-ld=lld -fvisibility=hidden")
+set(MY_C_FLAGS "-fvisibility=hidden -target x86_64-w64-windows-gnu")
+set(MY_CXX_FLAGS "-fvisibility=hidden -target x86_64-w64-windows-gnu")
+set(MY_LD_FLAGS "-fvisibility=hidden")
 
 # add_compile_options(-fvisibility=hidden)
+
+if (BENNI_USE_GPROF)
+    message("${BoldGreen}[Benni] Using GPROF performance analysis instrumentation!${ColourReset}")
+    # set(MY_C_FLAGS "${MY_C_FLAGS} -pg") #  -no-pie
+    # set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -pg") # -no-pie
+    # set(MY_LD_FLAGS "${MY_LD_FLAGS} -pg -lgmon") # -no-pie
+    
+    set(MY_C_FLAGS "${MY_C_FLAGS} -g2 -gstabs+")
+    set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -g2 -gstabs+")
+    # add_compile_options(-pg)
+    # add_link_options(-pg)
+    # add_link_libraries(gmon gcrt2.o)
+    
+    set(CMAKE_POSITION_INDEPENDENT_CODE OFF)
+else()
+    set(MY_LD_FLAGS "${MY_LD_FLAGS} -fuse-ld=lld") 
+    set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+endif()
 
 # Enable compiler messages about SIMD vectorizations and loop unrolling attempts (Misses + Hits).
 if (BENNI_USE_SIMD_DIAG)
@@ -274,7 +293,6 @@ project(DarkC++_Qt6_mingw64_1706_llvm)
 # message("[benni] CMAKE_MODULE_PATH = ${CMAKE_MODULE_PATH}")
 
 # :-1: Fehler: Generator: execution of make failed. Make command was: =;C:/SDK/Qt5.12.3/Tools/mingw730_64/bin/mingw32-make.exe -j12 /mingw32-make.exe -j12 /mingw32-make.exe -j12  all
-set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 # set(CMAKE_DEBUG_POSTFIX "d")
 set(CMAKE_VERBOSE_MAKEFILE OFF)
 set(CMAKE_CXX_STANDARD 17)
@@ -371,7 +389,7 @@ endif()
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
    set(BUILD_DEBUG=1) # Used in applications to add "d" postfix to TARGET_NAME
    add_compile_definitions(_DEBUG=1)
-   add_compile_definitions(DEBUG=1)
+   # add_compile_definitions(DEBUG=1)
    add_compile_definitions(BUILD_DEBUG=1)
 endif()
 if(CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
@@ -400,19 +418,22 @@ else()
     # set(MY_C_FLAGS "${MY_C_FLAGS} -march=native")
 
     if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-       # set(MY_C_FLAGS "${MY_C_FLAGS} -O0 -g")
+       # set(MY_C_FLAGS "${MY_C_FLAGS} -O0 -g2")
+       # set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -O0 -g2")
        # set(MY_C_FLAGS "${MY_C_FLAGS} -Wl,--demangle")
        # set(MY_LD_FLAGS "${MY_LD_FLAGS} -Wl,--demangle")
        #set(MY_C_FLAGS "${MY_C_FLAGS} -fsanitize=address")
        #set(MY_LD_FLAGS "${MY_LD_FLAGS} -lasan")
     endif()
     if(CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
-       #set(MY_C_FLAGS "${MY_C_FLAGS} -O2 -g")
+       # set(MY_C_FLAGS "${MY_C_FLAGS} -O2 -g2")
        #set(MY_C_FLAGS "${MY_C_FLAGS} -fsanitize=address")
        #set(MY_LD_FLAGS "${MY_LD_FLAGS} -lasan")
     endif()
 
     if(CMAKE_BUILD_TYPE STREQUAL "Release")
+       # set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -fexpensive-optimizations -ftree-vectorize")
+       
        #set(MY_C_FLAGS "${MY_C_FLAGS} -mfpmath=sse -msse3 -mmmx -O2")
        #set(MY_C_FLAGS "${MY_C_FLAGS} -fno-asynchronous-unwind-tables")
        # set(MY_C_FLAGS "${MY_C_FLAGS} -Wno-unused-but-set-variable")
@@ -423,7 +444,7 @@ else()
        # set(MY_C_FLAGS "${MY_C_FLAGS} -Wno-comment")
        # set(MY_C_FLAGS "${MY_C_FLAGS} -Wno-strict-aliasing")
        # set(MY_C_FLAGS "${MY_C_FLAGS} -Wno-maybe-uninitialized")
-       # set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -fexpensive-optimizations -ftree-vectorize")
+
        # set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -fno-rtti")
        # set(MY_C_FLAGS "${MY_C_FLAGS} -fno-exceptions")
        # set(MY_C_FLAGS "${MY_C_FLAGS} -fstrict-aliasing")
@@ -616,6 +637,29 @@ message("[benni] ===============================================================
 message("[benni] Final CMAKE_STATIC_LINKER_FLAGS = ${CMAKE_SHARED_LINKER_FLAGS}")
 message("[benni] Final CMAKE_SHARED_LINKER_FLAGS = ${CMAKE_SHARED_LINKER_FLAGS}")
 message("[benni] Final CMAKE_MODULE_LINKER_FLAGS = ${CMAKE_MODULE_LINKER_FLAGS}")
+
+set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} ${MY_LD_FLAGS}")
+set(CMAKE_SHARED_LINKER_FLAGS_DEBUG "${CMAKE_SHARED_LINKER_FLAGS_DEBUG} ${CMAKE_SHARED_LINKER_FLAGS}")
+set(CMAKE_SHARED_LINKER_FLAGS_RELEASE "${CMAKE_SHARED_LINKER_FLAGS_RELEASE} ${CMAKE_SHARED_LINKER_FLAGS}")
+set(CMAKE_SHARED_LINKER_FLAGS_RELWITHDEBINFO "${CMAKE_SHARED_LINKER_FLAGS_RELWITHDEBINFO} ${CMAKE_SHARED_LINKER_FLAGS}")
+set(CMAKE_SHARED_LINKER_FLAGS_MINSIZEREL "${CMAKE_SHARED_LINKER_FLAGS_MINSIZEREL} ${CMAKE_SHARED_LINKER_FLAGS}")
+message("[benni] Final CMAKE_SHARED_LINKER_FLAGS = ${CMAKE_SHARED_LINKER_FLAGS}")
+message("[benni] Final CMAKE_SHARED_LINKER_FLAGS_DEBUG = ${CMAKE_SHARED_LINKER_FLAGS_DEBUG}")
+message("[benni] Final CMAKE_SHARED_LINKER_FLAGS_RELEASE = ${CMAKE_SHARED_LINKER_FLAGS_RELEASE}")
+message("[benni] Final CMAKE_SHARED_LINKER_FLAGS_RELWITHDEBINFO = ${CMAKE_SHARED_LINKER_FLAGS_RELWITHDEBINFO}")
+message("[benni] Final CMAKE_SHARED_LINKER_FLAGS_MINSIZEREL = ${CMAKE_SHARED_LINKER_FLAGS_MINSIZEREL}")
+message("[benni] ============================================================================")
+message("[benni] Final CMAKE_STATIC_LINKER_FLAGS = ${CMAKE_SHARED_LINKER_FLAGS}")
+message("[benni] Final CMAKE_SHARED_LINKER_FLAGS = ${CMAKE_SHARED_LINKER_FLAGS}")
+message("[benni] Final CMAKE_MODULE_LINKER_FLAGS = ${CMAKE_MODULE_LINKER_FLAGS}")
+
+# Enable profiling globally
+# set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -pg")
+# set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pg")
+# set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -pg")
+# set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -pg")
+
+
 # set(CMAKE_STATIC_LINKER_FLAGS "${CMAKE_STATIC_LINKER_FLAGS} -fuse-ld=lld")
 # set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -fuse-ld=lld")
 # set(CMAKE_MODULE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} -fuse-ld=lld")

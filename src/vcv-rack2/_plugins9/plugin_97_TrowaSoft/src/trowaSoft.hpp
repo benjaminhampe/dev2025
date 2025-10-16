@@ -1,6 +1,4 @@
-#ifndef TROWASOFT_HPP
-#define TROWASOFT_HPP
-
+#pragma once
 #include <rack.hpp>
 using namespace rack;
 
@@ -11,7 +9,7 @@ extern Plugin *pluginInstance;
 #define TROWA_INTERNAL_VERSION_INT		23  //23: 2.0.9 -- Small changes again (button hit boxes)
 
 //After Rack v1.0 https://github.com/VCVRack/Rack/issues/266
-//In the vMAJOR.MINOR.REVISION scheme, vMAJOR is the compatibility verison with Rack and MINOR.REVISION is the revision of your plugin. 
+//In the vMAJOR.MINOR.REVISION scheme, vMAJOR is the compatibility verison with Rack and MINOR.REVISION is the revision of your plugin.
 //For example, v1.* plugins are all compatible with Rack v1.*.
 
 // 7: 0.5.5.2
@@ -31,4 +29,3 @@ extern Plugin *pluginInstance;
 //21: 2.0.7 -- Add 16 and 32-channel OSC expanders. Add copy/paste of rows to sequencers. Add polyGen to this plugin finally.
 //22: 2.0.8 -- Small changes.
 //23: 2.0.9 -- Small changes again (button hit boxes)
-#endif

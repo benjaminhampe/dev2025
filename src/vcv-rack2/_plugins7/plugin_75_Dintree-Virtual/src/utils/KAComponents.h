@@ -11,7 +11,6 @@
 #define KACOMPONENTS_H
 
 #include "../a_plugin.hpp"  // used for settings
-#include "componentlibrary.hpp"
 #include "PLog.h"
 #include "PUtils.h"
 #ifdef BGFX

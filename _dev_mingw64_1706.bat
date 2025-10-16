@@ -11,6 +11,8 @@ set PATH=C:\sdk\Qt\Tools\llvm-mingw1706_64\bin;%PATH%
 set PATH=C:\sdk\Qt\Tools\llvm-mingw1706_64\python\bin;%PATH%
 set PATH=C:\sdk\Qt\Tools\llvm-mingw1706_64\python\include;%PATH%
 set PATH=C:\sdk\Qt\Tools\llvm-mingw1706_64\python\lib;%PATH%
+
+set PATH=C:\sdk\qtcreator-17.0.2\bin;%PATH%
 REM set PATH=C:\sdk\Java\jdk-24\bin;%PATH%
 set PATH=C:\sdk\Git;%PATH%
 REM set PATH=C:\sdk\Graphviz-10.0.1-win64\bin;%PATH%

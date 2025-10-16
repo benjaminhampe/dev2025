@@ -1,14 +1,14 @@
 #include <jansson.h>
 
-#include <settings.hpp>
+#include <rack_settings.hpp>
 #include <window/Window.hpp>
-#include <plugin.hpp>
+#include <rack_plugin.hpp>
 #include <app/Scene.hpp>
 #include <engine/Engine.hpp>
-#include <context.hpp>
-#include <patch.hpp>
-#include <asset.hpp>
-#include <system.hpp>
+#include <rack_context.hpp>
+#include <rack_patch.hpp>
+#include <rack_asset.hpp>
+#include <rack_system.hpp>
 
 
 namespace rack {

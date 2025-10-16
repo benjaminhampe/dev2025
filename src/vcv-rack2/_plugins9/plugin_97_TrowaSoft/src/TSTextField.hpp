@@ -1,19 +1,9 @@
-#ifndef TSTEXTFIELD_HPP
-#define TSTEXTFIELD_HPP
-
-#include <rack.hpp>
-//#include <widget/Widget.hpp> //#include "widgets.hpp"
-//#include <ui/TextField.hpp>
-
-using namespace rack;
-
+#pragma once
+#include "TSColors.hpp"
 #include <iostream>
 #include <regex>
 #include <sstream>
 #include <string>
-
-#include "TSColors.hpp"
-
 
 // Integer/Digits: Entire string validation
 #define TROWA_REGEX_NUMERIC_STR_ONLY		"^[0-9]*$"
@@ -32,10 +22,10 @@ using namespace rack;
 #define TROWA_REGEX_FLOAT_CHAR_NOT				"[^\\-0-9\\.]"
 
 // IP Address: Entire string validation
-#define TROWA_REGEX_IP_ADDRESS			 "^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$" 
+#define TROWA_REGEX_IP_ADDRESS			 "^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$"
 // IP Address: Single char validation
 #define TROWA_REGEX_IP_CHAR				"^([0-9]|\\.)$"
-// IP Address: Not a valid character 
+// IP Address: Not a valid character
 #define TROWA_REGEX_IP_CHAR_NOT		"[^0-9\\.]"
 
 //-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
@@ -56,249 +46,244 @@ bool isPrintableKey(int keyCode);
 //-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
 /// TODO: Redo this struct completely.
 struct TSTextField : TextField {
-	// Maximum length allowed.
-	uint16_t maxLength = 50;
-	// IF text input is enabled.
-	bool enabled = true;
-	// The id of this widget. For use like tab order or something.
-	int id = 0;
-	// The call back if any (parameter is id). i.e. For tabbing to another field.
-	// So parent widget should do this since it is aware of any other field siblings, 
-	// or alternatively parent should point to the next guy's requestFocus()....
-	// EDIT: Realized you can't do function pointer to member procedure in C++, so this may be of limited use.
-	void (*onTabCallback)(int id) = NULL;
+    // Maximum length allowed.
+    uint16_t maxLength = 50;
+    // IF text input is enabled.
+    bool enabled = true;
+    // The id of this widget. For use like tab order or something.
+    int id = 0;
+    // The call back if any (parameter is id). i.e. For tabbing to another field.
+    // So parent widget should do this since it is aware of any other field siblings,
+    // or alternatively parent should point to the next guy's requestFocus()....
+    // EDIT: Realized you can't do function pointer to member procedure in C++, so this may be of limited use.
+    void (*onTabCallback)(int id) = NULL;
 
-	// The call back if any (parameter is id). i.e. For tabbing to the previous field if any.
-	// So parent widget should do this since it is aware of any other field siblings, 
-	// or alternatively parent should point to the next guy's requestFocus()....
-	// EDIT: Realized you can't do function pointer to member procedure in C++, so this may be of limited use.
-	void(*onShiftTabCallback)(int id) = NULL;
+    // The call back if any (parameter is id). i.e. For tabbing to the previous field if any.
+    // So parent widget should do this since it is aware of any other field siblings,
+    // or alternatively parent should point to the next guy's requestFocus()....
+    // EDIT: Realized you can't do function pointer to member procedure in C++, so this may be of limited use.
+    void(*onShiftTabCallback)(int id) = NULL;
 
-	// Previous field to focus if Shift-Tab (in lieu of callback).
-	TSTextField* nextField = NULL;
-	// Next field to focus if Tab (in lieu of callback).
-	TSTextField* prevField = NULL;
-	// If the tab to field is hidden, should we show on tab or go to the next one?
-	enum TabFieldHiddenAction {
-		DoNothing,
-		ShowHiddenTabToField,
-		MoveToNextVisibleTabField
-	};
-	TabFieldHiddenAction tabNextHiddenAction = TabFieldHiddenAction::MoveToNextVisibleTabField;
+    // Previous field to focus if Shift-Tab (in lieu of callback).
+    TSTextField* nextField = NULL;
+    // Next field to focus if Tab (in lieu of callback).
+    TSTextField* prevField = NULL;
+    // If the tab to field is hidden, should we show on tab or go to the next one?
+    enum TabFieldHiddenAction {
+        DoNothing,
+        ShowHiddenTabToField,
+        MoveToNextVisibleTabField
+    };
+    TabFieldHiddenAction tabNextHiddenAction = TabFieldHiddenAction::MoveToNextVisibleTabField;
 
-	// Text type for validation of input.
-	enum TextType {
-		// Any text allowed (i.e. no regex check).
-		Any,
-		// Digits only (no decimals even).
-		DigitsOnly,
-		// IP address (digits and periods), IPv4.
-		IpAddress,
-		// Real number (or integer), specify precision (max # of decimals).
-		RealNumberOnly
-	};
-	// Text type for validation of input.
-	TextType allowedTextType = TextType::Any;
-	// Regex for a single char.
-	std::regex regexChar;
-	// Regex for the entire string.
-	std::regex regexStr;
-	// Regex for invalid characters (to match on invalid and remove).
-	std::regex regexInvalidChar;
-	// The background color.
-	NVGcolor backgroundColor;
-	// Font
-	//std::shared_ptr<Font> font; // Rack v2 load font each time
-	std::string fontPath;
-	
-	// Text offset
-	Vec textOffset;
-	// Text color
-	NVGcolor color;
-	// Font size
-	float fontSize;
-	// The caret color - Actually the highlight color.
-	NVGcolor caretColor;
-	// The number of decmals allowed.
-	int realNumberPrecision = 2;
+    // Text type for validation of input.
+    enum TextType {
+        // Any text allowed (i.e. no regex check).
+        Any,
+        // Digits only (no decimals even).
+        DigitsOnly,
+        // IP address (digits and periods), IPv4.
+        IpAddress,
+        // Real number (or integer), specify precision (max # of decimals).
+        RealNumberOnly
+    };
+    // Text type for validation of input.
+    TextType allowedTextType = TextType::Any;
+    // Regex for a single char.
+    std::regex regexChar;
+    // Regex for the entire string.
+    std::regex regexStr;
+    // Regex for invalid characters (to match on invalid and remove).
+    std::regex regexInvalidChar;
+    // The background color.
+    NVGcolor backgroundColor;
+    // Font
+    //std::shared_ptr<Font> font; // Rack v2 load font each time
+    std::string fontPath;
 
-	std::string displayStr;
+    // Text offset
+    Vec textOffset;
+    // Text color
+    NVGcolor color;
+    // Font size
+    float fontSize;
+    // The caret color - Actually the highlight color.
+    NVGcolor caretColor;
+    // The number of decmals allowed.
+    int realNumberPrecision = 2;
 
-	// If this field can be tabbed to.
-	bool canTabToThisEnabled = true;
+    std::string displayStr;
 
-	int borderWidth = 0;
-	NVGcolor borderColor;
+    // If this field can be tabbed to.
+    bool canTabToThisEnabled = true;
 
-	int getTextPosition(Vec mousePos) override;
+    int borderWidth = 0;
+    NVGcolor borderColor;
 
-	TSTextField(TextType textType);
-	TSTextField(TextType textType, int maxLength);
-	//-----------------------------------------------------------------------------------------------
-	// TSTextField()
-	// @id : (IN) Hopefully unique id for the form. Should indicate tab order.
-	// @textType: (IN) Text type for this field (for validation).
-	// @maxLength: (IN) Max length for this field.
-	// @onTabHandler: (IN) Callback/Event handler for tab (i.e. focus on the next field).
-	// @onShiftTabHandler: (IN) Callback/Event handler for shift-tab (i.e. focus on the previous field).
-	//-----------------------------------------------------------------------------------------------
-	TSTextField(int id, TextType textType, int maxLength, void (*onTabHandler)(int),  void (*onShiftTabHandler)(int)) : TSTextField(textType, maxLength) {
-		this->onTabCallback = onTabHandler;
-		this->onShiftTabCallback = onShiftTabHandler;
-		return;
-	}
-	
-	void setVisible(bool isVisible);
+    int getTextPosition(Vec mousePos) override;
 
-	// If the text is valid.
-	bool isValid() {
-		return (allowedTextType == TextType::Any
-			|| std::regex_match(text, regexStr));
-	}
-	// Set the text type/validation
-	void setTextType(TextType validationType)
-	{
-		this->allowedTextType = validationType;
+    TSTextField(TextType textType);
+    TSTextField(TextType textType, int maxLength);
+    //-----------------------------------------------------------------------------------------------
+    // TSTextField()
+    // @id : (IN) Hopefully unique id for the form. Should indicate tab order.
+    // @textType: (IN) Text type for this field (for validation).
+    // @maxLength: (IN) Max length for this field.
+    // @onTabHandler: (IN) Callback/Event handler for tab (i.e. focus on the next field).
+    // @onShiftTabHandler: (IN) Callback/Event handler for shift-tab (i.e. focus on the previous field).
+    //-----------------------------------------------------------------------------------------------
+    TSTextField(int id, TextType textType, int maxLength, void (*onTabHandler)(int),  void (*onShiftTabHandler)(int)) : TSTextField(textType, maxLength) {
+        this->onTabCallback = onTabHandler;
+        this->onShiftTabCallback = onShiftTabHandler;
+        return;
+    }
 
-		//char buffer[50] = { '\0' };
+    void setVisible(bool isVisible);
 
-		switch (allowedTextType)
-		{
-		case TextType::DigitsOnly:
-			regexChar = std::regex(TROWA_REGEX_NUMERIC_CHAR_ONLY);
-			regexStr = std::regex(TROWA_REGEX_NUMERIC_STR_ONLY);
-			regexInvalidChar = std::regex(TROWA_REGEX_NUMERIC_CHAR_NOT);
-			break;
-		case TextType::IpAddress:
-			regexChar = std::regex(TROWA_REGEX_IP_CHAR);
-			regexStr = std::regex(TROWA_REGEX_IP_ADDRESS);
-			regexInvalidChar = std::regex(TROWA_REGEX_IP_CHAR_NOT);
-			break;
-		case TextType::RealNumberOnly:
-			regexChar = std::regex(TROWA_REGEX_FLOAT_CHAR_ONLY);
-			// Add our number of decimals to the regex:
-			//sprintf(buffer, TROWA_REGEX_FLOAT_STR_ONLY_FORMAT, this->realNumberPrecision);
-			//regexStr = std::regex(buffer);
-			regexStr = std::regex(TROWA_REGEX_FLOAT_STR_ONLY_FORMAT);
-			regexInvalidChar = std::regex(TROWA_REGEX_FLOAT_CHAR_NOT);
-			break;
-		case TextType::Any:
-		default:
-			break;
-		}
-		return;
-	}
-	// Set the decimal precision allowed for the text box.
-	void setRealPrecision(int precision) {
-		this->realNumberPrecision = precision;
-		if (allowedTextType == TextType::RealNumberOnly) {
-			setTextType(allowedTextType); // Redo our regex.
-		}
-	}
+    // If the text is valid.
+    bool isValid() {
+        return (allowedTextType == TextType::Any
+            || std::regex_match(text, regexStr));
+    }
+    // Set the text type/validation
+    void setTextType(TextType validationType)
+    {
+        this->allowedTextType = validationType;
+
+        //char buffer[50] = { '\0' };
+
+        switch (allowedTextType)
+        {
+        case TextType::DigitsOnly:
+            regexChar = std::regex(TROWA_REGEX_NUMERIC_CHAR_ONLY);
+            regexStr = std::regex(TROWA_REGEX_NUMERIC_STR_ONLY);
+            regexInvalidChar = std::regex(TROWA_REGEX_NUMERIC_CHAR_NOT);
+            break;
+        case TextType::IpAddress:
+            regexChar = std::regex(TROWA_REGEX_IP_CHAR);
+            regexStr = std::regex(TROWA_REGEX_IP_ADDRESS);
+            regexInvalidChar = std::regex(TROWA_REGEX_IP_CHAR_NOT);
+            break;
+        case TextType::RealNumberOnly:
+            regexChar = std::regex(TROWA_REGEX_FLOAT_CHAR_ONLY);
+            // Add our number of decimals to the regex:
+            //sprintf(buffer, TROWA_REGEX_FLOAT_STR_ONLY_FORMAT, this->realNumberPrecision);
+            //regexStr = std::regex(buffer);
+            regexStr = std::regex(TROWA_REGEX_FLOAT_STR_ONLY_FORMAT);
+            regexInvalidChar = std::regex(TROWA_REGEX_FLOAT_CHAR_NOT);
+            break;
+        case TextType::Any:
+        default:
+            break;
+        }
+        return;
+    }
+    // Set the decimal precision allowed for the text box.
+    void setRealPrecision(int precision) {
+        this->realNumberPrecision = precision;
+        if (allowedTextType == TextType::RealNumberOnly) {
+            setTextType(allowedTextType); // Redo our regex.
+        }
+    }
 
 
 
-	// Remove invalid chars.
-	std::string cleanseString(std::string newText);
-	void drawLayer(const DrawArgs &args, int layer) override;
-	void insertText(std::string newText);
-	void onTextChange();
-	
-	//void onKey(const event::Key &e) override;
-	void onSelectKey(const event::SelectKey &e) override;
-	// Set the text
-	void setText(std::string text);
-	// On key
-	//void onText(const event::Text &e) override;
-	void onSelectText(const event::SelectText &e) override;
-	// Request focus on this field from the Rack engine.
-	void requestFocus();
-	//void onDefocus(const event::Defocus &e) override;
+    // Remove invalid chars.
+    std::string cleanseString(std::string newText);
+    void drawLayer(const DrawArgs &args, int layer) override;
+    void insertText(std::string newText);
+    void onTextChange();
 
-	// -- TRY TO NOT RESPOND TO EVENTS IF WE ARE HIDING --
-	/** Called when a mouse button is pressed over this widget
-	0 for left, 1 for right, 2 for middle.
-	Return `this` to accept the event.
-	Return NULL to reject the event and pass it to the widget behind this one.
-	*/
-	// void onMouseDown(const event::MouseDown &e) override {
-		// if (visible) {
-			// TextField::onMouseDown(e);
-		// }
-	// };
-	// void onMouseUp(const event::MouseUp &e) override {
-		// if (visible) {
-			// TextField::onMouseUp(e);
-		// }
-	// };
-	// /** Called on every frame, even if mouseRel = Vec(0, 0) */
-	// void onMouseMove(const event::MouseMove &e) override {
-		// if (visible) {
-			// TextField::onMouseMove(e);
-		// }
-	// }
-	
-	void onButton(const event::Button &e) override {
-		if (visible && !e.isConsumed()){
-			TextField::onButton(e);	
-		}
-	}
-	
-	void onHoverKey(const event::HoverKey &e) override{
-		if (visible) {
-			TextField::onHoverKey(e);
-		}
-	}
-	/** Called when a widget responds to `onMouseDown` for a left button press */
-	void onDragStart(const event::DragStart &e) override {
-		if (visible) {
-			TextField::onDragStart(e);
-		}
-	}
-	/** Called when the left button is released and this widget is being dragged */
-	void onDragEnd(const event::DragEnd &e) override {
-		if (visible) {
-			TextField::onDragEnd(e);
-		}
-	}
-	/** Called when a widget responds to `onMouseMove` and is being dragged */
-	void onDragMove(const event::DragMove &e) override {
-		if (visible) {
-			TextField::onDragMove(e);
-		}
-	}
-	/** Called when a widget responds to `onMouseUp` for a left button release and a widget is being dragged */
-	void onDragEnter(const event::DragEnter &e) override {
-		if (visible) {
-			TextField::onDragEnter(e);
-		}
-	}
-	void onDragLeave(const event::DragLeave &e) override {
-		if (visible) {
-			TextField::onDragLeave(e);
-		}
-	}
-	void onDragDrop(const event::DragDrop &e) override {
-		if (visible) {
-			TextField::onDragDrop(e);
-		}
-	}
-	void onPathDrop(const event::PathDrop &e)override {
-		if (visible) {
-			TextField::onPathDrop(e);
-		}
-	}
+    //void onKey(const event::Key &e) override;
+    void onSelectKey(const event::SelectKey &e) override;
+    // Set the text
+    void setText(std::string text);
+    // On key
+    //void onText(const event::Text &e) override;
+    void onSelectText(const event::SelectText &e) override;
+    // Request focus on this field from the Rack engine.
+    void requestFocus();
+    //void onDefocus(const event::Defocus &e) override;
 
-	void onAction(const event::Action &e) override {
-		if (visible) {
-			TextField::onAction(e);
-		}
-	}
-	//void onChange(const event::Change &e) override {
-	//}
+    // -- TRY TO NOT RESPOND TO EVENTS IF WE ARE HIDING --
+    /** Called when a mouse button is pressed over this widget
+    0 for left, 1 for right, 2 for middle.
+    Return `this` to accept the event.
+    Return NULL to reject the event and pass it to the widget behind this one.
+    */
+    // void onMouseDown(const event::MouseDown &e) override {
+        // if (visible) {
+            // TextField::onMouseDown(e);
+        // }
+    // };
+    // void onMouseUp(const event::MouseUp &e) override {
+        // if (visible) {
+            // TextField::onMouseUp(e);
+        // }
+    // };
+    // /** Called on every frame, even if mouseRel = Vec(0, 0) */
+    // void onMouseMove(const event::MouseMove &e) override {
+        // if (visible) {
+            // TextField::onMouseMove(e);
+        // }
+    // }
+
+    void onButton(const event::Button &e) override {
+        if (visible && !e.isConsumed()){
+            TextField::onButton(e);
+        }
+    }
+
+    void onHoverKey(const event::HoverKey &e) override{
+        if (visible) {
+            TextField::onHoverKey(e);
+        }
+    }
+    /** Called when a widget responds to `onMouseDown` for a left button press */
+    void onDragStart(const event::DragStart &e) override {
+        if (visible) {
+            TextField::onDragStart(e);
+        }
+    }
+    /** Called when the left button is released and this widget is being dragged */
+    void onDragEnd(const event::DragEnd &e) override {
+        if (visible) {
+            TextField::onDragEnd(e);
+        }
+    }
+    /** Called when a widget responds to `onMouseMove` and is being dragged */
+    void onDragMove(const event::DragMove &e) override {
+        if (visible) {
+            TextField::onDragMove(e);
+        }
+    }
+    /** Called when a widget responds to `onMouseUp` for a left button release and a widget is being dragged */
+    void onDragEnter(const event::DragEnter &e) override {
+        if (visible) {
+            TextField::onDragEnter(e);
+        }
+    }
+    void onDragLeave(const event::DragLeave &e) override {
+        if (visible) {
+            TextField::onDragLeave(e);
+        }
+    }
+    void onDragDrop(const event::DragDrop &e) override {
+        if (visible) {
+            TextField::onDragDrop(e);
+        }
+    }
+    void onPathDrop(const event::PathDrop &e)override {
+        if (visible) {
+            TextField::onPathDrop(e);
+        }
+    }
+
+    void onAction(const event::Action &e) override {
+        if (visible) {
+            TextField::onAction(e);
+        }
+    }
+    //void onChange(const event::Change &e) override {
+    //}
 }; // end struct TSTextField
-
-
-
-
-#endif // end if not defined

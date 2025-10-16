@@ -1,6 +1,5 @@
 #pragma once
 #include "../RPJ.hpp"
-#include "settings.hpp"
 #include "composites/WidgetComposite.h"
 #include "SqHelper.h"
 #include "SqUI.h"

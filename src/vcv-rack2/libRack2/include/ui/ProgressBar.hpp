@@ -1,7 +1,7 @@
 #pragma once
 #include <ui/common.hpp>
 #include <widget/Widget.hpp>
-#include <Quantity.hpp>
+#include <rack_quantity.hpp>
 
 
 namespace rack {
@@ -9,11 +9,11 @@ namespace ui {
 
 
 struct RACK_DLL_API ProgressBar : widget::Widget {
-	/** Not owned. Stores the progress value and label. */
-	Quantity* quantity = NULL;
+    /** Not owned. Stores the progress value and label. */
+    Quantity* quantity = NULL;
 
-	ProgressBar();
-	void draw(const DrawArgs& args) override;
+    ProgressBar();
+    void draw(const DrawArgs& args) override;
 };
 
 

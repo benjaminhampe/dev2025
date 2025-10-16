@@ -6,7 +6,7 @@
 
 #include "LoudnessMeterEngine.hpp"
 #include "components.hpp"
-#include "plugin.hpp"
+#include <rack_plugin.hpp>
 
 using namespace rack;
 

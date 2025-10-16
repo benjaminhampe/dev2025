@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include <common.hpp>
+#include <rack_common.hpp>
 #define NUM_DEXTER_WAVETABLES 35
 
 BINARY(src_ADD_BANK1_bin);

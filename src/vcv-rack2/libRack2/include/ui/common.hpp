@@ -2,8 +2,8 @@
 #include <nanovg.h>
 #include <blendish.h>
 
-#include <common.hpp>
-#include <color.hpp>
+#include <rack_common.hpp>
+#include <rack_color.hpp>
 
 /** Useful for menu items with a "true" boolean state */
 #define CHECKMARK_STRING "✔"

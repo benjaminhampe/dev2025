@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+  <title>slurp</title>
+
+  <link href="./style.css" rel="stylesheet">
+  <link href="./bootstrap/bootstrap.min.css" rel="stylesheet">
+  <script src="./bootstrap/bootstrap.min.js"></script>
+  <script src="./script.js"></script>
+
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-FZ9FD6YW4S"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+  
+      gtag('config', 'G-FZ9FD6YW4S');
+    </script>
+
+</head>
+
+    <style>
+
+    </style>
+
+    <body class="bg-secondary">
+
+        <header class="site-header bg-dark">
+          <nav class="container d-flex flex-column flex-md-row justify-content-between">
+            <a href="./index.html">
+              <span class="display-6 fw-bold text-light text-bg">Questionable Modules</span>
+            </a>
+
+            <div class="container py-4 d-grid gap-2 d-md-flex justify-content-md-end">
+              <a href="https://library.vcvrack.com/questionablemodules/quatosc"><button class="btn btn-light btn-lg" type="button">View in Library</button></a>
+              <a href="https://github.com/isivisi/questionablemodules"><button class="btn btn-light btn-lg" type="button">View Source</button></a>
+            </div>
+            
+          </nav>
+        </header>
+
+        <div class="container nosidepad">
+          <iframe src="https://isivisi.ca/slurp/ad.html" width="100%" height="242px"></iframe>
+        </div>
+
+        <div class="container mt-2 nosidepad bg-light">
+          <span id="vbutton"></span><script> importHTML("versionbtn.html", document.getElementById("vbutton")) </script>
+          <div class="p-2 mb-4 bg-light text-center">
+            <div class="container-fluid py-5">
+              <h1 class="display-1 fw-bold">SLURP</h1>
+              <p class="fs-4">Quaternion based oscillation.</p>
+
+            </div>
+          </div>
+
+          <img src="./images/slurpview.jpg" style="object-fit: cover; width: 100%;"/>
+        </div>
+
+        <div class="container bg-light">
+          
+          <div class="container-fluid py-5">
+            <div class="feature">
+              <p class="">
+                SLURP has 3 oscillating sources, one for each rotational axis.
+                Each axis has an LFO that modulates its rotation. 
+                Rotating one axis will in turn move the other two axis. 
+                The final position of each axis is then projected into 2d space and its positional value becomes the output.
+              </p>
+
+              <img src="./images/quaternionProjection.svg" width="100%"/>
+            
+              <h2>Parameters</h2>
+              <p class="">
+                Each oscillator (or axis) has a
+                <span class="fw-bold">VOct</span>, 
+                <span class="fw-bold">Influence</span>,
+                <span class="fw-bold">Rotation</span>,
+                <span class="fw-bold">Octave</span>, and
+                <span class="fw-bold">LFO Influence</span> parameter.
+              </p>
+
+              <p class="alert alert-info"> <span class="fw-bold">Note:</span> setting all 3 VOct inputs to your desired pitch will keep the rotational dynamics you've created consistent.</p>
+              
+
+              <h2>Projection Plane</h2>
+              <p>
+                The projection plane is a static viewing direction that the axis position gets projection onto. You can change this in the modules <span class="fw-bold">context menu</span>, there are 3 projections to choose from: X, Y, and Z (defaults to Z).
+              </p>
+              
+              <h2>Stereo <span><img src="./images/quaternionStereo.svg" width="50px"></span></h2>
+              <p id="Stereo">
+                Stereo can be toggled with the stereo button <span><img src="./images/slurpMono.svg"/></span>. There are three settings in total: <span class="fw-bold">mono <span><img src="./images/slurpMono.svg"/></span>, full stereo <span><img src="./images/slurpFullStereo.svg"/></span>, and side stereo only. <span><img src="./images/slurpSides.svg"/></span></span> This splits the projected waveform based on how far it is to one side of the sphere.
+              </p>
+              
+              <h2>Spread</h2>
+              <p id="Spread">Enable <span class="fw-bold">polyphonic</span> support for SLURP by increasing its spread value. Pressing the spread button <img src="./images/slurpSpreadOff.svg"/></span> will cycle though 1-16 voices. You can also right click this to select a specific value with its context menu. Each new voice is a slightly offset rotation from the previous and will output to its own channel.</p>
+
+              <img src="./images/slurp.svg" width="100%"/>
+
+              <p id="VOct"> <voctinputbadge></voctinputbadge> <span class="fw-bold">VOct</span> Sets the frequency of the axis LFO to the desired note value. This uses the 1V/oct standard. This can be disabled by setting the corresponding <a href="#Octave">Octave</a> value to "Off" (less than 0V).</p>
+              <p id="Position Influence"> <controlbadge></controlbadge> <span class="fw-bold">Influence</span> Sets how much this axis projected position is added to the final output.</p>
+              <p id="Rotation"> <controlbadge></controlbadge> <span class="fw-bold">Rotation</span> Adds a constant rotation value over time to the axis.</p>
+              <p id="Octave"> <controlbadge></controlbadge> <span class="fw-bold">Octave</span> offsets the LFOs frequency by whole octave (0-8). Setting this to "Off" will disable this lfo. Quantization of this value can be toggled in the corresponding knobs <span class="fw-bold">context menu</span> with the option "Disable Quantization".</p>
+              <p id="LFO Influence"> <controlbadge></controlbadge> <span class="fw-bold">LFO Influence</span> How much influence the LFO has on the axis.</p>
+
+              <p id="Clock"> <triggerbadge></triggerbadge> <span class="fw-bold">Clock</span> Offsets the frequency of all LFOs to be in sync with the incoming clock signal.</p>
+              
+              <p id="Output"> <polyoutputbadge></polyoutputbadge> <span class="fw-bold">Outputs</span> Final audio out values, the left and right output will send different audio if any stereo options are enabled. IF not then both outouts will be the same mono audio.</p>
+              
+              <p id="Dephase"><span class="badge bg-warning">BETA</span> <span class="fw-bold">Dephase Algorithm</span> How SLURP performes its dephasing, the <span class="fw-bold">old</span> setting is the original method that doesn't play well with low sub audio frequencies. The <span class="fw-bold">new</span> method is the same as the <a href="https://isivisi.ca/slurp" target="_blank">VST</a> and can handle low and high frequencies and more accurately follows the clock.</p>
+              
+              <div style="min-height:250px"></div> <!-- Spacer -->
+
+            </div>
+           </div>
+
+           <div class="container-fluid py-5">
+            <div>
+              <h2>Themes</h2>
+              <p>The modules context menu has a theme submenu where you can change the background to a solid white or black color if you are having trouble with the default background design. </p>
+
+              <h2>Labels</h2>
+              <p>Knob and plug labels can be toggled via the <span class="fw-bold">toggle labels</span> option in the context menu. </p>
+            </div>
+          </div>
+
+          <script src="https://giscus.app/client.js"
+                data-repo="isivisi/questionablemodules"
+                data-repo-id="R_kgDOIioocg"
+                data-category="docs"
+                data-category-id="DIC_kwDOIioocs4CmqPh"
+                data-mapping="title"
+                data-strict="1"
+                data-reactions-enabled="1"
+                data-emit-metadata="0"
+                data-input-position="bottom"
+                data-theme="preferred_color_scheme"
+                data-lang="en"
+                crossorigin="anonymous"
+                async>
+        </script>
+ 
+        </div>   
+
+        <script> importHTML("footer.html") </script>
+
+    </body>
+
+</html>

@@ -1,5 +1,5 @@
 #pragma once
-#include <math.hpp>
+#include <rack_math.hpp>
 #include <memory>
 #include <map>
 #include <window/Svg.hpp>

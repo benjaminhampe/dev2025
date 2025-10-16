@@ -1,12 +1,9 @@
-#ifndef TSSCOPEMODULEBASE_HPP
-#define TSSCOPEMODULEBASE_HPP
-#include <string.h>
-#include <stdint.h>
+#pragma once
 #include "trowaSoft.hpp"
 #include "trowaSoftComponents.hpp"
 #include "trowaSoftUtilities.hpp"
-#include "math.hpp"
-//#include "dsp/digital.hpp"
+#include <string.h>
+#include <stdint.h>
 
 #define BUFFER_SIZE 					512
 #define TROWA_SCOPE_USE_COLOR_LIGHTS	  0
@@ -14,8 +11,8 @@
 // X and Y Knobs:
 #define TROWA_SCOPE_POS_KNOB_MIN	-30.0	// Min pos value
 #define TROWA_SCOPE_POS_KNOB_MAX	 30.0	// Max Pos value
-#define TROWA_SCOPE_POS_X_KNOB_DEF	  0.0 
-#define TROWA_SCOPE_POS_Y_KNOB_DEF	  0.0 
+#define TROWA_SCOPE_POS_X_KNOB_DEF	  0.0
+#define TROWA_SCOPE_POS_Y_KNOB_DEF	  0.0
 #define TROWA_SCOPE_SCALE_KNOB_MIN	-10.0	// Min Scale value
 #define TROWA_SCOPE_SCALE_KNOB_MAX	 10.0	// Max Scale value
 #define TROWA_SCOPE_SCALE_POS_INPUT_MIN_V	-10.0	// Min input voltage for Scale & Offset
@@ -33,15 +30,15 @@
 // Effect Knob min value (0)
 #define TROWA_SCOPE_EFFECT_KNOB_MIN		0
 // Effect Knob max value
-#define TROWA_SCOPE_EFFECT_KNOB_MAX		(TROWA_SCOPE_NUM_EFFECTS-1) 
+#define TROWA_SCOPE_EFFECT_KNOB_MAX		(TROWA_SCOPE_NUM_EFFECTS-1)
 #define TROWA_SCOPE_EFFECT_KNOB_DEF		TROWA_SCOPE_EFFECT_KNOB_MIN	// Default value
 
 //-- From original multiScope ---
 // Hue Knob:
-#define TROWA_SCOPE_HUE_KNOB_MIN	  -10.0f 
+#define TROWA_SCOPE_HUE_KNOB_MIN	  -10.0f
 #define TROWA_SCOPE_HUE_KNOB_MAX	   10.0f
-#define TROWA_SCOPE_HUE_INPUT_MIN_V	  0 
-#define TROWA_SCOPE_HUE_INPUT_MAX_V	  5 
+#define TROWA_SCOPE_HUE_INPUT_MIN_V	  0
+#define TROWA_SCOPE_HUE_INPUT_MAX_V	  5
 #define TROWA_SCOPE_COLOR_KNOB_Y_OFFSET	0 // 6
 // Opacity:
 #define TROWA_SCOPE_MIN_OPACITY			0.0 // Not used anymore
@@ -104,256 +101,252 @@ extern const GlobalEffect* SCOPE_GLOBAL_EFFECTS[TROWA_NUM_GLOBAL_EFFECTS];
 //-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
 struct TSWaveform
 {
-	float bufferX[BUFFER_SIZE] = {};
-	float bufferY[BUFFER_SIZE] = {};
-	bool bufferPenOn[BUFFER_SIZE] = {};
+    float bufferX[BUFFER_SIZE] = {};
+    float bufferY[BUFFER_SIZE] = {};
+    bool bufferPenOn[BUFFER_SIZE] = {};
 
-	int bufferIndex;
-	float frameIndex;
-	// Lissajous mode on
-	bool lissajous = true;
-	dsp::SchmittTrigger lissajousTrigger;
+    int bufferIndex;
+    float frameIndex;
+    // Lissajous mode on
+    bool lissajous = true;
+    dsp::SchmittTrigger lissajousTrigger;
 
-	// Link X and Y scale ::::::::::::::::::::::::::::::::::::::::::::::
-	// Force aspect ratio lock
-	bool linkXYScales;
-	// Trigger for linkXYScales button
-	dsp::SchmittTrigger linkXYScalesTrigger;
-	// Last value for scale when X and Y were synched.
-	float lastXYScaleValue;
-	// Aspect Ratio X/Y:
-	float aspectRatioXY = 1.0;
+    // Link X and Y scale ::::::::::::::::::::::::::::::::::::::::::::::
+    // Force aspect ratio lock
+    bool linkXYScales;
+    // Trigger for linkXYScales button
+    dsp::SchmittTrigger linkXYScalesTrigger;
+    // Last value for scale when X and Y were synched.
+    float lastXYScaleValue;
+    // Aspect Ratio X/Y:
+    float aspectRatioXY = 1.0;
 
 #if TROWA_SCOPE_USE_Z_DIMENSION
-	// Number of axes
-	int numAxes = 3;
-	// Z-values
-	float bufferZ[BUFFER_SIZE] = {};
-	// Master Buffer pointer
-	float* buffer[3] = { &(bufferX[0]), &(bufferY[0]), &(bufferZ[0]) };
-	// Aspect Ratio X/Z:
-	float aspectRatioXZ = 1.0;
-	// Scale values (amplitudes for X, Y, Z).
-	float scaleVals[3] = { 1.0, 1.0, 1.0 };
-	// Offset values for X, Y, Z
-	float offsetVals[3] = { 0.0, 0.0, 0.0 };
-	// If the X, Y, Z inputs are active.
-	bool inputsActive[3] = { false, false, false };
+    // Number of axes
+    int numAxes = 3;
+    // Z-values
+    float bufferZ[BUFFER_SIZE] = {};
+    // Master Buffer pointer
+    float* buffer[3] = { &(bufferX[0]), &(bufferY[0]), &(bufferZ[0]) };
+    // Aspect Ratio X/Z:
+    float aspectRatioXZ = 1.0;
+    // Scale values (amplitudes for X, Y, Z).
+    float scaleVals[3] = { 1.0, 1.0, 1.0 };
+    // Offset values for X, Y, Z
+    float offsetVals[3] = { 0.0, 0.0, 0.0 };
+    // If the X, Y, Z inputs are active.
+    bool inputsActive[3] = { false, false, false };
 #else
-	// Number of axes
-	int numAxes = 2;
-	// Master Buffer pointer
-	float* buffer[2] = { &(bufferX[0]), &(bufferY[0])};
-	// Scale values (amplitudes for X, Y).
-	float scaleVals[2] = { 1.0, 1.0 };
-	// Offset values for X, Y.
-	float offsetVals[2] = { 0.0, 0.0 };
-	// If the X, Y inputs are active.
-	bool inputsActive[2] = { false, false };
+    // Number of axes
+    int numAxes = 2;
+    // Master Buffer pointer
+    float* buffer[2] = { &(bufferX[0]), &(bufferY[0])};
+    // Scale values (amplitudes for X, Y).
+    float scaleVals[2] = { 1.0, 1.0 };
+    // Offset values for X, Y.
+    float offsetVals[2] = { 0.0, 0.0 };
+    // If the X, Y inputs are active.
+    bool inputsActive[2] = { false, false };
 #endif
 
 
-	// Rotation ::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-	dsp::SchmittTrigger rotModeTrigger;
-	// True for absolute angular position, false if constant angular change
-	bool rotMode;
-	// Value from rotation knob
-	float rotKnobValue;
-	// Translated to ABS position [radians]
-	float rotAbsValue;
-	// Translated to differential position [radians] (rate)
-	float rotDiffValue;
+    // Rotation ::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+    dsp::SchmittTrigger rotModeTrigger;
+    // True for absolute angular position, false if constant angular change
+    bool rotMode;
+    // Value from rotation knob
+    float rotKnobValue;
+    // Translated to ABS position [radians]
+    float rotAbsValue;
+    // Translated to differential position [radians] (rate)
+    float rotDiffValue;
 
-	// Colors ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-	// Actual color
-	NVGcolor waveColor;
-	// Color hue 0 to 1
-	float waveHue = 0;
-	// Color saturation 0 to 1
-	float waveSat = 0.5;
-	// Color light 0 to 1
-	float waveLght = 0.5;
+    // Colors ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+    // Actual color
+    NVGcolor waveColor;
+    // Color hue 0 to 1
+    float waveHue = 0;
+    // Color saturation 0 to 1
+    float waveSat = 0.5;
+    // Color light 0 to 1
+    float waveLght = 0.5;
 #if TROWA_SCOPE_USE_COLOR_LIGHTS
-	// References to our lights (typed)
-	ColorValueLight* waveLight;
+    // References to our lights (typed)
+    ColorValueLight* waveLight;
 #endif
-	// If the color has changed.
-	bool colorChanged;
-	// Alpha channel 0-1
-	float waveOpacity = 1.0;
+    // If the color has changed.
+    bool colorChanged;
+    // Alpha channel 0-1
+    float waveOpacity = 1.0;
 
-	// Fill color::::::::::::::::::::::::
-	// Fill mode is on
-	bool doFill = false;
-	dsp::SchmittTrigger fillOnTrigger;
-	// Color to use for fill.
-	NVGcolor fillColor;
-	// Fill hue (0-1)
-	float fillHue = 0;
-	// Fill saturation (0-1)
-	float fillSat = 0.5;
-	// Fill lum (0-1)
-	float fillLght = 0.5;
-	// Alpha channel 0-1.
-	float fillOpacity = 1.0;
+    // Fill color::::::::::::::::::::::::
+    // Fill mode is on
+    bool doFill = false;
+    dsp::SchmittTrigger fillOnTrigger;
+    // Color to use for fill.
+    NVGcolor fillColor;
+    // Fill hue (0-1)
+    float fillHue = 0;
+    // Fill saturation (0-1)
+    float fillSat = 0.5;
+    // Fill lum (0-1)
+    float fillLght = 0.5;
+    // Alpha channel 0-1.
+    float fillOpacity = 1.0;
 
 
-	// Rendering properties ::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-	// Thickness of waveform line.
-	float lineThickness = 3.0;
-	// Negative the color.
-	bool negativeImage = false;
-	// Index into SCOPE_GLOBAL_EFFECTS for what effect to do.
-	int gEffectIx = 0;
+    // Rendering properties ::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+    // Thickness of waveform line.
+    float lineThickness = 3.0;
+    // Negative the color.
+    bool negativeImage = false;
+    // Index into SCOPE_GLOBAL_EFFECTS for what effect to do.
+    int gEffectIx = 0;
 
-	TSWaveform()
-	{
-		bufferIndex = 0;
-		frameIndex = 0;
-		memset(bufferPenOn, true, BUFFER_SIZE);
-		colorChanged = true;
-		rotMode = false;
-		rotKnobValue = 0;
-		rotAbsValue = 0;
-		rotDiffValue = 0;
-		linkXYScales = false;
-		waveOpacity = TROWA_SCOPE_MAX_OPACITY;
-		lineThickness = 3.0;
-		waveColor = HueToColor(waveHue, waveSat, waveLght);
-		fillColor = HueToColor(fillHue, fillSat, fillLght);
+    TSWaveform()
+    {
+        bufferIndex = 0;
+        frameIndex = 0;
+        memset(bufferPenOn, true, BUFFER_SIZE);
+        colorChanged = true;
+        rotMode = false;
+        rotKnobValue = 0;
+        rotAbsValue = 0;
+        rotDiffValue = 0;
+        linkXYScales = false;
+        waveOpacity = TROWA_SCOPE_MAX_OPACITY;
+        lineThickness = 3.0;
+        waveColor = HueToColor(waveHue, waveSat, waveLght);
+        fillColor = HueToColor(fillHue, fillSat, fillLght);
 #if TROWA_SCOPE_USE_COLOR_LIGHTS
-		waveLight = NULL;
+        waveLight = NULL;
 #endif
-		return;
-	}
+        return;
+    }
 
-	void setHue(float hue)
-	{
-		waveHue = hue;
-		waveColor = HueToColor(waveHue, waveSat, waveLght);
-	}
-	void setHueFromKnob(float hueKnobValue)
-	{
-		setHue(rescale(hueKnobValue, TROWA_SCOPE_HUE_KNOB_MIN, TROWA_SCOPE_HUE_KNOB_MAX, 0.0, 1.0));
-		return;
-	}
-	void setFillHue(float hue)
-	{
-		fillHue = hue;
-		fillColor = HueToColor(hue, fillSat, fillLght);
-	}
-	void setFillHueFromKnob(float hueKnobValue)
-	{
-		setFillHue(rescale(hueKnobValue, TROWA_SCOPE_HUE_KNOB_MIN, TROWA_SCOPE_HUE_KNOB_MAX, 0.0, 1.0));
-		return;
-	}
-	//-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
-	// dataToJson(void)
-	// Save to json.
-	//-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-	
-	json_t *dataToJson() {
-		// Really should just serialize the TSWaveForm object.
-		json_t* rootJ = json_object();
-		json_t* itemJ;
+    void setHue(float hue)
+    {
+        waveHue = hue;
+        waveColor = HueToColor(waveHue, waveSat, waveLght);
+    }
+    void setHueFromKnob(float hueKnobValue)
+    {
+        setHue(rescale(hueKnobValue, TROWA_SCOPE_HUE_KNOB_MIN, TROWA_SCOPE_HUE_KNOB_MAX, 0.0, 1.0));
+        return;
+    }
+    void setFillHue(float hue)
+    {
+        fillHue = hue;
+        fillColor = HueToColor(hue, fillSat, fillLght);
+    }
+    void setFillHueFromKnob(float hueKnobValue)
+    {
+        setFillHue(rescale(hueKnobValue, TROWA_SCOPE_HUE_KNOB_MIN, TROWA_SCOPE_HUE_KNOB_MAX, 0.0, 1.0));
+        return;
+    }
+    //-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+    // dataToJson(void)
+    // Save to json.
+    //-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+    json_t *dataToJson() {
+        // Really should just serialize the TSWaveForm object.
+        json_t* rootJ = json_object();
+        json_t* itemJ;
 
-		// Colors
-		json_t* waveColorJ = json_array();
-		json_t* fillColorJ = json_array();
-		// -- RGB
-		for (int i = 0; i < 3; i++)
-		{
-			itemJ = json_real(waveColor.rgba[i]);
-			json_array_append_new(waveColorJ, itemJ);
-			itemJ = NULL;
+        // Colors
+        json_t* waveColorJ = json_array();
+        json_t* fillColorJ = json_array();
+        // -- RGB
+        for (int i = 0; i < 3; i++)
+        {
+            itemJ = json_real(waveColor.rgba[i]);
+            json_array_append_new(waveColorJ, itemJ);
+            itemJ = NULL;
 
-			itemJ = json_real(fillColor.rgba[i]);
-			json_array_append_new(fillColorJ, itemJ);
-			itemJ = NULL;
-		}
-		// -- Alpha (stored separately)
-		itemJ = json_real(waveOpacity);
-		json_array_append_new(waveColorJ, itemJ);
-		itemJ = json_real(fillOpacity);
-		json_array_append_new(fillColorJ, itemJ);
-		json_object_set_new(rootJ, "waveColor", waveColorJ);
-		json_object_set_new(rootJ, "fillColor", fillColorJ);
+            itemJ = json_real(fillColor.rgba[i]);
+            json_array_append_new(fillColorJ, itemJ);
+            itemJ = NULL;
+        }
+        // -- Alpha (stored separately)
+        itemJ = json_real(waveOpacity);
+        json_array_append_new(waveColorJ, itemJ);
+        itemJ = json_real(fillOpacity);
+        json_array_append_new(fillColorJ, itemJ);
+        json_object_set_new(rootJ, "waveColor", waveColorJ);
+        json_object_set_new(rootJ, "fillColor", fillColorJ);
 
-		json_object_set_new(rootJ, "fillOn", json_integer(this->doFill));
-		json_object_set_new(rootJ, "lissajous", json_integer(this->lissajous));
-		json_object_set_new(rootJ, "rotMode", json_integer(this->rotMode));
-		json_object_set_new(rootJ, "linkXYScales", json_integer(this->linkXYScales));
-		return rootJ;
-	} // end dataToJson()
-	//-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
-	// dataFromJson(void)
-	// Load settings.
-	//-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-	
-	void dataFromJson(json_t *rootJ) {
-		json_t* itemJ;
-		// Colors
-		json_t* waveColorJ = json_object_get(rootJ, "waveColor");
-		json_t* fillColorJ = json_object_get(rootJ, "fillColor");
-		// -- RGB
-		for (int i = 0; i < 3; i++)
-		{
-			if (waveColorJ)
-			{
-				itemJ = json_array_get(waveColorJ, i);
-				if (itemJ)
-					waveColor.rgba[i] = (float)(json_number_value(itemJ));
-				itemJ = NULL;
-			}
-			if (fillColorJ)
-			{
-				itemJ = json_array_get(fillColorJ, i);
-				if (itemJ)
-					fillColor.rgba[i] = (float)(json_number_value(itemJ));
-				itemJ = NULL;
-			}
-		}
-		// -- Alpha
-		if (waveColorJ)
-		{
-			itemJ = json_array_get(waveColorJ, 3);
-			if (itemJ)
-				waveOpacity = (float)(json_number_value(itemJ));
-			itemJ = NULL;
-		}
-		if (fillColorJ)
-		{
-			itemJ = json_array_get(fillColorJ, 3);
-			if (itemJ)
-				fillOpacity = (float)(json_number_value(itemJ));
-			itemJ = NULL;
-		}
-		itemJ = json_object_get(rootJ, "fillOn");
-		if (itemJ)
-		{
-			doFill = (bool)(json_integer_value(itemJ));
-			itemJ = NULL;
-		}
-		itemJ = json_object_get(rootJ, "lissajous");
-		if (itemJ)
-		{
-			lissajous = (bool)(json_integer_value(itemJ));
-			itemJ = NULL;
-		}
-		itemJ = json_object_get(rootJ, "rotMode");
-		if (itemJ)
-		{
-			lissajous = (bool)(json_integer_value(itemJ));
-			itemJ = NULL;
-		}
-		itemJ = json_object_get(rootJ, "linkXYScales");
-		if (itemJ)
-		{
-			linkXYScales = (bool)(json_integer_value(itemJ));
-			itemJ = NULL;
-		}
-		return;
-	} // end dataFromJson()
+        json_object_set_new(rootJ, "fillOn", json_integer(this->doFill));
+        json_object_set_new(rootJ, "lissajous", json_integer(this->lissajous));
+        json_object_set_new(rootJ, "rotMode", json_integer(this->rotMode));
+        json_object_set_new(rootJ, "linkXYScales", json_integer(this->linkXYScales));
+        return rootJ;
+    } // end dataToJson()
+    //-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+    // dataFromJson(void)
+    // Load settings.
+    //-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+    void dataFromJson(json_t *rootJ) {
+        json_t* itemJ;
+        // Colors
+        json_t* waveColorJ = json_object_get(rootJ, "waveColor");
+        json_t* fillColorJ = json_object_get(rootJ, "fillColor");
+        // -- RGB
+        for (int i = 0; i < 3; i++)
+        {
+            if (waveColorJ)
+            {
+                itemJ = json_array_get(waveColorJ, i);
+                if (itemJ)
+                    waveColor.rgba[i] = (float)(json_number_value(itemJ));
+                itemJ = NULL;
+            }
+            if (fillColorJ)
+            {
+                itemJ = json_array_get(fillColorJ, i);
+                if (itemJ)
+                    fillColor.rgba[i] = (float)(json_number_value(itemJ));
+                itemJ = NULL;
+            }
+        }
+        // -- Alpha
+        if (waveColorJ)
+        {
+            itemJ = json_array_get(waveColorJ, 3);
+            if (itemJ)
+                waveOpacity = (float)(json_number_value(itemJ));
+            itemJ = NULL;
+        }
+        if (fillColorJ)
+        {
+            itemJ = json_array_get(fillColorJ, 3);
+            if (itemJ)
+                fillOpacity = (float)(json_number_value(itemJ));
+            itemJ = NULL;
+        }
+        itemJ = json_object_get(rootJ, "fillOn");
+        if (itemJ)
+        {
+            doFill = (bool)(json_integer_value(itemJ));
+            itemJ = NULL;
+        }
+        itemJ = json_object_get(rootJ, "lissajous");
+        if (itemJ)
+        {
+            lissajous = (bool)(json_integer_value(itemJ));
+            itemJ = NULL;
+        }
+        itemJ = json_object_get(rootJ, "rotMode");
+        if (itemJ)
+        {
+            lissajous = (bool)(json_integer_value(itemJ));
+            itemJ = NULL;
+        }
+        itemJ = json_object_get(rootJ, "linkXYScales");
+        if (itemJ)
+        {
+            linkXYScales = (bool)(json_integer_value(itemJ));
+            itemJ = NULL;
+        }
+        return;
+    } // end dataFromJson()
 };
-
-
-
-#endif // !TSSCOPEMODULEBASE_HPP

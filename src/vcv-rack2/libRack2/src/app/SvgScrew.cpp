@@ -1,5 +1,5 @@
 #include <app/SvgScrew.hpp>
-#include <settings.hpp>
+#include <rack_settings.hpp>
 
 
 namespace rack {
@@ -7,23 +7,23 @@ namespace app {
 
 
 SvgScrew::SvgScrew() {
-	fb = new widget::FramebufferWidget;
-	addChild(fb);
+    fb = new widget::FramebufferWidget;
+    addChild(fb);
 
-	sw = new widget::SvgWidget;
-	fb->addChild(sw);
+    sw = new widget::SvgWidget;
+    fb->addChild(sw);
 }
 
 
 void SvgScrew::setSvg(std::shared_ptr<window::Svg> svg) {
-	if (sw->svg == svg)
-		return;
+    if (sw->svg == svg)
+        return;
 
-	sw->setSvg(svg);
-	fb->box.size = sw->box.size;
-	box.size = sw->box.size;
+    sw->setSvg(svg);
+    fb->box.size = sw->box.size;
+    box.size = sw->box.size;
 
-	fb->setDirty();
+    fb->setDirty();
 }
 
 

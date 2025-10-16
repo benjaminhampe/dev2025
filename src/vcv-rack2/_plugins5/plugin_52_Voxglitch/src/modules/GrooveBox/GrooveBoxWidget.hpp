@@ -1,7 +1,7 @@
 //
 // mm2px 2.952756
 
-#include <componentlibrary.hpp>
+#include <rack_componentlibrary.hpp>
 #include "widgets/RangeGrabbers.hpp"
 #include "widgets/ParameterKnob.hpp"
 #include "widgets/GrooveboxSmallLight.hpp"
@@ -181,9 +181,9 @@ struct GrooveBoxWidget : VoxglitchSamplerModuleWidget
             Vec pos = panelHelper.findNamed("step_button_" + std::to_string(i+1));
 
             GrooveboxStepButton *step_button = createLightParamCentered<GrooveboxStepButton>(
-                pos, 
-                module, 
-                GrooveBox::DRUM_PADS + i, 
+                pos,
+                module,
+                GrooveBox::DRUM_PADS + i,
                 GrooveBox::STEP_LIGHTS + i
             );
 

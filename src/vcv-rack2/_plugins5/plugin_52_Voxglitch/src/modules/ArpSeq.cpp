@@ -1,11 +1,11 @@
 //
-// Voxglitch X Omri Cohen 
+// Voxglitch X Omri Cohen
 // ArpSeq module for VCV Rack
 //
 
 #include "Voxglitch_plugin.hpp"
 #include "osdialog.h"
-#include "settings.hpp"
+#include <rack_settings.hpp>
 
 // These two includes are required for Mac
 #include <fstream>
@@ -14,7 +14,7 @@
 #include "ArpSeq/defines.h"
 
 #include "vgLib-2.0/constants.h"
-// 
+//
 #include "vgLib-2.0/components/VoxglitchComponents.hpp"
 #include "vgLib-2.0/dsp/Quantizer.hpp"
 #include "vgLib-2.0/dsp/SlewLimiter.hpp"

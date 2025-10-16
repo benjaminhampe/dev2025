@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   width="90"
+   height="300"
+   viewBox="0 0 90 300"
+   version="1.1"
+   id="svg8"
+   inkscape:version="0.92.2 5c3e80d, 2017-08-06"
+   sodipodi:docname="BigMuteButtonMute.svg"
+   style="enable-background:new">
+  <defs
+     id="defs2" />
+  <sodipodi:namedview
+     id="base"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:pageopacity="0.0"
+     inkscape:pageshadow="2"
+     inkscape:zoom="2.1266667"
+     inkscape:cx="-41.520375"
+     inkscape:cy="150"
+     inkscape:document-units="px"
+     inkscape:current-layer="layer1"
+     showgrid="false"
+     units="px"
+     inkscape:snap-bbox="false"
+     inkscape:snap-page="true"
+     inkscape:bbox-nodes="true"
+     inkscape:snap-bbox-edge-midpoints="true"
+     inkscape:window-width="1440"
+     inkscape:window-height="851"
+     inkscape:window-x="32"
+     inkscape:window-y="0"
+     inkscape:window-maximized="0"
+     inkscape:measure-start="0,0"
+     inkscape:measure-end="0,0"
+     inkscape:snap-text-baseline="true"
+     inkscape:snap-nodes="false"
+     inkscape:snap-others="false"
+     inkscape:snap-grids="false"
+     showguides="true"
+     inkscape:guide-bbox="true"
+     inkscape:snap-to-guides="false"
+     inkscape:object-nodes="false"
+     inkscape:snap-global="false">
+    <inkscape:grid
+       type="xygrid"
+       id="grid6570"
+       units="px"
+       empspacing="5" />
+    <sodipodi:guide
+       position="42.884015,405.25395"
+       orientation="1,0"
+       id="guide6572"
+       inkscape:locked="false" />
+    <sodipodi:guide
+       position="97.335423,242.16301"
+       orientation="0,1"
+       id="guide9071"
+       inkscape:locked="false" />
+  </sodipodi:namedview>
+  <metadata
+     id="metadata5">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title />
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1"
+     transform="translate(0,-276.45832)"
+     style="display:inline;opacity:0.79000005">
+    <rect
+       style="display:inline;opacity:1;fill:#ff0000;fill-opacity:1;fill-rule:evenodd;stroke:#000000;stroke-width:0.96094292;stroke-miterlimit:4;stroke-dasharray:0, 10.57037265;stroke-dashoffset:0;stroke-opacity:0.00485439"
+       id="rect1547"
+       width="91.039055"
+       height="300.60666"
+       x="-0.51952851"
+       y="275.37161"
+       inkscape:label="red" />
+    <g
+       inkscape:label="text paths"
+       id="layer12-6"
+       transform="translate(162.6489,278.65271)">
+      <g
+         id="g9069"
+         transform="matrix(1.4452355,0,0,1.4452355,-205.71413,-84.790198)"
+         inkscape:label="mute_path"
+         style="display:inline;enable-background:new">
+        <g
+           id="g9055"
+           style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:42.66666794px;line-height:1.25;font-family:'Trebuchet MS';-inkscape-font-specification:'Trebuchet MS, Bold';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:start;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none"
+           aria-label="M"
+           inkscape:label="M">
+          <path
+             inkscape:connector-curvature="0"
+             id="path9053"
+             d="m 75.583334,127.26848 h -5.25 l -3.166667,-16.45833 -6.145833,16.85417 h -1.9375 L 52.9375,110.81015 49.645834,127.26848 H 44.416667 L 50.5625,96.726816 h 2.875 l 6.604167,20.562504 6.458334,-20.562504 h 2.854166 z" />
+        </g>
+        <g
+           id="g9059"
+           style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:42.66666794px;line-height:1.25;font-family:'Trebuchet MS';-inkscape-font-specification:'Trebuchet MS, Bold';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:start;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none"
+           aria-label="U"
+           inkscape:label="U">
+          <path
+             inkscape:connector-curvature="0"
+             id="path9057"
+             d="m 48.666668,130.72682 h 5.416667 v 20.6875 q 0,2.45833 1.5,4 1.5,1.54166 4.125,1.54166 2.9375,0 4.5625,-1.5 1.645834,-1.52083 1.645834,-4.14583 v -20.58333 h 5.416666 v 21 q 0,4.70833 -3.166666,7.375 -3.145834,2.66666 -8.416667,2.66666 -5.3125,0 -8.208334,-2.60416 -2.875,-2.60417 -2.875,-7.45834 z" />
+        </g>
+        <g
+           id="g9063"
+           style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:42.66666794px;line-height:1.25;font-family:'Trebuchet MS';-inkscape-font-specification:'Trebuchet MS, Bold';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:start;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none"
+           aria-label="T"
+           inkscape:label="T">
+          <path
+             inkscape:connector-curvature="0"
+             id="path9061"
+             d="m 62.489585,169.53932 v 25.70833 h -5.416667 v -25.70833 h -9.708333 v -4.8125 h 25.270834 v 4.8125 z" />
+        </g>
+        <g
+           id="g9067"
+           style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:42.66666794px;line-height:1.25;font-family:'Trebuchet MS';-inkscape-font-specification:'Trebuchet MS, Bold';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:start;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;display:inline;fill:#000000;fill-opacity:1;stroke:none"
+           aria-label="E"
+           inkscape:label="E">
+          <path
+             inkscape:connector-curvature="0"
+             id="path9065"
+             d="m 55.677085,203.53932 v 7.14583 h 10.083333 v 4.60417 H 55.677085 v 9.14583 h 13.833334 v 4.8125 H 50.260418 v -30.52083 h 19.479167 v 4.8125 z" />
+        </g>
+      </g>
+    </g>
+  </g>
+</svg>

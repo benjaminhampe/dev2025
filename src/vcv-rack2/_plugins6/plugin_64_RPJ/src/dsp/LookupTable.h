@@ -58,7 +58,7 @@ public:
     static void initDiscrete(LookupTableParams<T>& params, int numEntries, const T * yEntries);
 private:
     static int cvtt(T *);
-
+    /*
 #ifdef _DEBUG
     static void checkInput(const LookupTableParams<T>& params, const T *in, int sampleFrames)
     {
@@ -70,6 +70,7 @@ private:
 #else
 #define checkInput __noop
 #endif
+    */
 
 };
 

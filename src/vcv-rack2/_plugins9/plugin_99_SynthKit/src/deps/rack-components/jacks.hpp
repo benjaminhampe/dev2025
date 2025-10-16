@@ -1,30 +1,27 @@
 #pragma once
-
-#include "asset.hpp"
-#include "rack.hpp"
-
+#include <rack.hpp>
 using namespace rack;
 
 extern Plugin *pluginInstance;
 
 struct LocalPort : PortWidget {
-	widget::FramebufferWidget *fb;
-	widget::SvgWidget *sw;
+    widget::FramebufferWidget *fb;
+    widget::SvgWidget *sw;
 
   LocalPort() {
-  	fb = new widget::FramebufferWidget;
-  	addChild(fb);
+    fb = new widget::FramebufferWidget;
+    addChild(fb);
 
-  	sw = new widget::SvgWidget;
-  	fb->addChild(sw);
+    sw = new widget::SvgWidget;
+    fb->addChild(sw);
   }
 
   void setSvg(std::shared_ptr<Svg> svg) {
-  	sw->setSvg(svg);
-  	fb->box.size = sw->box.size;
-  	box.size = sw->box.size;
+    sw->setSvg(svg);
+    fb->box.size = sw->box.size;
+    box.size = sw->box.size;
 
-  	fb->dirty = true;
+    fb->dirty = true;
   }
 
 };

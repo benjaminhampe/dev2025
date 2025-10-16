@@ -1,8 +1,4 @@
-#ifndef MODULE_OSCCV_HPP
-#define MODULE_OSCCV_HPP
-
-#include <rack.hpp>
-using namespace rack;
+#pragma once
 #include "trowaSoft.hpp"
 #include "trowaSoftUtilities.hpp"
 #include "TSOSCCommon.hpp"
@@ -498,5 +494,3 @@ struct oscCV : Module {
     void addRxMsgToQueue(int chNum, std::vector<float> vals);
 #endif
 };
-
-#endif // !MODULE_OSCCV_HPP

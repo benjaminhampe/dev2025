@@ -1,7 +1,7 @@
 
 #include "Voxglitch_plugin.hpp"
 #include "osdialog.h"
-#include "settings.hpp"
+#include <rack_settings.hpp>
 
 // These two includes are required for Mac
 #include <fstream>

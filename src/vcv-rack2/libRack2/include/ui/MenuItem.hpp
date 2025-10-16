@@ -1,7 +1,7 @@
 #pragma once
 #include <ui/MenuEntry.hpp>
 #include <ui/Menu.hpp>
-#include <context.hpp>
+#include <rack_context.hpp>
 
 namespace rack {
 namespace ui {

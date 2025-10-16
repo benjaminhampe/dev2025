@@ -1,6 +1,6 @@
 #include <app/AudioDisplay.hpp>
 #include <ui/MenuSeparator.hpp>
-#include <helpers.hpp>
+#include <rack_helpers.hpp>
 #include <set>
 
 

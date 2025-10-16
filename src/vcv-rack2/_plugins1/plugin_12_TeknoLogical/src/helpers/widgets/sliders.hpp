@@ -1,7 +1,7 @@
 // helpers/widgets/sliders.hpp
 #pragma once
+#include "plugin.hpp"
 #include <app/SvgSlider.hpp>
-#include <plugin.hpp>
 
 struct SmallHSlider : rack::app::SvgSlider {
   SmallHSlider(float margin = 2.f) {

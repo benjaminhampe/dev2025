@@ -19,22 +19,22 @@ Directly including Rack headers other than rack.hpp in your plugin is unsupporte
 #endif
 
 
-#include <common.hpp>
-#include <math.hpp>
-#include <string.hpp>
-#include <system.hpp>
-#include <mutex.hpp>
-#include <random.hpp>
-#include <network.hpp>
-#include <asset.hpp>
+#include <rack_common.hpp>
+#include <rack_math.hpp>
+#include <rack_string.hpp>
+#include <rack_system.hpp>
+#include <rack_mutex.hpp>
+#include <rack_random.hpp>
+#include <rack_network.hpp>
+#include <rack_asset.hpp>
 #include <window/Window.hpp>
 #include <window/Svg.hpp>
-#include <context.hpp>
-#include <audio.hpp>
-#include <midi.hpp>
-#include <settings.hpp>
-#include <helpers.hpp>
-#include <componentlibrary.hpp>
+#include <rack_context.hpp>
+#include <rack_audio.hpp>
+#include <rack_midi.hpp>
+#include <rack_settings.hpp>
+#include <rack_helpers.hpp>
+#include <rack_componentlibrary.hpp>
 
 #include <widget/TransparentWidget.hpp>
 #include <widget/OpenGlWidget.hpp>
@@ -104,7 +104,7 @@ Directly including Rack headers other than rack.hpp in your plugin is unsupporte
 #include <engine/Module.hpp>
 #include <engine/Engine.hpp>
 
-#include <plugin.hpp>
+#include <rack_plugin.hpp>
 #include <plugin/callbacks.hpp>
 
 #include <dsp/common.hpp>

@@ -52,7 +52,7 @@ class Expression {
     CEILING,
     CHANNELS,
     CONNECTED,
-    DEBUG,
+    DEBUG_ME,
     FLOOR,
     LOG2,
     LOGE,
@@ -291,7 +291,7 @@ struct Line {
 
   static Line While(const Expression &condition, const Statements &state,
                     Driver* driver);
-  
+
   friend std::ostream& operator<<(std::ostream& os, Line line);
 };
 

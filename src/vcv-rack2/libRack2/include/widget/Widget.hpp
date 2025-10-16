@@ -1,9 +1,9 @@
 #pragma once
-#include <math.hpp>
+#include <rack_math.hpp>
 #include <window/Window.hpp>
-#include <color.hpp>
+#include <rack_color.hpp>
 #include <widget/event.hpp>
-#include <weakptr.hpp>
+#include <rack_weakptr.hpp>
 #include <list>
 
 namespace rack {

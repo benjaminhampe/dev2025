@@ -1,7 +1,10 @@
 add_subdirectory(0_tools)
 add_subdirectory(1_libs)
 # add_subdirectory(2_demos) # Big
-add_subdirectory(4_juce)
+if (BENNI_USE_JUCE)
+    add_subdirectory(4_juce)
+endif()
+
 # add_subdirectory(raylib)
 # add_subdirectory(ActiveWallpaper)
 # add_subdirectory(H3_Siedler)

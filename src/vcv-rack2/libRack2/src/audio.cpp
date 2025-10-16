@@ -1,6 +1,6 @@
-#include <audio.hpp>
-#include <string.hpp>
-#include <math.hpp>
+#include <rack_audio.hpp>
+#include <rack_string.hpp>
+#include <rack_math.hpp>
 
 
 namespace rack {

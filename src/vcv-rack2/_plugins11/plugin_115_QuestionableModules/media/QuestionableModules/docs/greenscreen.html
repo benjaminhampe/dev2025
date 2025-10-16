@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+  <title>greenscreen</title>
+
+  <link href="./style.css" rel="stylesheet">
+  <link href="./bootstrap/bootstrap.min.css" rel="stylesheet">
+  <script src="./bootstrap/bootstrap.min.js"></script>
+  <script src="./script.js"></script>
+
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-FZ9FD6YW4S"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+  
+      gtag('config', 'G-FZ9FD6YW4S');
+    </script>
+
+</head>
+
+    <style>
+
+    </style>
+
+    <body class="bg-secondary">
+
+        <header class="site-header bg-dark">
+          <nav class="container d-flex flex-column flex-md-row justify-content-between">
+            <a href="./index.html">
+              <span class="display-6 fw-bold text-light text-bg">Questionable Modules</span>
+            </a>
+
+            <div class="container py-4 d-grid gap-2 d-md-flex justify-content-md-end">
+              <a href="https://library.vcvrack.com/questionablemodules/greenscreen"><button class="btn btn-light btn-lg" type="button">View in Library</button></a>
+              <a href="https://github.com/isivisi/questionablemodules"><button class="btn btn-light btn-lg" type="button">View Source</button></a>
+            </div>
+            
+          </nav>
+        </header>
+
+        <div class="container mt-2 nosidepad bg-light">
+          <span id="vbutton"></span><script> importHTML("versionbtn.html", document.getElementById("vbutton")) </script>
+          <div class="p-2 mb-4 bg-light text-center">
+            <div class="container-fluid py-5">
+              <h1 class="display-1 fw-bold">Greenscreen</h1>
+              <p class="fs-4">Background Colors.</p>
+
+            </div>
+          </div>
+
+          <img src="./images/greenscreenview.jpg" style="object-fit: cover; width: 100%;"/>
+        </div>
+
+        <div class="container bg-light">
+          
+          <div class="container-fluid py-5">
+            <div class="feature">
+              <p class="">
+                This module simply replaces the entire background of vcvrack with a solid color, you can change the color from the context menu.
+              </p>
+              
+              <h3>Context Menu</h3>
+              <p><span class="fw-bold">Toggle Text</span> The display text can be toggled if you want to hide it from view. (this makes the module very hard to find, you can use the select tool to see it more easily)</p>
+              <p><span class="fw-bold">Toggle VCV Shadow</span> Toggles the modules default vcvrack shadow effect</p>
+              <p><span class="fw-bold">Toggle Rack</span> Toggles the ability to display the rack visuals on top of the color background</p>
+              <p><span class="fw-bold">Box Shadow</span> offset values for a box'ish shadow that makes it look like your rack is in a case</p>
+
+              <p class="alert alert-warning"><span class="fw-bold">Note:</span> The <span class="fw-bold">Toggle VCV Shadow</span> menu item is <span class="fw-bold">NOT</span> related to the <span class="fw-bold">Box Shadow</span></p>
+              
+              <div style="min-height: 200px"></div> <!-- Spacer -->
+              
+              <h3>CV Control</h3>
+              <p id="red green blue">Enable cv color control using <span class="fw-bold">Toggle CV Inputs</span> in the modules context menu. This enables 3 input ports:<controlbadge></controlbadge>  <span class="fw-bold"> red</span>, <span class="fw-bold"> green</span>, and <span class="fw-bold"> blue</span>. Each input takes in -10V to 10V and represent -100% to 100% color. These will be added as offsets to the existing color value.</p>
+              <p id="Copper" class="alert alert-info"> <span class="fw-bold">Note:</span> These values align perfectly with <a href="https://library.vcvrack.com/pachde-one/pachde-copper">Pachde Copper</a>'s RGB output values, setting Greenscreens color to black will allow you to 1 to 1 control it with Coppers outputs.</p>
+
+              <h3>Custom Colors</h3>
+              <p class="">
+                You can add your own custom RGB values by going to the <span class="fw-bold">Change Color > Add Custom Color</span> submenu in the modules context menu. 
+              </p>
+              <p>
+                These values will be saved internally in the module by default but if you want to save them for later you can press <span class="fw-bold">Save</span> within the <span class="fw-bold">Add Custom Color</span> submenu.
+              </p>
+              <p>
+                This will save them globally and will then be accessable in the <span class="fw-bold">Change Color</span> submenu.
+              </p>
+
+              <div style="min-height: 0px"></div> <!-- Spacer -->
+            </div>
+           </div>
+
+           <script src="https://giscus.app/client.js"
+                data-repo="isivisi/questionablemodules"
+                data-repo-id="R_kgDOIioocg"
+                data-category="docs"
+                data-category-id="DIC_kwDOIioocs4CmqPh"
+                data-mapping="title"
+                data-strict="1"
+                data-reactions-enabled="1"
+                data-emit-metadata="0"
+                data-input-position="bottom"
+                data-theme="preferred_color_scheme"
+                data-lang="en"
+                crossorigin="anonymous"
+                async>
+          </script>
+ 
+        </div>   
+
+        <script> importHTML("footer.html") </script>
+
+    </body>
+
+</html>

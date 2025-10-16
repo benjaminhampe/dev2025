@@ -1,8 +1,5 @@
-#ifndef MODULE_OSCCV_EXPANDER_HPP
-#define MODULE_OSCCV_EXPANDER_HPP
-//-----------------------------
-// Expander for cvOSCcv
-//-----------------------------
+#pragma once
+
 #include <rack.hpp>
 using namespace rack;
 
@@ -357,7 +354,3 @@ struct oscCVExpanderOutput : oscCVExpander
         return;
     }
 };
-
-
-
-#endif // endif !MODULE_OSCCV_EXPANDER_HPP

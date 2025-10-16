@@ -3,7 +3,7 @@
 #include <app/LedDisplay.hpp>
 #include <ui/Menu.hpp>
 #include <app/SvgButton.hpp>
-#include <midi.hpp>
+#include <rack_midi.hpp>
 
 
 namespace rack {

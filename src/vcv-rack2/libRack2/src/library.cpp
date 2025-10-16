@@ -2,17 +2,17 @@
 #include <mutex>
 #include <condition_variable>
 
-#include <library.hpp>
-#include <settings.hpp>
+#include <rack_library.hpp>
+#include <rack_settings.hpp>
 #include <app/common.hpp>
-#include <network.hpp>
-#include <system.hpp>
-#include <context.hpp>
+#include <rack_network.hpp>
+#include <rack_system.hpp>
+#include <rack_context.hpp>
 #include <window/Window.hpp>
-#include <asset.hpp>
-#include <settings.hpp>
-#include <plugin.hpp>
-#include <string.hpp>
+#include <rack_asset.hpp>
+#include <rack_settings.hpp>
+#include <rack_plugin.hpp>
+#include <rack_string.hpp>
 
 
 namespace rack {

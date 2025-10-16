@@ -1,5 +1,5 @@
 #include <engine/LightInfo.hpp>
-#include <string.hpp>
+#include <rack_string.hpp>
 
 
 namespace rack {
@@ -7,11 +7,11 @@ namespace engine {
 
 
 std::string LightInfo::getName() {
-	return name;
+    return name;
 }
 
 std::string LightInfo::getDescription() {
-	return description;
+    return description;
 }
 
 

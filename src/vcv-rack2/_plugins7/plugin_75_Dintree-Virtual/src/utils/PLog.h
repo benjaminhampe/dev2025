@@ -13,7 +13,7 @@
 #include "../a_plugin.hpp"
 
 #ifdef PLATFORM_VCV
-#warning PLATFORM_VCV defined - using VCV logging interface
+// #warning PLATFORM_VCV defined - using VCV logging interface
 #define PDEBUG(format, ...) rack::logger::log(rack::logger::DEBUG_LEVEL, __FILE__, __LINE__, __FUNCTION__, format, ##__VA_ARGS__)
 #define PINFO(format, ...) rack::logger::log(rack::logger::INFO_LEVEL, __FILE__, __LINE__, __FUNCTION__, format, ##__VA_ARGS__)
 #define PWARN(format, ...) rack::logger::log(rack::logger::WARN_LEVEL, __FILE__, __LINE__, __FUNCTION__, format, ##__VA_ARGS__)
