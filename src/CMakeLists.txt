@@ -10,6 +10,9 @@ endif()
 # add_subdirectory(H3_Siedler)
 # add_subdirectory(SonnenSystem_glfw_glew)
 # add_subdirectory(F3_FreeLancer)
+# add_subdirectory(RoundRect_glfw_glad)
+
+add_subdirectory(VST_benni)
 
 add_subdirectory(vcv-rack2)
 

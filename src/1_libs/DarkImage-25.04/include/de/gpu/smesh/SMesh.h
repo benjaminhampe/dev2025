@@ -185,6 +185,10 @@ public:
       tex.y = glm::clamp( 1.0f - tex.y, 0.f, 1.0f ); // Invert v for OpenGL
    }
 
+   bool operator==( const S3DVertex& other ) const
+   {
+       return std::tie(other.pos,other.normal,other.color,other.tex) == std::tie(pos,normal,color,tex);
+   }
    /*
    // STANDARD_FVF = POS_XYZ | NORMAL_XYZ | COLOR_RGBA | TEX0_UV = 36 Bytes.
    static FVF const &
@@ -879,6 +883,9 @@ struct SMeshBufferTool
 {
     DE_CREATE_LOGGER("de.gpu.SMeshBufferTool")
 
+    static bool
+    onlyUniqueVertices( const SMeshBuffer& in, SMeshBuffer& out );
+
     static void
     transformPoints( std::vector< glm::vec3 > & points, glm::dmat4 const & modelMat );
     static void
@@ -958,7 +965,19 @@ struct SMeshBufferTool
     setNormalZ( SMeshBuffer & o, float nz );
 
     static void
+    translateTexture( SMeshBuffer & o, float x, float y, bool bClamp = false );
+    static void
+    translateTexture( SMeshBuffer & o, const glm::vec2& offset, bool bClamp = false );
+    static void
+    translateTextureU( SMeshBuffer & o, const float offset, const bool bClamp = false );
+    static void
+    translateTextureV( SMeshBuffer & o, const float offset, const bool bClamp = false );
+    static void
     scaleTexture( SMeshBuffer & o, float u, float v );
+    static void
+    scaleTexture( SMeshBuffer & o, const glm::vec2& scale );
+    static void
+    rotateTexture( SMeshBuffer & o, const glm::mat2& m );
     static void
     transformTexCoords( SMeshBuffer & o, Recti const & r_atlas, int atlas_w, int atlas_h );
     static void

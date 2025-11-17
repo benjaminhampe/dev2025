@@ -1,0 +1,130 @@
+{
+  "slug": "OrangeLine",
+  "name": "OrangeLine",
+  "version": "2.4.12",
+  "license": "GPL-3.0-only",
+  "brand": "",
+  "author": "Dieter Stubler",
+  "authorEmail": "dieter.stubler@googlemail.com",
+  "authorUrl": "https://github.com/Stubs42/OrangeLine",
+  "pluginUrl": "https://github.com/Stubs42/OrangeLine",
+  "manualUrl": "https://github.com/Stubs42/OrangeLine/blob/2.0/README.md",
+  "sourceUrl": "https://github.com/Stubs42/OrangeLine",
+  "donateUrl": "https://paypal.me/DieterStubler?locale.x=de_DE",
+  "modules": [
+    {
+      "slug": "Fence",
+      "name": "Fence",
+      "description": "Keep CVs in a defined pitch range",
+      "tags": [
+        "Quantizer",
+        "Tuner",
+        "Utility",
+        "Distortion",
+        "WaveShaper",
+	      "Polyphonic"
+      ]
+    },
+    {
+      "slug": "Swing",
+      "name": "Swing",
+      "description": "Micro Timing Sequencer",
+      "tags": [
+        "Sequencer",
+        "Clock",
+        "Clock modulator"
+      ]
+    },
+    {
+      "slug": "Mother",
+      "name": "Mother",
+      "description": "Mode aware probability driven quantizer",
+      "tags": [
+        "Quantizer",
+	      "Sequencer",
+	      "Polyphonic"
+      ]
+    },
+    {
+      "slug": "Phrase",
+      "name": "Phrase",
+      "description": "Utility to sequence phrases by sequencing a sequencer",
+      "tags": [
+	      "Sequencer",
+        "Utility",
+        "Clock modulator"
+      ]
+    },
+    {
+      "slug": "Dejavu",
+      "name": "Dejavu",
+      "description": "Random Cv and Trigger generator with nested repeat functionality",
+      "tags": [
+        "Utility",
+        "Polyphonic",
+        "Random",
+        "Sequencer",
+        "Visual"
+      ]
+    },
+    {
+      "slug": "Gator",
+      "name": "Gator",
+      "description": "Phased Based Microtiming, Ratcheting and Strumming",
+      "tags": [
+        "Utility",
+        "Polyphonic",
+        "Clock Modulator"
+      ]
+    },
+    {
+      "slug": "Resc",
+      "name": "Resc",
+      "description": "Utility to harmonicaly rescales pitch from one scale to another scale",
+      "tags": [
+        "Utility",
+        "Polyphonic"
+      ]
+    },
+    {
+      "slug": "Morph",
+      "name": "Morph",
+      "description": "Morphing of given or random sequences with turing machine functionality",
+      "tags": [
+        "Utility",
+        "Sequencer",
+        "Random",
+        "Polyphonic"
+      ]
+    },
+    {
+      "slug": "Morpheus",
+      "name": "Morpheus",
+      "description": "Morphing of given or random sequences with turing machine functionality and 16 Internal Memory Slots.",
+      "tags": [
+        "Utility",
+        "Sequencer",
+        "Random",
+        "Polyphonic"
+      ]
+    },
+    {
+      "slug": "Buckets",
+      "name": "Buckets",
+      "description": "Splits up polyphonic pitch and gate input into up to 12 polyphic pitch and gate outputs, depending on pitch value, chainable",
+      "tags": [
+        "Utility",
+        "Polyphonic"
+      ]
+    },
+    {
+      "slug": "Cron",
+      "name": "Cron",
+      "description": "Interface Module for MIDI>CV deriving BPM from MIDI CLK and 24 pmm CLK/N, handling Transport and calculating CMP cv for GATOR for latency compensation of up to 16 channels",
+      "tags": [
+        "MIDI",
+        "Utility"
+      ]
+    }
+  ]
+}

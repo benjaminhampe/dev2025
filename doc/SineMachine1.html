@@ -1,0 +1,1100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fourier Waveform Synthesizer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #ffffff;
+            --bg-secondary: #f8f9fa;
+            --bg-tertiary: #e9ecef;
+            --text-primary: #212529;
+            --text-secondary: #6c757d;
+            --border-color: #dee2e6;
+            --accent-color: #007bff;
+            --accent-hover: #0056b3;
+            --canvas-bg: #ffffff;
+            --grid-color: #e9ecef;
+            --waveform-primary: #007bff;
+            --waveform-sub1: #28a745;
+            --waveform-sub2: #ffc107;
+            --waveform-sub3: #dc3545;
+            --waveform-sub4: #6f42c1;
+            --waveform-sub5: #fd7e14;
+            --splitter-bg: #6c757d;
+        }
+
+        [data-theme="dark"] {
+            --bg-primary: #1a1a1a;
+            --bg-secondary: #2d2d2d;
+            --bg-tertiary: #404040;
+            --text-primary: #ffffff;
+            --text-secondary: #b0b0b0;
+            --border-color: #555555;
+            --accent-color: #4dabf7;
+            --accent-hover: #339af0;
+            --canvas-bg: #2d2d2d;
+            --grid-color: #404040;
+            --waveform-primary: #4dabf7;
+            --waveform-sub1: #69db7c;
+            --waveform-sub2: #ffd43b;
+            --waveform-sub3: #ff6b6b;
+            --waveform-sub4: #845ef7;
+            --waveform-sub5: #fab005;
+            --splitter-bg: #6c757d;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Theme Toggle */
+        .theme-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            background: var(--accent-color);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            cursor: pointer;
+            font-size: 20px;
+            transition: background-color 0.3s ease;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        .theme-toggle:hover {
+            background: var(--accent-hover);
+        }
+
+        /* Main Container */
+        .main-container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        /* Top Section - Waveform Display */
+        .top-section {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-height: 40%;
+            position: relative;
+        }
+
+        .top-header {
+            background: var(--bg-secondary);
+            padding: 15px 20px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .top-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .waveform-info {
+            display: flex;
+            gap: 20px;
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        .waveform-canvas-container {
+            flex: 1;
+            background: var(--canvas-bg);
+            position: relative;
+            overflow: hidden;
+        }
+
+        #waveformCanvas {
+            width: 100%;
+            height: 100%;
+            cursor: crosshair;
+        }
+
+        /* Splitter */
+        .splitter {
+            background: var(--splitter-bg);
+            height: 6px;
+            cursor: row-resize;
+            position: relative;
+            transition: background-color 0.3s ease;
+        }
+
+        .splitter:hover {
+            background: var(--accent-color);
+        }
+
+        .splitter::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 30px;
+            height: 2px;
+            background: var(--bg-primary);
+            border-radius: 1px;
+        }
+
+        /* Bottom Section - Controls */
+        .bottom-section {
+            background: var(--bg-primary);
+            display: flex;
+            flex-direction: column;
+            max-height: 60%;
+        }
+
+        .control-header {
+            background: var(--bg-secondary);
+            padding: 20px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .control-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .control-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .control-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .control-input {
+            padding: 8px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-size: 14px;
+            transition: border-color 0.3s ease;
+        }
+
+        .control-input:focus {
+            outline: none;
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+        }
+
+        .waveform-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .waveform-btn {
+            padding: 10px 16px;
+            border: none;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .waveform-btn.rect {
+            background: #ff6b6b;
+            color: white;
+        }
+
+        .waveform-btn.saw {
+            background: #4ecdc4;
+            color: white;
+        }
+
+        .waveform-btn.rev-saw {
+            background: #45b7d1;
+            color: white;
+        }
+
+        .waveform-btn.triangle {
+            background: #96ceb4;
+            color: white;
+        }
+
+        .waveform-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        /* Partials Container */
+        .partials-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+        }
+
+        .partials-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+        }
+
+        .partial-item {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 16px;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .partial-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .partial-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .partial-number {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .partial-value {
+            font-size: 14px;
+            font-weight: 500;
+            padding: 4px 8px;
+            border-radius: 4px;
+            background: var(--bg-tertiary);
+            color: var(--text-secondary);
+            min-width: 60px;
+            text-align: center;
+        }
+
+        .slider-container {
+            position: relative;
+            margin-bottom: 12px;
+        }
+
+        .amplitude-slider {
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            background: var(--bg-tertiary);
+            outline: none;
+            appearance: none;
+            cursor: pointer;
+        }
+
+        .amplitude-slider::-webkit-slider-thumb {
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: var(--accent-color);
+            cursor: pointer;
+            border: 2px solid var(--bg-primary);
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+            transition: all 0.3s ease;
+        }
+
+        .amplitude-slider::-webkit-slider-thumb:hover {
+            background: var(--accent-hover);
+            transform: scale(1.1);
+        }
+
+        .amplitude-slider::-moz-range-thumb {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: var(--accent-color);
+            cursor: pointer;
+            border: 2px solid var(--bg-primary);
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+        }
+
+        .slider-labels {
+            display: flex;
+            justify-content: space-between;
+            font-size: 11px;
+            color: var(--text-secondary);
+            margin-top: 4px;
+        }
+
+        .partial-controls {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .partial-btn {
+            padding: 4px 8px;
+            border: 1px solid var(--border-color);
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.3s ease;
+        }
+
+        .partial-btn:hover {
+            background: var(--accent-color);
+            color: white;
+            border-color: var(--accent-color);
+        }
+
+        .partial-btn.reset {
+            background: #dc3545;
+            color: white;
+            border-color: #dc3545;
+        }
+
+        .partial-btn.reset:hover {
+            background: #c82333;
+            border-color: #c82333;
+        }
+
+        /* Scrollbar Styling */
+        .partials-container::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .partials-container::-webkit-scrollbar-track {
+            background: var(--bg-secondary);
+            border-radius: 4px;
+        }
+
+        .partials-container::-webkit-scrollbar-thumb {
+            background: var(--border-color);
+            border-radius: 4px;
+        }
+
+        .partials-container::-webkit-scrollbar-thumb:hover {
+            background: var(--text-secondary);
+        }
+
+        /* Waveform Legend */
+        .waveform-legend {
+            display: flex;
+            gap: 20px;
+            margin-top: 10px;
+            padding: 10px;
+            background: var(--bg-secondary);
+            border-radius: 6px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .legend-color {
+            width: 12px;
+            height: 12px;
+            border-radius: 2px;
+        }
+
+        /* Info Panel */
+        .info-panel {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 10px;
+            border-radius: 6px;
+            font-size: 12px;
+            backdrop-filter: blur(10px);
+        }
+
+        [data-theme="dark"] .info-panel {
+            background: rgba(0,0,0,0.7);
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .partials-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .control-row {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .waveform-buttons {
+                flex-wrap: wrap;
+            }
+            
+            .waveform-info {
+                flex-direction: column;
+                gap: 8px;
+            }
+        }
+
+        /* Loading Animation */
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .loading {
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+
+        /* Tooltip */
+        .tooltip {
+            position: relative;
+            cursor: help;
+        }
+
+        .tooltip::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: 125%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.9);
+            color: white;
+            padding: 6px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            white-space: nowrap;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+            z-index: 1000;
+        }
+
+        .tooltip:hover::after {
+            opacity: 1;
+        }
+    </style>
+</head>
+<body>
+    <!-- Theme Toggle -->
+    <button class="theme-toggle" onclick="toggleTheme()" title="Toggle Light/Dark Mode">
+        🌙
+    </button>
+
+    <!-- Main Container -->
+    <div class="main-container">
+        <!-- Top Section - Waveform Display -->
+        <div class="top-section" id="topSection">
+            <div class="top-header">
+                <div class="top-title">Fourier Waveform Synthesizer</div>
+                <div class="waveform-info">
+                    <div class="tooltip" data-tooltip="Sum of all harmonics">Total Harmonics: <span id="totalHarmonics">16</span></div>
+                    <div class="tooltip" data-tooltip="Root Mean Square of coefficients">RMS: <span id="rmsValue">1.000</span></div>
+                    <div class="tooltip" data-tooltip="Peak amplitude after normalization">Peak: <span id="peakValue">1.000</span></div>
+                </div>
+            </div>
+            <div class="waveform-canvas-container">
+                <canvas id="waveformCanvas"></canvas>
+                <div class="info-panel">
+                    <div>Click to add points</div>
+                    <div>X: <span id="mouseX">0.000</span></div>
+                    <div>Y: <span id="mouseY">0.000</span></div>
+                </div>
+            </div>
+            <div class="waveform-legend">
+                <div class="legend-item">
+                    <div class="legend-color" style="background: var(--waveform-primary);"></div>
+                    <span>Final Waveform (Sum)</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: var(--waveform-sub1);"></div>
+                    <span>Partial 1</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: var(--waveform-sub2);"></div>
+                    <span>Partial 2</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: var(--waveform-sub3);"></div>
+                    <span>Partial 3</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: var(--waveform-sub4);"></div>
+                    <span>Partial 4</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: var(--waveform-sub5);"></div>
+                    <span>Partial 5</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Splitter -->
+        <div class="splitter" id="splitter"></div>
+
+        <!-- Bottom Section - Controls -->
+        <div class="bottom-section" id="bottomSection">
+            <div class="control-header">
+                <div class="control-row">
+                    <div class="control-group">
+                        <label class="control-label">Number of Partials</label>
+                        <input type="range" id="partialsRange" class="control-input" 
+                               min="1" max="64" value="16" 
+                               onchange="updatePartialCount(this.value)">
+                        <div style="text-align: center; margin-top: 5px; font-size: 14px;">
+                            <span id="partialsCount">16</span> harmonics
+                        </div>
+                    </div>
+                    <div class="control-group">
+                        <label class="control-label">Resolution</label>
+                        <select id="resolution" class="control-input" onchange="updateResolution()">
+                            <option value="512">512 samples</option>
+                            <option value="1024" selected>1024 samples</option>
+                            <option value="2048">2048 samples</option>
+                            <option value="4096">4096 samples</option>
+                        </select>
+                    </div>
+                    <div class="control-group">
+                        <label class="control-label">Waveform Presets</label>
+                        <div class="waveform-buttons">
+                            <button class="waveform-btn rect" onclick="applyWaveform('rect')">Rect</button>
+                            <button class="waveform-btn saw" onclick="applyWaveform('saw')">Saw</button>
+                            <button class="waveform-btn rev-saw" onclick="applyWaveform('rev-saw')">Rev Saw</button>
+                            <button class="waveform-btn triangle" onclick="applyWaveform('triangle')">Triangle</button>
+                        </div>
+                    </div>
+                    <div class="control-group">
+                        <label class="control-label">Global Controls</label>
+                        <div class="control-input" style="padding: 8px; display: flex; gap: 10px; align-items: center;">
+                            <button class="partial-btn" onclick="normalizeWaveform()" title="Normalize to 1.0 peak">Normalize</button>
+                            <button class="partial-btn" onclick="clearAllPartials()" title="Reset all coefficients">Clear All</button>
+                            <button class="partial-btn" onclick="randomizePartials()" title="Random coefficients">Random</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="partials-container">
+                <div class="partials-grid" id="partialsGrid">
+                    <!-- Partials will be generated dynamically -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let currentTheme = 'light';
+        let coefficients = new Array(64).fill(0);
+        let numPartials = 16;
+        let resolution = 1024;
+        let isDragging = false;
+        let splitterElement = document.getElementById('splitter');
+        let topSection = document.getElementById('topSection');
+        let bottomSection = document.getElementById('bottomSection');
+        let waveformCanvas = document.getElementById('waveformCanvas');
+        let ctx = waveformCanvas.getContext('2d');
+
+        // Initialize the application
+        function init() {
+            setupTheme();
+            setupSplitter();
+            setupCanvas();
+            setupEventListeners();
+            generatePartialControls();
+            applyWaveform('saw'); // Default waveform
+            updateWaveform();
+        }
+
+        // Theme management
+        function toggleTheme() {
+            currentTheme = currentTheme === 'light' ? 'dark' : 'light';
+            document.documentElement.setAttribute('data-theme', currentTheme);
+            localStorage.setItem('theme', currentTheme);
+            
+            const button = document.querySelector('.theme-toggle');
+            button.textContent = currentTheme === 'light' ? '🌙' : '☀️';
+            
+            updateWaveform(); // Redraw with new theme colors
+        }
+
+        function setupTheme() {
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            currentTheme = savedTheme;
+            document.documentElement.setAttribute('data-theme', currentTheme);
+            
+            const button = document.querySelector('.theme-toggle');
+            button.textContent = currentTheme === 'light' ? '🌙' : '☀️';
+        }
+
+        // Splitter functionality
+        function setupSplitter() {
+            splitterElement.addEventListener('mousedown', startDrag);
+            
+            function startDrag(e) {
+                isDragging = true;
+                document.addEventListener('mousemove', drag);
+                document.addEventListener('mouseup', stopDrag);
+                e.preventDefault();
+            }
+
+            function drag(e) {
+                if (!isDragging) return;
+                
+                const containerRect = document.querySelector('.main-container').getBoundingClientRect();
+                const containerHeight = containerRect.height;
+                const mouseY = e.clientY - containerRect.top;
+                
+                // Ensure minimum heights for both sections
+                const minTopHeight = containerHeight * 0.3;
+                const minBottomHeight = containerHeight * 0.25;
+                
+                let topHeight = mouseY;
+                if (topHeight < minTopHeight) topHeight = minTopHeight;
+                if (topHeight > containerHeight - minBottomHeight) topHeight = containerHeight - minBottomHeight;
+                
+                topSection.style.height = `${topHeight}px`;
+                bottomSection.style.height = `${containerHeight - topHeight - 6}px`;
+                
+                resizeCanvas();
+            }
+
+            function stopDrag() {
+                isDragging = false;
+                document.removeEventListener('mousemove', drag);
+                document.removeEventListener('mouseup', stopDrag);
+            }
+        }
+
+        // Canvas setup
+        function setupCanvas() {
+            resizeCanvas();
+            waveformCanvas.addEventListener('mousemove', updateMousePosition);
+            waveformCanvas.addEventListener('click', addPoint);
+        }
+
+        function resizeCanvas() {
+            const rect = waveformCanvas.getBoundingClientRect();
+            const dpr = window.devicePixelRatio || 1;
+            
+            waveformCanvas.width = rect.width * dpr;
+            waveformCanvas.height = rect.height * dpr;
+            
+            ctx.scale(dpr, dpr);
+            waveformCanvas.style.width = rect.width + 'px';
+            waveformCanvas.style.height = rect.height + 'px';
+            
+            updateWaveform();
+        }
+
+        function setupEventListeners() {
+            window.addEventListener('resize', resizeCanvas);
+        }
+
+        // Mouse tracking
+        function updateMousePosition(e) {
+            const rect = waveformCanvas.getBoundingClientRect();
+            const x = (e.clientX - rect.left) / rect.width;
+            const y = 1 - (e.clientY - rect.top) / rect.height; // Invert Y for canvas coordinates
+            
+            document.getElementById('mouseX').textContent = x.toFixed(3);
+            document.getElementById('mouseY').textContent = y.toFixed(3);
+        }
+
+        function addPoint(e) {
+            const rect = waveformCanvas.getBoundingClientRect();
+            const x = (e.clientX - rect.left) / rect.width;
+            const y = 1 - (e.clientY - rect.top) / rect.height;
+            
+            console.log(`Added point at: (${x.toFixed(3)}, ${y.toFixed(3)})`);
+        }
+
+        // Partial controls
+        function generatePartialControls() {
+            const grid = document.getElementById('partialsGrid');
+            grid.innerHTML = '';
+            
+            for (let i = 0; i < numPartials; i++) {
+                const partialItem = createPartialControl(i + 1, coefficients[i]);
+                grid.appendChild(partialItem);
+            }
+        }
+
+        function createPartialControl(partialNumber, initialValue) {
+            const item = document.createElement('div');
+            item.className = 'partial-item';
+            
+            const colors = [
+                'var(--waveform-sub1)',
+                'var(--waveform-sub2)', 
+                'var(--waveform-sub3)',
+                'var(--waveform-sub4)',
+                'var(--waveform-sub5)'
+            ];
+            const color = colors[(partialNumber - 1) % colors.length];
+            
+            item.innerHTML = `
+                <div class="partial-header">
+                    <div class="partial-number" style="color: ${color};">Partial ${partialNumber}</div>
+                    <div class="partial-value" id="value-${partialNumber}">${initialValue.toFixed(3)}</div>
+                </div>
+                <div class="slider-container">
+                    <input type="range" 
+                           class="amplitude-slider" 
+                           id="slider-${partialNumber}"
+                           min="-1" 
+                           max="1" 
+                           step="0.001" 
+                           value="${initialValue}"
+                           oninput="updateCoefficient(${partialNumber}, this.value)"
+                           onchange="updateCoefficient(${partialNumber}, this.value)">
+                    <div class="slider-labels">
+                        <span>-1.0</span>
+                        <span>0.0</span>
+                        <span>1.0</span>
+                    </div>
+                </div>
+                <div class="partial-controls">
+                    <button class="partial-btn" onclick="setPartial(${partialNumber}, 0)" title="Set to zero">Zero</button>
+                    <button class="partial-btn" onclick="setPartial(${partialNumber}, 1)" title="Set to full amplitude">Full</button>
+                    <button class="partial-btn reset" onclick="setPartial(${partialNumber}, null)" title="Reset to default">Reset</button>
+                </div>
+            `;
+            
+            return item;
+        }
+
+        function updateCoefficient(partialNumber, value) {
+            coefficients[partialNumber - 1] = parseFloat(value);
+            document.getElementById(`value-${partialNumber}`).textContent = value.toFixed(3);
+            updateWaveform();
+        }
+
+        function setPartial(partialNumber, value) {
+            if (value === null) {
+                // Reset to default (sawtooth pattern)
+                const harmonic = partialNumber;
+                coefficients[partialNumber - 1] = (partialNumber % 2 === 0) ? 0 : (1 / harmonic);
+            } else {
+                coefficients[partialNumber - 1] = value;
+            }
+            
+            document.getElementById(`slider-${partialNumber}`).value = coefficients[partialNumber - 1];
+            document.getElementById(`value-${partialNumber}`).textContent = coefficients[partialNumber - 1].toFixed(3);
+            updateWaveform();
+        }
+
+        function updatePartialCount(count) {
+            numPartials = parseInt(count);
+            document.getElementById('partialsCount').textContent = numPartials;
+            document.getElementById('totalHarmonics').textContent = numPartials;
+            
+            // Resize coefficients array if needed
+            if (coefficients.length < numPartials) {
+                const additionalCoeffs = new Array(numPartials - coefficients.length).fill(0);
+                coefficients = [...coefficients, ...additionalCoeffs];
+            }
+            
+            generatePartialControls();
+            updateWaveform();
+        }
+
+        function updateResolution() {
+            resolution = parseInt(document.getElementById('resolution').value);
+            updateWaveform();
+        }
+
+        // Waveform calculations
+        function generateWaveform() {
+            const waveform = new Array(resolution);
+            const partials = new Array(numPartials);
+            
+            for (let i = 0; i < resolution; i++) {
+                const t = i / resolution;
+                let sum = 0;
+                
+                for (let k = 0; k < numPartials; k++) {
+                    const coefficient = coefficients[k];
+                    if (coefficient !== 0) {
+                        const harmonic = k + 1;
+                        sum += coefficient * Math.sin(2 * Math.PI * harmonic * t);
+                        
+                        if (i < partials.length && partials[i] !== undefined) {
+                            partials[i] += coefficient * Math.sin(2 * Math.PI * harmonic * t);
+                        }
+                    }
+                }
+                
+                waveform[i] = sum;
+            }
+            
+            return waveform;
+        }
+
+        function calculateStatistics(waveform) {
+            // Calculate RMS
+            const rms = Math.sqrt(waveform.reduce((sum, val) => sum + val * val, 0) / waveform.length);
+            
+            // Calculate peak
+            const peak = Math.max(...waveform.map(val => Math.abs(val)));
+            
+            // Normalize to 1.0 peak
+            const normalized = peak > 0 ? waveform.map(val => val / peak) : waveform;
+            
+            return { rms: rms.toFixed(3), peak: peak.toFixed(3), normalized };
+        }
+
+        // Waveform presets
+        function applyWaveform(type) {
+            console.log(`Applying ${type} waveform...`);
+            
+            for (let k = 0; k < numPartials; k++) {
+                const n = k + 1; // Harmonic number
+                let coefficient = 0;
+                
+                switch (type) {
+                    case 'rect':
+                        // Square wave: only odd harmonics, alternating sign
+                        if (n % 2 === 1) {
+                            coefficient = (n === 1) ? 1 : (2 / (Math.PI * n)) * Math.pow(-1, (n - 1) / 2);
+                        }
+                        break;
+                        
+                    case 'saw':
+                        // Sawtooth wave: all harmonics, positive
+                        if (n % 2 === 1) {
+                            coefficient = 1 / n;
+                        }
+                        break;
+                        
+                    case 'rev-saw':
+                        // Reverse sawtooth: all harmonics, negative
+                        if (n % 2 === 1) {
+                            coefficient = -1 / n;
+                        }
+                        break;
+                        
+                    case 'triangle':
+                        // Triangle wave: only odd harmonics, alternating sign, 1/n²
+                        if (n % 2 === 1) {
+                            const sign = (n === 1) ? 1 : Math.pow(-1, (n - 1) / 2);
+                            coefficient = sign * 8 / (Math.PI * Math.PI * n * n);
+                        }
+                        break;
+                }
+                
+                coefficients[k] = coefficient;
+            }
+            
+            updatePartialControls();
+            updateWaveform();
+        }
+
+        function updatePartialControls() {
+            for (let i = 0; i < numPartials; i++) {
+                const slider = document.getElementById(`slider-${i + 1}`);
+                const valueDisplay = document.getElementById(`value-${i + 1}`);
+                
+                if (slider && valueDisplay) {
+                    slider.value = coefficients[i];
+                    valueDisplay.textContent = coefficients[i].toFixed(3);
+                }
+            }
+        }
+
+        function normalizeWaveform() {
+            const waveform = generateWaveform();
+            const peak = Math.max(...waveform.map(val => Math.abs(val)));
+            
+            if (peak > 0) {
+                for (let i = 0; i < coefficients.length; i++) {
+                    coefficients[i] /= peak;
+                }
+                updatePartialControls();
+                updateWaveform();
+            }
+        }
+
+        function clearAllPartials() {
+            coefficients.fill(0);
+            updatePartialControls();
+            updateWaveform();
+        }
+
+        function randomizePartials() {
+            for (let i = 0; i < numPartials; i++) {
+                const harmonic = i + 1;
+                // Random coefficients with bias towards lower harmonics
+                coefficients[i] = (Math.random() - 0.5) * 2 * (1 / Math.sqrt(harmonic));
+            }
+            updatePartialControls();
+            updateWaveform();
+        }
+
+        // Waveform drawing
+        function updateWaveform() {
+            const canvasRect = waveformCanvas.getBoundingClientRect();
+            const width = canvasRect.width;
+            const height = canvasRect.height;
+            
+            // Clear canvas
+            ctx.clearRect(0, 0, width, height);
+            
+            // Draw grid
+            drawGrid(ctx, width, height);
+            
+            // Calculate waveform
+            const waveform = generateWaveform();
+            const stats = calculateStatistics(waveform);
+            const normalizedWaveform = stats.normalized;
+            
+            // Update statistics display
+            document.getElementById('rmsValue').textContent = stats.rms;
+            document.getElementById('peakValue').textContent = stats.peak;
+            
+            // Draw zero line
+            ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--text-secondary').trim();
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(0, height / 2);
+            ctx.lineTo(width, height / 2);
+            ctx.stroke();
+            
+            // Draw sub-partials (first 5)
+            const maxSubPartials = Math.min(5, numPartials);
+            const colors = [
+                getComputedStyle(document.documentElement).getPropertyValue('--waveform-sub1').trim(),
+                getComputedStyle(document.documentElement).getPropertyValue('--waveform-sub2').trim(),
+                getComputedStyle(document.documentElement).getPropertyValue('--waveform-sub3').trim(),
+                getComputedStyle(document.documentElement).getPropertyValue('--waveform-sub4').trim(),
+                getComputedStyle(document.documentElement).getPropertyValue('--waveform-sub5').trim()
+            ];
+            
+            for (let partial = 0; partial < maxSubPartials; partial++) {
+                const partialWaveform = new Array(resolution);
+                for (let i = 0; i < resolution; i++) {
+                    const t = i / resolution;
+                    const coefficient = coefficients[partial];
+                    partialWaveform[i] = coefficient * Math.sin(2 * Math.PI * (partial + 1) * t);
+                }
+                
+                ctx.strokeStyle = colors[partial];
+                ctx.lineWidth = 1;
+                ctx.globalAlpha = 0.6;
+                drawWaveform(ctx, partialWaveform, width, height);
+                ctx.globalAlpha = 1.0;
+            }
+            
+            // Draw main waveform
+            ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--waveform-primary').trim();
+            ctx.lineWidth = 2;
+            drawWaveform(ctx, normalizedWaveform, width, height);
+        }
+
+        function drawWaveform(ctx, waveform, width, height) {
+            const centerY = height / 2;
+            const amplitude = height * 0.4;
+            
+            ctx.beginPath();
+            
+            for (let i = 0; i < waveform.length; i++) {
+                const x = (i / (waveform.length - 1)) * width;
+                const y = centerY - (waveform[i] * amplitude);
+                
+                if (i === 0) {
+                    ctx.moveTo(x, y);
+                } else {
+                    ctx.lineTo(x, y);
+                }
+            }
+            
+            ctx.stroke();
+        }
+
+        function drawGrid(ctx, width, height) {
+            const bgColor = getComputedStyle(document.documentElement).getPropertyValue('--canvas-bg').trim();
+            const gridColor = getComputedStyle(document.documentElement).getPropertyValue('--grid-color').trim();
+            
+            // Fill background
+            ctx.fillStyle = bgColor;
+            ctx.fillRect(0, 0, width, height);
+            
+            // Draw grid lines
+            ctx.strokeStyle = gridColor;
+            ctx.lineWidth = 0.5;
+            
+            const gridSpacing = 50;
+            
+            // Vertical lines
+            for (let x = 0; x <= width; x += gridSpacing) {
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, height);
+                ctx.stroke();
+            }
+            
+            // Horizontal lines
+            for (let y = 0; y <= height; y += gridSpacing) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(width, y);
+                ctx.stroke();
+            }
+            
+            // Draw axes at ±0.5
+            const yAxis1 = height * 0.25;
+            const yAxis2 = height * 0.75;
+            
+            ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--text-secondary').trim();
+            ctx.lineWidth = 1;
+            ctx.setLineDash([5, 5]);
+            
+            // ±0.5 lines
+            ctx.beginPath();
+            ctx.moveTo(0, yAxis1);
+            ctx.lineTo(width, yAxis1);
+            ctx.moveTo(0, yAxis2);
+            ctx.lineTo(width, yAxis2);
+            ctx.stroke();
+            
+            ctx.setLineDash([]);
+        }
+
+        // Initialize application when DOM is loaded
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>

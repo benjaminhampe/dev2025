@@ -11,6 +11,7 @@ struct WindowOptions
 {
     int width = 1024;
     int height = 768;
+    void* parent = nullptr;
     int r = 8;    // color buffer red bits
     int g = 8;    // color buffer green
     int b = 8;    // color buffer b
@@ -32,6 +33,10 @@ struct WindowOptions
     toString() const
     {
         std::ostringstream o;
+        if (parent)
+        {
+            o << "parent(" << parent << "),";
+        }
         o << width << "," << height;
         if ( r > 0 ) o << ",R" << r;
         if ( g > 0 ) o << ",G" << g;

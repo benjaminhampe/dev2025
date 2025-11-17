@@ -1,0 +1,127 @@
+Warum braucht Bloom einen separaten Framebuffer?
+
+Bloom simuliert das Überstrahlen heller Bereiche, indem man diese isoliert, weichzeichnet und wieder zum Bild addiert. Dafür brauchst du:
+1. Ein erstes Render-Target (Framebuffer A)
+
+    Du rendert deine Szene ganz normal hinein.
+
+    Das Ergebnis ist dein „Bild ohne Bloom“.
+
+2. Ein zweites Framebuffer (Framebuffer B)
+
+    Du extrahierst nur die hellen Pixel aus Framebuffer A.
+
+    Diese werden in Framebuffer B gespeichert.
+
+3. Blur-Pass (Framebuffer C, optional mehrfach)
+
+    Du weichzeichnest die hellen Pixel horizontal und vertikal.
+
+    Das passiert oft in mehreren Schritten (Ping-Pong-Blur).
+
+4. Finaler Composite
+
+    Du addierst die weichgezeichneten Bloom-Pixel zurück zum Originalbild.
+
+    Das passiert beim finalen „Blit“ auf den Bildschirm oder beim letzten Fullscreen-Quad.
+    
+    
+# Typischer Bloom-Workflow in OpenGL
+
+// 1. Szene rendern → framebufferScene
+glBindFramebuffer(GL_FRAMEBUFFER, framebufferScene);
+renderScene();
+
+// 2. Helle Bereiche extrahieren → framebufferBright
+glBindFramebuffer(GL_FRAMEBUFFER, framebufferBright);
+extractBrightAreas();
+
+// 3. Weichzeichnen → framebufferBlurA ↔ framebufferBlurB
+for (int i = 0; i < blurPasses; ++i) {
+    pingPongBlur();
+}
+
+// 4. Compositing → Bildschirm oder finaler FBO
+glBindFramebuffer(GL_FRAMEBUFFER, 0); // oder framebufferFinal
+combineSceneAndBloom();
+
+# Warum nicht direkt im Shader?
+
+Weil Bloom ein Post-Processing-Effekt ist:
+
+    Er braucht Zugriff auf das fertige Bild.
+
+    Er braucht mehrere Sampling-Schritte (Weichzeichnen).
+
+    Er ist nicht lokal pro Pixel, sondern verteilt über benachbarte Pixel → das geht nicht in einem einzigen Shader-Durchlauf.
+    
+    // === Setup ===
+// Wir erstellen zwei Framebuffer: einen für die Szene, einen für die Bloom-Extraktion.
+GLuint sceneFBO, brightFBO;
+GLuint sceneTex, brightTex;
+
+// Szene-FBO: rendert die gesamte Szene
+glGenFramebuffers(1, &sceneFBO);
+glBindFramebuffer(GL_FRAMEBUFFER, sceneFBO);
+
+// Szene-Textur
+glGenTextures(1, &sceneTex);
+glBindTexture(GL_TEXTURE_2D, sceneTex);
+glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, width, height, 0, GL_RGB, GL_FLOAT, NULL);
+glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, sceneTex, 0);
+
+// Bright-FBO: enthält nur helle Bereiche
+glGenFramebuffers(1, &brightFBO);
+glBindFramebuffer(GL_FRAMEBUFFER, brightFBO);
+
+glGenTextures(1, &brightTex);
+glBindTexture(GL_TEXTURE_2D, brightTex);
+glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, width, height, 0, GL_RGB, GL_FLOAT, NULL);
+glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, brightTex, 0);
+
+// === Renderpass 1: Szene rendern ===
+glBindFramebuffer(GL_FRAMEBUFFER, sceneFBO);
+glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+renderScene(); // Deine normale Szene
+
+// === Renderpass 2: Helle Bereiche extrahieren ===
+glBindFramebuffer(GL_FRAMEBUFFER, brightFBO);
+glClear(GL_COLOR_BUFFER_BIT);
+useShader(brightExtractShader);
+glBindTexture(GL_TEXTURE_2D, sceneTex);
+renderFullscreenQuad(); // Extrahiert helle Pixel
+
+// === Renderpass 3: Blur (Ping-Pong) ===
+GLuint pingpongFBO[2], pingpongTex[2];
+setupPingpongBuffers(pingpongFBO, pingpongTex); // Zwei FBOs für horizontal/vertikal Blur
+
+bool horizontal = true;
+for (int i = 0; i < blurPasses; ++i) {
+    glBindFramebuffer(GL_FRAMEBUFFER, pingpongFBO[horizontal]);
+    useShader(horizontal ? blurShaderH : blurShaderV);
+    glBindTexture(GL_TEXTURE_2D, i == 0 ? brightTex : pingpongTex[!horizontal]);
+    renderFullscreenQuad();
+    horizontal = !horizontal;
+}
+
+// === Renderpass 4: Compositing ===
+glBindFramebuffer(GL_FRAMEBUFFER, 0); // Zurück zum Bildschirm
+glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+useShader(compositeShader);
+glActiveTexture(GL_TEXTURE0);
+glBindTexture(GL_TEXTURE_2D, sceneTex);
+glActiveTexture(GL_TEXTURE1);
+glBindTexture(GL_TEXTURE_2D, pingpongTex[!horizontal]);
+renderFullscreenQuad(); // Szene + Bloom addieren
+
+Shader-Übersicht
+
+    brightExtractShader: isoliert helle Pixel (if (color > threshold))
+
+    blurShaderH/V: Gaussian Blur horizontal/vertikal
+
+    compositeShader: addiert Szene + Bloom (finalColor = scene + bloom * intensity)

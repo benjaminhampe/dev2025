@@ -29,13 +29,11 @@ enum class EventType
     HIDE,
     ENTER,
     LEAVE,
-    FOCUS,
-    //FOCUS_IN,
-    //FOCUS_OUT,
-    //KEYBOARD,     //< A key input event.
+    FOCUS_IN,
+    FOCUS_OUT,
     KEY_PRESS,      //< A key input event.
     KEY_RELEASE,    //< A key input event.
-    //MOUSE_BUTTON, //< A mouse input event.
+    KEY_REPEAT,     //< A key input event.
     MOUSE_PRESS,    //< A mouse input event.
     MOUSE_RELEASE,  //< A mouse input event.
     MOUSE_MOVE,     //< A mouse input event.
@@ -61,13 +59,11 @@ getEventTypeStr( EventType const eventType )
     case EventType::HIDE: return "HIDE";
     case EventType::ENTER: return "ENTER";
     case EventType::LEAVE: return "LEAVE";
-    case EventType::FOCUS: return "FOCUS";
-    //case EventType::FOCUS_IN: return "FOCUS_IN";
-    //case EventType::FOCUS_OUT: return "FOCUS_OUT";
-    //case EventType::KEYBOARD: return "KEYBOARD";
+    case EventType::FOCUS_IN: return "FOCUS_IN";
+    case EventType::FOCUS_OUT: return "FOCUS_OUT";
     case EventType::KEY_PRESS: return "KEY_PRESS";
     case EventType::KEY_RELEASE: return "KEY_RELEASE";
-    //case EventType::MOUSE_BUTTON: return "MOUSE_BUTTON";
+    case EventType::KEY_REPEAT: return "KEY_REPEAT";
     case EventType::MOUSE_PRESS: return "MOUSE_PRESS";
     case EventType::MOUSE_RELEASE: return "MOUSE_RELEASE";
     case EventType::MOUSE_MOVE: return "MOUSE_MOVE";
@@ -141,20 +137,11 @@ struct ResizeEvent
 };
 
 // =======================================================================
-struct ShowOrHideEvent
-// =======================================================================
-{
-    void* m_window = nullptr;
-    bool m_show = true;
-    std::string str() const { std::ostringstream o; o << (m_show ? "SHOW" : "HIDE"); return o.str(); }
-};
-
-// =======================================================================
 struct ShowEvent
 // =======================================================================
 {
     void* m_window = nullptr;
-    std::string str() const { std::ostringstream o; o << "SHOW"; return o.str(); }
+    std::string str() const { return "SHOW"; }
 };
 
 // =======================================================================
@@ -162,7 +149,7 @@ struct HideEvent
 // =======================================================================
 {
     void* m_window = nullptr;
-    std::string str() const { std::ostringstream o; o << "HIDE"; return o.str(); }
+    std::string str() const { return "HIDE"; }
 };
 
 // =======================================================================
@@ -172,7 +159,7 @@ struct EnterEvent
     void* m_window = nullptr;
     int32_t m_x = 0;
     int32_t m_y = 0;
-    std::string str() const { std::ostringstream o; o << "ENTER"; return o.str(); }
+    std::string str() const { return "ENTER"; }
 };
 
 // =======================================================================
@@ -182,16 +169,23 @@ struct LeaveEvent
     void* m_window = nullptr;
     int32_t m_x = 0;
     int32_t m_y = 0;
-    std::string str() const { std::ostringstream o; o << "LEAVE"; return o.str(); }
+    std::string str() const { return "LEAVE"; }
 };
 
 // =======================================================================
-struct FocusEvent
+struct FocusInEvent
 // =======================================================================
 {
     void* m_window = nullptr;
-    bool m_focusIn = true;
-    std::string str() const { std::ostringstream o; o << (m_focusIn ? "FOCUS_IN" : "FOCUS_OUT"); return o.str(); }
+    std::string str() const { return "FOCUS_IN"; }
+};
+
+// =======================================================================
+struct FocusOutEvent
+// =======================================================================
+{
+    void* m_window = nullptr;
+    std::string str() const { return "FOCUS_OUT"; }
 };
 
 // ========================================================================
@@ -743,7 +737,6 @@ struct KeyPressEvent : public KeyEvent
     {}
 };
 
-
 // ========================================================================
 struct KeyReleaseEvent : public KeyEvent
 // ========================================================================
@@ -757,6 +750,23 @@ struct KeyReleaseEvent : public KeyEvent
         : unicode( 0 )
         , key( EKEY_COUNT )
         , modifiers( KeyModifier::Released )
+        , scancode(0)
+    {}
+};
+
+// ========================================================================
+struct KeyRepeatEvent : public KeyEvent
+// ========================================================================
+{
+    uint32_t unicode; // For unknown enum value, corresponds to the key (0, if not a character)
+    uint32_t key;     // recognized enum value from EKEY
+    uint32_t modifiers;
+    uint32_t scancode;// Platform dependent scan key code
+
+    KeyRepeatEvent()
+        : unicode( 0 )
+        , key( EKEY_COUNT )
+        , modifiers( KeyModifier::Repeat )
         , scancode(0)
     {}
 };
@@ -989,6 +999,7 @@ struct MouseFlag
     };
 };
 
+/*
 // =======================================================================
 struct MouseButtonEvent // MouseEvent
 // =======================================================================
@@ -1033,33 +1044,100 @@ struct MouseButtonEvent // MouseEvent
         if ( isDoubleClick() ) o << ", DOUBLE-CLICK";
         return o.str();
     }
-
 };
+*/
 
 // =======================================================================
-struct MousePressEvent : public MouseButtonEvent
+struct MousePressEvent // : public MouseButtonEvent
 // =======================================================================
 {
-    // MousePressEvent()
-    //     : x(0)
-    //     , y(0)
-    //     , buttons(0)
-    //     , flags(MouseFlag::Pressed)
-    // {}
+    int32_t x;
+    int32_t y;
+    uint16_t buttons; // MouseButton::eButton flags
+    uint16_t flags;   // MouseFlag::eFlag flags
+
+    MousePressEvent()
+        : x(0)
+        , y(0)
+        , buttons(0)
+        , flags(MouseFlag::Pressed)
+    {}
+
+    uint32_t buttonCount() const
+    {
+        uint32_t n = 0;
+        if ( isLeft() ) n++;
+        if ( isRight() ) n++;
+        if ( isMiddle() ) n++;
+        return n;
+    }
+
+    //bool isPressed() const { return flags & MouseFlag::Pressed; }
+    //bool isReleased() const { return flags & MouseFlag::Released; }
+    //bool isDoubleClick() const { return flags & MouseFlag::DoubleClick; }
+    bool isLeft() const { return buttons & MouseButton::Left; }
+    bool isRight() const { return buttons & MouseButton::Right; }
+    bool isMiddle() const { return buttons & MouseButton::Middle; }
+
+    std::string str() const
+    {
+        std::ostringstream o;
+        o << "x(" << x << "), y(" << y << "), flags(" << flags << ")";
+        if ( isLeft() ) o << ", LEFT";
+        if ( isRight() ) o << ", RIGHT";
+        if ( isMiddle() ) o << ", MIDDLE";
+        //if ( isPressed() ) o << ", PRESSED";
+        //if ( isReleased() ) o << ", RELEASED";
+        //if ( isDoubleClick() ) o << ", DOUBLE-CLICK";
+        return o.str();
+    }
 };
 
 // =======================================================================
-struct MouseReleaseEvent : public MouseButtonEvent
+struct MouseReleaseEvent // : public MouseButtonEvent
 // =======================================================================
 {
-    // MouseReleaseEvent()
-    //     : x(0)
-    //     , y(0)
-    //     , buttons(0)
-    //     , flags(MouseFlag::Released)
-    // {}
-};
+    int32_t x;
+    int32_t y;
+    uint16_t buttons; // MouseButton::eButton flags
+    uint16_t flags;   // MouseFlag::eFlag flags
 
+    MouseReleaseEvent()
+        : x(0)
+        , y(0)
+        , buttons(0)
+        , flags(MouseFlag::Released)
+    {}
+
+    uint32_t buttonCount() const
+    {
+        uint32_t n = 0;
+        if ( isLeft() ) n++;
+        if ( isRight() ) n++;
+        if ( isMiddle() ) n++;
+        return n;
+    }
+
+    //bool isPressed() const { return flags & MouseFlag::Pressed; }
+    //bool isReleased() const { return flags & MouseFlag::Released; }
+    //bool isDoubleClick() const { return flags & MouseFlag::DoubleClick; }
+    bool isLeft() const { return buttons & MouseButton::Left; }
+    bool isRight() const { return buttons & MouseButton::Right; }
+    bool isMiddle() const { return buttons & MouseButton::Middle; }
+
+    std::string str() const
+    {
+        std::ostringstream o;
+        o << "x(" << x << "), y(" << y << "), flags(" << flags << ")";
+        if ( isLeft() ) o << ", LEFT";
+        if ( isRight() ) o << ", RIGHT";
+        if ( isMiddle() ) o << ", MIDDLE";
+        //if ( isPressed() ) o << ", PRESSED";
+        //if ( isReleased() ) o << ", RELEASED";
+        //if ( isDoubleClick() ) o << ", DOUBLE-CLICK";
+        return o.str();
+    }
+};
 
 // =======================================================================
 struct MouseDblClickEvent
@@ -1086,9 +1164,9 @@ struct MouseDblClickEvent
         return n;
     }
 
-    bool isPressed() const { return flags & MouseFlag::Pressed; }
-    bool isReleased() const { return flags & MouseFlag::Released; }
-    bool isDoubleClick() const { return flags & MouseFlag::DoubleClick; }
+    //bool isPressed() const { return flags & MouseFlag::Pressed; }
+    //bool isReleased() const { return flags & MouseFlag::Released; }
+    //bool isDoubleClick() const { return flags & MouseFlag::DoubleClick; }
     bool isLeft() const { return buttons & MouseButton::Left; }
     bool isRight() const { return buttons & MouseButton::Right; }
     bool isMiddle() const { return buttons & MouseButton::Middle; }
@@ -1100,9 +1178,9 @@ struct MouseDblClickEvent
         if ( isLeft() ) o << ", LEFT";
         if ( isRight() ) o << ", RIGHT";
         if ( isMiddle() ) o << ", MIDDLE";
-        if ( isPressed() ) o << ", PRESSED";
-        if ( isReleased() ) o << ", RELEASED";
-        if ( isDoubleClick() ) o << ", DOUBLE-CLICK";
+        //if ( isPressed() ) o << ", PRESSED";
+        //if ( isReleased() ) o << ", RELEASED";
+        //if ( isDoubleClick() ) o << ", DOUBLE-CLICK";
         return o.str();
     }
 
@@ -1390,12 +1468,13 @@ struct Event
         struct HideEvent hideEvent;
         struct EnterEvent enterEvent;
         struct LeaveEvent leaveEvent;
-        struct FocusEvent focusEvent;
-        //struct FocusInEvent focusInEvent;
-        //struct FocusOutEvent focusOutEvent;
+        //struct FocusEvent focusEvent;
+        struct FocusInEvent focusInEvent;
+        struct FocusOutEvent focusOutEvent;
         //struct KeyEvent keyEvent;
         struct KeyPressEvent keyPressEvent;
         struct KeyReleaseEvent keyReleaseEvent;
+        struct KeyRepeatEvent keyRepeatEvent;
         //struct MouseButtonEvent mouseButtonEvent;
         struct MousePressEvent mousePressEvent;
         struct MouseReleaseEvent mouseReleaseEvent;
@@ -1403,7 +1482,7 @@ struct Event
         struct MouseWheelEvent mouseWheelEvent;
         struct MouseDblClickEvent mouseDblClickEvent;
         struct JoystickEvent joystickEvent;
-        struct GuiEvent guiEvent;    
+        struct GuiEvent guiEvent;
         struct UserEvent userEvent;
     };
 
@@ -1423,12 +1502,13 @@ struct Event
         case EventType::HIDE: o << hideEvent.str(); break;
         case EventType::ENTER: o << enterEvent.str(); break;
         case EventType::LEAVE: o << leaveEvent.str(); break;
-        case EventType::FOCUS: o << focusEvent.str(); break;
-        //case EventType::FOCUS_IN: o << focusEvent.str(); break;
-        //case EventType::FOCUS_OUT: o << focusEvent.str(); break;
+        //case EventType::FOCUS: o << focusEvent.str(); break;
+        case EventType::FOCUS_IN: o << focusInEvent.str(); break;
+        case EventType::FOCUS_OUT: o << focusOutEvent.str(); break;
         //case EventType::KEYBOARD: o << keyEvent.str(); break;
         case EventType::KEY_PRESS: o << keyPressEvent.str(); break;
         case EventType::KEY_RELEASE: o << keyReleaseEvent.str(); break;
+        case EventType::KEY_REPEAT: o << keyRepeatEvent.str(); break;
         //case EventType::MOUSE_BUTTON: o << mouseButtonEvent.str(); break;
         case EventType::MOUSE_PRESS: o << mousePressEvent.str(); break;
         case EventType::MOUSE_RELEASE: o << mouseReleaseEvent.str(); break;
@@ -1476,12 +1556,13 @@ struct Event
     Event(HideEvent event) : type(EventType::HIDE), hideEvent(event) {}
     Event(EnterEvent event) : type(EventType::ENTER), enterEvent(event) {}
     Event(LeaveEvent event) : type(EventType::LEAVE), leaveEvent(event) {}
-    Event(FocusEvent event) : type(EventType::FOCUS), focusEvent(event) {}
-    //Event(FocusInEvent event) : type(EventType::FOCUS_IN), focusInEvent(event) {}
-    //Event(FocusOutEvent event) : type(EventType::FOCUS_OUT), focusOutEvent(event) {}
+    //Event(FocusEvent event) : type(EventType::FOCUS), focusEvent(event) {}
+    Event(FocusInEvent event) : type(EventType::FOCUS_IN), focusInEvent(event) {}
+    Event(FocusOutEvent event) : type(EventType::FOCUS_OUT), focusOutEvent(event) {}
     //Event(KeyEvent event) : type(EventType::KEYBOARD), keyEvent(event) {}
     Event(KeyPressEvent event) : type(EventType::KEY_PRESS), keyPressEvent(event) {}
     Event(KeyReleaseEvent event) : type(EventType::KEY_RELEASE), keyReleaseEvent(event) {}
+    Event(KeyRepeatEvent event) : type(EventType::KEY_REPEAT), keyRepeatEvent(event) {}
 
     //Event(MouseButtonEvent event) : type(EventType::MOUSE_BUTTON), mouseButtonEvent(event) {}
     Event(MousePressEvent event) : type(EventType::MOUSE_PRESS), mousePressEvent(event) {}
@@ -1501,33 +1582,124 @@ struct IEventReceiver
 // =======================================================================
 {
     virtual ~IEventReceiver() {}
-	virtual void onEvent( const Event& event ) = 0;
 
-/*
-    std::array<bool, 1024> m_keyStates;
-    virtual bool getKeyState( const EKEY key ) const { return false; }
-
-    virtual bool isEventProcessing() const { return true; }
-    virtual void setEventProcessing( bool enabled ) {}
-    virtual void windowMoveEvent( WindowMoveEvent const & event ) {}
+    // EventHandling in the style of QtSDK for big convenience.
+    // Override if you want to implement functionality. Default is no-op.
     virtual void timerEvent( const TimerEvent& event ) {}
-    virtual void moveEvent( const MoveEvent& event ) {}
     virtual void resizeEvent( const ResizeEvent& event ) {}
+    virtual void moveEvent( const MoveEvent& event ) {}
     virtual void paintEvent( const PaintEvent& event ) {}
+
     virtual void keyPressEvent( const KeyPressEvent& event ) {}
     virtual void keyReleaseEvent( const KeyReleaseEvent& event ) {}
+    virtual void keyRepeatEvent( const KeyRepeatEvent& event ) {}
+
     virtual void mouseMoveEvent( const MouseMoveEvent& event ) {}
     virtual void mouseWheelEvent( const MouseWheelEvent& event ) {}
     virtual void mousePressEvent( const MousePressEvent& event ) {}
     virtual void mouseReleaseEvent( const MouseReleaseEvent& event ) {}
+    virtual void mouseDblClickEvent( const MouseDblClickEvent& event ) {}
+
     virtual void showEvent( const ShowEvent& event ) {}
     virtual void hideEvent( const HideEvent& event ) {}
     virtual void enterEvent( const EnterEvent& event ) {}
     virtual void leaveEvent( const LeaveEvent& event ) {}
-    virtual void focusInEvent( const FocusEvent& event ) {}
-    virtual void focusOutEvent( const FocusEvent& event ) {}
+    virtual void focusInEvent( const FocusInEvent& event ) {}
+    virtual void focusOutEvent( const FocusOutEvent& event ) {}
+
     virtual void joystickEvent( const JoystickEvent& event ) {}
-*/
+
+    //virtual void dropEvent( const DropEvent& event ) {}
+    //virtual void dragStartEvent( const DragStartEvent& event ) {}
+    //virtual void dragMoveEvent( const DragMoveEvent& event ) {}
+
+    // Override if you don't want anything called and do your event-handling in one central place.
+    virtual void onEvent( const Event& event )
+    {
+        if (event.type == EventType::TIMER)
+        {
+            timerEvent(event.timerEvent);
+        }
+        else if (event.type == EventType::MOUSE_MOVE)
+        {
+            mouseMoveEvent(event.mouseMoveEvent);
+        }
+        else if (event.type == EventType::MOUSE_WHEEL)
+        {
+            mouseWheelEvent(event.mouseWheelEvent);
+        }
+        else if (event.type == EventType::PAINT)
+        {
+            paintEvent(event.paintEvent);
+        }
+        else if (event.type == EventType::JOYSTICK)
+        {
+            joystickEvent(event.joystickEvent);
+        }
+        else if (event.type == EventType::RESIZE)
+        {
+            resizeEvent(event.resizeEvent);
+        }
+        else if (event.type == EventType::MOVE)
+        {
+            moveEvent(event.moveEvent);
+        }
+        else if (event.type == EventType::KEY_PRESS)
+        {
+            keyPressEvent(event.keyPressEvent);
+        }
+        else if (event.type == EventType::KEY_RELEASE)
+        {
+            keyReleaseEvent(event.keyReleaseEvent);
+        }
+        else if (event.type == EventType::KEY_REPEAT)
+        {
+            keyRepeatEvent(event.keyRepeatEvent);
+        }
+        else if (event.type == EventType::MOUSE_PRESS)
+        {
+            mousePressEvent(event.mousePressEvent);
+        }
+        else if (event.type == EventType::MOUSE_RELEASE)
+        {
+            mouseReleaseEvent(event.mouseReleaseEvent);
+        }
+        else if (event.type == EventType::MOUSE_DBLCLICK)
+        {
+            mouseDblClickEvent(event.mouseDblClickEvent);
+        }
+        else if (event.type == EventType::SHOW)
+        {
+            showEvent(event.showEvent);
+        }
+        else if (event.type == EventType::HIDE)
+        {
+            hideEvent(event.hideEvent);
+        }
+        else if (event.type == EventType::ENTER)
+        {
+            enterEvent(event.enterEvent);
+        }
+        else if (event.type == EventType::LEAVE)
+        {
+            leaveEvent(event.leaveEvent);
+        }
+        else if (event.type == EventType::ENTER)
+        {
+            enterEvent(event.enterEvent);
+        }
+        else if (event.type == EventType::LEAVE)
+        {
+            leaveEvent(event.leaveEvent);
+        }
+
+    }
+
+    // std::array<bool, 1024> m_keyStates;
+    // virtual bool getKeyState( const EKEY key ) const { return false; }
+
+    // virtual bool isEventProcessing() const { return true; }
+    // virtual void setEventProcessing( bool enabled ) {}
 };
 
 } // end namespace de.

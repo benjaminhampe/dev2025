@@ -11,6 +11,7 @@ add_subdirectory(_libcad)
 add_subdirectory(DarkImage-25.04)
 add_subdirectory(DarkMidi-25.04)
 add_subdirectory(DarkCoverArt-25.04)
+add_subdirectory(DarkSIMD-25.04)
 
 # add_subdirectory(_libphysics)
 # add_subdirectory(de-clara)

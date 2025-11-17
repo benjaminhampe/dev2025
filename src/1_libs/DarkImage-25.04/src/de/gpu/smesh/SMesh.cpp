@@ -676,6 +676,51 @@ SMeshBuffer::str( bool withMaterial ) const
 }
 // ===========================================================================
 
+// static
+bool
+SMeshBufferTool::onlyUniqueVertices( const SMeshBuffer& in, SMeshBuffer& out )
+{
+    if (in.indices.empty())
+    {
+        DE_ERROR("Only indexed meshes supported")
+        return false;
+    }
+
+    out.name = in.name;
+    out.primitiveType = in.primitiveType;
+    out.material = in.material;
+    out.bVisible = in.bVisible;
+
+    uint32_t nIndices = 0;
+
+    for ( size_t k = 0; k < in.indices.size(); ++k )
+    {
+        const auto i0 = in.indices[k];
+        if (i0 >= in.vertices.size())
+        {
+            DE_ERROR("Got invalid index ", i0, "at k = ",k)
+            continue;
+        }
+
+        const S3DVertex & v0 = in.vertices[ i0 ];
+
+        auto it = std::find_if( out.vertices.cbegin(), out.vertices.cend(),
+                    [v0]( const S3DVertex& cached )
+                    {
+                        return cached == v0;
+                    });
+
+        if (it == out.vertices.cend())
+        {
+            out.vertices.push_back(v0);
+        }
+
+        out.indices.push_back(nIndices);
+        nIndices++;
+    }
+
+    return true;
+}
 
 void
 SMeshBufferTool::rotateTexCoords90_onlyQuads( SMeshBuffer & mesh )
@@ -1427,17 +1472,124 @@ SMeshBufferTool::setNormalZ( SMeshBuffer & o, float nz )
 }
 
 void
-SMeshBufferTool::scaleTexture( SMeshBuffer & o, float u, float v )
+SMeshBufferTool::translateTexture( SMeshBuffer & o, float x, float y, bool bClamp )
 {
-    if ( u != 1.0f || v != 1.0f )
+    translateTexture(o, glm::vec2(x,y), bClamp );
+}
+
+void
+SMeshBufferTool::translateTexture( SMeshBuffer & o, const glm::vec2& offset, bool bClamp )
+{
+    if (bClamp)
     {
-        for ( size_t i = 0; i < o.getVertexCount(); ++i )
+        auto wrap01 = [](float x)
         {
-            o.vertices[ i ].tex.x *= u;
-            o.vertices[ i ].tex.y *= v;
+            float result = std::fmodf(x, 1.0f);
+            if (result < 0.0f)
+                result += 1.0f;
+            if (result == 0.0f && x > 0.0f && std::fmodf(x, 1.0f) == 0.0f)
+                return 1.0f;
+            return result;
+        };
+
+        for ( auto & v : o.vertices )
+        {
+            v.tex.x = wrap01( v.tex.x + offset.x );
+            v.tex.y = wrap01( v.tex.y + offset.y );
         }
     }
-    //o.recalculateBoundingBox();
+    else
+    {
+        for ( auto & v : o.vertices )
+        {
+            v.tex += offset;
+        }
+    }
+
+}
+
+void
+SMeshBufferTool::translateTextureU( SMeshBuffer & o, const float offset, const bool bClamp )
+{
+    if (bClamp)
+    {
+        auto wrap01 = [](float x)
+        {
+            float result = std::fmodf(x, 1.0f);
+            if (result < 0.0f)
+                result += 1.0f;
+            if (result == 0.0f && x > 0.0f && std::fmodf(x, 1.0f) == 0.0f)
+                return 1.0f;
+            return result;
+        };
+
+        for ( auto & v : o.vertices )
+        {
+            v.tex.x = wrap01( v.tex.x + offset );
+        }
+    }
+    else
+    {
+        for ( auto & v : o.vertices )
+        {
+            v.tex.x += offset;
+        }
+    }
+
+}
+void
+SMeshBufferTool::translateTextureV( SMeshBuffer & o, const float offset, const bool bClamp )
+{
+    if (bClamp)
+    {
+        auto wrap01 = [](float x)
+        {
+            float result = std::fmodf(x, 1.0f);
+            if (result < 0.0f)
+                result += 1.0f;
+            if (result == 0.0f && x > 0.0f && std::fmodf(x, 1.0f) == 0.0f)
+                return 1.0f;
+            return result;
+        };
+
+        for ( auto & v : o.vertices )
+        {
+            v.tex.y = wrap01( v.tex.y + offset );
+        }
+    }
+    else
+    {
+        for ( auto & v : o.vertices )
+        {
+            v.tex.y += offset;
+        }
+    }
+
+}
+
+void
+SMeshBufferTool::scaleTexture( SMeshBuffer & o, float u, float v )
+{
+    scaleTexture( o, glm::vec2(u,v) );
+}
+
+void
+SMeshBufferTool::scaleTexture( SMeshBuffer & o, const glm::vec2& scale )
+{
+    for ( auto & v : o.vertices )
+    {
+        v.tex *= scale;
+    }
+}
+
+// static
+void
+SMeshBufferTool::rotateTexture( SMeshBuffer & o, const glm::mat2& m )
+{
+    for ( auto & v : o.vertices )
+    {
+        v.tex = m * v.tex;
+    }
 }
 
 void

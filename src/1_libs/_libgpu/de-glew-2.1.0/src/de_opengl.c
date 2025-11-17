@@ -5,9 +5,18 @@ static int g_isDesktopOpenGLInitialized = 0;
 void ensureDesktopOpenGL()
 {
     if ( g_isDesktopOpenGLInitialized > 0 ) return;
-    //glewExperimental = GL_TRUE;
+
+    // Use glewExperimental = GL_TRUE, when...
+    // ✅ You're using OpenGL 3.0+ or core profile contexts.
+    // ✅ You're working with libraries like NanoVG, ImGui, or modern shaders.
+    // ✅ You're targeting cross-platform builds.
+
+    glewExperimental = GL_TRUE;
+
     glewInit();
+
     //printf("Ensured Desktop OpenGL ok.\n"); fflush( stdout );
+
     g_isDesktopOpenGLInitialized = 1;
 }
 

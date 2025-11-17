@@ -24,7 +24,8 @@ set(CMAKE_SYSTEM_NAME Windows)
 
 cmake_minimum_required(VERSION 3.14 FATAL_ERROR)
 
-set(BENNI_USE_QT 1)     # <optional> There are various other libs to build UI
+set(BENNI_USE_JUCE 0)   # Big JUCE lib, Odin2, Surge Rack plugins, etc..
+set(BENNI_USE_QT 0)     # <optional> There are various other libs to build UI
 set(BENNI_USE_NASM 0)   # <broken-now> Very common, for compress, network and audio libs.
 set(BENNI_USE_ASAN 0)   # <broken> MinGW is not ready yet.
 set(BENNI_USE_SIMD_DIAG 0) # Enable compiler output for vectorization success and misses.

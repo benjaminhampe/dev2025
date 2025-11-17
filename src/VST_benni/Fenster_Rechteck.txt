@@ -1,0 +1,255 @@
+w(x)=1−exp⁡(−1000⋅sin⁡2(x))
+
+📐 Fensterfunktion:
+
+w(x)=1−exp⁡(−1000⋅sin⁡2(x))
+
+w(x) = 1 - \exp\left(-1000 \cdot \sin^2(x)\right)
+📏 Definitionsbereich:
+
+    x∈[−π,π]x \in [-\pi, \pi]
+
+    Periodisch mit Periode 2π2\pi
+
+    Symmetrisch um x=0x = 0
+
+🔍 Eigenschaften:
+
+    Immer positiv: w(x)>0w(x) > 0 für alle xx
+
+    Minima bei x=−π,0,πx = -\pi, 0, \pi: dort ist sin⁡(x)=0\sin(x) = 0, also w(x)≈0w(x) \approx 0
+
+    Maxima bei x=±π2x = \pm \frac{\pi}{2}: dort ist sin⁡(x)2=1\sin(x)^2 = 1, also w(x)≈1−e−1000≈1w(x) \approx 1 - e^{-1000} \approx 1
+
+    Steile Übergänge: durch den Faktor 1000 fällt die Funktion extrem schnell ab in der Nähe der Sprungstellen
+
+📊 Beispielwerte:
+xx	sin⁡(x)2\sin(x)^2	w(x)=1−exp⁡(−1000⋅sin⁡2(x))w(x) = 1 - \exp(-1000 \cdot \sin^2(x))
+−π-\pi	0	0
+−3π4-\frac{3\pi}{4}	0.5	≈1−e−500≈1\approx 1 - e^{-500} \approx 1
+−π2-\frac{\pi}{2}	1	≈1−e−1000≈1\approx 1 - e^{-1000} \approx 1
+00	0	0
+π2\frac{\pi}{2}	1	≈1\approx 1
+π\pi	0	0
+🧠 Anwendung:
+
+Diese Fensterfunktion eignet sich perfekt, um gezielt das Überschwingen an Sprungstellen zu reduzieren, ohne die flachen Bereiche der Rechteckfunktion zu beeinflussen. Du kannst den Dämpfungsfaktor (hier 1000) feinjustieren, um die Übergänge noch schärfer oder weicher zu gestalten.
+
+Wenn du magst, kann ich dir auch zeigen, wie du diese Funktion in Python, MATLAB oder GeoGebra umsetzt.
+
+🧮 Fensterfunktion in C++
+
+#include <iostream>
+#include <cmath>
+#include <vector>
+
+constexpr double PI = 3.14159265358979323846;
+constexpr int N = 1000;       // Anzahl der x-Werte
+constexpr int K = 32;         // Anzahl der Partials
+constexpr double DAMPING = 1000.0; // Dämpfungsfaktor
+
+double window(double x) {
+    return 1.0 - std::exp(-DAMPING * std::pow(std::sin(x), 2));
+}
+
+double fourier_rect(double x) {
+    double sum = 0.0;
+    for (int k = 1; k <= K; ++k) {
+        int n = 2 * k - 1;
+        sum += std::sin(n * x) / n;
+    }
+    return (4.0 / PI) * sum;
+}
+
+double fourier_saw(double x, int N = 32) {
+    double sum = 0.0;
+    for (int n = 1; n <= N; ++n) {
+        sum += std::sin(n * x) / n;
+    }
+    return -2.0 / PI * sum;
+}
+
+double fourier_reverse_saw(double x, int N = 32) {
+    double sum = 0.0;
+    for (int n = 1; n <= N; ++n) {
+        sum += std::sin(n * x) / n;
+    }
+    return 2.0 / PI * sum;
+}
+
+
+int main() {
+    std::vector<double> x_vals(N);
+    std::vector<double> original(N);
+    std::vector<double> windowed(N);
+    std::vector<double> window_vals(N);
+
+    for (int i = 0; i < N; ++i) {
+        double x = -PI + 2 * PI * i / (N - 1);
+        x_vals[i] = x;
+        double w = window(x);
+        double f = fourier_rect(x);
+        original[i] = f;
+        windowed[i] = f * w;
+        window_vals[i] = w;
+
+        std::cout << x << " " << original[i] << " " << windowed[i] << " " << window_vals[i] << "\n";
+    }
+
+    return 0;
+}
+
+📐 1. Rechteckfunktion (nur ungerade Frequenzen)
+
+double amplitude_rect(int n) {
+    return (n % 2 == 1) ? 4.0 / (PI * n) : 0.0;
+}
+
+📈 2. Sägezahnfunktion (alle Frequenzen, fallend)
+
+double amplitude_saw(int n) {
+    return -2.0 / (PI * n);
+}
+
+📉 3. Umgekehrte Sägezahnfunktion (alle Frequenzen, steigend)
+
+double amplitude_reverse_saw(int n) {
+    return 2.0 / (PI * n);
+}
+
+
+Icon	Unicode	Style / Use Case
+🟥	U+1F7E5	Red square (emoji-style)
+🟧	U+1F7E7	Orange square
+🟨	U+1F7E8	Yellow square
+🟩	U+1F7E9	Green square
+🟦	U+1F7E6	Blue square
+🟪	U+1F7EA	Purple square
+🟫	U+1F7EB	Brown square
+🧊	U+1F9CA	Ice cube (cool 3D box!)
+🧱	U+1F9F1	Brick/block (chunky visual)
+🗳️	U+1F5F3	Ballot box with ballot
+🧰	U+1F9F0	Toolbox (for modular vibes)
+🧮	U+1F9EE	Abacus (grid aesthetic)
+🧾	U+1F9FE	Receipt (scroll-like box)
+🧊🧊🧊	—	Stack of ice cubes = waveform blocks?
+🧱🧱🧱	—	Brick wall = partials wall?
+
+🟥 🟧 🟨 🟩 🟦 🟪 🟫 ⬛ ⬜ 🔲 🔳 🧊 🧱 🧰 🧮 🧾
+🔴 🟠 🟡 🟢 🔵 🟣 🟤 ⚫ ⚪ 🔶 🔷 🔸 🔹 🔺 🔻 🌀
+🌑 🌒 🌓 🌔 🌕 🌖 🌗 🌘 🌙 🌚 🌛 🌜 🌞 🌝 🌟 💫
+✨ ⚡ 🔥 💥 🌈 🌪 🌫 🌬 🌊 🪨 🪵 🪺 🪷 🪻 🪼
+🎛 🎚 🎙 🎚 🎛 🎚 🎙 🎚 🎛 🎚 🎙 🎚 🎛 🎚 🎙 🎚
+🎹 🥁 🎷 🎺 🎸 🪕 🎻 🪈 🎼 🎵 🎶 🧿 🪩 🪬 🪄 🪞
+🧊 🧊 🧊 🧊 🧊 🧊 🧊 🧊 🧊 🧊 🧊 🧊 🧊 🧊 🧊 🧊
+🧱 🧱 🧱 🧱 🧱 🧱 🧱 🧱 🧱 🧱 🧱 🧱 🧱 🧱 🧱 🧱
+⬛ ⬜ ⬛ ⬜ ⬛ ⬜ ⬛ ⬜ ⬛ ⬜ ⬛ ⬜ ⬛ ⬜ ⬛ ⬜
+🟥 🟧 🟨 🟩 🟦 🟪 🟫 🟥 🟧 🟨 🟩 🟦 🟪 🟫 🟥 🟧
+🔲 🔳 🔲 🔳 🔲 🔳 🔲 🔳 🔲 🔳 🔲 🔳 🔲 🔳 🔲 🔳
+🌀 🌀 🌀 🌀 🌀 🌀 🌀 🌀 🌀 🌀 🌀 🌀 🌀 🌀 🌀 🌀
+
+🟥 🟧 🟨 🟩 🟦 🟪 🟫 ⬛ ⬜ 🔲 🔳 🧊 🧱 🧰 🧮 🧾 🧊 🧊 🧊 🧊 🧊 🧊 🧊 🧊 🧱 🧱 🧱 🧱 🧱 🧱 🧱 🧱
+🔴 🟠 🟡 🟢 🔵 🟣 🟤 ⚫ ⚪ 🔶 🔷 🔸 🔹 🔺 🔻 🌀 🌑 🌒 🌓 🌔 🌕 🌖 🌗 🌘 🌙 🌚 🌛 🌜 🌞 🌝 🌟 💫
+✨ ⚡ 🔥 💥 🌈 🌪 🌫 🌬 🌊 🪨 🪵 🪺 🪷 🪻 🪼 🎛 🎚 🎙 🎚 🎛 🎚 🎙 🎚 🎛 🎚 🎙 🎚 🎛 🎚 🎙 🎚
+🎹 🥁 🎷 🎺 🎸 🪕 🎻 🪈 🎼 🎵 🎶 🧿 🪩 🪬 🪄 🪞 🧊 🧊 🧊 🧊 🧊 🧊 🧊 🧊 🧊 🧊 🧊 🧊 🧊 🧊 🧊 🧊
+🧱 🧱 🧱 🧱 🧱 🧱 🧱 🧱 🧱 🧱 🧱 🧱 🧱 🧱 🧱 🧱 ⬛ ⬜ ⬛ ⬜ ⬛ ⬜ ⬛ ⬜ ⬛ ⬜ ⬛ ⬜ ⬛ ⬜ ⬛ ⬜
+🌀 🌀 🌀 🌀 🌀 🌀 🌀 🌀 🌀 🌀 🌀 🌀 🌀 🌀 🌀 🌀 🔲 🔳 🔲 🔳 🔲 🔳 🔲 🔳 🔲 🔳 🔲 🔳 🔲 🔳 🔲 🔳
+🟥 🟧 🟨 🟩 🟦 🟪 🟫 🟥 🟧 🟨 🟩 🟦 🟪 🟫 🟥 🟧 🔴 🔵 🟢 🟡 🟠 🟣 🟤 ⚫ ⚪ 🔶 🔷 🔸 🔹 🔺 🔻 🌀
+🌑 🌒 🌓 🌔 🌕 🌖 🌗 🌘 🌙 🌚 🌛 🌜 🌞 🌝 🌟 💫 ✨ ⚡ 🔥 💥 🌈 🌪 🌫 🌬 🌊 🪨 🪵 🪺 🪷 🪻 🪼
+🎛 🎚 🎙 🎚 🎛 🎚 🎙 🎚 🎛 🎚 🎙 🎚 🎛 🎚 🎙 🎚 🎹 🥁 🎷 🎺 🎸 🪕 🎻 🪈 🎼 🎵 🎶 🧿 🪩 🪬 🪄
+🧊 🧊 🧊 🧊 🧊 🧊 🧊 🧊 🧊 🧊 🧊 🧊 🧊 🧊 🧊 🧊 🧱 🧱 🧱 🧱 🧱 🧱 🧱 🧱 🧱 🧱 🧱 🧱 🧱 🧱 🧱 🧱
+⬛ ⬜ ⬛ ⬜ ⬛ ⬜ ⬛ ⬜ ⬛ ⬜ ⬛ ⬜ ⬛ ⬜ ⬛ ⬜ 🔲 🔳 🔲 🔳 🔲 🔳 🔲 🔳 🔲 🔳 🔲 🔳 🔲 🔳 🔲 🔳
+🌀 🌀 🌀 🌀 🌀 🌀 🌀 🌀 🌀 🌀 🌀 🌀 🌀 🌀 🌀 🌀 🧊 🧱 🧊 🧱 🧊 🧱 🧊 🧱 🧊 🧱 🧊 🧱 🧊 🧱 🧊 🧱
+
+☀ ☁ ☂ ☃ ☄ ★ ☆ ☇ ☈ ☉ ☊ ☋ ☌ ☍ ☎ ☏
+☐ ☑ ☒ ☓ ☔ ☕ ☖ ☗ ☘ ☙ ☚ ☛ ☜ ☝ ☞ ☟
+☠ ☡ ☢ ☣ ☤ ☥ ☦ ☧ ☨ ☩ ☪ ☫ ☬ ☭ ☮ ☯
+☰ ☱ ☲ ☳ ☴ ☵ ☶ ☷ ☸ ☹ ☺ ☻ ☼ ☽ ☾ ☿
+♀ ♁ ♂ ♃ ♄ ♅ ♆ ♇ ♈ ♉ ♊ ♋ ♌ ♍ ♎ ♏
+♐ ♑ ♒ ♓ ♔ ♕ ♖ ♗ ♘ ♙ ♚ ♛ ♜ ♝ ♞ ♟
+♠ ♡ ♢ ♣ ♤ ♥ ♦ ♧ ♨ ♩ ♪ ♫ ♬ ♭ ♮ ♯
+♰ ♱ ♲ ♳ ♴ ♵ ♶ ♷ ♸ ♹ ♺ ♻ ♼ ♽ ♾ ♿
+⚀ ⚁ ⚂ ⚃ ⚄ ⚅ ⚆ ⚇ ⚈ ⚉ ⚊ ⚋ ⚌ ⚍ ⚎ ⚏
+⚐ ⚑ ⚒ ⚓ ⚔ ⚕ ⚖ ⚗ ⚘ ⚙ ⚚ ⚛ ⚜ ⚝ ⚞ ⚟
+⚠ ⚡ ⚢ ⚣ ⚤ ⚥ ⚦ ⚧ ⚨ ⚩ ⚪ ⚫ ⚬ ⚭ ⚮ ⚯
+⚰ ⚱ ⚲ ⚳ ⚴ ⚵ ⚶ ⚷ ⚸ ⚹ ⚺ ⚻ ⚼ ⚽ ⚾ ⚿
+⛀ ⛁ ⛂ ⛃ ⛄ ⛅ ⛆ ⛇ ⛈ ⛉ ⛊ ⛋ ⛌ ⛍ ⛎
+⛏ ⛐ ⛑ ⛒ ⛓ ⛔ ⛕ ⛖ ⛗ ⛘ ⛙ ⛚ ⛛ ⛜ ⛝ ⛞
+⛟ ⛠ ⛡ ⛢ ⛣ ⛤ ⛥ ⛦ ⛧ ⛨ ⛩ ⛪ ⛫ ⛬ ⛭ ⛮
+⛯ ⛰ ⛱ ⛲ ⛳ ⛴ ⛵ ⛶ ⛷ ⛸ ⛹ ⛺ ⛻ ⛼ ⛽ ⛾
+⛿ ✀ ✁ ✂ ✃ ✄ ✅ ✆ ✇ ✈ ✉ ✊ ✋ ✌ ✍ ✎
+✏ ✐ ✑ ✒ ✓ ✔ ✕ ✖ ✗ ✘ ✙ ✚ ✛ ✜ ✝ ✞ ✟
+✠ ✡ ✢ ✣ ✤ ✥ ✦ ✧ ✨ ✩ ✪ ✫ ✬ ✭ ✮ ✯
+✰ ✱ ✲ ✳ ✴ ✵ ✶ ✷ ✸ ✹ ✺ ✻ ✼ ✽ ✾ ✿
+❀ ❁ ❂ ❃ ❄ ❅ ❆ ❇ ❈ ❉ ❊ ❋ ❌ ❍ ❎ ❏
+❐ ❑ ❒ ❓ ❔ ❕ ❖ ❗ ❘ ❙ ❚ ❛ ❜ ❝ ❞ ❟
+❠ ❡ ❢ ❣ ❤ ❥ ❦ ❧ ➔ ➘ ➙ ➚ ➛ ➜ ➝ ➞
+➟ ➠ ➡ ➢ ➣ ➤ ➥ ➦ ➧ ➨ ➩ ➪ ➫ ➬ ➭ ➮
+➯ ➱ ➲ ➳ ➴ ➵ ➶ ➷ ➸ ➹ ➺ ➻ ➼ ➽ ➾ ➿
+⟀ ⟁ ⟂ ⟃ ⟄ ⟅ ⟆ ⟇ ⟈ ⟉ ⟊ ⟋ ⟌ ⟍ ⟎ ⟏
+⟐ ⟑ ⟒ ⟓ ⟔ ⟕ ⟖ ⟗ ⟘ ⟙ ⟚ ⟛ ⟜ ⟝ ⟞ ⟟
+⟠ ⟡ ⟢ ⟣ ⟤ ⟥ ⟦ ⟧ ⟨ ⟩ ⟪ ⟫ ⟬ ⟭ ⟮ ⟯
+⟰ ⟱ ⟲ ⟳ ⟴ ⟵ ⟶ ⟷ ⟸ ⟹ ⟺ ⟻ ⟼ ⟽ ⟾ ⟿
+⤀ ⤁ ⤂ ⤃ ⤄ ⤅ ⤆ ⤇ ⤈ ⤉ ⤊ ⤋ ⤌ ⤍ ⤎ ⤏
+⤐ ⤑ ⤒ ⤓ ⤔ ⤕ ⤖ ⤗ ⤘ ⤙ ⤚ ⤛ ⤜ ⤝ ⤞ ⤟
+⤠ ⤡ ⤢ ⤣ ⤤ ⤥ ⤦ ⤧ ⤨ ⤩ ⤪ ⤫ ⤬ ⤭ ⤮ ⤯
+⤰ ⤱ ⤲ ⤳ ⤴ ⤵ ⤶ ⤷ ⤸ ⤹ ⤺ ⤻ ⤼ ⤽ ⤾ ⤿
+⬀ ⬁ ⬂ ⬃ ⬄ ⬅ ⬆ ⬇ ⬈ ⬉ ⬊ ⬋ ⬌ ⬍ ⬎ ⬏
+⬐ ⬑ ⬒ ⬓ ⬔ ⬕ ⬖ ⬗ ⬘ ⬙ ⬚ ⬛ ⬜ ⬝ ⬞ ⬟
+⬠ ⬡ ⬢ ⬣ ⬤ ⬥ ⬦ ⬧ ⬨ ⬩ ⬪ ⬫ ⬬ ⬭ ⬮ ⬯
+⬰ ⬱ ⬲ ⬳ ⬴ ⬵ ⬶ ⬷ ⬸ ⬹ ⬺ ⬻ ⬼ ⬽ ⬾ ⬿
+
+⭀ ⭁ ⭂ ⭃ ⭄ ⭅ ⭆ ⭇ ⭈ ⭉ ⭊ ⭋ ⭌ ⭍ ⭎ ⭏
+⭐ ⭑ ⭒ ⭓ ⭔ ⭕ ⭖ ⭗ ⭘ ⭙ ⭚ ⭛ ⭜ ⭝ ⭞ ⭟
+⭠ ⭡ ⭢ ⭣ ⭤ ⭥ ⭦ ⭧ ⭨ ⭩ ⭪ ⭫ ⭬ ⭭ ⭮ ⭯
+⭰ ⭱ ⭲ ⭳ ⭴ ⭵ ⭶ ⭷ ⭸ ⭹ ⭺ ⭻ ⭼ ⭽ ⭾ ⭿
+⮀ ⮁ ⮂ ⮃ ⮄ ⮅ ⮆ ⮇ ⮈ ⮉ ⮊ ⮋ ⮌ ⮍ ⮎ ⮏
+⮐ ⮑ ⮒ ⮓ ⮔ ⮕ ⮖ ⮗ ⮘ ⮙ ⮚ ⮛ ⮜ ⮝ ⮞ ⮟
+⮠ ⮡ ⮢ ⮣ ⮤ ⮥ ⮦ ⮧ ⮨ ⮩ ⮪ ⮫ ⮬ ⮭ ⮮ ⮯
+⮰ ⮱ ⮲ ⮳ ⮴ ⮵ ⮶ ⮷ ⮸ ⮹ ⮺ ⮻ ⮼ ⮽ ⮾ ⮿
+⯀ ⯁ ⯂ ⯃ ⯄ ⯅ ⯆ ⯇ ⯈ ⯉ ⯊ ⯋ ⯌ ⯍ ⯎ ⯏
+⯐ ⯑ ⯒ ⯓ ⯔ ⯕ ⯖ ⯗ ⯘ ⯙ ⯚ ⯛ ⯜ ⯝ ⯞ ⯟
+⯠ ⯡ ⯢ ⯣ ⯤ ⯥ ⯦ ⯧ ⯨ ⯩ ⯪ ⯫ ⯬ ⯭ ⯮ ⯯
+⯰ ⯱ ⯲ ⯳ ⯴ ⯵ ⯶ ⯷ ⯸ ⯹ ⯺ ⯻ ⯼ ⯽ ⯾ ⯿
+Ⰰ Ⰱ Ⰲ Ⰳ Ⰴ Ⰵ Ⰶ Ⰷ Ⰸ Ⰹ Ⰺ Ⰻ Ⰼ Ⰽ Ⰾ Ⰿ
+Ⱀ Ⱁ Ⱂ Ⱃ Ⱄ Ⱅ Ⱆ Ⱇ Ⱈ Ⱉ Ⱊ Ⱋ Ⱌ Ⱍ Ⱎ Ⱏ
+Ⱐ Ⱑ Ⱒ Ⱓ Ⱔ Ⱕ Ⱖ Ⱗ Ⱘ Ⱙ Ⱚ Ⱛ Ⱜ Ⱝ Ⱞ Ⱟ
+ⰰ ⰱ ⰲ ⰳ ⰴ ⰵ ⰶ ⰷ ⰸ ⰹ ⰺ ⰻ ⰼ ⰽ ⰾ ⰿ
+ⱀ ⱁ ⱂ ⱃ ⱄ ⱅ ⱆ ⱇ ⱈ ⱉ ⱊ ⱋ ⱌ ⱍ ⱎ ⱏ
+ⱐ ⱑ ⱒ ⱓ ⱔ ⱕ ⱖ ⱗ ⱘ ⱙ ⱚ ⱛ ⱜ ⱝ ⱞ ⱟ
+Ⱡ ⱡ Ɫ Ᵽ Ɽ ⱥ ⱦ Ⱨ ⱨ Ⱪ ⱪ Ⱬ ⱬ Ɑ Ɱ Ɐ
+Ɒ ⱱ Ⱳ ⱳ ⱴ Ⱶ ⱶ ⱷ ⱸ ⱹ ⱺ ⱻ ⱼ ⱽ Ȿ Ɀ
+
+🟥 🟧 🟨 🟩 🟦 🟪 🟫 ⬛ ⬜ ⬤ 🔴 🟠 🟡 🟢 🔵 🟣
+🟤 ⚫ ⚪ 🔶 🔷 🔸 🔹 🔺 🔻 🧊 🧱 🧰 🧮 🧾 🪨 🪵
+🪓 🪔 🪕 🪖 🪗 🪘 🪙 🪚 🪛 🪜 🪝 🪞 🪟 🪠 🪡 🪢
+🪣 🪤 🪥 🪦 🪧 🪨 🪩 🪪 🪫 🪬 🪭 🪮 🪯 🪰 🪱 🪲
+🪳 🪴 🪵 🪶 🪷 🪸 🪹 🪺 🪻 🪼 🪽 🪾 🪿 🫀 🫁 🫂
+🫃 🫄 🫅 🫆 🫇 🫈 🫉 🫊 🫋 🫌 🫍 🫎 🫏 🫐 🫑 🫒
+🫓 🫔 🫕 🫖 🫗 🫘 🫙 🫚 🫛 🫜 🫝 🫞 🫟 🫠 🫡 🫢
+🫣 🫤 🫥 🫦 🫧 🫨 🫩 🫪 🫫 🫬 🫭 🫮 🫯 🫰 🫱 🫲
+🫳 🫴 🫵 🫶 🫷 🫸 🫹 🫺 🫻 🫼 🫽 🫾 🫿 🤀 🤁 🤂
+🤃 🤄 🤅 🤆 🤇 🤈 🤉 🤊 🤋 🤌 🤍 🤎 🤏 🤐 🤑 🤒
+🤓 🤔 🤕 🤖 🤗 🤘 🤙 🤚 🤛 🤜 🤝 🤞 🤟 🤠 🤡 🤢
+🤣 🤤 🤥 🤦 🤧 🤨 🤩 🤪 🤫 🤬 🤭 🤮 🤯 🥀 🥁 🥂
+🥃 🥄 🥅 🥆 🥇 🥈 🥉 🥊 🥋 🥌 🥍 🥎 🥏 🥐 🥑 🥒
+🥓 🥔 🥕 🥖 🥗 🥘 🥙 🥚 🥛 🥜 🥝 🥞 🥟 🥠 🥡 🥢
+🥣 🥤 🥥 🥦 🥧 🥨 🥩 🥪 🥫 🥬 🥭 🥮 🥯 🥰 🥱 🥲
+🥳 🥴 🥵 🥶 🥷 🥸 🥹 🥺 🥻 🥼 🥽 🥾 🥿 🦀 🦁 🦂
+🦃 🦄 🦅 🦆 🦇 🦈 🦉 🦊 🦋 🦌 🦍 🦎 🦏 🦐 🦑 🦒
+🦓 🦔 🦕 🦖 🦗 🦘 🦙 🦚 🦛 🦜 🦝 🦞 🦟 🦠 🦡 🦢
+🦣 🦤 🦥 🦦 🦧 🦨 🦩 🦪 🦫 🦬 🦭 🦮 🦯 🦰 🦱 🦲
+🦳 🦴 🦵 🦶 🦷 🦸 🦹 🦺 🦻 🦼 🦽 🦾 🦿 🧀 🧁 🧂
+🧃 🧄 🧅 🧆 🧇 🧈 🧉 🧊 🧋 🧌 🧍 🧎 🧏 🧐 🧑 🧒
+🧓 🧔 🧕 🧖 🧗 🧘 🧙 🧚 🧛 🧜 🧝 🧞 🧟 🧠 🧡 🧢
+🧣 🧤 🧥 🧦 🧧 🧨 🧩 🧪 🧫 🧬 🧭 🧮 🧯 🧰 🧱 🧲
+🧳 🧴 🧵 🧶 🧷 🧸 🧹 🧺 🧻 🧼 🧽 🧾 🧿 🩰 🩱 🩲
+🩳 🩴 🩵 🩶 🩷 🩸 🩹 🩺 🩻 🩼 🩽 🩾 🩿 🪀 🪁 🪂
+🪃 🪄 🪅 🪆 🪇 🪈 🪉 🪊 🪋 🪌 🪍 🪎 🪏 🪐 🪑 🪒
+🪓 🪔 🪕 🪖 🪗 🪘 🪙 🪚 🪛 🪜 🪝 🪞 🪟 🪠 🪡 🪢
+🪣 🪤 🪥 🪦 🪧 🪨 🪩 🪪 🪫 🪬 🪭 🪮 🪯 🪰 🪱 🪲
+🪳 🪴 🪵 🪶 🪷 🪸 🪹 🪺 🪻 🪼 🪽 🪾 🪿 🫀 🫁 🫂
+🫃 🫄 🫅 🫆 🫇 🫈 🫉 🫊 🫋 🫌 🫍 🫎 🫏 🫐 🫑 🫒
+🫓 🫔 🫕 🫖 🫗 🫘 🫙 🫚 🫛 🫜 🫝 🫞 🫟 🫠 🫡 🫢
+🫣 🫤 🫥 🫦 🫧 🫨 🫩 🫪 🫫 🫬 🫭 🫮 🫯 🫰 🫱 🫲
+🫳 🫴 🫵 🫶 🫷 🫸 🫹 🫺 🫻 🫼 🫽 🫾 🫿 🤍 🤎 🖤

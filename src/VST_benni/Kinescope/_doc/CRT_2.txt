@@ -1,0 +1,189 @@
+Erweiterung 1: Phosphor-Nachleuchten
+
+CRT-Phosphor bleibt nach dem Elektronenstrahl kurz sichtbar. Wir simulieren das mit einem Frame-Feedback-Ansatz, bei dem die vorherige Farbe leicht mit der aktuellen gemischt wird.
+🧬 Erweiterung 2: Subpixel-Maske
+
+CRT-Bildschirme bestehen aus RGB-Streifen oder Punkten. Wir simulieren das mit einem Pixelmasken-Muster, das die Farbe je nach X-Position filtert.
+🧪 Komplettshader mit Kommentaren (GLSL, Version 330)
+
+#version 330 core
+
+uniform sampler2D screenTex;       // Aktueller Frame-Inhalt
+uniform sampler2D prevFrameTex;    // Vorheriger Frame für Nachleuchten
+uniform vec2 resolution;           // Bildschirmauflösung
+uniform float time;                // Zeit für animierte Effekte
+
+in vec2 fragCoord;                 // Pixelposition im Bildschirmraum
+out vec4 fragColor;                // Ergebnisfarbe
+
+void main() {
+
+    // Normiere fragCoord in [0.0, 1.0]
+    vec2 uv = fragCoord / resolution;
+
+    // Verschiebe UVs in [-1.0, 1.0] für radiale Effekte
+    uv = uv * 2.0 - 1.0;
+
+    // CRT-Krümmung: Verzerrung abhängig von Abstand zum Zentrum
+    uv.x *= 1.0 + 0.1 * pow(abs(uv.y), 2.0);
+    uv.y *= 1.0 + 0.1 * pow(abs(uv.x), 2.0);
+
+    // Zurück in [0.0, 1.0] für Textursampling
+    uv = uv * 0.5 + 0.5;
+
+    // Chromatische Aberration: RGB-Kanäle leicht versetzt
+    float aberration = 0.002;
+    vec3 color;
+    color.r = texture(screenTex, uv + vec2(aberration, 0.0)).r;
+    color.g = texture(screenTex, uv).g;
+    color.b = texture(screenTex, uv - vec2(aberration, 0.0)).b;
+
+    // Scanlines: Sinusmuster entlang Y
+    float scanline = sin(uv.y * resolution.y * 3.1415) * 0.04;
+    color.rgb -= scanline;
+
+    // Flackern: pseudozufällige Helligkeitsschwankung
+    float flicker = 0.98 + 0.02 * fract(
+        sin(dot(uv.xy ,vec2(12.9898,78.233))) * 43758.5453 + time
+    );
+    color *= flicker;
+
+    // Subpixel-Maske: RGB-Streifenstruktur
+    float stripe = mod(gl_FragCoord.x, 3.0); // 0 = R, 1 = G, 2 = B
+    vec3 mask = vec3(stripe == 0.0, stripe == 1.0, stripe == 2.0);
+    color *= mask;
+
+    // Phosphor-Nachleuchten: Mischung mit vorherigem Frame
+    vec3 prevColor = texture(prevFrameTex, uv).rgb;
+    color = mix(prevColor, color, 0.3); // 0.3 = Frische des neuen Strahls
+
+    // Finale Ausgabe
+    fragColor = vec4(color, 1.0);
+}
+
+🧠 Hinweise zur Integration
+
+    prevFrameTex muss vom Host-Programm (z. B. C++) als Feedback-Textur übergeben werden.
+
+    Du brauchst ein Ping-Pong-System: zwei Texturen, die sich pro Frame abwechseln.
+
+    Die Subpixel-Maske funktioniert am besten bei nativer Auflösung oder integer-scaled Pixeln.
+
+Wenn du willst, helfe ich dir beim C++-Setup für das Ping-Pong-Feedback — oder erweitere den Shader um Beam-Simulation, Vignette oder Geisterbilder. Sag einfach, wie tief du in die Röhre schauen willst.
+
+Um die Phosphor-Nachleuchten im CRT-Shader umzusetzen, brauchst du ein Ping-Pong-Framebuffer-System in deinem C++ OpenGL-Code. Das erlaubt dir, den vorherigen Frame als Textur zu speichern und im nächsten Frame wieder zu verwenden — genau wie ein Nachleuchteffekt.
+🔁 Was ist Ping-Pong-Feedback?
+
+Ein Ping-Pong-System verwendet zwei Texturen (und ggf. zwei FBOs), die sich pro Frame abwechseln:
+
+    Tex A speichert den aktuellen Frame.
+
+    Tex B wird als „vorheriger Frame“ in den Shader geladen.
+
+    Im nächsten Frame tauschen sie die Rollen.
+    
+
+🧱 C++ OpenGL Setup für Ping-Pong-Feedback
+
+// === 1. Zwei Texturen für Ping-Pong ===
+GLuint pingpongTex[2];
+glGenTextures(2, pingpongTex);
+
+for (int i = 0; i < 2; ++i) {
+    glBindTexture(GL_TEXTURE_2D, pingpongTex[i]);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, width, height, 0, GL_RGB, GL_FLOAT, NULL);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+}
+
+// === 2. Zwei Framebuffer-Objekte (optional, falls du rendern willst) ===
+GLuint pingpongFBO[2];
+glGenFramebuffers(2, pingpongFBO);
+
+for (int i = 0; i < 2; ++i) {
+    glBindFramebuffer(GL_FRAMEBUFFER, pingpongFBO[i]);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, pingpongTex[i], 0);
+}
+
+// === 3. Initialisierung: Start mit Index 0
+int currentIndex = 0;
+
+// === 4. Pro Frame: Shader ausführen mit vorherigem Frame
+glBindFramebuffer(GL_FRAMEBUFFER, pingpongFBO[currentIndex]); // render to current
+glActiveTexture(GL_TEXTURE0);
+glBindTexture(GL_TEXTURE_2D, pingpongTex[1 - currentIndex]);  // use previous as input
+
+useShader(crtShader);
+setUniform("screenTex", sceneTexture);               // dein aktueller Frame
+setUniform("prevFrameTex", pingpongTex[1 - currentIndex]); // vorheriger Frame
+renderFullscreenQuad();
+
+// === 5. Nach dem Rendern: Index tauschen
+currentIndex = 1 - currentIndex;
+
+
+🧠 Wichtig
+
+    Du brauchst GL_RGB16F oder GL_RGBA16F, damit die Farben nicht abgeschnitten werden.
+
+    Du musst jede Frameausgabe in die Ping-Pong-Textur rendern, nicht direkt auf den Bildschirm.
+
+    Du kannst am Ende den Inhalt von pingpongTex[currentIndex] auf den Bildschirm blitten.
+    
+🧪 Shader-Anbindung
+
+In deinem CRT-Shader:
+
+uniform sampler2D screenTex;      // aktueller Frame
+uniform sampler2D prevFrameTex;   // vorheriger Frame
+
+vec3 prevColor = texture(prevFrameTex, uv).rgb;
+vec3 color = mix(prevColor, currentColor, 0.3); // 0.3 = Frische
+
+
+🧠 Warum zeitliche Steuerung?
+✅ Ziel: Konsistenz unabhängig von Framerate
+
+    Ohne Zeitsteuerung hängt der Effekt von der Framerate ab: bei 30 FPS leuchtet etwas länger als bei 60 FPS.
+
+    Mit Zeitsteuerung kannst du sagen: „Das Leuchten soll 0.5 Sekunden dauern“ — egal ob du 20 oder 120 FPS hast.
+
+🔥 Beispiel: Phosphor-Nachleuchten mit Zeitsteuerung
+Idee:
+
+    Du speicherst den vorherigen Frame in prevFrameTex.
+
+    Du mischst ihn mit dem aktuellen Frame abhängig von der vergangenen Zeit.
+
+Shader-Snippet:
+
+uniform float deltaTime; // Zeit seit letztem Frame in Sekunden
+uniform float decayRate; // Wie schnell das Leuchten verblasst (z. B. 1.5 = schnell, 0.2 = langsam)
+
+vec3 prevColor = texture(prevFrameTex, uv).rgb;
+vec3 currentColor = texture(screenTex, uv).rgb;
+
+// Berechne Gewichtung basierend auf Zeit
+float decay = exp(-decayRate * deltaTime); // Exponentieller Zerfall
+
+// Mischung: je länger vergangen, desto weniger Nachleuchten
+vec3 color = mix(currentColor, prevColor, decay);
+
+
+🧪 Was passiert hier?
+
+    decayRate ist ein Parameter, den du feinjustieren kannst.
+
+    deltaTime kommt vom Host-Programm (z. B. C++) und wird pro Frame berechnet.
+
+    exp(-rate * time) ergibt einen natürlichen Zerfall, wie bei echtem Phosphor.
+
+🧱 C++: Übergabe von deltaTime
+
+float currentTime = glfwGetTime();
+float deltaTime = currentTime - lastFrameTime;
+lastFrameTime = currentTime;
+
+glUseProgram(crtShader);
+glUniform1f(glGetUniformLocation(crtShader, "deltaTime"), deltaTime);
+glUniform1f(glGetUniformLocation(crtShader, "decayRate"), 1.2f); // Beispielwert

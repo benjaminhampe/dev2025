@@ -36,7 +36,7 @@ else()
 
     target_include_directories(${LIB_NAME} PUBLIC ${LIB_HEADER_DIR})
     target_include_directories(${LIB_NAME} PRIVATE ${LIB_SOURCE_DIR})
-	
+
     target_compile_definitions(${LIB_NAME} PUBLIC HAVE_LIBNANOVG=1)
     target_compile_definitions(${LIB_NAME} PUBLIC NANOVG_GLEW=1)
     target_compile_definitions(${LIB_NAME} PUBLIC NANOVG_GL_IMPLEMENTATION=1)
@@ -47,7 +47,7 @@ else()
     # target_compile_definitions(${LIB_NAME} PRIVATE STB_TRUETYPE_IMPLEMENTATION=1)
     # target_compile_definitions(${LIB_NAME} PRIVATE FONTSTASH_IMPLEMENTATION=1)
 
-    target_link_libraries(${LIB_NAME} PRIVATE de_glew)
+    target_link_libraries(${LIB_NAME} PUBLIC de_glew)
     target_link_libraries(${LIB_NAME} PRIVATE de_stb_image)
     # target_link_libraries(${LIB_NAME} PRIVATE de_stb_image)
     target_link_libraries(${LIB_NAME} PRIVATE de_stb_truetype)
@@ -63,7 +63,7 @@ else()
         # target_compile_options(${LIB_NAME} PRIVATE -Wno-shift-negative-value)
         # target_compile_options(${LIB_NAME} PRIVATE -Wno-main) # jdmainct.c
     endif()
-	
+
     # file(COPY ${LIB_HEADERS} DESTINATION ${JPEG_INCLUDE_DIR}) # For the SDK
 endif()
 

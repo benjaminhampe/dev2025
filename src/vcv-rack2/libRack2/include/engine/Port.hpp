@@ -47,33 +47,36 @@ struct RACK_DLL_API Port {
     /** Returns the voltage of the given channel.
     Because of proper bookkeeping, all channels higher than the input port's number of channels should be 0V.
     */
-    float getVoltage(uint8_t channel = 0) {
+    float getVoltage(uint8_t channel = 0) const {
         return voltages[channel];
     }
 
     /** Returns the given channel's voltage if the port is polyphonic, otherwise returns the first voltage (channel 0). */
-    float getPolyVoltage(uint8_t channel) {
+    float getPolyVoltage(uint8_t channel) const {
         return isMonophonic() ? getVoltage(0) : getVoltage(channel);
     }
 
     /** Returns the voltage if a cable is connected, otherwise returns the given normal voltage. */
-    float getNormalVoltage(float normalVoltage, uint8_t channel = 0) {
+    float getNormalVoltage(float normalVoltage, uint8_t channel = 0) const {
         return isConnected() ? getVoltage(channel) : normalVoltage;
     }
 
-    float getNormalPolyVoltage(float normalVoltage, uint8_t channel) {
+    float getNormalPolyVoltage(float normalVoltage, uint8_t channel) const {
         return isConnected() ? getPolyVoltage(channel) : normalVoltage;
     }
 
     /** Returns a pointer to the array of voltages beginning with firstChannel.
     The pointer can be used for reading and writing.
     */
+    const float* getVoltages(uint8_t firstChannel = 0) const {
+        return &voltages[firstChannel];
+    }
     float* getVoltages(uint8_t firstChannel = 0) {
         return &voltages[firstChannel];
     }
 
     /** Copies the port's voltages to an array of size at least `channels`. */
-    void readVoltages(float* v) {
+    void readVoltages(float* v) const {
         for (uint8_t c = 0; c < channels; c++) {
             v[c] = voltages[c];
         }
@@ -96,7 +99,7 @@ struct RACK_DLL_API Port {
     }
 
     /** Returns the sum of all voltages. */
-    float getVoltageSum() {
+    float getVoltageSum() const {
         float sum = 0.f;
         for (uint8_t c = 0; c < channels; c++) {
             sum += voltages[c];
@@ -107,7 +110,7 @@ struct RACK_DLL_API Port {
     /** Returns the root-mean-square of all voltages.
     Uses sqrt() which is slow, so use a custom approximation if calling frequently.
     */
-    float getVoltageRMS() {
+    float getVoltageRMS() const {
         if (channels == 0) {
             return 0.f;
         }
@@ -124,22 +127,22 @@ struct RACK_DLL_API Port {
     }
 
     template <typename T>
-    T getVoltageSimd(uint8_t firstChannel) {
+    T getVoltageSimd(uint8_t firstChannel) const {
         return T::load(&voltages[firstChannel]);
     }
 
     template <typename T>
-    T getPolyVoltageSimd(uint8_t firstChannel) {
+    T getPolyVoltageSimd(uint8_t firstChannel) const {
         return isMonophonic() ? getVoltage(0) : getVoltageSimd<T>(firstChannel);
     }
 
     template <typename T>
-    T getNormalVoltageSimd(T normalVoltage, uint8_t firstChannel) {
+    T getNormalVoltageSimd(T normalVoltage, uint8_t firstChannel) const {
         return isConnected() ? getVoltageSimd<T>(firstChannel) : normalVoltage;
     }
 
     template <typename T>
-    T getNormalPolyVoltageSimd(T normalVoltage, uint8_t firstChannel) {
+    T getNormalPolyVoltageSimd(T normalVoltage, uint8_t firstChannel) const {
         return isConnected() ? getPolyVoltageSimd<T>(firstChannel) : normalVoltage;
     }
 
@@ -172,24 +175,24 @@ struct RACK_DLL_API Port {
     /** Returns the number of channels.
     If the port is disconnected, it has 0 channels.
     */
-    int getChannels() {
+    int getChannels() const {
         return channels;
     }
 
     /** Returns whether a cable is connected to the Port.
     You can use this for skipping code that generates output voltages.
     */
-    bool isConnected() {
+    bool isConnected() const {
         return channels > 0;
     }
 
     /** Returns whether the cable exists and has 1 channel. */
-    bool isMonophonic() {
+    bool isMonophonic() const {
         return channels == 1;
     }
 
     /** Returns whether the cable exists and has more than 1 channel. */
-    bool isPolyphonic() {
+    bool isPolyphonic() const {
         return channels > 1;
     }
 

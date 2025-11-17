@@ -17,3 +17,6 @@ add_subdirectory(de-DaisySP)
 
 add_subdirectory(de_gamma_100_docB)
 add_subdirectory(de_gamma_128_Hetrick)
+
+add_subdirectory(de-SynthDevKit)
+

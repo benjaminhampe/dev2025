@@ -1,0 +1,117 @@
+{
+    "slug": "acModules",
+    "name": "acModules",
+    "version": "2.0.7",
+    "license": "GPL-3.0-or-later",
+    "brand": "artificialcolors",
+    "author": "g.wygonik",
+    "authorEmail": "gw@artificialcolors.com",
+    "authorUrl": "https://github.com/gwygonik/",
+    "pluginUrl": "https://github.com/gwygonik/acModules",
+    "manualUrl": "https://github.com/gwygonik/acModules",
+    "sourceUrl": "https://github.com/gwygonik/acModules",
+    "donateUrl": "",
+    "changelogUrl": "https://github.com/gwygonik/acModules/blob/main/CHANGELOG.md",
+    "modules": [
+        {
+            "slug": "Pick6",
+            "name": "Pick6",
+            "description": "8-step finger-pickin' trigger sequencer (1:6 patterned switch), with optional 'Smart Riff' functionality.",
+            "tags": [
+                "Sequencer",
+                "Switch",
+                "Polyphonic"
+            ]
+        },
+        {
+            "slug": "Ov3rCross",
+            "name": "Ov3rCross",
+            "description": "3-Band CV and Trigger Crossover.",
+            "tags": [
+                "Utility",
+                "Logic"
+            ]
+        },
+        {
+            "slug": "Pick6p",
+            "name": "Pick6p",
+            "description": "Custom pattern programmer for Pick6 (as a right-side expander).",
+            "tags": [
+                "Utility",
+                "Expander"
+            ]
+        },
+        {
+            "slug": "Chord4Roy",
+            "name": "Chord4Roy",
+            "description": "Guitar-style polyphonic chord CV generator.",
+            "tags": [
+                "Utility",
+                "Polyphonic"
+            ]
+        },
+        {
+            "slug": "Rhythm1101",
+            "name": "Rhythm1101",
+            "description": "16-step drum-oriented trigger sequencer with preset grooves.",
+            "tags": [
+                "Sequencer",
+                "Switch"
+            ]
+        },
+        {
+            "slug": "Merc8or",
+            "name": "Merc8or",
+            "description": "Quickly remap, scale, and/or invert one range of polyphonic CV values to another.",
+            "tags": [
+                "Attenuator",
+                "Polyphonic",
+                "Utility"
+            ]
+        },
+        {
+            "slug": "Pul5es",
+            "name": "Pul5es",
+            "description": "Outputs a trigger pulse upon receiving a specified number of incoming pulses.",
+            "tags": [
+                "Utility"
+            ]
+        },
+        {
+            "slug": "CFor2N2ForC",
+            "name": "CFor2N2ForC",
+            "description": "Output a configurable CV and/or trigger across a 1V/Oct semitone CV input.",
+            "tags": [
+                "Polyphonic",
+                "Utility"
+            ]
+        },
+        {
+            "slug": "MOREc8or",
+            "name": "MOREc8or",
+            "description": "Expands Merc8or's abilities with creative tools and CV control of output range.",
+            "tags": [
+                "Expander"
+            ]
+        },
+        {
+            "slug": "CRBVi",
+            "name": "CRBVi",
+            "description": "Two-Dimensional performance instrument with on-screen note guides, selectable octave range, optional note snapping, and Y-axis curve shapes. Can also function as a playable VCA. Virtual re-interpretation of Wygonium C|RB hardware ribbon controller.",
+            "tags": [
+                "Controller",
+                "Utility"
+            ]
+        },
+        {
+            "slug": "CRBViXL",
+            "name": "C|RB Vi XL",
+            "description": "eXtra-Large Two-Dimensional performance instrument with on-screen note guides, selectable octave range, optional note snapping, Y-axis curve shapes, with modulation input. Can also function as a playable VCA.",
+            "tags": [
+                "Controller",
+                "Utility"
+            ]
+        }
+
+    ]
+}

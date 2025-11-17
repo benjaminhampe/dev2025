@@ -1,0 +1,61 @@
+{
+  "slug": "Benni",
+  "name": "Benni",
+  "version": "2.6.4",
+  "license": "Free",
+  "brand": "benjaminhampe@gmx.de",
+  "author": "benjaminhampe@gmx.de",
+  "authorEmail": "benjaminhampe@gmx.de",
+  "pluginUrl": "https://github.com/benjaminhampe",
+  "authorUrl": "https://github.com/benjaminhampe",
+  "manualUrl": "https://github.com/benjaminhampe",
+  "sourceUrl": "https://github.com/benjaminhampe",
+  "changelogUrl": "https://github.com/benjaminhampe",
+  "minRackVersion": "2.4.0",
+  "modules": [
+    {
+      "slug": "DisplayCV_as_MidiNote",
+      "name": "DisplayCV_as_MidiNote",
+      "description": "Display Control Voltage values as MidiNote + Cent detuning + octave\nPressing keys on keyboard does not really indicate which MidiNotes are played.\nHope this helps.",
+      "manualUrl": "https://github.com/benjaminhampe",
+      "tags": [
+        "Visual",
+        "CV",
+        "MidiNote",
+        "Quantizer",
+        "Utility",
+        "Polyphonic"
+      ]
+    },
+    {
+      "slug": "Partial",
+      "name": "Partial",
+      "description": "Partial sine function generator",
+      "manualUrl": "https://github.com/benjaminhampe",
+      "tags": [
+        "Visual",
+        "CV",
+        "Polyphonic"
+      ]
+    },
+    {
+      "slug": "HostVst24_x64",
+      "name": "HostVst24_x64",
+      "description": "Steinberg VST 2.4 Instrument Plugin Host x64 (can be effect or synth)",
+      "manualUrl": "https://github.com/benjaminhampe",
+      "tags": [
+        "VST",
+        "Host",
+        "64bit",
+        "Plugin",
+        "Instrument",
+        "Effect",
+        "Synth",
+        "Extern",
+        "Visual",
+        "CV",
+        "Polyphonic"
+      ]
+    }       
+  ]
+}

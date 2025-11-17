@@ -2,15 +2,15 @@ set(LIB_NAME de_pffft)
 project(${LIB_NAME})
 
 if (TARGET ${LIB_NAME})
-	message("${BoldYellow}[benni] HEADER_GUARD: ${LIB_NAME}${ColourReset}")
+    message("${BoldYellow}[benni] HEADER_GUARD: ${LIB_NAME}${ColourReset}")
 else()
-	set(LIB_HEADER_DIR ${CMAKE_CURRENT_LIST_DIR}/include)
-	set(LIB_SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/src)
-	set(LIB_HEADERS 
+    set(LIB_HEADER_DIR ${CMAKE_CURRENT_LIST_DIR}/include)
+    set(LIB_SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/src)
+    set(LIB_HEADERS
         ${LIB_HEADER_DIR}/pffft.h
         ${LIB_HEADER_DIR}/fftpack.h
     )
-	set(LIB_SOURCES 
+    set(LIB_SOURCES
         ${LIB_SOURCE_DIR}/pffft.c
         ${LIB_SOURCE_DIR}/fftpack.c
     )
@@ -23,7 +23,7 @@ else()
 
     if (BUILD_SHARED)
         message("${BoldBlue}[benni] DLL: ${LIB_NAME}${ColourReset}")
-        add_library(${LIB_NAME} SHARED "")	
+        add_library(${LIB_NAME} SHARED "")
     else()
         message("${BoldCyan}[benni] LIB: ${LIB_NAME}${ColourReset}")
         add_library(${LIB_NAME} STATIC "")
@@ -33,20 +33,21 @@ else()
 
     target_include_directories(${LIB_NAME} PUBLIC ${LIB_HEADER_DIR})
     target_include_directories(${LIB_NAME} PRIVATE ${LIB_SOURCE_DIR})
-	
-	target_compile_definitions(${LIB_NAME} PRIVATE HAVE_LIBPFFFT=1)
-	
+
+    target_compile_definitions(${LIB_NAME} PUBLIC HAVE_LIBPFFFT=1)
+    # target_compile_definitions(${LIB_NAME} PRIVATE ZCONVOLVE_USING_INLINE_ASM=1)
+
     if (MSVC)
         set_target_properties(${LIB_NAME} PROPERTIES FOLDER _libgpu)
-	else()
+    else()
         # target_compile_options(${LIB_NAME} PRIVATE -Wno-unused-parameter)
         # target_compile_options(${LIB_NAME} PRIVATE -Wno-implicit-fallthrough)
         # target_compile_options(${LIB_NAME} PRIVATE -Wno-shift-negative-value)
         # target_compile_options(${LIB_NAME} PRIVATE -Wno-main) # jdmainct.c
     endif()
-    
+
     # target_link_libraries(${LIB_NAME} PUBLIC de_rack2_nanovg)
-    
+
 
     #	file(COPY ${LIB_HEADERS} DESTINATION ${JPEG_INCLUDE_DIR}) # For the SDK
 endif()

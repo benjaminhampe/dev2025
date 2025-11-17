@@ -1,0 +1,10 @@
+# add_subdirectory(_binary2cpp)
+add_subdirectory(minimal_vst2x_host)
+add_subdirectory(Kinescope)
+add_subdirectory(OpenGLAppDemo)
+# add_subdirectory(vst2_SineOvertoneSynth_glfw_nanovg)
+# add_subdirectory(vst2_SineMachine0)
+# add_subdirectory(vst2_SineMachine1)
+# add_subdirectory(vst2_SineMachine2)
+add_subdirectory(vst2_SineMachine4)
+

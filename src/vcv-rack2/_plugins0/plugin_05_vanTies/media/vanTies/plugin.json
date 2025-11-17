@@ -1,0 +1,63 @@
+{
+  "slug": "vanTies",
+  "name": "van Ties",
+  "version": "2.6.1",
+  "license": "GPL-3.0-or-later",
+  "brand": "",
+  "author": "Matthias Sars",
+  "authorEmail": "",
+  "authorUrl": "http://www.matthiassars.eu",
+  "pluginUrl": "",
+  "manualUrl": "https://html-preview.github.io/?url=https://github.com/matthiassars/vanTies/blob/main/manual/index.html",
+  "sourceUrl": "https://github.com/matthiassars/vanTies",
+  "donateUrl": "",
+  "changelogUrl": "https://html-preview.github.io/?url=https://raw.githubusercontent.com/matthiassars/vanTies/main/manual/whatsnew.html",
+  "modules": [
+    {
+      "slug": "Ad",
+      "name": "Ad",
+      "description": "eratosthenean additive oscillator",
+      "tags": [
+        "Oscillator",
+        "Polyphonic"
+      ],
+      "keywords": "additive"
+    },
+    {
+      "slug": "Adje",
+      "name": "Adje",
+      "description": "eratosthenean spectrum generator",
+      "tags": [],
+      "keywords": "additive"
+    },
+    {
+      "slug": "Bufke",
+      "name": "Bufke",
+      "description": "CV buffer expander for Adje",
+      "tags": [
+        "Expander"
+      ],
+      "keywords": ""
+    },
+    {
+      "slug": "Funs",
+      "name": "Funs",
+      "description": "rational function oscillator",
+      "tags": [
+        "Oscillator",
+        "Polyphonic"
+      ],
+      "keywords": ""
+    },
+    {
+      "slug": "Sjoegele",
+      "name": "Sjoegele",
+      "description": "double pendulum simulator",
+      "tags": [
+        "Random",
+        "Polyphonic"
+      ],
+      "keywords": "double pendulum"
+    }
+  ]
+}

@@ -1,4 +1,4 @@
-add_subdirectory(plugin_110_AaronStaticModules)
+add_subdirectory(plugin_110_AaronStatic)
 add_subdirectory(plugin_111_AZ)
 add_subdirectory(plugin_112_PachdeHcOne)
 add_subdirectory(plugin_113_PdArray)
