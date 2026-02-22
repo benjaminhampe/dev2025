@@ -15,7 +15,7 @@ else()
     set(CONCAVEMAN_HEADERS ${CONCAVEMAN_HEADER_DIR}/concaveman.h)
     set(CONCAVEMAN_SOURCES ${CONCAVEMAN_SOURCE_DIR}/concaveman.cpp)
 
-    if (BUILD_SHARED)
+    if (BUILD_SHARED_LIBS)
         add_library(${LIB_NAME} SHARED "")
         message("${BoldBlue}[benni] DLL: ${LIB_NAME}${ColourReset}")
     else()

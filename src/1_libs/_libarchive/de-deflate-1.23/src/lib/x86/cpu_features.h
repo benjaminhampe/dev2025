@@ -59,9 +59,9 @@ void libdeflate_init_x86_cpu_features(void);
 
 static inline u32 get_x86_cpu_features(void)
 {
-	if (libdeflate_x86_cpu_features == 0)
-		libdeflate_init_x86_cpu_features();
-	return libdeflate_x86_cpu_features;
+    if (libdeflate_x86_cpu_features == 0)
+        libdeflate_init_x86_cpu_features();
+    return libdeflate_x86_cpu_features;
 }
 /*
  * x86 intrinsics are also supported.  Include the headers needed to use them.
@@ -99,8 +99,8 @@ static inline u32 get_x86_cpu_features(void) { return 0; }
 #endif
 
 #if defined(__SSE2__) || \
-	(defined(_MSC_VER) && \
-	 (defined(ARCH_X86_64) || (defined(_M_IX86_FP) && _M_IX86_FP >= 2)))
+    (defined(_MSC_VER) && \
+     (defined(ARCH_X86_64) || (defined(_M_IX86_FP) && _M_IX86_FP >= 2)))
 #  define EXR_HAVE_SSE2(features)		1
 #  define EXR_HAVE_SSE2_NATIVE		1
 #else
@@ -109,7 +109,7 @@ static inline u32 get_x86_cpu_features(void) { return 0; }
 #endif
 
 #if (defined(__PCLMUL__) && defined(__SSE4_1__)) || \
-	(defined(_MSC_VER) && defined(__AVX2__))
+    (defined(_MSC_VER) && defined(__AVX2__))
 #  define EXR_HAVE_PCLMULQDQ(features)	1
 #else
 #  define EXR_HAVE_PCLMULQDQ(features)	((features) & X86_CPU_FEATURE_PCLMULQDQ)
@@ -138,35 +138,35 @@ static inline u32 get_x86_cpu_features(void) { return 0; }
 #ifdef __AVX512BW__
 #  define EXR_HAVE_AVX512BW(features)	1
 #else
-#  define EXR_HAVE_AVX512BW(features)	((features) & X86_CPU_FEATURE_AVX512BW)
+#  define EXR_HAVE_AVX512BW(features)	0 /* ((features) & X86_CPU_FEATURE_AVX512BW) */
 #endif
 
 #ifdef __AVX512VL__
 #  define EXR_HAVE_AVX512VL(features)	1
 #else
-#  define EXR_HAVE_AVX512VL(features)	((features) & X86_CPU_FEATURE_AVX512VL)
+#  define EXR_HAVE_AVX512VL(features)	0 /* ((features) & X86_CPU_FEATURE_AVX512VL) */
 #endif
 
 #ifdef __VPCLMULQDQ__
 #  define EXR_HAVE_VPCLMULQDQ(features)	1
 #else
-#  define EXR_HAVE_VPCLMULQDQ(features)	((features) & X86_CPU_FEATURE_VPCLMULQDQ)
+#  define EXR_HAVE_VPCLMULQDQ(features)	0 /* ((features) & X86_CPU_FEATURE_VPCLMULQDQ) */
 #endif
 
 #ifdef __AVX512VNNI__
 #  define EXR_HAVE_AVX512VNNI(features)	1
 #else
-#  define EXR_HAVE_AVX512VNNI(features)	((features) & X86_CPU_FEATURE_AVX512VNNI)
+#  define EXR_HAVE_AVX512VNNI(features)	0 /* ((features) & X86_CPU_FEATURE_AVX512VNNI) */
 #endif
 
 #ifdef __AVXVNNI__
 #  define EXR_HAVE_AVXVNNI(features)	1
 #else
-#  define EXR_HAVE_AVXVNNI(features)	((features) & X86_CPU_FEATURE_AVXVNNI)
+#  define EXR_HAVE_AVXVNNI(features)	0 /* ((features) & X86_CPU_FEATURE_AVXVNNI) */
 #endif
 
 #if (GCC_PREREQ(14, 0) || CLANG_PREREQ(18, 0, 18000000)) \
-	&& !defined(__EVEX512__) /* avoid subtracting the evex512 feature */
+    && !defined(__EVEX512__) /* avoid subtracting the evex512 feature */
 #  define EVEX512	",evex512"	/* needed to override potential -mno-evex512 */
 #  define NO_EVEX512	",no-evex512"	/* needed for AVX10/256 compatibility */
 #else

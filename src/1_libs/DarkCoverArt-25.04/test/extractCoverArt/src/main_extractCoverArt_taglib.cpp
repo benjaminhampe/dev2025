@@ -1,9 +1,9 @@
 #ifndef UNICODE
 
-#include <de/audio/GetCoverArt.hpp>
+#include <de/audio/GetCoverArt.h>
 
 #include <de/Core.h>
-#include <de/os/CommonDialogs.hpp>
+#include <de/os/CommonDialogs.h>
 // #include <de/audio/buffer/BufferIO.hpp>
 
 namespace de {
@@ -25,59 +25,67 @@ repairString( std::wstring loadUri )
    }
 
    std::string r = s.str();
-   std::cout << "RepairedUri = " << r << std::endl;
+   DE_OK("RepairedUri = ",r)
    return r;
 
 }
 
-struct extractCoverArt
+struct CoverArtExtractor
 {
-   DE_CREATE_LOGGER("extractCoverArt")
+    static std::wstring getLoadFileName()
+    {
+        de::OpenFileParamsW loadP;
+        loadP.caption = L"Load file (mp3,wav,mkv,avi,mp4,etc..) that is supported by libAVCodec ( vlc )";
+        loadP.x = 0;
+        loadP.y = 0;
+        loadP.w = 800;
+        loadP.h = 600;
+        loadP.newui = true;
+        loadP.initDir = L"../../";
+        loadP.initFileName = L"";
 
-   static void
-   run( int argc, char** argv )
-   {
-      std::wstring loadUri;
-//      if ( argc > 1 )
-//      {
-//         loadUri = argv[1];
-//      }
-      loadUri = dbOpenFileDlgW(
-         L"Load file (mp3,wav,mkv,avi,mp4,etc..) that is supported by libAVCodec ( vlc )",
-         0,0,800,600,
-         L"",
-         L"../../", true );
+        return dbOpenFileDlg(loadP);
+    }
 
-      std::wstring saveUri;
-//      if ( argc > 2 )
-//      {
-//         saveUri = argv[ 2 ];
-//      }
+    static std::wstring getSaveFileName()
+    {
+        de::SaveFileParamsW saveP;
+        saveP.caption = L"Save file (png,webp,jpg,bmp,xpm,exr,tga,tif,gif,dds,etc..) that is supported by libAVCodec ( vlc )";
+        saveP.x = 0;
+        saveP.y = 0;
+        saveP.w = 800;
+        saveP.h = 600;
+        saveP.newui = true;
+        saveP.initDir = L"../../";
+        saveP.initFileName = L"";
 
-      CoverArt coverArt;
-      CoverArt :: getCoverArt( coverArt, loadUri );
+        return dbSaveFileDlg(saveP);
+    }
 
+    static bool extractCoverArt()
+    {
+        std::wstring loadUri = getLoadFileName();
 
-      PerformanceTimer perf;
-      perf.start();
+        CoverArt coverArt;
+        CoverArt :: getCoverArt( coverArt, loadUri );
 
+        if (coverArt.img.empty())
+        {
+            DE_ERROR("No CoverArt in ",de_mbstr(loadUri))
+            return false;
+        }
 
-      perf.stop();
+        std::wstring saveUri = getSaveFileName();
+        if (saveUri.empty())
+        {
+            DE_WARN("Empty save uri, abort program! ",de_mbstr(loadUri) )
+            return false;
+        }
 
-//      if ( img )
-//      {
-//         DE_DEBUG("Loaded CoverArt img(",img->toString(),") after ",loopCounter," loops. ",loadUriSTL )
-//         dbSaveImage( *img, saveUri );
-//         return true;
-//      }
-//      else
-//      {
-//         DE_ERROR("No CoverArt after ",loopCounter," loops. ",loadUriSTL )
-//         return false;
-//      }
-
-//      DE_FLUSH
-
+        DE_DEBUG("Extract: ",de_mbstr(loadUri) )
+        DE_DEBUG("CoverArt: ",de_mbstr(saveUri),", img:", coverArt.img.str() )
+        dbSaveImage( coverArt.img, de_mbstr(saveUri) );
+        return true;
    }
 
 };
@@ -90,7 +98,7 @@ struct extractCoverArt
 int main(int argc, char** argv)
 //========================================================================
 {
-   de::audio::extractCoverArt::run( argc, argv );
+   de::audio::CoverArtExtractor::extractCoverArt();
    return 0;
 }
 

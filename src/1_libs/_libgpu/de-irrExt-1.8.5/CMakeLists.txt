@@ -12,7 +12,7 @@ else()
     file(GLOB_RECURSE LIB_HEADERS "${LIB_HEADER_DIR}/*.h")
     file(GLOB_RECURSE LIB_SOURCES "${LIB_SOURCE_DIR}/*.cpp")
 
-    if (BUILD_SHARED)
+    if (BUILD_SHARED_LIBS)
         add_library(${LIB_NAME} SHARED "")
         message("${BoldBlue}[benni] DLL: ${LIB_NAME}${ColourReset}")
     else()
@@ -37,3 +37,6 @@ else()
 
 
 endif()
+
+
+add_subdirectory(test)

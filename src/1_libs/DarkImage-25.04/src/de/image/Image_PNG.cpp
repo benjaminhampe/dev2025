@@ -3,7 +3,7 @@
 #if defined(DE_IMAGE_READER_PNG_ENABLED) || defined(DE_IMAGE_WRITER_PNG_ENABLED)
     #include <cstdio>
     #include <setjmp.h>
-    #include <png/png.h> // delib_png
+    #include <png.h>
 #endif
 
 namespace de {

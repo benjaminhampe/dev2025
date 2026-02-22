@@ -55,7 +55,7 @@ if (TARGET ${LIB_NAME})
         ${CORK_SOURCE_DIR}/unsafeRayTriIsct.h
     )
 
-    if (BUILD_SHARED)
+    if (BUILD_SHARED_LIBS)
         add_library(${LIB_NAME} SHARED "")
         message("${BoldBlue}[benni] DLL: ${LIB_NAME}${ColourReset}")
     else()

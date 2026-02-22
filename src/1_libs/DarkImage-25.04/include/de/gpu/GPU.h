@@ -6,6 +6,44 @@
 namespace de {
 namespace gpu {
 
+/*
+#pragma pack( push )
+#pragma pack( 1 )
+
+// ===========================================================================
+struct S3DVertex // FVF_POSITION_XYZ | FVF_NORMAL_XYZ | FVF_RGBA | FVF_TEXCOORD0
+// ===========================================================================
+{
+    glm::vec3 pos;
+    glm::vec3 normal;
+    uint32_t color;
+    glm::vec2 tex;    // 12 + 12 + 4 + 8 = 36 Bytes if packed
+public:
+    S3DVertex()
+        : pos(), normal( 0, 0, 1 ), color( 0xFFFF00FF ), tex()
+    {}
+    S3DVertex( float x, float y, float z, float nx, float ny, float nz, uint32_t crgba, float u, float v )
+        : pos( x,y,z ), normal( nx,ny,nz ), color( crgba ), tex( u,v )
+    {}
+    S3DVertex( glm::vec3 const & p, glm::vec3 const & nrm, uint32_t crgba, glm::vec2 const & tex0 )
+        : pos( p ), normal( nrm ), color( crgba ), tex( tex0 )
+    {}
+
+    void
+    flipV()
+    {
+        tex.y = glm::clamp( 1.0f - tex.y, 0.f, 1.0f ); // Invert v for OpenGL
+    }
+
+    bool operator==( const S3DVertex& other ) const
+    {
+        return std::tie(other.pos,other.normal,other.color,other.tex) == std::tie(pos,normal,color,tex);
+    }
+};
+
+#pragma pack( pop )
+*/
+
 inline uint32_t
 glRGBA( uint8_t r, uint8_t g, uint8_t b, uint8_t a = 255 )
 {
@@ -38,160 +76,6 @@ GT_createShader(
     const std::string& fsText );
 
 
-// ===========================================================================
-struct PrimitiveType
-// ===========================================================================
-{
-    enum EType : uint32_t
-    {
-        Points = 0,    // 1 GL_POINTS
-        Lines,         // 2 GL_LINES
-        LineStrip,     // 2 GL_LINE_STRIP
-        LineLoop,      // 2 GL_LINE_LOOP
-        Triangles,     // 3 GL_TRIANGLES
-        TriangleStrip, // 3 GL_TRIANGLE_STRIP
-        TriangleFan,   // 3 GL_TRIANGLE_FAN
-        Quads,         // 4 GL_QUADS -> not really impl on GPU but used for saving meshes.
-        //Polygon,       // 5-N GL_POLYGON = VERTEX_OUTLINE_LIST, FILLED lINE_lOOP
-        Max
-    };
-
-    EType m_type;
-    PrimitiveType();
-    PrimitiveType( EType type );
-    PrimitiveType( const PrimitiveType & other );
-    PrimitiveType& operator=( const PrimitiveType & other );
-    operator uint32_t() const { return m_type; }
-
-    std::string
-    str() const;
-
-    static std::string
-    getString( PrimitiveType const primitiveType );
-
-    static std::string
-    getShortString( PrimitiveType const primitiveType );
-
-    static uint32_t
-    getPrimitiveCount( PrimitiveType const primType,
-                       uint32_t const vCount, uint32_t const iCount );
-
-    static PrimitiveType
-    fromOpenGL( uint32_t const primitiveType );
-
-    static uint32_t
-    toOpenGL( PrimitiveType const primitiveType );
-};
-
-// ===========================================================================
-struct SamplerOptions // 16 Bit
-// ===========================================================================
-{
-    enum class Minify : uint8_t // 3 Bit
-    {   Nearest = 0,
-        Linear,
-        NearestMipmapNearest,
-        NearestMipmapLinear,
-        LinearMipmapNearest,
-        LinearMipmapLinear,
-        MaxCount,
-        Default = Minify::Linear
-    };
-    enum class Magnify : uint8_t // 1 Bit
-    {
-        Nearest = 0,
-        Linear,
-        MaxCount,
-        Default = Magnify::Linear
-    };
-
-    enum class Wrap : uint8_t   // 2 Bit + 2 Bit + 2 Bit
-    {
-        Repeat = 0,
-        RepeatMirrored,
-        ClampToEdge,
-        ClampToBorder,
-        MaxCount,
-        Default = Wrap::Repeat };
-
-    Minify min; // : 3; // : 3-bit;
-    Magnify mag; // : 1;// : 1-bit;
-    Wrap wrapS; // : 2; // : 2-bit;
-    Wrap wrapT; // : 2; // : 2-bit;
-    Wrap wrapR; // : 2; // : 2-bit;
-    uint8_t af; // : 6; // : 6-bit anisotropicFilter [0 = disabled, 1 = auto max, 2 = 2x, ..., 32 = 32x, 63 = 64x]
-    // sum = 16 Bit = 2 Byte;
-
-    SamplerOptions();
-    // >= 1 means, enabled, will auto increase level to max supported 16x.
-    SamplerOptions( float anisotropicFilterLevel,
-                   Minify minify = Minify::Default,
-                   Magnify magnify = Magnify::Default,
-                   Wrap wrapmodeS = Wrap::Default,
-                   Wrap wrapmodeT = Wrap::Default,
-                   Wrap wrapmodeR = Wrap::Default );
-
-    std::string str() const;
-
-    static SamplerOptions nearestRepeat();
-    static SamplerOptions linearRepeat();
-    static SamplerOptions linearMipmapRepeat();
-    static SamplerOptions nearestClampToEdge();
-    static SamplerOptions linearClampToEdge();
-    static SamplerOptions linearMipmapClampToEdge();
-    static SamplerOptions preset_lowp();
-    static SamplerOptions preset_mediump();
-    static SamplerOptions preset_highp();
-    static std::string toStr( Minify const texMin );
-    static std::string toStr( Magnify const texMag );
-    static std::string toStr( Wrap const texWrap );
-    static SamplerOptions parseString( std::string csv );
-    void setMin( Minify minify );
-    void setMag( Magnify magnify );
-    void setWrapS( Wrap wrap );
-    void setWrapT( Wrap wrap );
-    void setWrapR( Wrap wrap );
-    void setAF( float anisotropicLevel );
-    bool hasMipmaps() const;
-};
-
-typedef SamplerOptions SO;
-
-
-void applySamplerOptions(const SamplerOptions &so);
-
-// ===========================================================================
-struct SurfaceFormat
-// ===========================================================================
-{
-    constexpr static uint8_t s_FloatMask = 0x80;
-    uint8_t redBits = 0;
-    uint8_t greenBits = 0;
-    uint8_t blueBits = 0;
-    uint8_t alphaBits = 0;
-    uint8_t depthBits = 0;
-    uint8_t stencilBits = 0;
-
-    SurfaceFormat( uint8_t r = 0,
-                   uint8_t g = 0,
-                   uint8_t b = 0,
-                   uint8_t a = 0,
-                   uint8_t d = 0,
-                   uint8_t s = 0 );
-
-    std::string str() const;
-
-    static std::vector< std::string >
-    splitStringInWords( std::string const & txt );
-
-    static SurfaceFormat
-    parseString( std::string s );
-
-    static PixelFormat
-    toPixelFormat( SurfaceFormat const & fmt );
-
-    static void test();
-};
 
 // ===========================================================================
 struct Texture
@@ -295,7 +179,7 @@ struct TexRef
     glm::vec4 coords; // 16B {x,y} = uv-offset, {z,w} = uv-size
     glm::vec2 repeat; // 8B  {x,y[,z]} = uvw-repeat
     std::string name; // Can differ from tex->name, for image atlas chunks
-
+    glm::mat2 transform;
     TexRef();
     TexRef(Texture* tex_);
     TexRef(Texture* tex_, const Recti& pos_);
@@ -349,6 +233,8 @@ struct TexManager
         return uploadTexture2D(tex,img.w(),img.h(),img.data(),img.pixelFormat(), so);
     }
 };
+
+typedef std::vector<TexRef> TexRefs;
 
 // ===========================================================================
 struct Light

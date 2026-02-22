@@ -13,7 +13,7 @@ else()
     set(LIB_LIBRARY_DIR ${CMAKE_CURRENT_LIST_DIR}/lib)
     set(LIB_BINARY_DIR ${CMAKE_CURRENT_LIST_DIR}/bin)
 
-    # if (BUILD_SHARED)
+    # if (BUILD_SHARED_LIBS)
     #     message("${BoldBlue}[benni] DLL: ${LIB_NAME}${ColourReset}")
     #     # add_library(${LIB_NAME} SHARED "")
     #     add_library(${LIB_NAME} INTERFACE)

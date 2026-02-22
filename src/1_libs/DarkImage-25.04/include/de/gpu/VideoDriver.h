@@ -7,13 +7,14 @@
 #include <de/gpu/renderer/FontRenderer5x8.h>
 #include <de/gpu/renderer/FontRenderer.h>
 #include <de/gpu/renderer/SkyboxRenderer.h>
-#include <de/gpu/smesh/SMeshRenderer.h>
-#include <de/gpu/smesh/SMeshLibrary.h>
+#include <de/smesh/SMeshRenderer.h>
+#include <de/smesh/SMeshLibrary.h>
+#include <de/smesh/SMeshIO.h>
 #include <de/gpu/renderer/Line3D_Renderer.h>
 #include <de/gpu/renderer/PostFxRenderer.h>
 
 //#include <de/gpu/mtl/PMesh.h>
-#include <de/gpu/mtl/PMaterialRenderer.h>
+//#include <de/gpu/mtl/PMaterialRenderer.h>
 //#include <de/gpu/mtl/PMeshSceneNode.h>
 
 //#include <de/gpu/mtl/MTL.h>
@@ -246,7 +247,7 @@ struct RT_Attachment
         eAT_Stencil,
         eAT_DepthStencil,
         eAT_Unknown
-    };    
+    };
 
     uint32_t attach; // GL_COLOR_ATTACHMENT0, GL_DEPTH_ATTACHMENT, GL_STENCIL_ATTACHMENT, GL_RENDERBUFFER
     PixelFormat fmt;
@@ -451,6 +452,7 @@ struct VideoDriver
 
     bool                open(int w, int h);
     void                close();
+    void                resize( int w, int h );
     void                beginRender( IRenderTarget* rt = nullptr );
     void                endRender();
 
@@ -469,10 +471,10 @@ struct VideoDriver
     void                drawPerf( Recti pos);
 
     SceneManager*     	getSceneManager() { return &m_sceneManager; }
-	
-    PMaterialRenderer*  getPMaterialRenderer() { return &m_pmaterialRenderer; }
-    SMaterialRenderer*  getSMaterialRenderer() { return &m_smaterialRenderer; }
-	
+
+    //PMaterialRenderer*  getPMaterialRenderer() { return &m_pmaterialRenderer; }
+    smesh::SMaterialRenderer*  getSMaterialRenderer() { return &m_smaterialRenderer; }
+
     SkyboxRenderer*     getSkyboxRenderer() { return &m_skyboxRenderer; }
 
     ScreenRenderer*     getScreenRenderer() { return &m_screenRenderer; }
@@ -490,8 +492,20 @@ struct VideoDriver
     void                setCamera( Camera* camera ) { m_camera = camera; }
     void                resetCamera() { m_camera = &m_camera0; }
 
-    State const &       getState() const;
+    State               getState() const;
     void                setState( State const & state );
+
+    Culling const &     getCulling() const;
+    void                setCulling( Culling const & state );
+
+    Depth const &       getDepth() const;
+    void                setDepth( Depth const & state );
+
+    Stencil const &     getStencil() const;
+    void                setStencil( Stencil const & state );
+
+    Blend const &       getBlend() const;
+    void                setBlend( Blend const & state );
 
     // double getFPS() const { return m_fpsComputer.getFPS();   }
     // uint64_t getFrameCount() const { return m_fpsComputer.getFrameCount(); }
@@ -500,19 +514,6 @@ struct VideoDriver
     // #####################
     // ###   Transform   ###
     // #####################
-
-    void resize( int w, int h )
-    {
-        m_screenWidth = w;
-        m_screenHeight = h;
-        //setViewport( 0, 0, w, h );
-
-        if (getCamera())
-        {
-            getCamera()->setScreenSize(w,h);
-            getCamera()->update();
-        }
-    }
 
     //void setViewport( int x, int y, int w, int h );
     //void setViewport( const Recti& pos ) { setViewport(pos.x, pos.y, pos.w, pos.h); }
@@ -567,6 +568,24 @@ struct VideoDriver
     // ######################
     // ###   TexManager   ###
     // ######################
+    Texture*    getTexture2D( const std::string& name,
+                          const SamplerOptions& so = SamplerOptions(),
+                          const ImageLoadOptions& opt = ImageLoadOptions() )
+    {
+        auto tex = getTexture(name);
+        if (!tex)
+        {
+            DE_WARN("No tex named ", name, " try to load as file...")
+            tex = loadTexture2D(name,so,opt);
+            if (!tex)
+            {
+                DE_ERROR("Cannot load ", name)
+                return nullptr;
+            }
+        }
+        return tex;
+    }
+
     bool        useTexture( Texture* tex, int stage );
     //bool      useTexture( TexRef ref, int stage = 0 );
     uint32_t    getMaxTex2DSize() const { return m_texMgr.getMaxTex2DSize(); }
@@ -720,8 +739,20 @@ protected:
     int m_screenWidth;
     int m_screenHeight;
 
-    State m_initState;
-    State m_state;
+    //State m_initState;
+    //SM3<State> m_state;
+
+    //SM3<Viewport> m_viewport;
+    //SM3<Scissor> m_scissor;
+    SM3<Culling> m_culling;
+    SM3<Depth> m_depth;
+    SM3<Stencil> m_stencil;
+    SM3<Blend> m_blend;
+    //SM3<RasterizerDiscard> m_rasterizerDiscard;
+    //SM3<LineWidth> m_lineWidth;
+    //SM3<PointSize> m_pointSize;
+    //SM3<PolygonOffset> m_polygonOffset;
+
     glm::dmat4 m_modelMatrix;
     // CreateParams m_createParams;
     // FPSComputer m_fpsComputer;
@@ -754,22 +785,22 @@ protected:
 
     SkyboxRenderer m_skyboxRenderer;
 
-    SMaterialRenderer m_smaterialRenderer;
-    PMaterialRenderer m_pmaterialRenderer;
-	
+    smesh::SMaterialRenderer m_smaterialRenderer;
+    //PMaterialRenderer m_pmaterialRenderer;
+
     ScreenRenderer m_screenRenderer;
 
     FontRenderer5x8 m_fontRenderer5x8;
 
-    FontRenderer m_fontRenderer;    
+    FontRenderer m_fontRenderer;
 
     Line3D_Renderer m_line3dRenderer;
 
     PostFxRenderer m_postFxRenderer;
 
-	SceneManager m_sceneManager;
-	
-	// CameraManager m_cameraManager;
+    SceneManager m_sceneManager;
+
+    // CameraManager m_cameraManager;
 
     // gui::Env m_guienv;
 

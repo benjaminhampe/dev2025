@@ -144,7 +144,7 @@ struct HMesh
     size_t computeByteConsumption() const;
     std::string str( bool withMaterial = false ) const;
 
-    static HMesh fromSMesh( const SMeshBuffer & smesh );
+    static HMesh fromSMesh( const smesh::SMeshBuffer & smesh );
 
 };
 
@@ -169,9 +169,9 @@ struct HMeshRenderer
     void draw( const HMesh & hmesh );
     void setMaterial( const HMaterial & material );
 
-	
+
 protected:
-	void initShader();
+    void initShader();
 };
 
 

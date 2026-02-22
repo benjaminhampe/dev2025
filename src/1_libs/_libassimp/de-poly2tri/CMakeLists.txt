@@ -23,7 +23,7 @@ else()
 		${P2TRI_SOURCE_DIR}/sweep.cc
 		${P2TRI_SOURCE_DIR}/sweep_context.cc)
 
-	# if (BUILD_SHARED)
+	# if (BUILD_SHARED_LIBS)
 		# message("${BoldBlue}[benni] DLL: ${LIB_NAME}${ColourReset}")
 		# add_library(${LIB_NAME} SHARED "")
 	# else()

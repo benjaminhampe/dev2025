@@ -1,13 +1,16 @@
 #pragma once
-#include <cstdint>
-#include <sstream>
-#include <tuple>
-#include <optional>
-#include <de/Color.h>
+//#include <cstdint>
+//#include <sstream>
+//#include <tuple>
+//#include <optional>
+//#include <de/Color.h>
+#include <DarkImage.h>
+//#include <de/gpu/Camera.h>
+//#include <de/gpu/State.h>
 
 namespace de {
 namespace gpu {
-	
+
 // ===========================================================================
 struct Fog
 // ===========================================================================
@@ -224,19 +227,42 @@ struct Culling
 };
 
 // ===========================================================================
-struct Depth
+struct Depth // DepthTest
 // ===========================================================================
 {
-    enum EFlags { Disabled = 0, Enabled = 1, ZWriteEnabled = 2, EFlagCount };
-
-    enum EFunc { Less = 0, LessEqual, Equal, Greater, GreaterEqual, NotEqual, AlwaysPass, Never, EFuncCount };
-
-    uint8_t flags;
-
-    Depth( bool testEnable = true, bool zWrite = true, EFunc zFunc = LessEqual )
-        : flags( uint8_t( zFunc ) << 2 )
+    enum eFlag : uint8_t
     {
-        if ( testEnable ) flags |= Enabled;
+        Off = 0,
+        On = 0x10,
+        ZWriteEnabled = 0x20
+    };
+
+    enum eFunc : uint8_t
+    {
+        Less = 0,
+        LessEqual, // 1
+        Equal, // 2
+        Greater, // 3
+        GreaterEqual, // 4
+        NotEqual, // 5
+        AlwaysPass, // 6
+        Never, // 7
+        EFuncCount // 8
+    };
+
+                   //           +---------------------------+
+    uint8_t flags; // bits: msb | 4-bit eFlag | 4-bit eFunc | lsb.
+                   //           +---------------------------+
+
+    Depth()
+        : flags( On | ZWriteEnabled | LessEqual)
+    {
+    }
+
+    Depth( bool on, bool zWrite = true, eFunc zFunc = LessEqual )
+        : flags( uint8_t( zFunc ) )
+    {
+        if ( on ) flags |= On;
         if ( zWrite ) flags |= ZWriteEnabled;
         //DE_DEBUG( "Depth create. state(",toString(),")")
     }
@@ -245,13 +271,13 @@ struct Depth
     toString() const;
 
     static std::string
-    getString( EFunc const func );
+    getString( eFunc const func );
 
-    static Depth::EFunc
+    static eFunc
     toDepthFunction( int32_t value );
 
     static uint32_t
-    fromDepthFunction( Depth::EFunc value  );
+    fromDepthFunction( eFunc value  );
 
     static Depth
     query();
@@ -265,16 +291,26 @@ struct Depth
     static Depth
     alwaysPass() { return Depth( true, false, AlwaysPass ); }
 
-    bool isEnabled() const { return flags & Enabled; }
-
+    bool isEnabled() const { return flags & On; }
     bool isZWriteEnabled() const { return flags & ZWriteEnabled; }
-    EFunc getFunc() const { return EFunc( flags >> 2 ); }
+    eFunc getFunc() const { return eFunc( flags & 0x07 ); }
 
-    Depth& setEnabled( bool enable ) { if ( enable ) { flags |= Enabled; } else { flags &= ~Enabled; } return *this; }
-    Depth& setZWriteEnabled( bool enable ) { if ( enable ) { flags |= ZWriteEnabled; } else { flags &= ~ZWriteEnabled; } return *this; }
-    Depth& setFunc( EFunc func ) {
-        flags &= 0x03; // delete all func bits
-        flags |= uint8_t( func << 2 ); // set all func bits
+    Depth& setEnabled( bool enable )
+    {
+        if ( enable ) { flags |= On; }
+        else { flags &= ~On; }
+        return *this;
+    }
+    Depth& setZWriteEnabled( bool enable )
+    {
+        if ( enable ) { flags |= ZWriteEnabled; }
+        else { flags &= ~ZWriteEnabled; }
+        return *this;
+    }
+    Depth& setFunc( eFunc func )
+    {
+        flags &= ~0x07; // delete all func bits
+        flags |= uint8_t( func ) & 0x07; // set all func bits
         return *this;
     }
 
@@ -586,7 +622,7 @@ struct Clear
 // =======================================================================
 struct State
 // =======================================================================
-{    
+{
     Viewport viewport;
     Scissor scissor;
     Culling culling;
@@ -609,6 +645,161 @@ struct State
 
     static State query();
     static State apply( State const & alt, State const & neu );
+    static void test();
+};
+
+// ===========================================================================
+struct PrimitiveType
+// ===========================================================================
+{
+    enum EType : uint32_t
+    {
+        Points = 0,    // 1 GL_POINTS
+        Lines,         // 2 GL_LINES
+        LineStrip,     // 2 GL_LINE_STRIP
+        LineLoop,      // 2 GL_LINE_LOOP
+        Triangles,     // 3 GL_TRIANGLES
+        TriangleStrip, // 3 GL_TRIANGLE_STRIP
+        TriangleFan,   // 3 GL_TRIANGLE_FAN
+        Quads,         // 4 GL_QUADS -> not really impl on GPU but used for saving meshes.
+        //Polygon,       // 5-N GL_POLYGON = VERTEX_OUTLINE_LIST, FILLED lINE_lOOP
+        Max
+    };
+
+    EType m_type;
+    PrimitiveType();
+    PrimitiveType( EType type );
+    PrimitiveType( const PrimitiveType & other );
+    PrimitiveType& operator=( const PrimitiveType & other );
+    operator uint32_t() const { return m_type; }
+
+    std::string
+    str() const;
+
+    static std::string
+    getString( PrimitiveType const primitiveType );
+
+    static std::string
+    getShortString( PrimitiveType const primitiveType );
+
+    static uint32_t
+    getPrimitiveCount( PrimitiveType const primType,
+                      uint32_t const vCount, uint32_t const iCount );
+
+    static PrimitiveType
+    fromOpenGL( uint32_t const primitiveType );
+
+    static uint32_t
+    toOpenGL( PrimitiveType const primitiveType );
+};
+
+// ===========================================================================
+struct SamplerOptions // 16 Bit
+// ===========================================================================
+{
+    enum class Minify : uint8_t // 3 Bit
+    {   Nearest = 0,
+      Linear,
+      NearestMipmapNearest,
+      NearestMipmapLinear,
+      LinearMipmapNearest,
+      LinearMipmapLinear,
+      MaxCount,
+      Default = Minify::Linear
+    };
+    enum class Magnify : uint8_t // 1 Bit
+    {
+        Nearest = 0,
+        Linear,
+        MaxCount,
+        Default = Magnify::Linear
+    };
+
+    enum class Wrap : uint8_t   // 2 Bit + 2 Bit + 2 Bit
+    {
+        Repeat = 0,
+        RepeatMirrored,
+        ClampToEdge,
+        ClampToBorder,
+        MaxCount,
+        Default = Wrap::Repeat };
+
+    Minify min; // : 3; // : 3-bit;
+    Magnify mag; // : 1;// : 1-bit;
+    Wrap wrapS; // : 2; // : 2-bit;
+    Wrap wrapT; // : 2; // : 2-bit;
+    Wrap wrapR; // : 2; // : 2-bit;
+    uint8_t af; // : 6; // : 6-bit anisotropicFilter [0 = disabled, 1 = auto max, 2 = 2x, ..., 32 = 32x, 63 = 64x]
+    // sum = 16 Bit = 2 Byte;
+
+    SamplerOptions();
+    // >= 1 means, enabled, will auto increase level to max supported 16x.
+    SamplerOptions( float anisotropicFilterLevel,
+                   Minify minify = Minify::Default,
+                   Magnify magnify = Magnify::Default,
+                   Wrap wrapmodeS = Wrap::Default,
+                   Wrap wrapmodeT = Wrap::Default,
+                   Wrap wrapmodeR = Wrap::Default );
+
+    std::string str() const;
+
+    static SamplerOptions nearestRepeat();
+    static SamplerOptions linearRepeat();
+    static SamplerOptions linearMipmapRepeat();
+    static SamplerOptions nearestClampToEdge();
+    static SamplerOptions linearClampToEdge();
+    static SamplerOptions linearMipmapClampToEdge();
+    static SamplerOptions preset_lowp();
+    static SamplerOptions preset_mediump();
+    static SamplerOptions preset_highp();
+    static std::string toStr( Minify const texMin );
+    static std::string toStr( Magnify const texMag );
+    static std::string toStr( Wrap const texWrap );
+    static SamplerOptions parseString( std::string csv );
+    void setMin( Minify minify );
+    void setMag( Magnify magnify );
+    void setWrapS( Wrap wrap );
+    void setWrapT( Wrap wrap );
+    void setWrapR( Wrap wrap );
+    void setAF( float anisotropicLevel );
+    bool hasMipmaps() const;
+};
+
+typedef SamplerOptions SO;
+
+
+void applySamplerOptions(const SamplerOptions &so);
+
+// ===========================================================================
+struct SurfaceFormat
+// ===========================================================================
+{
+    constexpr static uint8_t s_FloatMask = 0x80;
+    uint8_t redBits = 0;
+    uint8_t greenBits = 0;
+    uint8_t blueBits = 0;
+    uint8_t alphaBits = 0;
+    uint8_t depthBits = 0;
+    uint8_t stencilBits = 0;
+
+    SurfaceFormat( uint8_t r = 0,
+                  uint8_t g = 0,
+                  uint8_t b = 0,
+                  uint8_t a = 0,
+                  uint8_t d = 0,
+                  uint8_t s = 0 );
+
+    std::string str() const;
+
+    static std::vector< std::string >
+    splitStringInWords( std::string const & txt );
+
+    static SurfaceFormat
+    parseString( std::string s );
+
+    static PixelFormat
+    toPixelFormat( SurfaceFormat const & fmt );
+
     static void test();
 };
 

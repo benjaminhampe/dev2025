@@ -5,11 +5,37 @@
 
 namespace de {
 
+// FILE:
+// n 16
+// <uint32_t color> <float t>
+
+// create Image with 32 bit colors
+//Image
+//createImage( int n, bool bVertical ) const;
+
 // ============================================================================
 /// @class LinearColorGradient
 // ============================================================================
 struct LinearColorGradient
 {
+    struct ColorStop
+    {
+        ColorStop()
+            : m_t(0.0)
+            , m_color( 0xFFFFFFFF )
+        {}
+        ColorStop( float t, uint32_t color = 0xFFFFFFFF )
+            : m_t( t )
+            , m_color( color )
+        {}
+        float m_t; // stop in range [0,1]
+        uint32_t m_color;
+    };
+
+    float m_sum;
+    float m_inv_max;
+    std::vector< ColorStop > m_stops;
+
     static glm::vec4
     toRGBAf( uint32_t const color )
     {
@@ -30,53 +56,46 @@ struct LinearColorGradient
         return dbRGBA(r,g,b,a);
     }
 
-   static glm::vec4
-   lerpColor128( uint32_t A, uint32_t B, float t );
+    static glm::vec4
+    lerpColor128( uint32_t A, uint32_t B, float t );
 
-   // Empty
-   LinearColorGradient();
+    // Empty
+    LinearColorGradient();
 
-   LinearColorGradient( uint32_t color );
+    LinearColorGradient( uint32_t color );
 
-   // Two colors ( start + end )
-   LinearColorGradient( uint32_t startColor, uint32_t endColor );
+    // Two colors ( start + end )
+    LinearColorGradient( uint32_t startColor, uint32_t endColor );
 
-   // create LookUpTable with 32 bit colors
-   std::vector< uint32_t >
-   createLookUpTable32( int n ) const;
+    // create LookUpTable with 32 bit colors
+    std::vector< uint32_t >
+    createLookUpTable32( int n ) const;
 
-   // create LookUpTable with 128 bit colors
-   std::vector< glm::vec4 >
-   createLookUpTable128( int n ) const;
+    // create LookUpTable with 128 bit colors
+    std::vector< glm::vec4 >
+    createLookUpTable128( int n ) const;
 
-   void
-   clearStops();
+    void
+    clearStops();
 
+    // create Image with 32 bit colors
+    bool
+    hasTransparentColor() const;
 
-   // create Image with 32 bit colors
-//   Image
-//   createImage( int n, bool bVertical ) const;
+    glm::vec4
+    getColor128( float t ) const;
 
-   // create Image with 32 bit colors
+    uint32_t
+    getColor32( float t ) const;
 
+    LinearColorGradient&
+    addStop( float t, uint32_t color = 0xFFFFFFFF );
 
-   bool
-   hasTransparentColor() const;
+    //   LinearColorGradient&
+    //   setColor( int index, uint32_t color, float t );
 
-   glm::vec4
-   getColor128( float t ) const;
-
-   uint32_t
-   getColor32( float t ) const;
-
-   LinearColorGradient&
-   addStop( float t, uint32_t color = 0xFFFFFFFF );
-
-//   LinearColorGradient&
-//   setColor( int index, uint32_t color, float t );
-
-   std::string
-   toString() const;
+    std::string
+    toString() const;
 
 
 #if 0
@@ -91,22 +110,22 @@ struct LinearColorGradient
 
    // static void
    // test();
-public:
 
-   struct ColorStop
-   {
-      ColorStop( float stop_param, uint32_t stop_color = 0xFFFFFFFF )
-         : stop( stop_param )
-         , color( stop_color )
-      {}
 
-      float stop;
-      uint32_t color;
-   };
-
-   float m_sum;
-   float m_inv_max;
-   std::vector< ColorStop > m_Stops;
 };
 
 } // end namespace de.
+
+
+/* XML color gradient
+
+<LinearColorGradient n="3">
+    <Stop t="0.0" r="255" g="0"   b="0"   a="255"/>
+    <Stop t="0.5" r="0"   g="255" b="0"   a="255"/>
+    <Stop t="1.0" r="0"   g="0"   b="255" a="255"/>
+</LinearColorGradient>
+*/
+
+bool dbLoadLinearColorGradient(de::LinearColorGradient& cg, const std::string& uri);
+
+bool dbSaveLinearColorGradient(const de::LinearColorGradient& cg, const std::string& uri);

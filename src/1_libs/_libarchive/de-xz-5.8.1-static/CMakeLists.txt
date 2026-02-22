@@ -24,7 +24,7 @@ else()
 		${LIB_HEADER_DIR}/lzma/vli.h
 	)
     
-	# if (BUILD_SHARED)
+	# if (BUILD_SHARED_LIBS)
         # message("${BoldBlue}[benni] DLL: ${LIB_NAME}${ColourReset}")
         # add_library(${LIB_NAME} SHARED IMPORTED GLOBAL) # GLOBAL
     # else()

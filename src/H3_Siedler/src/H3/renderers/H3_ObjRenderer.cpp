@@ -16,10 +16,10 @@ H3_ObjMeshBuffer::H3_ObjMeshBuffer()
 }
 
 // static
-de::gpu::SMeshBuffer
+de::smesh::SMeshBuffer
 H3_ObjMeshBuffer::toSMesh( const H3_ObjMeshBuffer& tmesh )
 {
-    de::gpu::SMeshBuffer smesh;
+    de::smesh::SMeshBuffer smesh;
 
     //smesh.name = tmesh.name;
     smesh.primitiveType = tmesh.m_primitiveType;
@@ -44,7 +44,7 @@ H3_ObjMeshBuffer::toSMesh( const H3_ObjMeshBuffer& tmesh )
 
 // static
 H3_ObjMeshBuffer
-H3_ObjMeshBuffer::toTMesh( const de::gpu::SMeshBuffer& smesh )
+H3_ObjMeshBuffer::toTMesh( const de::smesh::SMeshBuffer& smesh )
 {
     H3_ObjMeshBuffer tmesh;
 

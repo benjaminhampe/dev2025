@@ -35,7 +35,7 @@
    // return -1;
 // }
 
-#include <GL/gl.h>
+//#include <GL/gl.h>
 //#include <GL/glu.h>
 //#include <GL/glcorearb.h>
 //#include <GL/glext.h>

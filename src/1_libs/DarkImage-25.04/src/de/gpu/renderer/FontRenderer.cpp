@@ -129,7 +129,7 @@ FontRenderer::draw2DText(int x, int y, std::wstring const & msg,
     int px = aligned_pos.x;
     int py = aligned_pos.y;
 
-    SMeshBuffer quads( PrimitiveType::Triangles );
+    smesh::SMeshBuffer quads( PrimitiveType::Triangles );
 
     // Loop over glyphs we got from cacheString() and
     // render them now...
@@ -184,10 +184,10 @@ FontRenderer::draw2DText(int x, int y, std::wstring const & msg,
             float u2 = u1 + ( float( r.w ) / float( tex_w ) );
             float v2 = v1 + ( float( r.h ) / float( tex_h ) );
 
-            S3DVertex A( x1, y2, 0, 0,0,1, color, u1, v2 ); // color is set as uniform now
-            S3DVertex B( x1, y1, 0, 0,0,1, color, u1, v1 ); // not as vertex attrib anymore
-            S3DVertex C( x2, y1, 0, 0,0,1, color, u2, v1 );
-            S3DVertex D( x2, y2, 0, 0,0,1, color, u2, v2 );
+            smesh::S3DVertex A( x1, y2, 0, 0,0,1, color, u1, v2 ); // color is set as uniform now
+            smesh::S3DVertex B( x1, y1, 0, 0,0,1, color, u1, v1 ); // not as vertex attrib anymore
+            smesh::S3DVertex C( x2, y1, 0, 0,0,1, color, u2, v1 );
+            smesh::S3DVertex D( x2, y2, 0, 0,0,1, color, u2, v2 );
 
             quads.addVertex( A );
             quads.addVertex( C );
@@ -283,11 +283,11 @@ FontRenderer::draw2DDebug(Font const & font)
         }
     }
 
-    SMeshBuffer quad( PrimitiveType::Triangles );
-    S3DVertex A( 0, 0, 0, 0,0,1, 0xFFFFFFFF, 0, 0 );
-    S3DVertex B( w, 0, 0, 0,0,1, 0xFFFFFFFF, 1, 0 );
-    S3DVertex C( w, h, 0, 0,0,1, 0xFFFFFFFF, 1, 1 );
-    S3DVertex D( 0, h, 0, 0,0,1, 0xFFFFFFFF, 0, 1 );
+    smesh::SMeshBuffer quad( PrimitiveType::Triangles );
+    smesh::S3DVertex A( 0, 0, 0, 0,0,1, 0xFFFFFFFF, 0, 0 );
+    smesh::S3DVertex B( w, 0, 0, 0,0,1, 0xFFFFFFFF, 1, 0 );
+    smesh::S3DVertex C( w, h, 0, 0,0,1, 0xFFFFFFFF, 1, 1 );
+    smesh::S3DVertex D( 0, h, 0, 0,0,1, 0xFFFFFFFF, 0, 1 );
 
     quad.addVertex( A );
     quad.addVertex( B );
@@ -356,7 +356,7 @@ FontRenderer::draw2DTextDebug( int x, int y, std::wstring const & msg, uint32_t 
    float py = aligned_pos.y + ts.baseline;
    float pz = -1.0f; // At -1.0 it disappears, not inside frustum.
 
-   SMeshBuffer lines( PrimitiveType::Lines );
+   smesh::SMeshBuffer lines( PrimitiveType::Lines );
 
    // Loop over glyphs we got from cacheString() and
    // render them now...
@@ -400,10 +400,10 @@ FontRenderer::draw2DTextDebug( int x, int y, std::wstring const & msg, uint32_t 
          float v1 = texCoords.v1();
          float u2 = texCoords.u2();
          float v2 = texCoords.v2();
-         S3DVertex A( x1, y2, z1, 0,0,0, 0x4F0000FF, u1, v2 );
-         S3DVertex B( x1, y1, z1, 0,0,0, 0x4F00FF00, u1, v1 );
-         S3DVertex C( x2, y1, z1, 0,0,0, 0x4FFF0000, u2, v1 );
-         S3DVertex D( x2, y2, z1, 0,0,0, 0x4F00FFFF, u2, v2 );
+         smesh::S3DVertex A( x1, y2, z1, 0,0,0, 0x4F0000FF, u1, v2 );
+         smesh::S3DVertex B( x1, y1, z1, 0,0,0, 0x4F00FF00, u1, v1 );
+         smesh::S3DVertex C( x2, y1, z1, 0,0,0, 0x4FFF0000, u2, v1 );
+         smesh::S3DVertex D( x2, y2, z1, 0,0,0, 0x4F00FFFF, u2, v2 );
 
 //         S3DVertex A( x1, y2, z1, 0,0,0, 0x4F0000FF, 0, 1 );
 //         S3DVertex B( x1, y1, z1, 0,0,0, 0x4F00FF00, 0, 0 );

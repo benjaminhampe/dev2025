@@ -1,5 +1,5 @@
 #pragma once
-#include <de/gpu/smesh/SMesh.h>
+#include <de/smesh/SMesh.h>
 
 namespace de {
 namespace gpu {
@@ -28,7 +28,7 @@ struct Billboard
    float zoffset; // for multiple billboards at same pos, order of overlap zoffset.
    uint32_t color;
    TexRef tex;
-   SMeshBuffer mesh;
+   smesh::SMeshBuffer mesh;
 };
 
 // ===========================================================================
@@ -37,9 +37,9 @@ struct BillboardRenderer
 {
     VideoDriver* m_driver;
     Shader* m_shader;
-    SMeshBuffer meshRect;
-    SMeshBuffer meshRoundRect;
-    SMeshBuffer meshCircle;
+    smesh::SMeshBuffer meshRect;
+    smesh::SMeshBuffer meshRoundRect;
+    smesh::SMeshBuffer meshCircle;
     std::vector< Billboard > m_billboards;
 
     BillboardRenderer();
@@ -47,7 +47,7 @@ struct BillboardRenderer
     void init( VideoDriver* driver );
     void clear();
     void render();
-    void draw3DBillboard( SMeshBuffer & vao, const glm::mat4& modelMat = glm::mat4(1.0f) );
+    void draw3DBillboard( smesh::SMeshBuffer & vao, const glm::mat4& modelMat = glm::mat4(1.0f) );
     void add( int typ, glm::vec2 size, glm::vec3 pos, glm::vec2 radius, uint32_t color = 0xFFFFFFFF, TexRef ref = TexRef() );
 
     void addRect( glm::vec2 size, glm::vec3 pos, uint32_t color = 0xFFFFFFFF, TexRef ref = TexRef() )
@@ -64,7 +64,7 @@ struct BillboardRenderer
     }
 
 private:
-   std::string createShaderName( SMaterial const & mtl ) const;
+   std::string createShaderName( smesh::SMaterial const & mtl ) const;
 };
 
 } // end namespace gpu.

@@ -4,7 +4,7 @@
 
 #include "Image_PNG.h"
 #include "Image_BMP.h"
-#include <png/png.h>
+#include <png.h>
 
 #ifdef _WIN32
 #ifndef WIN32_LEAN_AND_MEAN

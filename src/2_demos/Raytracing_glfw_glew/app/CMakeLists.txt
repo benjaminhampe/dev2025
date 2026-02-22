@@ -10,7 +10,7 @@ else()
     file(GLOB_RECURSE APP_HEADER_H ${APP_HEADER_DIR}/*.h)
     file(GLOB_RECURSE APP_HEADER_HPP ${APP_HEADER_DIR}/*.hpp)
     set(APP_HEADERS ${APP_HEADER_H} ${APP_HEADER_HPP})
-	
+
     set(APP_SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/src)
     set(APP_SOURCES ${APP_SOURCE_DIR}/application.cpp)
 
@@ -26,16 +26,16 @@ else()
 
     target_include_directories(${APP_NAME} PRIVATE ${APP_SOURCE_DIR})
     target_include_directories(${APP_NAME} PRIVATE ${APP_HEADER_DIR})
-	
+
     if (MSVC)
     else()
         target_link_options(${APP_NAME} PRIVATE -mwindows)
     endif()
-	
+
     include(${CMAKE_SOURCE_DIR}/src/embed_static_runtime.cmake)
     target_link_libraries(${APP_NAME} PRIVATE de_glm)
     target_link_libraries(${APP_NAME} PRIVATE de_glew)
-    target_link_libraries(${APP_NAME} PRIVATE de_glfw_glew)
+    target_link_libraries(${APP_NAME} PRIVATE de_glfw)
     target_link_libraries(${APP_NAME} PRIVATE de_stb_image)
     target_link_libraries(${APP_NAME} PRIVATE de_stb_truetype)
     target_link_libraries(${APP_NAME} PRIVATE de_imgui)

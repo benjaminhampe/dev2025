@@ -39,6 +39,7 @@
 #include <wx/filename.h>
 #include <wx/event.h>
 #include <wx/config.h>
+#include <wx/graphics.h>
 
 #include "HexEditorCtrlGui.h"
 #define SELECT_EVENT 50005

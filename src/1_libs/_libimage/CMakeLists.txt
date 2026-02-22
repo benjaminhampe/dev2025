@@ -1,13 +1,27 @@
 # Math
 add_subdirectory(de-glm-4.20.8)
-# Xml
-add_subdirectory(de-tinyxml-2.6.2)
-add_subdirectory(de-tinyxml2-8.0.0)
-#add_subdirectory(de-expat-3.2.2)
 # Images
-add_subdirectory(de-png-1.6.23)
-add_subdirectory(de-jpeg-8d)
-add_subdirectory(de-webp-1.1.0)
+
+# add_subdirectory(de_png_1.6.23)
+add_subdirectory(de_png_1.6.53) # opencv
+add_subdirectory(de_spng) 		# opencv
+
+# add_subdirectory(de_jpeg_8d)
+# add_subdirectory(de_jpeg_9e)
+add_subdirectory(de_jpeg_9f)	# opencv
+
+add_subdirectory(de_jasper_1.900.1) # opencv JPEG-2000
+add_subdirectory(de_openjpeg_2.5.3) # opencv JPEG-2000
+
+# add_subdirectory(de_webp_2.9)
+add_subdirectory(de_webp_2.10) 	# opencv
+
+# add_subdirectory(de_tiff_4.0.4)
+add_subdirectory(de_tiff_4.7.1)	# opencv
+
+# add_subdirectory(de_openexr_2.3.0)# opencv
+add_subdirectory(de_openexr_3.3.2)
+
 add_subdirectory(de-dds-image)
 # Fonts
 add_subdirectory(de-freetype-2.10.0)
@@ -15,20 +29,15 @@ add_subdirectory(de-fontawesome)
 
 ### Supported but deactivated for faster compile:
 add_subdirectory(de-giflib-5.2.1)
-add_subdirectory(de-tiff-4.0.4)
-add_subdirectory(de-jpeg-9e)
+
+
 add_subdirectory(de-stb_image-2.10)
 add_subdirectory(de-stb_image_write-1.01)
 add_subdirectory(de-stb_truetype-1.24)
 add_subdirectory(de-fontstash)
 
-add_subdirectory(de-nlohmann-json-3.12.0)
-add_subdirectory(de_nlohmann_json_schema_validator)
 add_subdirectory(de-nanosvg)
 
-add_subdirectory(de-rapidjson)
-
-add_subdirectory(de-openexr-3.3.2)
 add_subdirectory(de-zimg)
 
 

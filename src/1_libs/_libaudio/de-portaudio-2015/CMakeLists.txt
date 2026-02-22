@@ -123,7 +123,7 @@ else()
 		${LIB_SOURCE_DIR}/os/win/pa_x86_plain_converters.h
 	)
 
-    if (BUILD_SHARED)
+    if (BUILD_SHARED_LIBS)
         message("${BoldBlue}[benni] DLL: ${LIB_NAME}${ColourReset}")
         add_library(${LIB_NAME} SHARED "")
     else()

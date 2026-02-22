@@ -8,7 +8,7 @@ struct H3_Game;
 struct H3_ChipMeshBuffer
 // ===========================================================================
 {
-    de::gpu::SMeshBuffer* m_smesh;
+    de::smesh::SMeshBuffer* m_smesh;
 
     uint32_t m_vao;
     uint32_t m_vbo_vertices;
@@ -68,7 +68,7 @@ struct H3_ChipRenderer
 
     H3_ChipRenderer();
     ~H3_ChipRenderer();
-    
+
     void init( H3_Game & game );
     void initTexture( H3_Game & game );
     void initShader();

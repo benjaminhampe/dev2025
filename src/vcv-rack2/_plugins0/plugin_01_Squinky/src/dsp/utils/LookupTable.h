@@ -58,6 +58,7 @@ private:
     static int cvtt(T *);
 
 #ifdef _DEBUG
+/*
     static void checkInput(const LookupTableParams<T>& params, const T *in, int sampleFrames)
     {
         for (int i = 0; i < sampleFrames; ++i) {
@@ -65,6 +66,7 @@ private:
             assert(input >= params.xMin && input <= params.xMax);
         }
     }
+*/
 #else
 #define checkInput __noop
 #endif
@@ -85,7 +87,7 @@ inline T LookupTable<T>::lookup(const LookupTableParams<T>& params, T input, boo
     assert(allowOutsideDomain || (input >= params.xMin && input <= params.xMax));
                                                             // won't happen in the field,
                                                             // as assertions are disabled for release.
-                                                          
+
     input = std::min(input, params.xMax);
     input = std::max(input, params.xMin);
     assert(params.isValid());
@@ -165,7 +167,7 @@ inline void LookupTable<T>::initDiscrete(LookupTableParams<T>& params, int numEn
         int x1 = i + 1;
 
         // Ugh - this will need to get resolved when we "officially" make
-        // all table support x values outside their range. But for now we 
+        // all table support x values outside their range. But for now we
         // have a problem: if x == Xmax (numEntries), we need an extra "bin"
         // at the end to look up that value, so here we make a flat bit of xMax.
         if (i == (numEntries - 1)) {

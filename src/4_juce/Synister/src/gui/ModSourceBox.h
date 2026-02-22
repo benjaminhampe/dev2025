@@ -1,7 +1,7 @@
 /*
   ==============================================================================
 
-    modSourceBox.h
+    ModSourceBox.h
     Created: 21 Feb 2016 3:34:37pm
     Author:  Nutty
 
@@ -16,8 +16,7 @@
 /**
 * Combobox that can display a different text what is in the item list.
 */
-class ModSourceBox : public ComboBox,
-                  public ComponentListener
+class ModSourceBox : public ComboBox, public ComponentListener
 {
 public:
     //==============================================================================

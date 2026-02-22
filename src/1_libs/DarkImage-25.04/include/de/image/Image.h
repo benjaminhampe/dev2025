@@ -13,6 +13,8 @@
 
 namespace de {
 
+// Benni's image lib for BMP,DDS,EXR,GIF,ICO,JPG,PNG,RGB,TGA,TIF,WAL,WEBP,XPM,SVG
+
 // ===================================================================
 class PixelFormat /// @brief A color format for images and textures mostly.
 // ===================================================================

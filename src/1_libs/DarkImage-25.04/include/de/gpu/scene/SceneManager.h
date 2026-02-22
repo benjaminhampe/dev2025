@@ -1,7 +1,7 @@
 #pragma once
 #include <de/os/Events.h>
 #include <de/gpu/GPU.h>
-#include <de/gpu/smesh/SMesh.h>
+#include <de/smesh/SMesh.h>
 
 namespace de {
 namespace gpu {
@@ -13,9 +13,9 @@ struct SceneManager;
 struct ISceneNode
 // =====================================================================
 {
-	typedef float T;
-	
-	typedef glm::vec3 V3;
+    typedef float T;
+
+    typedef glm::vec3 V3;
     typedef glm::mat4 M4;
 
     // =====================================================================
@@ -96,12 +96,12 @@ struct SMeshSceneNode : public ISceneNode
     ~SMeshSceneNode() override;
     void draw() override;
 
-    void setMesh( SMesh mesh ) { m_mesh = mesh; }
-    const SMesh& getMesh() const { return m_mesh; }
-    SMesh& getMesh() { return m_mesh; }
+    void setMesh( smesh::SMesh mesh ) { m_mesh = mesh; }
+    const smesh::SMesh& getMesh() const { return m_mesh; }
+    smesh::SMesh& getMesh() { return m_mesh; }
 
 public:
-    SMesh m_mesh;
+    smesh::SMesh m_mesh;
 };
 
 // =====================================================================

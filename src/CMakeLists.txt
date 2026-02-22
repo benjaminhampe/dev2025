@@ -1,20 +1,26 @@
 add_subdirectory(0_tools)
 add_subdirectory(1_libs)
-# add_subdirectory(2_demos) # Big
+add_subdirectory(minimal_vst2x_host)
+
+if (BENNI_USE_QT)
+	add_subdirectory(AbletonChain-qt6)
+	add_subdirectory(VHS_qt6)
+endif()
+
+add_subdirectory(VST_benni)
+add_subdirectory(H3_Siedler)
+
+# add_subdirectory(2_demos)
+
 if (BENNI_USE_JUCE)
     add_subdirectory(4_juce)
 endif()
 
-# add_subdirectory(raylib)
-# add_subdirectory(ActiveWallpaper)
-# add_subdirectory(H3_Siedler)
-# add_subdirectory(SonnenSystem_glfw_glew)
-# add_subdirectory(F3_FreeLancer)
-# add_subdirectory(RoundRect_glfw_glad)
+add_subdirectory(raylib)
 
-add_subdirectory(VST_benni)
-
-add_subdirectory(vcv-rack2)
+if (BENNI_USE_VCV)
+	add_subdirectory(vcv-rack2)
+endif()
 
 
 # add_subdirectory(minimal_vst2x_host)

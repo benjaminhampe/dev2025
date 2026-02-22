@@ -22,7 +22,7 @@ H3_findTilesFromCornerPos( const H3_Game& game, const glm::vec3& cornerPos )
     {
         for ( int k = 0; k < 6; ++k )
         {
-            const auto e2 = de::gpu::SMeshHexagon::getCorner( k, dx, dz );
+            const auto e2 = de::smesh::SMeshHexagon::getCorner( k, dx, dz );
             const auto e3 = tile.pos + glm::vec3( e2.x, 0.0f, e2.y );
             if ( dbEquals( e3, cornerPos ) )
             {
@@ -289,7 +289,7 @@ void H3_Topology_createCorners( H3_Game& game )
 
         for (u32 c = 0; c < 6; ++c)
         {
-            auto cornerPos2 = de::gpu::SMeshHexagon::getCorner( c, g_tileSize.x, g_tileSize.z );
+            auto cornerPos2 = de::smesh::SMeshHexagon::getCorner( c, g_tileSize.x, g_tileSize.z );
             auto cornerPos3 = tile.pos + glm::vec3( cornerPos2.x, 0.0f, cornerPos2.y ); //game.m_cornerSize.y * 0.5f
 
             // Be unique in regard to float position XYZ.
@@ -345,14 +345,14 @@ void H3_Topology_createEdges( H3_Game& game )
 
         for (u32 e = 0; e < 6; ++e)
         {
-            auto edgePos2 = de::gpu::SMeshHexagon::getEdge( e, g_tileSize.x, g_tileSize.z );
+            auto edgePos2 = de::smesh::SMeshHexagon::getEdge( e, g_tileSize.x, g_tileSize.z );
             auto edgePos3 = tile.pos + glm::vec3( edgePos2.x, 0.f, edgePos2.y ); // game.m_edgeSize.y * 0.5f
 
             // Be unique in regard to float position XYZ.
             auto edgePtr = H3_getEdge( game, edgePos3 );
             if (edgePtr) { continue; }
 
-            float angle = de::gpu::SMeshHexagon::computeEdgeAngle( e, g_tileSize.x, g_tileSize.z );
+            float angle = de::smesh::SMeshHexagon::computeEdgeAngle( e, g_tileSize.x, g_tileSize.z );
 
             //DE_WARN("tile[",tile.id,"].angle = ",angle)
 
@@ -403,7 +403,7 @@ void H3_Topology_connectTiles( H3_Game& game )
     {
         for (u32 c = 0; c < 6; ++c)
         {
-            auto c2 = de::gpu::SMeshHexagon::getCorner( c, g_tileSize.x, g_tileSize.z );
+            auto c2 = de::smesh::SMeshHexagon::getCorner( c, g_tileSize.x, g_tileSize.z );
             auto c3 = tile.pos + glm::vec3( c2.x, 0.0f, c2.y );
             auto next = H3_findTilesFromCornerPos( game, c3 );
             for (const u32 n : next)
@@ -431,7 +431,7 @@ void H3_Topology_connectCorners( H3_Game& game )
     {
         for (u32 c = 0; c < 6; ++c)
         {
-            auto c2 = de::gpu::SMeshHexagon::getCorner( c, g_tileSize.x, g_tileSize.z );
+            auto c2 = de::smesh::SMeshHexagon::getCorner( c, g_tileSize.x, g_tileSize.z );
             auto c3 = tile.pos + glm::vec3( c2.x, 0.0f, c2.y );
 
             // Be unique in regard to float position XYZ.
@@ -471,7 +471,7 @@ void H3_Topology_connectEdges( H3_Game& game )
     {
         for (u32 c = 0; c < 6; ++c)
         {
-            auto e2 = de::gpu::SMeshHexagon::getEdge( c, g_tileSize.x, g_tileSize.z );
+            auto e2 = de::smesh::SMeshHexagon::getEdge( c, g_tileSize.x, g_tileSize.z );
             auto e3 = tile.pos + glm::vec3( e2.x, 0.0f, e2.y );
 
             // Be unique in regard to float position XYZ.
@@ -517,7 +517,7 @@ void H3_Topology_connectCornersWithEdges( H3_Game& game )
             int e1 = (i60) % 6;
             int e2 = (i60 + 5) % 6;
 
-            auto e12 = de::gpu::SMeshHexagon::getEdge( e1, g_tileSize.x, g_tileSize.z );
+            auto e12 = de::smesh::SMeshHexagon::getEdge( e1, g_tileSize.x, g_tileSize.z );
             auto e13 = tile.pos + glm::vec3( e12.x, 0.0f, e12.y );
             auto e1Ptr = H3_getEdge( game, e13 );
             if ( e1Ptr )
@@ -528,7 +528,7 @@ void H3_Topology_connectCornersWithEdges( H3_Game& game )
                 numConnections++;
             }
 
-            auto e22 = de::gpu::SMeshHexagon::getEdge( e2, g_tileSize.x, g_tileSize.z );
+            auto e22 = de::smesh::SMeshHexagon::getEdge( e2, g_tileSize.x, g_tileSize.z );
             auto e23 = tile.pos + glm::vec3( e22.x, 0.0f, e22.y );
             auto e2Ptr = H3_getEdge( game, e23 );
             if ( e2Ptr )

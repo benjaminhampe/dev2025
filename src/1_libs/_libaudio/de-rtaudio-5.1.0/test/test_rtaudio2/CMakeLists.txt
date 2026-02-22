@@ -4,7 +4,7 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug")
   set(APP_NAME "${APP_NAME}_d") # hint exe filename as debug build.
 endif()
 
-if( BUILD_SHARED EQUAL 0 )
+if( BUILD_SHARED_LIBS EQUAL 0 )
   set(APP_NAME "${APP_NAME}_s") # hint exe filename as static build.
 endif()
 

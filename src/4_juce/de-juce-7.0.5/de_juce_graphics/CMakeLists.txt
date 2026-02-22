@@ -126,8 +126,8 @@ else()
    target_link_libraries(${LIB_NAME} PUBLIC de_juce_events)
 
    target_link_libraries(${LIB_NAME} PRIVATE de_png)
-   target_link_libraries(${LIB_NAME} PRIVATE de_jpeg8d)
-   #target_link_libraries(${LIB_NAME} PRIVATE de_tiff4)
+   target_link_libraries(${LIB_NAME} PRIVATE de_jpeg)
+   #target_link_libraries(${LIB_NAME} PRIVATE de_tiff)
    target_link_libraries(${LIB_NAME} PRIVATE de_gif5)
    target_link_libraries(${LIB_NAME} PRIVATE de_freetype2)
 

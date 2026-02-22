@@ -1,6 +1,76 @@
 // Copyright (C) 2002-2014 Benjamin Hampe
 #include <de/ColorGradient.h>
 #include <de/Math.h>
+#include <tinyxml2/tinyxml2.h>
+
+/*
+<LinearColorGradient n="3">
+    <Stop t="0.0" r="255" g="0"   b="0"   a="255"/>
+    <Stop t="0.5" r="0"   g="255" b="0"   a="255"/>
+    <Stop t="1.0" r="0"   g="0"   b="255" a="255"/>
+</LinearColorGradient>
+*/
+
+
+bool dbLoadColorGradient(de::LinearColorGradient& cg, const std::string& uri)
+{
+    tinyxml2::XMLDocument doc;
+    if (doc.LoadFile(uri.c_str()) != tinyxml2::XML_SUCCESS)
+    {
+        DE_ERROR("Cannot open ",uri)
+        return false;
+    }
+
+    auto* root = doc.FirstChildElement("LinearColorGradient");
+    if (!root)
+    {
+        return false;
+    }
+
+    cg.m_stops.clear();
+
+    for (auto* xmlStop = root->FirstChildElement("Stop");
+         xmlStop;
+         xmlStop = xmlStop->NextSiblingElement("Stop"))
+    {
+        float t; int i, r, g, b, a;
+        xmlStop->QueryIntAttribute("i", &i);
+        xmlStop->QueryFloatAttribute("t", &t);
+        xmlStop->QueryIntAttribute("r", &r);
+        xmlStop->QueryIntAttribute("g", &g);
+        xmlStop->QueryIntAttribute("b", &b);
+        xmlStop->QueryIntAttribute("a", &a);
+
+        cg.m_stops.emplace_back(t, dbRGBA(r,g,b,a));
+    }
+
+    return true;
+}
+
+bool dbSaveLinearColorGradient(const de::LinearColorGradient& cg, const std::string& uri)
+{
+    tinyxml2::XMLDocument doc;
+
+    auto xmlTag = doc.NewElement("LinearColorGradient");
+    xmlTag->SetAttribute("n",int(cg.m_stops.size()));
+    doc.InsertFirstChild(xmlTag);
+
+    size_t i = 0;
+    for (const de::LinearColorGradient::ColorStop& s : cg.m_stops)
+    {
+        auto xmlStop = doc.NewElement("Stop");
+        xmlStop->SetAttribute("i", int(i));
+        xmlStop->SetAttribute("t", s.m_t);
+        xmlStop->SetAttribute("r", int(dbRGBA_R(s.m_color)));
+        xmlStop->SetAttribute("g", int(dbRGBA_G(s.m_color)));
+        xmlStop->SetAttribute("b", int(dbRGBA_B(s.m_color)));
+        xmlStop->SetAttribute("a", int(dbRGBA_A(s.m_color)));
+        xmlTag->InsertEndChild(xmlStop);
+        i++;
+    }
+
+    return doc.SaveFile(uri.c_str()) == tinyxml2::XML_SUCCESS;
+}
 
 namespace de {
 
@@ -97,7 +167,6 @@ LinearColorGradient::createLookUpTable128( int n ) const
 LinearColorGradient::LinearColorGradient()
    : m_sum( 0.0f )
    , m_inv_max( 0.0f )
-   , m_Stops()
 {
    // addStop( 0.0f, color );
 }
@@ -118,7 +187,7 @@ LinearColorGradient::clearStops()
 {
    m_sum = 0.0f;
    m_inv_max = 0.0f;
-   m_Stops.clear();
+   m_stops.clear();
 }
 
 
@@ -131,7 +200,7 @@ LinearColorGradient::addStop( float t, uint32_t color )
    {
       m_inv_max = 1.0f / float( m_sum );
    }
-   m_Stops.emplace_back( t, color );
+   m_stops.emplace_back( t, color );
    // updateTable();
 
 /*
@@ -176,9 +245,9 @@ LinearColorGradient::addStop( float t, uint32_t color )
 bool
 LinearColorGradient::hasTransparentColor() const
 {
-   for ( ColorStop const & colorStop : m_Stops )
+   for ( ColorStop const & cs : m_stops )
    {
-      if ( dbRGBA_A( colorStop.color ) < 255 ) return true;
+      if ( dbRGBA_A( cs.m_color ) < 255 ) return true;
    }
    return false;
 }
@@ -188,30 +257,30 @@ LinearColorGradient::getColor128( float t ) const
 {
    // DE_DEBUG("t = ", t )
 
-   if ( m_Stops.size() < 1 )
+   if ( m_stops.size() < 1 )
    {
       return glm::vec4();
    }
-   if ( m_Stops.size() < 2 )
+   if ( m_stops.size() < 2 )
    {
-       return toRGBAf( m_Stops.back().color );
+       return toRGBAf( m_stops.back().m_color );
    }
-   else if ( m_Stops.size() < 3 )
+   else if ( m_stops.size() < 3 )
    {
-      return lerpColor128( m_Stops[ 0 ].color, m_Stops[ 1 ].color, t*m_inv_max );
+      return lerpColor128( m_stops[ 0 ].m_color, m_stops[ 1 ].m_color, t*m_inv_max );
    }
    else
    {
       // find maximum and minimum neighbors
       int32_t found = -1; // found_greater_t
 
-      for ( size_t i = 0; i < m_Stops.size(); ++i )
+      for ( size_t i = 0; i < m_stops.size(); ++i )
       {
-         if ( std::abs( t - m_Stops[ i ].stop ) <= 1.0e-6f ) // dbEquals
+         if ( std::abs( t - m_stops[ i ].m_t ) <= 1.0e-6f ) // dbEquals
          {
-            return toRGBAf( m_Stops[ i ].color );
+            return toRGBAf( m_stops[ i ].m_color );
          }
-         else if ( m_Stops[ i ].stop > t )
+         else if ( m_stops[ i ].m_t > t )
          {
             found = int32_t( i );
             break;
@@ -220,14 +289,14 @@ LinearColorGradient::getColor128( float t ) const
 
       if ( found < 0 )
       {
-         return toRGBAf( m_Stops[ m_Stops.size()-1 ].color );
+         return toRGBAf( m_stops[ m_stops.size()-1 ].m_color );
       }
 
       // interpolate between prev and next neighbor color
-      uint32_t const A = m_Stops[ found - 1 ].color;
-      uint32_t const B = m_Stops[ found ].color;
-      float const min_t = m_Stops[ found - 1 ].stop;
-      float const max_t = m_Stops[ found ].stop;
+      uint32_t const A = m_stops[ found - 1 ].m_color;
+      uint32_t const B = m_stops[ found ].m_color;
+      float const min_t = m_stops[ found - 1 ].m_t;
+      float const max_t = m_stops[ found ].m_t;
       float const k = std::abs( (t - min_t) / ( max_t - min_t ) );
       return lerpColor128( A, B, k );
    }

@@ -24,6 +24,7 @@ class wxHexTextCtrl;
 #include <wx/scrolbar.h>
 #include <wx/sizer.h>
 #include <wx/panel.h>
+#include <wx/graphics.h>
 
 #include "wxHexCtrl/wxHexCtrl.h"
 

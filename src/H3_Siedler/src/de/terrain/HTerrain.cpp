@@ -53,7 +53,7 @@ HMesh::upload( bool bForceUpload )
     glBindVertexArray(m_vao);
 
     int k = 0;
-	
+
     // [vbo] vertices
     glBindBuffer(GL_ARRAY_BUFFER, m_vbo_vertices);
     glBufferData(GL_ARRAY_BUFFER,
@@ -71,8 +71,8 @@ HMesh::upload( bool bForceUpload )
 
     // [vbo] instanceMat:
     glBindBuffer(GL_ARRAY_BUFFER, m_vbo_instanceMat);
-    glBufferData(GL_ARRAY_BUFFER, m_instanceMat.size() * sizeof(glm::mat4), 
-					m_instanceMat.data(), GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, m_instanceMat.size() * sizeof(glm::mat4),
+                    m_instanceMat.data(), GL_STATIC_DRAW);
     glVertexAttribPointer(k, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void*)(0));
     glVertexAttribDivisor(k, 1);
     glEnableVertexAttribArray( k ); k++;
@@ -93,8 +93,8 @@ HMesh::upload( bool bForceUpload )
         const size_t indexSize = sizeof(uint32_t);
         const size_t indexBytes = indexCount * indexSize;
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_vbo_indices);
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER, GLsizeiptr(indexBytes), 
-		              m_indices.data(), GL_STATIC_DRAW);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, GLsizeiptr(indexBytes),
+                      m_indices.data(), GL_STATIC_DRAW);
     }
 
     glBindVertexArray(0);
@@ -153,7 +153,7 @@ HMesh::computeBoundingBox()
 
 //static
 HMesh
-HMesh::fromSMesh( const SMeshBuffer & smesh )
+HMesh::fromSMesh( const smesh::SMeshBuffer & smesh )
 {
     HMesh hmesh;
     hmesh.m_name = smesh.name;
@@ -263,18 +263,18 @@ void HMeshRenderer::setMaterial( const HMaterial & material )
 
     // [Uniform] u_diffuseMap
     int stage = 0;
-	m_driver->useTexture(material.diffuseMap.tex, stage);
+    m_driver->useTexture(material.diffuseMap.tex, stage);
     glUniform1i(m_uloc_diffuseMap, stage);
 
     // [Uniform] u_lightPos0 + u_lightColor0
     const auto & l0 = m_driver->getLights().at(0);
     glUniform3fv(m_uloc_lightPos0, 1, glm::value_ptr( l0.pos ));
     glUniform3fv(m_uloc_lightColor0, 1, glm::value_ptr( l0.color ));
-	
+
     State state;
     state.culling = Culling();
     state.blend = Blend::disabled();
-    m_driver->setState( state );	
+    m_driver->setState( state );
 }
 
 void HMeshRenderer::initShader()
@@ -300,7 +300,7 @@ void HMeshRenderer::initShader()
     out vec3 v_fragPos;
     out vec3 v_fragNormal;
     out vec3 v_fragPosLight0;
-    
+
     void main()
     {
         v_tex = a_tex;

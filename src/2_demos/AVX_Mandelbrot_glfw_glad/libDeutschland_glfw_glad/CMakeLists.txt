@@ -10,7 +10,7 @@ else()
     file(GLOB_RECURSE LIB_HEADERS_H "${LIB_HEADER_DIR}/*.h")
     set(LIB_HEADERS ${LIB_HEADERS_H})
 
-    set(LIB_SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/src)   
+    set(LIB_SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/src)
     file(GLOB_RECURSE LIB_SOURCES_H "${LIB_SOURCE_DIR}/*.h")
     file(GLOB_RECURSE LIB_SOURCES_CPP "${LIB_SOURCE_DIR}/*.cpp")
     set(LIB_SOURCES ${LIB_SOURCES_H} ${LIB_SOURCES_CPP})
@@ -40,7 +40,7 @@ else()
         target_compile_options(${LIB_NAME} PRIVATE -Wno-strict-aliasing)
         target_compile_options(${LIB_NAME} PRIVATE -Wno-unused-variable)
         target_compile_options(${LIB_NAME} PRIVATE -Wno-unused-function)
-        target_compile_options(${LIB_NAME} PRIVATE -Wno-unused-but-set-variable)    
+        target_compile_options(${LIB_NAME} PRIVATE -Wno-unused-but-set-variable)
         target_compile_definitions(${LIB_NAME} PUBLIC OEMRESOURCE=1) # needed by winuser.h ODC
         #target_compile_definitions(${LIB_NAME} PUBLIC UNICODE=1)    # Windows says "Cant create Window" if defined and A versions is used?
         #target_compile_definitions(${LIB_NAME} PUBLIC _UNICODE=1)   # Windows says "Cant create Window" if defined and A versions is used?
@@ -57,6 +57,16 @@ else()
 
     target_link_libraries(${LIB_NAME} PUBLIC de_glm)      # Math
     target_link_libraries(${LIB_NAME} PUBLIC de_tinyxml2) # XML
+    target_link_libraries(${LIB_NAME} PUBLIC de_glad)
+    target_link_libraries(${LIB_NAME} PUBLIC de_glfw)
+
+    # target_link_libraries(${LIB_NAME} PUBLIC de_fontawesome)
+    # target_link_libraries(${LIB_NAME} PRIVATE de_freetype2)
+
+    # target_link_libraries(${APP_NAME} PUBLIC de_boost)
+    # target_link_libraries(${APP_NAME} PUBLIC de_dvdcss)
+    # target_link_libraries(${APP_NAME} PUBLIC de_dvdnav)
+    # target_link_libraries(${APP_NAME} PUBLIC de_dvdread)
 
     # on Windows:
     # if (WIN32)
@@ -95,16 +105,6 @@ else()
     else()
          target_link_libraries(${LIB_NAME} PUBLIC X11 Xxf86vm Xi Xcursor)
     endif()
-
-    target_link_libraries(${LIB_NAME} PUBLIC de_glfw_glad)
-
-    # target_link_libraries(${LIB_NAME} PUBLIC de_fontawesome)
-    # target_link_libraries(${LIB_NAME} PRIVATE de_freetype2)
-
-    # target_link_libraries(${APP_NAME} PUBLIC de_boost)
-    # target_link_libraries(${APP_NAME} PUBLIC de_dvdcss)
-    # target_link_libraries(${APP_NAME} PUBLIC de_dvdnav)
-    # target_link_libraries(${APP_NAME} PUBLIC de_dvdread)
 
 endif()
 

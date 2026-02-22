@@ -1,7 +1,12 @@
+# add_subdirectory(AbletonChain-qt6)
 add_subdirectory(ClockStdThread-qt)
 add_subdirectory(AMSynth-1.12.4-qt)
-add_subdirectory(IrrlichtWidget2019-qt)
 add_subdirectory(Qt6_DesktopOpenGL)
 add_subdirectory(Qt6_Piano_glew)
 add_subdirectory(AudioSynth-qt)
 add_subdirectory(Polyphone-2.5.1)
+# add_subdirectory(VHS_qt6)
+
+if (BENNI_USE_IRR AND BENNI_USE_QT)
+    add_subdirectory(IrrlichtWidget2019-qt)
+endif()

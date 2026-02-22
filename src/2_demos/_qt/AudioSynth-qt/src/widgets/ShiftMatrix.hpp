@@ -1,6 +1,6 @@
 #pragma once
 #include <DarkImage.h>
-#include <de/gpu/smesh/SMesh.h>
+#include <de/smesh/SMesh.h>
 #include <de/gpu/VideoDriver.h>
 #include <de/audio/dsp/ShiftBuffer.hpp>
 #include <functional>
@@ -11,9 +11,8 @@
 struct ShiftMesh_LineStrips
 // =======================================================================
 {
-   DE_CREATE_LOGGER("ShiftMesh_LineStrips")
-   std::vector< de::gpu::SMeshBuffer* > m_data; // Owner ( deletes rows in dtr )
-   std::vector< de::gpu::SMeshBuffer* > m_copy; // Not owner ( does not delete anything )
+   std::vector< de::smesh::SMeshBuffer* > m_data; // Owner ( deletes rows in dtr )
+   std::vector< de::smesh::SMeshBuffer* > m_copy; // Not owner ( does not delete anything )
 
    // Collects mono channel data until m_shiftBuffer.size()
    // and uses the data to build a 3d geometry out of it.
@@ -43,7 +42,7 @@ struct ShiftMesh_LineStrips
       m_copy.resize( 64 );
       for ( size_t i = 0; i < m_data.size(); ++i )
       {
-         auto row = new de::gpu::SMeshBuffer();
+         auto row = new de::smesh::SMeshBuffer();
          m_data[ i ] = row;
          m_copy[ i ] = row;
       }
@@ -115,7 +114,7 @@ struct ShiftMesh_LineStrips
    // Impl for LineStrip: Overwrites first row with new data
    virtual void createLineStrip()
    {
-      de::gpu::SMeshBuffer & o = *m_data[ 0 ];
+      de::smesh::SMeshBuffer & o = *m_data[ 0 ];
 
       size_t n = m_shiftBuffer.size();
 
@@ -135,7 +134,7 @@ struct ShiftMesh_LineStrips
          float y = dy * s;
          float z = 0.0f;
          uint32_t color = m_ColorGradient.getColor32( t ); // de::RainbowColor::computeColor32( t );
-         o.addVertex( de::gpu::S3DVertex(x,y,z,0,0,0,color,0,0) );
+         o.addVertex( de::smesh::S3DVertex(x,y,z,0,0,0,color,0,0) );
       }
 
 
@@ -380,7 +379,7 @@ struct ShiftMatrix
 inline void
 createMatrixFrontTriangleMesh(
    int ch,
-   de::gpu::SMeshBuffer & o,
+   de::smesh::SMeshBuffer & o,
    float const* row, uint32_t colCount,
    float m_sizeX, float m_sizeY, float m_sizeZ,
    de::LinearColorGradient & gradient, int mode = 1 )
@@ -409,8 +408,8 @@ createMatrixFrontTriangleMesh(
             float x = -m_sizeX + dx * float( i );
             float y = dy * s;
             uint32_t color = gradient.getColor32( std::abs( s ) ); // de::RainbowColor::computeColor32( t );
-            o.addVertex( de::gpu::S3DVertex(x,-320,0,0,1,0,color,0,0) );
-            o.addVertex( de::gpu::S3DVertex(x,y,0,0,1,0,color,0,0) );
+            o.addVertex( de::smesh::S3DVertex(x,-320,0,0,1,0,color,0,0) );
+            o.addVertex( de::smesh::S3DVertex(x,y,0,0,1,0,color,0,0) );
             pSrc--;
          }
       }
@@ -423,8 +422,8 @@ createMatrixFrontTriangleMesh(
             float x = dx * float( i );
             float y = dy * s;
             uint32_t color = gradient.getColor32( std::abs( s ) ); // de::RainbowColor::computeColor32( t );
-            o.addVertex( de::gpu::S3DVertex(x,-320,0,0,1,0,color,0,0) );
-            o.addVertex( de::gpu::S3DVertex(x,y,0,0,1,0,color,0,0) );
+            o.addVertex( de::smesh::S3DVertex(x,-320,0,0,1,0,color,0,0) );
+            o.addVertex( de::smesh::S3DVertex(x,y,0,0,1,0,color,0,0) );
             pSrc++;
          }
       }
@@ -445,8 +444,8 @@ createMatrixFrontTriangleMesh(
             float x = -m_sizeX + dx * float( i );
             float y = db;
             uint32_t color = gradient.getColor32( s ); // de::RainbowColor::computeColor32( t );
-            o.addVertex( de::gpu::S3DVertex(x,-320,0,0,1,0,color,0,0) );
-            o.addVertex( de::gpu::S3DVertex(x,y,0,0,1,0,color,0,0) );
+            o.addVertex( de::smesh::S3DVertex(x,-320,0,0,1,0,color,0,0) );
+            o.addVertex( de::smesh::S3DVertex(x,y,0,0,1,0,color,0,0) );
             pSrc--;
          }
       }
@@ -464,8 +463,8 @@ createMatrixFrontTriangleMesh(
             float x = dx * float( i );
             float y = db;
             uint32_t color = gradient.getColor32( std::abs( s ) ); // de::RainbowColor::computeColor32( t );
-            o.addVertex( de::gpu::S3DVertex(x,-320,0,0,1,0,color,0,0) );
-            o.addVertex( de::gpu::S3DVertex(x,y,0,0,1,0,color,0,0) );
+            o.addVertex( de::smesh::S3DVertex(x,-320,0,0,1,0,color,0,0) );
+            o.addVertex( de::smesh::S3DVertex(x,y,0,0,1,0,color,0,0) );
             pSrc++;
          }
       }
@@ -492,7 +491,7 @@ createMatrixFrontTriangleMesh(
 inline void
 createMatrixTriangleMesh(
    int ch,
-   de::gpu::SMeshBuffer & o,
+   de::smesh::SMeshBuffer & o,
    std::vector< std::vector< float >* > const & shiftMatrixData,
    float m_sizeX, float m_sizeY, float m_sizeZ,
    de::LinearColorGradient & gradient, uint32_t mode,
@@ -570,7 +569,7 @@ createMatrixTriangleMesh(
                float z = dz * j;
                uint32_t color = gradient.getColor32( std::abs( s ) );
                //uint32_t color = de::RainbowColor::computeColor32( std::fabs( 1.0f - 0.5f * s ) );
-               o.addVertex( de::gpu::S3DVertex(x,y,z,0,-1,0,color,0,0) );
+               o.addVertex( de::smesh::S3DVertex(x,y,z,0,-1,0,color,0,0) );
                pSrc++;
             }
          }
@@ -623,7 +622,7 @@ createMatrixTriangleMesh(
                   float y = dy * r;
                   uint32_t color = gradient.getColor32( r );
                   //uint32_t color = de::RainbowColor::computeColor32( std::fabs( 1.0f - 0.5f * r ) );
-                  o.addVertex( de::gpu::S3DVertex(x,y,z,0,1,0,color,0,0) );
+                  o.addVertex( de::smesh::S3DVertex(x,y,z,0,1,0,color,0,0) );
                }
             }
             else // if ( scaleXmode == 0 ) // X-axis is scaled linear frequency.
@@ -637,7 +636,7 @@ createMatrixTriangleMesh(
                   float y = dy * r;
                   uint32_t color = gradient.getColor32( 1.0f - 0.5f * r ); // de::RainbowColor::computeColor32( t );
                   //uint32_t color = de::RainbowColor::computeColor32( std::fabs( 1.0f - 0.5f * r ) );
-                  o.addVertex( de::gpu::S3DVertex(x,y,z,0,1,0,color,0,0) );
+                  o.addVertex( de::smesh::S3DVertex(x,y,z,0,1,0,color,0,0) );
                   x += kx;
                }
             }
@@ -666,7 +665,7 @@ createMatrixTriangleMesh(
    for ( size_t i = 0; i < colCount; ++i )
    {
       float x = o.getVertex( i ).pos.x;
-      o.addVertex( de::gpu::S3DVertex(x,-90,0,0,1,0,c0,0,0) );
+      o.addVertex( de::smesh::S3DVertex(x,-90,0,0,1,0,c0,0,0) );
       pSrc++;
    }
 

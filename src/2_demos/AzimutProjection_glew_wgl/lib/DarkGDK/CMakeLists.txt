@@ -98,8 +98,8 @@ else()
     # target_link_libraries(${LIB_NAME} PRIVATE de_lzma)
 
     target_link_libraries(${LIB_NAME} PRIVATE de_png)
-    target_link_libraries(${LIB_NAME} PRIVATE de_jpeg8d)
-    # target_link_libraries(${LIB_NAME} PRIVATE de_tiff4)
+    target_link_libraries(${LIB_NAME} PRIVATE de_jpeg)
+    # target_link_libraries(${LIB_NAME} PRIVATE de_tiff)
     # target_link_libraries(${LIB_NAME} PRIVATE de_gif5)
 
 endif()

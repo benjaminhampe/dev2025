@@ -1,6 +1,6 @@
 #include <de/gpu/renderer/ScreenRenderer.h>
 #include <de/gpu/VideoDriver.h>
-#include <de/gpu/smesh/SMeshLibrary.h>
+#include <de/smesh/SMeshLibrary.h>
 #include <de_opengl.h>
 
 namespace de {
@@ -10,6 +10,9 @@ namespace
    constexpr float const CONST_Z_INIT = 0.90f; // At 1.0 it disappears, not inside frustum.
    constexpr float const CONST_Z_STEP = -0.00001f; // enough for 200.000 elements, TODO: test more.
 }
+
+using smesh::S3DVertex;
+using smesh::SMeshBuffer;
 
 ScreenRenderer::ScreenRenderer()
    : m_driver( nullptr )
@@ -65,7 +68,7 @@ void ScreenRenderer::draw2DHexagon( const Recti& pos, const uint32_t color, cons
 
 void ScreenRenderer::draw2DCircle( const Recti& pos, const uint32_t color, const TexRef& tex, int tess )
 {
-    SMeshBuffer m( PrimitiveType::Triangles );
+    smesh::SMeshBuffer m( PrimitiveType::Triangles );
 
     // Add center point
     const float rx = 0.5f * pos.w;
@@ -201,7 +204,7 @@ void
 ScreenRenderer::draw2DRoundRect( const Recti& pos, const glm::ivec2& r, const uint32_t color, const TexRef& tex, int tess )
 {
     SMeshBuffer m( PrimitiveType::Triangles );
-    SMeshRoundRect::addXY( m,
+    smesh::SMeshRoundRect::addXY( m,
                            glm::vec3(pos.x + 0.5f*pos.w, pos.y + 0.5f*pos.h, 0),
                            pos.w,
                            pos.h,
@@ -240,7 +243,7 @@ ScreenRenderer::draw2DRoundRectLine( const Recti& pos, const glm::ivec2& r, cons
 }
 
 bool
-ScreenRenderer::setMaterial( SMaterial const & mtl, const Recti& pos )
+ScreenRenderer::setMaterial( smesh::SMaterial const & mtl, const Recti& pos )
 {
     if ( !m_driver ) { DE_ERROR("No driver") return false; }
 
@@ -284,7 +287,7 @@ ScreenRenderer::setMaterial( SMaterial const & mtl, const Recti& pos )
 }
 
 void
-ScreenRenderer::unsetMaterial( SMaterial const & mtl )
+ScreenRenderer::unsetMaterial( smesh::SMaterial const & mtl )
 {
     const TexRef& diffuseMap = mtl.getDiffuseMap();
     if (diffuseMap.tex)
@@ -294,7 +297,7 @@ ScreenRenderer::unsetMaterial( SMaterial const & mtl )
 }
 
 std::string
-ScreenRenderer::createShaderName( SMaterial const & material )
+ScreenRenderer::createShaderName( smesh::SMaterial const & material )
 {
    std::stringstream s; s << "s2d";
    if ( material.hasDiffuseMap() ) s << "+Td";
@@ -303,7 +306,7 @@ ScreenRenderer::createShaderName( SMaterial const & material )
 }
 
 std::string
-ScreenRenderer::createVS( SMaterial const & material )
+ScreenRenderer::createVS( smesh::SMaterial const & material )
 {
     std::stringstream vs; vs <<
     R"(
@@ -342,7 +345,7 @@ ScreenRenderer::createVS( SMaterial const & material )
 }
 
 std::string
-ScreenRenderer::createFS( SMaterial const & material )
+ScreenRenderer::createFS( smesh::SMaterial const & material )
 {
     std::stringstream fs;
     fs << R"(

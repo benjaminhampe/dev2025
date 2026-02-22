@@ -6,7 +6,7 @@ project(${APP_NAME}-dev)
   # set(APP_NAME "${APP_NAME}d")
 # endif()
 
-# if( BUILD_SHARED EQUAL 1 )
+# if( BUILD_SHARED_LIBS EQUAL 1 )
 # else()
   # set(APP_NAME "${APP_NAME}s") # static suffix
 # endif()

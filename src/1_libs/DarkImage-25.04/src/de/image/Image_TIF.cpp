@@ -2,7 +2,7 @@
 
 #if defined(DE_IMAGE_READER_TIF_ENABLED) || defined(DE_IMAGE_WRITER_TIF_ENABLED)
 
-#include <tiff4/tiffio.h>
+#include <tiffio.h>
 
 namespace de {
 namespace image {

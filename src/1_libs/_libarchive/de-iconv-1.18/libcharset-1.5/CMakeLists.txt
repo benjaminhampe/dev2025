@@ -25,7 +25,7 @@ else()
 		# ${LIB_SOURCE_DIR}/relocatable-stub.c
 	)
 
-	# if (BUILD_SHARED)
+	# if (BUILD_SHARED_LIBS)
 		# message("${BoldCyan}SHARED_LIBRARY: ${LIB_NAME}${ColourReset}")
 		# add_library(${LIB_NAME} SHARED "")
 	# else()

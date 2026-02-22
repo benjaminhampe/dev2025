@@ -83,7 +83,7 @@ bool H3_Game::run()
     return (m_device != nullptr) && m_device->run();
 }
 
-void createSMeshTile( de::gpu::SMeshBuffer & o, de::gpu::VideoDriver* driver,
+void createSMeshTile( de::smesh::SMeshBuffer & o, de::gpu::VideoDriver* driver,
     glm::vec3 tileSize, de::Image bumpMap, const de::gpu::TexRef& diffuseMap )
 {
     DE_BENNI("Loaded bumpMap = ", dbStrBytes(bumpMap.computeMemoryConsumption()) )
@@ -132,7 +132,7 @@ void createSMeshTile( de::gpu::SMeshBuffer & o, de::gpu::VideoDriver* driver,
 
     de::gpu::BumpMapUtil::windowVertices( o );
 
-    de::gpu::SMeshBufferTool::computeNormals( o );
+    de::smesh::SMeshBufferTool::computeNormals( o );
 
     //o.upload();
 
@@ -218,7 +218,7 @@ void H3_Game::init(de::IrrlichtDevice* device)
         glm::vec3(0,300,0),
         glm::vec3(1,1,0.9));
 
-    de::gpu::SMeshSphere::add(
+    de::smesh::SMeshSphere::add(
         m_smeshSun,
         glm::vec3(50,50,50),
         dbRGBA(255,255,200),
@@ -234,7 +234,7 @@ void H3_Game::init(de::IrrlichtDevice* device)
 
     // === Create geometry ===
     m_smeshTile.clear();
-    de::gpu::SMeshHexagon::add(
+    de::smesh::SMeshHexagon::add(
         m_smeshTile,
         m_tileSize.x,
         m_tileSize.z,
@@ -243,7 +243,7 @@ void H3_Game::init(de::IrrlichtDevice* device)
 
     // === Create geometry ===
     m_smeshChip.clear();
-    de::gpu::SMeshCylinder::addXZ(
+    de::smesh::SMeshCylinder::addXZ(
         m_smeshChip,
         m_chipSize.x,
         m_chipSize.y,
@@ -256,7 +256,7 @@ void H3_Game::init(de::IrrlichtDevice* device)
 
     // === Create geometry ===
     m_smeshCorner.clear();
-    de::gpu::SMeshCylinder::addXZ(
+    de::smesh::SMeshCylinder::addXZ(
         m_smeshCorner,
         m_cornerSize.x,
         m_cornerSize.y,
@@ -269,7 +269,7 @@ void H3_Game::init(de::IrrlichtDevice* device)
 
     // === Create geometry ===
     m_smeshEdge.clear();
-    de::gpu::SMeshCylinder::addXZ(
+    de::smesh::SMeshCylinder::addXZ(
         m_smeshEdge,
         m_edgeSize.x,
         m_edgeSize.y,
@@ -303,7 +303,7 @@ void H3_Game::init(de::IrrlichtDevice* device)
 
     // === Create geometry ===
     m_smeshThief.clear();
-    de::gpu::SMeshCone::addXZ(
+    de::smesh::SMeshCone::addXZ(
         m_smeshThief,
         m_thiefSize,
         0xFFFFFFFF,
@@ -316,12 +316,12 @@ void H3_Game::init(de::IrrlichtDevice* device)
     m_smeshThief.upload();
 
     // === Create hexagon tiles geometry ===
-    de::gpu::SMeshBuffer m_meshTileDesert; // Nevada
-    de::gpu::SMeshBuffer m_meshTileA; // Mt Wilder
-    de::gpu::SMeshBuffer m_meshTileB; // ?
-    de::gpu::SMeshBuffer m_meshTileC; // Thuringen
-    de::gpu::SMeshBuffer m_meshTileD; // Italia
-    de::gpu::SMeshBuffer m_meshTileE; // Alpen
+    de::smesh::SMeshBuffer m_meshTileDesert; // Nevada
+    de::smesh::SMeshBuffer m_meshTileA; // Mt Wilder
+    de::smesh::SMeshBuffer m_meshTileB; // ?
+    de::smesh::SMeshBuffer m_meshTileC; // Thuringen
+    de::smesh::SMeshBuffer m_meshTileD; // Italia
+    de::smesh::SMeshBuffer m_meshTileE; // Alpen
 
     createSMeshTile( m_meshTileDesert, driver, m_tileSize, getImg(H3_Img::TileDesert_H), getTex(H3_Tex::TileDesert_D, "m_meshTileDesert"));
     createSMeshTile( m_meshTileA, driver, m_tileSize, getImg(H3_Img::TileA_H), getTex(H3_Tex::TileA_D, "m_meshTileA"));
@@ -434,8 +434,8 @@ void H3_Game::setPreset(const H3_Cfg& preset)
 
         const auto& tx = m_tileSize.x;
         const auto& tz = m_tileSize.z;
-        const auto x = de::gpu::SMeshHexagon::computeBoardPosX(tx,tz,tile.i,tile.j);
-        const auto z = de::gpu::SMeshHexagon::computeBoardPosY(tx,tz,tile.i,tile.j);
+        const auto x = de::smesh::SMeshHexagon::computeBoardPosX(tx,tz,tile.i,tile.j);
+        const auto z = de::smesh::SMeshHexagon::computeBoardPosY(tx,tz,tile.i,tile.j);
         tile.pos = glm::vec3(x,0,z);
 
         // Collision aabbox:
@@ -554,7 +554,7 @@ void H3_Game::newGame()
     }
     if (m_uiThiefIntroPanel) {
         m_uiThiefIntroPanel->setVisible(false);
-    }    
+    }
 }
 
 void H3_Game::enterWinnerScreen()
@@ -1172,7 +1172,7 @@ void H3_Game::doPlaceCancel()
     computeVisibleCorners( m_player );
     computeVisibleEdges( m_player );
     m_bUpdateDrawCall_Corners = true;
-    m_bUpdateDrawCall_Edges = true;    
+    m_bUpdateDrawCall_Edges = true;
 }
 
 void H3_Game::doBuyRoad()
@@ -1387,7 +1387,7 @@ void H3_Game::doBuyCity()
 }
 
 void H3_Game::finalizeBuyCity( H3_Farm & farm )
-{    
+{
     DE_DEBUG("H3_finalizeBuyCity()")
 
     if ( m_state != H3_State::PlaceCity )
@@ -2203,8 +2203,8 @@ void H3_Game::drawPortBridges()
 
     auto rend = driver->getSMaterialRenderer();
 
-    de::gpu::SMeshBuffer bridge;
-    de::gpu::SMeshBox::add( bridge, m_roadSize, {0,0,0}, 0xFFFFFFFF );
+    de::smesh::SMeshBuffer bridge;
+    de::smesh::SMeshBox::add( bridge, m_roadSize, {0,0,0}, 0xFFFFFFFF );
     bridge.primitiveType = de::gpu::PrimitiveType::Triangles;
     bridge.material.Lighting = 1;
     bridge.material.setTexture( 0, getTex(H3_Tex::Wood2, "H3_Game::drawPortBridges()") );
@@ -2219,7 +2219,7 @@ void H3_Game::drawPortBridges()
         int ang60 = tile.angle60;
 
         // Draw bridge A:
-        auto cornerA_pos2 = de::gpu::SMeshHexagon::getCorner(ang60, m_tileSize.x, m_tileSize.z);
+        auto cornerA_pos2 = de::smesh::SMeshHexagon::getCorner(ang60, m_tileSize.x, m_tileSize.z);
         auto cornerA_pos3 = glm::vec3(cornerA_pos2.x, 0, cornerA_pos2.y);
         auto cornerA_ang = atan2( cornerA_pos2.y, cornerA_pos2.x ) * de::Math::RAD2DEG;
         cornerA_ang = de::Math::wrapAngle(180.0f - cornerA_ang);
@@ -2231,7 +2231,7 @@ void H3_Game::drawPortBridges()
         rend->draw3D(bridge);
 
         // Draw bridge B:
-        auto cornerB_pos2 = de::gpu::SMeshHexagon::getCorner((ang60 + 1) % 6, m_tileSize.x, m_tileSize.z);
+        auto cornerB_pos2 = de::smesh::SMeshHexagon::getCorner((ang60 + 1) % 6, m_tileSize.x, m_tileSize.z);
         auto cornerB_pos3 = glm::vec3(cornerB_pos2.x, 0, cornerB_pos2.y);
         auto cornerB_ang = atan2( cornerB_pos2.y, cornerB_pos2.x ) * de::Math::RAD2DEG;
         cornerB_ang = de::Math::wrapAngle(180.0f - cornerB_ang);
@@ -2424,7 +2424,7 @@ void H3_Game::drawHoveredEdge()
 
         if (m_state == H3_State::PlaceRoad)
         {
-            de::gpu::SMeshBufferTool::colorVertices( m_smeshRoad, player.color );
+            de::smesh::SMeshBufferTool::colorVertices( m_smeshRoad, player.color );
 
             m_smeshRoad.upload( true );
 
@@ -2463,7 +2463,7 @@ void H3_Game::drawHoveredCorner()
 
         if (m_state == H3_State::PlaceFarm)
         {
-            de::gpu::SMeshBufferTool::colorVertices( m_smeshFarm, player.color );
+            de::smesh::SMeshBufferTool::colorVertices( m_smeshFarm, player.color );
 
             m_smeshFarm.upload( true );
 
@@ -2477,7 +2477,7 @@ void H3_Game::drawHoveredCorner()
         }
         else if (m_state == H3_State::PlaceCity)
         {
-            de::gpu::SMeshBufferTool::colorVertices( m_smeshCity, player.color );
+            de::smesh::SMeshBufferTool::colorVertices( m_smeshCity, player.color );
 
             m_smeshCity.upload( true );
 

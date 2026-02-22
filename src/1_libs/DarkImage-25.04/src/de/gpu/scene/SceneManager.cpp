@@ -1,6 +1,6 @@
 #include <de/gpu/scene/SceneManager.h>
 #include <de/gpu/VideoDriver.h>
-#include <de/gpu/smesh/SMeshLibrary.h>
+#include <de/smesh/SMeshLibrary.h>
 
 namespace de {
 namespace gpu {
@@ -305,15 +305,15 @@ void SceneManager::addTopLevelNode( ISceneNode* node )
 {
     if (!node) return; // Nothing to add.
 
-	auto& children = m_topLevelNodes;
-	
-    auto itChild = std::find_if( 
-		children.begin(), 
-		children.end(), 
-		[=](const auto cached) { return cached == node; }
-	);
-    
-	if (itChild != children.end())
+    auto& children = m_topLevelNodes;
+
+    auto itChild = std::find_if(
+        children.begin(),
+        children.end(),
+        [=](const auto cached) { return cached == node; }
+    );
+
+    if (itChild != children.end())
     {
         DE_WARN("TopLevelNode already added ", node->getId())
         return;
@@ -328,8 +328,8 @@ ISceneNode* SceneManager::pick( int mx, int my )
 /*
     for (auto & node : m_topLevelNodes)
     {
-		if ( !node ) continue;
-		
+        if ( !node ) continue;
+
         if ( !node->isVisible() ) continue;
 
         if ( node->getBoundingBox().contains( mx, my ) )

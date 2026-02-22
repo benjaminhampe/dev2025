@@ -44,12 +44,18 @@ extern "C" {
 #  endif
 #endif
 
-#if defined(ZSTD_DLL_EXPORT) && (ZSTD_DLL_EXPORT==1)
-#  define ZSTDLIB_API __declspec(dllexport) ZSTDLIB_VISIBLE
-#elif defined(ZSTD_DLL_IMPORT) && (ZSTD_DLL_IMPORT==1)
-#  define ZSTDLIB_API __declspec(dllimport) ZSTDLIB_VISIBLE /* It isn't required but allows to generate better code, saving a function pointer load from the IAT and an indirect jump.*/
+#ifdef ZSTD_DLL
+    #ifdef _WIN32
+        #ifdef ZSTD_DLL_EXPORT
+            #define ZSTDLIB_API __declspec(dllexport) ZSTDLIB_VISIBLE
+        #else
+            #define ZSTDLIB_API __declspec(dllimport) ZSTDLIB_VISIBLE /* It isn't required but allows to generate better code, saving a function pointer load from the IAT and an indirect jump.*/
+        #endif
+    #else
+        #define ZSTDLIB_API ZSTDLIB_VISIBLE
+    #endif
 #else
-#  define ZSTDLIB_API ZSTDLIB_VISIBLE
+    #define ZSTDLIB_API ZSTDLIB_VISIBLE
 #endif
 
 /* Deprecation warnings :

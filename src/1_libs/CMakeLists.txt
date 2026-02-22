@@ -1,17 +1,25 @@
+add_subdirectory(_libcommon)
 add_subdirectory(_libarchive)
 add_subdirectory(_libimage)
 add_subdirectory(_libgpu)
-add_subdirectory(_libaudio)
-add_subdirectory(_libnetwork)
 add_subdirectory(_libextra)
-add_subdirectory(_libdatabase)
+add_subdirectory(_libaudio)
 add_subdirectory(_libassimp)
 add_subdirectory(_libcad)
+add_subdirectory(_libnetwork)
+add_subdirectory(_libdatabase)
 
 add_subdirectory(DarkImage-25.04)
-add_subdirectory(DarkMidi-25.04)
 add_subdirectory(DarkCoverArt-25.04)
+add_subdirectory(DarkMidi-25.04)
 add_subdirectory(DarkSIMD-25.04)
+add_subdirectory(DarkAudio)
+
+add_subdirectory(de-opencv-4.13.0)
+
+add_subdirectory(de-QtAdvancedDockingSystem-4.4.1)
+
+# add_subdirectory(DarkMesh)
 
 # add_subdirectory(_libphysics)
 # add_subdirectory(de-clara)

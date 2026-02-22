@@ -69,35 +69,53 @@ typedef
    bz_stream;
 
 
-#ifndef BZ_IMPORT
-#define BZ_EXPORT
-#endif
+// #ifndef BZ_IMPORT
+// #define BZ_EXPORT
+// #endif
 
 #ifndef BZ_NO_STDIO
 #include <stdio.h>
 #endif
 
-#ifdef _WIN32
-#   ifndef WIN32_LEAN_AND_MEAN
-#   define WIN32_LEAN_AND_MEAN
-#   endif
-#   include <windows.h>
-#   ifdef small
-      /* windows.h define small to char */
-#      undef small
-#   endif
-#   ifdef BZ_EXPORT
-#   define BZ_API(func) WINAPI func
-#   define BZ_EXTERN extern
-#   else
-   /* import windows dll dynamically */
-#   define BZ_API(func) (WINAPI * func)
-#   define BZ_EXTERN
-#   endif
+#if defined(WINDOWS) || defined(WIN32) || defined(_WIN32)
+
+    #ifndef WIN32_LEAN_AND_MEAN
+    #define WIN32_LEAN_AND_MEAN
+    #endif
+    #include <windows.h>
+    #ifdef small
+    /* windows.h define small to char */
+    #undef small
+    #endif
+
+    #ifndef BZ_API
+    #define BZ_API(func) WINAPI func
+    #endif
+
+    #ifdef BZLIB_DLL
+        #ifdef BZLIB_INTERNAL
+            #define BZ_EXTERN extern __declspec(dllexport)
+        #else
+            #define BZ_EXTERN extern __declspec(dllimport)
+        #endif
+    #else
+        #define BZ_EXTERN extern
+    #endif
+
 #else
-#   define BZ_API(func) func
-#   define BZ_EXTERN extern
+    #define BZ_API(func) func
+    #define BZ_EXTERN extern
 #endif
+
+// #ifdef _WIN32
+// #   ifdef BZ_EXPORT
+// #   define BZ_API(func) WINAPI func
+// #   define BZ_EXTERN extern
+// #   else
+//    /* import windows dll dynamically */
+// #   define BZ_API(func) (WINAPI * func)
+// #   define BZ_EXTERN
+// #   endif
 
 
 /*-- Core (low-level) library functions --*/

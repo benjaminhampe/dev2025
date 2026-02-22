@@ -405,7 +405,7 @@ else()
         ${LIB_SOURCE_DIR}/os.cpp
     )
 
-    if (BUILD_SHARED)
+    if (BUILD_SHARED_LIBS)
         add_library(${LIB_NAME} SHARED "")
         message("${BoldBlue}[benni] DLL: ${LIB_NAME}${ColourReset}")
     else()
@@ -450,12 +450,14 @@ else()
     target_link_libraries(${LIB_NAME} PUBLIC de_zlib)
     target_link_libraries(${LIB_NAME} PUBLIC de_bzip2)
     target_link_libraries(${LIB_NAME} PUBLIC de_png)
-    target_link_libraries(${LIB_NAME} PUBLIC de_jpeg8d)
+    target_link_libraries(${LIB_NAME} PUBLIC de_jpeg)
 
     # COPY MEDIA FILES to
     #file( COPY        ${CMAKE_CURRENT_LIST_DIR}/res/irrlicht.ico
     #      DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} )
 
+    file(COPY media/irrlicht DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/media)
+    
 endif()
 
 add_subdirectory(test)

@@ -15,18 +15,19 @@ else()
     #      list(APPEND IRRXML_SOURCES ${CMAKE_CURRENT_LIST_DIR}/res/resource.rc)
     #   endif()
     #
-    if (BUILD_SHARED)
-        message("${BoldBlue}[benni] DLL: ${LIB_NAME}${ColourReset}")
-        add_library(${LIB_NAME} SHARED "")
-    else()
+
+    # if (BUILD_SHARED_LIBS)
+    #     message("${BoldBlue}[benni] DLL: ${LIB_NAME}${ColourReset}")
+    #     add_library(${LIB_NAME} SHARED "")
+    # else()
         message("${BoldCyan}[benni] LIB: ${LIB_NAME}${ColourReset}")
         add_library(${LIB_NAME} STATIC "")
-    endif()
+    # endif()
 
     target_sources(${LIB_NAME} PUBLIC ${LIB_HEADERS} PRIVATE ${LIB_SOURCES})
-    
+
     target_include_directories(${LIB_NAME} PUBLIC ${LIB_HEADER_DIR})
-    target_include_directories(${LIB_NAME} PRIVATE ${LIB_SOURCE_DIR}) 
+    target_include_directories(${LIB_NAME} PRIVATE ${LIB_SOURCE_DIR})
 
     target_compile_definitions(${LIB_NAME} PUBLIC STBI_NO_DDS=1)
     # target_compile_definitions(${LIB_NAME} PUBLIC STBI_NO_GLU=1)
@@ -38,7 +39,7 @@ else()
     if(CMAKE_BUILD_TYPE STREQUAL "Debug")
         set(STBI_DEBUG_MODE 1)
     endif()
-    
+
     if (MSVC)
     else()
         target_compile_options(${LIB_NAME} PRIVATE -Wno-misleading-indentation)

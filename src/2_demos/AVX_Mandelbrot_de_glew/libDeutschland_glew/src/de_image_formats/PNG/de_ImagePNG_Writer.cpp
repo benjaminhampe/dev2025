@@ -4,7 +4,7 @@
 
 #include <de_image/de_PixelFormatConverter.h>
 
-#include <png/png.h>
+#include <png.h>
 
 namespace de {
 namespace image {

@@ -24,13 +24,28 @@ set(CMAKE_SYSTEM_NAME Windows)
 
 cmake_minimum_required(VERSION 3.14 FATAL_ERROR)
 
-set(BENNI_USE_JUCE 0)   # Big JUCE lib, Odin2, Surge Rack plugins, etc..
-set(BENNI_USE_QT 0)     # <optional> There are various other libs to build UI
+set(BENNI_USE_QT 1)     # <optional> Build QtSDK Apps and copy runtime
+set(BENNI_USE_WX 0)     # <optional> Build wxWidgets Apps and copy runtime
+set(BENNI_USE_IRR 1)    # <optional> Builds Irrlicht libs and apps.
+set(BENNI_USE_JUCE 1)   # <optional> Big JUCE lib, Bespoke, Odin2, Surge Rack plugins, etc..
+set(BENNI_USE_VCV 0)    # <optional> Big VCV-Rack2 + Benni plugins + ca. 500 external plugins.
+set(BENNI_USE_OPENGL_TUTORIALS 0) # <optional> Builds LearnOpenGL, Norberts and
+
 set(BENNI_USE_NASM 0)   # <broken-now> Very common, for compress, network and audio libs.
 set(BENNI_USE_ASAN 0)   # <broken> MinGW is not ready yet.
 set(BENNI_USE_SIMD_DIAG 0) # Enable compiler output for vectorization success and misses.
 
-set(BENNI_USE_AVX512 0)
+set(BENNI_USE_UNSAFE 0)   # Enable -fstrict-aliasing -ffast-math
+set(BENNI_USE_SPEED 1)    # Enable -O3 -fexpensive-optimizations -ftree-vectorize -funroll-loops
+set(BENNI_USE_LTO 1)      # Enable -flto
+set(BENNI_USE_OPENMP 1)   # Enable -fopenmp
+
+set(BENNI_USE_NATIVE 0)   # Enable My CPU only Intel 165U Meteor Lake or similar.
+set(BENNI_USE_AVX512 0)   # Enable all AVX512 extensions.
+set(BENNI_USE_AVX512F 0)  # Float + Double extensions.
+set(BENNI_USE_AVX512DQ 0) # Double quad extensions
+set(BENNI_USE_AVX512BW 0) # Byte + Word extensions
+set(BENNI_USE_AVX512VL 0) # Vector length extension
 set(BENNI_USE_AVX2 1)
 set(BENNI_USE_FMA3 1)
 set(BENNI_USE_SSE42 0)
@@ -40,13 +55,18 @@ set(BENNI_USE_SSE3 0)
 set(BENNI_USE_SSE2 0)
 set(BENNI_USE_SSE 0)
 set(BENNI_USE_MMX 0)
-set(BENNI_USE_LTO 0)
+
 set(BENNI_USE_LLD 0) # Parallel Linker
 set(BENNI_USE_GPROF 0) # Perf, cannot link to libgprof.a and gcrt2.0
 
+# clang-cl.exe -fms-extensions -fms-compatibility
+
 set(BENNI_USE_OMIT_FRAMEPOINTER 0)
+# set(BENNI_MINGW_DIR C:/sdk/mingw64_1520-posix-seh-ucrt-rt_v13-rev0)
+# set(BENNI_MINGW_DIR C:/sdk/llvm-mingw-20260210-ucrt-x86_64)
 set(BENNI_MINGW_DIR C:/sdk/Qt/Tools/llvm-mingw1706_64)
 set(BENNI_QT6_DIR C:/sdk/Qt/6.9.1/llvm-mingw_64)
+
 # set(BENNI_MINGW_DIR ${CMAKE_CURRENT_LIST_DIR}/toolchain/mingw1310_64)
 # set(BENNI_QT6_DIR ${CMAKE_CURRENT_LIST_DIR}/toolchain/Qt-6.8.2_mingw_64)
 
@@ -86,26 +106,63 @@ find_program(NASM_EXECUTABLE nasm
 set(CMAKE_ASM_NASM_COMPILER "${NASM_EXECUTABLE}" CACHE FILEPATH "NASM compiler")
 enable_language(ASM_NASM)
 
+# <BUILD_TYPE>  STATIC or SHARED libs and apps.
+
+if(NOT DEFINED BENNI_BUILD_STATIC)
+    set(BENNI_BUILD_STATIC 0)
+    message(AUTHOR_WARNING "BENNI_BUILD_STATIC was not defined, so i set it to 0.")
+endif()
+
+if (BENNI_BUILD_STATIC EQUAL 1)
+    set(BUILD_SHARED_LIBS 0)
+else()
+    set(BUILD_SHARED_LIBS 1)
+endif()
+
+if (BUILD_SHARED_LIBS)
+   message("[benni] BUILD_SHARED")
+else()
+   message("[benni] BUILD_STATIC")
+   # set(MY_LD_FLAGS "${MY_LD_FLAGS} -static -static-libgcc -static-libstdc++")
+endif()
+
+# </BUILD_TYPE>
+
+# 🛠 Key Compiler Flags
+#
+# Flag	        Meaning	Use Case
+# -march=native	Sets the target architecture to match the host CPU. Enables all instruction sets supported by your CPU (e.g., AVX2, AVX-512, SSE4.2, etc.).	Best for maximum performance on the machine you’re compiling on.
+# -mtune=native	Tunes the generated code for the host CPU’s microarchitecture (pipeline, scheduling, etc.), but doesn’t enable new instructions.	Useful if you want portable binaries but still optimize scheduling for your CPU.
+# -O2, -O3, -Ofast	Optimization levels. -O3 and -Ofast enable aggressive optimizations, including vectorization.	Combine with -march=native for best speed.
+# -fopenmp	    Enables OpenMP parallelization if supported.	For multi-threaded workloads.
+# -flto	        Enables link-time optimization.	Improves whole-program optimization.
+#
+# Flag	        Meaning	What It Enables
+# -mavx512f	    AVX-512 Foundation	The base set of AVX-512 instructions. Provides 512-bit registers (ZMM0–ZMM31), mask registers, and core vector operations (add, multiply, logical ops, etc.). Required before using other AVX-512 subsets.
+# -mavx512dq	Doubleword and Quadword Instructions	Adds support for operations on 32-bit (doubleword) and 64-bit (quadword) integers. Enables more flexible integer arithmetic, comparisons, and conversions.
+# -mavx512bw	Byte and Word Instructions	Extends AVX-512 to handle 8-bit (byte) and 16-bit (word) integers. Useful for text processing, image/video codecs, and other workloads needing smaller integer types.
+# -mavx512vl	Vector Length Extensions	Allows AVX-512 instructions to operate on 128-bit (XMM) and 256-bit (YMM) registers, not just 512-bit ZMM. This improves efficiency when full 512-bit vectors aren’t needed, reducing power and register pressure.
+#
 # SIMD Level	Compiler Flag	Defined Macro(s)	Intrinsics Header(s)
-# AMX (Tile)	-mamx-tile	__AMX__, __AMXTILE__	<amxintrin.h>
-# AVX-VNNI	-mavxvnni	__AVXVNNI__             <immintrin.h>
+# AMX (Tile)	-mamx-tile	    __AMX__, __AMXTILE__	<amxintrin.h>
+# AVX-VNNI	    -mavxvnni	    __AVXVNNI__             <immintrin.h>
 # AVX-512VNNI	-mavx512vnni	__AVX512VNNI__          <immintrin.h>
 # AVX-512VBMI	-mavx512vbmi	__AVX512VBMI__          <immintrin.h>
-# AVX-512CD	-mavx512cd	__AVX512CD__            <immintrin.h>
-# AVX-512VL	-mavx512vl	__AVX512VL__            <immintrin.h>
-# AVX-512BW	-mavx512bw	__AVX512BW__            <immintrin.h>
-# AVX-512DQ	-mavx512dq	__AVX512DQ__            <immintrin.h>
-# AVX-512F	-mavx512f	__AVX512F__             <immintrin.h>
+# AVX-512CD	    -mavx512cd	    __AVX512CD__            <immintrin.h>
+# AVX-512VL	    -mavx512vl	    __AVX512VL__            <immintrin.h>
+# AVX-512BW	    -mavx512bw	    __AVX512BW__            <immintrin.h>
+# AVX-512DQ	    -mavx512dq	    __AVX512DQ__            <immintrin.h>
+# AVX-512F	    -mavx512f	    __AVX512F__             <immintrin.h>
 # BMI2          -mbmi2          __BMI2__                <immintrin.h>
 # BMI1          -mbmi           __BMI__                 <immintrin.h>
 # FMA3          -mfma           __FMA__                 <immintrin.h>
 # AVX2          -mavx2          __AVX2__                <immintrin.h>
 # AVX           -mavx           __AVX__                 <immintrin.h>
-# PCLMULQDQ	-mpclmul	__PCLMUL__              <wmmintrin.h>
+# PCLMULQDQ	    -mpclmul	    __PCLMUL__              <wmmintrin.h>
 # AES-NI        -maes           __AES__                 <wmmintrin.h>
-# POPCNT        -mpopcnt	__POPCNT__              <popcntintrin.h>
-# SSE4.2        -msse4.2	__SSE4_2__              <nmmintrin.h>
-# SSE4.1        -msse4.1	__SSE4_1__              <smmintrin.h>
+# POPCNT        -mpopcnt	    __POPCNT__              <popcntintrin.h>
+# SSE4.2        -msse4.2	    __SSE4_2__              <nmmintrin.h>
+# SSE4.1        -msse4.1	    __SSE4_1__              <smmintrin.h>
 # SSSE3         -mssse3         __SSSE3__               <tmmintrin.h>
 # SSE3          -msse3          __SSE3__                <pmmintrin.h>
 # SSE2          -msse2          __SSE2__                <emmintrin.h>
@@ -113,6 +170,7 @@ enable_language(ASM_NASM)
 # MMX           -mmmx           __MMX__                 <mmintrin.h>
 
 # <INIT>
+# -fms-extensions -fms-compatibility x86_64-w64-mingw32uwp x86_64-w64-windows-gnu
 set(MY_C_FLAGS "-fvisibility=hidden -target x86_64-w64-windows-gnu")
 set(MY_CXX_FLAGS "-fvisibility=hidden -target x86_64-w64-windows-gnu")
 set(MY_LD_FLAGS "-fvisibility=hidden")
@@ -124,16 +182,16 @@ if (BENNI_USE_GPROF)
     # set(MY_C_FLAGS "${MY_C_FLAGS} -pg") #  -no-pie
     # set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -pg") # -no-pie
     # set(MY_LD_FLAGS "${MY_LD_FLAGS} -pg -lgmon") # -no-pie
-    
+
     set(MY_C_FLAGS "${MY_C_FLAGS} -g2 -gstabs+")
     set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -g2 -gstabs+")
     # add_compile_options(-pg)
     # add_link_options(-pg)
     # add_link_libraries(gmon gcrt2.o)
-    
+
     set(CMAKE_POSITION_INDEPENDENT_CODE OFF)
 else()
-    set(MY_LD_FLAGS "${MY_LD_FLAGS} -fuse-ld=lld") 
+    set(MY_LD_FLAGS "${MY_LD_FLAGS} -fuse-ld=lld")
     set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 endif()
 
@@ -151,53 +209,95 @@ if (BENNI_USE_SIMD_DIAG)
     endif()
 endif()
 
-if(NOT DEFINED BENNI_BUILD_STATIC)
-    set(BENNI_BUILD_STATIC 0)
-	message(AUTHOR_WARNING "BENNI_BUILD_STATIC was not defined, so i set it to 0.")
-endif()
+# My CPU Intel 165U only. Very sad now after i discovered i don't seem to have AVX512F.
+# clang -march=native -E - -o /dev/null -### < /dev/null 2>&1 | grep target-feature
+if (BENNI_USE_NATIVE) #  -march=native -mtune=native
+    message("[benni] HAVE_NATIVE_OPTIM -march=native -mtune=native")
+    set(MY_C_FLAGS "${MY_C_FLAGS} -march=native -mtune=native")
+    set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -march=native -mtune=native")
 
-if (BENNI_BUILD_STATIC)
-	set(BUILD_SHARED_LIBS 0)
+    # message("[benni] HAVE_NATIVE_OPTIM -O3 -msse2 -msse3 -mssse3 -msse4.1 -msse4.2 -mavx -mavx2 -mfma -mf16c -mbmi -mbmi2 -mlzcnt -mpopcnt -maes -mvaes -mpclmul -mvpclmulqdq -msha -mrdrnd -mrdseed -madx -mgfni")
+    # set(MY_C_FLAGS "${MY_C_FLAGS} -O3 -msse2 -msse3 -mssse3 -msse4.1 -msse4.2 -mavx -mavx2 -mfma -mf16c -mbmi -mbmi2 -mlzcnt -mpopcnt -maes -mvaes -mpclmul -mvpclmulqdq -msha -mrdrnd -mrdseed -madx -mgfni")
+    # set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -O3 -msse2 -msse3 -mssse3 -msse4.1 -msse4.2 -mavx -mavx2 -mfma -mf16c -mbmi -mbmi2 -mlzcnt -mpopcnt -maes -mvaes -mpclmul -mvpclmulqdq -msha -mrdrnd -mrdseed -madx -mgfni")
+    # set(BENNI_USE_AVX2 1)
+    # add_compile_definitions(HAVE_FMA3)
+    # add_compile_definitions(HAVE_AVX2)
+    # add_compile_definitions(HAVE_AVX)
+    # add_compile_definitions(HAVE_SSE4_2)
+    # add_compile_definitions(HAVE_SSE4_1)
+    # add_compile_definitions(HAVE_SSSE3)
+    # add_compile_definitions(HAVE_SSE3)
+    # add_compile_definitions(HAVE_SSE2)
+    # add_compile_definitions(HAVE_SSE)
+    # add_compile_definitions(HAVE_MMX)
 else()
-	set(BUILD_SHARED_LIBS 1)
+    set(MY_C_FLAGS "${MY_C_FLAGS} -march=haswell")
+    set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -march=haswell")
 endif()
 
-# <SHARED|STATIC>
-if (BUILD_SHARED_LIBS)
-   message("[benni] BUILD_SHARED")
-else()
-   message("[benni] BUILD_STATIC")
-   # set(MY_LD_FLAGS "${MY_LD_FLAGS} -static -static-libgcc -static-libstdc++")
-endif()
-
-# <LTO>
 if (BENNI_USE_LTO)
-    message("[benni] HAVE_LTO")
-    set(MY_C_FLAGS "${MY_C_FLAGS} -flto")
-    set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -flto")
-    set(MY_LD_FLAGS "${MY_LD_FLAGS} -flto")
+    message("[benni] HAVE_LTO -flto -fuse-linker-plugin -Wl,-O1")
+    set(MY_LD_FLAGS "${MY_LD_FLAGS} -flto -fuse-linker-plugin -Wl,-O1")
 endif()
 
-# <OMIT-FRAME-POINTER>
+if (BENNI_USE_OPENMP)
+    message("[benni] HAVE_OPENMP -fopenmp")
+    set(MY_C_FLAGS "${MY_C_FLAGS} -fopenmp")
+    set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -fopenmp")
+endif()
+
+if (BENNI_USE_UNSAFE)
+    message("[benni] HAVE_FASTMATH -fstrict-aliasing -ffast-math")
+    set(MY_C_FLAGS "${MY_C_FLAGS} -fstrict-aliasing -ffast-math")
+    set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -fstrict-aliasing -ffast-math")
+endif()
+
+if (BENNI_USE_SPEED)
+    message("[benni] HAVE_EXPENSIVE_OPTIM -ftree-vectorize -funroll-loops") #  -fexpensive-optimizations
+    set(MY_C_FLAGS "${MY_C_FLAGS} -ftree-vectorize -funroll-loops") #  -fexpensive-optimizations
+    set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -ftree-vectorize -funroll-loops") #  -fexpensive-optimizations
+endif()
+
 if (BENNI_USE_OMIT_FRAMEPOINTER)
-    message("[benni] HAVE_OMIT_FRAMEPOINTER")
+    message("[benni] HAVE_OMIT_FRAMEPOINTER -fomit-frame-pointer")
+    set(MY_C_FLAGS "${MY_C_FLAGS} -fomit-frame-pointer")
+    set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -fomit-frame-pointer")
+else()
+    message("[benni] HAVE_NO_OMIT_FRAMEPOINTER -fno-omit-frame-pointer")
     set(MY_C_FLAGS "${MY_C_FLAGS} -fno-omit-frame-pointer")
     set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -fno-omit-frame-pointer")
 endif()
 
 # <SIMD> Don't use add_compile_options(), it would pollute ASM commandLines.
+
+if (BENNI_USE_AVX512)
+    message("[benni] HAVE_AVX512 -mavx512f -mavx512dq -mavx512bw -mavx512vl")
+    message("[benni] HAVE_AVX512F -mavx512f")
+    message("[benni] HAVE_AVX512DQ -mavx512dq") # Doubleword and Quadword Instructions
+    message("[benni] HAVE_AVX512BW -mavx512bw")
+    message("[benni] HAVE_AVX512LV -mavx512vl")
+    set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -mavx512f -mavx512dq -mavx512bw -mavx512vl")
+    set(MY_C_FLAGS "${MY_C_FLAGS} -mavx512f -mavx512dq -mavx512bw -mavx512vl")
+    add_compile_definitions(HAVE_AVX512)
+    add_compile_definitions(HAVE_AVX512F)
+    set(BENNI_USE_FMA3 1)
+else()
+    add_compile_definitions(USE_AVX512=0)
+    add_compile_definitions(USE_VNNI=0)
+    add_compile_definitions(HAVE_AVX512=0)
+    add_compile_definitions(HAVE_AVX512F=0)
+    add_compile_definitions(HAVE_AVX512BW=0)
+    add_compile_definitions(HAVE_AVX512VL=0)
+    add_compile_definitions(HAVE_AVX512VNNI=0)
+    set(MY_C_FLAGS "${MY_C_FLAGS} -mno-avx512f -mno-avx512vl -mno-avx512bw -mno-avx512dq -mno-vpclmulqdq")
+    set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -mno-avx512f -mno-avx512vl -mno-avx512bw -mno-avx512dq -mno-vpclmulqdq")
+endif()
+
 if (BENNI_USE_FMA3)
     message("[benni] HAVE_FMA3")
     set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -mfma")
     set(MY_C_FLAGS "${MY_C_FLAGS} -mfma")
     add_compile_definitions(HAVE_FMA3)
-endif()
-
-if (BENNI_USE_AVX512)
-    message("[benni] HAVE_AVX512")
-    set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -mavx512f -mavx512dq -mavx512bw -mavx512vl")
-    set(MY_C_FLAGS "${MY_C_FLAGS} -mavx512f -mavx512dq -mavx512bw -mavx512vl")
-    add_compile_definitions(HAVE_AVX512)
     set(BENNI_USE_AVX2 1)
 endif()
 
@@ -313,15 +413,6 @@ set(CMAKE_CXX_EXTENSIONS ON)
 #   message("${BoldWhite}CMAKE_MODULE_PATH =${CMAKE_MODULE_PATH}${ColourReset}")
 #endif()
 
-
-if (WIN32)
-    # set(CMAKE_REQUIRED_DEFINITIONS ${CMAKE_REQUIRED_DEFINITIONS} -DWIN32=1)
-    add_compile_definitions(_FILE_OFFSET_BITS=64) # enable fseeko64()
-    add_compile_definitions(_USE_MATH_DEFINES=1) # enable M_PI
-    add_compile_definitions(_WIN32=1)
-	add_compile_definitions(-DWIN32=1)
-endif()
-
 # Use folders (for IDE project grouping)
 # set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
@@ -434,7 +525,7 @@ else()
 
     if(CMAKE_BUILD_TYPE STREQUAL "Release")
        # set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -fexpensive-optimizations -ftree-vectorize")
-       
+
        #set(MY_C_FLAGS "${MY_C_FLAGS} -mfpmath=sse -msse3 -mmmx -O2")
        #set(MY_C_FLAGS "${MY_C_FLAGS} -fno-asynchronous-unwind-tables")
        # set(MY_C_FLAGS "${MY_C_FLAGS} -Wno-unused-but-set-variable")
@@ -475,40 +566,52 @@ endif()
 #    SET(CPU_OPTS " ${CPU_OPTS} -ftree-parallelize-loops=${CPU_SMP} ")
 #ENDIF (CPU_SMP GREATER 1)
 
+
+if (WIN32)
+endif()
+
 # =============================================================
 # Detect host OS name, e.g. Linux/Win/Mac
 # =============================================================
 message("[benni] Detect OS - operating system ...")
 if (WIN32)
-   message("[benni] WIN32")
-   set(BENNI_OS_NAME "win")
-   message("[benni] BENNI_OS_NAME = win")
-   add_compile_definitions(BENNI_OS_WINDOWS=1)
-   add_compile_definitions(WIN32_LEAN_AND_MEAN)
-   add_compile_definitions(_CRT_SECURE_NO_DEPRECATE)
-   add_compile_definitions(_CRT_SECURE_NO_WARNINGS) 	# Shut up about unsafe stuff
-   add_compile_definitions(_CRT_NONSTDC_NO_WARNINGS)
-   if (MSYS)
-      message("[benni] Has MSYS")
-   endif()
-   if (MINGW)
-      message("[benni] Has MINGW")
-   endif()
-   if (CYGWIN)
-      message("[benni] Has CYGWIN")
-   endif()
+    message("[benni] WIN32")
+    set(BENNI_OS_NAME "win")
+    message("[benni] BENNI_OS_NAME = win")
+    add_compile_definitions(BENNI_OS_WINDOWS=1)
+    add_compile_definitions(WIN32_LEAN_AND_MEAN)
+    add_compile_definitions(_CRT_SECURE_NO_DEPRECATE)
+    add_compile_definitions(_CRT_SECURE_NO_WARNINGS) 	# Shut up about unsafe stuff
+    add_compile_definitions(_CRT_NONSTDC_NO_WARNINGS)
+    # set(CMAKE_REQUIRED_DEFINITIONS ${CMAKE_REQUIRED_DEFINITIONS} -DWIN32=1)
+    add_compile_definitions(_FILE_OFFSET_BITS=64) # enable fseeko64()
+    add_compile_definitions(_USE_MATH_DEFINES=1) # enable M_PI
+    add_compile_definitions(_WIN32=1)
+    add_compile_definitions(-DWIN32=1)
+    if (MSYS)
+        message("[benni] Has MSYS")
+    endif()
+    if (MINGW)
+        message("[benni] Has MINGW")
+    endif()
+    if (CLANG)
+        message("[benni] Has CLANG")
+    endif()
+    if (CYGWIN)
+        message("[benni] Has CYGWIN")
+    endif()
 endif()
 if (UNIX)
-   message("[benni] UNIX")
-   set(BENNI_OS_NAME "linux")
-   message("[benni] BENNI_OS_NAME = win")
-   add_compile_definitions(BENNI_OS_LINUX=1)
+    message("[benni] UNIX")
+    set(BENNI_OS_NAME "linux")
+    message("[benni] BENNI_OS_NAME = win")
+    add_compile_definitions(BENNI_OS_LINUX=1)
 endif()
 if (APPLE)
-   message("[benni] APPLE")
-   set(BENNI_OS_NAME "apple")
-   message("[benni] BENNI_OS_NAME = apple")
-   add_compile_definitions(BENNI_OS_MAC=1)
+    message("[benni] APPLE")
+    set(BENNI_OS_NAME "apple")
+    message("[benni] BENNI_OS_NAME = apple")
+    add_compile_definitions(BENNI_OS_MAC=1)
 endif()
 
 # =============================================================
@@ -516,14 +619,14 @@ endif()
 # =============================================================
 # 64 bit host
 if (CMAKE_SIZEOF_VOID_P EQUAL 8)
-   set(BENNI_MACHINE 64)
-   add_compile_definitions(BENNI_MACHINE=64)
-   message("[benni] Machine x64_86")
+    set(BENNI_MACHINE 64)
+    add_compile_definitions(BENNI_MACHINE=64)
+    message("[benni] Machine x64_86")
 # 32 bit host
 elseif (CMAKE_SIZEOF_VOID_P EQUAL 4)
-   set(BENNI_MACHINE 32)
-   add_compile_definitions(BENNI_MACHINE=32)
-   message("[benni] Machine x86")
+    set(BENNI_MACHINE 32)
+    add_compile_definitions(BENNI_MACHINE=32)
+    message("[benni] Machine x86")
 endif()
 
 # =============================================================
@@ -701,7 +804,7 @@ add_subdirectory(src)
 message("${ColourReset}")
 
 # Runtime .dlls:
-if (WIN32) 
+if (WIN32)
     if (MSVC)
     else()
         if(BUILD_SHARED_LIBS OR BENNI_USE_QT) # Get runtime dlls from LLVM Compiler ( clang++ )
@@ -739,7 +842,7 @@ if (WIN32)
             # file(COPY "${BENNI_MINGW_DIR}/bin/libstdc++-6.dll" DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})      # gcc runtime for windows
             # file(COPY "${BENNI_MINGW_DIR}/bin/libwinpthread-1.dll" DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})  # gcc runtime for windows
             # file(COPY media/H3 DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/media)
-            
+
         else()
         # Do not copy gcc runtime if we have static build and do not use QtSDK (which needs runtime dlls itself)
 
@@ -773,7 +876,7 @@ if (WIN32)
          file(COPY "${BENNI_QT6_DIR}/bin/Qt6Gui.dll" DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
          file(COPY "${BENNI_QT6_DIR}/bin/Qt6Network.dll" DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
          file(COPY "${BENNI_QT6_DIR}/bin/Qt6OpenGL.dll" DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
-		 file(COPY "${BENNI_QT6_DIR}/bin/Qt6OpenGLWidgets.dll" DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
+         file(COPY "${BENNI_QT6_DIR}/bin/Qt6OpenGLWidgets.dll" DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
          file(COPY "${BENNI_QT6_DIR}/bin/Qt6PrintSupport.dll" DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
          file(COPY "${BENNI_QT6_DIR}/bin/Qt6Qml.dll" DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
          file(COPY "${BENNI_QT6_DIR}/bin/Qt6QmlModels.dll" DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})

@@ -27,13 +27,13 @@ else()
       ${UDIS_SOURCE_DIR}/itab.c
    )
 
-   if (BUILD_SHARED)
-      add_library(${LIB_NAME} SHARED "")
-      message("${BoldBlue}[benni] SHARED_LIB: ${LIB_NAME}${ColourReset}")
-   else()
+   # if (BUILD_SHARED)
+      # add_library(${LIB_NAME} SHARED "")
+      # message("${BoldBlue}[benni] SHARED_LIB: ${LIB_NAME}${ColourReset}")
+   # else()
       add_library(${LIB_NAME} STATIC "")
       message("${BoldBlue}[benni] STATIC_LIB: ${LIB_NAME}${ColourReset}")
-   endif()
+   # endif()
 
    # target_compile_definitions(${LIB_NAME} PUBLIC -DUSE_IRRLICHT=1)
    # target_compile_definitions(${LIB_NAME} PUBLIC -D_UDIS_STATIC_LIB_=1)

@@ -5,7 +5,7 @@ if (TARGET ${LIB_NAME})
    message("${BoldYellow}[benni] HEADER_GUARD: ${LIB_NAME}${ColourReset}")
 else()
 
-#	if (BUILD_SHARED)
+#	if (BUILD_SHARED_LIBS)
 #		 message("${BoldBlue}[benni] SHARED_LIBRARY: ${LIB_NAME}${ColourReset}")
 #		 add_library(${LIB_NAME} SHARED "")
 #	else()

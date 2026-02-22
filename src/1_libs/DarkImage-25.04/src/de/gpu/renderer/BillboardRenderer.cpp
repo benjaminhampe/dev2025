@@ -36,20 +36,20 @@ void BillboardRenderer::render()
     }
 }
 std::string
-BillboardRenderer::createShaderName( SMaterial const & mtl ) const
+BillboardRenderer::createShaderName( smesh::SMaterial const & mtl ) const
 {
     std::string name = "billboard";
     if ( mtl.hasDiffuseMap() ) name += "+tex";
     return name;
 }
 
-void BillboardRenderer::draw3DBillboard( SMeshBuffer & meshBuffer, const glm::mat4& modelMat )
-{   
+void BillboardRenderer::draw3DBillboard( smesh::SMeshBuffer & meshBuffer, const glm::mat4& modelMat )
+{
     if ( !m_driver ) { DE_ERROR("No driver") return; }
     if ( meshBuffer.getVertexCount() < 1 ) { return; } // Nothing to draw.
 
     // [UseProgram]
-    const SMaterial& mtl = meshBuffer.getMaterial();
+    const smesh::SMaterial& mtl = meshBuffer.getMaterial();
     const std::string& name = createShaderName( mtl );
 
     Shader* shader = m_driver->getShader( name );
@@ -195,10 +195,10 @@ void BillboardRenderer::add( int typ, glm::vec2 size, glm::vec3 pos, glm::vec2 r
     {
         float rx = 0.5f * size.x;
         float ry = 0.5f * size.y;
-        S3DVertex A( 0,0,0, -rx, -ry, 0.0f, color, 0, 1 );
-        S3DVertex B( 0,0,0, -rx,  ry, 0.0f, color, 0, 0 );
-        S3DVertex C( 0,0,0,  rx,  ry, 0.0f, color, 1, 0 );
-        S3DVertex D( 0,0,0,  rx, -ry, 0.0f, color, 1, 1 );
+        smesh::S3DVertex A( 0,0,0, -rx, -ry, 0.0f, color, 0, 1 );
+        smesh::S3DVertex B( 0,0,0, -rx,  ry, 0.0f, color, 0, 0 );
+        smesh::S3DVertex C( 0,0,0,  rx,  ry, 0.0f, color, 1, 0 );
+        smesh::S3DVertex D( 0,0,0,  rx, -ry, 0.0f, color, 1, 1 );
         bb.mesh.addQuad( A,B,C,D );
     }
 
@@ -206,7 +206,7 @@ void BillboardRenderer::add( int typ, glm::vec2 size, glm::vec3 pos, glm::vec2 r
     {
         float rx = 0.5f * size.x;
         float ry = 0.5f * size.y;
-        S3DVertex M( 0,0,0, 0,0,0, color, .5f, .5f );
+        smesh::S3DVertex M( 0,0,0, 0,0,0, color, .5f, .5f );
         bb.mesh.addVertex( M );
 
         // Add circle outline points
@@ -221,7 +221,7 @@ void BillboardRenderer::add( int typ, glm::vec2 size, glm::vec3 pos, glm::vec2 r
             float const ny = ry * s;
             float const u = std::clamp( 0.5f + 0.5f * c, 0.0001f, 0.9999f );
             float const v = std::clamp( 0.5f - 0.5f * s, 0.0001f, 0.9999f );
-            S3DVertex P( 0,0,0, nx,ny,0, color, u, v );
+            smesh::S3DVertex P( 0,0,0, nx,ny,0, color, u, v );
             bb.mesh.addVertex( P );
         }
 
@@ -234,7 +234,7 @@ void BillboardRenderer::add( int typ, glm::vec2 size, glm::vec3 pos, glm::vec2 r
         }
     }
 
-    SMeshBufferTool::translateVertices( bb.mesh, pos );
+    smesh::SMeshBufferTool::translateVertices( bb.mesh, pos );
 }
 
 } // end namespace gpu.

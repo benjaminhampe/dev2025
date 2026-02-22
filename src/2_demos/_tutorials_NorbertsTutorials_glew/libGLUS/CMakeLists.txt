@@ -54,7 +54,7 @@ else()
    #target_link_libraries(${LIB_GLUS} LINK_PRIVATE -nostdlib)
 
    target_link_libraries(${LIB_GLUS} PUBLIC de_glew)   
-   target_link_libraries(${LIB_GLUS} PUBLIC de_glfw_glew)
+   target_link_libraries(${LIB_GLUS} PUBLIC de_glfw)
 
 endif()
 

@@ -9,7 +9,7 @@ else()
 	set(CLIPPER_HEADERS ${CLIPPER_HEADER_DIR}/ClipperLib/clipper.hpp)
 	set(CLIPPER_SOURCES ${CLIPPER_SOURCE_DIR}/clipper.cpp)
 
-	# if (BUILD_SHARED)
+	# if (BUILD_SHARED_LIBS)
 		# message("${BoldBlue}[benni] DLL: ${LIB_NAME}${ColourReset}")
 		# add_library(${LIB_NAME} SHARED "")
 	# else()

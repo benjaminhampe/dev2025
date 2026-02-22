@@ -24,9 +24,11 @@ else()
         list(APPEND LIB_SOURCES ${CMAKE_CURRENT_LIST_DIR}/res/resource.rc)
     endif()
 
-    if (BUILD_SHARED)
+    if (BUILD_SHARED_LIBS)
         message("${BoldBlue}[benni] DLL: ${LIB_NAME}${ColourReset}")
         add_library(${LIB_NAME} SHARED "")
+        target_compile_definitions(${LIB_NAME} PUBLIC BZLIB_DLL=1)
+        target_compile_definitions(${LIB_NAME} PRIVATE BZLIB_INTERNAL=1)
     else()
         message("${BoldCyan}[benni] LIB: ${LIB_NAME}${ColourReset}")
         add_library(${LIB_NAME} STATIC "")
@@ -37,11 +39,11 @@ else()
     target_include_directories(${LIB_NAME} PUBLIC ${LIB_HEADER_DIR})
     target_include_directories(${LIB_NAME} PUBLIC ${LIB_HEADER_DIR}/..)
 
-    target_include_directories(${LIB_NAME} PRIVATE ${LIB_SOURCE_DIR})    
+    target_include_directories(${LIB_NAME} PRIVATE ${LIB_SOURCE_DIR})
 
-	target_compile_definitions(${LIB_NAME} PUBLIC HAVE_BZIP2=1)
+    target_compile_definitions(${LIB_NAME} PUBLIC HAVE_BZIP2=1)
     target_compile_definitions(${LIB_NAME} PUBLIC HAVE_LIBBZ2=1)
-	
+
     if(MSVC)
     else()
         target_compile_options(${LIB_NAME} PRIVATE -Wno-implicit-fallthrough)
@@ -49,7 +51,7 @@ else()
         target_compile_options(${LIB_NAME} PRIVATE -Wno-unused-parameter)
         target_compile_options(${LIB_NAME} PRIVATE -Wno-unused-but-set-variable)
     endif()
-    
+
     # file(COPY ${LIB_HEADERS} DESTINATION ${LIB_INCLUDE_DIR}) # For the SDK
 
 endif()

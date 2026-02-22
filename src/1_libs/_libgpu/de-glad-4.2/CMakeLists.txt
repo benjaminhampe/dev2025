@@ -21,7 +21,7 @@ else()
     # list(APPEND LIB_HEADERS ${LIB_HEADER_DIR}/de/EGL_Validate.hpp)
     # list(APPEND LIB_SOURCES ${LIB_SOURCE_DIR}/de/EGL_Validate.cpp)
 
-    if (BUILD_SHARED)
+    if (BUILD_SHARED_LIBS)
         message("${BoldBlue}[benni] DLL: ${LIB_NAME}${ColourReset}")
         add_library(${LIB_NAME} SHARED "")
         # target_compile_definitions(${LIB_GLFW} PUBLIC GLFW_DLL=1)

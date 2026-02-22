@@ -875,7 +875,7 @@ struct SM3
     T curr;
     T last;
     T init;
-    SM3() { init = curr = last = T(0); }
+    SM3() { init = curr = last = T{}; }
     SM3( T const & t ) { init = curr = last = t; }
     SM3& operator= ( T const & t ) { init = curr = last = t; return *this; }
 };
@@ -1143,6 +1143,30 @@ struct Rectf
     float m_h;
 };
 
+struct BBox1f
+{
+    float m_min;
+    float m_max;
+
+    BBox1f() : m_min(0.f), m_max(0.f)
+    {}
+    BBox1f(float min, float max) : m_min(min), m_max(max)
+    {}
+
+};
+
+struct BBox3f
+{
+    glm::vec3 m_min;
+    glm::vec3 m_max;
+
+    BBox3f() : m_min(0.f,0.f,0.f), m_max(0.f,0.f,0.f)
+    {}
+    BBox3f(float dx, float dy, float dz) : m_min(-dx,-dy,-dz), m_max(dx,dy,dz)
+    {}
+    BBox3f(float x1, float y1, float z1, float x2, float y2, float z2) : m_min(x1,y1,z1), m_max(x2,y2,z2)
+    {}
+};
 
 // =======================================================================
 struct Align
@@ -1230,6 +1254,8 @@ inline std::ostream& operator<< ( std::ostream & o, const de::Recti & r )
     return o;
 }
 */
+std::string dbStrVal(float val, int digits = 1);
+std::string dbStrVal(double val, int digits = 1);
 
 std::string dbStrNanoSeconds(double nSeconds);
 std::string dbStrSeconds(double nSeconds);
@@ -1275,3 +1301,17 @@ bool dbStrEndsWith( const std::string& txt, const std::string& query );
 bool dbStrEndsWith( const std::wstring& txt, const std::wstring& query );
 bool dbStrEndsWith( const std::string& txt, char c );
 bool dbStrEndsWith( const std::wstring& txt, wchar_t c );
+
+typedef std::string DE_StringA;
+typedef std::vector< DE_StringA > DE_StringsA;
+typedef std::wstring DE_StringW;
+typedef std::vector< DE_StringW > DE_StringsW;
+
+DE_StringsA
+dbStrSplit(const std::string& txt, char searchChar, bool bKeepEmptyLines );
+
+DE_StringsA
+dbLoadTextLn(const std::string& uri);
+
+DE_StringsA
+dbLoadTextLn(const std::wstring& uri);

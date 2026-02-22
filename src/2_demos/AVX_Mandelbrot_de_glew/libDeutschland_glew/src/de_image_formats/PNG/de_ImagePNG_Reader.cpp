@@ -6,7 +6,7 @@
 
 #include <cstdio>
 #include <setjmp.h>
-#include <png/png.h> // delib_png
+#include <png.h>
 
 namespace de {
 namespace image {

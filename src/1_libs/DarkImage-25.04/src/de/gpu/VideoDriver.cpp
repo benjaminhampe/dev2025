@@ -2,7 +2,7 @@
 #include <de/IrrlichtDevice.h>
 #include <de_opengl.h>
 #include <de/gpu/GL_debug_layer.h>
-
+#include <de/gpu/GPU.h>
 #ifdef _WIN32
     #ifndef WIN32_LEAN_AND_MEAN
     #define WIN32_LEAN_AND_MEAN
@@ -76,7 +76,7 @@ Shader::destroy()
 // ------------------------------------------------------------------------
 void Shader::setBool(const std::string& name, bool value) const
 {
-	setInt(name, (int)value);
+    setInt(name, (int)value);
 }
 void Shader::setInt(const std::string& name, int value) const
 {
@@ -318,6 +318,7 @@ IrrlichtDevice* VideoDriver::getIrrlichtDevice()
 
 bool VideoDriver::open(int w, int h)
 {
+    DE_OK("w(",w,"), h(",h,")")
     m_screenWidth = w;
     m_screenHeight = h;
     m_shader = nullptr;
@@ -374,13 +375,10 @@ bool VideoDriver::open(int w, int h)
     addRenderTarget_HDR("hdr",1024,768);
 
     // RenderStates
-    m_initState = State::query();
-    m_state = m_initState;
-    m_state.blend = Blend::alphaBlend();
-    m_state.depth = Depth();
-    m_state.culling = Culling();
-    m_state = State::apply( m_initState, m_state );
-
+    setCulling( Culling() );
+    setBlend( Blend::alphaBlend() );
+    setDepth( Depth() );
+    setStencil( Stencil() );
     // // Enable depth testing
     // glEnable(GL_DEPTH_TEST);
     // glDepthFunc(GL_LESS);
@@ -403,16 +401,16 @@ bool VideoDriver::open(int w, int h)
 
     m_skyboxRenderer.init( this );
     m_smaterialRenderer.init( this );
-	m_pmaterialRenderer.init( this );	
+    //m_pmaterialRenderer.init( this );
     m_screenRenderer.init( this );
     m_fontRenderer5x8.init( this );
     m_fontRenderer.init( this );
 
     m_line3dRenderer.init( this );
     m_postFxRenderer.init( this );
-	
-	m_sceneManager.init( this );
-	
+
+    m_sceneManager.init( this );
+
     //m_guienv.init( this );
 
     // FPSComputer
@@ -444,20 +442,50 @@ void VideoDriver::close()
     //m_texMgr.deinit();
 }
 
+void VideoDriver::resize( int w, int h )
+{
+    if (w < 1 || h < 1)
+        return;
+
+    if ((w == m_screenWidth) &&
+        (h == m_screenHeight))
+    {
+        return;
+    }
+
+    //DE_OK("w(",w,"), h(",h,")")
+    m_screenWidth = w;
+    m_screenHeight = h;
+
+    if (getCamera())
+    {
+        getCamera()->setScreenSize(w,h);
+        getCamera()->update();
+    }
+}
+
 void VideoDriver::beginRender( IRenderTarget* rt )
 {
     m_timeNow = dbTimeInSeconds() - m_timeEpoch;
     //m_timeFrameStart = m_timeNow;
-
     const int w = getScreenWidth();
     const int h = getScreenHeight();
-    //DE_ERROR("w(",w,"), h(",h,")")
+    //DE_OK("w(",w,"), h(",h,")")
 
-    glViewport(0, 0, w, h); GL_VALIDATE
-    glClearColor(0.2f, 0.3f, 0.4f, 1.0f); GL_VALIDATE
-    glClearDepthf(1.0f); GL_VALIDATE
-    glClearStencil(0); GL_VALIDATE
-    glClear(GL_COLOR_BUFFER_BIT | GL_STENCIL_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); GL_VALIDATE
+    glDisable(GL_SCISSOR_TEST);
+    glScissor(0,0,w,h);
+
+    glViewport(0,0,w,h);
+
+    //GL_VALIDATE
+    glClearColor(0.2f, 0.3f, 0.4f, 1.0f);
+    //GL_VALIDATE
+    glClearDepthf(1.0f);
+    //GL_VALIDATE
+    glClearStencil(0);
+    //GL_VALIDATE
+    glClear(GL_COLOR_BUFFER_BIT | GL_STENCIL_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    //GL_VALIDATE
 
     auto camera = getCamera();
     if (camera)
@@ -465,11 +493,12 @@ void VideoDriver::beginRender( IRenderTarget* rt )
         camera->setScreenSize(w,h);
         camera->update();
     }
+
 }
 
 void VideoDriver::endRender()
 {
-    glFlush(); GL_VALIDATE
+    glFlush(); // GL_VALIDATE
     //m_window->swapBuffers();
     // Add item to frame history... (not yet)
 
@@ -507,14 +536,74 @@ double VideoDriver::getFPS() const
     return m_fps;
 }
 
-State const & VideoDriver::getState() const
+State
+VideoDriver::getState() const
 {
-    return m_state;
+    State state;
+    state.culling = m_culling.curr;
+    state.depth = m_depth.curr;
+    state.stencil = m_stencil.curr;
+    state.blend = m_blend.curr;
+    // state.viewport = Viewport::query();
+    // state.scissor = Scissor::query();
+    // state.culling = Culling::query();
+    // state.depth = Depth::query();
+    // state.stencil = Stencil::query();
+    // state.blend = Blend::query();
+    // state.pointSize = PointSize::query();
+    // state.lineWidth = LineWidth::query();
+    // state.rasterizerDiscard = RasterizerDiscard::query();
+    // state.polygonOffset = PolygonOffset::query();
+    //state.clear = Clear::query();
+    return state;
 }
-void VideoDriver::setState( State const & state )
+
+void
+VideoDriver::setState( State const & state )
 {
-    m_state = State::apply( m_state, state );
+    //State state;
+    //state.viewport = Viewport::apply( alt.viewport, neu.viewport );
+    //state.scissor = Scissor::apply( alt.scissor, neu.scissor );
+    m_culling.curr = Culling::apply( m_culling.last, state.culling );
+    m_depth.curr = Depth::apply( m_depth.last, state.depth );
+    m_stencil.curr = Stencil::apply( m_stencil.last, state.stencil );
+    m_blend.curr = Blend::apply( m_blend.last, state.blend );
+    //state.pointSize = PointSize::apply( alt.pointSize, neu.pointSize );
+    //state.lineWidth = LineWidth::apply( alt.lineWidth, neu.lineWidth );
+    //state.rasterizerDiscard = RasterizerDiscard::apply( alt.rasterizerDiscard, neu.rasterizerDiscard );
+    //state.polygonOffset = PolygonOffset::apply( alt.polygonOffset, neu.polygonOffset );
+    //state.clear = Clear::apply( alt.clear, neu.clear );
+    //state.depthRange = DepthRange::apply( alt.depthRange, neu.depthRange );
 }
+
+Culling const &
+VideoDriver::getCulling() const { return m_culling.curr; }
+
+void
+VideoDriver::setCulling( Culling const & state )
+{
+    m_culling.curr = Culling::apply( m_culling.last, state );
+}
+
+Depth const &
+VideoDriver::getDepth() const { return m_depth.curr; }
+void
+VideoDriver::setDepth( Depth const & state ) {
+    m_depth.curr = Depth::apply( m_depth.last, state );
+}
+
+Stencil const &
+VideoDriver::getStencil() const { return m_stencil.curr; }
+void
+VideoDriver::setStencil( Stencil const & state )
+{
+    m_stencil.curr = Stencil::apply( m_stencil.last, state );
+}
+
+Blend const &
+VideoDriver::getBlend() const { return m_blend.curr; }
+void
+VideoDriver::setBlend( Blend const & state ) { m_blend.curr = Blend::apply( m_blend.last, state ); }
 
 // ##################
 // ### PerfTracer ###

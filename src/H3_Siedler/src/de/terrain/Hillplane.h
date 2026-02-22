@@ -1,5 +1,5 @@
 #pragma once
-#include <de/gpu/smesh/SMesh.h>
+#include <de/smesh/SMesh.h>
 #include <de/gpu/VideoDriver.h>
 #include <de/image/ImagePainter.h>
 
@@ -17,7 +17,7 @@ struct BumpMapUtil
     typedef glm::vec2 V2;
     typedef glm::vec3 V3;
     typedef glm::vec4 V4;
-    typedef S3DVertex V;
+    typedef smesh::S3DVertex V;
 
     // **Definition der Triangle-Struct**
     struct BBox
@@ -134,7 +134,7 @@ struct BumpMapUtil
     getPerpendicularVectors(V3 normal, V3 & tangent, V3 & bitangent );
 
     static void
-    addPlaneXZ( SMeshBuffer & mesh, const V4& plane, float size );
+    addPlaneXZ( smesh::SMeshBuffer & mesh, const V4& plane, float size );
 
     static void
     translateHeightmap( Image & img, float offset );
@@ -188,13 +188,13 @@ struct BumpMapUtil
                         Triangles& out_triangles, const V3& tileSize );
 
     static bool
-    comparePos( const S3DVertex& a, const S3DVertex& b);
+    comparePos( const smesh::S3DVertex& a, const smesh::S3DVertex& b);
 
     static void
-    addTriangles(SMeshBuffer & o, const Triangles & triangles);
+    addTriangles( smesh::SMeshBuffer & o, const Triangles & triangles);
 
     static void
-    makeVerticesUnique( SMeshBuffer & o );
+    makeVerticesUnique( smesh::SMeshBuffer & o );
 
     static glm::vec3
     computeNormal( const Triangle & o );
@@ -215,10 +215,10 @@ struct BumpMapUtil
     filterGrey( Image & img, const Image & mask );
 
     static void
-    windowVertices( SMeshBuffer & o );
+    windowVertices( smesh::SMeshBuffer & o );
 
     static void
-    smoothNormals( SMeshBuffer & o );
+    smoothNormals( smesh::SMeshBuffer & o );
 
 /*
     static void

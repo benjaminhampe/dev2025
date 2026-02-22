@@ -69,9 +69,9 @@ struct H3_ObjMeshBuffer
     void uploadInstances();
     void render() const;
 
-    static de::gpu::SMeshBuffer toSMesh( const H3_ObjMeshBuffer& tmesh );
+    static de::smesh::SMeshBuffer toSMesh( const H3_ObjMeshBuffer& tmesh );
 
-    static H3_ObjMeshBuffer toTMesh( const de::gpu::SMeshBuffer& smesh );
+    static H3_ObjMeshBuffer toTMesh( const de::smesh::SMeshBuffer& smesh );
     //
     //     B
     //    / \
@@ -136,7 +136,7 @@ struct H3_ObjRenderer
 
     H3_ObjRenderer();
     //~H3_ObjRenderer();
-    
+
     void init( H3_Game & game );
 
     //void upload( const H3_Game & game );

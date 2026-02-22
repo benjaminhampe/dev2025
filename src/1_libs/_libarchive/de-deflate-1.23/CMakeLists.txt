@@ -10,7 +10,7 @@ else()
 		${LIB_HEADER_DIR}/libdeflate.h
 	)
 
-	set(LIB_SOURCES
+    set(LIB_SOURCES
 		${LIB_SOURCE_DIR}/bt_matchfinder.h
 		${LIB_SOURCE_DIR}/cpu_features_common.h
 		${LIB_SOURCE_DIR}/crc32_multipliers.h
@@ -55,30 +55,33 @@ else()
 	)
 
     if (WIN32)
-        enable_language(RC)
-        list(APPEND LIB_SOURCES ${CMAKE_CURRENT_LIST_DIR}/res/resource.h)
-        list(APPEND LIB_SOURCES ${CMAKE_CURRENT_LIST_DIR}/res/resource.rc)
-    endif()
+		enable_language(RC)
+		list(APPEND LIB_SOURCES ${CMAKE_CURRENT_LIST_DIR}/res/resource.h)
+		list(APPEND LIB_SOURCES ${CMAKE_CURRENT_LIST_DIR}/res/resource.rc)
+	endif()
 
-    if (BUILD_SHARED)
-        message("${BoldBlue}[benni] DLL: ${LIB_NAME}${ColourReset}")
-        add_library(${LIB_NAME} SHARED "")	
-        target_compile_definitions(${LIB_NAME} PUBLIC LIBDEFLATE_DLL=1)
-    else()
-        message("${BoldCyan}[benni] LIB: ${LIB_NAME}${ColourReset}")
-        add_library(${LIB_NAME} STATIC "")
-    endif()
+	if (BUILD_SHARED_LIBS)
+		message("${BoldBlue}[benni] DLL: ${LIB_NAME}${ColourReset}")
+		add_library(${LIB_NAME} SHARED "")
+		target_compile_definitions(${LIB_NAME} PUBLIC LIBDEFLATE_DLL=1)
+	else()
+		message("${BoldCyan}[benni] LIB: ${LIB_NAME}${ColourReset}")
+		add_library(${LIB_NAME} STATIC "")
+	endif()
 
-    target_sources(${LIB_NAME} PUBLIC ${LIB_HEADERS} PRIVATE ${LIB_SOURCES})
+	target_sources(${LIB_NAME} PUBLIC ${LIB_HEADERS} PRIVATE ${LIB_SOURCES})
 
-    target_include_directories(${LIB_NAME} PUBLIC ${LIB_HEADER_DIR})
-    target_include_directories(${LIB_NAME} PRIVATE ${LIB_SOURCE_DIR})
+	target_include_directories(${LIB_NAME} PUBLIC ${LIB_HEADER_DIR})
+	target_include_directories(${LIB_NAME} PRIVATE ${LIB_SOURCE_DIR})
+	# NO_EVEX512
+	target_compile_definitions(${LIB_NAME} PUBLIC LIBDEFLATE_BUILD_AVX512=0)
+	target_compile_definitions(${LIB_NAME} PUBLIC LIBDEFLATE_ASSEMBLER_DOES_NOT_SUPPORT_AVX_VNNI=1)
+	target_compile_definitions(${LIB_NAME} PUBLIC LIBDEFLATE_ASSEMBLER_DOES_NOT_SUPPORT_VPCLMULQDQ=1)
+	if (MSVC)
+		set_target_properties(${LIB_NAME} PROPERTIES FOLDER _libarchive)
+	endif()
 
-    if (MSVC)
-        set_target_properties(${LIB_NAME} PROPERTIES FOLDER _libarchive)
-    endif()
-    
-    #	file(COPY ${LIB_HEADERS} DESTINATION ${JPEG_INCLUDE_DIR}) # For the SDK
+	#	file(COPY ${LIB_HEADERS} DESTINATION ${JPEG_INCLUDE_DIR}) # For the SDK
 endif()
 
 # add_subdirectory(test)

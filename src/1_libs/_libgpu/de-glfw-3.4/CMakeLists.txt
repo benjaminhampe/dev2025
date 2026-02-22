@@ -53,7 +53,7 @@ else()
         )
     endif()
 
-    # if (BUILD_SHARED)
+    # if (BUILD_SHARED_LIBS)
     # if (WIN32)
     # enable_language(RC)
     # list(APPEND IRRXML_SOURCES ${CMAKE_CURRENT_LIST_DIR}/res/resource.h)

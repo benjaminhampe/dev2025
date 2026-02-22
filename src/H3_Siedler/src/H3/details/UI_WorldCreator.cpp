@@ -65,8 +65,8 @@ void UI_World::draw()
 
     for (const H3_CfgTile & tile : m_cfg.tileList)
     {
-        float fX = de::gpu::SMeshHexagon::computeBoardPosX(m_tileSize, m_tileSize, tile.i, tile.j);
-        float fY = de::gpu::SMeshHexagon::computeBoardPosY(m_tileSize, m_tileSize, tile.i, tile.j);
+        float fX = de::smesh::SMeshHexagon::computeBoardPosX(m_tileSize, m_tileSize, tile.i, tile.j);
+        float fY = de::smesh::SMeshHexagon::computeBoardPosY(m_tileSize, m_tileSize, tile.i, tile.j);
         float pX = m_scale * fX;
         float pY = m_scale * fY;
         float pW = m_scale * m_tileSize;

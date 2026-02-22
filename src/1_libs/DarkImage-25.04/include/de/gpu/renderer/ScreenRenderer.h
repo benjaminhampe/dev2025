@@ -1,5 +1,5 @@
 #pragma once
-#include <de/gpu/smesh/SMesh.h>
+#include <de/smesh/SMesh.h>
 
 namespace de {
 namespace gpu {
@@ -19,11 +19,11 @@ struct ScreenRenderer
     int getScreenWidth() const;
     int getScreenHeight() const;
 
-    bool setMaterial( const SMaterial& material, const Recti& pos = Recti(0,0,1,1) );
-    void unsetMaterial( const SMaterial& material );
+    bool setMaterial( const smesh::SMaterial& material, const Recti& pos = Recti(0,0,1,1) );
+    void unsetMaterial( const smesh::SMaterial& material );
     void animate( double pts ) {}
 
-    void draw2D( const SMeshBuffer& m );
+    void draw2D( const smesh::SMeshBuffer& m );
 
     void draw2DHexagon( const Recti& pos, const uint32_t color = 0xFFFFFFFF, const TexRef& tex = TexRef() );
 
@@ -39,15 +39,15 @@ struct ScreenRenderer
     void draw2DRoundRectLine( const Recti& pos, const glm::ivec2& r, const uint32_t color = 0xFFFFFFFF, const TexRef& tex = TexRef(), int tess = 23 );
 
 protected:
-    static std::string createShaderName( SMaterial const& material );
-    static std::string createVS( SMaterial const& material );
-    static std::string createFS( SMaterial const& material );
+    static std::string createShaderName( smesh::SMaterial const& material );
+    static std::string createVS( smesh::SMaterial const& material );
+    static std::string createFS( smesh::SMaterial const& material );
 
     VideoDriver* m_driver;
-    SMaterial m_material;
+    smesh::SMaterial m_material;
     float m_zIndex;
     bool m_isDirty;
-    AnimTimer m_animTime;
+    smesh::AnimTimer m_animTime;
 
 };
 

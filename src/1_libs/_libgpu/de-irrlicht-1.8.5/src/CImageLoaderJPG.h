@@ -14,8 +14,8 @@
 extern "C"
 {
    #include <setjmp.h>  // is used for the optional error recovery mechanism
-   #include <jpeg8d/jpeglib.h>
-   #include <jpeg8d/jerror.h>
+   #include <jpeglib.h>
+   #include <jerror.h>
 }
 
 

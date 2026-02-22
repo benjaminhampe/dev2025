@@ -76,27 +76,27 @@
 #define _IRR_COMPILE_WITH_TGA_LOADER_        //! .tga files
 #define _IRR_COMPILE_WITH_TGA_WRITER_        //! write .tga files
 
-// #define _IRR_COMPILE_WITH_PCX_LOADER_        //! .pcx files
-// #define _IRR_COMPILE_WITH_PCX_WRITER_        //! write .pcx files
+#define _IRR_COMPILE_WITH_PCX_LOADER_        //! .pcx files
+#define _IRR_COMPILE_WITH_PCX_WRITER_        //! write .pcx files
 
-// #define _IRR_COMPILE_WITH_PPM_LOADER_        //! .ppm/.pgm/.pbm files
-// #define _IRR_COMPILE_WITH_PPM_WRITER_        //! write .ppm files
+#define _IRR_COMPILE_WITH_PPM_LOADER_        //! .ppm/.pgm/.pbm files
+#define _IRR_COMPILE_WITH_PPM_WRITER_        //! write .ppm files
 
-// #define _IRR_COMPILE_WITH_PSD_LOADER_        //! .psd files
-// #define _IRR_COMPILE_WITH_PSD_WRITER_        //! write .psd files
+#define _IRR_COMPILE_WITH_PSD_LOADER_        //! .psd files
+#define _IRR_COMPILE_WITH_PSD_WRITER_        //! write .psd files
 
-// #define _IRR_COMPILE_WITH_WAL_LOADER_        //! load .wal files
-// #define _IRR_COMPILE_WITH_LMP_LOADER_        //! load .lmp files
-// #define _IRR_COMPILE_WITH_RGB_LOADER_        //! load Silicon Graphics .rgb/.rgba/.sgi/.int/.inta/.bw files
-// #define _IRR_COMPILE_WITH_DDS_LOADER_      //! .dds files
-// #define _IRR_COMPILE_WITH_IRR_SCENE_LOADER_     //! .irr scenes using ISceneManager::loadScene().
+#define _IRR_COMPILE_WITH_WAL_LOADER_        //! load .wal files
+#define _IRR_COMPILE_WITH_LMP_LOADER_        //! load .lmp files
+#define _IRR_COMPILE_WITH_RGB_LOADER_        //! load Silicon Graphics .rgb/.rgba/.sgi/.int/.inta/.bw files
+#define _IRR_COMPILE_WITH_DDS_LOADER_      //! .dds files
+#define _IRR_COMPILE_WITH_IRR_SCENE_LOADER_     //! .irr scenes using ISceneManager::loadScene().
 
 #define _IRR_COMPILE_WITH_SKINNED_MESH_SUPPORT_  //! loads B3D, MS3D or X meshes
 #ifdef _IRR_COMPILE_WITH_SKINNED_MESH_SUPPORT_
-   //#define _IRR_COMPILE_WITH_B3D_LOADER_  // Blitz3D files
-   //#define _IRR_COMPILE_WITH_MS3D_LOADER_ // Milkshape files
+   #define _IRR_COMPILE_WITH_B3D_LOADER_  // Blitz3D files
+   #define _IRR_COMPILE_WITH_MS3D_LOADER_ // Milkshape files
    #define _IRR_COMPILE_WITH_X_LOADER_    // Microsoft X files
-   //#define _IRR_COMPILE_WITH_OGRE_LOADER_ // Ogre 3D files
+   #define _IRR_COMPILE_WITH_OGRE_LOADER_ // Ogre 3D files
 #endif
 
 #define _IRR_COMPILE_WITH_3DS_LOADER_        //! 3D Studio Max files
@@ -110,24 +110,24 @@
 #define _IRR_COMPILE_WITH_PLY_LOADER_        //! Polygon (Stanford Triangle) files
 #define _IRR_COMPILE_WITH_PLY_WRITER_        //! .ply files
 
-//#define _IRR_COMPILE_WITH_IRR_MESH_LOADER_   //! .irrmesh files
-//#define _IRR_COMPILE_WITH_IRR_WRITER_        //! static .irrMesh files
+#define _IRR_COMPILE_WITH_IRR_MESH_LOADER_   //! .irrmesh files
+#define _IRR_COMPILE_WITH_IRR_WRITER_        //! static .irrMesh files
 
-//#define _IRR_COMPILE_WITH_HALFLIFE_LOADER_   //! Halflife animated files
-//#define _IRR_COMPILE_WITH_MD2_LOADER_        //! Quake 2 animated files
-//#define _IRR_COMPILE_WITH_MD3_LOADER_        //! Quake 3 animated files
+#define _IRR_COMPILE_WITH_HALFLIFE_LOADER_   //! Halflife animated files
+#define _IRR_COMPILE_WITH_MD2_LOADER_        //! Quake 2 animated files
+#define _IRR_COMPILE_WITH_MD3_LOADER_        //! Quake 3 animated files
 
-//#define _IRR_COMPILE_WITH_COLLADA_LOADER_    //! Collada files
-//#define _IRR_COMPILE_WITH_COLLADA_WRITER_    //! Collada files
+#define _IRR_COMPILE_WITH_COLLADA_LOADER_    //! Collada files
+#define _IRR_COMPILE_WITH_COLLADA_WRITER_    //! Collada files
 
-//#define _IRR_COMPILE_WITH_CSM_LOADER_        //! Cartography Shop files
-//#define _IRR_COMPILE_WITH_BSP_LOADER_        //! Quake 3 BSP files
-//#define _IRR_COMPILE_WITH_DMF_LOADER_        //! DeleD files
-//#define _IRR_COMPILE_WITH_LMTS_LOADER_       //! LMTools files
-//#define _IRR_COMPILE_WITH_MY3D_LOADER_       //! MY3D files
-//#define _IRR_COMPILE_WITH_OCT_LOADER_        //! FSRad OCT files
-//#define _IRR_COMPILE_WITH_LWO_LOADER_        //! Lightwave3D files
-//#define _IRR_COMPILE_WITH_SMF_LOADER_        //! 3D World Studio mesh files
+#define _IRR_COMPILE_WITH_CSM_LOADER_        //! Cartography Shop files
+#define _IRR_COMPILE_WITH_BSP_LOADER_        //! Quake 3 BSP files
+#define _IRR_COMPILE_WITH_DMF_LOADER_        //! DeleD files
+#define _IRR_COMPILE_WITH_LMTS_LOADER_       //! LMTools files
+#define _IRR_COMPILE_WITH_MY3D_LOADER_       //! MY3D files
+#define _IRR_COMPILE_WITH_OCT_LOADER_        //! FSRad OCT files
+#define _IRR_COMPILE_WITH_LWO_LOADER_        //! Lightwave3D files
+#define _IRR_COMPILE_WITH_SMF_LOADER_        //! 3D World Studio mesh files
 
 #if defined(UNICODE) || defined(_UNICODE)
    #ifndef _IRR_WCHAR_FILESYSTEM

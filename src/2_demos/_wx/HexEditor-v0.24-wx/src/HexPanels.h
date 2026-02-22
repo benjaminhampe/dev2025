@@ -22,9 +22,9 @@
 *************************************************************************/
 
 
-#include "HexEditor.h"
+// #include "HexEditor.h"
 #include "HexEditorGui.h"
-#include "HexEditorFrame.h"
+//#include "HexEditorFrame.h"
 #include "HexEditorCtrl/HexEditorCtrl.h"
 #include "HexEditorCtrl/wxHexCtrl/wxHexCtrl.h"
 #include <udis86.h>
@@ -44,105 +44,105 @@
 #include <wx/memory.h>
 
 class DataInterpreter : public InterpreterGui{
-	public:
-		DataInterpreter(wxWindow* parent, int id = -1, wxPoint pos = wxDefaultPosition, wxSize size = wxSize( -1,-1 ), int style = wxTAB_TRAVERSAL )
-		:InterpreterGui( parent, id, pos, size, style){
+    public:
+        DataInterpreter(wxWindow* parent, int id = -1, wxPoint pos = wxDefaultPosition, wxSize size = wxSize( -1,-1 ), int style = wxTAB_TRAVERSAL )
+        :InterpreterGui( parent, id, pos, size, style){
 #if wxCHECK_VERSION( 2,9,0 ) && defined( __WXOSX__ )	//onOSX, 8 px too small.
-			wxFont f = GetFont();
-			f.SetPointSize(10);
-			m_textctrl_binary->SetFont(f);
-			m_textctrl_8bit->SetFont(f);
-			m_textctrl_16bit->SetFont(f);
-			m_textctrl_32bit->SetFont(f);
-			m_textctrl_64bit->SetFont(f);
-			m_textctrl_float->SetFont(f);
-			m_textctrl_double->SetFont(f);
+            wxFont f = GetFont();
+            f.SetPointSize(10);
+            m_textctrl_binary->SetFont(f);
+            m_textctrl_8bit->SetFont(f);
+            m_textctrl_16bit->SetFont(f);
+            m_textctrl_32bit->SetFont(f);
+            m_textctrl_64bit->SetFont(f);
+            m_textctrl_float->SetFont(f);
+            m_textctrl_double->SetFont(f);
 #endif
-			unidata.raw = unidata.mraw = NULL;
-			};
-		void Set( wxMemoryBuffer buffer );
-		void Clear( void );
-		void OnUpdate( wxCommandEvent& event );
-		void OnTextEdit( wxKeyEvent& event );
-		void OnTextMouse( wxMouseEvent& event );
-		void OnCheckEdit( wxCommandEvent& event );
-	protected:
-		struct unidata{
-			char *raw, *mraw;	//big endian and little endian
-			struct endian{
-				int8_t *bit8;
-				int16_t *bit16;
-				int32_t *bit32;
-				int64_t *bit64;
-				uint8_t  *ubit8;
-				uint16_t *ubit16;
-				uint32_t *ubit32;
-				uint64_t *ubit64;
-				float  *bitfloat;
-				double *bitdouble;
-				} little, big;
-			short size;
-			char *mirrorbfr;
-			}unidata;
-	};
+            unidata.raw = unidata.mraw = NULL;
+            };
+        void Set( wxMemoryBuffer buffer );
+        void Clear( void );
+        void OnUpdate( wxCommandEvent& event );
+        void OnTextEdit( wxKeyEvent& event );
+        void OnTextMouse( wxMouseEvent& event );
+        void OnCheckEdit( wxCommandEvent& event );
+    protected:
+        struct unidata{
+            char *raw, *mraw;	//big endian and little endian
+            struct endian{
+                int8_t *bit8;
+                int16_t *bit16;
+                int32_t *bit32;
+                int64_t *bit64;
+                uint8_t  *ubit8;
+                uint16_t *ubit16;
+                uint32_t *ubit32;
+                uint64_t *ubit64;
+                float  *bitfloat;
+                double *bitdouble;
+                } little, big;
+            short size;
+            char *mirrorbfr;
+            }unidata;
+    };
 
 class InfoPanel : public InfoPanelGui{
-	public:
-		InfoPanel(wxWindow* parent, int id = -1, wxPoint pos = wxDefaultPosition, wxSize size = wxSize( -1,-1 ), int style = wxTAB_TRAVERSAL )
-		:InfoPanelGui( parent, id, pos, size, style){
-		}
-		void Set( wxFileName flnm, uint64_t lenght, wxString AccessMode, int FD, wxString XORKey );
-		void OnUpdate( wxCommandEvent& event ){
-			}
+    public:
+        InfoPanel(wxWindow* parent, int id = -1, wxPoint pos = wxDefaultPosition, wxSize size = wxSize( -1,-1 ), int style = wxTAB_TRAVERSAL )
+        :InfoPanelGui( parent, id, pos, size, style){
+        }
+        void Set( wxFileName flnm, uint64_t lenght, wxString AccessMode, int FD, wxString XORKey );
+        void OnUpdate( wxCommandEvent& event ){
+            }
 };
 
 #define idDeleteTag 31001 //just random num
 class TagPanel : public TagPanelGui{
-	public:
-		TagPanel(class HexEditorFrame* parent_, int id = -1, wxPoint pos = wxDefaultPosition, wxSize size = wxSize( -1,-1 ), int style = wxTAB_TRAVERSAL )
-		:TagPanelGui( (wxWindow*) parent_, id, pos, size, style){
-			parent = parent_;
-			this->Connect( idDeleteTag, wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( TagPanel::OnDeleteTag ) );
-			}
-		class HexEditorFrame *parent;
-		void Set( ArrayOfTAG& TagArray );
-		void Clear( void );
-		void OnTagSelect( wxCommandEvent& event );
-		//void OnUpdate( wxCommandEvent& event ){}
-		void OnRightMouse( wxMouseEvent& event );
-		void OnDeleteTag( wxCommandEvent& event );
-		~TagPanel(void){
-			this->Disconnect( idDeleteTag, wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( TagPanel::OnDeleteTag ) );
-			}
-	private:
-		wxMutex mutextag;
+    public:
+        TagPanel(class HexEditorFrame* parent_, int id = -1, wxPoint pos = wxDefaultPosition, wxSize size = wxSize( -1,-1 ), int style = wxTAB_TRAVERSAL )
+        :TagPanelGui( (wxWindow*) parent_, id, pos, size, style){
+            parent = parent_;
+            this->Connect( idDeleteTag, wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( TagPanel::OnDeleteTag ) );
+            }
+        class HexEditorFrame *parent;
+        void Set( ArrayOfTAG& TagArray );
+        void Clear( void );
+        void OnTagSelect( wxCommandEvent& event );
+        //void OnUpdate( wxCommandEvent& event ){}
+        void OnRightMouse( wxMouseEvent& event );
+        void OnDeleteTag( wxCommandEvent& event );
+        ~TagPanel(void){
+            this->Disconnect( idDeleteTag, wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( TagPanel::OnDeleteTag ) );
+            }
+    private:
+        wxMutex mutextag;
 };
 
 class SearchPanel : public TagPanel{
-	public:
-	SearchPanel(class HexEditorFrame* parent_, int id = -1, wxPoint pos = wxDefaultPosition, wxSize size = wxSize( -1,-1 ), int style = wxTAB_TRAVERSAL )
-	:TagPanel( parent_, id, pos, size, style){
-	m_buttonClear->Show(true);};
-	void OnTagSelect( wxCommandEvent& event );
-	void OnRightMouse( wxMouseEvent& event ){};
-	void OnClear( wxCommandEvent& event );
-	};
+    public:
+    SearchPanel(class HexEditorFrame* parent_, int id = -1, wxPoint pos = wxDefaultPosition, wxSize size = wxSize( -1,-1 ), int style = wxTAB_TRAVERSAL )
+    :TagPanel( parent_, id, pos, size, style){
+    m_buttonClear->Show(true);};
+    void OnTagSelect( wxCommandEvent& event );
+    void OnRightMouse( wxMouseEvent& event ){};
+    void OnClear( wxCommandEvent& event );
+    };
 
 class ComparePanel : public TagPanel{
-	public:
-	ComparePanel(class HexEditorFrame* parent_, int id = -1, wxPoint pos = wxDefaultPosition, wxSize size = wxSize( -1,-1 ), int style = wxTAB_TRAVERSAL )
-	:TagPanel( parent_, id, pos, size, style){};
-	void OnRightMouse( wxMouseEvent& event ){};
-	void OnTagSelect( wxCommandEvent& event );
-	};
+    public:
+    ComparePanel(class HexEditorFrame* parent_, int id = -1, wxPoint pos = wxDefaultPosition, wxSize size = wxSize( -1,-1 ), int style = wxTAB_TRAVERSAL )
+    :TagPanel( parent_, id, pos, size, style){};
+    void OnRightMouse( wxMouseEvent& event ){};
+    void OnTagSelect( wxCommandEvent& event );
+    };
 
 class DisassemblerPanel : public DisassemblerPanelGUI{
-	public:
-	DisassemblerPanel( class HexEditorFrame* parent_, int id = -1, wxPoint pos = wxDefaultPosition, wxSize size = wxSize( -1,-1 ), int style = wxTAB_TRAVERSAL )
-	:DisassemblerPanelGUI( (wxWindow*) parent_, id ){};
-	void Set( wxMemoryBuffer buffer );
-	void OnUpdate(wxCommandEvent& event);
-	void Clear( void );
-	wxMemoryBuffer mybuff;
-	};
+    public:
+    DisassemblerPanel( class HexEditorFrame* parent_, int id = -1, wxPoint pos = wxDefaultPosition, wxSize size = wxSize( -1,-1 ), int style = wxTAB_TRAVERSAL )
+    :DisassemblerPanelGUI( (wxWindow*) parent_, id ){};
+    void Set( wxMemoryBuffer buffer );
+    void OnUpdate(wxCommandEvent& event);
+    void Clear( void );
+    wxMemoryBuffer mybuff;
+    };
 #endif

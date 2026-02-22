@@ -189,7 +189,7 @@ endif()
         # list(APPEND LIB_SOURCES ${CMAKE_CURRENT_LIST_DIR}/res/resource.rc)
     # endif()
 
-    if (BUILD_SHARED)
+    if (BUILD_SHARED_LIBS)
         message("${BoldBlue}[benni] DLL: ${LIB_NAME}${ColourReset}")
         add_library(${LIB_NAME} SHARED "")
     else()
@@ -221,8 +221,10 @@ endif()
     target_link_libraries(${LIB_NAME} PRIVATE de_archive_fe)
     target_link_libraries(${LIB_NAME} PRIVATE de_pcre2)
     
-    target_link_libraries(${LIB_NAME} PRIVATE bcrypt) # Windows CNG API, cryptographic op's MD5, SHA1, SHA256, etc.
-
+    if (WIN32)
+        target_link_libraries(${LIB_NAME} PRIVATE bcrypt) # Windows CNG API, cryptographic op's MD5, SHA1, SHA256, etc.
+    endif()
+    
     if(MSVC)
     else()
         # target_compile_options(${LIB_NAME} PRIVATE -Wno-implicit-fallthrough)

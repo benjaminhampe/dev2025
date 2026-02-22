@@ -1,2 +1,34 @@
+#include "wx/msw/wx.rc"
+#include <windows.h>
+#include "resource.h"
+
+// Application icon(s)
 aaaa ICON "wxHexEditor.ico"
-#include <wx/msw/wx.rc>
+
+// Application manifest for DPI awareness (xml)!
+CREATEPROCESS_MANIFEST_RESOURCE_ID RT_MANIFEST "app.manifest"
+
+1 VERSIONINFO
+FILEVERSION     1,0,0,0
+PRODUCTVERSION  1,0,0,0
+BEGIN
+  BLOCK "StringFileInfo"
+  BEGIN
+    BLOCK "080904E4"
+    BEGIN
+      VALUE "CompanyName", "Benjamin Hampe <benjaminhampe@gmx.de>"
+      VALUE "FileDescription", "Audi Q7 Irrlicht OpenGL"
+      VALUE "FileVersion", "23.02"
+      VALUE "InternalName", "Audi Q7 Irrlicht OpenGL"
+      VALUE "LegalCopyright", "(c) 2024 Benjamin Hampe <benjaminhampe@gmx.de>"
+      VALUE "OriginalFilename", "Audi Q7 Irrlicht OpenGL"
+      VALUE "ProductName", "Audi Q7 Irrlicht OpenGL"
+      VALUE "ProductVersion", "23.02"
+    END
+  END
+
+  BLOCK "VarFileInfo"
+  BEGIN
+    VALUE "Translation", 0x809, 1252
+  END
+END

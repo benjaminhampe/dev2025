@@ -41,7 +41,7 @@ else()
 		${OPEN3DGC_SOURCE_DIR}/o3dgcTools.cpp
 		${OPEN3DGC_SOURCE_DIR}/o3dgcTriangleFans.cpp)
 
-	# if (BUILD_SHARED)
+	# if (BUILD_SHARED_LIBS)
 		# message("${BoldBlue}[benni] DLL: ${LIB_NAME}${ColourReset}")
 		# add_library(${LIB_NAME} SHARED "")
 	# else()

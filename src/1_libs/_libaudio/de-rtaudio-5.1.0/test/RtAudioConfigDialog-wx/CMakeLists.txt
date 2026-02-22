@@ -5,7 +5,7 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug")
   set(APP_NAME "${APP_NAME}d")
 endif()
 
-if(NOT BUILD_SHARED EQUAL 1)
+if(NOT BUILD_SHARED_LIBS EQUAL 1)
   set(APP_NAME "${APP_NAME}s") # static suffix
 endif()
 

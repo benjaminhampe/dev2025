@@ -30,7 +30,7 @@ else()
         list(APPEND LIB_SOURCES ${CMAKE_CURRENT_LIST_DIR}/res/resource.rc)
     endif()
 
-    if (BUILD_SHARED)
+    if (BUILD_SHARED_LIBS)
         message("${BoldBlue}[benni] DLL: ${LIB_NAME}${ColourReset}")
         add_library(${LIB_NAME} SHARED "")
     else()
@@ -39,15 +39,16 @@ else()
     endif()
 
     target_sources(${LIB_NAME} PUBLIC ${LIB_HEADERS} PRIVATE ${LIB_SOURCES})
-    
+
     target_include_directories(${LIB_NAME} PUBLIC ${LIB_HEADER_DIR}/..)
     target_include_directories(${LIB_NAME} PRIVATE ${LIB_HEADER_DIR})
     target_include_directories(${LIB_NAME} PRIVATE ${LIB_SOURCE_DIR})
 
     target_compile_definitions(${LIB_NAME} PUBLIC HAVE_LIBGIF=1)
+    target_compile_definitions(${LIB_NAME} PUBLIC HAVE_GIFLIB=1)
 
     if (MSVC)
-	else()
+    else()
         target_compile_options(${LIB_NAME} PRIVATE -Wno-sign-compare )
             # -Wno-implicit-fallthrough
             # -Wmaybe-uninitialized
@@ -57,7 +58,7 @@ else()
     endif()
 
     # target_link_libraries(${LIB_NAME} PRIVATE de_zlib) # delib_harfbuzz
-    
+
     ### add_custom_command(TARGET foo POST_BUILD
     ###    COMMAND ${CMAKE_COMMAND} -E copy
     ###            ${CMAKE_SOURCE_DIR}/test/input.txt

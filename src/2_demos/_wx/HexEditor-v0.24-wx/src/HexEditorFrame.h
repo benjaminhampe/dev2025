@@ -26,10 +26,10 @@
 #define __HexEditorFrame__
 
 #include "HexEditorGui.h"
-#include "HexEditor.h"
-#include "HexEditorApp.h"
-#include "HexDialogs.h"
-#include "HexPanels.h"
+// #include "HexEditor.h"
+// #include "HexEditorApp.h"
+// #include "HexDialogs.h"
+// #include "HexPanels.h"
 #include "../res/wxhex.xpm"
 #include <wx/filename.h>
 #include <wx/dir.h>
@@ -63,76 +63,76 @@ inline wxBitmap _wxGetBitmapFromMemory(const unsigned char *data, int length) {
 
 class DnDFile;
 class HexEditorFrame : public HexEditorGui {
-	public:
-		HexEditorFrame();
-		HexEditorFrame(	wxWindow* parent, wxWindowID id = wxID_ANY );
-		~HexEditorFrame();
-		void TagHideAll();
-		class HexEditor* OpenFile(wxFileName flname, bool openAtRight=false);
-		class HexEditor* GetActiveHexEditor(void);
+    public:
+        HexEditorFrame();
+        HexEditorFrame(	wxWindow* parent, wxWindowID id = wxID_ANY );
+        ~HexEditorFrame();
+        void TagHideAll();
+        class HexEditor* OpenFile(wxFileName flname, bool openAtRight=false);
+        class HexEditor* GetActiveHexEditor(void);
 #if _FSWATCHER_
-		wxFileSystemWatcher *file_watcher;
+        wxFileSystemWatcher *file_watcher;
 #endif
-	protected:
-		void OnMenuEvent( wxCommandEvent& event );
-		void OnToolsMenu( wxCommandEvent& event );
-		void OnDevicesMenu( wxCommandEvent& event );
-		void OnUpdateUI( wxUpdateUIEvent& event );
-		void OnViewMenu( wxCommandEvent& event );
-		void OnOptionsMenu( wxCommandEvent& event );
-		void OnOptionsFileMode( wxCommandEvent& event );
-		void OnClose( wxCloseEvent& event );
-		void OnHelpMenu( wxCommandEvent& event );
-		void OnActivate( wxActivateEvent& event );
+    protected:
+        void OnMenuEvent( wxCommandEvent& event );
+        void OnToolsMenu( wxCommandEvent& event );
+        void OnDevicesMenu( wxCommandEvent& event );
+        void OnUpdateUI( wxUpdateUIEvent& event );
+        void OnViewMenu( wxCommandEvent& event );
+        void OnOptionsMenu( wxCommandEvent& event );
+        void OnOptionsFileMode( wxCommandEvent& event );
+        void OnClose( wxCloseEvent& event );
+        void OnHelpMenu( wxCommandEvent& event );
+        void OnActivate( wxActivateEvent& event );
 
-		void ActionEnabler( void );
-		void ActionDisabler( void );
-		void OnNotebookTabSelection( wxAuiNotebookEvent& event );
-		void OnNotebookTabClose( wxAuiNotebookEvent& event );
-		void OnFloatingPaneClosed( wxAuiManagerEvent& event );
+        void ActionEnabler( void );
+        void ActionDisabler( void );
+        void OnNotebookTabSelection( wxAuiNotebookEvent& event );
+        void OnNotebookTabClose( wxAuiNotebookEvent& event );
+        void OnFloatingPaneClosed( wxAuiManagerEvent& event );
 
-	private:
-		void PrepareAUI( void );
-		//wxAuiNotebook *MyNotebook;
-		wxAuiManager *MyAUI;
-		DataInterpreter *MyInterpreter;
-		InfoPanel *MyInfoPanel;
-		TagPanel *MyTagPanel;
-		TagPanel *MySearchPanel;
-		TagPanel *MyComparePanel;
-		DisassemblerPanel *MyDisassemblerPanel;
-		wxFileHistory *MyFileHistory;
-		wxString license;
+    private:
+        void PrepareAUI( void );
+        //wxAuiNotebook *MyNotebook;
+        wxAuiManager *MyAUI;
+        DataInterpreter *MyInterpreter;
+        InfoPanel *MyInfoPanel;
+        TagPanel *MyTagPanel;
+        TagPanel *MySearchPanel;
+        TagPanel *MyComparePanel;
+        DisassemblerPanel *MyDisassemblerPanel;
+        wxFileHistory *MyFileHistory;
+        wxString license;
 #ifdef _WX_AUIBAR_H_
-		wxAuiToolBar* Toolbar;
+        wxAuiToolBar* Toolbar;
 #else
-		wxToolBar* Toolbar;
+        wxToolBar* Toolbar;
 #endif
-		friend class DnDFile;
-	};
+        friend class DnDFile;
+    };
 
 class HexEditorArtProvider : public wxArtProvider{
 protected:
     virtual wxBitmap CreateBitmap(const wxArtID& id, const wxArtClient& client,
                                   const wxSize& size);
-	};
+    };
 
 
 class DnDFile : public wxFileDropTarget{
-	public:
-		DnDFile( HexEditorFrame* myHexFramework) {
-			HexFramework = myHexFramework;
-			}
-	virtual bool OnDropFiles(wxCoord x, wxCoord y, const wxArrayString& filenames);
-	private:
-		wxAuiNotebook *m_pOwner;
-		HexEditorFrame *HexFramework;
-	};
+    public:
+        DnDFile( HexEditorFrame* myHexFramework) {
+            HexFramework = myHexFramework;
+            }
+    virtual bool OnDropFiles(wxCoord x, wxCoord y, const wxArrayString& filenames);
+    private:
+        wxAuiNotebook *m_pOwner;
+        HexEditorFrame *HexFramework;
+    };
 
 class VersionChecker : public UpdateDialogGui {
-	public:
-		VersionChecker( wxString _url, wxString current_version, wxWindow *parent = NULL, wxWindowID id = 1  );
-		void OnChkDisplay( wxCommandEvent& event );
-	};
+    public:
+        VersionChecker( wxString _url, wxString current_version, wxWindow *parent = NULL, wxWindowID id = 1  );
+        void OnChkDisplay( wxCommandEvent& event );
+    };
 
 #endif

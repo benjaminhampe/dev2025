@@ -4,7 +4,7 @@ project(${LIB_NAME}-dev)
 if (TARGET ${LIB_NAME})
     message("${BoldYellow}[benni] HEADER_GUARD: ${LIB_NAME}${ColourReset}")
 else()
-    #add_subdirectory(lib)
+    # add_subdirectory(lib)
 
     set(LIB_HEADER_DIR ${CMAKE_CURRENT_LIST_DIR}/include)
     set(LIB_HEADERS 
@@ -32,7 +32,7 @@ else()
     # list(APPEND LIB_SOURCES ${CMAKE_CURRENT_LIST_DIR}/res/resource.h)
     # list(APPEND LIB_SOURCES ${CMAKE_CURRENT_LIST_DIR}/res/resource.rc)
 
-    if (BUILD_SHARED)
+    if (BUILD_SHARED_LIBS)
         add_library(${LIB_NAME} SHARED "")
         message("${Blue}[benni] DLL: ${LIB_NAME}${ColourReset}")
     else()
@@ -55,5 +55,5 @@ else()
     
 endif()
 
-# add_subdirectory(test)
+add_subdirectory(test)
 

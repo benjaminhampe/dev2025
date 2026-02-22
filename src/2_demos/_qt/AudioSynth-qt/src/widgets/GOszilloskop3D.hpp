@@ -120,8 +120,8 @@ protected:
    //std::vector< float > m_outputBuffer; // in deciBel dB
    ShiftMesh_LineStrips m_wavlinesL;
    ShiftMesh_LineStrips m_wavlinesR;
-   de::gpu::SMeshBuffer m_trianglesL;
-   de::gpu::SMeshBuffer m_trianglesR;
+   de::smesh::SMeshBuffer m_trianglesL;
+   de::smesh::SMeshBuffer m_trianglesR;
 
    ShiftMatrix< float > m_shiftMatrixL;
    ShiftMatrix< float > m_shiftMatrixR;

@@ -1,5 +1,5 @@
 #pragma once
-#include <de/gpu/smesh/SMesh.h>
+#include <de/smesh/SMesh.h>
 #include <de/image/font/FontManager.h>
 
 namespace de {

@@ -91,22 +91,22 @@ void H3_ChipMeshBuffer::initVAO()
     // vbo_vertices
     const auto & vertices = m_smesh->vertices;
     const size_t vertexCount = vertices.size();
-    const size_t vertexSize = sizeof(de::gpu::S3DVertex);
+    const size_t vertexSize = sizeof(de::smesh::S3DVertex);
     const size_t vertexBytes = vertexCount * vertexSize;
     const uint8_t* pVertices = reinterpret_cast< const uint8_t* >( vertices.data() );
     glBindBuffer(GL_ARRAY_BUFFER, m_vbo_vertices);
     glBufferData(GL_ARRAY_BUFFER, GLsizeiptr(vertexBytes), pVertices, GL_STATIC_DRAW);
     // a_pos
-    glVertexAttribPointer( 0, 3, GL_FLOAT, GL_FALSE, sizeof(de::gpu::S3DVertex), (void*)(0) );
+    glVertexAttribPointer( 0, 3, GL_FLOAT, GL_FALSE, sizeof(de::smesh::S3DVertex), (void*)(0) );
     glEnableVertexAttribArray( 0 );
     // a_normal
-    glVertexAttribPointer( 1, 3, GL_FLOAT, GL_FALSE, sizeof(de::gpu::S3DVertex), (void*)(12) );
+    glVertexAttribPointer( 1, 3, GL_FLOAT, GL_FALSE, sizeof(de::smesh::S3DVertex), (void*)(12) );
     glEnableVertexAttribArray( 1 );
     // a_color
-    glVertexAttribPointer( 2, 4, GL_UNSIGNED_BYTE, GL_FALSE, sizeof(de::gpu::S3DVertex), (void*)(24) );
+    glVertexAttribPointer( 2, 4, GL_UNSIGNED_BYTE, GL_FALSE, sizeof(de::smesh::S3DVertex), (void*)(24) );
     glEnableVertexAttribArray( 2 );
     // a_tex
-    glVertexAttribPointer( 3, 2, GL_FLOAT, GL_FALSE, sizeof(de::gpu::S3DVertex), (void*)(28) );
+    glVertexAttribPointer( 3, 2, GL_FLOAT, GL_FALSE, sizeof(de::smesh::S3DVertex), (void*)(28) );
     glEnableVertexAttribArray( 3 );
 
     // vbo_instanceMat:

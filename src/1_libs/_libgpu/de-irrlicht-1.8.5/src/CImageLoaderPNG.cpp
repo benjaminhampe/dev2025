@@ -7,7 +7,7 @@
 #ifdef _IRR_COMPILE_WITH_PNG_LOADER_
 
 #ifdef _IRR_COMPILE_WITH_LIBPNG_
-	#include <png/png.h>
+	#include <png.h>
 
 	// #ifndef _IRR_USE_NON_SYSTEM_LIB_PNG_
 	// #include <png.h> // use system lib png

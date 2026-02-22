@@ -51,7 +51,7 @@ struct LineBoxAnim
     float ang_x = 14.0;
 
     void
-    draw( de::gpu::VideoDriver* driver, de::gpu::SMaterialRenderer* renderer )
+    draw( de::gpu::VideoDriver* driver, de::smesh::SMaterialRenderer* renderer )
     {
         if ( !driver ) { DE_ERROR("No driver") return; }
         auto camera = driver->getCamera();
@@ -70,9 +70,9 @@ struct LineBoxAnim
         trs.update();
         driver->setModelMatrix( trs.modelMat );
 
-        de::gpu::SMeshBuffer m( de::gpu::PrimitiveType::Lines );
+        de::smesh::SMeshBuffer m( de::gpu::PrimitiveType::Lines );
 
-        de::gpu::SMeshBox::addLines(m, glm::vec3(20), glm::vec3(-10), 0xFF1060FF );
+        de::smesh::SMeshBox::addLines(m, glm::vec3(20), glm::vec3(-10), 0xFF1060FF );
         m.setDepth( false );
         //int msaa = driver->getMSAA();
         //if ( msaa > 0 ) m.setLineWidth( msaa );
@@ -676,7 +676,7 @@ struct H3_Tile
     {
         for ( int i = 0; i < 6; ++i )
         {
-            auto relPos = de::gpu::SMeshHexagon::getCorner( i, tileSize.x, tileSize.z );
+            auto relPos = de::smesh::SMeshHexagon::getCorner( i, tileSize.x, tileSize.z );
             auto cornerPos = pos + glm::vec3( relPos.x, 0.0f, relPos.y );
             if ( dbEquals( cornerPos, corner.trs.pos ) )
             {
@@ -807,7 +807,7 @@ struct H3_RankedPlayer
 // =====================================================================
 struct H3_Player
 // =====================================================================
-{    
+{
     H3_Player() {}
 
     u32 id = 0;
@@ -896,7 +896,7 @@ struct H3_Player
     };
 
     // State
-    State state;    
+    State state;
 
     // Statistics
     std::vector< State > history;

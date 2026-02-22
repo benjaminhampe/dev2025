@@ -27,7 +27,7 @@ BumpMapUtil::createTriangles( Triangles & o, const Image & bumpMapRGB, glm::vec3
     //====================
     // Temporary vertices
     //====================
-    std::vector< S3DVertex > vertices;
+    std::vector< smesh::S3DVertex > vertices;
     vertices.reserve( size_t( w ) * size_t( h ) );
 
     float cell_x = siz.x / float( w - 1 );
@@ -98,7 +98,7 @@ BumpMapUtil::createTrianglesf( Triangles & o, const Image & bumpMap, glm::vec3 s
     //====================
     // Temporary vertices
     //====================
-    std::vector< S3DVertex > vertices;
+    std::vector< smesh::S3DVertex > vertices;
     vertices.reserve( size_t( w ) * size_t( h ) );
 
     float cell_x = siz.x / float( w - 1 );
@@ -141,7 +141,7 @@ BumpMapUtil::createTrianglesf( Triangles & o, const Image & bumpMap, glm::vec3 s
 }
 
 bool
-BumpMapUtil::comparePos( const S3DVertex& a, const S3DVertex& b)
+BumpMapUtil::comparePos( const smesh::S3DVertex& a, const smesh::S3DVertex& b)
 {
     const auto e_pos = 1.0e-6f;
     const auto e_tex = 1.0e-5f;
@@ -163,7 +163,7 @@ BumpMapUtil::comparePos( const S3DVertex& a, const S3DVertex& b)
 }
 
 void
-BumpMapUtil::addTriangles(SMeshBuffer & o, const Triangles & triangles)
+BumpMapUtil::addTriangles(smesh::SMeshBuffer & o, const Triangles & triangles)
 {
     o.setPrimitiveType( PrimitiveType::Triangles );
 
@@ -197,7 +197,8 @@ BumpMapUtil::addTriangles(SMeshBuffer & o, const Triangles & triangles)
     {
         const Triangle& t = triangles[ i ];
 
-        auto itA = std::find_if( v.begin(), v.end(), [&] (const S3DVertex& c) { return comparePos(c,t.A); } );
+        auto itA = std::find_if( v.begin(), v.end(),
+            [&] (const smesh::S3DVertex& c) { return comparePos(c,t.A); } );
         if (itA == v.end())
         {
             o.indices.push_back( o.vertices.size() );
@@ -209,7 +210,8 @@ BumpMapUtil::addTriangles(SMeshBuffer & o, const Triangles & triangles)
                 std::distance( v.begin(), itA ) ) );
         }
 
-        auto itB = std::find_if( v.begin(), v.end(), [&] (const S3DVertex& c) { return comparePos(c,t.B); } );
+        auto itB = std::find_if( v.begin(), v.end(),
+            [&] (const smesh::S3DVertex& c) { return comparePos(c,t.B); } );
         if (itB == v.end())
         {
             o.indices.push_back( o.vertices.size() );
@@ -221,7 +223,8 @@ BumpMapUtil::addTriangles(SMeshBuffer & o, const Triangles & triangles)
                 std::distance( v.begin(), itB ) ) );
         }
 
-        auto itC = std::find_if( v.begin(), v.end(), [&] (const S3DVertex& c) { return comparePos(c,t.C); } );
+        auto itC = std::find_if( v.begin(), v.end(),
+            [&] (const smesh::S3DVertex& c) { return comparePos(c,t.C); } );
         if (itC == v.end())
         {
             o.indices.push_back( o.vertices.size() );
@@ -711,7 +714,7 @@ BumpMapUtil::repairWinding( Triangles & o )
 
 // static
 void
-BumpMapUtil::makeVerticesUnique( SMeshBuffer & o )
+BumpMapUtil::makeVerticesUnique( smesh::SMeshBuffer & o )
 {
     /*
     const auto & v0 = o.vertices;
@@ -967,7 +970,7 @@ BumpMapUtil::getPerpendicularVectors(V3 normal, V3 & tangent, V3 & bitangent )
 
 // static
 void
-BumpMapUtil::addPlaneXZ( SMeshBuffer & mesh, const V4& plane, float size )
+BumpMapUtil::addPlaneXZ( smesh::SMeshBuffer & mesh, const V4& plane, float size )
 {
     V3 n(plane);
     V3 b;
@@ -985,10 +988,10 @@ BumpMapUtil::addPlaneXZ( SMeshBuffer & mesh, const V4& plane, float size )
     V3 D = P + (t * s) - (b * s);
 
     const auto v = mesh.vertices.size();
-    mesh.vertices.push_back( S3DVertex(A, n, 0x8F8080FF, V2(0,1)) );
-    mesh.vertices.push_back( S3DVertex(B, n, 0x8F80FF80, V2(0,0)) );
-    mesh.vertices.push_back( S3DVertex(C, n, 0x8FFF8080, V2(1,0)) );
-    mesh.vertices.push_back( S3DVertex(D, n, 0x8F80FFFF, V2(1,1)) );
+    mesh.vertices.push_back( smesh::S3DVertex(A, n, 0x8F8080FF, V2(0,1)) );
+    mesh.vertices.push_back( smesh::S3DVertex(B, n, 0x8F80FF80, V2(0,0)) );
+    mesh.vertices.push_back( smesh::S3DVertex(C, n, 0x8FFF8080, V2(1,0)) );
+    mesh.vertices.push_back( smesh::S3DVertex(D, n, 0x8F80FFFF, V2(1,1)) );
     mesh.indices.push_back(v + 0);
     mesh.indices.push_back(v + 1);
     mesh.indices.push_back(v + 2);
@@ -1154,12 +1157,12 @@ BumpMapUtil::clipTrianglesHexagon(const Triangles& in_triangles,
     ///      \ /
     ///       A       triangles: ABF, BCE, BEF, CDE
     ///
-    const S3DVertex A( V3(     0,0,-.5f*h ), n, color, V2(.5f, 1 ) );
-    const S3DVertex B( V3(-.5f*w,0,-.25f*h), n, color, V2(0, .75f ));
-    const S3DVertex C( V3(-.5f*w,0, .25f*h), n, color, V2(0, .25f ));
-    const S3DVertex D( V3(     0,0, .5f*h ), n, color, V2(.5f, 0 ) );
-    const S3DVertex E( V3(0.5f*w,0, .25f*h), n, color, V2(1, .25f ));
-    const S3DVertex F( V3(0.5f*w,0,-.25f*h), n, color, V2(1, .75f ));
+    const smesh::S3DVertex A( V3(     0,0,-.5f*h ), n, color, V2(.5f, 1 ) );
+    const smesh::S3DVertex B( V3(-.5f*w,0,-.25f*h), n, color, V2(0, .75f ));
+    const smesh::S3DVertex C( V3(-.5f*w,0, .25f*h), n, color, V2(0, .25f ));
+    const smesh::S3DVertex D( V3(     0,0, .5f*h ), n, color, V2(.5f, 0 ) );
+    const smesh::S3DVertex E( V3(0.5f*w,0, .25f*h), n, color, V2(1, .25f ));
+    const smesh::S3DVertex F( V3(0.5f*w,0,-.25f*h), n, color, V2(1, .75f ));
 
     // **Sechs Clipping-Ebenen mit nach innen gerichteten Normalen**
     const std::vector<V4> clip_planes =
@@ -1385,7 +1388,7 @@ BumpMapUtil::filterGrey( Image & img, const Image & mask )
 }
 
 // static
-void BumpMapUtil::windowVertices( SMeshBuffer & o )
+void BumpMapUtil::windowVertices( smesh::SMeshBuffer & o )
 {
     auto bx = o.boundingBox.size().x * 0.5f;
     auto by = o.boundingBox.size().y;
@@ -1409,7 +1412,7 @@ void BumpMapUtil::windowVertices( SMeshBuffer & o )
 }
 
 // static
-void BumpMapUtil::smoothNormals( SMeshBuffer & o )
+void BumpMapUtil::smoothNormals( smesh::SMeshBuffer & o )
 {
     if ( o.getPrimitiveType() != PrimitiveType::Triangles )
     {

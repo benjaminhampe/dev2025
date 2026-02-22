@@ -57,8 +57,8 @@ else()
 		${LIB_HEADER_DIR}/libxml/xpointer.h
 		${LIB_HEADER_DIR}/libxml/win32config.h
 		${LIB_HEADER_DIR}/libxml/wsockcompat.h
-    )
-	set(LIB_SOURCES
+	)
+    set(LIB_SOURCES
 		${LIB_SOURCE_DIR}/buf.c
 		${LIB_SOURCE_DIR}/buf.h
 		${LIB_SOURCE_DIR}/c14n.c
@@ -94,7 +94,7 @@ else()
 		${LIB_SOURCE_DIR}/trio.c
 		${LIB_SOURCE_DIR}/trio.h
 		${LIB_SOURCE_DIR}/triodef.h
-        #${LIB_SOURCE_DIR}/trionan.c
+		#${LIB_SOURCE_DIR}/trionan.c
 		${LIB_SOURCE_DIR}/trionan.h
 		${LIB_SOURCE_DIR}/triop.h
 		${LIB_SOURCE_DIR}/triostr.c
@@ -103,9 +103,9 @@ else()
 		${LIB_SOURCE_DIR}/valid.c
 		${LIB_SOURCE_DIR}/xinclude.c
 		${LIB_SOURCE_DIR}/xlink.c
-        #${LIB_SOURCE_DIR}/xmlcatalog.c
+		#${LIB_SOURCE_DIR}/xmlcatalog.c
 		${LIB_SOURCE_DIR}/xmlIO.c
-        # ${LIB_SOURCE_DIR}/xmllint.c
+		# ${LIB_SOURCE_DIR}/xmllint.c
 		${LIB_SOURCE_DIR}/xmlmemory.c
 		${LIB_SOURCE_DIR}/xmlmodule.c
 		${LIB_SOURCE_DIR}/xmlreader.c
@@ -121,8 +121,8 @@ else()
 		${LIB_SOURCE_DIR}/xzlib.c
 		${LIB_SOURCE_DIR}/xzlib.h
 
-        ${LIB_SOURCE_DIR}/nanoftp.c
-        ${LIB_SOURCE_DIR}/nanohttp.c
+		${LIB_SOURCE_DIR}/nanoftp.c
+		${LIB_SOURCE_DIR}/nanohttp.c
 		# ${LIB_SOURCE_DIR}/runsuite.c
 		# ${LIB_SOURCE_DIR}/runtest.c
 		# ${LIB_SOURCE_DIR}/runxmlconf.c
@@ -144,48 +144,50 @@ else()
 		# ${LIB_SOURCE_DIR}/testThreads.c
 		# ${LIB_SOURCE_DIR}/testURI.c
 		# ${LIB_SOURCE_DIR}/testXPath.c
-    )
+	)
 
     # if (WIN32)
-        # enable_language(RC)
-        # list(APPEND LIB_SOURCES ${CMAKE_CURRENT_LIST_DIR}/res/resource.h)
-        # list(APPEND LIB_SOURCES ${CMAKE_CURRENT_LIST_DIR}/res/resource.rc)
-    # endif()
-    
-	if (BUILD_SHARED)
-		message("${BoldBlue}[benni] DLL: ${LIB_NAME}${ColourReset}")
-		add_library(${LIB_NAME} SHARED "")
-	else()
-		message("${BoldCyan}[benni] LIB: ${LIB_NAME}${ColourReset}")
+	    # enable_language(RC)
+		# list(APPEND LIB_SOURCES ${CMAKE_CURRENT_LIST_DIR}/res/resource.h)
+		# list(APPEND LIB_SOURCES ${CMAKE_CURRENT_LIST_DIR}/res/resource.rc)
+		# endif()
+
+	# if (BUILD_SHARED_LIBS)
+	# 	message("${BoldBlue}[benni] DLL: ${LIB_NAME}${ColourReset}")
+	# 	add_library(${LIB_NAME} SHARED "")
+	# else()
+	    message("${BoldCyan}[benni] LIB: ${LIB_NAME}${ColourReset}")
 		add_library(${LIB_NAME} STATIC "")
-	endif()
+	# endif()
 
 	target_sources(${LIB_NAME} PUBLIC ${LIB_HEADERS} PRIVATE ${LIB_SOURCES})
 
-    target_include_directories(${LIB_NAME} PUBLIC ${LIB_HEADER_DIR})
-    target_include_directories(${LIB_NAME} PRIVATE ${LIB_HEADER_DIR})
-    target_include_directories(${LIB_NAME} PRIVATE ${LIB_HEADER_DIR}/libxml)
+	target_include_directories(${LIB_NAME} PUBLIC ${LIB_HEADER_DIR})
+	target_include_directories(${LIB_NAME} PRIVATE ${LIB_HEADER_DIR})
+	target_include_directories(${LIB_NAME} PRIVATE ${LIB_HEADER_DIR}/libxml)
 
 	target_compile_definitions(${LIB_NAME} PUBLIC HAVE_LIBXML2=1)
 	target_compile_definitions(${LIB_NAME} PUBLIC HAVE_LIBXML_XMLREADER_H=1)
 	target_compile_definitions(${LIB_NAME} PUBLIC HAVE_LIBXML_XMLVERSION_H=1)
 	target_compile_definitions(${LIB_NAME} PUBLIC HAVE_LIBXML_XMLWRITER_H=1)
 
-    if (WIN32)
-        target_link_libraries(${LIB_NAME} PRIVATE ws2_32) # nanoftp/nanohttp
-        target_link_libraries(${LIB_NAME} PRIVATE shlwapi) # for PathRemoveFileSpecW
-        target_link_libraries(${LIB_NAME} PRIVATE dbghelp) # for SymInitialize, SymFromAddr
-    endif()
+	if (WIN32)
+		target_link_libraries(${LIB_NAME} PRIVATE ws2_32) # nanoftp/nanohttp
+		target_link_libraries(${LIB_NAME} PRIVATE shlwapi) # for PathRemoveFileSpecW
+		target_link_libraries(${LIB_NAME} PRIVATE dbghelp) # for SymInitialize, SymFromAddr
+	endif()
 
-    # if (MSVC)
+	# if (MSVC)
 	# else()
-        # target_compile_options(${LIB_NAME} PRIVATE -Wno-unused-parameter)
-        # target_compile_options(${LIB_NAME} PRIVATE -Wno-unused-variable)
-    # endif()
-    
-    target_link_libraries(${LIB_NAME} PRIVATE de_zlib)
-    target_link_libraries(${LIB_NAME} PRIVATE de_bzip2)
-    target_link_libraries(${LIB_NAME} PRIVATE de_xz_static)
-    target_link_libraries(${LIB_NAME} PRIVATE de_iconv)
+	    # target_compile_options(${LIB_NAME} PRIVATE -Wno-unused-parameter)
+		# target_compile_options(${LIB_NAME} PRIVATE -Wno-unused-variable)
+		# endif()
+
+	target_link_libraries(${LIB_NAME} PRIVATE pthread)
+
+	target_link_libraries(${LIB_NAME} PRIVATE de_zlib)
+	target_link_libraries(${LIB_NAME} PRIVATE de_bzip2)
+	target_link_libraries(${LIB_NAME} PRIVATE de_xz_static)
+	target_link_libraries(${LIB_NAME} PRIVATE de_iconv)
 
 endif()

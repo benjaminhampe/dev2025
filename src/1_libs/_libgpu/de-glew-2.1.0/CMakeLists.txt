@@ -26,7 +26,7 @@ else()
 #      list(APPEND LIB_SOURCES ${CMAKE_CURRENT_LIST_DIR}/res/resource.rc)
 #   endif()
 #
-    if (BUILD_SHARED)
+    if (BUILD_SHARED_LIBS)
         set(BUILD_SHARED_LIBS 1)
         message("${BoldBlue}[benni] DLL: ${LIB_NAME}${ColourReset}")
         add_library(${LIB_NAME} SHARED "")

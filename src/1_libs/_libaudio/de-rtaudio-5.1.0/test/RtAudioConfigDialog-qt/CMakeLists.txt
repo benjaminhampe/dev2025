@@ -5,7 +5,7 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug")
   set(APP_NAME "${APP_NAME}d")
 endif()
 
-if( BUILD_SHARED EQUAL 1 )
+if( BUILD_SHARED_LIBS EQUAL 1 )
 else()
   set(APP_NAME "${APP_NAME}s") # static suffix
 endif()
@@ -77,7 +77,7 @@ else()
    # target_sources(${APP_NAME} PRIVATE ${APP_SOURCES})
    target_compile_options(${APP_NAME} PUBLIC -Wno-deprecated-declarations)
 
-   if (BUILD_SHARED)
+   if (BUILD_SHARED_LIBS)
    else()
       target_compile_options(${APP_NAME} PRIVATE -static)
       target_compile_options(${APP_NAME} PRIVATE -static-libstdc++)

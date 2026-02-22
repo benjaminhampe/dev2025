@@ -43,7 +43,7 @@ LIBVER_MINOR := $(shell echo $(LIBVER_MINOR_SCRIPT))
 LIBVER_PATCH := $(shell echo $(LIBVER_PATCH_SCRIPT))
 LIBVER  := $(shell echo $(LIBVER_SCRIPT))
 
-BUILD_SHARED:=yes
+BUILD_SHARED_LIBS:=yes
 BUILD_STATIC:=yes
 
 CPPFLAGS+= -DXXH_NAMESPACE=LZ4_
@@ -121,7 +121,7 @@ liblz4-dll.o: liblz4-dll.rc
 
 CLEAN += $(LIBLZ4_EXP)
 $(LIBLZ4): $(SRCFILES) liblz4-dll.o
-  ifeq ($(BUILD_SHARED),yes)
+  ifeq ($(BUILD_SHARED_LIBS),yes)
 	@echo compiling dynamic library $(LIBVER)
 	$(CC) $(ALLFLAGS) -DLZ4_DLL_EXPORT=1 -shared $^ -o $@ -Wl,--out-implib,$(LIBLZ4_EXP)
   endif
@@ -129,7 +129,7 @@ $(LIBLZ4): $(SRCFILES) liblz4-dll.o
 else   # not windows
 
 $(LIBLZ4): $(SRCFILES)
-  ifeq ($(BUILD_SHARED),yes)
+  ifeq ($(BUILD_SHARED_LIBS),yes)
 	@echo compiling dynamic library $(LIBVER)
 	$(CC) $(ALLFLAGS) -shared $^ -fPIC -fvisibility=hidden $(SONAME_FLAGS) -o $@
 	@echo creating versioned links
@@ -203,7 +203,7 @@ install: lib liblz4.pc
 	$(INSTALL_DATA) lz4frame_static.h $(DESTDIR)$(includedir)/lz4frame_static.h
 	$(INSTALL_DATA) lz4file.h $(DESTDIR)$(includedir)/lz4file.h
   endif
-  ifeq ($(BUILD_SHARED),yes)
+  ifeq ($(BUILD_SHARED_LIBS),yes)
 # Traditionally, one installs the DLLs in the bin directory as programs
 # search them first in their directory. This allows to not pollute system
 # directories (like c:/windows/system32), nor modify the PATH variable.

@@ -1142,6 +1142,23 @@ FileSystem::loadByteVector( std::vector< uint8_t > & bv, const std::string& uri,
 }
 */
 
+std::string
+FileSystem::loadStr( const std::string& uri )
+{
+    //DE_PERF_MARKER
+    std::ifstream fin( uri.c_str() );
+    std::stringstream s;
+    if ( fin.is_open() )
+    {
+        s << fin.rdbuf();
+    }
+    else
+    {
+        s << "Not a file " << uri;
+    }
+
+    return s.str();
+}
 std::wstring
 FileSystem::loadStrW( const std::wstring& uri )
 {
@@ -1161,39 +1178,20 @@ FileSystem::loadStrW( const std::wstring& uri )
 }
 
 bool
-FileSystem::saveStrW( const std::wstring& uri, const std::wstring& txt )
+FileSystem::saveStr( const std::string& uri, const std::string& txt )
 {
     //DE_PERF_MARKER
-    std::wofstream file( uri.c_str() );
+    std::ofstream file( uri );
     if ( !file.is_open() ) return false;
     file << txt;
     file.close();
     return true;
 }
-
-std::string
-FileSystem::loadStr( const std::string& uri )
-{
-    //DE_PERF_MARKER
-    std::ifstream fin( uri.c_str() );
-    std::stringstream s;
-    if ( fin.is_open() )
-    {
-        s << fin.rdbuf();
-    }
-    else
-    {
-        s << "Not a file " << uri;
-    }
-
-    return s.str();
-}
-
 bool
-FileSystem::saveStr( const std::string& uri, const std::string& txt )
+FileSystem::saveStrW( const std::wstring& uri, const std::wstring& txt )
 {
     //DE_PERF_MARKER
-    std::ofstream file( uri );
+    std::wofstream file( uri.c_str() );
     if ( !file.is_open() ) return false;
     file << txt;
     file.close();
@@ -3697,6 +3695,23 @@ float Rectf::getDV() const { return h(); }
 
 } // end namespace de.
 
+std::string
+dbStrVal(float val, int digits)
+{
+    int mg = val * std::pow(10.0f, digits );
+    std::string a = std::to_string(mg);
+    a.insert(a.begin() + a.size() - digits, '.');
+    return a;
+}
+
+std::string
+dbStrVal(double val, int digits)
+{
+    int mg = val * std::pow(10.0, digits );
+    std::string a = std::to_string(mg);
+    a.insert(a.begin() + a.size() - digits, '.');
+    return a;
+}
 
 std::string dbStrNanoSeconds(double nSeconds) { return de::StringUtil::nanoseconds( nSeconds ); }
 std::string dbStrSeconds(double nSeconds) { return de::StringUtil::seconds( nSeconds ); }
@@ -3715,6 +3730,26 @@ std::string dbLoadTextA(const std::string& uri) { return de::FileSystem::loadStr
 
 std::wstring dbLoadTextW(const std::wstring& uri) { return de::FileSystem::loadStrW( uri ); }
 std::wstring dbLoadTextW(const std::string& uri) { return de::FileSystem::loadStrW( uri ); }
+
+DE_StringsA
+dbStrSplit(const std::string& txt, char searchChar, bool bKeepEmptyLines )
+{
+    return de::StringUtil::split( txt, searchChar, bKeepEmptyLines );
+}
+
+DE_StringsA
+dbLoadTextLn(const std::string& uri)
+{
+    auto content = de::FileSystem::loadStr( uri );
+    return dbStrSplit( content, '\n', false);
+}
+
+DE_StringsA
+dbLoadTextLn(const std::wstring& uri)
+{
+    auto content = de::FileSystem::loadStr( uri );
+    return dbStrSplit( content, '\n', false);
+}
 
 bool dbSaveTextA(const std::wstring& uri, const std::string& txt) { return de::FileSystem::saveStr( uri, txt ); }
 bool dbSaveTextA(const std::string& uri, const std::string& txt) { return de::FileSystem::saveStr( uri, txt ); }

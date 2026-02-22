@@ -324,8 +324,8 @@ namespace pnglibNamespace
 // #else
   extern "C"
   {
-    #include <png/png.h>
-    #include <png/pngconf.h>
+    #include <png.h>
+    #include <pngconf.h>
   }
 // #endif
 }

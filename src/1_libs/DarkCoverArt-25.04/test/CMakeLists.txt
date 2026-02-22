@@ -1,1 +1,1 @@
-add_subdirectory(extractCoverArt2)
+add_subdirectory(extractCoverArt)

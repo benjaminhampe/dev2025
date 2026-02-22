@@ -3,17 +3,23 @@
 #include <de_opengl.h>
 #include <de/gpu/GL_debug_layer.h>
 
+using de::smesh::SMeshBuffer;
+using de::smesh::S3DVertex;
+using de::gpu::TexRef;
+using de::gpu::PrimitiveType;
+using de::gpu::Blend;
+
 namespace {
 
-auto addQuad = [](de::gpu::SMeshBuffer & o,
-                   de::gpu::S3DVertex const & a, de::gpu::S3DVertex const & b,
-                   de::gpu::S3DVertex const & c, de::gpu::S3DVertex const & d,
-                   de::gpu::TexRef tex = de::gpu::TexRef(),
+auto addQuad = [](SMeshBuffer & o,
+                   S3DVertex const & a, S3DVertex const & b,
+                   S3DVertex const & c, S3DVertex const & d,
+                   TexRef tex = TexRef(),
                    bool flip = false )
 {
-    o.setPrimitiveType(de::gpu::PrimitiveType::Triangles);
+    o.setPrimitiveType(PrimitiveType::Triangles);
     o.setTexture(0, tex);
-    o.setBlend(de::gpu::Blend::disabled());
+    o.setBlend(Blend::disabled());
     o.setLighting(0);
     o.vertices.push_back( a );
     o.vertices.push_back( b );
@@ -96,55 +102,55 @@ H3_DiceRenderer::init( H3_Game & game )
     const auto g = glm::vec3(  dx,  dy,  dz );
     const auto h = glm::vec3(  dx, -dy,  dz );
 
-    de::gpu::SMeshBuffer m_meshNegX;
-    de::gpu::SMeshBuffer m_meshPosX;
-    de::gpu::SMeshBuffer m_meshNegY;
-    de::gpu::SMeshBuffer m_meshPosY;
-    de::gpu::SMeshBuffer m_meshNegZ;
-    de::gpu::SMeshBuffer m_meshPosZ;
+    SMeshBuffer m_meshNegX;
+    SMeshBuffer m_meshPosX;
+    SMeshBuffer m_meshNegY;
+    SMeshBuffer m_meshPosY;
+    SMeshBuffer m_meshNegZ;
+    SMeshBuffer m_meshPosZ;
 
     {   // Top quad BFGC = Dice(2)
-        de::gpu::S3DVertex B( b.x, b.y, b.z, 0,1,0, color, 0,1 );
-        de::gpu::S3DVertex F( f.x, f.y, f.z, 0,1,0, color, 0,0 );
-        de::gpu::S3DVertex G( g.x, g.y, g.z, 0,1,0, color, 1,0 );
-        de::gpu::S3DVertex C( c.x, c.y, c.z, 0,1,0, color, 1,1 );
+        S3DVertex B( b.x, b.y, b.z, 0,1,0, color, 0,1 );
+        S3DVertex F( f.x, f.y, f.z, 0,1,0, color, 0,0 );
+        S3DVertex G( g.x, g.y, g.z, 0,1,0, color, 1,0 );
+        S3DVertex C( c.x, c.y, c.z, 0,1,0, color, 1,1 );
         addQuad( m_meshPosY,B,F,G,C, game.getTex(H3_Tex::Dice2, __func__) );
     }
     {   // Bottom quad AEHD = Dice(5)
-        de::gpu::S3DVertex E( e.x, e.y, e.z, 0,-1,0, color, 0,1 );
-        de::gpu::S3DVertex A( a.x, a.y, a.z, 0,-1,0, color, 0,0 );
-        de::gpu::S3DVertex D( d.x, d.y, d.z, 0,-1,0, color, 1,0 );
-        de::gpu::S3DVertex H( h.x, h.y, h.z, 0,-1,0, color, 1,1 );
+        S3DVertex E( e.x, e.y, e.z, 0,-1,0, color, 0,1 );
+        S3DVertex A( a.x, a.y, a.z, 0,-1,0, color, 0,0 );
+        S3DVertex D( d.x, d.y, d.z, 0,-1,0, color, 1,0 );
+        S3DVertex H( h.x, h.y, h.z, 0,-1,0, color, 1,1 );
         addQuad( m_meshNegY,E,A,D,H, game.getTex(H3_Tex::Dice5, __func__) );
     }
 
     {   // Front quad ABCD = Dice(4)
-        de::gpu::S3DVertex A( a.x, a.y, a.z, 0,0,-1, color, 0,1 );
-        de::gpu::S3DVertex B( b.x, b.y, b.z, 0,0,-1, color, 0,0 );
-        de::gpu::S3DVertex C( c.x, c.y, c.z, 0,0,-1, color, 1,0 );
-        de::gpu::S3DVertex D( d.x, d.y, d.z, 0,0,-1, color, 1,1 );
+        S3DVertex A( a.x, a.y, a.z, 0,0,-1, color, 0,1 );
+        S3DVertex B( b.x, b.y, b.z, 0,0,-1, color, 0,0 );
+        S3DVertex C( c.x, c.y, c.z, 0,0,-1, color, 1,0 );
+        S3DVertex D( d.x, d.y, d.z, 0,0,-1, color, 1,1 );
         addQuad( m_meshNegZ,A,B,C,D, game.getTex(H3_Tex::Dice4, __func__) );
     }
     {   // Back quad HGFE = Dice(3)
-        de::gpu::S3DVertex E( e.x, e.y, e.z, 0,0,1, color, 0,1 );
-        de::gpu::S3DVertex F( f.x, f.y, f.z, 0,0,1, color, 0,0 );
-        de::gpu::S3DVertex G( g.x, g.y, g.z, 0,0,1, color, 1,0 );
-        de::gpu::S3DVertex H( h.x, h.y, h.z, 0,0,1, color, 1,1 );
+        S3DVertex E( e.x, e.y, e.z, 0,0,1, color, 0,1 );
+        S3DVertex F( f.x, f.y, f.z, 0,0,1, color, 0,0 );
+        S3DVertex G( g.x, g.y, g.z, 0,0,1, color, 1,0 );
+        S3DVertex H( h.x, h.y, h.z, 0,0,1, color, 1,1 );
         addQuad( m_meshPosZ,H,G,F,E, game.getTex(H3_Tex::Dice3, __func__) );
     }
 
     {   // Left quad EFBA = Dice(1)
-        de::gpu::S3DVertex E( e.x, e.y, e.z, -1,0,0, color, 0,1 );
-        de::gpu::S3DVertex F( f.x, f.y, f.z, -1,0,0, color, 0,0 );
-        de::gpu::S3DVertex B( b.x, b.y, b.z, -1,0,0, color, 1,0 );
-        de::gpu::S3DVertex A( a.x, a.y, a.z, -1,0,0, color, 1,1 );
+        S3DVertex E( e.x, e.y, e.z, -1,0,0, color, 0,1 );
+        S3DVertex F( f.x, f.y, f.z, -1,0,0, color, 0,0 );
+        S3DVertex B( b.x, b.y, b.z, -1,0,0, color, 1,0 );
+        S3DVertex A( a.x, a.y, a.z, -1,0,0, color, 1,1 );
         addQuad( m_meshNegX,E,F,B,A, game.getTex(H3_Tex::Dice1, __func__) );
     }
     {   // Right quad DCGH = Dice(6)
-        de::gpu::S3DVertex D( d.x, d.y, d.z, 1,0,0, color, 0,1 );
-        de::gpu::S3DVertex C( c.x, c.y, c.z, 1,0,0, color, 0,0 );
-        de::gpu::S3DVertex G( g.x, g.y, g.z, 1,0,0, color, 1,0 );
-        de::gpu::S3DVertex H( h.x, h.y, h.z, 1,0,0, color, 1,1 );
+        S3DVertex D( d.x, d.y, d.z, 1,0,0, color, 0,1 );
+        S3DVertex C( c.x, c.y, c.z, 1,0,0, color, 0,0 );
+        S3DVertex G( g.x, g.y, g.z, 1,0,0, color, 1,0 );
+        S3DVertex H( h.x, h.y, h.z, 1,0,0, color, 1,1 );
         addQuad( m_meshPosX,D,C,G,H, game.getTex(H3_Tex::Dice6, __func__) );
     }
 

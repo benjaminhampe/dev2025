@@ -11,3 +11,10 @@
 #ifdef _WIN32
     #include <de/os/win32/ComInit.h>
 #endif
+
+de::Image
+dbImageFromLinearColorGradient( const de::LinearColorGradient & cg,
+                         int w, int h, bool bVertical);
+
+bool dbImageToLinearColorGradient( de::LinearColorGradient & cg,
+                              const de::Image &img, bool bVertical);

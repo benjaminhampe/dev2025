@@ -495,9 +495,19 @@ typedef char stbtt__check_size16[sizeof(stbtt_int16)==2 ? 1 : -1];
 #define __STB_INCLUDE_STB_TRUETYPE_H__
 
 #ifdef STBTT_STATIC
-#define STBTT_DEF static
+    #define STBTT_DEF static
 #else
-#define STBTT_DEF extern
+    #ifdef BENNI_STBTT_DLL
+        #if defined(WIN32)
+            #ifdef BENNI_STBTT_INTERNAL
+                #define STBTT_DEF extern __declspec(dllexport)
+            #else
+                #define STBTT_DEF extern __declspec(dllimport)
+            #endif
+        #endif
+    #else
+        #define STBTT_DEF extern
+    #endif  /* BENNI_STBTT_DLL */
 #endif
 
 #ifdef __cplusplus

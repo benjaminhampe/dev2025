@@ -4519,7 +4519,7 @@ void SurgeSynthesizer::process()
 #endif
     processRunning = 0;
 
-#if DEBUG
+#ifdef DEBUG
     memset(endedHostNoteIds, 0, 512 * sizeof(int32_t));
 #endif
 

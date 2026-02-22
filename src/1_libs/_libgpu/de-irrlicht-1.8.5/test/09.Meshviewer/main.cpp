@@ -725,7 +725,7 @@ int main(int argc, char* argv[])
 		video::SColorf(1.0f,1.0f,1.0f),2000);
 	smgr->setAmbientLight(video::SColorf(0.3f,0.3f,0.3f));
 	// add our media directory as "search path"
-	Device->getFileSystem()->addFileArchive("../../media/");
+	Device->getFileSystem()->addFileArchive("media/irrlicht/");
 
 	/*
 	The next step is to read the configuration file. It is stored in the xml
@@ -921,18 +921,12 @@ int main(int argc, char* argv[])
 	// add skybox
 
 	SkyBox = smgr->addSkyBoxSceneNode(
-      driver->getTexture("../../media/MarriottMadisonWest/py.jpg"),
-      driver->getTexture("../../media/MarriottMadisonWest/ny.jpg"),
-      driver->getTexture("../../media/MarriottMadisonWest/pz.jpg"),
-      driver->getTexture("../../media/MarriottMadisonWest/nz.jpg"),
-      driver->getTexture("../../media/MarriottMadisonWest/px.jpg"),
-      driver->getTexture("../../media/MarriottMadisonWest/nx.jpg"));
-		// driver->getTexture("irrlicht2_up.jpg"),
-		// driver->getTexture("irrlicht2_dn.jpg"),
-		// driver->getTexture("irrlicht2_lf.jpg"),
-		// driver->getTexture("irrlicht2_rt.jpg"),
-		// driver->getTexture("irrlicht2_ft.jpg"),
-		// driver->getTexture("irrlicht2_bk.jpg"));
+		driver->getTexture("irrlicht2_up.jpg"),
+		driver->getTexture("irrlicht2_dn.jpg"),
+		driver->getTexture("irrlicht2_lf.jpg"),
+		driver->getTexture("irrlicht2_rt.jpg"),
+		driver->getTexture("irrlicht2_ft.jpg"),
+		driver->getTexture("irrlicht2_bk.jpg"));
 
 	// add a camera scene node
 	Camera[0] = smgr->addCameraSceneNodeMaya();

@@ -6,10 +6,10 @@ if (TARGET ${LIB_NAME})
 else()
     set(LIB_HEADER_DIR ${CMAKE_CURRENT_LIST_DIR}/include)
     set(LIB_SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/src)
-    set(LIB_HEADERS 
+    set(LIB_HEADERS
         ${LIB_HEADER_DIR}/stb_image_write.h
     )
-    set(LIB_SOURCES 
+    set(LIB_SOURCES
         ${LIB_SOURCE_DIR}/stb_image_write.c
     )
 
@@ -18,20 +18,20 @@ else()
     #      list(APPEND IRRXML_SOURCES ${CMAKE_CURRENT_LIST_DIR}/res/resource.h)
     #      list(APPEND IRRXML_SOURCES ${CMAKE_CURRENT_LIST_DIR}/res/resource.rc)
     #   endif()
-    
-    if (BUILD_SHARED)
-        message("${BoldBlue}[benni] DLL: ${LIB_NAME}${ColourReset}")
-        add_library(${LIB_NAME} SHARED "")
-    else()
+
+    # if (BUILD_SHARED_LIBS)
+    #     message("${BoldBlue}[benni] DLL: ${LIB_NAME}${ColourReset}")
+    #     add_library(${LIB_NAME} SHARED "")
+    # else()
         message("${BoldCyan}[benni] LIB: ${LIB_NAME}${ColourReset}")
         add_library(${LIB_NAME} STATIC "")
         target_compile_definitions(${LIB_NAME} PUBLIC STB_IMAGE_STATIC=1)
-    endif()
+    # endif()
 
     target_sources(${LIB_NAME} PUBLIC ${LIB_HEADERS} PRIVATE ${LIB_SOURCES})
-    
+
     target_include_directories(${LIB_NAME} PUBLIC ${LIB_HEADER_DIR})
-    target_include_directories(${LIB_NAME} PRIVATE ${LIB_SOURCE_DIR}) 
+    target_include_directories(${LIB_NAME} PRIVATE ${LIB_SOURCE_DIR})
 
     target_compile_definitions(${LIB_NAME} PUBLIC HAVE_LIBSTB_IMAGE_WRITE=1)
     #target_compile_definitions(${LIB_NAME} PUBLIC STBI_HEADER_FILE_ONLY=1)
@@ -46,7 +46,7 @@ else()
     if(CMAKE_BUILD_TYPE STREQUAL "Debug")
         set(STBI_DEBUG_MODE 1)
     endif()
-    
+
     if (MSVC)
     else()
         target_compile_options(${LIB_NAME} PRIVATE -Wno-misleading-indentation)

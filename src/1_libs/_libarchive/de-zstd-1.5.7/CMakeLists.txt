@@ -1,6 +1,5 @@
 set(LIB_NAME de_zstd)
-
-project(${LIB_NAME}-1.5.7 C ASM)
+project(${LIB_NAME} C ASM) # -1.5.7
 
 if (TARGET ${LIB_NAME})
     message("${BoldYellow}[benni] HEADER_GUARD: ${LIB_NAME}${ColourReset}")
@@ -9,7 +8,7 @@ else()
 
     set(LIB_HEADER_DIR ${CMAKE_CURRENT_LIST_DIR}/include)
     set(LIB_SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/src)
-    set(LIB_HEADERS 
+    set(LIB_HEADERS
         ${LIB_HEADER_DIR}/zdict.h
         ${LIB_HEADER_DIR}/zstd.h
         ${LIB_HEADER_DIR}/zstd_errors.h
@@ -17,8 +16,8 @@ else()
         ${LIB_HEADER_DIR}/common/zstd_deps.h
         ${LIB_HEADER_DIR}/common/compiler.h
         ${LIB_HEADER_DIR}/common/portability_macros.h
-        ${LIB_HEADER_DIR}/common/debug.h		
-        ${LIB_HEADER_DIR}/common/pool.h		
+        ${LIB_HEADER_DIR}/common/debug.h
+        ${LIB_HEADER_DIR}/common/pool.h
         ${LIB_HEADER_DIR}/common/threading.h
         ${LIB_HEADER_DIR}/common/allocations.h
         ${LIB_HEADER_DIR}/common/bits.h
@@ -108,23 +107,23 @@ else()
         # ${LIB_SOURCE_DIR}/deprecated/zbuff_compress.c
         # ${LIB_SOURCE_DIR}/deprecated/zbuff_decompress.c
     )
-	
+
     # if(WIN32)
         # enable_language(RC)
         # list(APPEND LIB_SOURCES ${CMAKE_CURRENT_LIST_DIR}/res/resource.h)
         # list(APPEND LIB_SOURCES ${CMAKE_CURRENT_LIST_DIR}/res/resource.rc)
     # endif()
 
-    if (BUILD_SHARED)
-        message("${BoldBlue}[benni] DLL: ${LIB_NAME}${ColourReset}")
-        add_library(${LIB_NAME} SHARED "")
-        # target_compile_definitions(${LIB_NAME} PRIVATE DLL_EXPORT=1)
-        target_compile_definitions(${LIB_NAME} PUBLIC ZSTD_BUILD_SHARED=1)
-    else()
+    # if (BUILD_SHARED_LIBS)
+    #     message("${BoldBlue}[benni] DLL: ${LIB_NAME}${ColourReset}")
+    #     add_library(${LIB_NAME} SHARED "")
+    #     target_compile_definitions(${LIB_NAME} PUBLIC ZSTD_DLL=1)
+    #     target_compile_definitions(${LIB_NAME} PRIVATE ZSTD_DLL_EXPORT=1)
+    # else()
         message("${BoldCyan}[benni] LIB: ${LIB_NAME}${ColourReset}")
         add_library(${LIB_NAME} STATIC "")
         target_compile_definitions(${LIB_NAME} PUBLIC ZSTD_BUILD_STATIC=1)
-    endif()
+    # endif()
 
     target_sources(${LIB_NAME} PUBLIC ${LIB_HEADERS} PRIVATE ${LIB_SOURCES})
 
@@ -146,7 +145,7 @@ else()
     target_compile_definitions(${LIB_NAME} PUBLIC HAVE_LIBZSTD=1)
     target_compile_definitions(${LIB_NAME} PUBLIC HAVE_ZSTD=1)
     # target_compile_definitions(${LIB_NAME} PRIVATE HAVE_CONFIG_H=1)
-	
+
     target_compile_definitions(${LIB_NAME} PUBLIC ZSTD_BUILD_COMPRESSION=1)
     target_compile_definitions(${LIB_NAME} PUBLIC ZSTD_BUILD_DECOMPRESSION=1)
     target_compile_definitions(${LIB_NAME} PUBLIC ZSTD_BUILD_DICTBUILDER=1)
@@ -175,12 +174,11 @@ else()
     if (MSVC)
         target_compile_definitions(${LIB_NAME} PUBLIC _CRT_SECURE_NO_WARNINGS=1)
         target_compile_definitions(${LIB_NAME} PUBLIC ZSTD_HEAPMODE=0)
-        if (ZSTD_BUILD_SHARED)
-            target_compile_definitions(${LIB_NAME} PUBLIC ZSTD_DLL_EXPORT=1)
+        if (ZSTD_DLL)
             target_compile_definitions(${LIB_NAME} PUBLIC _CONSOLE=1)
         endif()
-	else()
-		target_link_libraries(${LIB_NAME} PUBLIC pthread)
+    else()
+        target_link_libraries(${LIB_NAME} PUBLIC pthread)
     endif()
 
 endif()

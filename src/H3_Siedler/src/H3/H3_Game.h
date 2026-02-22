@@ -167,7 +167,7 @@ struct H3_Game : public de::IEventReceiver
     void computeVisibleCorners( uint32_t playerId );
     void computeVisibleEdges( uint32_t playerId );
 
-	void pick();
+    void pick();
     void stealRandomCard( int playerFrom, int playerTo );
 
     H3_Player& getPlayer( const u32 playerId );
@@ -256,18 +256,18 @@ struct H3_Game : public de::IEventReceiver
     uint32_t m_fpsTimerId;  // Screen FPS...
     uint32_t m_capTimerId;  // Window title update...
 
-    de::gpu::SMeshBuffer m_smeshSun;
-    de::gpu::SMeshBuffer m_smeshTile;
-    de::gpu::SMeshBuffer m_smeshChip;
-    de::gpu::SMeshBuffer m_smeshCorner;
-    de::gpu::SMeshBuffer m_smeshEdge;
-    de::gpu::SMeshBuffer m_smeshRoad;
-    de::gpu::SMeshBuffer m_smeshFarm;
-    de::gpu::SMeshBuffer m_smeshCity;
+    de::smesh::SMeshBuffer m_smeshSun;
+    de::smesh::SMeshBuffer m_smeshTile;
+    de::smesh::SMeshBuffer m_smeshChip;
+    de::smesh::SMeshBuffer m_smeshCorner;
+    de::smesh::SMeshBuffer m_smeshEdge;
+    de::smesh::SMeshBuffer m_smeshRoad;
+    de::smesh::SMeshBuffer m_smeshFarm;
+    de::smesh::SMeshBuffer m_smeshCity;
     H3_ObjMeshBuffer m_tmeshRoad;
     H3_ObjMeshBuffer m_tmeshFarm;
     H3_ObjMeshBuffer m_tmeshCity;
-    de::gpu::SMeshBuffer m_smeshThief;
+    de::smesh::SMeshBuffer m_smeshThief;
 
     // dc == (instanced) drawcall of one SMeshBuffer.
     H3_ChipMeshBuffer m_dcChips;
