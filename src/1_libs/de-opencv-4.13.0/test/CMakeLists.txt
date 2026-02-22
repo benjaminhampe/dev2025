@@ -1,0 +1,6 @@
+add_subdirectory(face_detect_1)
+add_subdirectory(02_annotation)
+add_subdirectory(03_createsamples)
+add_subdirectory(04_model_diagnostics)
+add_subdirectory(05_version)
+add_subdirectory(06_visualisation)

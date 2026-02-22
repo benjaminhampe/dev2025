@@ -1,0 +1,22 @@
+file(COPY media/OpenCV DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/media)
+
+add_subdirectory(3rdparty)
+add_subdirectory(de_opencv_core4130)
+add_subdirectory(de_opencv_imgproc4130)
+add_subdirectory(de_opencv_imgcodecs4130)
+add_subdirectory(de_opencv_dnn4130)
+add_subdirectory(de_opencv_flann4130)
+add_subdirectory(de_opencv_features2d4130)
+add_subdirectory(de_opencv_calib3d4130)
+add_subdirectory(de_opencv_video4130)
+add_subdirectory(de_opencv_videoio4130)
+add_subdirectory(de_opencv_highgui4130)
+add_subdirectory(de_opencv_ts4130)
+add_subdirectory(de_opencv_gapi4130)
+add_subdirectory(de_opencv_ml4130)
+add_subdirectory(de_opencv_objdetect4130)
+add_subdirectory(de_opencv_photo4130)
+add_subdirectory(de_opencv_stitching4130)
+
+add_subdirectory(test)
+

@@ -1,0 +1,23 @@
+# add_subdirectory(protobuf-34.0-rc2)
+
+# add_subdirectory(00_de_cv_opencl)
+# add_subdirectory(00_de_cv_vulkan)
+add_subdirectory(01_de_cv_ade_0.1.2e)
+# add_subdirectory(02_de_cv_cpufeatures)
+# add_subdirectory(03_de_cv_dlpack)
+# add_subdirectory(04_de_google_flatbuffers)
+# add_subdirectory(06_de_cv_zlib)
+# add_subdirectory(06_de_cv_zlib)
+# add_subdirectory(08_de_cv_jasper)
+# add_subdirectory(09_de_cv_jpeg)
+# add_subdirectory(10_de_cv_jpeg_turbo)
+# add_subdirectory(11_de_cv_png)
+# add_subdirectory(12_de_cv_spng)
+# add_subdirectory(13_de_cv_tiff)
+# add_subdirectory(14_de_cv_webp)
+# add_subdirectory(15_de_cv_openjpeg_2.5.3)
+# add_subdirectory(16_de_cv_openexr)
+
+add_subdirectory(17_de_cv_protobuf)
+add_subdirectory(18_de_cv_quirc)
+
