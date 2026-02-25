@@ -57,40 +57,36 @@ PluginManagerWidget::~PluginManagerWidget()
 
 void PluginManagerWidget::updateLayout()
 {
-    int ml = contentsMargins().left();
-    int mt = contentsMargins().top();
-    //int mr = contentsMargins().right();
-    int mb = contentsMargins().bottom();
+    const int n = static_cast<int>(m_widgets.size());
+    const int ml = contentsMargins().left();
+    const int mt = contentsMargins().top();
 
     int x = ml;
     int y = mt;
 
-    for (int i = 0; i < m_widgets.size(); ++i)
+    for (int i = 0; i < n; i++)
     {
         auto pWidget = m_widgets[ i ];
 
-        m_rcDropIndicator = QRect(x, y, m_dropWidth, height() - mt - mb);
-
         if (m_dropIndex == i)
         {
-            x += m_dropWidth;
+            x += m_dropIndicatorWidth + m_widgetSpacing;
         }
 
         pWidget->move(x,y);
 
         pWidget->setPluginPos(x,y);
 
-        x += pWidget->width() + m_spacing;
+        x += pWidget->width() + m_widgetSpacing;
     }
 
-    /*
-    if (m_dropIndex == m_widgets.size())
+    if (m_dropIndex >= n)
     {
-        x += m_dropWidth;
+        x += m_dropIndicatorWidth + m_widgetSpacing;
     }
 
-    setMinimumWidth(x + 20);
-    */
+    // setMinimumWidth(x + 20);
+
     setMinimumWidth(x);
 
     update();
@@ -101,16 +97,22 @@ void PluginManagerWidget::updateLayout()
 // ------------------------------------------------------------
 void PluginManagerWidget::paintEvent(QPaintEvent* e)
 {
-    QPainter dc(this);
-    dc.fillRect(rect(),QColor(95,95,105));
+    // const int ml = contentsMargins().left();
+    const int mt = contentsMargins().top();
+    // const int mr = contentsMargins().right();
+    const int mb = contentsMargins().bottom();
 
-    auto s = QString("m_dragIndex{%1}, m_dragRect{%2}, m_dropIndex{%3}")
-        .arg(m_dragIndex)
-        .arg(qstr(m_dragRect))
-        .arg(m_dropIndex);
+    QPainter dc(this);
+    dc.fillRect(rect(),QColor(145,95,25));
+
+    auto s = QString("m_dropIndex(%1), m_dropIndicatorRect(%2)")
+         // .arg(m_dragIndex)
+        .arg(m_dropIndex)
+        .arg(qstr(m_dropIndicatorRect))
+    ;
 
     auto fm = QFontMetrics(font());
-    int w = width();
+    //int w = width();
     int h = height();
     int x = 10;
     int y = h - 10 - 1 - fm.ascent();
@@ -119,11 +121,12 @@ void PluginManagerWidget::paintEvent(QPaintEvent* e)
 
     if (m_dropIndex > -1)
     {
-        //int x = computeDropX(m_dropIndex);
-        dc.fillRect(m_rcDropIndicator, QColor(0, 0, 255, 120));
+        int x = computeDropX(m_dropIndex);
+        m_dropIndicatorRect = QRect(x, 0, m_dropIndicatorWidth, height() - mt - mb);
+        dc.fillRect(m_dropIndicatorRect, QColor(0, 0, 255, 120));
     }
 
-    e->accept();
+    // e->accept();
 
 
 }
@@ -190,8 +193,6 @@ void PluginManagerWidget::dragEnterEvent(QDragEnterEvent* e)
 
 int PluginManagerWidget::computeDropIndex(const QPoint &pos)
 {
-    int x = contentsMargins().left();
-
     for (int i = 0; i < m_widgets.size(); ++i)
     {
         auto w = m_widgets[ i ];
@@ -207,6 +208,8 @@ int PluginManagerWidget::computeDropIndex(const QPoint &pos)
 
 void PluginManagerWidget::dragMoveEvent(QDragMoveEvent* e)
 {
+    // qDebug() << "dragMoveEvent()";
+
     QPoint pos = e->position().toPoint();
     m_lastDragPos = pos;
 
@@ -218,6 +221,8 @@ void PluginManagerWidget::dragMoveEvent(QDragMoveEvent* e)
 
 void PluginManagerWidget::dragLeaveEvent(QDragLeaveEvent*)
 {
+    qDebug() << "dragLeaveEvent()";
+    m_dragIndex = -1;
     m_dropIndex = -1;
     m_scrollTimer->stop();
     updateLayout();
@@ -225,6 +230,8 @@ void PluginManagerWidget::dragLeaveEvent(QDragLeaveEvent*)
 
 void PluginManagerWidget::dropEvent(QDropEvent* e)
 {
+    qDebug() << "dropEvent()";
+
     m_scrollTimer->stop();
 
     if (!e->mimeData()->hasUrls())
@@ -243,57 +250,38 @@ void PluginManagerWidget::dropEvent(QDropEvent* e)
         }
     }
 
+    m_dragIndex = -1;
     m_dropIndex = -1;
-    // repositionWidgets();
-    // update();
     updateLayout();
 }
-
-
 
 // ------------------------------------------------------------
 // Positionierung
 // ------------------------------------------------------------
-/*
-void PluginManagerWidget::repositionWidgets()
-{
-    int x = 10;
-
-    for (int i = 0; i < m_widgets.size(); ++i)
-    {
-        PluginWidget* w = m_widgets[ i ];
-
-        if (m_dropIndex == i)
-        {
-            x += m_dropWidth;
-        }
-        w->move(x, 10);
-        x += w->width() + 10;
-    }
-
-    if (m_dropIndex == m_widgets.size())
-    {
-        x += m_dropWidth;
-    }
-
-    setMinimumWidth(x + 20);
-}
-*/
 
 int PluginManagerWidget::computeDropX(int index)
 {
-    if (index == 0)
+    const int n = static_cast<int>(m_widgets.size());
+
+    if (index <= 0 || n < 1)
     {
-        return 10;
+        return contentsMargins().left();
     }
 
-    if (index >= m_widgets.size())
+    if (index >= n)
     {
-        PluginWidget *last = m_widgets.back();
-        return last->x() + last->width() + 10;
+        if (n > 0)
+        {
+            auto p = m_widgets.back();
+            return p->x() + p->width() + m_widgetSpacing;
+        }
+        else
+        {
+            return contentsMargins().left();
+        }
     }
 
-    return m_widgets[index]->x();
+    return m_widgets[index]->x() - m_widgetSpacing - m_dropIndicatorWidth;
 }
 
 // ------------------------------------------------------------
@@ -301,6 +289,7 @@ int PluginManagerWidget::computeDropX(int index)
 // ------------------------------------------------------------
 void PluginManagerWidget::startAutoScrollIfNeeded(const QPoint &pos)
 {
+/*
     int margin = 40;
 
     if (pos.x() < margin)
@@ -323,10 +312,12 @@ void PluginManagerWidget::startAutoScrollIfNeeded(const QPoint &pos)
     {
         m_scrollTimer->stop();
     }
+*/
 }
 
 void PluginManagerWidget::autoScroll()
 {
+/*
     auto scrollArea = qobject_cast<QScrollArea*>(parentWidget()->parentWidget());
     if (!scrollArea)
     {
@@ -338,9 +329,8 @@ void PluginManagerWidget::autoScroll()
 
     m_dropIndex = computeDropIndex(m_lastDragPos);
     updateLayout();
+*/
 }
-
-
 
 // ------------------------------------------------------------
 // Drag&Drop Reorder:
@@ -363,35 +353,43 @@ int PluginManagerWidget::computeWidgetIndex(const QPoint &pos)
     return -1;
 }
 
-void PluginManagerWidget::mousePressEvent(QMouseEvent* e)
-{
-    if (m_dragIndex < 0)
-    {
-        for (auto& w : m_widgets)
-        {
-            w->setIsDragging(false);
-        }
-
-        int i = computeWidgetIndex(e->pos());
-        if (i > -1)
-        {
-            m_dragIndex = i;
-            m_dragRect = m_widgets[i]->rect();
-            m_widgets[i]->setIsDragging(true);
-            updateLayout();
-        }
-    }
-}
-
 void PluginManagerWidget::mouseReleaseEvent(QMouseEvent* e)
 {
-    if (m_dragIndex > -1)
+    if (e->button() == Qt::LeftButton)
     {
-        m_dragIndex = -1;
+        m_isLeftPressed = false;
 
-        for (auto& w : m_widgets)
+        if (m_isDragging)
         {
-            w->setIsDragging(false);
+            swapWidgets( m_dragIndex, m_dropIndex );
+
+            for (auto p : m_widgets)
+            {
+                p->setIsDragging(false);
+            }
+        }
+
+        m_isDragging = false;
+        m_dropIndex = -1;
+        m_dragIndex = -1;
+        updateLayout();
+    }
+
+}
+
+void PluginManagerWidget::mousePressEvent(QMouseEvent* e)
+{
+    if (e->button() == Qt::LeftButton)
+    {
+        m_isLeftPressed = true;
+        m_isDragging = false;
+        m_dragIndex = -1;
+        m_dropIndex = -1;
+        m_lastDragPos = e->position().toPoint();
+
+        for (auto p : m_widgets)
+        {
+            p->setIsDragging(false);
         }
 
         updateLayout();
@@ -400,13 +398,67 @@ void PluginManagerWidget::mouseReleaseEvent(QMouseEvent* e)
 
 void PluginManagerWidget::mouseMoveEvent(QMouseEvent* e)
 {
-    if (m_dragIndex > -1)
+    if (m_isLeftPressed)
     {
-        updateLayout();
+        auto v = m_lastDragPos - e->position().toPoint();
+        auto d = v.x() * v.x() + v.y() * v.y();
+        // Init drag only when mouse moved atleast 10px (=100 squared)
+        if (d >= 100)
+        {
+            if (!m_isDragging)
+            {
+                m_dropIndex = -1;
+                m_dragIndex = computeWidgetIndex( m_lastDragPos );
+
+                if (m_dragIndex > -1 && m_dragIndex < int(m_widgets.size()))
+                {
+                    m_widgets[ m_dragIndex ]->setIsDragging(true);
+                }
+
+                m_isDragging = true;
+            }
+            else
+            {
+                m_dropIndex = computeDropIndex(e->position().toPoint());
+
+                updateLayout();
+            }
+        }
     }
 }
 
+void PluginManagerWidget::swapWidgets(int drag, int drop)
+{
+    if (drag == drop)
+    {
+        return;
+    }
 
+    const int n = static_cast<int>(m_widgets.size());
+
+    if (n < 2)
+    {
+        return;
+    }
+
+    if (drag < 0 || drag >= n)
+    {
+        qDebug() << "Invalid drag index " << drag << " of " << n;
+        return;
+    }
+
+    if (drop < 0 || drop >= n)
+    {
+        qDebug() << "Invalid drop index " << drop << " of " << n;
+        return;
+    }
+
+    qDebug() << "Swap index " << (drag+1) << " <-> "  << (drop+1) << " of " << n;
+
+    std::swap( m_widgets[ drag ], m_widgets[ drop ] );
+
+    emit reorderedWidgets();
+}
 
 
 // ------------------------------------------------------------

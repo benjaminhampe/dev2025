@@ -18,6 +18,9 @@ public:
     void saveState(const QString &path);
     void loadState(const QString &path);
 
+signals:
+    void reorderedWidgets();
+
 protected:
     // ------------------------------------------------------------
     // Drag&Drop
@@ -40,20 +43,21 @@ protected:
     void mouseReleaseEvent(QMouseEvent* e) override;
 
     void updateLayout();
-    int m_spacing = 10;
 
     int computeWidgetIndex(const QPoint &pos);
-    int m_dragIndex = -1;
-    QRect m_dragRect;
-    QRect m_rcDropIndicator;
+    void swapWidgets(int drag, int drop);
 private:
     std::vector<PluginWidget*> m_widgets;
-    int m_dropIndex = -1;
-    int m_dropWidth = 20;
+    int m_widgetSpacing = 1;
+    int m_dragIndex = -1; // Only valid for reorder with mouse-click
+    int m_dropIndex = -1; // Valid for reorder with mouse-click and Drag&Drop events.
+    int m_dropIndicatorWidth = 20;
+    QRect m_dropIndicatorRect;
     QPoint m_lastDragPos;
     QTimer* m_scrollTimer;
     int m_scrollDirection = 0;
-
+    bool m_isLeftPressed = false;
+    bool m_isDragging = false;
     // ------------------------------------------------------------
     // Plugin hinzufügen
     // ------------------------------------------------------------
