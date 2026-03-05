@@ -1,0 +1,46 @@
+Kurve	Operationen	CPU‑Kosten	Echtzeit‑Tauglichkeit
+Linear	0	extrem niedrig	perfekt
+S‑Curve	2–3 multiplies	sehr niedrig	perfekt
+Equal‑Power	1 sqrt	mittel	sehr gut
+Exponential	1 pow	hoch	gut mit LUT
+Logarithmic	1 log	hoch	gut mit LUT
+
+inline float fadeSCurve(float x)
+{
+    return x * x * (3.0f - 2.0f * x);   // smoothstep
+}
+
+#include <cmath>
+
+inline float fadeEqualPowerIn(float x)
+{
+    return std::sqrt(x);
+}
+
+inline float fadeEqualPowerOut(float x)
+{
+    return std::sqrt(1.0f - x);
+}
+
+
+#include <cmath>
+
+inline float fadeLogIn(float x)
+{
+    return std::log10(1.0f + 9.0f * x);  // skaliert auf 0..1
+}
+
+inline float fadeLogOut(float x)
+{
+    return 1.0f - std::log10(1.0f + 9.0f * x);
+}
+
+inline float fadeExponentialIn(float x)
+{
+    return std::pow(x, 3.0f);   // weich, langsam → schnell
+}
+
+inline float fadeExponentialOut(float x)
+{
+    return 1.0f - std::pow(x, 3.0f);
+}

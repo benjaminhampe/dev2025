@@ -10,7 +10,7 @@ compress_tar_file(
 )
 // ====================================================
 {
-    RAII_FILE in_file;
+    de::File in_file;
     if (!in_file.open(input_path, "rb"))
     {
         DE_ERROR("Failed to open input file")
@@ -34,7 +34,7 @@ compress_tar_file(
         return false;
     }
 
-    RAII_FILE out_file;
+    de::File out_file;
     if (!out_file.open(output_path, "wb"))
     {
         DE_ERROR("Failed to open output file");
@@ -63,7 +63,7 @@ decompress_tar_file(
 )
 // ====================================================
 {
-    RAII_FILE in_file;
+    de::File in_file;
     if (!in_file.open(input_path, "rb"))
     {
         DE_ERROR("Failed to open input file");
@@ -94,7 +94,7 @@ decompress_tar_file(
     }
 
 
-    RAII_FILE out_file;
+    de::File out_file;
     if (!out_file.open(output_path, "wb"))
     {
         DE_ERROR("Failed to open output file");

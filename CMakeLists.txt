@@ -5,6 +5,14 @@
 # @platforms Windows64, Linux64
 #define CASE_RETURN(x) case x: return L ## #x
 
+# set(BENNI_MINGW_DIR C:/sdk/mingw64_1520-posix-seh-ucrt-rt_v13-rev0)
+# set(BENNI_MINGW_DIR C:/sdk/llvm-mingw-20260210-ucrt-x86_64)
+# set(BENNI_MINGW_DIR ${CMAKE_CURRENT_LIST_DIR}/toolchain/mingw1310_64)
+set(BENNI_MINGW_DIR C:/sdk/Qt/Tools/llvm-mingw1706_64)
+set(BENNI_QT6_DIR C:/sdk/Qt/6.10.2/llvm-mingw_64)
+# set(BENNI_QT6_DIR C:/sdk/Qt/6.9.1/llvm-mingw_64)
+# set(BENNI_QT6_DIR ${CMAKE_CURRENT_LIST_DIR}/toolchain/Qt-6.8.2_mingw_64)
+
 # toolchain.cmake
 # Can be with 'ninja' instead of 'mingw32-make' or not.
 # Always uses parallel linking since big apps really need too much time on a single core.
@@ -62,13 +70,6 @@ set(BENNI_USE_GPROF 0) # Perf, cannot link to libgprof.a and gcrt2.0
 # clang-cl.exe -fms-extensions -fms-compatibility
 
 set(BENNI_USE_OMIT_FRAMEPOINTER 0)
-# set(BENNI_MINGW_DIR C:/sdk/mingw64_1520-posix-seh-ucrt-rt_v13-rev0)
-# set(BENNI_MINGW_DIR C:/sdk/llvm-mingw-20260210-ucrt-x86_64)
-set(BENNI_MINGW_DIR C:/sdk/Qt/Tools/llvm-mingw1706_64)
-set(BENNI_QT6_DIR C:/sdk/Qt/6.9.1/llvm-mingw_64)
-
-# set(BENNI_MINGW_DIR ${CMAKE_CURRENT_LIST_DIR}/toolchain/mingw1310_64)
-# set(BENNI_QT6_DIR ${CMAKE_CURRENT_LIST_DIR}/toolchain/Qt-6.8.2_mingw_64)
 
 string(ASCII 27 Esc)
 set(ColourReset "${Esc}[m")

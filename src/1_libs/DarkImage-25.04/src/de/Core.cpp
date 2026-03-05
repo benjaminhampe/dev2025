@@ -1023,6 +1023,68 @@ StringUtil::trimRight( const std::string& original, const std::string& filter )
     return tmp;
 }
 
+// ===========================================================================
+// ======= RAII_File ========================================================
+// ===========================================================================
+/*
+File::File()
+    : m_file(nullptr), m_size(0)
+{
+    // Empty default ctr
+}
+File::File(std::string const & uri, std::string const & flags)
+    : m_file(nullptr), m_size(0), m_uri(uri), m_flags(flags)
+{
+    // Empty value ctr
+}
+
+uint64_t File::size() const
+{
+    return m_size;
+}
+
+bool File::open(std::string const & uri, std::string const & flags)
+{
+    close();
+
+    m_file = fopen(uri.c_str(), flags.c_str());
+    if (!m_file)
+    {
+        DE_ERROR("Failed to open input file ", uri, " with flags ",flags)
+        return false;
+    }
+
+    fseek(m_file, 0, SEEK_END);
+    m_size = ftell(m_file);
+    fseek(m_file, 0, SEEK_SET);
+
+    return true;
+}
+
+void File::close()
+{
+    if (m_file)
+    {
+        DE_OK("Close file. ", m_uri)
+        fclose(m_file);
+        m_file = nullptr;
+        m_size = 0;
+    }
+}
+
+void File::write(const void* __restrict__ pSrc, uint64_t asize)
+{
+    if (!m_file) { DE_ERROR("No file.") return; }
+    fwrite(pSrc, 1, asize, m_file);
+}
+
+void File::read(void* __restrict__ pDst, uint64_t asize)
+{
+    if (!m_file) { DE_ERROR("No file.") return; }
+    fread(pDst, 1, asize, m_file);
+}
+*/
+
 // =======================================================================
 File::File()
 // =======================================================================
@@ -1070,7 +1132,7 @@ void File::close()
     }
 }
 
-size_t File::write( const void* src, size_t nBytes ) const
+size_t File::write( const void* __restrict__ src, size_t nBytes ) const
 {
     if (!m_file) return 0;
     size_t nWrittenBytes = ::fwrite( src, 1, nBytes, m_file );
@@ -1081,7 +1143,7 @@ size_t File::write( const void* src, size_t nBytes ) const
     return nWrittenBytes;
 }
 
-size_t File::read( void* dst, size_t nBytes ) const
+size_t File::read( void* __restrict__ dst, size_t nBytes ) const
 {
     if (!m_file) return 0;
     const size_t nReadBytes = ::fread( dst, 1, nBytes, m_file );
@@ -2976,21 +3038,20 @@ Binary::seek( uint64_t byteOffset, int dir )
 }
 */
 
+
+
 // static
 FileMagic::EFileMagic
 FileMagic::getFileMagicFromFile(const std::string& uri)
 {
-    FILE* file = ::fopen( uri.c_str(), "rb" );
-    if ( !file )
+    File file;
+    if ( !file.open( uri.c_str(), "rb" ) )
     {
         DE_ERROR("Cant open ", uri )
         return Unknown;
     }
 
-    ::fseeko64( file, 0, SEEK_END );
-    size_t byteCount = size_t( ::ftello64( file ) );
-    ::fseeko64( file, 0, SEEK_SET );
-
+    const size_t byteCount = file.size();
     if ( byteCount < 32 )
     {
         DE_ERROR("byteCount(",byteCount,") < 32")
@@ -2998,8 +3059,7 @@ FileMagic::getFileMagicFromFile(const std::string& uri)
     }
 
     std::array<uint8_t,32> blob{ 0 };
-    ::fread( blob.data(), 1, blob.size(), file );
-    ::fclose( file );
+    file.read(blob.data(), blob.size() );
     return getFileMagic( blob.data() );
 }
 
@@ -3691,12 +3751,11 @@ float Rectf::getV2() const { return y2(); }
 float Rectf::getDU() const { return w(); }
 float Rectf::getDV() const { return h(); }
 
-
-
 } // end namespace de.
 
-std::string
-dbStrVal(float val, int digits)
+
+
+std::string dbStrVal(float val, int digits)
 {
     int mg = val * std::pow(10.0f, digits );
     std::string a = std::to_string(mg);
@@ -3704,8 +3763,7 @@ dbStrVal(float val, int digits)
     return a;
 }
 
-std::string
-dbStrVal(double val, int digits)
+std::string dbStrVal(double val, int digits)
 {
     int mg = val * std::pow(10.0, digits );
     std::string a = std::to_string(mg);
@@ -3713,9 +3771,50 @@ dbStrVal(double val, int digits)
     return a;
 }
 
-std::string dbStrNanoSeconds(double nSeconds) { return de::StringUtil::nanoseconds( nSeconds ); }
-std::string dbStrSeconds(double nSeconds) { return de::StringUtil::seconds( nSeconds ); }
-std::string dbStrBytes(uint64_t nBytes) { return de::StringUtil::bytes( nBytes ); }
+std::string dbHex( uint8_t byte )
+{
+    return de::StringUtil::hex( byte );
+}
+
+std::string dbHex( uint16_t const color )
+{
+    return de::StringUtil::hex( color );
+}
+
+std::string dbHex( uint32_t const color )
+{
+    return de::StringUtil::hex( color );
+}
+
+std::string dbHex( uint64_t color )
+{
+    return de::StringUtil::hex( color );
+}
+
+std::string dbHex( uint8_t const* beg, uint8_t const* end )
+{
+    return de::StringUtil::hex( beg, end );
+}
+
+std::string dbHex( uint8_t const* beg, uint8_t const* end, size_t nBytesPerRow )
+{
+    return de::StringUtil::hex( beg, end, nBytesPerRow );
+}
+
+std::string dbStrNanoSeconds(double nSeconds)
+{
+    return de::StringUtil::nanoseconds( nSeconds );
+}
+
+std::string dbStrSeconds(double nSeconds)
+{
+    return de::StringUtil::seconds( nSeconds );
+}
+
+std::string dbStrBytes(uint64_t nBytes)
+{
+    return de::StringUtil::bytes( nBytes );
+}
 
 std::string de_mbstr(const std::wstring& w ) { return de::StringUtil::to_str( w ); }
 std::string de_mbstr( wchar_t const w ) { return de::StringUtil::to_str( w ); }
@@ -3769,6 +3868,20 @@ void dbStrUpperCase(std::string& txt, const std::locale& loc) { return de::Strin
 void dbStrLowerCase(std::wstring& txt) { return de::StringUtil::lowerCase(txt); }
 void dbStrUpperCase(std::wstring& txt) { return de::StringUtil::upperCase(txt); }
 
+std::string dbStrReplace(const std::string& txt,
+                         const std::string& from,
+                         const std::string& to, size_t* nReplacements )
+{
+    return de::StringUtil::replace( txt, from, to, nReplacements );
+}
+
+std::wstring dbStrReplace(const std::wstring& txt,
+                          const std::wstring& from,
+                          const std::wstring& to, size_t* nReplacements )
+{
+    return de::StringUtil::replace( txt, from, to, nReplacements );
+}
+
 bool dbStrBeginsWith( const std::string& txt, const std::string& query ) { return de::StringUtil::startsWith(txt,query); }
 bool dbStrBeginsWith( const std::wstring& txt, const std::wstring& query ) { return de::StringUtil::startsWith(txt,query); }
 bool dbStrBeginsWith( const std::string& txt, char c ) { return de::StringUtil::startsWith(txt,c); }
@@ -3779,3 +3892,69 @@ bool dbStrEndsWith( const std::wstring& txt, const std::wstring& query ) { retur
 bool dbStrEndsWith( const std::string& txt, char c ) { return de::StringUtil::endsWith(txt,c); }
 bool dbStrEndsWith( const std::wstring& txt, wchar_t c ) { return de::StringUtil::endsWith(txt,c); }
 
+void dbRemoveFile( const std::string& uri )
+{
+    de::FileSystem::removeFile(uri);
+}
+
+
+
+int64_t dbFileSize( const std::string & uri )
+{
+    return de::FileSystem::fileSize( uri );
+}
+
+int64_t dbFileSize( const std::wstring & uri )
+{
+    return de::FileSystem::fileSize( uri );
+}
+
+std::string dbFileName( const std::string& uri, const std::string& relativeToPath )
+{
+    return de::FileSystem::fileName( uri, relativeToPath );
+}
+
+std::wstring dbFileName( const std::wstring& uri, const std::wstring& relativeToPath )
+{
+    return de::FileSystem::fileName( uri, relativeToPath );
+}
+
+std::string dbFileBase( const std::string& uri )
+{
+    return de::FileSystem::fileBase( uri );
+}
+
+std::wstring dbFileBase( const std::wstring& uri )
+{
+    return de::FileSystem::fileBase( uri );
+}
+
+std::string dbFileSuffix( const std::string& uri )
+{
+    return de::FileSystem::fileSuffix( uri );
+}
+
+std::wstring dbFileSuffix( const std::wstring& uri )
+{
+    return de::FileSystem::fileSuffix( uri );
+}
+
+std::string dbFileDir( const std::string& uri )
+{
+    return de::FileSystem::fileDir( uri );
+}
+
+std::wstring dbFileDir( const std::wstring& uri )
+{
+    return de::FileSystem::fileDir( uri );
+}
+
+std::string dbParentDir( const std::string& uri )
+{
+    return de::FileSystem::parentDir(uri);
+}
+
+std::wstring dbParentDir( const std::wstring& uri )
+{
+    return de::FileSystem::parentDir(uri);
+}

@@ -1,6 +1,6 @@
-# add_subdirectory(0_tools)
-# add_subdirectory(1_libs)
-# add_subdirectory(minimal_vst2x_host)
+add_subdirectory(0_tools)
+add_subdirectory(1_libs)
+add_subdirectory(minimal_vst2x_host)
 
 # if (BENNI_USE_QT)
 	# add_subdirectory(VHS_qt6)
@@ -22,7 +22,8 @@
 # endif()
 
 if (BENNI_USE_QT)
-	add_subdirectory(AbletonChain-qt6)
+	# add_subdirectory(AbentonChain_qt6)
+	add_subdirectory(AbentonLive_qt6)
 endif()
 
 

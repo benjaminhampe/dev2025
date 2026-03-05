@@ -409,9 +409,29 @@ struct File
     bool open(const std::string& uri, const std::string& mode = "wb");
     void close();
 
-    size_t write( const void* src, size_t nBytes ) const;
-    size_t read( void* dst, size_t nBytes ) const;
+    size_t write( const void* __restrict__ src, size_t nBytes ) const;
+    size_t read( void* __restrict__ dst, size_t nBytes ) const;
 };
+
+/*
+// ===========================================================================
+struct File
+// ===========================================================================
+{
+    FILE* m_file;
+    uint64_t m_size;
+    std::string m_uri;
+    std::string m_flags;
+
+    File();
+    File(std::string const & uri, std::string const & flags);
+    uint64_t size() const;
+    bool open(std::string const & uri, std::string const & flags);
+    void close();
+    void write(const void* __restrict__ pSrc, uint64_t asize);
+    void read(void* __restrict__ pDst, uint64_t asize);
+};
+*/
 
 typedef std::vector<uint8_t> Blob;
 
@@ -1247,15 +1267,15 @@ struct Align
 
 } // end namespace de.
 
-/*
-inline std::ostream& operator<< ( std::ostream & o, const de::Recti & r )
-{
-    o << r.str();
-    return o;
-}
-*/
 std::string dbStrVal(float val, int digits = 1);
 std::string dbStrVal(double val, int digits = 1);
+
+std::string dbHex( uint8_t byte );
+std::string dbHex( uint16_t const color );
+std::string dbHex( uint32_t const color );
+std::string dbHex( uint64_t color );
+std::string dbHex( uint8_t const* beg, uint8_t const* end );
+std::string dbHex( uint8_t const* beg, uint8_t const* end, size_t nBytesPerRow );
 
 std::string dbStrNanoSeconds(double nSeconds);
 std::string dbStrSeconds(double nSeconds);
@@ -1293,6 +1313,16 @@ void dbStrUpperCase(std::string& txt, const std::locale& loc = std::locale());
 void dbStrLowerCase(std::wstring& txt);
 void dbStrUpperCase(std::wstring& txt);
 
+std::string dbStrReplace(const std::string& txt,
+                         const std::string& from,
+                         const std::string& to,
+                         size_t* nReplacements = nullptr );
+
+std::wstring dbStrReplace(const std::wstring& txt,
+                          const std::wstring& from,
+                          const std::wstring& to,
+                          size_t* nReplacements = nullptr );
+
 bool dbStrBeginsWith( const std::string& txt, const std::string& query );
 bool dbStrBeginsWith( const std::wstring& txt, const std::wstring& query );
 bool dbStrBeginsWith( const std::string& txt, char c );
@@ -1308,10 +1338,25 @@ typedef std::wstring DE_StringW;
 typedef std::vector< DE_StringW > DE_StringsW;
 
 DE_StringsA
-dbStrSplit(const std::string& txt, char searchChar, bool bKeepEmptyLines );
+dbStrSplit(const std::string& txt, char searchChar, bool bKeepEmptyLines = false );
 
 DE_StringsA
 dbLoadTextLn(const std::string& uri);
 
 DE_StringsA
 dbLoadTextLn(const std::wstring& uri);
+
+void dbRemoveFile( const std::string& uri );
+int64_t dbFileSize( const std::string & uri );
+int64_t dbFileSize( const std::wstring & uri );
+std::string dbFileName( const std::string& uri, const std::string& relativeToPath = "" );
+std::wstring dbFileName( const std::wstring& uri, const std::wstring& relativeToPath = L"" );
+std::string dbFileBase( const std::string& uri );
+std::wstring dbFileBase( const std::wstring& uri );
+std::string dbFileSuffix( const std::string& uri );
+std::wstring dbFileSuffix( const std::wstring& uri );
+std::string dbFileDir( const std::string& uri );
+std::wstring dbFileDir( const std::wstring& uri );
+std::string dbParentDir( const std::string& uri );
+std::wstring dbParentDir( const std::wstring& uri );
+
