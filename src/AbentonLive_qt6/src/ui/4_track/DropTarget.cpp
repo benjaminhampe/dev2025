@@ -126,9 +126,7 @@ void DropTarget::dragMoveEvent(QDragMoveEvent* event )
    QWidget::dragMoveEvent( event );
 }
 
-
-void
-DropTarget::resizeEvent( QResizeEvent* event )
+void DropTarget::resizeEvent( QResizeEvent* event )
 {
    QWidget::resizeEvent( event );
    m_size = event->size();
@@ -149,30 +147,26 @@ void DropTarget::paintEvent( QPaintEvent* event )
    }
 }
 
-void
-DropTarget::focusInEvent( QFocusEvent* event )
+void DropTarget::focusInEvent( QFocusEvent* event )
 {
    m_hasFocus = true;
    update();
    QWidget::focusInEvent( event );
 }
 
-void
-DropTarget::focusOutEvent( QFocusEvent* event )
+void DropTarget::focusOutEvent( QFocusEvent* event )
 {
    m_hasFocus = true;
    update();
    QWidget::focusOutEvent( event );
 }
 
-void
-DropTarget::enterEvent( QEnterEvent* event )
+void DropTarget::enterEvent( QEnterEvent* event )
 {
    QWidget::enterEvent( event );
 }
 
-void
-DropTarget::leaveEvent( QEvent* event )
+void DropTarget::leaveEvent( QEvent* event )
 {
    QWidget::leaveEvent( event );
 }

@@ -1,4 +1,3 @@
-// #include "PluginWidget.h"
 #include "gui/Track.h"
 #include <QApplication>
 #include <QMainWindow>
@@ -11,7 +10,7 @@ int main(int argc, char **argv)
     QApplication app(argc, argv);
     app.setWindowIcon(QIcon(":/winico"));
 
-    auto track = new live::gui::track::Track;
+    auto track = new de::gui::track::Track;
 
     QMainWindow win;
     win.setCentralWidget(track);

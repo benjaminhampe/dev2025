@@ -1,0 +1,2 @@
+# add_subdirectory(test_vulkan_add_two_vectors)
+add_subdirectory(test_vulkan_info)

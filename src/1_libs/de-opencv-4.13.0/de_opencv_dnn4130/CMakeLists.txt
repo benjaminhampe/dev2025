@@ -499,7 +499,7 @@ else()
 
     target_link_libraries(${LIB_NAME} PUBLIC de_opencv_core4130)
     target_link_libraries(${LIB_NAME} PUBLIC de_opencv_imgproc4130)
-    target_link_libraries(${LIB_NAME} PUBLIC de_opencl)
+    # target_link_libraries(${LIB_NAME} PUBLIC de_opencl_loader_shared)
 
 endif()
 

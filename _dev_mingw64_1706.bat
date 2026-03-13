@@ -4,6 +4,10 @@ REM :: Silence auto echo of every command line
 REM set PATH=C:\sdk\StrawberryPerl\c\bin;%PATH%
 REM set PATH=C:\sdk\StrawberryPerl\perl\site\bin;%PATH%
 REM set PATH=C:\sdk\StrawberryPerl\perl\bin;%PATH%
+
+REM set PATH=C:\sdk\vulkan\include;%PATH%
+REM set PATH=C:\sdk\VulkanSDK\1.4.341.1\Bin;%PATH%
+
 set PATH=C:\sdk\nasm;%PATH%
 set PATH=C:\sdk\ninja;%PATH%
 set PATH=C:\sdk\cmake-3.29.0\bin;%PATH%

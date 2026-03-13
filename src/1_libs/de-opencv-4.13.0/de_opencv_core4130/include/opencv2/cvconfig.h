@@ -48,6 +48,8 @@
 /* DirectX */
 #define HAVE_DIRECTX
 #define HAVE_DIRECTX_NV12
+/* NVIDIA OpenCL D3D Extensions support */
+//#define HAVE_OPENCL_D3D11_NV
 #define HAVE_D3D11
 #define HAVE_D3D10
 #define HAVE_D3D9
@@ -107,8 +109,6 @@
 /* #undef HAVE_OPENCL_STATIC */
 /* #undef HAVE_OPENCL_SVM */
 
-/* NVIDIA OpenCL D3D Extensions support */
-#define HAVE_OPENCL_D3D11_NV
 
 /* OpenEXR codec */
 // #ifndef HAVE_OPENEXR

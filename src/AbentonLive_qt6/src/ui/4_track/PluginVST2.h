@@ -1,8 +1,7 @@
 #pragma once
-#include "LiveSkin.h"
-#include "ImageButton.h"
-#include <pluginterfaces/vst2.x/aeffectx.h>
+#include "ShellCommon.h"
 #include "AudioMeter.h"
+#include <pluginterfaces/vst2.x/aeffectx.h>
 
 // ============================================================================
 class PluginEditorWindow : public QWidget
@@ -211,12 +210,4 @@ public:
    ImageButton* m_btnEditor;
    ImageButton* m_btnLoadPreset;
    ImageButton* m_btnSavePreset;
-
-   ImageButton* createEnableButton(); // Bypass button
-   ImageButton* createMoreButton(); // More button
-   ImageButton* createEditorButton();  // Show/hide (plugin) editor window button
-   ImageButton* createUpdateButton();  // UpdateFrom button
-   ImageButton* createSaveButton(); // Save button
-
-
 };

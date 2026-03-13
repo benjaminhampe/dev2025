@@ -71,7 +71,6 @@ protected:
    void dragLeaveEvent( QDragLeaveEvent* event ) override;
    void dragMoveEvent(QDragMoveEvent* event ) override;
 public:
-   DE_CREATE_LOGGER("Track")
    App & m_app;
    TrackInfo m_trackInfo;
 

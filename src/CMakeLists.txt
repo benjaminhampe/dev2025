@@ -21,12 +21,12 @@ add_subdirectory(minimal_vst2x_host)
 	# add_subdirectory(vcv-rack2)
 # endif()
 
-if (BENNI_USE_QT)
-	# add_subdirectory(AbentonChain_qt6)
-	add_subdirectory(AbentonLive_qt6)
-endif()
+# if (BENNI_USE_QT)
+# 	add_subdirectory(AbentonChain_qt6)
+# 	add_subdirectory(AbentonLive_qt6)
+# endif()
 
-
+add_subdirectory(whisper.cpp)
 # add_subdirectory(minimal_vst2x_host)
 # add_subdirectory(minimal_vst3_host)
 # add_subdirectory(AbletonLive64-qt6) # uses old RtAudio_5

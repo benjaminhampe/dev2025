@@ -423,7 +423,8 @@ else()
 
     # target_compile_definitions(${LIB_NAME} PUBLIC JSONCPP_NO_LOCALE_SUPPORT=1)
 
-    target_link_libraries(${LIB_NAME} PUBLIC de_opencl)
+    # target_link_libraries(${LIB_NAME} PUBLIC de_opencl)
+    target_link_libraries(${LIB_NAME} PUBLIC de_opencl_loader_shared)
     target_link_libraries(${LIB_NAME} PUBLIC de_zlib)
     target_link_libraries(${LIB_NAME} PUBLIC pthread)
 

@@ -28,7 +28,8 @@ public:
     int spacing = 1;
     int dropIndicatorWidth = 20;
     QColor fillColor = QColor(50,50,50);
-    QColor bodyColor = QColor(50,50,50);
+    QColor bodyColor = QColor(150,150,150);
+    QColor textColor = QColor(255,255,255);
 };
 
 // ============================================
@@ -49,7 +50,7 @@ public slots:
     void setPluginPos(int x, int y);
     void setPluginIndex(int i);
 public slots:
-    void on_skinChanged();
+    // void on_skinChanged();
 
 private slots:
     void showContextMenu(const QPoint &pos);
@@ -67,13 +68,13 @@ private:
 };
 
 // ============================================
-class Body : public QWidget
+class Track : public QWidget
 // ============================================
 {
     Q_OBJECT
 public:
-    Body(QWidget* parent = nullptr);
-    ~Body() override;
+    Track(QWidget* parent = nullptr);
+    ~Track() override;
 
     // ----------------------------------------
     // Speicherung / Laden
@@ -84,7 +85,7 @@ public:
 signals:
     void reorderedWidgets();
 public slots:
-    void on_skinChanged();
+    // void on_skinChanged();
 
 protected:
     // ----------------------------------------
@@ -144,8 +145,11 @@ private:
     // ----------------------------------------
     void startAutoScrollIfNeeded(const QPoint &pos);
     void autoScroll();
+
+    ShellSkin m_skin;
 };
 
+/*
 // ============================================
 class Track : public QWidget
 // ============================================
@@ -159,7 +163,7 @@ private:
     Body* m_body = nullptr;
 	QScrollArea* m_scrollArea = nullptr;
 };
-
+*/
 
 } // end namespace track
 } // end namespace gui

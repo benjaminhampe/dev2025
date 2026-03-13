@@ -1,0 +1,3 @@
+add_subdirectory(test_opencl)
+add_subdirectory(test_opencl_add_two_vectors)
+add_subdirectory(test_opencl_info)

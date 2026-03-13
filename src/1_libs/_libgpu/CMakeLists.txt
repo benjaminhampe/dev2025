@@ -1,8 +1,17 @@
 # Compute
-add_subdirectory(de_opencl_1.2)
+# add_subdirectory(de_opencl_1.2)
+# add_subdirectory(de_opencl_loader_shared)
+add_subdirectory(de_opencl_loader_shared_2024.10.24-1)
+add_subdirectory(de_opencl_CLBlast_shared)
 # Graphics
 # add_subdirectory(de_vulkan_1.1)
-add_subdirectory(de_vulkan_1.3)
+# add_subdirectory(de_vulkan_1.3)
+# add_subdirectory(de_vulkan_1.4.345)
+# add_subdirectory(de_vulkan_loader_1.4.345)
+add_subdirectory(de_vulkan_loader_shared_1.4.335.0-1)
+# add_subdirectory(de_vulkan_hpp_1.4.344)
+# add_subdirectory(de_vulkan_loader_1.4.341-shared)
+
 # Graphics
 add_subdirectory(de-glew-2.1.0)
 add_subdirectory(de-glad-4.2)
