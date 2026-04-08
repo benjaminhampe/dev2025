@@ -1,5 +1,6 @@
 #include <de/audio/AudioCentral.h>
-#include <de/audio/device/EndPoint_RtAudio.h>
+//#include <de/audio/device/EndPoint_RtAudio.h>
+#include <de/audio/device/EndPoint_Wasapi.h>
 
 namespace de {
 namespace audio {
@@ -44,12 +45,32 @@ public:
         , m_chainStart(nullptr)
         , m_chainEnd(nullptr)
     {
-
+        DE_TRACE("")
     }
 
     ~Track()
     {
-        destroyPlugins();
+        DE_TRACE("")
+
+    }
+
+    void cleanupAll()
+    {
+        DE_DEBUG("Delete (",m_plugins.size(),") Plugins...")
+        for (size_t i = 0; i < m_plugins.size(); ++i)
+        {
+            auto p = m_plugins[i];
+            if (!p)
+            {
+                DE_ERROR("Got nullptr at ",i)
+            }
+            else
+            {
+                DE_DEBUG("Delete Plugin[",i,"]")
+                delete p;
+            }
+        }
+        m_plugins.clear();
     }
 
     void setAudioCentral( IAudioCentral* audioCentral)
@@ -62,25 +83,6 @@ public:
     void setTrackId(u32 trackId) override { m_trackId = trackId; }
 
     std::string getTrackName() const override { return m_trackName; }
-
-
-    void destroyPlugins()
-    {
-        for (size_t i = 0; i < m_plugins.size(); ++i)
-        {
-            auto p = m_plugins[i];
-            if (!p)
-            {
-                DE_ERROR("Got nullptr at ",i)
-            }
-            else
-            {
-                delete p;
-            }
-        }
-        m_plugins.clear();
-        updateDspChain();
-    }
 
     void removePlugin( IPlugin* plugin ) override
     {
@@ -96,7 +98,13 @@ public:
             m_plugins.end()
         );
 
+        m_audioCentral->stopAudio();
+
+        delete plugin;
+
         updateDspChain();
+
+        m_audioCentral->playAudio();
     }
 
     IPlugin* createPlugin( std::string uri, int index = -1) override
@@ -109,6 +117,8 @@ public:
         }
 
         plugin->setTrack(this);
+
+        m_audioCentral->stopAudio();
 
         if (plugin->isSynth())
         {
@@ -129,6 +139,8 @@ public:
         }
 
         updateDspChain();
+
+        m_audioCentral->playAudio();
         return plugin;
     }
 
@@ -142,7 +154,7 @@ public:
 
     void updateDspChain()
     {
-        m_audioCentral->stopAudio();
+        // m_audioCentral->stopAudio();
 
         auto n = m_plugins.size();
         if (n == 0)
@@ -202,7 +214,7 @@ public:
             }
         }
 
-        m_audioCentral->playAudio();
+        // m_audioCentral->playAudio();
     }
 
     void dsp_read(f64 pts, u32 frames, u32 sampleRate,
@@ -283,7 +295,8 @@ public:
 
     Track m_track0;
 
-    EndPoint_RtAudio m_endPoint;
+    //EndPoint_RtAudio m_endPoint;
+    EndPoint_Wasapi m_endPoint;
 
 public:
     AudioCentral_Private()
@@ -294,12 +307,21 @@ public:
         , m_sampleRate(0)
         , m_track(nullptr)
     {
+        DE_TRACE("")
         m_track = &m_track0;
     }
 
     ~AudioCentral_Private()
     {
+        DE_TRACE("")
+        cleanupAll();
+    }
 
+    void cleanupAll()
+    {
+        stopAudio();
+
+        m_track0.cleanupAll();
     }
 
     //=========================
@@ -385,13 +407,13 @@ public:
 AudioCentral::AudioCentral()
     : _d(new AudioCentral_Private)
 {
+    DE_TRACE("")
     _d->m_track0.setAudioCentral(this);
 }
 
 AudioCentral::~AudioCentral()
 {
-    _d->stopAudio();
-    _d->m_track0.destroyPlugins();
+    DE_TRACE("")
     delete _d;
 }
 
@@ -416,6 +438,11 @@ void AudioCentral::playAudio()
 void AudioCentral::stopAudio()
 {
     _d->stopAudio();
+}
+
+void AudioCentral::cleanupAll()
+{
+    _d->cleanupAll();
 }
 
 //=========================

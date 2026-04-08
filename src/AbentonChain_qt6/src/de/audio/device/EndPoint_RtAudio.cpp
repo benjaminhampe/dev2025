@@ -7,6 +7,19 @@ namespace audio {
 
 class EndPoint_RtAudio_Private
 {
+    static std::string formatStr( u32 nativeFormats )
+    {
+        int n = 0;
+        std::ostringstream o;
+        if (nativeFormats & RTAUDIO_SINT8) { o << "s8"; n++; }
+        if (nativeFormats & RTAUDIO_SINT16) { if (n>0) { o << "|"; } o << "s16"; }
+        if (nativeFormats & RTAUDIO_SINT24) { if (n>0) { o << "|"; } o << "s24"; }
+        if (nativeFormats & RTAUDIO_SINT32) { if (n>0) { o << "|"; } o << "s32"; }
+        if (nativeFormats & RTAUDIO_FLOAT32) { if (n>0) { o << "|"; } o << "f32"; }
+        if (nativeFormats & RTAUDIO_FLOAT64) { if (n>0) { o << "|"; } o << "f64"; }
+        return o.str();
+    }
+
 public:
     bool m_bIsPlaying;
     RtAudio::Api m_api;
@@ -29,7 +42,7 @@ public:
         : m_bIsPlaying(false)
         , m_api(RtAudio::WINDOWS_WASAPI)
         , m_sampleRate(48000)
-        , m_blockSize(128)
+        , m_blockSize(256)
         , m_channels(2)
         , m_inputSignal(nullptr)
         , m_dac( m_api )
@@ -54,19 +67,37 @@ public:
         m_oParams.firstChannel = 0;
 
         m_iParams.deviceId = iDevId;
-        m_iParams.nChannels = m_iDevInfo.outputChannels;
+        m_iParams.nChannels = m_iDevInfo.inputChannels;
         m_iParams.firstChannel = 0;
 
         m_channels = m_oDevInfo.outputChannels;
         m_sampleRate = m_oDevInfo.preferredSampleRate;
 
-        DE_WARN("Output Device: ",m_oDevInfo.name, " (Default)")
-        DE_WARN("Output Channels: ",m_oDevInfo.outputChannels)
-        DE_WARN("Output SampleRate: ",m_oDevInfo.preferredSampleRate)
+        DE_WARN("=============================================")
+        DE_WARN("Output.DeviceIndex: ",oDevId)
+        DE_WARN("Output.DeviceName: ",m_oDevInfo.name)
+        DE_WARN("Output.Channels: ",m_oDevInfo.outputChannels)
+        DE_WARN("Output.SampleRate.Preferred: ",m_oDevInfo.preferredSampleRate)
+        DE_WARN("Output.SampleRate.Current: ",m_oDevInfo.currentSampleRate)
+        DE_WARN("Output.SampleRates.Count: ",m_oDevInfo.sampleRates.size())
+        for (size_t i = 0; i < m_oDevInfo.sampleRates.size(); i++)
+        {
+            DE_WARN("Output.SampleRates[",i,"] ",m_oDevInfo.sampleRates[i])
+        }
+        DE_WARN("Output.NativeFormats: ",formatStr(m_oDevInfo.nativeFormats))
 
-        DE_WARN("Input Device: ",m_iDevInfo.name, " (Default)")
-        DE_WARN("Input Channels: ",m_iDevInfo.outputChannels)
-        DE_WARN("Input SampleRate: ",m_iDevInfo.preferredSampleRate)
+        DE_WARN("=============================================")
+        DE_WARN("Input.DeviceIndex: ",iDevId)
+        DE_WARN("Input.DeviceName: ",m_iDevInfo.name)
+        DE_WARN("Input.Channels: ",m_iDevInfo.inputChannels)
+        DE_WARN("Input.SampleRate.Preferred: ",m_iDevInfo.preferredSampleRate)
+        DE_WARN("Input.SampleRate.Current: ",m_iDevInfo.currentSampleRate)
+        DE_WARN("Input.SampleRates.Count: ",m_iDevInfo.sampleRates.size())
+        for (size_t i = 0; i < m_iDevInfo.sampleRates.size(); i++)
+        {
+            DE_WARN("Input.SampleRates[",i,"] ",m_iDevInfo.sampleRates[i])
+        }
+        DE_WARN("Input.NativeFormats: ",formatStr(m_iDevInfo.nativeFormats))
     }
 
     ~EndPoint_RtAudio_Private()
@@ -88,16 +119,16 @@ public:
             u32 blockSize = m_blockSize;
 #if RTAUDIO_VERSION_MAJOR > 5
             RtAudio::StreamOptions options;
-            options.flags = RTAUDIO_MINIMIZE_LATENCY;
-            options.numberOfBuffers = 2;   // double buffering
+            options.flags = 0; // RTAUDIO_MINIMIZE_LATENCY;
+            options.numberOfBuffers = 1;   // double buffering
             options.streamName = "EndPoint_Rt601";
-            options.priority = 1; // 0 = default thread priority
+            options.priority = 0; // 0 = default thread priority
 
             int e =
 #endif
             m_dac.openStream(
                 &m_oParams,
-                NULL,
+                &m_iParams,
                 RTAUDIO_FLOAT32,
                 m_sampleRate,
                 &m_blockSize,
@@ -116,10 +147,7 @@ public:
             }
 #endif
 
-            if (blockSize != m_blockSize)
-            {
-                DE_WARN("blockSize(",blockSize,") != m_blockSize(",m_blockSize,")")
-            }
+            DE_WARN("blockSize(",blockSize,") != m_blockSize(",m_blockSize,")")
 
             constexpr u64 GUARD = 64;
 

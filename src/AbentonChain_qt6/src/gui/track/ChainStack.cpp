@@ -5,6 +5,8 @@
 ChainStack::ChainStack(QWidget* parent)
     : QWidget(parent)
 {
+    DE_TRACE("")
+
     setMinimumWidth(100);
     setContentsMargins(0,0,0,0);
 
@@ -38,6 +40,11 @@ ChainStack::ChainStack(QWidget* parent)
     m_scrollBar->setVisible( false );
 
     applySkin();
+}
+
+ChainStack::~ChainStack()
+{
+    DE_TRACE("")
 }
 
 void ChainStack::applySkin()

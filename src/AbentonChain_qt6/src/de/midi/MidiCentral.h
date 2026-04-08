@@ -31,7 +31,8 @@ public:
     void postMessage(f64 pts, const ShortMidiMessage& msg);
     void postMessage(f64 pts, const MidiMessage & msg);
 
-    inline void sendNoteMessage( int command, int channel, int midiNote, int velocity )
+    // Make life easier to send NoteEvents...
+    void sendNoteMessage( int command, int channel, int midiNote, int velocity )
     {
         u8 state = (u8(command) & 0xF0) | (u8(channel) & 0x0F);
         u8 data1 = u8(midiNote);

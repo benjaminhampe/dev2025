@@ -11,6 +11,7 @@ class ChainStack : public QWidget
     Q_OBJECT
 public:
     ChainStack(QWidget* parent = nullptr);
+    ~ChainStack() override;
 
     void applySkin();
 

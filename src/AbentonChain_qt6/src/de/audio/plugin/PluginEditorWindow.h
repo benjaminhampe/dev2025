@@ -22,7 +22,7 @@ protected:
    void closeEvent( QCloseEvent* event ) override;
    
 protected:
-   bool m_enableClosing;
+   bool m_bRealCloseEnabled;
 };
 
 /*

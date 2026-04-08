@@ -27,6 +27,8 @@ public:
 
     virtual void stopAudio() = 0;
 
+    virtual void cleanupAll() = 0;
+
     //=========================
     // PluginApi
     //=========================
@@ -83,6 +85,8 @@ public:
     void playAudio() override;
 	
     void stopAudio() override;
+
+    void cleanupAll() override;
 	
 	//=========================
 	// PluginApi

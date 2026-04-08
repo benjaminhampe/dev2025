@@ -487,8 +487,12 @@ struct VST2_Plugin_Impl
 
         if (m_editor)
         {
+            DE_TRACE("Close editor")
+            dispatcher(effEditClose, 0, 0, nullptr, 0.0f);
             m_editor->enableClosing();
-            delete m_editor;
+            m_editor->close();
+            m_editor->deleteLater();
+            //delete m_editor;
             m_editor = nullptr;
         }
 

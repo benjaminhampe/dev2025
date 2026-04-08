@@ -39,6 +39,8 @@ public:
         , m_vst(fx)
         , m_hostHwnd(0)
     {
+        DE_DEBUG("")
+
         setAttribute(Qt::WA_NativeWindow);
         setAttribute(Qt::WA_PaintOnScreen);
         setAttribute(Qt::WA_NoSystemBackground);
@@ -89,16 +91,17 @@ public:
 
     ~VST2_Editor() override
     {
+        DE_DEBUG("")
         // if ( !m_editorWindow )
         // {
         //     DE_ERROR("No editorWindow")
         // }
         // m_editorWindow->hide();
-        DE_DEBUG("Delete")
 
-        enableClosing();
 
-        m_vst->dispatcher(m_vst, effEditClose, 0, 0, nullptr, 0.0f);
+        // enableClosing();
+
+        // m_vst->dispatcher(m_vst, effEditClose, 0, 0, nullptr, 0.0f);
 
         // if ( !m_editorWindow->close() )
         // {

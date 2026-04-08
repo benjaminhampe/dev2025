@@ -7,6 +7,7 @@ Plugin::Plugin(de::audio::IPlugin* plugin, QWidget* parent)
     : QWidget(parent)
     , m_plugin(plugin)
 {
+    DE_TRACE("")
     //setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Expanding);
     setContextMenuPolicy(Qt::CustomContextMenu);
     setStyleSheet("background: transparent;");
@@ -59,18 +60,7 @@ Plugin::Plugin(de::audio::IPlugin* plugin, QWidget* parent)
 
 Plugin::~Plugin()
 {
-    if (m_plugin)
-    {
-        if (m_plugin->getEditor())
-        {
-            m_plugin->getEditor()->enableClosing();
-        }
-
-        auto track = m_plugin->getTrack();
-
-        track->removePlugin( m_plugin );
-        m_plugin = nullptr;
-    }
+    DE_TRACE("")
 }
 
 void Plugin::on_editorWindowClosed()

@@ -13,18 +13,15 @@ class ChainWrapper : public QWidget
     Q_OBJECT
 public:
     ChainWrapper(QWidget* parent = nullptr);
-
+    ~ChainWrapper() override;
     void applySkin();
-
     void setAudioOnly(bool bAudioOnly);
 
 protected:
     bool eventFilter(QObject* obj, QEvent* event) override;
     void paintEvent(QPaintEvent* event) override;
-
     void focusInEvent(QFocusEvent* event) override;
     void focusOutEvent(QFocusEvent* event) override;
-
     void enterEvent( QEnterEvent* event ) override;
     void leaveEvent( QEvent* event ) override;
 

@@ -6,15 +6,15 @@
 namespace de {
 namespace audio {
 
-class EndPoint_RtAudio_Private;
+class EndPoint_Wasapi_Impl;
 
 // =======================================================
-class EndPoint_RtAudio
+class EndPoint_Wasapi
 // =======================================================
 {
 public:
-    EndPoint_RtAudio();
-    ~EndPoint_RtAudio();
+    EndPoint_Wasapi();
+    ~EndPoint_Wasapi();
 
     void play();
     void stop();
@@ -38,7 +38,7 @@ public:
     //                 int channels = 2 );
 
 public:
-    EndPoint_RtAudio_Private* m_impl;	
+    EndPoint_Wasapi_Impl* _d;
 };
 
 } // end namespace audio.

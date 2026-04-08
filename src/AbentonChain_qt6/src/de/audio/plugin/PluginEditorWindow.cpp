@@ -2,7 +2,7 @@
 
 PluginEditorWindow::PluginEditorWindow( QWidget* parent )
 	: QWidget( parent )
-	, m_enableClosing(false)
+    , m_bRealCloseEnabled(false)
 {}
 
 PluginEditorWindow::~PluginEditorWindow()
@@ -10,17 +10,23 @@ PluginEditorWindow::~PluginEditorWindow()
 
 void PluginEditorWindow::enableClosing() 
 { 
-	m_enableClosing = true; 
+    m_bRealCloseEnabled = true;
 }
 
 void PluginEditorWindow::disableClosing() 
 { 
-	m_enableClosing = false; 
+    m_bRealCloseEnabled = false;
 }
 
 void PluginEditorWindow::closeEvent( QCloseEvent* event )
 {
-	if ( !m_enableClosing ) { event->ignore(); }
-	hide();
-	emit closed();
+    if ( !m_bRealCloseEnabled )
+    {
+        event->ignore(); // keep it open
+        hide();
+        emit closed();
+        return;
+    }
+
+    QWidget::closeEvent(event);
 }

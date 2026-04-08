@@ -102,7 +102,6 @@ private:
 
     std::vector<Plugin*> m_plugins;
 
-
     int m_dragIndex = -1; // Only valid for reorder with mouse-click
     int m_dropIndex = -1; // Valid for reorder with mouse-click and Drag&Drop events.
 

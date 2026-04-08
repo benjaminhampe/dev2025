@@ -8,7 +8,9 @@
 ChainWrapper::ChainWrapper(QWidget* parent)
     : QWidget(parent)
 {
-    setFocusPolicy(Qt::StrongFocus);
+    DE_TRACE("")
+
+    // setFocusPolicy(Qt::StrongFocus);
     setContentsMargins(0,8,8,8);
     setStyleSheet("background: transparent;");
 
@@ -67,6 +69,11 @@ ChainWrapper::ChainWrapper(QWidget* parent)
     applySkin();
 
     m_scrollArea->viewport()->installEventFilter(this);
+}
+
+ChainWrapper::~ChainWrapper()
+{
+    DE_TRACE("")
 }
 
 bool ChainWrapper::eventFilter(QObject* obj, QEvent* event)

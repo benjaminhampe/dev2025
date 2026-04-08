@@ -7,6 +7,7 @@ Track::Track(de::audio::ITrack* track, QWidget* parent)
     : QWidget(parent)
     , m_track(track)
 {
+    DE_TRACE("")
     //setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding);
     setContentsMargins(0,0,0,0);
     setMouseTracking(true);
@@ -25,7 +26,12 @@ Track::Track(de::audio::ITrack* track, QWidget* parent)
 
 Track::~Track()
 {
-
+    DE_TRACE("")
+    for (auto p : m_plugins)
+    {
+        delete p;
+    }
+    m_plugins.clear();
 }
 
 // QSize Track::sizeHint() const { return QSize(0, m_height); }
