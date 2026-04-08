@@ -1,6 +1,6 @@
 #include <de/audio/plugin/details/VST2_Plugin.h>
 #include <de/audio/plugin/details/VST2_Editor.h>
-
+#include <App.h>
 namespace de {
 namespace audio {
 
@@ -156,11 +156,13 @@ struct VST2_Plugin_Impl
     VST2_Plugin_Impl()
     // ============================================================================
     {
+        DE_DEBUG("")
         dsp_init( 64, 2, 48000 );
     }
 
     ~VST2_Plugin_Impl()
     {
+        DE_DEBUG("")
         closePlugin();
     }
 
@@ -362,7 +364,12 @@ struct VST2_Plugin_Impl
 
     void openPlugin( std::string uri )
     {
-        closePlugin();
+        if (m_bPluginOpen)
+        {
+            DE_WARN("Plugin already open")
+            return;
+        }
+
         //setBypassed( true );
 
         if ( uri.empty() )
@@ -371,31 +378,11 @@ struct VST2_Plugin_Impl
             return;
         }
 
-        DE_TRACE("uri1 = ",uri)
-        uri = de::FileSystem::makeAbsolute(uri);
-        DE_TRACE("uri2 = ",uri)
-
-        // VST2_Plugin needs path/directory of itself
+        m_uri = uri;
         m_directoryMultiByte = dbFileDir(uri);
-        DE_TRACE("uri3 = ",m_directoryMultiByte)
 
-        /*
-        {
-            wchar_t buf[ MAX_PATH + 1 ] {};
-            wchar_t* namePtr = nullptr;
-            auto const r = GetFullPathName( pluginUri().c_str(), _countof(buf), buf, &namePtr );
-            if ( r && namePtr )
-            {
-                *namePtr = 0;
-                char mbBuf[ _countof(buf) * 4 ] {};
-                int ok = WideCharToMultiByte(CP_OEMCP, 0, buf, -1, mbBuf, sizeof(mbBuf), 0, 0);
-                if (ok)
-                {
-                    m_directoryMultiByte = mbBuf;
-                }
-            }
-        }
-        */
+        DE_TRACE("uri = ",m_uri)
+        DE_TRACE("dir = ",m_directoryMultiByte)
 
         HMODULE dll = LoadLibraryA( uri.c_str() );
         if ( !dll )
@@ -443,7 +430,7 @@ struct VST2_Plugin_Impl
         dispatcher(effOpen);
 
         m_bNeedSetup = true;
-        dsp_init(64, 2, 48000);
+        dsp_init(256, 2, 48000);
 
         DE_DEBUG("VST plugin = ", dbFileBase(m_uri))
         DE_DEBUG("VST plugin dir = ", m_directoryMultiByte)
@@ -480,7 +467,7 @@ struct VST2_Plugin_Impl
     {
         if ( !m_bPluginOpen )
         {
-            //DE_WARN("Not vst loaded")
+            DE_TRACE("Plugin already closed")
             return;
         }
 
@@ -704,12 +691,14 @@ VST2_Plugin::VST2_Plugin()
 // ============================================================================
    : _d( new VST2_Plugin_Impl )
 {
-    //aboutToStart( 64, 2, 48000 );
+    DE_TRACE("")
 }
 
 VST2_Plugin::~VST2_Plugin()
 {
-    closePlugin();
+    DE_TRACE("")
+    App::instance()->getMidiCentral().deregisterListener(this);
+    delete _d;
 }
 
 // ===================================================

@@ -9,7 +9,6 @@ namespace audio {
 
 // ===========================================================================
 class ITrack : public IDspChainElement
-             , public midi::IMidiMessageListener
 // ===========================================================================
 {
 public:

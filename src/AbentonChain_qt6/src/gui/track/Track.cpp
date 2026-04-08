@@ -170,7 +170,11 @@ void Track::insertPlugin(int index, const QString &uri)
 {
     qDebug() << "Dropped file:" << uri;
 
-    auto audioCentral = App::instance()->getAudioCentral();
+    if (!m_track)
+    {
+        DE_ERROR("No track")
+        return;
+    }
 
     auto plugin = m_track->createPlugin(uri.toStdString(), index);
     if (!plugin)
@@ -184,11 +188,11 @@ void Track::insertPlugin(int index, const QString &uri)
     w->show();
 
     // Connect GUI Shell
-    connect( w, &Plugin::requestRemoval,
-             this, &Track::removePlugin );
+    connect(w, &Plugin::requestRemoval, this, &Track::removePlugin);
 
     // Manage GUI Shell
-    m_plugins.insert(m_plugins.begin()+index, w);
+    m_plugins.insert(m_plugins.begin() + index, w);
+
     updateLayout();
 }
 
@@ -303,7 +307,7 @@ void Track::dropEvent(QDropEvent* e)
     for (const auto& item : liste)
     {
         QString url = item.toLocalFile();
-        if (QFileInfo(url).exists())
+        if (QFileInfo::exists(url))
         {
             insertPlugin(m_dropIndex, url);
         }

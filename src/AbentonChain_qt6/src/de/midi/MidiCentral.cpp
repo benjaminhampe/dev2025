@@ -181,7 +181,7 @@ struct MidiCentral_Private
 	{
         m_midiInBuffer.reserve( 128 );
         m_midiOutBuffer.reserve( 128 );
-
+        m_listeners.reserve( 128 );
         setup();
 	}
 
@@ -196,7 +196,7 @@ struct MidiCentral_Private
         MidiUtil::printMidiOut();
 
         openInput( 0 );
-        // openOutput( 0 );
+        openOutput( 0 );
     }
 
     void close()
@@ -233,38 +233,69 @@ struct MidiCentral_Private
 
     void postMessage(f64 pts, const ShortMidiMessage& msg)
     {
-        {
-            std::lock_guard<std::mutex> lock(m_mutex);
-            for (auto listener : m_listeners)
-            {
-                listener->onShortMidiMessage(pts, msg);
-            }
-        }
-
+        /*
         if ( m_midiOut )
         {
             m_midiOut->sendShortMessage( msg.pack() );
+        }
+        */
+        int errorCount = 0;
+        int errorIndex = -1;
+        {
+            std::lock_guard<std::mutex> lock(m_mutex);
+            for (size_t i = 0; i < m_listeners.size(); i++)
+            {
+                auto listener = m_listeners[i];
+                if (!listener)
+                {
+                    errorCount++;
+                    errorIndex = i;
+                    continue;
+                }
+                listener->onShortMidiMessage(pts, msg);
+            }
+        }
+        if (errorCount > 0)
+        {
+            DE_ERROR("errorCount = ",errorCount,", errorIndex = ",errorIndex)
         }
     }
 
     void postMessage(f64 pts, const MidiMessage & msg)
     {
-        DE_DEBUG("MidiMessage.size = ", msg.size())
-
-        {
-            std::lock_guard<std::mutex> lock(m_mutex);
-            for (auto listener : m_listeners)
-            {
-                listener->onMidiMessage(pts, msg);
-            }
-        }
-
+        /*
         if ( m_midiOut )
         {
             m_midiOutBuffer.clear();
             m_midiOutBuffer.assign( msg.begin(), msg.end() );
             m_midiOut->sendMessage( &m_midiOutBuffer );
         }
+
+        */
+        DE_DEBUG("MidiMessage.size = ", msg.size())
+
+        int errorCount = 0;
+        int errorIndex = -1;
+        {
+            std::lock_guard<std::mutex> lock(m_mutex);
+            for (size_t i = 0; i < m_listeners.size(); ++i)
+            {
+                auto listener = m_listeners[i];
+                if (!listener)
+                {
+                    errorCount++;
+                    errorIndex = i;
+                    continue;
+                }
+                listener->onMidiMessage(pts, msg);
+            }
+        }
+
+        if (errorCount > 0)
+        {
+            DE_ERROR("errorCount = ",errorCount,", errorIndex = ",errorIndex)
+        }
+
     }
 
     static void
@@ -294,7 +325,8 @@ struct MidiCentral_Private
         }
         else
         {
-            central->postMessage( deltaTime, *message );
+            DE_ERROR("Unsupported")
+            // central->postMessage( deltaTime, *message );
         }
     }
 
@@ -325,7 +357,12 @@ struct MidiCentral_Private
         m_midiOut = MidiUtil::openMidiOut( portIndex );
         if (m_midiOut)
         {
+            DE_TRACE("")
             m_portOut = portIndex;
+        }
+        else
+        {
+            DE_ERROR("")
         }
 	}
 
@@ -333,6 +370,7 @@ struct MidiCentral_Private
 	{
 		if ( m_midiOut )
 		{ 
+            DE_TRACE("")
 			delete m_midiOut;
 			m_midiOut = nullptr;
 		}

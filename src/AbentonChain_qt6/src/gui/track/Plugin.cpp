@@ -23,7 +23,7 @@ Plugin::Plugin(de::audio::IPlugin* plugin, QWidget* parent)
 
     if (m_plugin)
     {
-        m_title = QString::fromStdString(m_plugin->uri());
+        m_title = QString::fromStdString(m_plugin->name());
     }
     else
     {

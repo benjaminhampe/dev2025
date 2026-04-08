@@ -12,7 +12,7 @@ struct VST2_Plugin : public IPlugin
 {
 public:
     VST2_Plugin();
-    ~VST2_Plugin();
+    ~VST2_Plugin() override;
 
     void dsp_init(u64 frames,
                   u32 channels,

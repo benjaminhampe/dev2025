@@ -14,7 +14,7 @@ class Track : public ITrack
         return ++s_id;
     }
 
-    IAudioCentral* m_central;
+    IAudioCentral* m_audioCentral;
     int m_trackId;
 
     IPlugin* m_chainStart;
@@ -38,8 +38,8 @@ class Track : public ITrack
     }
 
 public:
-    explicit Track(IAudioCentral* central)
-        : m_central(central)
+    Track()
+        : m_audioCentral(nullptr)
         , m_trackId(GetFreeTrackId())
         , m_chainStart(nullptr)
         , m_chainEnd(nullptr)
@@ -50,6 +50,11 @@ public:
     ~Track()
     {
         destroyPlugins();
+    }
+
+    void setAudioCentral( IAudioCentral* audioCentral)
+    {
+        m_audioCentral = audioCentral;
     }
 
     u32 getTrackId() const override { return m_trackId; }
@@ -96,16 +101,18 @@ public:
 
     IPlugin* createPlugin( std::string uri, int index = -1) override
     {
-        IPlugin* plugin = m_central->getPluginManager().createPlugin(uri);
+        IPlugin* plugin = m_audioCentral->getPluginManager().createPlugin(uri);
         if (!plugin)
         {
             DE_ERROR("No plugin ")
             return nullptr;
         }
 
+        plugin->setTrack(this);
+
         if (plugin->isSynth())
         {
-            m_central->getMidiCentral().registerListener(plugin);
+            m_audioCentral->getMidiCentral().registerListener(plugin);
         }
 
         if (index < 0 || index >= int(m_plugins.size()))
@@ -125,16 +132,18 @@ public:
         return plugin;
     }
 
-    void deregisterMidiListeners()
-    {
-        for (IPlugin* p : m_plugins)
-        {
-            m_central->getMidiCentral().deregisterListener(p);
-        }
-    }
+    // void deregisterMidiListeners()
+    // {
+    //     for (IPlugin* p : m_plugins)
+    //     {
+    //         m_audioCentral->getMidiCentral().deregisterListener(p);
+    //     }
+    // }
 
     void updateDspChain()
     {
+        m_audioCentral->stopAudio();
+
         auto n = m_plugins.size();
         if (n == 0)
         {
@@ -182,7 +191,7 @@ public:
             // Register synth (first plugin) to receive MIDI:
             // TODO: Register all plugins,
             //       maybe some effect acts on midi events.
-            m_central->getMidiCentral().registerListener( m_chainStart );
+            // m_audioCentral->getMidiCentral().registerListener( m_chainStart );
 
             // Cry if first plugin is not a synth/player.
             if (!m_chainStart->isSynth())
@@ -192,21 +201,10 @@ public:
                 DE_ERROR("No audio will be heard!")
             }
         }
+
+        m_audioCentral->playAudio();
     }
 
-/*
-    void confPlugin(std::vector<u32> pluginIds) override
-    {
-        deregisterMidiListeners();
-        m_pluginIds = std::move(pluginIds);
-        updateDspChain();
-    }
-
-    const std::vector<u32>& getPluginIds() const override
-    {
-        return m_pluginIds;
-    }
-*/
     void dsp_read(f64 pts, u32 frames, u32 sampleRate,
                 f32* __restrict__ L,
                 f32* __restrict__ R ) override
@@ -235,28 +233,40 @@ public:
         DE_ERROR("Should not be called, use setPluginIds()!")
     }
 
-    void onMidiMessage(f64 pts, const midi::MidiMessage& msg) override
+    // void onMidiMessage(f64 pts, const midi::MidiMessage& msg) override
+    // {
+    //     if (m_chainStart)
+    //     {
+    //         m_chainStart->onMidiMessage(pts, msg);
+    //     }
+    // }
+
+    // void onShortMidiMessage(f64 pts, const midi::ShortMidiMessage& msg) override
+    // {
+    //     if (m_chainStart)
+    //     {
+    //         m_chainStart->onShortMidiMessage(pts, msg);
+    //     }
+    // }
+
+/*
+    void confPlugin(std::vector<u32> pluginIds) override
     {
-        if (m_chainStart)
-        {
-            m_chainStart->onMidiMessage(pts, msg);
-        }
+        deregisterMidiListeners();
+        m_pluginIds = std::move(pluginIds);
+        updateDspChain();
     }
 
-    void onShortMidiMessage(f64 pts, const midi::ShortMidiMessage& msg) override
+    const std::vector<u32>& getPluginIds() const override
     {
-        if (m_chainStart)
-        {
-            m_chainStart->onShortMidiMessage(pts, msg);
-        }
+        return m_pluginIds;
     }
-
-
+*/
 };
 
 
 // ===========================================================================
-class AudioCentral_Private : public IAudioCentral
+class AudioCentral_Private
 // ===========================================================================
 {
 public:
@@ -283,36 +293,35 @@ public:
         , m_channels(0)
         , m_sampleRate(0)
         , m_track(nullptr)
-        , m_track0(this)
     {
         m_track = &m_track0;
     }
 
-    ~AudioCentral_Private() override
+    ~AudioCentral_Private()
     {
-        stopAudio();
+
     }
 
     //=========================
     // DriverApi
     //=========================
 
-    void confAudio( int outputDevice = -1,
+    void confAudio(int outputDevice = -1,
                    int inputDevice = -1,
                    int sampleRate = 48000,
                    int blockSize = 128,
-                   int channels = 2 ) override
+                   int channels = 2 )
     {
         //m_endPoint.start();
     }
 
-    void playAudio() override
+    void playAudio()
     {
         m_endPoint.setInputSignal(m_track);
-        m_endPoint.start();
+        m_endPoint.play();
     }
 
-    void stopAudio() override
+    void stopAudio()
     {
         m_endPoint.stop();
     }
@@ -321,12 +330,12 @@ public:
     // PluginApi
     //=========================
 
-    PluginManager& getPluginManager() override
+    PluginManager& getPluginManager()
     {
         return m_pluginManager;
     }
 
-    const PluginManager& getPluginManager() const override
+    const PluginManager& getPluginManager() const
     {
         return m_pluginManager;
     }
@@ -350,36 +359,39 @@ public:
     // TrackApi
     //=========================
 
-    u32 addTrack( std::string name ) override
+    u32 addTrack( std::string name )
     {
         return m_track->getTrackId();
     }
 
-    ITrack* getTrack( u32 id ) override
+    ITrack* getTrack( u32 id )
     {
         return m_track;
     }
 
-    void removeTrack( u32 id ) override
+    void removeTrack( u32 id )
     {
         // m_track0
     }
 
     midi::MidiCentral&
-    getMidiCentral() override { return m_midiCentral; }
+    getMidiCentral() { return m_midiCentral; }
 
     const midi::MidiCentral&
-    getMidiCentral() const override { return m_midiCentral; }
+    getMidiCentral() const { return m_midiCentral; }
 };
 
 // ===========================================================================
 AudioCentral::AudioCentral()
     : _d(new AudioCentral_Private)
 {
-
+    _d->m_track0.setAudioCentral(this);
 }
+
 AudioCentral::~AudioCentral()
 {
+    _d->stopAudio();
+    _d->m_track0.destroyPlugins();
     delete _d;
 }
 

@@ -58,9 +58,16 @@ else()
 
     target_link_libraries(${APP_NAME} PRIVATE de_kissfft_cpp)
     target_link_libraries(${APP_NAME} PRIVATE de_pffft)
-    target_link_libraries(${APP_NAME} PRIVATE de_rtaudio)
+    target_link_libraries(${APP_NAME} PRIVATE de_rtaudio_601)
     target_link_libraries(${APP_NAME} PRIVATE de_rtmidi)
     target_link_libraries(${APP_NAME} PRIVATE de_vst2sdk)
+
+	target_link_options(${APP_NAME} PRIVATE
+		-static
+		-stdlib=libc++
+		-Wl,-Bstatic -lc++ -lc++abi -lunwind -lwinpthread
+		-Wl,-Bdynamic
+	)
 
     # target_link_libraries(${APP_NAME} PRIVATE AudioDreamy64_DarkImage)
     # target_link_libraries(${APP_NAME} PRIVATE de_fontawesome)

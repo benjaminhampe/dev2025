@@ -8,26 +8,31 @@ namespace audio {
 class EndPoint_RtAudio_Private
 {
 public:
-    unsigned int m_sampleRate = 44100;
-    unsigned int m_bufferSize = 256;
-    unsigned int m_channels = 2;
-	
-    IDspChainElement* m_inputSignal = nullptr;
+    bool m_bIsPlaying;
+    RtAudio::Api m_api;
+    u32 m_sampleRate;
+    u32 m_blockSize;
+    u32 m_channels;
+    IDspChainElement* m_inputSignal;
 
-    RtAudio::Api m_api = RtAudio::WINDOWS_WASAPI;
     RtAudio m_dac;
-    RtAudio::DeviceInfo m_outDevice;
-    RtAudio::StreamParameters m_outParams;
-
-    RtAudio::DeviceInfo m_inDevice;
-    RtAudio::StreamParameters m_inParams;
+    RtAudio::DeviceInfo m_oDevInfo;
+    RtAudio::DeviceInfo m_iDevInfo;
+    RtAudio::StreamParameters m_oParams;
+    RtAudio::StreamParameters m_iParams;
 
     AlignedFloatVector m_L;
     AlignedFloatVector m_R;
 
 public:
     EndPoint_RtAudio_Private()
-        : m_dac( m_api )
+        : m_bIsPlaying(false)
+        , m_api(RtAudio::WINDOWS_WASAPI)
+        , m_sampleRate(48000)
+        , m_blockSize(128)
+        , m_channels(2)
+        , m_inputSignal(nullptr)
+        , m_dac( m_api )
     {
         if (m_dac.getDeviceCount() < 1)
         {
@@ -36,26 +41,37 @@ public:
         }
 
         // Get default output device id
-        auto deviceId = m_dac.getDefaultOutputDevice();
+        auto oDevId = m_dac.getDefaultOutputDevice();
+        auto iDevId = m_dac.getDefaultInputDevice();
 
         // Get default output device info
-        m_outDevice = m_dac.getDeviceInfo(deviceId);
-
-        DE_WARN("Output Device: ",m_outDevice.name, " (Default)")
-        DE_WARN("Output Channels: ",m_outDevice.outputChannels)
-        DE_WARN("Output SampleRate: ",m_outDevice.preferredSampleRate)
+        m_oDevInfo = m_dac.getDeviceInfo(oDevId);
+        m_iDevInfo = m_dac.getDeviceInfo(iDevId);
 
         // Build stream
-        m_outParams.deviceId = deviceId;
-        m_outParams.firstChannel = 0;
-        m_outParams.nChannels = m_outDevice.outputChannels;
-        m_channels = m_outDevice.outputChannels;
-        m_sampleRate = m_outDevice.preferredSampleRate;
+        m_oParams.deviceId = oDevId;
+        m_oParams.nChannels = m_oDevInfo.outputChannels;
+        m_oParams.firstChannel = 0;
+
+        m_iParams.deviceId = iDevId;
+        m_iParams.nChannels = m_iDevInfo.outputChannels;
+        m_iParams.firstChannel = 0;
+
+        m_channels = m_oDevInfo.outputChannels;
+        m_sampleRate = m_oDevInfo.preferredSampleRate;
+
+        DE_WARN("Output Device: ",m_oDevInfo.name, " (Default)")
+        DE_WARN("Output Channels: ",m_oDevInfo.outputChannels)
+        DE_WARN("Output SampleRate: ",m_oDevInfo.preferredSampleRate)
+
+        DE_WARN("Input Device: ",m_iDevInfo.name, " (Default)")
+        DE_WARN("Input Channels: ",m_iDevInfo.outputChannels)
+        DE_WARN("Input SampleRate: ",m_iDevInfo.preferredSampleRate)
     }
 
     ~EndPoint_RtAudio_Private()
     {
-        if (m_dac.isStreamOpen()) m_dac.closeStream();
+        stop();
     }
 
     void setInputSignal( IDspChainElement* inputSignal )
@@ -63,49 +79,93 @@ public:
         m_inputSignal = inputSignal;
     }
 
-    void start()
+    void play()
     {
+#if RTAUDIO_VERSION_MAJOR < 6
         try
         {
-            u32 blockSize = m_bufferSize;
-            m_dac.openStream(&m_outParams,
-                             NULL,
-                             RTAUDIO_FLOAT32,
-                             m_sampleRate,
-                             &m_bufferSize,
-                             &cb_rtaudio_f32, this);
+#endif
+            u32 blockSize = m_blockSize;
+#if RTAUDIO_VERSION_MAJOR > 5
+            RtAudio::StreamOptions options;
+            options.flags = RTAUDIO_MINIMIZE_LATENCY;
+            options.numberOfBuffers = 2;   // double buffering
+            options.streamName = "EndPoint_Rt601";
+            options.priority = 1; // 0 = default thread priority
 
-            if (blockSize != m_bufferSize)
+            int e =
+#endif
+            m_dac.openStream(
+                &m_oParams,
+                NULL,
+                RTAUDIO_FLOAT32,
+                m_sampleRate,
+                &m_blockSize,
+                &cb_rtaudio_f32,
+                this
+#if RTAUDIO_VERSION_MAJOR > 5
+                , &options
+#endif
+            );
+
+#if RTAUDIO_VERSION_MAJOR > 5
+            if (e != RTAUDIO_NO_ERROR)
             {
-                DE_WARN("blockSize(",blockSize,") != m_bufferSize(",m_bufferSize,")")
+                DE_ERROR("Cannot open stream: ",m_dac.getErrorText())
+                return;
+            }
+#endif
+
+            if (blockSize != m_blockSize)
+            {
+                DE_WARN("blockSize(",blockSize,") != m_blockSize(",m_blockSize,")")
             }
 
             constexpr u64 GUARD = 64;
 
-            m_L.resize(m_bufferSize + GUARD);
-            m_R.resize(m_bufferSize + GUARD);
+            m_L.resize(m_blockSize + GUARD);
+            m_R.resize(m_blockSize + GUARD);
 
             std::fill(m_L.begin(),m_L.end(),0.0f);
             std::fill(m_R.begin(),m_R.end(),0.0f);
 
             if (m_inputSignal)
             {
-                m_inputSignal->dsp_init( m_bufferSize, m_channels, m_sampleRate );
+                m_inputSignal->dsp_init( m_blockSize, m_channels, m_sampleRate );
             }
 
-            m_dac.startStream();
+            e = m_dac.startStream();
+            if (e != RTAUDIO_NO_ERROR)
+            {
+                DE_ERROR("Cannot start stream: ",m_dac.getErrorText())
+                return;
+            }
 
-            std::cout << "Playing..." << std::endl;
+            DE_OK("Playing...")
+
+            m_bIsPlaying = true;
+#if RTAUDIO_VERSION_MAJOR < 6
         }
         catch (RtAudioError &e)
         {
             e.printMessage();
             exit(1);
         }
+#endif
+
     }
 
     void stop()
     {
+        if (!m_bIsPlaying)
+        {
+            DE_ERROR("Not m_bIsPlaying")
+            return;
+        }
+
+        m_bIsPlaying = false;
+
+#if RTAUDIO_VERSION_MAJOR < 6
         try
         {
             m_dac.stopStream();
@@ -114,6 +174,19 @@ public:
         {
             e.printMessage();
         }
+#else
+        if (m_dac.isStreamRunning())
+        {
+            m_dac.stopStream();
+        }
+        DE_OK("Stopped stream")
+#endif
+        if (m_dac.isStreamOpen())
+        {
+            m_dac.closeStream();
+        }
+        DE_OK("Closed stream")
+
     }
 
 private:
@@ -137,9 +210,9 @@ private:
 
         // FillZeroes:
         float* __restrict__ pDst = static_cast<float*>(outputBuffer);
-        uint32_t nChannels = pDSP->m_outParams.nChannels;
-        uint64_t nSamples = nFrames * nChannels;
-        memset(pDst, 0, nSamples * sizeof(float));
+        uint32_t oChannels = pDSP->m_oParams.nChannels;
+        uint64_t oSamples = nFrames * oChannels;
+        memset(pDst, 0, oSamples * sizeof(float));
 
         // FillZeroes:
         std::fill(pDSP->m_L.begin(),pDSP->m_L.end(),0.0f);
@@ -164,7 +237,7 @@ private:
         {
             pDst[0] = *pL++;
             pDst[1] = *pR++;
-            pDst += nChannels;
+            pDst += oChannels;
         }
 
         return status;
@@ -189,23 +262,33 @@ void EndPoint_RtAudio::setInputSignal( IDspChainElement* inputSignal )
 {
     m_impl->setInputSignal( inputSignal );
 }
-void EndPoint_RtAudio::start()
+void EndPoint_RtAudio::play()
 {
-    m_impl->start();
+    m_impl->play();
 }
 void EndPoint_RtAudio::stop()
 {
     m_impl->stop();
 }
-int EndPoint_RtAudio::getSampleRate() const
+
+u32 EndPoint_RtAudio::getOutputDeviceId() const
+{
+    return m_impl->m_oDevInfo.ID;
+}
+u32 EndPoint_RtAudio::getInputDeviceId() const
+{
+    return m_impl->m_iDevInfo.ID;
+}
+
+u32 EndPoint_RtAudio::getSampleRate() const
 {
     return m_impl->m_sampleRate;
 }
-int EndPoint_RtAudio::getBufferSize() const
+u32 EndPoint_RtAudio::getBlockSize() const
 {
-    return m_impl->m_bufferSize;
+    return m_impl->m_blockSize;
 }
-int EndPoint_RtAudio::getChannelCount() const
+u32 EndPoint_RtAudio::getChannelCount() const
 {
     return m_impl->m_channels;
 }
