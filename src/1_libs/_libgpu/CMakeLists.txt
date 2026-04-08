@@ -1,4 +1,5 @@
 # Compute
+# add_subdirectory(de_DirectML)
 # add_subdirectory(de_opencl_1.2)
 # add_subdirectory(de_opencl_loader_shared)
 add_subdirectory(de_opencl_loader_shared_2024.10.24-1)

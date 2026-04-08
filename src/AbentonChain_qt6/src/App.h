@@ -1,51 +1,56 @@
 #pragma once
+#include "gui/SkinManager.h"
 #include <QObject>
 #include <QColor>
+#include <de/audio/AudioCentral.h>
 
-#define g_pGlob (AbenniApp::instance())
-#define g_pSkin (&AbenniApp::instance()->m_skin)
-
-
-// ============================================
-class AbenniSkin : public QObject
-// ============================================
-{
-public:
-    int zoom = 100; // in percent
-
-    // TrackChain:
-    int trkChnWidgetSpacing = 1;
-    int trkChnDropIndicatorWidth = 20;
-    QColor trkChnFillColor = QColor(50,50,50);
-    QColor trkChnBodyColor = QColor(50,50,50);
-};
-
+void enableConsoleOutput();
 
 // ============================================
-class AbenniApp : public QObject
+class App : public QObject
 // ============================================
 {
     Q_OBJECT
 public:
-    AbenniApp(QObject* parent = nullptr);
-    ~AbenniApp();
+    App(QObject* parent = nullptr);
+    ~App();
 
-    static AbenniApp* instance()
+    de::audio::AudioCentral& getAudioCentral()
     {
-        if (!m_pInstance)   // Only allow one instance of class to be generated.
-            m_pInstance = new AbenniApp;
-
-        return m_pInstance;
+        return m_audioCentral;
     }
+    const de::audio::AudioCentral& getAudioCentral() const
+    {
+        return m_audioCentral;
+    }
+    de::midi::MidiCentral& getMidiCentral()
+    {
+        return m_audioCentral.getMidiCentral();
+    }
+    const de::midi::MidiCentral& getMidiCentral() const
+    {
+        return m_audioCentral.getMidiCentral();
+    }
+
+    static App* instance();
+    const Skin& currentSkin() const;
+    Skin& currentSkin();
+
+    int getZoom() const;
 
 protected:
 public slots:
+    void setZoom(int percent);
+
 private slots:
 signals:
+    void skinChanged();
+
 private:
-    static AbenniApp* m_pInstance;
+    static App* m_pInstance;
 
 public:
-    AbenniSkin m_skin;
+    SkinManager m_skinManager;
 
+    de::audio::AudioCentral m_audioCentral;
 };

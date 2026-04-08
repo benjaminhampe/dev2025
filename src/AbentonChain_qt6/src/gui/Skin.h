@@ -13,10 +13,43 @@
 #include <QFile>
 #include <QVBoxLayout>
 #include <QScrollArea>
-#include <vector>
+#include <QPushButton>
+#include <QSvgRenderer>
+#include <QPainter>
 
-namespace de {
-namespace gui {
+#include <DarkImage.h>
+
+// ------------------------------------------------------------
+// Utils
+// ------------------------------------------------------------
+bool
+isMouseOver(const QPoint &pos, const QRect &r);
+
+QString
+qstr(const QRect &r);
+
+QRect
+mkRect(const QRect &r, int b = 1);
+
+QPixmap
+mkSvg(const QString &svg, int size = 64);
+
+QPixmap
+mkSvg_Power(int buttonWidth, const QColor& fillColor,
+            int outlineWidth, const QColor& outlineColor);
+
+QString
+toSvg(const QColor& c);
+
+
+/*
+QString
+mkSvg_Power( int d, int p, int r );
+*/
+
+void setButtonSvg(QPushButton* btn, const QString &svg, int size );
+
+void setButtonSvg(QPushButton* btn, const QPixmap &pix );
 
 // ============================================
 struct Skin
@@ -26,87 +59,27 @@ public:
     int zoom = 100; // in percent
 	
     QColor windowColor = QColor(129,129,129);
+    QColor windowColorActive = QColor(61,61,61); // Border around window
 	QColor panelColor = QColor(165,165,165);
-    QColor titleColor = QColor(222,222,222);
-    QColor textColor = QColor(36,36,36);
-	
-    int shellSpacing = 1;
-    int shellDropWidth = 20;	
+    QColor headerColor = QColor(188,188,188);
+    QColor headerColorActive = QColor(205,248,255); // light-blue
+    QColor symbolColor = QColor(207,207,207);
+    QColor symbolColorActive = QColor(255,185,1); // orange
+    QColor comboColor = QColor(223,223,223);
+    QColor padColor = QColor(36,36,36);
+    QColor textColor = QColor(18,18,18);
+    // QColor(36,36,36);	
 	
     //QColor m_primary;
     //QColor m_background;
     //QFont m_font;	
 };
 
-/*
-MyWidget::MyWidget(QWidget* parent)
-    : QWidget(parent)
-{
-    connect(&SkinManager::instance(), 
-			&SkinManager::skinChanged,
-            this, 
-			&MyWidget::onSkinChanged);
-
-    onSkinChanged(); // initial anwenden
-}
-
-void MyWidget::onSkinChanged() {
-    m_color = SkinManager::instance().primaryColor();
-    m_font  = SkinManager::instance().defaultFont();
-    update(); // neu zeichnen
-}
-*/
 
 // ============================================
-class SkinManager : public QObject 
+class ISkinnable
 // ============================================
 {
-    Q_OBJECT
 public:
-    static SkinManager& instance()
-	{
-		static SkinManager s_instance;
-		return s_instance;
-	}
-
-	const Skin& current() const 
-	{ 
-		return m_current; 
-	}
-	
-	// void loadSkin(const QString& name);
-    
-signals:
-    void skinChanged();
-
-private:
-    SkinManager() = default;
-
-	Skin m_current;
+    virtual void applySkin() = 0;
 };
-
-class SkinWidget : public QWidget
-{
-	Q_OBJECT
-public:
-	SkinWidget( QWidget* parent = nullptr )
-		: QWidget( parent )
-	{
-		setContentMargins(0,0,0,0);
-		connect(&SkinManager::instance(), &SkinManager::skinChanged, this, &SkinWidget::applySkin);
-		applySkin(); // initial anwenden
-	}
-
-protected slots:
-    virtual void applySkin() 
-	{
-        // default: nothing
-		// m_color = SkinManager::instance().primaryColor();
-		// m_font  = SkinManager::instance().defaultFont();
-		update(); // neu zeichnen
-    }
-	
-}
-
-} // end namespace gui
-} // end namespace de

@@ -388,7 +388,8 @@ namespace audio {
         // Now class can compute with it and then convert back to s24.
         operator int32_t() const
         {
-        return (r) | (g<<8) | (b<<16) | (b&0x80 ? (-1<<24) : 0); // looks correct
+            return (r) | (g<<8) | (b<<16) |
+                   (b&0x80 ? -(1<<24) : 0); // TODO: verify if correct!
         }
 
         s24& operator++ ()            { operator=(*this+1); return *this; }

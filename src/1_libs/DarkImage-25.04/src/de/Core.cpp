@@ -1721,16 +1721,18 @@ FileSystem::parentDir( const std::wstring& uri )
 std::string
 FileSystem::makeAbsolute( std::string uri, std::string baseDir )
 {
+    std::string retVal = uri;
     try
     {
         const auto p2 = fs::canonical( fs::absolute( uri ) );
-        return p2.string();
+        retVal = p2.string();
     }
     catch ( std::exception & e )
     {
-        //DE_DEBUG("exception what(",e.what(),"), uri = ",uri )
-        return uri;
+        DE_DEBUG("exception what(",e.what(),"), uri = ",uri )
     }
+
+    return retVal;
 }
 
 // static

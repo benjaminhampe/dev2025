@@ -1,5 +1,5 @@
 set(APP_NAME AbentonChain_qt6)
-project(${APP_NAME}-dev)
+project(${APP_NAME})
 
 if (TARGET ${APP_NAME})
     message("${BoldRed}[benni] HEADER_GUARD: ${APP_NAME}${ColourReset}")
@@ -22,7 +22,7 @@ else()
     set(CMAKE_AUTORCC ON)
     # set(CMAKE_AUTOUIC OFF)
     find_package(Qt6Widgets)
-    find_package(Qt6 COMPONENTS Core Widgets)
+    find_package(Qt6 COMPONENTS Core Widgets Svg)
     include_directories(SYSTEM ${Qt6Widgets_INCLUDE_DIRS})
     add_definitions(${Qt6Widgets_DEFINITIONS})
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${Qt6Widgets_EXECUTABLE_COMPILE_FLAGS}")
@@ -31,12 +31,6 @@ else()
     add_executable(${APP_NAME} ${APP_SOURCES})
 
     target_include_directories(${APP_NAME} PRIVATE ${APP_SOURCE_DIR})
-    # target_include_directories(${APP_NAME} PRIVATE ${APP_SOURCE_DIR}/ui)
-    # target_include_directories(${APP_NAME} PRIVATE ${APP_SOURCE_DIR}/ui/0_common)
-    # target_include_directories(${APP_NAME} PRIVATE ${APP_SOURCE_DIR}/ui/1_pluginScanner)
-    # target_include_directories(${APP_NAME} PRIVATE ${APP_SOURCE_DIR}/ui/3_clip)
-    # target_include_directories(${APP_NAME} PRIVATE ${APP_SOURCE_DIR}/ui/4_track)
-    # target_include_directories(${APP_NAME} PRIVATE ${APP_SOURCE_DIR}/ui/5_footer)
 
     if (WIN32)
         # target_link_libraries(${APP_NAME} PRIVATE comctl32 user32 gdi32 kernel32)
@@ -46,7 +40,7 @@ else()
 
     if (MSVC)
     else()
-        target_link_options(${APP_NAME} PRIVATE -mwindows)
+        # target_link_options(${APP_NAME} PRIVATE -mwindows)
 
         # target_compile_options(${APP_NAME} PRIVATE -Werror=maybe-uninitialized)
         # target_compile_options(${APP_NAME} PRIVATE -Wno-deprecated-declarations)
@@ -58,14 +52,23 @@ else()
     endif()
 
     target_link_libraries(${APP_NAME} PRIVATE Qt6::Widgets)
+    target_link_libraries(${APP_NAME} PRIVATE Qt6::Svg)
+
+    target_link_libraries(${APP_NAME} PRIVATE DarkImage_2504)
+
+    target_link_libraries(${APP_NAME} PRIVATE de_kissfft_cpp)
+    target_link_libraries(${APP_NAME} PRIVATE de_pffft)
+    target_link_libraries(${APP_NAME} PRIVATE de_rtaudio)
+    target_link_libraries(${APP_NAME} PRIVATE de_rtmidi)
+    target_link_libraries(${APP_NAME} PRIVATE de_vst2sdk)
+
     # target_link_libraries(${APP_NAME} PRIVATE AudioDreamy64_DarkImage)
     # target_link_libraries(${APP_NAME} PRIVATE de_fontawesome)
     # target_link_libraries(${APP_NAME} PRIVATE de_tinyxml2)
     # target_link_libraries(${APP_NAME} PRIVATE de_rtaudio)
     # target_link_libraries(${APP_NAME} PRIVATE de_rtmidi)
-    # target_link_libraries(${APP_NAME} PRIVATE de_vst2sdk)
 
-    # target_link_libraries(${APP_NAME} PRIVATE DarkGetCoverArt)   # Audio Tags ( relative new )
+
     # target_link_libraries(${APP_NAME} PRIVATE de_fftw3)   # Can be used
     # target_link_libraries(${APP_NAME} PRIVATE de_kissfft) # What i use
     # target_link_libraries(${APP_NAME} PRIVATE de_soundtouch) # see GSoundTouch impl

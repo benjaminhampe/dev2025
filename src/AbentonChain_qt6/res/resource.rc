@@ -15,14 +15,14 @@ BEGIN
   BEGIN
     BLOCK "080904E4"
     BEGIN
-      VALUE "CompanyName", "Ingenieur Buro Benjamin Hampe"
-      VALUE "FileDescription", "Alphasonic-LiveStudio64 Qt"
-      VALUE "FileVersion", "1.0"
-      VALUE "InternalName", "Alphasonic-LivePro"
-      VALUE "LegalCopyright", "Meins"
-      VALUE "OriginalFilename", "Alphasonic-LivePro-64.exe"
-      VALUE "ProductName", "Alphasonic LiveStudio64 Pro VST2.3 Plugin Host"
-      VALUE "ProductVersion", "23.01"
+      VALUE "CompanyName", "Abenton LLC"
+      VALUE "FileDescription", "Live64_qt6"
+      VALUE "FileVersion", "26.04"
+      VALUE "InternalName", "Live64_qt6"
+      VALUE "LegalCopyright", "Donationware"
+      VALUE "OriginalFilename", "AbentonLive64_qt6"
+      VALUE "ProductName", "Live64_qt6"
+      VALUE "ProductVersion", "26.04"
     END
   END
 
