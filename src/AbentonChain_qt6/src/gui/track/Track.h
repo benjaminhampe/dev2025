@@ -53,6 +53,7 @@ protected:
     // Zeichnen
     // ----------------------------------------
     void paintEvent(QPaintEvent* e) override;
+    void resizeEvent(QResizeEvent* e) override;
 
     // ----------------------------------------
     // Drag&Drop Reorder:

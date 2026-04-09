@@ -5,6 +5,50 @@ namespace de {
 namespace audio {
 
 //===============================
+struct VST2_PerfTimer
+//===============================
+{
+    double m_freqInv;
+
+    VST2_PerfTimer()
+    {
+        LARGE_INTEGER m_freq;
+        QueryPerformanceFrequency(&m_freq); // e.g. 3,000,000 Hz (3 MHz)
+        m_freqInv = 1.0 / (double)m_freq.QuadPart;
+    }
+
+    double now() const
+    {
+        LARGE_INTEGER a;
+        QueryPerformanceCounter(&a);
+
+        double seconds = double(a.QuadPart) * m_freqInv;
+        return seconds;
+    }
+};
+
+//===============================
+struct VST2_Clock
+//===============================
+{
+    VST2_PerfTimer m_timer;
+    double m_timeStart;
+
+    VST2_Clock() { restart(); }
+
+    void restart()
+    {
+        m_timeStart = m_timer.now();
+    }
+
+    double now() const
+    {
+        double timeNow = m_timer.now() - m_timeStart;
+        return timeNow;
+    }
+};
+
+//===============================
 struct VST2_SampleBuffers
 //===============================
 {
@@ -115,7 +159,7 @@ struct VST2_Plugin_Impl
 
     IDspChainElement* m_inputSignal = nullptr;
     u32 m_sampleRate = 0;     // rate in Hz
-    u32 m_bufferFrames = 0;   // frames per channel
+    u32 m_blockSize = 0;   // frames per channel
     std::atomic< u64 > m_framePos = 0;
     u64 m_dllHandle = 0; // HMODULE
 
@@ -133,8 +177,11 @@ struct VST2_Plugin_Impl
     // std::vector< f32*> m_inBufferHeads;
 
     // VST midi event handling
+    VST2_Clock m_midiClock;
     std::vector< VstMidiEvent > m_vstMidiEvents;
     std::vector< char > m_vstEventBuffer;
+
+
 
     struct MyVstMidi
     {
@@ -203,9 +250,9 @@ struct VST2_Plugin_Impl
 
     void dsp_init(u64 frames, u32 channels, u32 sampleRate)
     {
-        if ( m_bufferFrames != frames )
+        if ( m_blockSize != frames )
         {
-            m_bufferFrames = frames;
+            m_blockSize = frames;
             m_bNeedSetup = true;
         }
 
@@ -224,11 +271,11 @@ struct VST2_Plugin_Impl
 
             // Prepare input buffer + input channel heads ( planar = non-interleaved )
             // Prepare output buffer + output channel heads ( planar = non-interleaved )
-            m_sampleBuffers.setup(m_numInputs,m_numOutputs, m_bufferFrames);
+            m_sampleBuffers.setup(m_numInputs,m_numOutputs, m_blockSize);
 
             // Setup VST plugin
             dispatcher(effSetSampleRate, 0, 0, 0, float( m_sampleRate ) );
-            dispatcher(effSetBlockSize, 0, m_bufferFrames);
+            dispatcher(effSetBlockSize, 0, m_blockSize);
             dispatcher(effSetProcessPrecision, 0, kVstProcessPrecision32);
             dispatcher(effMainsChanged, 0, 1);
             dispatcher(effStartProcess);
@@ -520,7 +567,7 @@ struct VST2_Plugin_Impl
         case audioMasterVersion:                return kVstVersion;
         case audioMasterCurrentId:              return m_vst->uniqueID;
         case audioMasterGetSampleRate:          return m_sampleRate;
-        case audioMasterGetBlockSize:           return m_bufferFrames;
+        case audioMasterGetBlockSize:           return m_blockSize;
         case audioMasterGetCurrentProcessLevel: return kVstProcessLevelUnknown;
         case audioMasterGetAutomationState:     return kVstAutomationOff;
         case audioMasterGetLanguage:            return kVstLangEnglish;
@@ -605,6 +652,8 @@ struct VST2_Plugin_Impl
     void
     processVstMidiEvents()
     {
+        m_midiClock.restart();
+
         m_vstMidiEvents.clear();
         if ( auto l = m_vstMidi.lock() )
         {
@@ -612,10 +661,11 @@ struct VST2_Plugin_Impl
             //m_vstMidi.events.clear();
         }
 
-        if ( !m_vstMidiEvents.empty() )
+        auto const n = m_vstMidiEvents.size();
+        if ( n > 0 )
         {
-            auto const n = m_vstMidiEvents.size();
-            auto const m = sizeof( VstEvents ) + sizeof( VstEvent* ) * n;
+            auto const m = sizeof( VstEvents ) +
+                           sizeof( VstEvent* ) * n;
             m_vstEventBuffer.resize( m );
             auto vstEvents = reinterpret_cast< VstEvents* >( m_vstEventBuffer.data() );
             memset( vstEvents, 0, sizeof( VstEvents ) );
@@ -629,26 +679,6 @@ struct VST2_Plugin_Impl
             //DE_ERROR("Dispatch MIDI n = ",n)
             dispatcher( effProcessEvents, 0, 0, vstEvents );
         }
-    }
-
-    const char**
-    getCapabilities() const
-    {
-        static const char* hostCapabilities[] =
-        {
-            "sendVstEvents",
-            "sendVstMidiEvents",
-            "sizeWindow",
-            "startStopProcess",
-            "sendVstMidiEventFlagIsRealtime",
-            nullptr
-        };
-        return hostCapabilities;
-    }
-
-    void onMidiMessage(f64 pts, const midi::MidiMessage& msg)
-    {
-        DE_WARN("Not implemented, ", msg.size())
     }
 
     void onShortMidiMessage(f64 pts, const midi::ShortMidiMessage& msg)
@@ -665,6 +695,27 @@ struct VST2_Plugin_Impl
         e.midiData[0] = static_cast<char>( msg.status);
         e.midiData[1] = static_cast<char>( msg.data1 );
         e.midiData[2] = static_cast<char>( msg.data2 );
+
+        // HOPEFULLY that fixes missing NoteOff events:
+        // Pianos work ok without that, but monophonic synth are
+        // beasts on a higher level...
+        double dt = m_midiClock.now(); // Clock is restarted every callback call.
+        int deltaFrames = std::clamp(
+                            int(dt * m_sampleRate),
+                            int(0),
+                            int(m_blockSize) - 10);
+
+        // if (deltaFrames < 0)
+        // {
+        //     //DE_WARN("deltaFrames(",deltaFrames,") < 0")
+        //     deltaFrames = 0;
+        // }
+        // if (deltaFrames > m_blockSize - 10)
+        // {
+        //     //DE_WARN("deltaFrames(",deltaFrames,") >= blockSize(",m_blockSize,")")
+        //     deltaFrames = m_blockSize - 10;
+        // }
+        e.deltaFrames = deltaFrames; // <- Yay relative to start of audio callback
 
         // Special event: All Notes Off (Bn 7B 00):
         if (((msg.status & 0xF0) == 0xB0) &&
@@ -685,6 +736,26 @@ struct VST2_Plugin_Impl
         }
 
         // DE_DEBUG("events(",n,"), byte1(",dbHex(byte1),"), data1(",dbHex(data1),"), data2(",dbHex(data2),")")
+    }
+
+    void onMidiMessage(f64 pts, const midi::MidiMessage& msg)
+    {
+        DE_WARN("Not implemented, ", msg.size())
+    }
+
+    const char**
+    getCapabilities() const
+    {
+        static const char* hostCapabilities[] =
+        {
+            "sendVstEvents",
+            "sendVstMidiEvents",
+            "sizeWindow",
+            "startStopProcess",
+            "sendVstMidiEventFlagIsRealtime",
+            nullptr
+        };
+        return hostCapabilities;
     }
 
 };
@@ -847,6 +918,102 @@ void VST2_Plugin::onShortMidiMessage(f64 pts, const midi::ShortMidiMessage& msg)
 {
     _d->onShortMidiMessage(pts, msg);
 }
+
+// 🎯 1. Get plugin name
+// cpp
+
+// char name[kVstMaxProductStrLen] = {0};
+// plugin->dispatcher(effGetProductString, 0, 0, name, 0);
+
+// Alternative (older plugins):
+// cpp
+
+// plugin->dispatcher(effGetEffectName, 0, 0, name, 0);
+
+// 🎯 2. Get vendor name
+// cpp
+
+// char vendor[kVstMaxVendorStrLen] = {0};
+// plugin->dispatcher(effGetVendorString, 0, 0, vendor, 0);
+
+// 🎯 3. Get vendor version
+// cpp
+
+// int version = plugin->dispatcher(effGetVendorVersion, 0, 0, nullptr, 0);
+
+// 🎯 4. Get number of programs (presets)
+
+// This is stored directly in the AEffect struct:
+// cpp
+
+// int numPrograms = plugin->numPrograms;
+
+// 🎯 5. Get current program index
+// cpp
+
+// int currentProgram = plugin->dispatcher(effGetProgram, 0, 0, nullptr, 0);
+
+// 🎯 6. Set current program
+// cpp
+
+// plugin->dispatcher(effSetProgram, 0, programIndex, nullptr, 0);
+
+// 🎯 7. Get program name
+// cpp
+
+// char programName[kVstMaxProgNameLen] = {0};
+// plugin->dispatcher(effGetProgramName, 0, 0, programName, 0);
+
+// 🎯 8. Get number of parameters
+
+// Also stored in AEffect:
+// cpp
+
+// int numParams = plugin->numParams;
+
+// 🎯 9. Get parameter value
+// cpp
+
+// float value = plugin->getParameter(plugin, paramIndex);
+
+// 🎯 10. Set parameter value
+// cpp
+
+// plugin->setParameter(plugin, paramIndex, value);
+
+// 🎯 11. Get parameter name
+// cpp
+
+// char name[kVstMaxParamStrLen] = {0};
+// plugin->dispatcher(effGetParamName, paramIndex, 0, name, 0);
+
+// 🎯 12. Get parameter label (units)
+// cpp
+
+// char label[kVstMaxParamStrLen] = {0};
+// plugin->dispatcher(effGetParamLabel, paramIndex, 0, label, 0);
+
+// 🎯 13. Get parameter display (formatted value)
+// cpp
+
+// char display[kVstMaxParamStrLen] = {0};
+// plugin->dispatcher(effGetParamDisplay, paramIndex, 0, display, 0);
+
+// 🧠 Summary Table
+// What you want	How to get it
+// Plugin name	effGetProductString or effGetEffectName
+// Vendor name	effGetVendorString
+// Vendor version	effGetVendorVersion
+// Number of programs	AEffect::numPrograms
+// Current program	effGetProgram
+// Set program	effSetProgram
+// Program name	effGetProgramName
+// Number of parameters	AEffect::numParams
+// Parameter value	getParameter()
+// Set parameter	setParameter()
+// Parameter name	effGetParamName
+// Parameter label	effGetParamLabel
+// Parameter display	effGetParamDisplay
 
 //uint64_t
 //VST2_Plugin::getSamplePos() const { return m_framePos; }

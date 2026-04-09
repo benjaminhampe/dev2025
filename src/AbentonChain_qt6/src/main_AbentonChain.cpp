@@ -4,6 +4,25 @@
 #include <QFontDatabase>
 #include <QDebug>
 
+#ifdef _WIN32
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#include <windows.h>
+
+void forceForeground(QWidget* w)
+{
+    HWND hwnd = (HWND)w->winId();
+    SetForegroundWindow(hwnd);
+    ShowWindow(hwnd, SW_SHOW);
+    ShowWindow(hwnd, SW_RESTORE);
+}
+#else
+void forceForeground(QWidget* w)
+{
+}
+#endif
+
 void dbLoadFont(QString uri)
 {
     int id = QFontDatabase::addApplicationFont(uri);
@@ -62,6 +81,11 @@ int main(int argc, char **argv)
     // win.setWindowIcon(QIcon(":/winico"));
     // win.setWindowIcon(app.windowIcon());
     win.setWindowIcon(QApplication::windowIcon());
+    win.show();
+    win.raise();
+    win.activateWindow();
+    win.setWindowState((win.windowState() & ~Qt::WindowMinimized)
+                        | Qt::WindowActive );
 
     int retVal = app.exec();
 

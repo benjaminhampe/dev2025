@@ -1,9 +1,7 @@
-#include <de/audio/plugin/IPlugin.h>
-//#include <de/audio/plugin/details/NullPlugin.h>
+#include <de/audio/plugin/PluginFactory.h>
 #include <de/audio/plugin/details/VST2_Plugin.h>
-#include <DarkImage.h>
+#include <de/audio/plugin/details/VST3_Plugin.h>
 
-// // *.jpg, *.jpeg
 // #if defined(DE_IMAGE_READER_JPG_ENABLED) || defined(DE_IMAGE_WRITER_JPG_ENABLED)
    // #include <de/image/Image_JPG.h>
 // #endif
@@ -12,10 +10,10 @@ namespace de {
 namespace audio {
 
 // ===========================================================================
-// ===   PluginManager
+// ===   PluginFactory
 // ===========================================================================
 
-PluginManager::PluginManager()
+PluginFactory::PluginFactory()
 {
 // initThreadPool();
 
@@ -34,7 +32,7 @@ PluginManager::PluginManager()
 // #endif
 }
 
-PluginManager::~PluginManager()
+PluginFactory::~PluginFactory()
 {
 /*
     for (size_t i = 0; i < m_plugins.size(); ++i)
@@ -58,7 +56,7 @@ PluginManager::~PluginManager()
 // PluginApi
 //=========================
 
-IPlugin* PluginManager::createPlugin( std::string uri )
+IPlugin* PluginFactory::createPlugin( std::string uri )
 {
     IPlugin* plugin = nullptr;
 
@@ -102,7 +100,7 @@ IPlugin* PluginManager::createPlugin( std::string uri )
 }
 
 /*
-IPlugin* PluginManager::getPlugin( u32 pluginId )
+IPlugin* PluginFactory::getPlugin( u32 pluginId )
 {
     // if (pluginId < 1)
     // {
@@ -119,7 +117,7 @@ IPlugin* PluginManager::getPlugin( u32 pluginId )
     return *it;
 }
 
-const IPlugin* PluginManager::getPlugin( u32 pluginId ) const
+const IPlugin* PluginFactory::getPlugin( u32 pluginId ) const
 {
     // if (pluginId < 1)
     // {
@@ -136,7 +134,7 @@ const IPlugin* PluginManager::getPlugin( u32 pluginId ) const
     return *it;
 }
 
-void PluginManager::removePlugin( u32 pluginId )
+void PluginFactory::removePlugin( u32 pluginId )
 {
     IPlugin* plugin = getPlugin( pluginId );
     if (!plugin)
@@ -154,21 +152,12 @@ void PluginManager::removePlugin( u32 pluginId )
 */
 
 // static
-// std::shared_ptr< PluginManager >
-// PluginManager::get()
+// std::shared_ptr< PluginFactory >
+// PluginFactory::get()
 // {
-//    static std::shared_ptr< PluginManager > s_manager( new PluginManager() );
+//    static std::shared_ptr< PluginFactory > s_manager( new PluginFactory() );
 //    return s_manager;
 // }
 
 } // end namespace audio.    
 } // end namespace de.
-
-
-// std::shared_ptr< de::audio::IPlugin >
-// dbLoadAudioPlugin( std::string uri )
-// {
-//     return de::audio::PluginManager::get()->loadPlugin(uri);
-// }
-	
-

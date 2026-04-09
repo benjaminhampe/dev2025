@@ -113,7 +113,7 @@ void ArrowButton::applySkin()
         };
 
 
-        m_active = mkSvg_ArrowDown(b, onColor,
+        m_active = mkSvg_ArrowDown(b, offColor,
                                 lineColor, textColor );
         m_deactive = mkSvg_ArrowRight(b, offColor,
                                 lineColor, textColor );

@@ -40,7 +40,7 @@ add_subdirectory(de-miniaudio-0.11.23)
 add_subdirectory(de-ableton-push2)
 add_subdirectory(de-aften)
 add_subdirectory(de-vst3sdk-3.7.13)     # Steinberg VSTi plugin importer.
-
+add_subdirectory(de-vst3sdk-3.8.0)
 add_subdirectory(de-tuning-library)
 add_subdirectory(de-oddsound-mts-esp)
 

@@ -25,6 +25,8 @@ public:
 	
     de::audio::IPlugin* getPlugin();
 
+    void setPlugin(de::audio::IPlugin* plugin);
+
     QRect labelRect() const;
 
     void applySkin();

@@ -5,7 +5,7 @@
 
 Plugin::Plugin(de::audio::IPlugin* plugin, QWidget* parent)
     : QWidget(parent)
-    , m_plugin(plugin)
+    , m_plugin(nullptr)
 {
     DE_TRACE("")
     //setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Expanding);
@@ -21,15 +21,6 @@ Plugin::Plugin(de::audio::IPlugin* plugin, QWidget* parent)
     m_audioMeter = new AudioMeter(this);
 
     applySkin();
-
-    if (m_plugin)
-    {
-        m_title = QString::fromStdString(m_plugin->name());
-    }
-    else
-    {
-        m_title = "NoPlugin";
-    }
 
     connect(this, &QWidget::customContextMenuRequested,
             this, &Plugin::on_showContextMenu);
@@ -49,13 +40,7 @@ Plugin::Plugin(de::audio::IPlugin* plugin, QWidget* parent)
     connect(m_btnEditor, &QPushButton::toggled,
             this, &Plugin::on_pressedBtnEditor);
 
-    // Connect GUI Editor
-    if (plugin->getEditor())
-    {
-        DE_TRACE("Connect editor")
-        QObject::connect(plugin->getEditor(), SIGNAL(closed()),
-                         this, SLOT(on_editorWindowClosed()), Qt::QueuedConnection );
-    }
+    setPlugin(plugin);
 }
 
 Plugin::~Plugin()
@@ -63,17 +48,69 @@ Plugin::~Plugin()
     DE_TRACE("")
 }
 
-void Plugin::on_editorWindowClosed()
-{
-   DE_ERROR("Editor closed")
-   m_btnWrench->blockSignals( true );
-   m_btnWrench->setChecked( false );
-   m_btnWrench->blockSignals( false );
-}
+QRect Plugin::labelRect() const { return m_rcLabel; }
 
 de::audio::IPlugin* Plugin::getPlugin() { return m_plugin; }
 
-QRect Plugin::labelRect() const { return m_rcLabel; }
+void Plugin::setPlugin(de::audio::IPlugin* plugin)
+{
+    // Disconnect old
+    if (m_plugin)
+    {
+        auto editor = m_plugin->getEditor();
+        if (editor)
+        {
+            editor->hide();
+
+            DE_TRACE("Disconnect editor")
+            disconnect(editor,
+                       nullptr,
+                       this,
+                       nullptr );
+        }
+    }
+
+    // Transition:
+    m_plugin = plugin;
+
+    // Connect new:
+    if (m_plugin)
+    {
+        m_title = QString::fromStdString(m_plugin->name());
+        m_btnEnable->setChecked(true);
+        m_btnExpand->setChecked(false);
+        m_btnWrench->setChecked(true);
+        m_btnUpdate->setChecked(false);
+        m_btnEditor->setChecked(false);
+
+        auto editor = m_plugin->getEditor();
+        if (editor)
+        {
+            editor->show();
+            editor->raise();
+            editor->activateWindow();
+            editor->setWindowState((editor->windowState() & ~Qt::WindowMinimized) | Qt::WindowActive );
+
+            DE_TRACE("Connect editor")
+            QObject::connect(editor,
+                             SIGNAL(closed()),
+                             this,
+                             SLOT(on_editorWindowClosed()),
+                             Qt::QueuedConnection );
+        }
+    }
+    else
+    {
+        m_title = "";
+        m_btnEnable->setChecked(false);
+        m_btnExpand->setChecked(false);
+        m_btnWrench->setChecked(false);
+        m_btnUpdate->setChecked(false);
+        m_btnEditor->setChecked(false);
+    }
+}
+
+
 
 void Plugin::on_showContextMenu(const QPoint &pos)
 {
@@ -84,6 +121,16 @@ void Plugin::on_showContextMenu(const QPoint &pos)
     if (chosen == removeAct)
         emit requestRemoval(this);
 }
+
+
+void Plugin::on_editorWindowClosed()
+{
+   DE_ERROR("Editor closed")
+   m_btnWrench->blockSignals( true );
+   m_btnWrench->setChecked( false );
+   m_btnWrench->blockSignals( false );
+}
+
 
 void Plugin::on_pressedBtnEnable( bool checked )
 {

@@ -1,6 +1,6 @@
 #pragma once
 #include <de/audio/ITrack.h>
-#include <de/audio/plugin/IPlugin.h>
+#include <de/audio/plugin/PluginFactory.h>
 #include <de/midi/MidiCentral.h>
 
 namespace de {
@@ -33,9 +33,9 @@ public:
     // PluginApi
     //=========================
 
-    virtual PluginManager& getPluginManager() = 0;
+    virtual PluginFactory& getPluginFactory() = 0;
 
-    virtual const PluginManager& getPluginManager() const = 0;
+    virtual const PluginFactory& getPluginFactory() const = 0;
 
     // virtual u32 createPlugin( std::string uri ) = 0;
 
@@ -92,15 +92,9 @@ public:
 	// PluginApi
 	//=========================
 	
-    PluginManager& getPluginManager() override;
+    PluginFactory& getPluginFactory() override;
 
-    const PluginManager& getPluginManager() const override;
-
- //    IPlugin* createPlugin( std::string uri ) override;
-	
- //    IPlugin* getPlugin( u32 id ) override;
-
- //    void removePlugin( u32 id ) override;
+    const PluginFactory& getPluginFactory() const override;
 
 	//=========================
 	// TrackApi

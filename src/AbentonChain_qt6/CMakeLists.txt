@@ -61,6 +61,7 @@ else()
     target_link_libraries(${APP_NAME} PRIVATE de_rtaudio_601)
     target_link_libraries(${APP_NAME} PRIVATE de_rtmidi)
     target_link_libraries(${APP_NAME} PRIVATE de_vst2sdk)
+    target_link_libraries(${APP_NAME} PRIVATE de_vst3sdk_380)
 
 	target_link_options(${APP_NAME} PRIVATE
 		-static

@@ -85,12 +85,20 @@ void Track::updateLayout()
         x += m_dropIndicatorWidth + m_widgetSpacing;
     }
 
-    x += m_dropTargetWidth;
+    int remain = parentWidget()->width() - x;
+    if (remain < m_dropTargetWidth)
+    {
+        remain = m_dropTargetWidth;
+    }
+
+    x += remain;
 
     m_width = x;
 
-    m_rcDropTarget = QRect(m_width - m_dropTargetWidth, 0,
-                           m_dropTargetWidth, m_height);
+    m_rcDropTarget = QRect(m_width - remain, 0,
+                           remain, m_height);
+
+    DE_DEBUG("m_rcDropTarget = ",qstr(m_rcDropTarget).toStdString())
 
     setFixedSize(m_width, m_height);
 
@@ -125,6 +133,13 @@ void drawDropTarget(QPainter & dc, QRect pos, int radius,
 // ------------------------------------------------------------
 // Zeichnen
 // ------------------------------------------------------------
+void Track::resizeEvent(QResizeEvent* e)
+{
+    updateLayout();
+
+    QWidget::resizeEvent(e);
+}
+
 void Track::paintEvent(QPaintEvent* e)
 {
     if (!isVisible())

@@ -109,7 +109,7 @@ public:
 
     IPlugin* createPlugin( std::string uri, int index = -1) override
     {
-        IPlugin* plugin = m_audioCentral->getPluginManager().createPlugin(uri);
+        IPlugin* plugin = m_audioCentral->getPluginFactory().createPlugin(uri);
         if (!plugin)
         {
             DE_ERROR("No plugin ")
@@ -289,7 +289,7 @@ public:
     u32 m_sampleRate;
     Track* m_track;
 
-    PluginManager m_pluginManager;
+    PluginFactory m_pluginFactory;
 
     midi::MidiCentral m_midiCentral;
 
@@ -352,14 +352,14 @@ public:
     // PluginApi
     //=========================
 
-    PluginManager& getPluginManager()
+    PluginFactory& getPluginFactory()
     {
-        return m_pluginManager;
+        return m_pluginFactory;
     }
 
-    const PluginManager& getPluginManager() const
+    const PluginFactory& getPluginFactory() const
     {
-        return m_pluginManager;
+        return m_pluginFactory;
     }
 
     // u32 createPlugin( std::string uri ) override
@@ -449,14 +449,14 @@ void AudioCentral::cleanupAll()
 // PluginApi
 //=========================
 
-PluginManager& AudioCentral::getPluginManager()
+PluginFactory& AudioCentral::getPluginFactory()
 {
-    return _d->getPluginManager();
+    return _d->getPluginFactory();
 }
 
-const PluginManager& AudioCentral::getPluginManager() const
+const PluginFactory& AudioCentral::getPluginFactory() const
 {
-    return _d->getPluginManager();
+    return _d->getPluginFactory();
 }
 
 // IPlugin* AudioCentral::createPlugin( std::string uri )
