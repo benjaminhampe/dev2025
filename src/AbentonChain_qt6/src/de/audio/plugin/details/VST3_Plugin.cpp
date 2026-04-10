@@ -2,32 +2,35 @@
 
 #ifdef BENNI_USE_VST3
 
-#ifndef WIN32_LEAN_AND_MEAN
-#define WIN32_LEAN_AND_MEAN
-#endif
-#include <windows.h>
+#include "App.h"
 
-#include <memory>
 #include <string>
-#include <vector>
+//#include <vector>
 #include <memory>
 #include <cassert>
 
-#include "base/source/fobject.h"
+#include "VST3_Editor.h"
+
+//#include "base/source/fobject.h"
 #include "pluginterfaces/base/ustring.h"
 #include "pluginterfaces/base/funknown.h"
-#include "pluginterfaces/base/ipluginbase.h"
-#include "pluginterfaces/vst/ivstcomponent.h"
 #include "pluginterfaces/vst/ivstaudioprocessor.h"
+#include "pluginterfaces/vst/ivstcomponent.h"
+#include "pluginterfaces/vst/ivstevents.h"
+#include "pluginterfaces/vst/vsttypes.h"
+
+
 #include "pluginterfaces/vst/ivsteditcontroller.h"
 #include "pluginterfaces/vst/ivsthostapplication.h"
 #include "pluginterfaces/gui/iplugview.h"
 
-#include "public.sdk/source/vst/hosting/module.h"
-//#include "public.sdk/source/vst/hosting/factory.h"
-#include "public.sdk/source/vst/hosting/hostclasses.h"
 #include "public.sdk/source/vst/hosting/eventlist.h"
-#include "public.sdk/source/vst/hosting/processdata.h"
+#include "public.sdk/source/vst/hosting/module.h"
+#include "public.sdk/source/vst/hosting/parameterchanges.h"
+#include "public.sdk/source/common/memorystream.h" // Set state
+// #include "public.sdk/source/vst/hosting/hostclasses.h"
+
+// #include "public.sdk/source/vst/hosting/processdata.h"
 
 // namespace Vst3 = Steinberg::Vst;
 // using namespace VST3::Hosting;
@@ -36,9 +39,242 @@
 // using Steinberg::kResultOk;
 // using Steinberg::tresult;
 
+// #include "pluginterfaces/vst/ivstcomponent.h"
+// #include "pluginterfaces/base/funknown.h"
+// #include <iostream>
+// #include <unordered_map>
+
+// using namespace Steinberg;
+// using namespace Steinberg::Vst;
 
 namespace de {
 namespace audio {
+
+std::string getErrorDesc(Steinberg::tresult e)
+{
+    switch (e)
+    {
+        case Steinberg::kNoInterface: return "E_NOINTERFACE";
+        case Steinberg::kResultOk: return "S_OK";
+        //case Steinberg::kResultTrue: return "S_OK";
+        case Steinberg::kResultFalse: return "S_FALSE";
+        case Steinberg::kInvalidArgument: return "E_INVALIDARG";
+        case Steinberg::kNotImplemented: return "E_NOTIMPL";
+        case Steinberg::kInternalError: return "E_FAIL";
+        case Steinberg::kNotInitialized: return "E_UNEXPECTED";
+        case Steinberg::kOutOfMemory: return "E_OUTOFMEMORY";
+        default: return "Unknown";
+    }
+}
+
+//===============================
+struct VST3_PerfTimer
+//===============================
+{
+    double m_freqInv;
+
+    VST3_PerfTimer()
+    {
+        LARGE_INTEGER m_freq;
+        QueryPerformanceFrequency(&m_freq); // e.g. 3,000,000 Hz (3 MHz)
+        m_freqInv = 1.0 / (double)m_freq.QuadPart;
+    }
+
+    double now() const
+    {
+        LARGE_INTEGER a;
+        QueryPerformanceCounter(&a);
+
+        double seconds = double(a.QuadPart) * m_freqInv;
+        return seconds;
+    }
+};
+
+//===============================
+struct VST3_Clock
+//===============================
+{
+    VST3_PerfTimer m_timer;
+    double m_timeStart;
+
+    VST3_Clock() { restart(); }
+
+    void restart()
+    {
+        m_timeStart = m_timer.now();
+    }
+
+    double now() const
+    {
+        double timeNow = m_timer.now() - m_timeStart;
+        return timeNow;
+    }
+};
+
+/*
+std::vector<Steinberg::Vst::AudioBusBuffers> inputBuses;
+std::vector<std::vector<float*>> inputChannelPtrs;
+std::vector<std::vector<std::vector<float>>> inputSampleBuffers;
+
+for (int32 i = 0; i < numInBuses; i++)
+{
+    Steinberg::Vst::BusInfo info;
+    component->getBusInfo(Steinberg::Vst::kAudio, Steinberg::Vst::kInput, i, info);
+
+    if (!info.active)
+        continue;
+
+    int channels = info.channelCount;
+
+    // Speicher für Samples
+    inputSampleBuffers.emplace_back(channels, std::vector<float>(blockSize));
+
+    // Pointer-Liste
+    inputChannelPtrs.emplace_back(channels);
+    for (int c = 0; c < channels; c++)
+        inputChannelPtrs.back()[c] = inputSampleBuffers.back()[c].data();
+
+    // AudioBusBuffers erzeugen
+    Steinberg::Vst::AudioBusBuffers bus;
+    bus.numChannels = channels;
+    bus.channelBuffers32 = inputChannelPtrs.back().data();
+
+    inputBuses.push_back(bus);
+}
+
+std::vector<Steinberg::Vst::AudioBusBuffers> outputBuses;
+std::vector<std::vector<float*>> outputChannelPtrs;
+std::vector<std::vector<std::vector<float>>> outputSampleBuffers;
+
+for (int32 i = 0; i < numOutBuses; i++)
+{
+    Steinberg::Vst::BusInfo info;
+    component->getBusInfo(Steinberg::Vst::kAudio, Steinberg::Vst::kOutput, i, info);
+
+    if (!info.active)
+        continue;
+
+    int channels = info.channelCount;
+
+    outputSampleBuffers.emplace_back(channels, std::vector<float>(blockSize));
+    outputChannelPtrs.emplace_back(channels);
+
+    for (int c = 0; c < channels; c++)
+        outputChannelPtrs.back()[c] = outputSampleBuffers.back()[c].data();
+
+    Steinberg::Vst::AudioBusBuffers bus;
+    bus.numChannels = channels;
+    bus.channelBuffers32 = outputChannelPtrs.back().data();
+
+    outputBuses.push_back(bus);
+}
+
+Steinberg::Vst::ProcessData data = {};
+data.numInputs  = inputBuses.size();
+data.inputs     = inputBuses.data();
+data.numOutputs = outputBuses.size();
+data.outputs    = outputBuses.data();
+data.numSamples = blockSize;
+
+*/
+//===============================
+struct VST3_SampleBuffers
+//===============================
+{
+    int m_numInputs = 0;
+    int m_numOutputs = 0;
+    int m_blockSize = 0;
+    int m_dummy = 0;
+
+    // Audio bus storage
+    std::vector<Steinberg::Vst::AudioBusBuffers> m_iBuses;
+    std::vector<Steinberg::Vst::AudioBusBuffers> m_oBuses;
+
+    std::vector<TAlignedVector<float>> m_iBuffers;
+    std::vector<TAlignedVector<float>> m_oBuffers;
+
+    std::vector<float*> m_iHeads;
+    std::vector<float*> m_oHeads;
+
+    void setup(int numInputs, int numOutputs, int blockSize)
+    {
+        // Only continue if necessary...
+        if ((m_blockSize == blockSize) &&
+            (m_numInputs == numInputs) &&
+            (m_numOutputs == numOutputs))
+        {
+            return; // Nothing todo
+        }
+
+        // Do work...
+        m_blockSize  = blockSize;
+        m_numInputs = numInputs;
+        m_numOutputs = numOutputs;
+        m_iBuses.resize(1);
+        m_oBuses.resize(1);
+        m_iBuffers.resize(m_numInputs);
+        m_oBuffers.resize(m_numOutputs);
+        m_iHeads.resize(m_numInputs);
+        m_oHeads.resize(m_numOutputs);
+
+        constexpr u64 GUARD = 64; // 64 extra bytes for "out-of-bounds" bugs.
+
+        for (auto & inputBuffer : m_iBuffers)
+        {
+            inputBuffer.resize(blockSize + GUARD);
+        }
+        for (auto & outputBuffer : m_oBuffers)
+        {
+            outputBuffer.resize(blockSize + GUARD);
+        }
+
+        for (int i = 0; i < m_numInputs; ++i)
+        {
+            m_iHeads[i] = m_iBuffers[i].data();
+        }
+
+        for (int i = 0; i < m_numOutputs; ++i)
+        {
+            m_oHeads[i] = m_oBuffers[i].data();
+        }
+
+        m_iBuses[0].numChannels = m_numInputs;
+        m_iBuses[0].channelBuffers32 = m_iHeads.data();
+
+        m_oBuses[0].numChannels = m_numOutputs;
+        m_oBuses[0].channelBuffers32 = m_oHeads.data();
+    }
+
+    void zeroInput(int i)
+    {
+        if (i >= int(m_iBuffers.size())) return;
+        std::fill(m_iBuffers.at(i).begin(),
+                  m_iBuffers.at(i).end(), 0.0f);
+    }
+
+    void zeroOutput(int i)
+    {
+        if (i >= int(m_oBuffers.size())) return;
+        std::fill(m_oBuffers.at(i).begin(),
+                  m_oBuffers.at(i).end(), 0.0f);
+    }
+
+    void zeroInputs()
+    {
+        for (auto & buffer : m_iBuffers)
+        {
+            std::fill(buffer.begin(), buffer.end(), 0.0f);
+        }
+    }
+
+    void zeroOutputs()
+    {
+        for (auto & buffer : m_oBuffers)
+        {
+            std::fill(buffer.begin(), buffer.end(), 0.0f);
+        }
+    }
+};
 
 class HostApp : public Steinberg::Vst::IHostApplication
 {
@@ -70,9 +306,120 @@ public:
     uint32_t PLUGIN_API release() override { return 1; }
 };
 
+class HostComponentHandler : public Steinberg::Vst::IComponentHandler
+{
+public:
+    // Your host’s parameter storage
+    std::unordered_map<Steinberg::Vst::ParamID, Steinberg::Vst::ParamValue> paramValues;
+
+    std::atomic<Steinberg::uint32> m_refCount {1};
+
+    Steinberg::uint32 PLUGIN_API addRef() override
+    {
+        return ++m_refCount;
+    }
+
+    Steinberg::uint32 PLUGIN_API release() override
+    {
+        auto r = --m_refCount;
+        if (r == 0)
+            delete this;
+        return r;
+    }
+
+    Steinberg::tresult PLUGIN_API queryInterface(const Steinberg::TUID iid, void** obj) override
+    {
+        if (Steinberg::FUnknownPrivate::iidEqual(iid, Steinberg::Vst::IComponentHandler::iid))
+        {
+            *obj = static_cast<Steinberg::Vst::IComponentHandler*>(this);
+            addRef();
+            return Steinberg::kResultOk;
+        }
+        *obj = nullptr;
+        return Steinberg::kNoInterface;
+    }
+
+
+    // This macro adds:
+    // - refCount member
+    // - addRef()
+    // - release()
+    // - queryInterface() fallback
+    // DELEGATE_REFCOUNT(Steinberg::FUnknown)
+
+    // Steinberg::tresult PLUGIN_API queryInterface(const Steinberg::TUID iid, void** obj) override
+    // {
+    //     QUERY_INTERFACE(iid, obj, Steinberg::Vst::IComponentHandler::iid, Steinberg::Vst::IComponentHandler)
+    //     *obj = nullptr;
+    //     return Steinberg::kNoInterface;
+    // }
+
+    // // Required by FUnknown
+    // DELEGATE_REFCOUNT (Steinberg::FUnknown)
+    // Steinberg::tresult PLUGIN_API queryInterface (const Steinberg::TUID iid, void** obj) override
+    // {
+    //     QUERY_INTERFACE (iid, obj, IComponentHandler::iid, IComponentHandler)
+    //     *obj = nullptr;
+    //     return Steinberg::kNoInterface;
+    // }
+
+
+    // Called when plugin UI begins editing a parameter
+    Steinberg::tresult PLUGIN_API beginEdit (Steinberg::Vst::ParamID id) override
+    {
+        DE_TRACE("[Host] beginEdit param ",id)
+        return Steinberg::kResultOk;
+    }
+
+    // Called continuously while the parameter changes (automation or UI)
+    Steinberg::tresult PLUGIN_API performEdit (Steinberg::Vst::ParamID id, Steinberg::Vst::ParamValue value) override
+    {
+        DE_TRACE("[Host] performEdit param ",id," = ",value)
+
+        // Update host-side parameter storage
+        paramValues[id] = value;
+
+        // If you have automation recording, you'd record here
+
+        return Steinberg::kResultOk;
+    }
+
+    // Called when plugin UI ends editing a parameter
+    Steinberg::tresult PLUGIN_API endEdit (Steinberg::Vst::ParamID id) override
+    {
+        DE_TRACE("[Host] endEdit param ",id)
+        return Steinberg::kResultOk;
+    }
+
+    // Called when plugin requests a restart (e.g. new parameters, IO changes)
+    Steinberg::tresult PLUGIN_API restartComponent (int32_t flags) override
+    {
+        DE_TRACE("[Host] restartComponent flags = ",flags)
+
+        if (flags & Steinberg::Vst::kParamValuesChanged)
+        {
+            DE_TRACE("[Host] -> Plugin says parameter values changed")
+        }
+
+        if (flags & Steinberg::Vst::kReloadComponent)
+        {
+            DE_TRACE("[Host] -> Plugin requests full reload")
+        }
+
+        if (flags & Steinberg::Vst::kIoChanged)
+        {
+            DE_TRACE("[Host] -> Plugin changed IO configuration")
+        }
+
+        return Steinberg::kResultOk;
+    }
+
+};
+
 
 class VST3_Plugin_Impl
 {
+public:
     struct MidiEvent
     {
         int32_t sampleOffset;
@@ -82,37 +429,119 @@ class VST3_Plugin_Impl
     };
 
     bool m_bIsPluginOpen;
+    bool m_bNeedSetup;
+    bool m_bIsBypassed;
+    bool m_bIsSynth;
+    // bool m_bHasEditor = false;
+    u32 m_numInputs;
+    u32 m_numOutputs;
+    u32 m_sampleRate;
+    u32 m_blockSize;
+    u32 m_pluginId;
+    ITrack* m_track;
+    VST3_Editor* m_editor;
+    IDspChainElement* m_inputSignal;
+
+    std::atomic< u64 > m_framePos;
+
+    std::string m_uri;                 // VST2_Plugin file name
+    std::string m_directoryMultiByte;
+
+    VST3_SampleBuffers m_sampleBuffers;
+    VST3_Clock m_midiClock;
+
+    // MIDI + automation
+    Steinberg::Vst::EventList        m_midiEventListIn;
+    Steinberg::Vst::ParameterChanges m_paramChanges;
+
+    struct VST3_MidiEventQueue
+    {
+        Steinberg::Vst::EventList events;
+        //std::vector<Steinberg::Vst::Event> events;
+
+        std::unique_lock< std::mutex >
+        lock() const
+        {
+            return std::unique_lock<std::mutex>(m_mutex);
+        }
+    private:
+        std::mutex mutable m_mutex;
+    };
+
+    VST3_MidiEventQueue m_midiEventQueueIn;
+
+    struct VST3_ParamChangeQueue
+    {
+        std::vector<std::pair<Steinberg::Vst::ParamID, double>> params;
+
+        std::unique_lock< std::mutex >
+        lock() const
+        {
+            return std::unique_lock<std::mutex>(m_mutex);
+        }
+    private:
+        std::mutex mutable m_mutex;
+    };
+
+    VST3_ParamChangeQueue m_paramChangesIn;
+
+    // VstTimeInfo m_timeInfo;
+    // std::vector< VstMidiEvent > m_vstMidiEvents;
+    // std::vector< char > m_vstEventBuffer;
+
+    // struct MyVstMidi
+    // {
+    //     std::unique_lock< std::mutex >
+    //     lock() const { return std::unique_lock<std::mutex>(m_mutex); }
+    //     std::vector< VstMidiEvent > events;
+    // private:
+    //     std::mutex mutable m_mutex;
+    // } m_midiEventQueue;
+
     //using Module = Hosting::Module;
     //using FactoryInfo = Steinberg::PFactoryInfo;
     //using ClassInfo = Steinberg::Vst::Hosting::ClassInfo;
-
-    int32_t m_sampleRate = 44100;
-    int32_t m_blockSize  = 512;
 
     // VST3::Hosting::Module::Ptr                       m_module;
     // Steinberg::IPtr<Steinberg::IPluginFactory>       m_factory;
     // Steinberg::IPtr<Steinberg::Vst::IComponent>      m_component;
     // Steinberg::IPtr<Steinberg::Vst::IEditController> m_controller;
     // Steinberg::IPtr<Steinberg::Vst::IAudioProcessor> m_audioProcessor;
-    // Steinberg::IPtr<Steinberg::IPlugView>            m_view;
 
     VST3::Hosting::Module::Ptr                       m_module;
     //Steinberg::Vst::IPluginFactory*                m_factory;
-    Steinberg::IPtr<Steinberg::IPluginFactory>       m_factory;
+    //Steinberg::IPtr<Steinberg::IPluginFactory>       m_factory;
     Steinberg::IPtr<Steinberg::Vst::IComponent>      m_component;
     Steinberg::IPtr<Steinberg::Vst::IAudioProcessor> m_audioProcessor;
-    Steinberg::IPtr<Steinberg::Vst::IEditController> m_controller;
+    Steinberg::IPtr<Steinberg::Vst::IEditController> m_editController;
     Steinberg::IPtr<Steinberg::Vst::IHostApplication> m_hostApp;
+    Steinberg::IPtr<Steinberg::Vst::IComponentHandler> m_hostHandler;
 
-    // Steinberg::IPtr<SimpleHostApplication> m_hostApp;
+    Steinberg::IPtr<Steinberg::IPlugView>            m_plugView;
+
 
 
 public:
     VST3_Plugin_Impl() // const std::wstring& path
         : m_bIsPluginOpen{ false }
+        , m_bNeedSetup{ true }
+        , m_bIsBypassed{ false }
+        , m_bIsSynth{ false }
+        , m_numInputs{ 0 }
+        , m_numOutputs{ 0 }
+        , m_sampleRate{ 48000 }
+        , m_blockSize{ 1280 }
+        , m_pluginId{ 0 }
+        , m_track{ nullptr }
+        , m_editor{ nullptr }
+        , m_inputSignal{ nullptr }
+        , m_framePos{ 0 }
     {
         m_hostApp = Steinberg::IPtr<HostApp>(new HostApp());
+
+        m_hostHandler = Steinberg::IPtr<HostComponentHandler>(new HostComponentHandler());
     }
+
     ~VST3_Plugin_Impl()
     {
         // unload();
@@ -123,41 +552,106 @@ public:
         return m_bIsPluginOpen;
     }
 
-
-    void unload()
+    void closePlugin()
     {
-        if (!m_initialized)
+        if (!m_bIsPluginOpen)
         {
-            m_module.reset();
-            m_factory = nullptr;
+            DE_WARN("Already closed")
             return;
         }
 
         if (m_audioProcessor)
+        {
             m_audioProcessor->setProcessing(false);
+            m_audioProcessor = nullptr;
+        }
+
+        if (m_plugView)
+        {
+            m_plugView->removed();
+            m_plugView = nullptr;
+        }
+
+        if (m_editor)
+        {
+            DE_TRACE("Close editor")
+            //dispatcher(effEditClose, 0, 0, nullptr, 0.0f);
+            m_editor->enableClosing();
+            m_editor->close();
+            m_editor->deleteLater();
+            //delete m_editor;
+            m_editor = nullptr;
+        }
+
+        if (m_editController)
+        {
+            m_editController->terminate();
+            m_editController = nullptr;
+        }
 
         if (m_component)
         {
             m_component->setActive(false);
             m_component->terminate();
+            m_component      = nullptr;
         }
 
-        if (m_controller)
-            m_controller->terminate();
-
-        m_audioProcessor = nullptr;
-        m_controller     = nullptr;
-        m_component      = nullptr;
-        m_hostApp        = nullptr;
-        m_factory        = nullptr;
+        m_hostApp.reset();
+        m_hostHandler.reset();
         m_module.reset();
 
-        m_initialized = false;
+        m_bIsPluginOpen = false;
     }
 
     void openPlugin( std::string uri )
     {
-        // closePlugin();
+        if (m_bIsPluginOpen)
+        {
+            DE_ERROR("Already open")
+            return;
+        }
+
+        if (!m_hostApp)
+        {
+            DE_ERROR("No hostApp")
+            return;
+        }
+
+        // [Load plugin]
+        //     ↓
+        // [Create processor]
+        //     ↓
+        // processor->initialize()
+        //     ↓
+        // processor->setActive(true)
+        //     ↓
+        // audio->setupProcessing()
+        //     ↓
+        // audio->setProcessing(true)
+        //     ↓
+        // [OPTIONAL: Create controller]
+        //     ↓
+        // controller->initialize()
+        //     ↓
+        // controller->setComponentHandler()
+        //     ↓
+        // connect(processor, controller)
+        //     ↓
+        // view = controller->createView("editor")
+        //     ↓
+        // [Create Qt widget]
+        //     ↓
+        // Qt widget winId() → native handle
+        //     ↓
+        // view->setFrame(IPlugFrame)
+        //     ↓
+        // view->attached(nativeHandle)
+        //     ↓
+        // Qt resize → view->onSize()
+        //     ↓
+        // [Plugin UI works]
+
+        // 0.
         std::string errorDesc;
         m_module = VST3::Hosting::Module::create(uri,errorDesc);
         if (!m_module)
@@ -166,193 +660,770 @@ public:
             return;
         }
 
-        auto factory = m_module->getFactory();
-        // if (!m_factory)
-        //     return;
+        // 0.1.
+        const VST3::Hosting::PluginFactory& factory = m_module->getFactory();
 
-        if (!createComponentAndController())
+        // 0.2
+        Steinberg::TUID processorCID {};
+        Steinberg::TUID controllerCID {};
+        bool foundProcessor  = false;
+        bool foundController = false;
+
+        int32_t cc = factory.classCount();
+        DE_TRACE("Class.Count = ",cc)
+
+        size_t i = 0;
+        for (VST3::Hosting::ClassInfo const& ci : factory.classInfos())
+        {
+            DE_DEBUG("ClassInfo[",i,"].Category = ",ci.category())
+
+            if (ci.category() == kVstAudioEffectClass)
+            {
+                DE_TRACE("Found[",i,"] kVstAudioEffectClass")
+                Steinberg::copyTUID(processorCID, ci.ID().data());
+                foundProcessor = true;
+            }
+            else if (ci.category() == kVstComponentControllerClass)
+            {
+                DE_TRACE("Found[",i,"] kVstComponentControllerClass")
+                Steinberg::copyTUID(controllerCID, ci.ID().data());
+                foundController = true;
+            }
+        }
+
+        if (!foundProcessor)
+        {
+            DE_ERROR("No component found!")
             return;
+        }
 
-        if (!initializePlugin())
+        // I.A. Create component
+        m_component = factory.createInstance<Steinberg::Vst::IComponent>(processorCID);
+        if (!m_component)
+        {
+            DE_ERROR("No component.")
             return;
+        }
 
-/*
-        m_audioProcessor = Steinberg::IPtr<Steinberg::Vst::IAudioProcessor>(m_component);
+        // I.B. Create edit controller
+        if (foundController)
+        {
+            m_editController = factory.createInstance<Steinberg::Vst::IEditController>(controllerCID);
+            if (!m_editController)
+            {
+                DE_ERROR("No m_editController")
+                return;
+            }
+        }
+
+        // II.A. Initialize component
+        Steinberg::tresult e;
+        e = m_component->initialize(m_hostApp);
+        if (e != Steinberg::kResultOk)
+        {
+            DE_ERROR("No m_component initialized. ", getErrorDesc(e))
+            return;
+        }
+
+        // II.B Initialize edit controller
+        if (m_editController)
+        {
+            // II. Initialize edit controller
+            e = m_editController->initialize(m_hostApp);
+            if (e != Steinberg::kResultOk)
+            {
+                DE_ERROR("No m_editController->initialize(m_hostApp). ", getErrorDesc(e))
+                return;
+            }
+        }
+
+        // II.C DSP-State wiederherstellen (oder leer)
+        Steinberg::MemoryStream componentStateStream;
+        componentStateStream.setSize(0);
+        m_component->setState(&componentStateStream);
+
+        // III. Activate MIDI event processing:
+        e = m_component->activateBus(Steinberg::Vst::MediaTypes::kEvent,
+                                     Steinberg::Vst::kInput, 0, true);
+        if (e != Steinberg::kResultOk)
+        {
+            DE_ERROR("No activateBusEventIn(). ", getErrorDesc(e))
+            // return;
+        }
+
+        m_component->activateBus(Steinberg::Vst::MediaTypes::kAudio,
+                                 Steinberg::Vst::kInput, 0, true);
+        if (e != Steinberg::kResultOk)
+        {
+            DE_ERROR("No activateBusAudioIn(). ", getErrorDesc(e))
+            // return;
+        }
+
+        m_component->activateBus(Steinberg::Vst::MediaTypes::kAudio,
+                                 Steinberg::Vst::kOutput, 0, true);
+        if (e != Steinberg::kResultOk)
+        {
+            DE_ERROR("No activateBusAudioOut(). ", getErrorDesc(e))
+            // return;
+        }
+
+        int numBusEventIn  = m_component->getBusCount(Steinberg::Vst::kEvent, Steinberg::Vst::kInput);
+        int numBusEventOut = m_component->getBusCount(Steinberg::Vst::kEvent, Steinberg::Vst::kOutput);
+        u32 numBusAudioIn  = m_component->getBusCount(Steinberg::Vst::kAudio, Steinberg::Vst::kInput);
+        u32 numBusAudioOut = m_component->getBusCount(Steinberg::Vst::kAudio, Steinberg::Vst::kOutput);
+
+        DE_TRACE("numBusEventIn = ", numBusEventIn)
+        DE_TRACE("numBusEventOut = ", numBusEventOut)
+        DE_TRACE("numBusAudioIn = ", numBusAudioIn)
+        DE_TRACE("numBusAudioOut = ", numBusAudioOut)
+
+        if (numBusAudioIn == 0 && numBusEventIn > 0)
+        {
+            m_bIsSynth = true;
+        }
+        DE_TRACE("m_bIsSynth = ", m_bIsSynth)
+
+        int numInputs = 0;
+        int numOutputs = 0;
+        for (u32 i = 0; i < numBusAudioIn; i++)
+        {
+            Steinberg::Vst::BusInfo info;
+            e = m_component->getBusInfo(Steinberg::Vst::kAudio, Steinberg::Vst::kInput, i, info);
+            if (e != Steinberg::kResultOk)
+            {
+                DE_ERROR("No InputBusInfo[",i,"]. ", getErrorDesc(e))
+            }
+
+            numInputs += info.channelCount;
+        }
+        m_numInputs = numInputs;
+
+        for (u32 i = 0; i < numBusAudioOut; i++)
+        {
+            Steinberg::Vst::BusInfo info;
+            e = m_component->getBusInfo(Steinberg::Vst::kAudio, Steinberg::Vst::kOutput, i, info);
+            if (e != Steinberg::kResultOk)
+            {
+                DE_ERROR("No OutputBusInfo[",i,"]. ", getErrorDesc(e))
+            }
+            numOutputs += info.channelCount;
+        }
+        m_numOutputs = numOutputs;
+        DE_TRACE("m_numInputs = ", m_numInputs)
+        DE_TRACE("m_numOutputs = ", m_numOutputs)
+
+        // IV: Activate component
+        e = m_component->setActive(true);
+        if (e != Steinberg::kResultOk)
+        {
+            DE_ERROR("No m_component setActive(true). ", getErrorDesc(e))
+            return;
+        }
+
+        // V. Setup edit controller
+        if (m_editController)
+        {
+            // 2.3. Host sets the component handler (automation)
+            e = m_editController->setComponentHandler(m_hostHandler);
+            if (e != Steinberg::kResultOk)
+            {
+                DE_ERROR("No m_editController->setComponentHandler(m_hostHandler). ", getErrorDesc(e))
+                return;
+            }
+
+            Steinberg::MemoryStream stateStream;
+            stateStream.setSize(0);
+            e = m_editController->setState(&stateStream);
+            if (e != Steinberg::kResultOk)
+            {
+                DE_ERROR("No m_editController->setState(&stateStream). ", getErrorDesc(e))
+                // return;
+            }
+        }
+
+        // 3. Host connects processor ↔ controller
+        // Steinberg::Vst::IConnectionPoint* procCP = Steinberg::FCast<Steinberg::Vst::IConnectionPoint>(m_component);
+        // Steinberg::Vst::IConnectionPoint* ctrlCP = Steinberg::FCast<Steinberg::Vst::IConnectionPoint>(m_editController);
+        // procCP->connect(ctrlCP);
+        // ctrlCP->connect(procCP);
+
+        Steinberg::Vst::IConnectionPoint* procCP = nullptr;
+        e = m_component->queryInterface(Steinberg::Vst::IConnectionPoint::iid, (void**)&procCP);
+        if (e != Steinberg::kResultOk)
+        {
+            DE_ERROR("No m_component->queryInterface(Steinberg::Vst::IConnectionPoint). ", getErrorDesc(e))
+        }
+
+        Steinberg::Vst::IConnectionPoint* ctrlCP = nullptr;
+        e = m_editController->queryInterface(Steinberg::Vst::IConnectionPoint::iid, (void**)&ctrlCP);
+        if (e != Steinberg::kResultOk)
+        {
+            DE_ERROR("No m_editController->queryInterface(Steinberg::Vst::IConnectionPoint). ", getErrorDesc(e))
+        }
+
+        if (procCP && ctrlCP)
+        {
+            procCP->connect(ctrlCP);
+            ctrlCP->connect(procCP);
+        }
+        else
+        {
+            DE_ERROR("")
+        }
+
+        // 4. Restore state
+        // m_component->setState(stateStream);
+        // m_editController->setComponentState(stateStream);
+
+        // 5.A.
+        Steinberg::Vst::IAudioProcessor* audio = nullptr;
+        e = m_component->queryInterface(Steinberg::Vst::IAudioProcessor::iid, (void**)&audio);
+        if (e != Steinberg::kResultOk)
+        {
+            DE_ERROR("No m_component->queryInterface(Steinberg::Vst::IAudioProcessor). ", getErrorDesc(e))
+        }
+
+        m_audioProcessor = audio;
         if (!m_audioProcessor)
+        {
+            DE_ERROR("No audioProcessor")
             return;
+        }
 
-        Steinberg::Vst::ProcessSetup setup {};
-        setup.processMode = Steinberg::Vst::kRealtime;
-        setup.symbolicSampleSize = Steinberg::Vst::kSample32;
-        setup.maxSamplesPerBlock = m_blockSize;
-        setup.sampleRate = m_sampleRate;
+        // 5.B.
+        Steinberg::Vst::SpeakerArrangement inputs = Steinberg::Vst::SpeakerArr::kStereo;
+        Steinberg::Vst::SpeakerArrangement outputs = Steinberg::Vst::SpeakerArr::kStereo;
+        e = m_audioProcessor->setBusArrangements(&inputs, 1, &outputs, 1);
+        if (e != Steinberg::kResultOk)
+        {
+            DE_ERROR("No m_audioProcessor->setBusArrangements(Stereo). ", getErrorDesc(e))
+            // return;
+        }
 
-#if 0
-m_component->initialize(m_hostApp);
-m_component->setActive(true);
-
-Steinberg::Vst::ProcessSetup setup {};
-setup.processMode = Steinberg::Vst::kRealtime;
-setup.symbolicSampleSize = Steinberg::Vst::kSample32;
-setup.maxSamplesPerBlock = m_blockSize;
-setup.sampleRate = m_sampleRate;
-
-m_audioProcessor->setupProcessing(setup);
-
-// Optional:
-m_audioProcessor->setProcessing(true);
-#endif
-
-        if (m_audioProcessor->setupProcessing(setup) != Steinberg::kResultOk)
-            return;
-
-        if (m_component->setActive(true) != Steinberg::kResultOk)
-
-        // if (m_audioProcessor->setActive(true) != Steinberg::kResultOk)
-        //     return;
-
-        activateBuses();
-*/
-        m_bIsPluginOpen = true;
-    }
-
-    bool initializePlugin()
-    {
-        //m_hostApp = Steinberg::Vst::Hosting::HostApplication::create("MinimalHost");
-        if (!m_hostApp)
-            return false;
-
-        if (m_component->initialize(m_hostApp) != Steinberg::kResultOk)
-            return false;
-
-        if (m_component->setActive(true) != Steinberg::kResultOk)
-            return false;
-
+        // 5.C.
         Steinberg::Vst::ProcessSetup setup {};
         setup.processMode        = Steinberg::Vst::kRealtime;
         setup.symbolicSampleSize = Steinberg::Vst::kSample32;
         setup.maxSamplesPerBlock = m_blockSize;
         setup.sampleRate         = m_sampleRate;
+        e = m_audioProcessor->setupProcessing(setup);
+        if (e != Steinberg::kResultOk)
+        {
+            DE_ERROR("No m_audioProcessor->setupProcessing(setup). ", getErrorDesc(e))
+            // return;
+        }
 
-        if (m_audioProcessor->setupProcessing(setup) != Steinberg::kResultOk)
-            return false;
 
-        m_audioProcessor->setProcessing(true);
-        return true;
+        // 5.D.
+        e = m_audioProcessor->setProcessing(true);
+        if (e != Steinberg::kResultOk)
+        {
+            DE_ERROR("No m_audioProcessor->setProcessing(true). ", getErrorDesc(e))
+            // return;
+        }
+
+        // X. Open editor
+        if (m_editController)
+        {
+            Steinberg::IPlugView* plugView = m_editController->createView(Steinberg::Vst::ViewType::kEditor);
+            if (plugView)
+            {
+                DE_OK("Got IPlugView")
+                m_editor = new VST3_Editor(plugView, nullptr);
+            }
+            else
+            {
+                DE_ERROR("No IPlugView")
+            }
+        }
+
+        m_uri = uri;
+        m_bIsPluginOpen = true;
     }
 
-    // ------------------------------------------------------------------------
-    // Component + controller creation
-    // ------------------------------------------------------------------------
-
-    bool createComponentAndController()
+    PluginEditorWindow* getEditor()
     {
-        Steinberg::TUID componentCID {};
-        Steinberg::TUID controllerCID {};
-        bool foundComponent  = false;
-        bool foundController = false;
-
-        int32_t count = m_factory->countClasses();
-        for (int32_t i = 0; i < count; ++i)
-        {
-            Steinberg::PClassInfo ci {};
-            if (m_factory->getClassInfo(i, &ci) != Steinberg::kResultOk)
-                continue;
-
-            if (std::strcmp(ci.category, kVstAudioEffectClass) == 0)
-            {
-                Steinberg::copyTUID(componentCID, ci.cid);
-                foundComponent = true;
-            }
-            else if (std::strcmp(ci.category, kVstComponentControllerClass) == 0)
-            {
-                Steinberg::copyTUID(controllerCID, ci.cid);
-                foundController = true;
-            }
-        }
-
-        if (!foundComponent)
-            return false;
-
-        if (m_factory->createInstance(componentCID,
-                                      Steinberg::Vst::IComponent::iid,
-                                      (void**)&m_component) != Steinberg::kResultOk)
-            return false;
-
-        if (foundController)
-        {
-            m_factory->createInstance(controllerCID,
-                                      Steinberg::Vst::IEditController::iid,
-                                      (void**)&m_controller);
-        }
-
-        m_audioProcessor = Steinberg::FCast<Steinberg::Vst::IAudioProcessor>(m_component);
-        return m_audioProcessor != nullptr;
-
+        return m_editor;
     }
 
-    void openEditor(HWND parent);
-    void closeEditor();
-    bool getEditorSize(int& width, int& height);
+    // =====================================
+    // interface: IVst2Plugin|AEffectx
+    // =====================================
+    void setInputSignal( IDspChainElement* input, int i = 0 )
+    {
+        m_inputSignal = input;
+    }
 
+    void clearInputSignals()
+    {
+        m_inputSignal = nullptr;
+    }
+
+    void dsp_init(u64 frames, u32 channels, u32 sampleRate)
+    {
+        (void)channels;
+
+        if ( m_blockSize != frames )
+        {
+            m_blockSize = frames;
+            m_bNeedSetup = true;
+        }
+
+        if ( m_sampleRate != sampleRate )
+        {
+            m_sampleRate = sampleRate;
+            m_bNeedSetup = true;
+        }
+
+        if ( m_audioProcessor && m_bNeedSetup )
+        {
+            m_bNeedSetup = false;
+
+            // dispatcher(effStopProcess);
+            // dispatcher(effMainsChanged, 0, 0);
+
+            Steinberg::tresult e;
+
+            // Tell component that IO / processing setup changed
+            e = m_component->setActive(false);
+            if (e != Steinberg::kResultOk)
+            {
+                DE_ERROR("No m_component->setActive(false). ", getErrorDesc(e))
+            }
+
+            // Prepare input buffer + input channel heads ( planar = non-interleaved )
+            // Prepare output buffer + output channel heads ( planar = non-interleaved )
+            m_sampleBuffers.setup(m_numInputs,m_numOutputs,m_blockSize);
+
+            Steinberg::Vst::ProcessSetup setup {};
+            setup.processMode        = Steinberg::Vst::kRealtime;
+            setup.symbolicSampleSize = Steinberg::Vst::kSample32;
+            setup.maxSamplesPerBlock = m_blockSize;
+            setup.sampleRate         = m_sampleRate;
+
+            e = m_audioProcessor->setupProcessing(setup);
+            if (e != Steinberg::kResultOk)
+            {
+                DE_ERROR("No m_audioProcessor->setupProcessing(setup). ", getErrorDesc(e))
+            }
+
+            e = m_component->setActive(true);
+            if (e != Steinberg::kResultOk)
+            {
+                DE_ERROR("No m_component->setActive(true). ", getErrorDesc(e))
+            }
+
+            // Setup VST plugin
+            // dispatcher(effSetSampleRate, 0, 0, 0, float( m_sampleRate ) );
+            // dispatcher(effSetBlockSize, 0, m_blockSize);
+            // dispatcher(effSetProcessPrecision, 0, kVstProcessPrecision32);
+            // dispatcher(effMainsChanged, 0, 1);
+            // dispatcher(effStartProcess);
+            // dispatcher(effSetProgram, 0, 0, 0);
+        }
+    }
+/*
+    // Audio + MIDI + automation
+    bool process(float** inputs,
+                 float** outputs,
+                 int32_t numSamples,
+                 const std::vector<Steinberg::Vst::Event>& midiEvents,
+                 const std::vector<std::pair<Steinberg::Vst::ParamID, double>>& paramChanges)
+    {
+        if (!m_initialized || !m_audioProcessor)
+            return false;
+
+        Steinberg::Vst::ProcessData data {};
+        data.numSamples         = numSamples;
+        data.processMode        = Steinberg::Vst::kRealtime;
+        data.symbolicSampleSize = Steinberg::Vst::kSample32;
+
+        // --- Audio buses ---
+
+        m_inBuses.clear();
+        m_outBuses.clear();
+
+        m_inBuses.resize(1);
+        m_outBuses.resize(1);
+
+        m_inChannelPtrs.clear();
+        m_outChannelPtrs.clear();
+
+        m_inChannelPtrs.resize(m_numInChannels);
+        m_outChannelPtrs.resize(m_numOutChannels);
+
+        for (int32_t c = 0; c < m_numInChannels; ++c)
+            m_inChannelPtrs[c] = inputs && inputs[c] ? inputs[c] : nullptr;
+
+        for (int32_t c = 0; c < m_numOutChannels; ++c)
+            m_outChannelPtrs[c] = outputs && outputs[c] ? outputs[c] : nullptr;
+
+        m_inBuses[0].numChannels      = m_numInChannels;
+        m_inBuses[0].channelBuffers32 = m_inChannelPtrs.data();
+
+        m_outBuses[0].numChannels      = m_numOutChannels;
+        m_outBuses[0].channelBuffers32 = m_outChannelPtrs.data();
+
+        data.numInputs  = static_cast<Steinberg::int32>(m_inBuses.size());
+        data.numOutputs = static_cast<Steinberg::int32>(m_outBuses.size());
+        data.inputs     = m_inBuses.data();
+        data.outputs    = m_outBuses.data();
+
+        // --- MIDI events ---
+
+        m_eventList.clear();
+        for (const auto& e : midiEvents)
+            m_eventList.addEvent(e);
+
+        data.inputEvents  = &m_eventList;
+        data.outputEvents = nullptr; // could capture plugin‑generated events
+
+        // --- Parameter changes (automation) ---
+
+        m_paramChanges.clearQueue();
+
+        for (const auto& pc : paramChanges)
+        {
+            auto queue = m_paramChanges.addParameterData(pc.first, nullptr);
+            if (queue)
+            {
+                Steinberg::int32 index = 0;
+                queue->addPoint(0 // sampleOffset,
+                                static_cast<Steinberg::Vst::ParamValue>(pc.second),
+                                index);
+            }
+        }
+
+        data.inputParameterChanges  = &m_paramChanges;
+        data.outputParameterChanges = nullptr;
+
+        return m_audioProcessor->process(data) == Steinberg::kResultOk;
+    }
+*/
+
+
+    void dsp_read(f64 pts,
+                  u32 frames,
+                  u32 sampleRate,
+                  f32* __restrict__ outL,
+                  f32* __restrict__ outR)
+    {    
+        if ( !outL || !outR )
+        {
+            throw std::runtime_error("No dst audio dsp buffer in VST2_Plugin::readSamples()!");
+        }
+
+        //===============================
+        // VST3 processing is inactive:
+        //===============================
+
+        if (!m_bIsPluginOpen || m_bIsBypassed)
+        {
+            if ( m_inputSignal )
+            {
+                m_inputSignal->dsp_read( pts, frames, sampleRate, outL, outR );
+            }
+            else
+            {
+                //std::fill(outL,outL+frames,0.0f);
+                //std::fill(outR,outR+frames,0.0f);
+            }
+
+            return; // We relayed samples or filled output with zeroes
+        }
+
+/*
+        //===============================
+        // VST3 processing is active:
+        //===============================
+
+        dsp_init(frames,2,sampleRate);
+
+        if ( m_inputSignal )
+        {
+            m_inputSignal->dsp_read( pts, frames, sampleRate,
+                m_sampleBuffers.m_iBuffers.at(0).data(),
+                m_sampleBuffers.m_iBuffers.at(1).data() );
+
+            for (int i = 2; i < int(m_numInputs); ++i)
+            {
+                m_sampleBuffers.zeroInput(i);
+            }
+        }
+        else
+        {
+            m_sampleBuffers.zeroInputs();
+        }
+
+        // --- Audio buses ---
+        Steinberg::Vst::ProcessData data {};
+        data.numSamples         = m_blockSize;
+        data.processMode        = Steinberg::Vst::kRealtime;
+        data.symbolicSampleSize = Steinberg::Vst::kSample32;
+        data.numInputs  = static_cast<Steinberg::int32>(m_sampleBuffers.m_iBuses.size());
+        data.numOutputs = static_cast<Steinberg::int32>(m_sampleBuffers.m_oBuses.size());
+        data.inputs     = m_sampleBuffers.m_iBuses.data();
+        data.outputs    = m_sampleBuffers.m_oBuses.data();
+
+        // ======================================================
+        // Process MIDI messages:
+        // ======================================================
+        processVstMidiEvents( data );
+
+        // ======================================================
+        // Process Audio samples:
+        // ======================================================
+        // if (m_audioProcessor->process(data) == Steinberg::kResultOk)
+        // {
+        //     DE_ERROR("")
+        // }
+
+        // ======================================================
+        // Write (L+R) VST audio output back to DspChain.
+        // ======================================================
+
+        m_framePos += frames; // atomic.
+
+        const auto bytesPerChannel = u64(frames) * sizeof(float);
+
+        // Copy [L]eft channel:
+        std::memcpy(outL,
+                    m_sampleBuffers.m_oBuffers.at(0).data(),
+                    bytesPerChannel);
+
+        // Copy [R]ight channel:
+        std::memcpy(outR,
+                    m_sampleBuffers.m_oBuffers.at(1).data(),
+                    bytesPerChannel);
+
+    */
+
+        // Thank you for participating in our DspChain dear plugin.
+    }
+
+
+
+    // This function is called from refillCallback() which is running in audio thread.
+    void
+    processVstMidiEvents( Steinberg::Vst::ProcessData & data )
+    {
+        m_midiClock.restart();
+/*
+        m_midiEventListIn.clear();
+
+        if ( auto l = m_midiEventQueueIn.lock() )
+        {
+            std::swap( m_midiEventListIn, m_midiEventQueueIn.events );
+        }
+
+        data.inputEvents  = &m_midiEventListIn;
+        data.outputEvents = nullptr; // could capture plugin‑generated events
+
+        // --- Parameter changes (automation) ---
+
+        m_paramChanges.clearQueue();
+
+        for (const auto& pc : m_paramChanges)
+        {
+            auto queue = m_paramChanges.addParameterData(pc.first, nullptr);
+            if (queue)
+            {
+                Steinberg::int32 index = 0;
+                queue->addPoint(0 // sampleOffset,
+                                static_cast<Steinberg::Vst::ParamValue>(pc.second),
+                                index);
+            }
+        }
+
+        data.inputParameterChanges  = &m_paramChanges;
+        data.outputParameterChanges = nullptr;
+*/
+
+        data.inputEvents  = nullptr;
+        data.outputEvents = nullptr;
+
+        data.inputParameterChanges  = nullptr;
+        data.outputParameterChanges = nullptr;
+    }
+
+    void onShortMidiMessage(f64 pts, const midi::ShortMidiMessage& msg)
+    {
+        if ( !m_bIsSynth )
+        {
+            return;
+        }
+/*
+        // HOPEFULLY that fixes missing NoteOff events:
+        // Pianos work ok without that, but monophonic synth are
+        // beasts on a higher level...
+        const double dt = m_midiClock.now(); // Clock is restarted every callback call.
+        const int deltaFrames = std::clamp( int(dt * m_sampleRate),
+                                            int(0),
+                                            int(m_blockSize) - 10);
+        const u8 command = msg.status & 0xF0;
+        const u8 channel = msg.status & 0x0F;
+
+        Steinberg::Vst::Event e = {};
+        // int16 channel;	///< channel index in event bus
+        // int16 pitch;		///< range [0, 127] = [C-2, G8] with A3=440Hz (12-TET: twelve-tone equal temperament)
+        // float tuning;    ///< 1.f = +1 cent, -1.f = -1 cent
+        // float velocity;	///< range [0.0, 1.0]
+        // int32 length;	///< in sample frames (optional, Note Off has to follow in any case!)
+        // int32 noteId;	///< note identifier (if not available then -1)
+
+        if (command == 0x90 && msg.data2 != 0) // Note On
+        {
+            e.type = Steinberg::Vst::Event::kNoteOnEvent;
+            e.noteOn.channel = int16_t(channel);
+            e.noteOn.pitch = int16_t(msg.data1);
+            e.noteOn.velocity = float(msg.data2) / 127.0f;
+            e.sampleOffset = deltaFrames; // at start of block
+
+        }
+        else if (command == 0x80 || (command == 0x90 && msg.data2 == 0)) // Note Off
+        {
+            e.type = Steinberg::Vst::Event::kNoteOffEvent;
+            e.noteOff.channel = int16_t(channel);
+            e.noteOff.pitch = int16_t(msg.data1);
+            e.noteOff.velocity = float(msg.data2) / 127.0f;
+            e.sampleOffset = deltaFrames;
+        }
+        else
+        {
+            DE_ERROR("Unsupported midi message", dbHex(command))
+            return;
+        }
+
+        // Special event: All Notes Off (Bn 7B 00):
+        if ((command == 0xB0) && (msg.data1 == 0x7B) && (msg.data2 == 0x00))
+        {
+            if ( auto l = m_midiEventQueueIn.lock() )
+            {
+                m_midiEventQueueIn.events.clear();
+            }
+            return;
+        }
+
+        //size_t n = 0;
+        if ( auto l = m_midiEventQueueIn.lock() )
+        {
+            m_midiEventQueueIn.events.addEvent( e );
+            //n = m_midiEventQueue.events.size();
+        }
+*/
+        // DE_DEBUG("events(",n,"), byte1(",dbHex(byte1),"), data1(",dbHex(data1),"), data2(",dbHex(data2),")")
+    }
+
+    void onMidiMessage(f64 pts, const midi::MidiMessage& msg)
+    {
+        DE_WARN("Not implemented, ", msg.size())
+    }
 };
 
-VST3_Plugin::VST3_Plugin(const std::wstring& path)
+// ============================================================================
+VST3_Plugin::VST3_Plugin()
+// ============================================================================
+    : _d( new VST3_Plugin_Impl )
+{
+    DE_TRACE("")
+}
 
 VST3_Plugin::~VST3_Plugin()
 {
-    if (plugView)
-    {
-        plugView->removed();
-        plugView = nullptr;
-    }
-
-    if (controller)
-    {
-        controller->terminate();
-        controller = nullptr;
-    }
-
-    if (component)
-    {
-        component->terminate();
-        component = nullptr;
-    }
-
-    module.reset();
+    DE_TRACE("")
+    App::instance()->getMidiCentral().deregisterListener(this);
+    delete _d;
 }
 
-void VST3_Plugin::openEditor(HWND parent)
+// ===================================================
+
+void VST3_Plugin::dsp_init(u64 frames, u32 channels, u32 sampleRate)
 {
-    if (!plugView)
-        return;
-
-    // Attach to parent window
-    plugView->setFrame(nullptr); // optional, for resize notifications
-    plugView->attached((void*)parent, "HWND");
+    _d->dsp_init(frames, channels, sampleRate);
 }
 
-void VST3_Plugin::closeEditor()
+void VST3_Plugin::dsp_read(f64 pts,
+                          u32 frames,
+                          u32 sampleRate,
+                          f32* __restrict__ L,
+                          f32* __restrict__ R)
 {
-    if (plugView)
-        plugView->removed();
+    _d->dsp_read(pts, frames, sampleRate, L, R);
 }
 
-bool VST3_Plugin::getEditorSize(int& width, int& height)
+void VST3_Plugin::dsp_setInputSignal(IDspChainElement* inSignal, int i)
 {
-    if (!plugView)
-        return false;
-
-    ViewRect r;
-    if (plugView->getSize(&r) != kResultOk)
-        return false;
-
-    width = r.right - r.left;
-    height = r.bottom - r.top;
-    return true;
+    _d->setInputSignal(inSignal, i);
 }
 
+void VST3_Plugin::dsp_clearInputSignals()
+{
+    _d->clearInputSignals();
+}
 
+// ===================================================
+
+const ITrack* VST3_Plugin::getTrack() const { return _d->m_track; }
+
+ITrack* VST3_Plugin::getTrack() { return _d->m_track; }
+
+void VST3_Plugin::setTrack(ITrack* track) { _d->m_track = track; }
+
+// ===================================================
+
+u32 VST3_Plugin::getPluginId() const { return _d->m_pluginId; }
+
+void VST3_Plugin::setPluginId( u32 pluginId ) { _d->m_pluginId = pluginId; }
+
+// ===================================================
+
+std::string VST3_Plugin::uri() const { return _d->m_uri; }
+
+std::string VST3_Plugin::name() const { return dbFileBase(_d->m_uri); }
+
+std::string VST3_Plugin::vendor() const { return dbFileBase(_d->m_uri); }
+
+// ===================================================
+
+void VST3_Plugin::openPlugin( std::string uri )
+{
+    _d->openPlugin( uri );
+}
+
+void VST3_Plugin::closePlugin()
+{
+    _d->closePlugin();
+}
+
+bool VST3_Plugin::isPluginOpen() const
+{
+    return _d->m_bIsPluginOpen;
+}
+
+bool VST3_Plugin::isSynth() const
+{
+    return _d->m_bIsSynth;
+}
+
+bool VST3_Plugin::hasEditor() const
+{
+    return _d->m_editor != nullptr;
+}
+
+PluginEditorWindow* VST3_Plugin::getEditor()
+{
+    return _d->getEditor();
+}
+
+void VST3_Plugin::onMidiMessage(f64 pts, const midi::MidiMessage& msg)
+{
+    _d->onMidiMessage(pts, msg);
+}
+
+void VST3_Plugin::onShortMidiMessage(f64 pts, const midi::ShortMidiMessage& msg)
+{
+    _d->onShortMidiMessage(pts, msg);
+}
 
 
 

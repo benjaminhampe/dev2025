@@ -1,6 +1,10 @@
 #pragma once
 #include <de/audio/plugin/IPlugin.h>
 
+#ifndef BENNI_USE_VST3
+#define BENNI_USE_VST3
+#endif
+
 #ifdef BENNI_USE_VST3
 
 namespace de {

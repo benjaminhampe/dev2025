@@ -71,6 +71,12 @@ IPlugin* PluginFactory::createPlugin( std::string uri )
     {
         plugin = new VST2_Plugin;
     }
+#ifdef BENNI_USE_VST3
+    else if (suffix == "vst3")
+    {
+        plugin = new VST3_Plugin;
+    }
+#endif
     else
     {
         DE_ERROR("Unsupported extension (yet) ", suffix)

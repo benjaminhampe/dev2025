@@ -213,6 +213,157 @@ struct VST2_Plugin_Impl
         closePlugin();
     }
 
+
+    void closePlugin()
+    {
+        if ( !m_bPluginOpen )
+        {
+            DE_TRACE("Plugin already closed")
+            return;
+        }
+
+        DE_WARN("Close ",m_uri)
+
+        m_bPluginOpen = false;  // Set this first, so the audio callback does bypass this dsp element.
+
+        //   if ( isSynth() )
+        //   {
+        //      emit removedSynth( this ); // Unregister synth from MIDI keyboards
+        //   }
+
+        DE_WARN("Stop vst plugin")
+
+        dispatcher(effMainsChanged, 0, 0);  // Stop plugin
+        dispatcher(effStopProcess);         // Stop plugin
+
+        if (m_editor)
+        {
+            DE_TRACE("Close editor")
+            dispatcher(effEditClose, 0, 0, nullptr, 0.0f);
+            m_editor->enableClosing();
+            m_editor->close();
+            m_editor->deleteLater();
+            //delete m_editor;
+            m_editor = nullptr;
+        }
+
+        dispatcher(effClose);               // Stop plugin
+
+        if ( m_dllHandle )                  // Close plugin
+        {
+            HMODULE hModule = reinterpret_cast< HMODULE >( m_dllHandle );
+            FreeLibrary(hModule);
+            m_dllHandle = 0;
+        }
+
+        m_framePos = 0;
+
+        //m_loadButton->setIcon( QIcon() );
+        //m_editorImage->hide();
+    }
+
+
+    void openPlugin( std::string uri )
+    {
+        if (m_bPluginOpen)
+        {
+            DE_WARN("Plugin already open")
+            return;
+        }
+
+        //setBypassed( true );
+
+        if ( uri.empty() )
+        {
+            DE_WARN("empty filename")
+            return;
+        }
+
+        m_uri = uri;
+        m_directoryMultiByte = dbFileDir(uri);
+
+        DE_TRACE("uri = ",m_uri)
+        DE_TRACE("dir = ",m_directoryMultiByte)
+
+        HMODULE dll = LoadLibraryA( uri.c_str() );
+        if ( !dll )
+        {
+            DE_WARN("No HMODULE ",uri)
+            return;
+        }
+
+        typedef AEffect* (VstEntryProc)(audioMasterCallback);
+        auto proc = reinterpret_cast< VstEntryProc* >( GetProcAddress(dll, "VSTPluginMain") );
+
+        if ( !proc )
+        {
+            proc = reinterpret_cast< VstEntryProc* >( GetProcAddress(dll, "main") );
+        }
+        if ( !proc )
+        {
+            DE_WARN("No VST entry point found, ",uri)
+            return;
+        }
+
+        m_dllHandle = uint64_t( dll );
+        m_vst = proc( hostCallback_static );
+        if ( !m_vst )
+        {
+            DE_WARN("Not a VST plugin (I.) ",uri)
+            return;
+        }
+
+        if ( m_vst->magic != kEffectMagic )
+        {
+            DE_WARN("Not a VST plugin with kEffectMagic, ",uri)
+            return;
+        }
+
+        m_vst->user = this;
+        // m_pluginInfo.m_name = de::FileSystem::fileBase( pluginUri() );
+        m_numPrograms = m_vst->numPrograms;
+        m_numParams = m_vst->numParams;
+        m_numInputs = m_vst->numInputs;
+        m_numOutputs = m_vst->numOutputs;
+        m_bIsSynth = getFlags( effFlagsIsSynth );
+        m_bHasEditor = getFlags( effFlagsHasEditor );
+
+        dispatcher(effOpen);
+
+        m_bNeedSetup = true;
+        dsp_init(256, 2, 48000);
+
+        DE_DEBUG("VST plugin = ", dbFileBase(m_uri))
+        DE_DEBUG("VST plugin dir = ", m_directoryMultiByte)
+        DE_TRACE("VST plugin isSynth = ",m_bIsSynth)
+        DE_TRACE("VST plugin hasEditor = ",m_bHasEditor)
+        DE_TRACE("VST plugin programCount = ",m_numPrograms)
+        DE_TRACE("VST plugin parameterCount = ",m_numParams)
+        DE_TRACE("VST plugin inputCount = ",m_numInputs)
+        DE_TRACE("VST plugin outputCount = ",m_numOutputs)
+        DE_TRACE("VST plugin can float replacing = ",getFlags( effFlagsCanReplacing ))
+        DE_TRACE("VST plugin can double replacing = ",getFlags( effFlagsCanDoubleReplacing ))
+        DE_TRACE("VST plugin has program chunks = ",getFlags( effFlagsProgramChunks ))
+
+        //connect( m_editorWindow, SIGNAL(closed()),
+        //       this,           SLOT(on_editorClosed()), Qt::QueuedConnection );
+
+        if (m_bHasEditor)
+        {
+            m_editor = new VST2_Editor(m_vst, nullptr );
+        }
+/*
+        setBypassed( m_pluginInfo.m_isBypassed );
+
+        //DE_TRACE("VST pluginInfo = ",de_mbstr(m_pluginInfo.toWString()))
+        update();
+
+        setBypassed( isBypassed() );
+*/
+        m_bIsBypassed = false;
+        m_bPluginOpen = true;
+    }
+
     PluginEditorWindow* getEditor()
     {
         return m_editor;
@@ -279,7 +430,7 @@ struct VST2_Plugin_Impl
             dispatcher(effSetProcessPrecision, 0, kVstProcessPrecision32);
             dispatcher(effMainsChanged, 0, 1);
             dispatcher(effStartProcess);
-            dispatcher(effSetProgram, 0, 0, 0);
+            //dispatcher(effSetProgram, 0, 0, 0);
         }
     }
 
@@ -407,155 +558,6 @@ struct VST2_Plugin_Impl
                     bytesPerChannel);
 
         // Thank you for participating in our DspChain dear plugin.
-    }
-
-    void openPlugin( std::string uri )
-    {
-        if (m_bPluginOpen)
-        {
-            DE_WARN("Plugin already open")
-            return;
-        }
-
-        //setBypassed( true );
-
-        if ( uri.empty() )
-        {
-            DE_WARN("empty filename")
-            return;
-        }
-
-        m_uri = uri;
-        m_directoryMultiByte = dbFileDir(uri);
-
-        DE_TRACE("uri = ",m_uri)
-        DE_TRACE("dir = ",m_directoryMultiByte)
-
-        HMODULE dll = LoadLibraryA( uri.c_str() );
-        if ( !dll )
-        {
-            DE_WARN("No HMODULE ",uri)
-            return;
-        }
-
-        typedef AEffect* (VstEntryProc)(audioMasterCallback);
-        auto proc = reinterpret_cast< VstEntryProc* >( GetProcAddress(dll, "VSTPluginMain") );
-
-        if ( !proc )
-        {
-            proc = reinterpret_cast< VstEntryProc* >( GetProcAddress(dll, "main") );
-        }
-        if ( !proc )
-        {
-            DE_WARN("No VST entry point found, ",uri)
-            return;
-        }
-
-        m_dllHandle = uint64_t( dll );
-        m_vst = proc( hostCallback_static );
-        if ( !m_vst )
-        {
-            DE_WARN("Not a VST plugin (I.) ",uri)
-            return;
-        }
-
-        if ( m_vst->magic != kEffectMagic )
-        {
-            DE_WARN("Not a VST plugin with kEffectMagic, ",uri)
-            return;
-        }
-
-        m_vst->user = this;
-        // m_pluginInfo.m_name = de::FileSystem::fileBase( pluginUri() );
-        m_numPrograms = m_vst->numPrograms;
-        m_numParams = m_vst->numParams;
-        m_numInputs = m_vst->numInputs;
-        m_numOutputs = m_vst->numOutputs;
-        m_bIsSynth = getFlags( effFlagsIsSynth );
-        m_bHasEditor = getFlags( effFlagsHasEditor );
-
-        dispatcher(effOpen);
-
-        m_bNeedSetup = true;
-        dsp_init(256, 2, 48000);
-
-        DE_DEBUG("VST plugin = ", dbFileBase(m_uri))
-        DE_DEBUG("VST plugin dir = ", m_directoryMultiByte)
-        DE_TRACE("VST plugin isSynth = ",m_bIsSynth)
-        DE_TRACE("VST plugin hasEditor = ",m_bHasEditor)
-        DE_TRACE("VST plugin programCount = ",m_numPrograms)
-        DE_TRACE("VST plugin parameterCount = ",m_numParams)
-        DE_TRACE("VST plugin inputCount = ",m_numInputs)
-        DE_TRACE("VST plugin outputCount = ",m_numOutputs)
-        DE_TRACE("VST plugin can float replacing = ",getFlags( effFlagsCanReplacing ))
-        DE_TRACE("VST plugin can double replacing = ",getFlags( effFlagsCanDoubleReplacing ))
-        DE_TRACE("VST plugin has program chunks = ",getFlags( effFlagsProgramChunks ))
-
-        //connect( m_editorWindow, SIGNAL(closed()),
-        //       this,           SLOT(on_editorClosed()), Qt::QueuedConnection );
-
-        if (m_bHasEditor)
-        {
-            m_editor = new VST2_Editor(m_vst, nullptr );
-        }
-/*
-        setBypassed( m_pluginInfo.m_isBypassed );
-
-        //DE_TRACE("VST pluginInfo = ",de_mbstr(m_pluginInfo.toWString()))
-        update();
-
-        setBypassed( isBypassed() );
-*/
-        m_bIsBypassed = false;
-        m_bPluginOpen = true;
-    }
-
-    void closePlugin()
-    {
-        if ( !m_bPluginOpen )
-        {
-            DE_TRACE("Plugin already closed")
-            return;
-        }
-
-        DE_WARN("Close ",m_uri)
-
-        m_bPluginOpen = false;  // Set this first, so the audio callback does bypass this dsp element.
-
-        //   if ( isSynth() )
-        //   {
-        //      emit removedSynth( this ); // Unregister synth from MIDI keyboards
-        //   }
-
-        DE_WARN("Stop vst plugin")
-
-        dispatcher(effMainsChanged, 0, 0);  // Stop plugin
-        dispatcher(effStopProcess);         // Stop plugin
-
-        if (m_editor)
-        {
-            DE_TRACE("Close editor")
-            dispatcher(effEditClose, 0, 0, nullptr, 0.0f);
-            m_editor->enableClosing();
-            m_editor->close();
-            m_editor->deleteLater();
-            //delete m_editor;
-            m_editor = nullptr;
-        }
-
-        dispatcher(effClose);               // Stop plugin
-
-        if ( m_dllHandle )                  // Close plugin
-        {
-            HMODULE hModule = reinterpret_cast< HMODULE >( m_dllHandle );
-            FreeLibrary(hModule);
-            m_dllHandle = 0;
-        }
-
-        m_framePos = 0;
-
-        //m_loadButton->setIcon( QIcon() );
-        //m_editorImage->hide();
     }
 
     VstIntPtr
@@ -726,13 +728,14 @@ struct VST2_Plugin_Impl
             {
                 m_vstMidi.events.clear();
             }
+            return;
         }
 
-        size_t n = 0;
+        //size_t n = 0;
         if ( auto l = m_vstMidi.lock() )
         {
             m_vstMidi.events.push_back( e );
-            n = m_vstMidi.events.size();
+            //n = m_vstMidi.events.size();
         }
 
         // DE_DEBUG("events(",n,"), byte1(",dbHex(byte1),"), data1(",dbHex(data1),"), data2(",dbHex(data2),")")
