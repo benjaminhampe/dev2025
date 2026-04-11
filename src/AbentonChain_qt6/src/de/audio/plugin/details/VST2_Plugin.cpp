@@ -143,7 +143,6 @@ struct VST2_Plugin_Impl
     u32 m_pluginId = 0;
     bool m_bIsPluginOpen = false;
     bool m_bNeedSetup = true;
-    bool m_bHasEditor = false;
     bool m_bIsSynth = false;
     bool m_bIsBypassed = false;
 
@@ -328,7 +327,7 @@ struct VST2_Plugin_Impl
         m_numInputs = m_vst->numInputs;
         m_numOutputs = m_vst->numOutputs;
         m_bIsSynth = getFlags( effFlagsIsSynth );
-        m_bHasEditor = getFlags( effFlagsHasEditor );
+        bool bHasEditor = getFlags( effFlagsHasEditor );
 
         dispatcher(effOpen);
 
@@ -338,7 +337,7 @@ struct VST2_Plugin_Impl
         DE_DEBUG("VST plugin = ", dbFileBase(m_uri))
         DE_DEBUG("VST plugin dir = ", m_directoryMultiByte)
         DE_TRACE("VST plugin isSynth = ",m_bIsSynth)
-        DE_TRACE("VST plugin hasEditor = ",m_bHasEditor)
+        DE_TRACE("VST plugin hasEditor = ",bHasEditor)
         DE_TRACE("VST plugin programCount = ",m_numPrograms)
         DE_TRACE("VST plugin parameterCount = ",m_numParams)
         DE_TRACE("VST plugin inputCount = ",m_numInputs)
@@ -350,7 +349,7 @@ struct VST2_Plugin_Impl
         //connect( m_editorWindow, SIGNAL(closed()),
         //       this,           SLOT(on_editorClosed()), Qt::QueuedConnection );
 
-        if (m_bHasEditor)
+        if (bHasEditor)
         {
             m_editor = new VST2_Editor(m_vst, nullptr );
         }
@@ -851,68 +850,12 @@ bool VST2_Plugin::isSynth() const
     return _d->m_bIsSynth;
 }
 
-bool VST2_Plugin::hasEditor() const
-{
-    return _d->m_bHasEditor;
-}
-
 PluginEditorWindow* VST2_Plugin::getEditor()
 {
     return _d->getEditor();
 }
 
 // ===================================================
-
-/*
-void VST2_Plugin::openEditor( u64 parent )
-{
-    _d->openEditor( parent );
-}
-
-void VST2_Plugin::closeEditor()
-{
-    _d->closeEditor();
-}
-
-bool VST2_Plugin::isEditorOpen()
-{
-    return _d->m_bEditorOpen;
-}
-
-// ===================================================
-
-bool VST2_Plugin::isEditorVisible()
-{
-    if ( _d->m_editorWindow )
-    {
-        return _d->m_editorWindow->isVisible();
-    }
-    else
-    {
-        return false;
-    }
-}
-
-void VST2_Plugin::setEditorVisible( bool bVisible )
-{
-    if ( _d->m_editorWindow )
-    {
-        _d->m_editorWindow->setVisible( bVisible );
-        if (_d->m_editorWindow->isVisible())
-        {
-            _d->m_editorWindow->raise();
-        }
-    }
-}
-
-void VST2_Plugin::moveEditor( int x, int y )
-{
-    if (_d->m_editorWindow )
-    {
-        _d->m_editorWindow->move( x,y );
-    }
-}
-*/
 
 void VST2_Plugin::onMidiMessage(f64 pts, const midi::MidiMessage& msg)
 {

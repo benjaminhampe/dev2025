@@ -369,47 +369,55 @@ private:
                 UINT32 padding = 0;
                 m_audioClient->GetCurrentPadding(&padding);
 
-                const auto oFrames = m_blockSize - padding;
-                float* wasapiBuffer = nullptr;
-                m_audioRenderClient->GetBuffer(oFrames, reinterpret_cast<BYTE**>(&wasapiBuffer));
+                int32_t oFrames = int32_t(m_blockSize) - int32_t(padding);
 
-                // FillZeroes:
-                m_L.resize(oFrames);
-                m_R.resize(oFrames);
-                std::fill(m_L.begin(),m_L.end(),0.0f);
-                std::fill(m_R.begin(),m_R.end(),0.0f);
-
-                // FillZeroes:
-                float* __restrict__ dst = static_cast<float*>(wasapiBuffer);
-                uint32_t oChannels = m_mixFormat->nChannels;
-                uint64_t oSamples = oFrames * oChannels;
-                memset(dst, 0, oSamples * sizeof(float));
-
-                // const auto r = m_refillFunc(wasapiBuffer, a, m_mixFormat);
-
-                double pts = 0.0;
-                // Process
-                if (m_inputSignal)
+                if (oFrames > 0)
                 {
-                    // Read:
-                    m_inputSignal->dsp_read( pts,
-                        oFrames,
-                        m_sampleRate,
-                        m_L.data(),
-                        m_R.data() );
-                }
+                    float* wasapiBuffer = nullptr;
+                    m_audioRenderClient->GetBuffer(oFrames, reinterpret_cast<BYTE**>(&wasapiBuffer));
 
-                // Transform Planar L+R to Interleaved pDST
-                const float* __restrict__ pL = m_L.data();
-                const float* __restrict__ pR = m_R.data();
-                for (size_t i = 0; i < oFrames; ++i)
+                    // FillZeroes:
+                    m_L.resize(oFrames);
+                    m_R.resize(oFrames);
+                    std::fill(m_L.begin(),m_L.end(),0.0f);
+                    std::fill(m_R.begin(),m_R.end(),0.0f);
+
+                    // FillZeroes:
+                    float* __restrict__ dst = static_cast<float*>(wasapiBuffer);
+                    uint32_t oChannels = m_mixFormat->nChannels;
+                    uint64_t oSamples = oFrames * oChannels;
+                    memset(dst, 0, oSamples * sizeof(float));
+
+                    // const auto r = m_refillFunc(wasapiBuffer, a, m_mixFormat);
+
+                    double pts = 0.0;
+                    // Process
+                    if (m_inputSignal)
+                    {
+                        // Read:
+                        m_inputSignal->dsp_read( pts,
+                            oFrames,
+                            m_sampleRate,
+                            m_L.data(),
+                            m_R.data() );
+                    }
+
+                    // Transform Planar L+R to Interleaved pDST
+                    const float* __restrict__ pL = m_L.data();
+                    const float* __restrict__ pR = m_R.data();
+                    for (size_t i = 0; i < oFrames; ++i)
+                    {
+                        dst[0] = *pL++;
+                        dst[1] = *pR++;
+                        dst += oChannels;
+                    }
+
+                    m_audioRenderClient->ReleaseBuffer(oFrames, 0); // retFrames ? 0 : AUDCLNT_BUFFERFLAGS_SILENT
+                }
+                else
                 {
-                    dst[0] = *pL++;
-                    dst[1] = *pR++;
-                    dst += oChannels;
+                    DE_ERROR("Wasapi really called with 0 frames, idiot!")
                 }
-
-                m_audioRenderClient->ReleaseBuffer(oFrames, 0); // retFrames ? 0 : AUDCLNT_BUFFERFLAGS_SILENT
             }
         }
         return 0;

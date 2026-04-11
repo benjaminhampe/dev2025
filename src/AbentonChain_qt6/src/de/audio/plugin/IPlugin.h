@@ -6,6 +6,10 @@
 #include <de/audio/dsp/IDspChainElement.h>
 #include <de/audio/plugin/PluginEditorWindow.h>
 
+#ifndef BENNI_USE_VST3
+#define BENNI_USE_VST3
+#endif
+
 namespace de {
 namespace audio {
 
@@ -47,47 +51,18 @@ public:
 
     virtual bool isSynth() const = 0;
 
-    virtual bool hasEditor() const = 0;
-
     virtual PluginEditorWindow* getEditor() = 0;
 
-    // virtual QRect getEditorRect() const = 0;
-
-    // virtual void openEditor( u64 parent ) = 0; // { return nullptr; }
-
-    // virtual void closeEditor() = 0; // {}
-
-    // virtual bool isEditorOpen() = 0; // { return false; }
-
-    // virtual void moveEditor( int x, int y ) = 0; // {}
-
-    // virtual bool isEditorVisible() = 0; // { return false; }
-
-    // virtual void setEditorVisible( bool bVisible ) = 0; // {}
-
-    // inline void showEditor() { setEditorVisible( true ); }
-
-    // inline void hideEditor() { setEditorVisible( false ); }
 /*
     // =====================================
     // interface: IDspChainElement
     // =====================================
     bool isBypassed() const override { return m_pluginInfo.isBypassed(); }
-    bool isSynth() const override { return m_pluginInfo.isSynth(); }
+    void setBypassed( bool bypassed ) override;
+
     // =====================================
     // interface: IPlugin
     // =====================================
-    de::audio::PluginInfo const & pluginInfo() const { return m_pluginInfo; }
-    de::audio::PluginInfo & pluginInfo() { return m_pluginInfo; }
-    int pluginId() const { return m_id; }
-    QRect pluginEditorRect() const { return m_editorWindow ? m_editorWindow->rect() : QRect(); }
-    bool isPluginMinimized() const { return m_pluginInfo.isMinimized(); }
-    bool isPluginEditorVisible() const { return m_editorWindow ? m_editorWindow->isVisible() : false; }
-    bool isPluginMoreVisible() const { return m_isMoreVisible; }
-    bool hasPluginEditor() const { return pluginInfo().hasEditor(); }
-    PluginEditorWindow* pluginEditorWindow() { return m_editorWindow; }
-    std::wstring pluginUri() const { return pluginInfo().m_uri; }
-    std::wstring pluginName() const { return pluginInfo().m_name; }
     int pluginProgramCount() const { return pluginInfo().numPrograms(); }
     int pluginParamCount() const { return pluginInfo().numParams(); }
     int pluginInputCount() const { return pluginInfo().numInputs(); }
@@ -103,41 +78,7 @@ public:
    // =====================================
    // interface: IDspChainElement
    // =====================================
-   void setBypassed( bool bypassed ) override;
-   void sendMidi( uint8_t byte1, uint8_t data1, uint8_t data2 ) override;
-   void setInputSignal( int i, de::audio::IDspChainElement* input ) override;
-   void clearInputSignals() override;
-   void aboutToStart( uint32_t dstFrames, uint32_t dstChannels, uint32_t dstRate ) override;
-   uint64_t readSamples( double pts, float* dst, uint32_t dstFrames, uint32_t dstChannels, uint32_t dstRate ) override;
-   // =====================================
-   // interface: IPlugin
-   // =====================================
-   bool openPlugin( de::audio::PluginInfo const & pluginInfo );
-   void closePlugin();
-   void showEditor() { setEditorVisible( true ); }
-   void hideEditor() { setEditorVisible( false ); }
-   void moveEditor( int x, int y );
-   void setEditorVisible( bool visible );
-   void setExtraMoreVisible( bool visible );
 
-protected:
-   // =====================================
-   // interface: IVst2Plugin|AEffectx
-   // =====================================
-   bool getFlags( int32_t m ) const
-   {
-      return m_vst ? ((m_vst->flags & m) == m) : 0;
-   }
-   static VstIntPtr
-   hostCallback_static( AEffect* effect, VstInt32 opcode, VstInt32 index, VstIntPtr value, void *ptr, float opt );
-   VstIntPtr
-   hostCallback( VstInt32 opcode, VstInt32 index, VstIntPtr value, void* ptr, float opt );
-   intptr_t
-   dispatcher( int32_t opcode, int32_t index = 0, intptr_t value = 0, void *ptr = nullptr, float opt = 0.0f ) const;
-   void
-   processVstMidiEvents();
-   const char**
-   getCapabilities() const;
 
 */
 };

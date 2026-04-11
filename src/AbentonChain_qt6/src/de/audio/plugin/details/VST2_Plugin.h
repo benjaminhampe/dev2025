@@ -57,24 +57,7 @@ public:
 
     bool isSynth() const override;
 
-    bool hasEditor() const override;
-
     PluginEditorWindow* getEditor() override;
-
-
-    // QRect getEditorRect() const override;
-
-    // void openEditor( u64 parent ) override;
-
-    // void closeEditor() override;
-
-    // bool isEditorOpen() override;
-
-    // bool isEditorVisible() override;
-
-    // void setEditorVisible( bool bVisible ) override;
-
-    // void moveEditor( int x, int y ) override;
 
 
     void onMidiMessage(f64 pts, const midi::MidiMessage& msg) override;

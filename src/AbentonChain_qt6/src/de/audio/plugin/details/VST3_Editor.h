@@ -1,34 +1,12 @@
 #pragma once
 #include <de/audio/plugin/IPlugin.h>
 
-#ifndef BENNI_USE_VST3
-#define BENNI_USE_VST3
-#endif
-
 #ifdef BENNI_USE_VST3
 
 #include <de/Core.h>
 #include <QWidget>
 #include <QResizeEvent>
 #include "pluginterfaces/gui/iplugview.h"
-
-#ifndef WIN32_LEAN_AND_MEAN
-#define WIN32_LEAN_AND_MEAN
-#endif
-#include <windows.h>
-
-/**
-class IPlugFrame : public FUnknown
-{
-public:
-    /// Called to inform the host about the resize of a given view.
-    /// Afterwards the host has to call IPlugView::onSize ().
-    virtual tresult PLUGIN_API resizeView (IPlugView* view, ViewRect* newSize) = 0;
-
-    static const FUID iid;
-};
-*/
-
 
 class VST3_PlugFrame : public Steinberg::IPlugFrame
 {
@@ -57,17 +35,6 @@ public:
         *obj = nullptr;
         return Steinberg::kNoInterface;
     }
-
-
-    // // Required by FUnknown
-    // DELEGATE_REFCOUNT(Steinberg::FUnknown)
-    // Steinberg::tresult PLUGIN_API queryInterface(const Steinberg::TUID iid, void** obj) override
-    // {
-    //     QUERY_INTERFACE(iid, obj, Steinberg::IPlugFrame::iid, Steinberg::IPlugFrame)
-    //     *obj = nullptr;
-    //     return Steinberg::kNoInterface;
-    // }
-
 
     VST3_PlugFrame(QWidget* widget)
         : m_parentWidget(widget)
@@ -122,8 +89,8 @@ public:
 
     ~VST3_Editor() override
     {
-        if (m_plugView)
-            m_plugView->removed();
+        // if (m_plugView)
+        //     m_plugView->removed();
         delete m_plugFrame;
     }
 
@@ -138,85 +105,5 @@ public:
         }
     }
 };
-
-
-/*
-class VST3_Editor : public PluginEditorWindow
-{
-    Q_OBJECT
-    Steinberg::IPlugView* m_plugView;
-    HWND m_hostHwnd;
-
-public:
-    explicit VST3_Editor(Steinberg::IPlugView* plugView, QWidget* parent = nullptr)
-        : QWidget(parent)
-        , m_plugView(plugView)
-        , m_hostHwnd(nullptr)
-    {
-        DE_DEBUG("")
-
-        setAttribute(Qt::WA_NativeWindow);
-        setAttribute(Qt::WA_PaintOnScreen);
-        setAttribute(Qt::WA_NoSystemBackground);
-
-        // createHostWindow();
-
-        HWND parentHwnd = (HWND)winId();
-
-        m_hostHwnd = CreateWindowEx(
-            0, L"STATIC", L"",
-            WS_CHILD | WS_VISIBLE,
-            0, 0, width(), height(),
-            parentHwnd,
-            nullptr,
-            GetModuleHandle(nullptr),
-            nullptr
-        );
-
-
-        // Attach to parent window
-        m_plugView->setFrame(nullptr); // optional, for resize notifications
-        m_plugView->attached((void*)m_hostHwnd, "HWND");
-
-        Steinberg::ViewRect r;
-        Steinberg::tresult e = m_plugView->getSize(&r);
-        if (e == Steinberg::kResultOk)
-        {
-            int w = r.right - r.left;
-            int h = r.bottom - r.top;
-            resize(w, h);
-            SetWindowPos(m_hostHwnd, nullptr, 0, 0, w, h, SWP_NOZORDER);
-        }
-        else
-        {
-            DE_ERROR("No getSize(&r)")
-        }
-
-    }
-
-    ~VST3_Editor() override
-    {
-        DE_DEBUG("")
-
-        if (m_hostHwnd)
-            DestroyWindow(m_hostHwnd);
-    }
-
-protected:
-    void resizeEvent(QResizeEvent* event) override
-    {
-        if (m_hostHwnd)
-        {
-            SetWindowPos((HWND)m_hostHwnd, nullptr, 0, 0, width(), height(), SWP_NOZORDER);
-        }
-    }
-
-};
-*/
-
-
-
-
-
 
 #endif
