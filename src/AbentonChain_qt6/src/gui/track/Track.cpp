@@ -98,7 +98,7 @@ void Track::updateLayout()
     m_rcDropTarget = QRect(m_width - remain, 0,
                            remain, m_height);
 
-    DE_DEBUG("m_rcDropTarget = ",qstr(m_rcDropTarget).toStdString())
+    // DE_DEBUG("m_rcDropTarget = ",qstr(m_rcDropTarget).toStdString())
 
     setFixedSize(m_width, m_height);
 

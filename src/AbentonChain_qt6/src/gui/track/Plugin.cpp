@@ -3,6 +3,18 @@
 #include "gui/Skin.h"
 #include "gui/track/Track.h"
 
+namespace {
+
+    void bringToFront(QWidget* w)
+    {
+        if (!w) { DE_ERROR("nullptr") return; }
+        w->show();
+        w->raise();
+        w->activateWindow();
+        w->setWindowState((w->windowState() & ~Qt::WindowMinimized) | Qt::WindowActive );
+    }
+}
+
 Plugin::Plugin(de::audio::IPlugin* plugin, QWidget* parent)
     : QWidget(parent)
     , m_plugin(nullptr)
@@ -86,10 +98,7 @@ void Plugin::setPlugin(de::audio::IPlugin* plugin)
         auto editor = m_plugin->getEditor();
         if (editor)
         {
-            editor->show();
-            editor->raise();
-            editor->activateWindow();
-            editor->setWindowState((editor->windowState() & ~Qt::WindowMinimized) | Qt::WindowActive );
+            bringToFront(editor);
 
             DE_TRACE("Connect editor")
             QObject::connect(editor,
@@ -125,12 +134,11 @@ void Plugin::on_showContextMenu(const QPoint &pos)
 
 void Plugin::on_editorWindowClosed()
 {
-   DE_ERROR("Editor closed")
-   m_btnWrench->blockSignals( true );
-   m_btnWrench->setChecked( false );
-   m_btnWrench->blockSignals( false );
+    //DE_ERROR("Editor closed")
+    m_btnWrench->blockSignals( true );
+    m_btnWrench->setChecked( false );
+    m_btnWrench->blockSignals( false );
 }
-
 
 void Plugin::on_pressedBtnEnable( bool checked )
 {
@@ -156,10 +164,13 @@ void Plugin::on_pressedBtnWrench( bool checked )
         return;
     }
 
-    editor->setVisible(checked);
     if (checked)
     {
-        editor->raise();
+        bringToFront(editor);
+    }
+    else
+    {
+        editor->hide();
     }
 }
 

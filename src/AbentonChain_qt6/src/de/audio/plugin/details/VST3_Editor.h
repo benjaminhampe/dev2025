@@ -120,7 +120,7 @@ public:
         //m_plugView->attached(nativeHandle, "X11EmbedWindowID");
     }
 
-    ~VST3_Editor()
+    ~VST3_Editor() override
     {
         if (m_plugView)
             m_plugView->removed();

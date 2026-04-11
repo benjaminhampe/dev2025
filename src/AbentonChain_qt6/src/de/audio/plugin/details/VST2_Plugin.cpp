@@ -141,9 +141,7 @@ struct VST2_Plugin_Impl
 //===============================
 {
     u32 m_pluginId = 0;
-    bool m_bPluginOpen = false;
-    bool m_bEditorOpen = false;
-    //bool m_bEditorVisible = false;
+    bool m_bIsPluginOpen = false;
     bool m_bNeedSetup = true;
     bool m_bHasEditor = false;
     bool m_bIsSynth = false;
@@ -210,13 +208,17 @@ struct VST2_Plugin_Impl
     ~VST2_Plugin_Impl()
     {
         DE_DEBUG("")
-        closePlugin();
+        if (m_bIsPluginOpen)
+        {
+            DE_ERROR("No closePlugin() called.")
+            closePlugin();
+        }
     }
 
 
     void closePlugin()
     {
-        if ( !m_bPluginOpen )
+        if ( !m_bIsPluginOpen )
         {
             DE_TRACE("Plugin already closed")
             return;
@@ -224,7 +226,7 @@ struct VST2_Plugin_Impl
 
         DE_WARN("Close ",m_uri)
 
-        m_bPluginOpen = false;  // Set this first, so the audio callback does bypass this dsp element.
+        m_bIsPluginOpen = false;  // Set this first, so the audio callback does bypass this dsp element.
 
         //   if ( isSynth() )
         //   {
@@ -265,7 +267,7 @@ struct VST2_Plugin_Impl
 
     void openPlugin( std::string uri )
     {
-        if (m_bPluginOpen)
+        if (m_bIsPluginOpen)
         {
             DE_WARN("Plugin already open")
             return;
@@ -361,7 +363,7 @@ struct VST2_Plugin_Impl
         setBypassed( isBypassed() );
 */
         m_bIsBypassed = false;
-        m_bPluginOpen = true;
+        m_bIsPluginOpen = true;
     }
 
     PluginEditorWindow* getEditor()
@@ -449,7 +451,7 @@ struct VST2_Plugin_Impl
         // VST2 processing is inactive:
         //===============================
 
-        if ( !m_bPluginOpen || m_bIsBypassed)
+        if ( !m_bIsPluginOpen || m_bIsBypassed)
         {
             if ( m_inputSignal )
             {
@@ -841,7 +843,7 @@ void VST2_Plugin::closePlugin()
 
 bool VST2_Plugin::isPluginOpen() const
 {
-    return _d->m_bPluginOpen;
+    return _d->m_bIsPluginOpen;
 }
 
 bool VST2_Plugin::isSynth() const
