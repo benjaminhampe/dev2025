@@ -1,8 +1,9 @@
 #pragma once
 #include <de/audio/plugin/IPlugin.h>
 
-#ifdef BENNI_USE_VST2
+#ifdef BENNI_USE_CLAP
 
+/*
 #include <de/Core.h>
 
 #ifndef UNICODE
@@ -132,4 +133,6 @@ protected:
     }
 };
 
-#endif // BENNI_USE_VST2
+*/
+
+#endif

@@ -41,7 +41,7 @@ else()
     if (MSVC)
     else()
         # target_link_options(${APP_NAME} PRIVATE -mwindows)
-
+        target_compile_options(${APP_NAME} PRIVATE -Wno-macro-redefined)
         # target_compile_options(${APP_NAME} PRIVATE -Werror=maybe-uninitialized)
         # target_compile_options(${APP_NAME} PRIVATE -Wno-deprecated-declarations)
         # target_compile_options(${APP_NAME} PRIVATE -Wno-unused-but-set-variable)
@@ -62,6 +62,7 @@ else()
     target_link_libraries(${APP_NAME} PRIVATE de_rtmidi)
     target_link_libraries(${APP_NAME} PRIVATE de_vst2sdk)
     target_link_libraries(${APP_NAME} PRIVATE de_vst3sdk_380)
+    target_link_libraries(${APP_NAME} PRIVATE de_clap)
 
 	target_link_options(${APP_NAME} PRIVATE
 		-static
@@ -69,6 +70,17 @@ else()
 		-Wl,-Bstatic -lc++ -lc++abi -lunwind -lwinpthread
 		-Wl,-Bdynamic
 	)
+
+
+    if (WIN32)
+        target_link_libraries(${APP_NAME} PRIVATE kernel32 user32 gdi32 shell32)
+        target_link_libraries(${APP_NAME} PRIVATE ole32 oleaut32 comdlg32 comctl32)
+        target_link_libraries(${APP_NAME} PRIVATE shlwapi winmm d2d1 dxgi d3d11 dcomp)
+        target_link_libraries(${APP_NAME} PRIVATE imm32 advapi32 dwmapi)
+
+    else()
+        # target_link_libraries(${APP_NAME} PRIVATE X11 Xxf86vm Xi Xcursor)
+    endif()
 
     # target_link_libraries(${APP_NAME} PRIVATE AudioDreamy64_DarkImage)
     # target_link_libraries(${APP_NAME} PRIVATE de_fontawesome)

@@ -2,8 +2,10 @@
 
 #ifdef BENNI_USE_VST3
 
-#include "App.h"
-#include "VST3_Editor.h"
+#include <de/audio/plugin/details/VST3_Editor.h>
+#include <de/audio/plugin/details/BasePluginUtils.h>
+#include <App.h>
+
 #include "pluginterfaces/base/ustring.h"
 #include "pluginterfaces/base/funknown.h"
 #include "pluginterfaces/vst/ivstaudioprocessor.h"
@@ -47,55 +49,9 @@ std::string getErrorDesc(Steinberg::tresult e)
 }
 
 //===============================
-struct VST3_PerfTimer
-//===============================
-{
-    double m_freqInv;
-
-    VST3_PerfTimer()
-    {
-        LARGE_INTEGER m_freq;
-        QueryPerformanceFrequency(&m_freq); // e.g. 3,000,000 Hz (3 MHz)
-        m_freqInv = 1.0 / (double)m_freq.QuadPart;
-    }
-
-    double now() const
-    {
-        LARGE_INTEGER a;
-        QueryPerformanceCounter(&a);
-
-        double seconds = double(a.QuadPart) * m_freqInv;
-        return seconds;
-    }
-};
-
-//===============================
-struct VST3_Clock
-//===============================
-{
-    VST3_PerfTimer m_timer;
-    double m_timeStart;
-
-    VST3_Clock() { restart(); }
-
-    void restart()
-    {
-        m_timeStart = m_timer.now();
-    }
-
-    double now() const
-    {
-        double timeNow = m_timer.now() - m_timeStart;
-        return timeNow;
-    }
-};
-
-//===============================
 struct VST3_SampleBuffers
 //===============================
 {
-    int m_blockSize = 0;
-
     TAlignedVector<float> m_L;
     TAlignedVector<float> m_R;
 
@@ -111,18 +67,12 @@ struct VST3_SampleBuffers
     std::vector<std::vector<float*>> m_iHeads;
     std::vector<std::vector<float*>> m_oHeads;
 
-    void setup(Steinberg::IPtr<Steinberg::Vst::IComponent>& comp, int blockSize)
+    void setup(Steinberg::IPtr<Steinberg::Vst::IComponent>& comp, u32 blockSize)
     {
         if (!comp) { DE_WARN("No component") return; } // Nothing todo
 
-        // Only continue if necessary...
-        if (m_blockSize == blockSize) { return; } // Nothing todo
-
-        // Do work...
-        m_blockSize  = blockSize;
-
-        m_L.resize(m_blockSize + GUARD);
-        m_R.resize(m_blockSize + GUARD);
+        m_L.resize(blockSize + GUARD);
+        m_R.resize(blockSize + GUARD);
 
         DE_WARN("========= SETUP =========== blockSize = ", blockSize)
 
@@ -155,7 +105,7 @@ struct VST3_SampleBuffers
             m_iHeads[i].resize(info.channelCount);
             for (auto & b : m_iBuffers[i])
             {
-                b.resize(m_blockSize + GUARD);
+                b.resize(blockSize + GUARD);
             }
             for (u32 k = 0; k < info.channelCount; k++)
             {
@@ -194,7 +144,7 @@ struct VST3_SampleBuffers
             m_oHeads[i].resize(info.channelCount);
             for (auto & b : m_oBuffers[i])
             {
-                b.resize(m_blockSize + GUARD);
+                b.resize(blockSize + GUARD);
             }
             for (u32 k = 0; k < info.channelCount; k++)
             {
@@ -209,9 +159,9 @@ struct VST3_SampleBuffers
         DE_TRACE("BusAudioOut.Channels = ", nChannelsOut)
     }
 
-    void copy1()
+    void copy1( u32 blockSize )
     {
-        if (m_blockSize < 1)
+        if (blockSize < 1)
         {
             DE_ERROR("No blockSize")
             return;
@@ -226,7 +176,7 @@ struct VST3_SampleBuffers
             }
         }
 
-        const auto bytesPerChannel = u64(m_blockSize) * sizeof(f32);
+        const auto bytesPerChannel = u64(blockSize) * sizeof(f32);
 
         // Copy L+R to vst3 buffers, if any...
         u32 n = 0;
@@ -382,7 +332,6 @@ public:
     };
 
     bool m_bIsPluginOpen;
-    bool m_bNeedSetup;
     bool m_bIsBypassed;
     bool m_bIsSynth;
     // bool m_bHasEditor = false;
@@ -390,6 +339,7 @@ public:
     u32 m_numOutputs;
     u32 m_sampleRate;
     u32 m_blockSize;
+    u32 m_blockSizeMax = 2048;
     u32 m_pluginId;
     ITrack* m_track;
     VST3_Editor* m_editor;
@@ -399,9 +349,9 @@ public:
 
     std::string m_uri;                 // VST2_Plugin file name
     std::string m_directoryMultiByte;
+    PluginClock m_midiClock;
 
     VST3_SampleBuffers m_sampleBuffers;
-    VST3_Clock m_midiClock;
 
     // MIDI + automation
     Steinberg::Vst::EventList        m_midiEventListIn;
@@ -472,13 +422,13 @@ public:
 public:
     VST3_Plugin_Impl() // const std::wstring& path
         : m_bIsPluginOpen{ false }
-        , m_bNeedSetup{ true }
         , m_bIsBypassed{ false }
         , m_bIsSynth{ false }
         , m_numInputs{ 0 }
         , m_numOutputs{ 0 }
         , m_sampleRate{ 48000 }
-        , m_blockSize{ 1280 }
+        , m_blockSize{ 480 }
+        , m_blockSizeMax{ 2048 }
         , m_pluginId{ 0 }
         , m_track{ nullptr }
         , m_editor{ nullptr }
@@ -796,7 +746,7 @@ public:
         // III. Activate MIDI event processing:
         determineIsSynth();
 
-        m_sampleBuffers.setup(m_component, m_blockSize);
+        m_sampleBuffers.setup(m_component, 2048);
         setAudioIn( true );
         setAudioOut( true );
         setEventIn( true );
@@ -839,6 +789,7 @@ public:
         if (e != Steinberg::kResultOk)
         {
             DE_ERROR("No m_component->queryInterface(Steinberg::Vst::IConnectionPoint). ", getErrorDesc(e))
+            procCP = nullptr;
         }
 
         IConnectionPoint* ctrlCP = nullptr;
@@ -846,6 +797,7 @@ public:
         if (e != Steinberg::kResultOk)
         {
             DE_ERROR("No m_editController->queryInterface(Steinberg::Vst::IConnectionPoint). ", getErrorDesc(e))
+            ctrlCP = nullptr;
         }
 
         if (procCP && ctrlCP)
@@ -895,7 +847,8 @@ public:
             DE_ERROR("No m_audioProcessor->setBusArrangements(Stereo). ", getErrorDesc(e))
         }
 
-        m_sampleBuffers.setup(m_component, m_blockSize);
+
+        m_sampleBuffers.setup(m_component, m_blockSizeMax);
         setAudioIn( true );
         setAudioOut( true );
         setEventIn( true );
@@ -969,23 +922,33 @@ public:
     {
         (void)channels;
 
+        bool bNeedUpdate = false;
+        bool bNewBufferSize = false;
+        // bool bNewSampleRate = false;
+
         if ( m_blockSize != frames )
         {
             m_blockSize = frames;
-            m_bNeedSetup = true;
+            //bNeedUpdate = true;
+
+            if (m_blockSizeMax < frames)
+            {
+                m_blockSizeMax = frames;
+                bNewBufferSize = true;
+                bNeedUpdate = true;
+            }
         }
 
         if ( m_sampleRate != sampleRate )
         {
             m_sampleRate = sampleRate;
-            m_bNeedSetup = true;
+            // bNewSampleRate = true;
+            bNeedUpdate = true;
         }
 
-        if ( m_audioProcessor && m_bNeedSetup )
+        if ( bNeedUpdate )
         {
             DE_WARN("====== dsp_init(",frames,",",sampleRate,")")
-
-            m_bNeedSetup = false;
 
             auto e = m_component->setActive(false);
             if (e != Steinberg::kResultOk)
@@ -1000,12 +963,14 @@ public:
                 DE_ERROR("No m_audioProcessor->setProcessing(false). ", getErrorDesc(e))
             }
 
-            m_sampleBuffers.setup(m_component,m_blockSize);
-
-            setAudioIn( true );
-            setAudioOut( true );
-            setEventIn( true );
-            setEventOut( false );
+            if (bNewBufferSize)
+            {
+                m_sampleBuffers.setup(m_component,m_blockSizeMax);
+                setAudioIn( true );
+                setAudioOut( true );
+                setEventIn( true );
+                setEventOut( false );
+            }
 
             Steinberg::Vst::ProcessSetup setup {};
             setup.processMode        = Steinberg::Vst::kRealtime;
@@ -1085,7 +1050,7 @@ public:
                       m_sampleBuffers.m_R.end(), 0.0f);
         }
 
-        m_sampleBuffers.copy1();
+        m_sampleBuffers.copy1( frames );
 
         Steinberg::Vst::ProcessContext ctx{};
         ctx.state = Steinberg::Vst::ProcessContext::kTempoValid

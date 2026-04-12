@@ -1,9 +1,13 @@
 #include <de/audio/plugin/details/VST2_Plugin.h>
+
+#ifdef BENNI_USE_VST2
+
 #include <de/audio/plugin/details/VST2_Editor.h>
+#include <de/audio/plugin/details/BasePluginUtils.h>
 #include <App.h>
 namespace de {
 namespace audio {
-
+/*
 //===============================
 struct VST2_PerfTimer
 //===============================
@@ -47,6 +51,7 @@ struct VST2_Clock
         return timeNow;
     }
 };
+*/
 
 //===============================
 struct VST2_SampleBuffers
@@ -158,7 +163,9 @@ struct VST2_Plugin_Impl
     u32 m_sampleRate = 0;     // rate in Hz
     u32 m_blockSize = 0;   // frames per channel
     std::atomic< u64 > m_framePos = 0;
-    u64 m_dllHandle = 0; // HMODULE
+
+    SymbolLoader m_symLoader;
+    // u64 m_dllHandle = 0; // HMODULE
 
     AEffect* m_vst = nullptr;
     VstTimeInfo m_timeInfo;
@@ -174,7 +181,7 @@ struct VST2_Plugin_Impl
     // std::vector< f32*> m_inBufferHeads;
 
     // VST midi event handling
-    VST2_Clock m_midiClock;
+    PluginClock m_midiClock;
     std::vector< VstMidiEvent > m_vstMidiEvents;
     std::vector< char > m_vstEventBuffer;
 
@@ -214,7 +221,6 @@ struct VST2_Plugin_Impl
         }
     }
 
-
     void closePlugin()
     {
         if ( !m_bIsPluginOpen )
@@ -250,12 +256,13 @@ struct VST2_Plugin_Impl
 
         dispatcher(effClose);               // Stop plugin
 
-        if ( m_dllHandle )                  // Close plugin
-        {
-            HMODULE hModule = reinterpret_cast< HMODULE >( m_dllHandle );
-            FreeLibrary(hModule);
-            m_dllHandle = 0;
-        }
+        m_symLoader.close();
+        // if ( m_dllHandle )                  // Close plugin
+        // {
+        //     HMODULE hModule = reinterpret_cast< HMODULE >( m_dllHandle );
+        //     FreeLibrary(hModule);
+        //     m_dllHandle = 0;
+        // }
 
         m_framePos = 0;
 
@@ -286,6 +293,27 @@ struct VST2_Plugin_Impl
         DE_TRACE("uri = ",m_uri)
         DE_TRACE("dir = ",m_directoryMultiByte)
 
+        m_symLoader.open( uri );
+        if ( !m_symLoader.is_open() )
+        {
+            DE_WARN("No library ",uri)
+            return;
+        }
+
+        typedef AEffect* (VstEntryProc)(audioMasterCallback);
+
+        auto proc = reinterpret_cast< VstEntryProc* >( m_symLoader.getSymbol("VSTPluginMain") );
+        if ( !proc )
+        {
+            proc = reinterpret_cast< VstEntryProc* >( m_symLoader.getSymbol("main") );
+        }
+        if ( !proc )
+        {
+            DE_WARN("No VST entry point found, ",uri)
+            return;
+        }
+
+/*
         HMODULE dll = LoadLibraryA( uri.c_str() );
         if ( !dll )
         {
@@ -293,7 +321,6 @@ struct VST2_Plugin_Impl
             return;
         }
 
-        typedef AEffect* (VstEntryProc)(audioMasterCallback);
         auto proc = reinterpret_cast< VstEntryProc* >( GetProcAddress(dll, "VSTPluginMain") );
 
         if ( !proc )
@@ -307,6 +334,8 @@ struct VST2_Plugin_Impl
         }
 
         m_dllHandle = uint64_t( dll );
+*/
+
         m_vst = proc( hostCallback_static );
         if ( !m_vst )
         {
@@ -990,6 +1019,7 @@ void VST2_Plugin::onShortMidiMessage(f64 pts, const midi::ShortMidiMessage& msg)
 } // end namespace audio.
 } // end namespace de.
 
+#endif // BENNI_USE_VST2
 
 /*
  *
@@ -1227,3 +1257,4 @@ int main() {
 }
 
 */
+

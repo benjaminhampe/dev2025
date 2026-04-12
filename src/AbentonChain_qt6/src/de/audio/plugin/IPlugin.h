@@ -6,8 +6,16 @@
 #include <de/audio/dsp/IDspChainElement.h>
 #include <de/audio/plugin/PluginEditorWindow.h>
 
+#ifndef BENNI_USE_VST2
+#define BENNI_USE_VST2
+#endif
+
 #ifndef BENNI_USE_VST3
 #define BENNI_USE_VST3
+#endif
+
+#ifndef BENNI_USE_CLAP
+#define BENNI_USE_CLAP
 #endif
 
 namespace de {

@@ -1,6 +1,7 @@
 #include <de/audio/plugin/PluginFactory.h>
 #include <de/audio/plugin/details/VST2_Plugin.h>
 #include <de/audio/plugin/details/VST3_Plugin.h>
+#include <de/audio/plugin/details/CLAP_Plugin.h>
 
 // #if defined(DE_IMAGE_READER_JPG_ENABLED) || defined(DE_IMAGE_WRITER_JPG_ENABLED)
    // #include <de/image/Image_JPG.h>
@@ -58,8 +59,6 @@ PluginFactory::~PluginFactory()
 
 IPlugin* PluginFactory::createPlugin( std::string uri )
 {
-    IPlugin* plugin = nullptr;
-
     PerformanceTimer timer;
     timer.start();
 
@@ -67,15 +66,20 @@ IPlugin* PluginFactory::createPlugin( std::string uri )
 
     std::string suffix = FileSystem::fileSuffix( uri );
 
-    if (suffix == "dll")
+    IPlugin* plugin = nullptr;
+
+    if (suffix.empty())
     {
-        plugin = new VST2_Plugin;
+        DE_ERROR("Got empty extension, not able to determine plugin type.")
     }
+#ifdef BENNI_USE_VST2
+    else if (suffix == "dll")  { plugin = new VST2_Plugin; }
+#endif
 #ifdef BENNI_USE_VST3
-    else if (suffix == "vst3")
-    {
-        plugin = new VST3_Plugin;
-    }
+    else if (suffix == "vst3") { plugin = new VST3_Plugin; }
+#endif
+#ifdef BENNI_USE_CLAP
+    else if (suffix == "clap") { plugin = new CLAP_Plugin; }
 #endif
     else
     {

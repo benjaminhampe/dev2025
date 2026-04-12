@@ -1,6 +1,8 @@
 #pragma once
 #include <de/audio/plugin/IPlugin.h>
 
+#ifdef BENNI_USE_VST2
+
 namespace de {
 namespace audio {
 
@@ -71,3 +73,5 @@ public:
 
 } // end namespace audio.
 } // end namespace de.
+
+#endif
