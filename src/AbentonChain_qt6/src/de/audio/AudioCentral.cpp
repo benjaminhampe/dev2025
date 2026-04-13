@@ -92,13 +92,19 @@ public:
             return;
         }
 
+        m_audioCentral->stopAudio();
+
         // std::lock_guard<std::mutex> lock(m_mutex);
+
+        for (auto & cached : m_plugins)
+        {
+            cached->dsp_clearInputSignals();
+        }
+
         m_plugins.erase(
             std::remove(m_plugins.begin(), m_plugins.end(), plugin),
             m_plugins.end()
         );
-
-        m_audioCentral->stopAudio();
 
         delete plugin;
 
@@ -154,8 +160,6 @@ public:
 
     void updateDspChain()
     {
-        // m_audioCentral->stopAudio();
-
         auto n = m_plugins.size();
         if (n == 0)
         {
@@ -214,7 +218,35 @@ public:
             }
         }
 
-        // m_audioCentral->playAudio();
+        // <debug>
+        std::vector< std::string > pluginNames;
+        IDspChainElement* p = m_chainEnd;
+        while (p)
+        {
+            std::string name;
+            auto plugin = dynamic_cast<IPlugin*>(p);
+            if (plugin)
+            {
+                name = plugin->name();
+                if (plugin->isSynth()) name += " (Synth)";
+            }
+            else
+            {
+                DE_ERROR("Cast failed.")
+                name = "CastFailed";
+            }
+            pluginNames.emplace_back( std::move( name ) );
+
+            p = p->dsp_getInputSignal(0);
+        }
+        std::reverse(pluginNames.begin(), pluginNames.end());
+
+        DE_WARN("DspChain.Count = ",pluginNames.size())
+        for (size_t i = 0; i < pluginNames.size(); i++)
+        {
+            DE_DEBUG("DspChain[",i,"] ",pluginNames[i])
+        }
+        // </debug>
     }
 
     void dsp_read(f64 pts, u32 frames, u32 sampleRate,
@@ -233,6 +265,17 @@ public:
         {
             m_chainEnd->dsp_init(frames,channels,sampleRate);
         }
+    }
+
+    u32 dsp_getInputSignalCount() const override
+    {
+        return 0;
+    }
+
+    IDspChainElement* dsp_getInputSignal(int i = 0) override
+    {
+        DE_ERROR("Should not be called!")
+        return nullptr;
     }
 
     void dsp_setInputSignal(IDspChainElement* input, int i = 0) override

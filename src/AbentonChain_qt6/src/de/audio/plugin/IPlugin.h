@@ -61,6 +61,10 @@ public:
 
     virtual PluginEditorWindow* getEditor() = 0;
 
+
+    virtual bool isBypassed() const = 0;
+
+    virtual void setBypassed( bool bBypassed ) = 0;
 /*
     // =====================================
     // interface: IDspChainElement

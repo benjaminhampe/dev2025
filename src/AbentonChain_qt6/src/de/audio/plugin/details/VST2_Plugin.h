@@ -26,6 +26,10 @@ public:
                   f32* __restrict__ L,
                   f32* __restrict__ R ) override;
 
+    u32 dsp_getInputSignalCount() const override;
+
+    IDspChainElement* dsp_getInputSignal(int i = 0) override;
+
     void dsp_setInputSignal(IDspChainElement* input, int i = 0) override;
 
     void dsp_clearInputSignals() override;
@@ -60,6 +64,11 @@ public:
     bool isSynth() const override;
 
     PluginEditorWindow* getEditor() override;
+
+
+    bool isBypassed() const override;
+
+    void setBypassed( bool bBypassed ) override;
 
 
     void onMidiMessage(f64 pts, const midi::MidiMessage& msg) override;

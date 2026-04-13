@@ -80,6 +80,8 @@ void Plugin::setPlugin(de::audio::IPlugin* plugin)
                        this,
                        nullptr );
         }
+
+        DE_TRACE("Disconnected plugin ", m_plugin->name())
     }
 
     // Transition:
@@ -142,8 +144,13 @@ void Plugin::on_editorWindowClosed()
 
 void Plugin::on_pressedBtnEnable( bool checked )
 {
-
+    if (!m_plugin)
+    {
+        DE_ERROR("No plugin")
+    }
+    m_plugin->setBypassed(!checked);
 }
+
 void Plugin::on_pressedBtnExpand( bool checked )
 {
 
@@ -180,9 +187,9 @@ void Plugin::on_pressedBtnUpdate( bool checked )
 }
 void Plugin::on_pressedBtnEditor( bool checked )
 {
-    m_bCollapsed = checked;
-    applySkin();
-    static_cast<Track*>(parent())->updateLayout();
+    // m_bCollapsed = checked;
+    // applySkin();
+    // static_cast<Track*>(parent())->updateLayout();
 }
 
 void Plugin::on_doubleClickedLabel()

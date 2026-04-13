@@ -219,6 +219,12 @@ void Track::insertPlugin(int index, const QString &uri)
 
 void Track::removePlugin(Plugin* w)
 {
+    if (!w)
+    {
+        DE_ERROR("Got nullptr")
+        return;
+    }
+
     auto it = std::find(m_plugins.begin(), m_plugins.end(), w);
     if (it != m_plugins.end())
     {
@@ -229,6 +235,15 @@ void Track::removePlugin(Plugin* w)
         // found it
         m_plugins.erase(it);
         //m_layout->removeWidget(w);
+    }
+
+    if (m_track)
+    {
+        m_track->removePlugin( w->getPlugin() );
+    }
+    else
+    {
+        DE_ERROR("No audio track")
     }
 
     // Update indices...

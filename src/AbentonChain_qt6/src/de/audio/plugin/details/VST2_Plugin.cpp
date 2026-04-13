@@ -7,51 +7,6 @@
 #include <App.h>
 namespace de {
 namespace audio {
-/*
-//===============================
-struct VST2_PerfTimer
-//===============================
-{
-    double m_freqInv;
-
-    VST2_PerfTimer()
-    {
-        LARGE_INTEGER m_freq;
-        QueryPerformanceFrequency(&m_freq); // e.g. 3,000,000 Hz (3 MHz)
-        m_freqInv = 1.0 / (double)m_freq.QuadPart;
-    }
-
-    double now() const
-    {
-        LARGE_INTEGER a;
-        QueryPerformanceCounter(&a);
-
-        double seconds = double(a.QuadPart) * m_freqInv;
-        return seconds;
-    }
-};
-
-//===============================
-struct VST2_Clock
-//===============================
-{
-    VST2_PerfTimer m_timer;
-    double m_timeStart;
-
-    VST2_Clock() { restart(); }
-
-    void restart()
-    {
-        m_timeStart = m_timer.now();
-    }
-
-    double now() const
-    {
-        double timeNow = m_timer.now() - m_timeStart;
-        return timeNow;
-    }
-};
-*/
 
 //===============================
 struct VST2_SampleBuffers
@@ -479,7 +434,7 @@ struct VST2_Plugin_Impl
         // VST2 processing is inactive:
         //===============================
 
-        if ( !m_bIsPluginOpen || m_bIsBypassed)
+        if (!m_bIsPluginOpen || m_bIsBypassed)
         {
             if ( m_inputSignal )
             {
@@ -491,6 +446,10 @@ struct VST2_Plugin_Impl
                 std::fill(outR,outR+frames,0.0f);
             }
 
+            // if (m_bIsBypassed)
+            // {
+            //     DE_WARN("IsBypassed ", m_uri)
+            // }
             return; // We relayed samples or filled output with zeroes
         }
 
@@ -825,6 +784,16 @@ void VST2_Plugin::dsp_read(f64 pts,
     _d->dsp_read(pts, frames, sampleRate, L, R);
 }
 
+u32 VST2_Plugin::dsp_getInputSignalCount() const
+{
+    return 1;
+}
+
+IDspChainElement* VST2_Plugin::dsp_getInputSignal(int i)
+{
+    return _d->m_inputSignal;
+}
+
 void VST2_Plugin::dsp_setInputSignal(IDspChainElement* inSignal, int i)
 {
     _d->setInputSignal(inSignal, i);
@@ -833,6 +802,16 @@ void VST2_Plugin::dsp_setInputSignal(IDspChainElement* inSignal, int i)
 void VST2_Plugin::dsp_clearInputSignals()
 {
     _d->clearInputSignals();
+}
+
+bool VST2_Plugin::isBypassed() const
+{
+    return _d->m_bIsBypassed;
+}
+
+void VST2_Plugin::setBypassed( bool bBypassed )
+{
+    _d->m_bIsBypassed = bBypassed;
 }
 
 // ===================================================

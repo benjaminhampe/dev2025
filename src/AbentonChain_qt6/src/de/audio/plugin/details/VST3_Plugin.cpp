@@ -1313,6 +1313,16 @@ void VST3_Plugin::dsp_read(f64 pts,
     _d->dsp_read(pts, frames, sampleRate, L, R);
 }
 
+u32 VST3_Plugin::dsp_getInputSignalCount() const
+{
+    return 1;
+}
+
+IDspChainElement* VST3_Plugin::dsp_getInputSignal(int i)
+{
+    return _d->m_inputSignal;
+}
+
 void VST3_Plugin::dsp_setInputSignal(IDspChainElement* inSignal, int i)
 {
     _d->setInputSignal(inSignal, i);
@@ -1323,6 +1333,15 @@ void VST3_Plugin::dsp_clearInputSignals()
     _d->clearInputSignals();
 }
 
+bool VST3_Plugin::isBypassed() const
+{
+    return _d->m_bIsBypassed;
+}
+
+void VST3_Plugin::setBypassed( bool bBypassed )
+{
+    _d->m_bIsBypassed = bBypassed;
+}
 // ===================================================
 
 const ITrack* VST3_Plugin::getTrack() const { return _d->m_track; }

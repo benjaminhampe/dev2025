@@ -36,6 +36,10 @@ struct IDspChainElement
                           f32* __restrict__ L,
                           f32* __restrict__ R ) = 0;
 
+    virtual u32 dsp_getInputSignalCount() const = 0;
+
+    virtual IDspChainElement* dsp_getInputSignal(int i = 0) = 0;
+
     virtual void dsp_setInputSignal(IDspChainElement* input, int i = 0) = 0;
 
     virtual void dsp_clearInputSignals() = 0;
