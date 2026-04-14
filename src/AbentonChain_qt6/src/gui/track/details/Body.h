@@ -17,6 +17,8 @@ public:
     //QSize sizeHint() const override;
     //QSize minimumSizeHint() const override;
 
+    Pad* getPad() { return m_pad; }
+
     void applySkin();
 
 protected slots:

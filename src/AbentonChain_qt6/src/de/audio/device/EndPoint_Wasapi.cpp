@@ -1,4 +1,6 @@
 #include <de/audio/device/EndPoint_Wasapi.h>
+//#include <de/audio/device/AlignedRingBuffer.h>
+#include <de/audio/device/AlignedAccumBuffer.h>
 
 #ifndef UNICODE
 #define UNICODE
@@ -17,31 +19,7 @@
 #include <process.h>
 #include <mmdeviceapi.h>
 #include <audioclient.h>
-
-// #include <algorithm>
-// #include <atomic>
-// #include <iostream>
-// #include <map>
-// #include <memory>
-// #include <mutex>
-// #include <string>
-// #include <thread>
-// #include <vector>
-#include <functional>
-
-//#include <mmsystem.h> // For JOYCAPS
-//#include <windowsx.h>
-//#include <winuser.h>
-//#include <Uxtheme.h>
-//#include <vssym32.h>
-//#include <CommCtrl.h>
-//#include <VersionHelpers.h>q
 #include <commdlg.h>
-//#include <windowsx.h>
-//#include <shellapi.h>
-//#include <commctrl.h>
-//#include <shlobj.h>
-//#include <wchar.h>
 
 #define ASSERT_THROW(c,e)   if(!(c)) { throw std::runtime_error(e); }
 #define CLOSE_HANDLE(x)     if((x)) { CloseHandle(x); x = nullptr; }
@@ -52,9 +30,21 @@
 //     ~ComInit() { CoUninitialize(); }
 // };
 
-
 namespace de {
 namespace audio {
+
+    void interleave(const float* __restrict__ inL,
+                    const float* __restrict__ inR,
+                    float* __restrict__ out, u32 frames, u32 channels)
+    {
+        for (size_t i = 0; i < frames; ++i)
+        {
+            out[0] = *inL++;
+            out[1] = *inR++;
+            out += channels;
+        }
+    }
+
 /*
 SampleType GetSampleType(const WAVEFORMATEX* fmt)
 {
@@ -146,7 +136,9 @@ class EndPoint_Wasapi_Impl
 public:
     bool m_bIsPlaying;
     u32 m_sampleRate;
-    u32 m_blockSize;
+    u32 m_blockSizeDsp;
+    u32 m_blockSizeWasapi;
+    u32 m_blockSizeMax;
     u32 m_channels;
     IDspChainElement* m_inputSignal;
 
@@ -160,18 +152,27 @@ public:
     HANDLE                  m_hCloseEvent;
     // UINT32               m_bufferFrameCount;
 
-    AlignedFloatVector m_L;
-    AlignedFloatVector m_R;
+    double                  m_timeStart;
+    std::atomic<int64_t>    m_iFramePos64;
+
+    AlignedFloatVector      m_L;
+    AlignedFloatVector      m_R;
+    AlignedFloatVector      m_I; // Interleaved;
 
     // using RefillFunc = std::function<bool(float*, uint32_t, const WAVEFORMATEX*)>;
 
     // RefillFunc              m_refillFunc {};
+    AlignedAccumBuffer m_oRing;
 
+    //AudioRingBuffer m_iRing;
+    //AudioRingBuffer m_oRing; // (4096, numChannels);
 public:
     EndPoint_Wasapi_Impl()
         : m_bIsPlaying(false)
         , m_sampleRate(48000)
-        , m_blockSize(256)
+        , m_blockSizeDsp(256)
+        , m_blockSizeWasapi(256)
+        , m_blockSizeMax(4096)
         , m_channels(2)
         , m_inputSignal(nullptr)
         , m_hThread { nullptr }
@@ -183,6 +184,8 @@ public:
         , m_hRefillEvent { nullptr }
         , m_hCloseEvent { nullptr }
         // , m_bufferFrameCount{ 0 }
+        , m_timeStart{ 0 }
+        , m_iFramePos64{ 0 }
     {
 
     }
@@ -238,9 +241,10 @@ public:
             // double seconds = (double)hns / 10000000.0;
 
             // int hnsBufferDuration = 30 * 10000;
-            int hnsBufferDuration = (u64(m_blockSize) * 10000000ULL) / m_sampleRate;
+            int hnsBufferDuration = (u64(m_blockSizeDsp) * 10000000ULL) / m_sampleRate;
             double bdInSec = (double)hnsBufferDuration / 10000000.0;
             double bdInMilliSec = (double)hnsBufferDuration / 10000.0;
+
             DE_TRACE("hnsBufferDuration = ",hnsBufferDuration)
             DE_TRACE("BufferDuration.Seconds = ",bdInSec)
             DE_TRACE("BufferDuration.MilliSeconds = ",bdInMilliSec)
@@ -253,6 +257,9 @@ public:
             double minPeriodInMS = (double)minPeriod / 10000.0;
             DE_TRACE("defPeriodInMS = ",defPeriodInMS)
             DE_TRACE("minPeriodInMS = ",minPeriodInMS)
+
+            int blockSizeMin = std::round(f64(minPeriod) * f64(m_sampleRate) / f64(10000000ULL));
+            DE_TRACE("blockSizeMin = ",blockSizeMin)
 
             hr = m_audioClient->Initialize(
                   AUDCLNT_SHAREMODE_SHARED
@@ -267,28 +274,36 @@ public:
             hr = m_audioClient->GetService(__uuidof(IAudioRenderClient), reinterpret_cast<void**>(&m_audioRenderClient));
             ASSERT_THROW(SUCCEEDED(hr), "audioClient->GetService(IAudioRenderClient) failed");
 
-            hr = m_audioClient->GetBufferSize(&m_blockSize);
+            hr = m_audioClient->GetBufferSize(&m_blockSizeWasapi);
             ASSERT_THROW(SUCCEEDED(hr), "audioClient->GetBufferSize() failed");
-            DE_TRACE("m_blockSize = ", m_blockSize)
-            DE_TRACE("m_latency = ", (1000.0 * m_blockSize) / m_sampleRate)
+
+            DE_TRACE("m_blockSizeWasapi = ", m_blockSizeWasapi)
+            DE_TRACE("m_latencyWasapi = ", (1000.0 * m_blockSizeWasapi) / m_sampleRate)
 
             hr = m_audioClient->SetEventHandle(m_hRefillEvent);
             ASSERT_THROW(SUCCEEDED(hr), "audioClient->SetEventHandle() failed");
 
             BYTE* data = nullptr;
-            hr = m_audioRenderClient->GetBuffer(m_blockSize, &data);
+            hr = m_audioRenderClient->GetBuffer(m_blockSizeWasapi, &data);
             ASSERT_THROW(SUCCEEDED(hr), "audioRenderClient->GetBuffer() failed");
 
-            hr = m_audioRenderClient->ReleaseBuffer(m_blockSize, AUDCLNT_BUFFERFLAGS_SILENT);
+            hr = m_audioRenderClient->ReleaseBuffer(m_blockSizeWasapi, AUDCLNT_BUFFERFLAGS_SILENT);
             ASSERT_THROW(SUCCEEDED(hr), "audioRenderClient->ReleaseBuffer() failed");
 
-            m_L.resize(m_blockSize);
-            m_R.resize(m_blockSize);
+            m_L.resize(m_blockSizeMax);
+            m_R.resize(m_blockSizeMax);
+            m_I.resize(m_blockSizeMax * m_channels);
 
             if (m_inputSignal)
             {
-                m_inputSignal->dsp_init(m_blockSize,m_channels,m_sampleRate);
+                m_inputSignal->dsp_init(m_blockSizeDsp,m_channels,m_sampleRate);
             }
+
+            //m_iRing.resize(m_blockSizeMax,m_channels);
+            m_oRing.resize(m_blockSizeMax,m_channels);
+
+            m_timeStart = dbTimeInSeconds();
+            m_iFramePos64 = 0; // Restart
 
             unsigned threadId = 0;
             m_hThread = reinterpret_cast<HANDLE>(_beginthreadex(0, 0, threadFunc_static, reinterpret_cast<void*>(this), 0, &threadId));
@@ -351,9 +366,45 @@ private:
         return reinterpret_cast<EndPoint_Wasapi_Impl*>(arg)->threadFunc();
     }
 
+    /*
+    constexpr int kInternalBlockSize = 128;
+    AudioRingBuffer inputRing(4096, numChannels);
+    AudioRingBuffer outputRing(4096, numChannels);
+
+    void OnWasapiCallback(float* in, float* out, int frames)
+    {
+        // write input from WASAPI
+        inputRing.write(in, frames);
+
+        // run DSP in fixed 128-frame chunks
+        while (inputRing.getReadableFrames() >= kInternalBlockSize &&
+               outputRing.getWritableFrames() >= kInternalBlockSize)
+        {
+            float inBlock[kInternalBlockSize * numChannels];
+            float outBlock[kInternalBlockSize * numChannels];
+
+            inputRing.read(inBlock, kInternalBlockSize);
+
+            // your VST2 chain here, always 128 frames:
+            // processReplacing(inBlock, outBlock, kInternalBlockSize);
+
+            outputRing.write(outBlock, kInternalBlockSize);
+        }
+
+        // read out to WASAPI
+        if (!outputRing.read(out, frames))
+        {
+            // underrun: not enough data, you can zero-fill
+            std::memset(out, 0, (size_t)frames * numChannels * sizeof(float));
+        }
+    }
+    */
+
     unsigned threadFunc()
     {
         //ComInit comInit {};
+
+
 
         const HANDLE events[2] = { m_hCloseEvent, m_hRefillEvent };
         for (bool run = true; run; )
@@ -369,7 +420,7 @@ private:
                 UINT32 padding = 0;
                 m_audioClient->GetCurrentPadding(&padding);
 
-                int32_t oFrames = int32_t(m_blockSize) - int32_t(padding);
+                int32_t oFrames = int32_t(m_blockSizeWasapi) - int32_t(padding);
 
                 if (oFrames > 0)
                 {
@@ -377,46 +428,50 @@ private:
                     m_audioRenderClient->GetBuffer(oFrames, reinterpret_cast<BYTE**>(&wasapiBuffer));
 
                     // FillZeroes:
-                    m_L.resize(oFrames);
-                    m_R.resize(oFrames);
-                    std::fill(m_L.begin(),m_L.end(),0.0f);
-                    std::fill(m_R.begin(),m_R.end(),0.0f);
-
-                    // FillZeroes:
                     float* __restrict__ dst = static_cast<float*>(wasapiBuffer);
                     uint32_t oChannels = m_mixFormat->nChannels;
                     uint64_t oSamples = oFrames * oChannels;
                     memset(dst, 0, oSamples * sizeof(float));
 
-                    // const auto r = m_refillFunc(wasapiBuffer, a, m_mixFormat);
-
-                    double pts = 0.0;
-                    // Process
-                    if (m_inputSignal)
+                    // Run DSP in fixed chunks to stabilize Dsp
+                    // and to get rid of WASAPI jitter (fast
+                    // alternating blockSizes 480,520,512).
+                    while (oFrames > m_oRing.getAvailFrames())
                     {
-                        // Read:
-                        m_inputSignal->dsp_read( pts,
-                            oFrames,
-                            m_sampleRate,
-                            m_L.data(),
-                            m_R.data() );
+                        std::fill(m_L.begin(),m_L.end(),0.0f);
+                        std::fill(m_R.begin(),m_R.end(),0.0f);
+                        std::fill(m_I.begin(),m_I.end(),0.0f);
+
+                        // Process
+                        if (m_inputSignal)
+                        {
+                            m_inputSignal->dsp_read(
+                                dbTimeInSeconds() - m_timeStart,
+                                m_blockSizeDsp,
+                                m_sampleRate,
+                                m_L.data(),
+                                m_R.data());
+                        }
+
+                        interleave(m_L.data(),
+                                   m_R.data(),
+                                   m_I.data(),
+                                   m_blockSizeDsp,
+                                   m_channels);
+
+                        m_oRing.produce(m_I.data(), m_blockSizeDsp);
                     }
 
-                    // Transform Planar L+R to Interleaved pDST
-                    const float* __restrict__ pL = m_L.data();
-                    const float* __restrict__ pR = m_R.data();
-                    for (size_t i = 0; i < oFrames; ++i)
-                    {
-                        dst[0] = *pL++;
-                        dst[1] = *pR++;
-                        dst += oChannels;
-                    }
+                    // read out to WASAPI
+                    m_oRing.consume(dst,oFrames);
 
                     m_audioRenderClient->ReleaseBuffer(oFrames, 0); // retFrames ? 0 : AUDCLNT_BUFFERFLAGS_SILENT
+
+                    m_iFramePos64 += oFrames;
                 }
                 else
                 {
-                    DE_ERROR("Wasapi really called with 0 frames, idiot!")
+                    // DE_ERROR("Wasapi really called with 0 frames, idiot!")
                 }
             }
         }

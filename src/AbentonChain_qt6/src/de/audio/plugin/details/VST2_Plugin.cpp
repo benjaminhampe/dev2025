@@ -7,13 +7,15 @@
 #include <App.h>
 namespace de {
 namespace audio {
+namespace {
+
+constexpr u64 GUARD = 256; // 64 extra bytes for "out-of-bounds" bugs.
 
 //===============================
 struct VST2_SampleBuffers
 //===============================
 {
-    int m_maxChannels = 0;
-    int m_blockSize = 0;
+    u32 m_maxChannels = 0;
 
     std::vector<TAlignedVector<float>> m_iBuffers;
     std::vector<TAlignedVector<float>> m_oBuffers;
@@ -25,25 +27,15 @@ struct VST2_SampleBuffers
     {
         // Input & Output side get same worst case amount
         // of channels to enable "in-place" legacy/old mode.
-        const auto maxChannels = std::max(2,
-                                    std::max(numInputs, numOutputs));
-
-        // Only continue if necessary...
-        if ((m_blockSize == blockSize) &&
-            (m_maxChannels == maxChannels))
-        {
-            return; // Nothing todo
-        }
+        const auto maxChannels = std::max(2, // Atleast stereo
+                    std::max(numInputs, numOutputs));
 
         // Do work...
-        m_blockSize  = blockSize;
         m_maxChannels = maxChannels;
         m_iBuffers.resize(maxChannels);
         m_oBuffers.resize(maxChannels);
         m_iHeads.resize(maxChannels);
         m_oHeads.resize(maxChannels);
-
-        constexpr u64 GUARD = 64; // 64 extra bytes for "out-of-bounds" bugs.
 
         for (auto & inputBuffer : m_iBuffers)
         {
@@ -96,6 +88,8 @@ struct VST2_SampleBuffers
     }
 };
 
+} // end namespace
+
 //===============================
 struct VST2_Plugin_Impl
 //===============================
@@ -108,25 +102,22 @@ struct VST2_Plugin_Impl
 
     ITrack* m_track = nullptr;
     PluginEditorWindow* m_editor = nullptr;
-
+    IDspChainElement* m_inputSignal = nullptr;
+    AEffect* m_vst = nullptr;
     u32 m_numPrograms = 0;
     u32 m_numParams = 0;
     u32 m_numInputs = 0;
     u32 m_numOutputs = 0;
-
-    IDspChainElement* m_inputSignal = nullptr;
-    u32 m_sampleRate = 0;     // rate in Hz
-    u32 m_blockSize = 0;   // frames per channel
+    u32 m_sampleRate = 0;
+    u32 m_blockSize = 0;
     std::atomic< u64 > m_framePos = 0;
 
     SymbolLoader m_symLoader;
-    // u64 m_dllHandle = 0; // HMODULE
-
-    AEffect* m_vst = nullptr;
     VstTimeInfo m_timeInfo;
-
     std::string m_uri;                 // VST2_Plugin file name
     std::string m_directoryMultiByte;
+    std::string m_pluginName;
+    std::string m_pluginVendor;
 
     VST2_SampleBuffers m_sampleBuffers;
     // VST seems to work channelwise / planar, not interleaved audio.
@@ -139,8 +130,6 @@ struct VST2_Plugin_Impl
     PluginClock m_midiClock;
     std::vector< VstMidiEvent > m_vstMidiEvents;
     std::vector< char > m_vstEventBuffer;
-
-
 
     struct MyVstMidi
     {
@@ -161,6 +150,22 @@ struct VST2_Plugin_Impl
     // ============================================================================
     VST2_Plugin_Impl()
     // ============================================================================
+        : m_pluginId{ 0 }
+        , m_bIsPluginOpen{ false }
+        , m_bNeedSetup{ true }
+        , m_bIsSynth{ false }
+        , m_bIsBypassed{ false }
+        , m_track{ nullptr }
+        , m_editor{ nullptr }
+        , m_inputSignal{ nullptr }
+        , m_vst{ nullptr }
+        , m_numPrograms{ 0 }
+        , m_numParams{ 0 }
+        , m_numInputs{ 0 }
+        , m_numOutputs{ 0 }
+        , m_sampleRate{ 0 }
+        , m_blockSize{ 0 }
+        , m_framePos{ 0 }
     {
         DE_DEBUG("")
         dsp_init( 64, 2, 48000 );
@@ -244,6 +249,8 @@ struct VST2_Plugin_Impl
 
         m_uri = uri;
         m_directoryMultiByte = dbFileDir(uri);
+        m_pluginName = dbFileBase(uri);
+        m_pluginVendor = "";
 
         DE_TRACE("uri = ",m_uri)
         DE_TRACE("dir = ",m_directoryMultiByte)
@@ -268,29 +275,6 @@ struct VST2_Plugin_Impl
             return;
         }
 
-/*
-        HMODULE dll = LoadLibraryA( uri.c_str() );
-        if ( !dll )
-        {
-            DE_WARN("No HMODULE ",uri)
-            return;
-        }
-
-        auto proc = reinterpret_cast< VstEntryProc* >( GetProcAddress(dll, "VSTPluginMain") );
-
-        if ( !proc )
-        {
-            proc = reinterpret_cast< VstEntryProc* >( GetProcAddress(dll, "main") );
-        }
-        if ( !proc )
-        {
-            DE_WARN("No VST entry point found, ",uri)
-            return;
-        }
-
-        m_dllHandle = uint64_t( dll );
-*/
-
         m_vst = proc( hostCallback_static );
         if ( !m_vst )
         {
@@ -305,7 +289,6 @@ struct VST2_Plugin_Impl
         }
 
         m_vst->user = this;
-        // m_pluginInfo.m_name = de::FileSystem::fileBase( pluginUri() );
         m_numPrograms = m_vst->numPrograms;
         m_numParams = m_vst->numParams;
         m_numInputs = m_vst->numInputs;
@@ -313,38 +296,103 @@ struct VST2_Plugin_Impl
         m_bIsSynth = getFlags( effFlagsIsSynth );
         bool bHasEditor = getFlags( effFlagsHasEditor );
 
+        // Get plugin Name
+        char pluginName[kVstMaxEffectNameLen] = {0};
+        dispatcher(effGetEffectName, 0, 0, pluginName, 0);
+        if (strlen(pluginName) > 0)
+        {
+            m_pluginName = pluginName;
+        }
+
+        // Get plugin Vendor
+        char pluginVendor[kVstMaxVendorStrLen] = {0};
+        dispatcher(effGetVendorString, 0, 0, pluginVendor, 0);
+        if (strlen(pluginVendor) > 0)
+        {
+            m_pluginVendor = pluginVendor;
+        }
+
         dispatcher(effOpen);
 
+        m_sampleBuffers.setup(m_numInputs,m_numOutputs, m_blockSize);
         m_bNeedSetup = true;
         dsp_init(256, 2, 48000);
 
-        DE_DEBUG("VST plugin = ", dbFileBase(m_uri))
-        DE_DEBUG("VST plugin dir = ", m_directoryMultiByte)
-        DE_TRACE("VST plugin isSynth = ",m_bIsSynth)
-        DE_TRACE("VST plugin hasEditor = ",bHasEditor)
-        DE_TRACE("VST plugin programCount = ",m_numPrograms)
-        DE_TRACE("VST plugin parameterCount = ",m_numParams)
-        DE_TRACE("VST plugin inputCount = ",m_numInputs)
-        DE_TRACE("VST plugin outputCount = ",m_numOutputs)
-        DE_TRACE("VST plugin can float replacing = ",getFlags( effFlagsCanReplacing ))
-        DE_TRACE("VST plugin can double replacing = ",getFlags( effFlagsCanDoubleReplacing ))
-        DE_TRACE("VST plugin has program chunks = ",getFlags( effFlagsProgramChunks ))
-
-        //connect( m_editorWindow, SIGNAL(closed()),
-        //       this,           SLOT(on_editorClosed()), Qt::QueuedConnection );
+        DE_DEBUG("VST2 plugin File = ", dbFileBase(m_uri))
+        DE_DEBUG("VST2 plugin Dir = ", m_directoryMultiByte)
+        DE_DEBUG("VST2 plugin Name = ", m_pluginName)
+        DE_DEBUG("VST2 plugin Vendor = ", m_pluginVendor)
+        DE_TRACE("VST2 plugin Synth = ",m_bIsSynth)
+        DE_TRACE("VST2 plugin Editor = ",bHasEditor)
+        DE_TRACE("VST2 plugin Programs = ",m_numPrograms)
+        DE_TRACE("VST2 plugin Parameters = ",m_numParams)
+        DE_TRACE("VST2 plugin Inputs = ",m_numInputs)
+        DE_TRACE("VST2 plugin Outputs = ",m_numOutputs)
+        DE_TRACE("VST2 plugin CanFloat32 = ",getFlags(effFlagsCanReplacing ))
+        DE_TRACE("VST2 plugin CanFloat64 = ",getFlags(effFlagsCanDoubleReplacing ))
+        DE_TRACE("VST2 plugin CanProgramChunks = ",getFlags(effFlagsProgramChunks))
 
         if (bHasEditor)
         {
             m_editor = new VST2_Editor(m_vst, nullptr );
         }
-/*
-        setBypassed( m_pluginInfo.m_isBypassed );
 
-        //DE_TRACE("VST pluginInfo = ",de_mbstr(m_pluginInfo.toWString()))
-        update();
+        const int currentProgram = dispatcher(effGetProgram);
+        std::vector< IPlugin::ProgramInfo > programs;
+        programs.reserve(m_numPrograms);
+        for (int i = 0; i < m_numPrograms; ++i)
+        {
+            IPlugin::ProgramInfo pi;
+            pi.id = i;
 
-        setBypassed( isBypassed() );
-*/
+            dispatcher(effSetProgram, 0, i);
+
+            char name[kVstMaxProgNameLen+GUARD] = {0};
+            dispatcher(effGetProgramName, i, 0, name, 0);
+            pi.name = name;
+
+            programs.emplace_back( std::move( pi ) );
+        }
+
+        dispatcher(effSetProgram, 0, currentProgram);
+
+        DE_DEBUG("Program.Count = ",programs.size())
+        for (auto & pi : programs)
+        {
+            DE_DEBUG("Program",pi.str())
+        }
+
+        std::vector< IPlugin::ParamInfo > params;
+        params.reserve(m_numParams);
+        for (int i = 0; i < m_numParams; ++i)
+        {
+            IPlugin::ParamInfo pi;
+            pi.id = i;
+            pi.nowValue = m_vst->getParameter(m_vst, i);
+
+            // GUARD already solved a "out of bounds" bug in a plugin
+            // where it overwrote pi.id, so totally worth it!!!
+            char name[kVstMaxParamStrLen+GUARD] = {0};
+            dispatcher(effGetParamName, i, 0, name, 0);
+            pi.name = name;
+
+            char label[kVstMaxParamStrLen+GUARD] = {0};
+            dispatcher(effGetParamLabel, i, 0, label, 0);
+            pi.unit = label;
+
+            char display[kVstMaxParamStrLen+GUARD] = {0};
+            dispatcher(effGetParamDisplay, i, 0, display, 0);
+            pi.disp = display;
+
+            params.emplace_back( std::move( pi ) );
+        }
+
+        DE_DEBUG("Param.Count = ",params.size())
+        for (auto & pi : params)
+        {
+            DE_DEBUG("Param",pi.str())
+        }
+
         m_bIsBypassed = false;
         m_bIsPluginOpen = true;
     }
@@ -352,36 +400,6 @@ struct VST2_Plugin_Impl
     PluginEditorWindow* getEditor()
     {
         return m_editor;
-    }
-
-    // void setBypassed( bool bypassed ) override;
-    // void sendMidi( uint8_t byte1, uint8_t data1, uint8_t data2 ) override;
-    // void setInputSignal( int i, de::audio::IDspChainElement* input ) override;
-    // void clearInputSignals() override;
-    // void aboutToStart( uint32_t dstFrames, uint32_t dstChannels, uint32_t dstRate ) override;
-    // u64 readSamples( f64 pts, f32* dst, u32 dstFrames, u32 dstChannels, uint32_t dstRate ) override;
-    // // =====================================
-    // // interface: IPlugin
-    // // =====================================
-    // bool openPlugin( de::audio::PluginInfo const & pluginInfo );
-    // void closePlugin();
-    // void showEditor() { setEditorVisible( true ); }
-    // void hideEditor() { setEditorVisible( false ); }
-    // void moveEditor( int x, int y );
-    // void setEditorVisible( bool visible );
-    // void setExtraMoreVisible( bool visible );
-
-    // =====================================
-    // interface: IVst2Plugin|AEffectx
-    // =====================================
-    void setInputSignal( IDspChainElement* input, int i = 0 )
-    {
-        m_inputSignal = input;
-    }
-
-    void clearInputSignals()
-    {
-        m_inputSignal = nullptr;
     }
 
     void dsp_init(u64 frames, u32 channels, u32 sampleRate)
@@ -400,6 +418,7 @@ struct VST2_Plugin_Impl
 
         if ( m_vst && m_bNeedSetup )
         {
+            DE_WARN("frames(",frames,", channels(",channels,"), sampleRate(",sampleRate,")")
             m_bNeedSetup = false;
 
             dispatcher(effStopProcess);
@@ -407,7 +426,6 @@ struct VST2_Plugin_Impl
 
             // Prepare input buffer + input channel heads ( planar = non-interleaved )
             // Prepare output buffer + output channel heads ( planar = non-interleaved )
-            m_sampleBuffers.setup(m_numInputs,m_numOutputs, m_blockSize);
 
             // Setup VST plugin
             dispatcher(effSetSampleRate, 0, 0, 0, float( m_sampleRate ) );
@@ -794,14 +812,14 @@ IDspChainElement* VST2_Plugin::dsp_getInputSignal(int i)
     return _d->m_inputSignal;
 }
 
-void VST2_Plugin::dsp_setInputSignal(IDspChainElement* inSignal, int i)
+void VST2_Plugin::dsp_setInputSignal(IDspChainElement* pSignal, int i)
 {
-    _d->setInputSignal(inSignal, i);
+    _d->m_inputSignal = pSignal;
 }
 
 void VST2_Plugin::dsp_clearInputSignals()
 {
-    _d->clearInputSignals();
+    _d->m_inputSignal = nullptr;
 }
 
 bool VST2_Plugin::isBypassed() const
@@ -830,11 +848,11 @@ void VST2_Plugin::setPluginId( u32 pluginId ) { _d->m_pluginId = pluginId; }
 
 // ===================================================
 
-std::string VST2_Plugin::uri() const { return _d->m_uri; }
+std::string VST2_Plugin::getUri() const { return _d->m_uri; }
 
-std::string VST2_Plugin::name() const { return dbFileBase(_d->m_uri); }
+std::string VST2_Plugin::getName() const { return _d->m_pluginName; }
 
-std::string VST2_Plugin::vendor() const { return dbFileBase(_d->m_uri); }
+std::string VST2_Plugin::getVendor() const { return _d->m_pluginVendor; }
 
 // ===================================================
 
@@ -873,6 +891,56 @@ void VST2_Plugin::onMidiMessage(f64 pts, const midi::MidiMessage& msg)
 void VST2_Plugin::onShortMidiMessage(f64 pts, const midi::ShortMidiMessage& msg)
 {
     _d->onShortMidiMessage(pts, msg);
+}
+
+// ===================================================
+
+u32 VST2_Plugin::getProgramCount() const
+{
+    return _d->m_numPrograms;
+}
+
+int VST2_Plugin::getProgram() const
+{
+    return _d->dispatcher(effGetProgram);
+}
+
+void VST2_Plugin::setProgram( int i )
+{
+    if (i < 0 || i >= _d->m_numPrograms)
+    {
+        DE_ERROR("Invalid index ",i," of ",_d->m_numPrograms)
+        return;
+    }
+    _d->dispatcher(effSetProgram, 0, i);
+}
+
+// ===================================================
+
+u32 VST2_Plugin::getParameterCount() const
+{
+    return _d->m_numParams;
+}
+
+f32 VST2_Plugin::getParameter(int i) const
+{
+    if (!_d->m_vst)
+    {
+        DE_ERROR("No vst")
+        return 0.0f;
+    }
+    return _d->m_vst->getParameter(_d->m_vst, i);
+}
+
+void VST2_Plugin::setParameter(int i, f32 value)
+{
+    if (!_d->m_vst)
+    {
+        DE_ERROR("No vst")
+        return;
+    }
+
+    _d->m_vst->setParameter(_d->m_vst, i, value);
 }
 
 // 🎯 1. Get plugin name
@@ -971,269 +1039,8 @@ void VST2_Plugin::onShortMidiMessage(f64 pts, const midi::ShortMidiMessage& msg)
 // Parameter label	effGetParamLabel
 // Parameter display	effGetParamDisplay
 
-//uint64_t
-//VST2_Plugin::getSamplePos() const { return m_framePos; }
-//uint32_t
-//VST2_Plugin::getSampleRate() const { return m_sampleRate; }
-//uint64_t
-//VST2_Plugin::getBlockSize() const { return m_bufferFrames; }
-//uint64_t
-//VST2_Plugin::getChannelCount() const { return m_channelCount; }
-//bool
-//VST2_Plugin::isSynth() const { return getFlags(effFlagsIsSynth); }
-//
-// This function is called from refillCallback() which is running in audio thread.
-//float**
-//VST2_Plugin::processAudio( uint64_t frameCount, uint64_t & outputFrameCount )
-//{
-//   //frameCount = std::min( uint64_t(frameCount), uint64_t(m_outBuffer.size()) / m_outputChannels );
-//   m_vst->processReplacing( m_vst, m_inBufferHeads.data(), m_outBufferHeads.data(), frameCount );
-//   m_framePos += frameCount;
-//   outputFrameCount = frameCount;
-//   return m_outBufferHeads.data();
-//}
-
-
 
 } // end namespace audio.
 } // end namespace de.
 
 #endif // BENNI_USE_VST2
-
-/*
- *
-
-
-#include "VstEditorHost.h"
-#include <QWindow>
-#include <QVBoxLayout>
-#include <windows.h>
-
-VstEditorHost::VstEditorHost(AEffect* effect, QWidget* parent)
-    : QWidget(parent), effect(effect)
-{
-    setAttribute(Qt::WA_NativeWindow);
-    setAttribute(Qt::WA_PaintOnScreen);
-    setAttribute(Qt::WA_NoSystemBackground);
-
-    createHostWindow();
-    openEditor();
-}
-
-VstEditorHost::~VstEditorHost()
-{
-    closeEditor();
-    if (hostHwnd)
-        DestroyWindow(hostHwnd);
-}
-
-void VstEditorHost::createHostWindow()
-{
-    HWND parentHwnd = (HWND)winId();
-
-    hostHwnd = CreateWindowEx(
-        0,
-        L"STATIC",
-        L"",
-        WS_CHILD | WS_VISIBLE,
-        0, 0, width(), height(),
-        parentHwnd,
-        nullptr,
-        GetModuleHandle(nullptr),
-        nullptr
-    );
-}
-
-void VstEditorHost::openEditor()
-{
-    if (!effect) return;
-
-    effect->dispatcher(effect, effEditOpen, 0, 0, hostHwnd, 0);
-
-    // Query editor size
-    ERect* rect = nullptr;
-    effect->dispatcher(effect, effEditGetRect, 0, 0, &rect, 0);
-
-    if (rect)
-    {
-        int w = rect->right - rect->left;
-        int h = rect->bottom - rect->top;
-        resize(w, h);
-        SetWindowPos(hostHwnd, nullptr, 0, 0, w, h, SWP_NOZORDER);
-    }
-}
-
-void VstEditorHost::closeEditor()
-{
-    if (effect)
-        effect->dispatcher(effect, effEditClose, 0, 0, nullptr, 0);
-}
-
-void VstEditorHost::resizeEvent(QResizeEvent* event)
-{
-    QWidget::resizeEvent(event);
-
-    if (hostHwnd)
-    {
-        SetWindowPos(
-            hostHwnd,
-            nullptr,
-            0, 0,
-            width(), height(),
-            SWP_NOZORDER
-        );
-    }
-}
-
-
-    unsigned threadFunc() {
-        ComInit comInit {};
-        const HANDLE events[2] = { hClose, hRefillEvent };
-        for(bool run = true; run; ) {
-            const auto r = WaitForMultipleObjects(_countof(events), events, FALSE, INFINITE);
-            if(WAIT_OBJECT_0 == r) {    // hClose
-                run = false;
-            } else if(WAIT_OBJECT_0+1 == r) {   // hRefillEvent
-                UINT32 c = 0;
-                audioClient->GetCurrentPadding(&c);
-
-                const auto a = bufferFrameCount - c;
-                float* data = nullptr;
-                audioRenderClient->GetBuffer(a, reinterpret_cast<BYTE**>(&data));
-
-                const auto r = refillFunc(data, a, mixFormat);
-                audioRenderClient->ReleaseBuffer(a, r ? 0 : AUDCLNT_BUFFERFLAGS_SILENT);
-            }
-        }
-        return 0;
-    }
-
-    HANDLE                  hThread { nullptr };
-    IMMDeviceEnumerator*    mmDeviceEnumerator { nullptr };
-    IMMDevice*              mmDevice { nullptr };
-    IAudioClient*           audioClient { nullptr };
-    IAudioRenderClient*     audioRenderClient { nullptr };
-    WAVEFORMATEX*           mixFormat { nullptr };
-    HANDLE                  hRefillEvent { nullptr };
-    HANDLE                  hClose { nullptr };
-    UINT32                  bufferFrameCount { 0 };
-    RefillFunc              refillFunc {};
-};
-
-
-// This function is called from Wasapi::threadFunc() which is running in audio thread.
-bool
-refillCallback(
-      VstPlugin& vstPlugin,
-      float* const data,
-      uint32_t availableFrameCount,
-      const WAVEFORMATEX* const mixFormat)
-{
-    vstPlugin.processEvents();
-
-    const auto nDstChannels = mixFormat->nChannels;
-    const auto nSrcChannels = vstPlugin.getChannelCount();
-    const auto vstSamplesPerBlock = vstPlugin.getBlockSize();
-
-    int ofs = 0;
-    while(availableFrameCount > 0) {
-        size_t outputFrameCount = 0;
-        float** vstOutput = vstPlugin.processAudio(availableFrameCount, outputFrameCount);
-
-        // VST vstOutput[][] format :
-        //  vstOutput[a][b]
-        //      channel = a % vstPlugin.getChannelCount()
-        //      frame   = b + floor(a/2) * vstPlugin.getBlockSize()
-
-        // wasapi data[] format :
-        //  data[x]
-        //      channel = x % mixFormat->nChannels
-        //      frame   = floor(x / mixFormat->nChannels);
-
-        const auto nFrame = outputFrameCount;
-        for(size_t iFrame = 0; iFrame < nFrame; ++iFrame) {
-            for(size_t iChannel = 0; iChannel < nDstChannels; ++iChannel) {
-                const int sChannel = iChannel % nSrcChannels;
-                const int vstOutputPage = (iFrame / vstSamplesPerBlock) * sChannel + sChannel;
-                const int vstOutputIndex = (iFrame % vstSamplesPerBlock);
-                const int wasapiWriteIndex = iFrame * nDstChannels + iChannel;
-                *(data + ofs + wasapiWriteIndex) = vstOutput[vstOutputPage][vstOutputIndex];
-            }
-        }
-
-        availableFrameCount -= nFrame;
-        ofs += nFrame * nDstChannels;
-    }
-    return true;
-}
-
-
-void mainLoop(const std::wstring& dllFilename)
-{
-    VstPlugin vstPlugin { dllFilename.c_str(), GetConsoleWindow() };
-
-    Wasapi wasapi { [&vstPlugin](float* const data, uint32_t availableFrameCount, const WAVEFORMATEX* const mixFormat) {
-        return refillCallback(vstPlugin, data, availableFrameCount, mixFormat);
-    }};
-
-    struct Key {
-        Key(int midiNote) : midiNote { midiNote } {}
-        int     midiNote {};
-        bool    status { false };
-    };
-
-    std::map<int, Key> keyMap {
-               {'2', {61}}, {'3', {63}},              {'5', {66}}, {'6', {68}}, {'7', {70}},
-        {'Q', {60}}, {'W', {62}}, {'E', {64}}, {'R', {65}}, {'T', {67}}, {'Y', {69}}, {'U', {71}}, {'I', {72}},
-
-               {'S', {49}}, {'D', {51}},              {'G', {54}}, {'H', {56}}, {'J', {58}},
-        {'Z', {48}}, {'X', {50}}, {'C', {52}}, {'V', {53}}, {'B', {55}}, {'N', {57}}, {'M', {59}}, {VK_OEM_COMMA, {60}},
-    };
-
-    for(bool run = true; run; WaitMessage()) {
-        MSG msg {};
-        while(BOOL b = PeekMessage(&msg, 0, 0, 0, PM_REMOVE)) {
-            if(b == -1) {
-                run = false;
-                break;
-            }
-            TranslateMessage(&msg);
-            DispatchMessage(&msg);
-        }
-
-        for(auto& e : keyMap) {
-            auto& key = e.second;
-            const auto on = (GetKeyState(e.first) & 0x8000) != 0;
-            if(key.status != on) {
-                key.status = on;
-                vstPlugin.sendMidiNote(0, key.midiNote, on, 100);
-            }
-        }
-    }
-}
-
-
-int main() {
-    volatile ComInit comInit;
-
-    const auto dllFilename = []() -> std::wstring {
-        wchar_t fn[MAX_PATH+1] {};
-        OPENFILENAME ofn { sizeof(ofn) };
-        ofn.lpstrFilter = L"VSTi DLL(*.dll)\0*.dll\0All Files(*.*)\0*.*\0\0";
-        ofn.lpstrFile   = fn;
-        ofn.nMaxFile    = _countof(fn);
-        ofn.lpstrTitle  = L"Select VST DLL";
-        ofn.Flags       = OFN_FILEMUSTEXIST | OFN_ENABLESIZING;
-        GetOpenFileName(&ofn);
-        return fn;
-    } ();
-
-    try {
-        mainLoop(dllFilename);
-    } catch(std::exception &e) {
-        std::cout << "Exception : " << e.what() << std::endl;
-    }
-}
-
-*/
-

@@ -47,11 +47,13 @@ public:
     void setPluginId(u32 pluginId) override;
 
 
-    std::string uri() const override;
+    eType getType() const override { return eT_VST3; }
 
-    std::string name() const override;
+    std::string getUri() const override;
 
-    std::string vendor() const override;
+    std::string getName() const override;
+
+    std::string getVendor() const override;
 
 
     void openPlugin( std::string uri ) override;
@@ -74,6 +76,20 @@ public:
     void onMidiMessage(f64 pts, const midi::MidiMessage& msg) override;
 
     void onShortMidiMessage(f64 pts, const midi::ShortMidiMessage& msg) override;
+
+
+    u32 getProgramCount() const override;
+
+    int getProgram() const override;
+
+    void setProgram( int i ) override;
+
+
+    u32 getParameterCount() const override;
+
+    f32 getParameter(int i) const override;
+
+    void setParameter(int i, f32 value) override;
 
 
     VST3_Plugin_Impl* _d;

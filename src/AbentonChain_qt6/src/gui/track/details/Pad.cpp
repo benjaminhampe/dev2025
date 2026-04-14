@@ -43,6 +43,18 @@ void Pad::applySkin()
     update();
 }
 
+void drawCenterText(QPainter & dc, QRect r, QString msg)
+{
+    // QFontMetrics fm(dc.font());
+
+    // QSize bs = fm.boundingRect(msg).size();
+
+    // int x = r.x() + (r.width() - bs.width()) / 2;
+    // int y = r.y() + (r.height() - bs.height()) / 2;
+
+    dc.drawText(r, Qt::AlignCenter, msg, &r);
+}
+
 void Pad::paintEvent(QPaintEvent* event)
 {
     QPainter dc(this);
@@ -50,15 +62,44 @@ void Pad::paintEvent(QPaintEvent* event)
     dc.setBrush(QBrush(QColor(36,36,36)));
     dc.drawRoundedRect( rect(), m_borderRadius, m_borderRadius);
 
-    const int w = m_rcBody.width();
-    const int h = m_rcBody.height();
-    const int x = m_rcBody.x() + (m_fx * w);
-    const int y = m_rcBody.y() + h - 1 - (m_fy * h);
-    dc.setBrush(Qt::NoBrush);
-    dc.setPen(QPen(QColor(255,185,1), m_circleBorder));
-    dc.drawEllipse(QPoint(x,y),m_circleRadius,m_circleRadius);
+    {
+        const int w = m_rcBody.width();
+        const int h = m_rcBody.height();
+        const int x = m_rcBody.x() + (m_fx * w);
+        const int y = m_rcBody.y() + h - 1 - (m_fy * h);
+        dc.setBrush(Qt::NoBrush);
+        dc.setPen(QPen(QColor(255,185,1), m_circleBorder));
+        dc.drawEllipse(QPoint(x,y),m_circleRadius,m_circleRadius);
+    }
 
-    // dc.drawRect(m_rcBody);
+    {
+        const int w = m_rcBody.width();
+        const int h = m_rcBody.height() / 4;
+        const int x = m_rcBody.x();
+        const int y = m_rcBody.y();
+        dc.setPen(QPen(Qt::white));
+
+        if (m_str0.size() > 0)
+        {
+            QRect r0(x,y,w,h);
+            dc.drawText(r0, Qt::AlignCenter, m_str0, &r0);
+        }
+        if (m_str1.size() > 0)
+        {
+            QRect r1(x,y+h,w,h);
+            dc.drawText(r1, Qt::AlignCenter, m_str1, &r1);
+        }
+        if (m_str2.size() > 0)
+        {
+            QRect r2(x,y+h*2,w,h);
+            dc.drawText(r2, Qt::AlignCenter, m_str2, &r2);
+        }
+        if (m_str3.size() > 0)
+        {
+            QRect r3(x,y+h*3,w,h);
+            dc.drawText(r3, Qt::AlignCenter, m_str3, &r3);
+        }
+    }
 }
 
 void Pad::resizeEvent(QResizeEvent* event)

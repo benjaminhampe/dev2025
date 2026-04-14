@@ -339,7 +339,6 @@ public:
     u32 m_numOutputs;
     u32 m_sampleRate;
     u32 m_blockSize;
-    u32 m_blockSizeMax = 2048;
     u32 m_pluginId;
     ITrack* m_track;
     VST3_Editor* m_editor;
@@ -347,8 +346,10 @@ public:
 
     std::atomic< u64 > m_framePos;
 
-    std::string m_uri;                 // VST2_Plugin file name
+    std::string m_uri;
     std::string m_directoryMultiByte;
+    std::string m_pluginName;
+    std::string m_pluginVendor;
     PluginClock m_midiClock;
 
     VST3_SampleBuffers m_sampleBuffers;
@@ -426,9 +427,8 @@ public:
         , m_bIsSynth{ false }
         , m_numInputs{ 0 }
         , m_numOutputs{ 0 }
-        , m_sampleRate{ 48000 }
-        , m_blockSize{ 480 }
-        , m_blockSizeMax{ 2048 }
+        , m_sampleRate{ 0 }
+        , m_blockSize{ 0 }
         , m_pluginId{ 0 }
         , m_track{ nullptr }
         , m_editor{ nullptr }
@@ -661,10 +661,24 @@ public:
             return;
         }
 
+        m_uri = uri;
+        m_pluginName = dbFileBase(uri);
+        m_pluginVendor = "";
+
         // 0.1.
         const PluginFactory& factory = m_module->getFactory();
 
-        // 0.2
+        // 0.2 Read factory info
+        VST3::Hosting::FactoryInfo factoryInfo = factory.info();
+        m_pluginVendor = factoryInfo.vendor();
+
+        DE_TRACE("Plugin.Name: ",m_pluginName)
+        DE_TRACE("Plugin.Vendor: ",m_pluginVendor)
+        DE_TRACE("Plugin.URL: ",factoryInfo.url())
+        DE_TRACE("Plugin.Email: ",factoryInfo.email())
+        DE_TRACE("Plugin.Flags: ",factoryInfo.flags())
+
+        // 0.3 Read class IDs
         Steinberg::TUID processorCID {};
         Steinberg::TUID controllerCID {};
         bool foundProcessor  = false;
@@ -676,20 +690,29 @@ public:
         size_t i = 0;
         for (ClassInfo const& ci : factory.classInfos())
         {
+            DE_TRACE("ClassInfo[",i,"].ID = ",ci.ID().toString())
+            DE_TRACE("ClassInfo[",i,"].Name = ",ci.name())
             DE_DEBUG("ClassInfo[",i,"].Category = ",ci.category())
+            DE_TRACE("ClassInfo[",i,"].SubCategories = ",ci.subCategoriesString())
+            DE_TRACE("ClassInfo[",i,"].ClassFlags = ",dbHex(ci.classFlags()))
+            DE_TRACE("ClassInfo[",i,"].Cardinality = ",ci.cardinality())
+            DE_TRACE("ClassInfo[",i,"].sdkVersion = ",ci.sdkVersion())
+            DE_TRACE("ClassInfo[",i,"].Vendor = ",ci.vendor())
 
             if (ci.category() == kVstAudioEffectClass)
             {
-                DE_TRACE("Found[",i,"] kVstAudioEffectClass")
+                DE_TRACE("ClassInfo[",i,"] Found kVstAudioEffectClass")
                 Steinberg::copyTUID(processorCID, ci.ID().data());
                 foundProcessor = true;
             }
             else if (ci.category() == kVstComponentControllerClass)
             {
-                DE_TRACE("Found[",i,"] kVstComponentControllerClass")
+                DE_TRACE("ClassInfo[",i,"] Found kVstComponentControllerClass")
                 Steinberg::copyTUID(controllerCID, ci.ID().data());
                 foundController = true;
             }
+
+            i++;
         }
 
         if (!foundProcessor)
@@ -848,12 +871,11 @@ public:
         }
 
 
-        m_sampleBuffers.setup(m_component, m_blockSizeMax);
+        m_sampleBuffers.setup(m_component, m_blockSize);
         setAudioIn( true );
         setAudioOut( true );
         setEventIn( true );
         setEventOut( false );
-
 
         // 5.C.
         Steinberg::Vst::ProcessSetup setup {};
@@ -924,19 +946,12 @@ public:
 
         bool bNeedUpdate = false;
         bool bNewBufferSize = false;
-        // bool bNewSampleRate = false;
 
         if ( m_blockSize != frames )
         {
             m_blockSize = frames;
-            //bNeedUpdate = true;
-
-            if (m_blockSizeMax < frames)
-            {
-                m_blockSizeMax = frames;
-                bNewBufferSize = true;
-                bNeedUpdate = true;
-            }
+            bNewBufferSize = true;
+            bNeedUpdate = true;
         }
 
         if ( m_sampleRate != sampleRate )
@@ -948,7 +963,7 @@ public:
 
         if ( bNeedUpdate )
         {
-            DE_WARN("====== dsp_init(",frames,",",sampleRate,")")
+            DE_WARN("frames(",frames,"), channels(",channels,"), sampleRate(",sampleRate,")")
 
             auto e = m_component->setActive(false);
             if (e != Steinberg::kResultOk)
@@ -965,7 +980,7 @@ public:
 
             if (bNewBufferSize)
             {
-                m_sampleBuffers.setup(m_component,m_blockSizeMax);
+                m_sampleBuffers.setup(m_component,m_blockSize);
                 setAudioIn( true );
                 setAudioOut( true );
                 setEventIn( true );
@@ -1358,11 +1373,11 @@ void VST3_Plugin::setPluginId( u32 pluginId ) { _d->m_pluginId = pluginId; }
 
 // ===================================================
 
-std::string VST3_Plugin::uri() const { return _d->m_uri; }
+std::string VST3_Plugin::getUri() const { return _d->m_uri; }
 
-std::string VST3_Plugin::name() const { return dbFileBase(_d->m_uri); }
+std::string VST3_Plugin::getName() const { return _d->m_pluginName; }
 
-std::string VST3_Plugin::vendor() const { return dbFileBase(_d->m_uri); }
+std::string VST3_Plugin::getVendor() const { return _d->m_pluginVendor; }
 
 // ===================================================
 
@@ -1405,7 +1420,39 @@ void VST3_Plugin::onShortMidiMessage(f64 pts, const midi::ShortMidiMessage& msg)
     _d->onShortMidiMessage(pts, msg);
 }
 
+// ===================================================
 
+u32 VST3_Plugin::getProgramCount() const
+{
+    return 0;
+}
+
+int VST3_Plugin::getProgram() const
+{
+    return 0;
+}
+
+void VST3_Plugin::setProgram( int i )
+{
+
+}
+
+// ===================================================
+
+u32 VST3_Plugin::getParameterCount() const
+{
+    return 0;
+}
+
+f32 VST3_Plugin::getParameter(int i) const
+{
+    return 0.0f;
+}
+
+void VST3_Plugin::setParameter(int i, f32 value)
+{
+
+}
 
 } // end namespace audio.
 } // end namespace de.

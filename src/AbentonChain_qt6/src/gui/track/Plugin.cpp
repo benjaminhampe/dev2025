@@ -81,7 +81,7 @@ void Plugin::setPlugin(de::audio::IPlugin* plugin)
                        nullptr );
         }
 
-        DE_TRACE("Disconnected plugin ", m_plugin->name())
+        DE_TRACE("Disconnected plugin ", m_plugin->getName())
     }
 
     // Transition:
@@ -90,7 +90,7 @@ void Plugin::setPlugin(de::audio::IPlugin* plugin)
     // Connect new:
     if (m_plugin)
     {
-        m_title = QString::fromStdString(m_plugin->name());
+        m_title = QString::fromStdString(m_plugin->getName());
         m_btnEnable->setChecked(true);
         m_btnExpand->setChecked(false);
         m_btnWrench->setChecked(true);
@@ -109,6 +109,16 @@ void Plugin::setPlugin(de::audio::IPlugin* plugin)
                              SLOT(on_editorWindowClosed()),
                              Qt::QueuedConnection );
         }
+
+        // VST2 <Effect|Synth>
+        auto s0 = QString("%1 %2")
+            .arg(QString::fromStdString(m_plugin->getTypeStr()))
+            .arg(m_plugin->isSynth() ? "Synth" : "Effect");
+        auto pad = m_body->getPad();
+        pad->setText(0, s0);
+        pad->setText(1, "");
+        pad->setText(2, QString::fromStdString(m_plugin->getName()));
+        pad->setText(3, QString::fromStdString(m_plugin->getVendor()));
     }
     else
     {
@@ -118,6 +128,12 @@ void Plugin::setPlugin(de::audio::IPlugin* plugin)
         m_btnWrench->setChecked(false);
         m_btnUpdate->setChecked(false);
         m_btnEditor->setChecked(false);
+
+        auto pad = m_body->getPad();
+        pad->setText(0, "");
+        pad->setText(1, "");
+        pad->setText(2, "");
+        pad->setText(3, "");
     }
 }
 

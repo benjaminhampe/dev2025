@@ -220,8 +220,10 @@ struct CLAP_Plugin_Impl
 
     std::atomic< u64 > m_framePos = 0;
 
-    std::string m_uri;                 // CLAP_Plugin file name
+    std::string m_uri;
     std::string m_directoryMultiByte;
+    std::string m_pluginName;
+    std::string m_pluginVendor;
 
     SymbolLoader m_symLoader;
     PluginClock m_midiClock;
@@ -348,6 +350,8 @@ struct CLAP_Plugin_Impl
 
         m_uri = uri;
         m_directoryMultiByte = dbFileDir(uri);
+        m_pluginName = dbFileBase(uri);
+        m_pluginVendor = "";
 
         DE_TRACE("uri = ",m_uri)
         DE_TRACE("dir = ",m_directoryMultiByte)
@@ -867,11 +871,11 @@ void CLAP_Plugin::setPluginId( u32 pluginId ) { _d->m_pluginId = pluginId; }
 
 // ===================================================
 
-std::string CLAP_Plugin::uri() const { return _d->m_uri; }
+std::string CLAP_Plugin::getUri() const { return _d->m_uri; }
 
-std::string CLAP_Plugin::name() const { return dbFileBase(_d->m_uri); }
+std::string CLAP_Plugin::getName() const { return _d->m_pluginName; }
 
-std::string CLAP_Plugin::vendor() const { return dbFileBase(_d->m_uri); }
+std::string CLAP_Plugin::getVendor() const { return _d->m_pluginVendor; }
 
 // ===================================================
 
@@ -910,6 +914,40 @@ void CLAP_Plugin::onMidiMessage(f64 pts, const midi::MidiMessage& msg)
 void CLAP_Plugin::onShortMidiMessage(f64 pts, const midi::ShortMidiMessage& msg)
 {
     _d->onShortMidiMessage(pts, msg);
+}
+
+// ===================================================
+
+u32 CLAP_Plugin::getProgramCount() const
+{
+    return 0;
+}
+
+int CLAP_Plugin::getProgram() const
+{
+    return 0;
+}
+
+void CLAP_Plugin::setProgram( int i )
+{
+
+}
+
+// ===================================================
+
+u32 CLAP_Plugin::getParameterCount() const
+{
+    return 0;
+}
+
+f32 CLAP_Plugin::getParameter(int i) const
+{
+    return 0.0f;
+}
+
+void CLAP_Plugin::setParameter(int i, f32 value)
+{
+
 }
 
 } // end namespace audio.

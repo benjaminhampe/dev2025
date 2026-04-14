@@ -532,7 +532,7 @@ void Track::saveState(const QString &path)
             continue;
         }
 
-        arr.append(QString::fromStdString(plugin->uri()));
+        arr.append(QString::fromStdString(plugin->getUri()));
     }
 
     QFile f(path);

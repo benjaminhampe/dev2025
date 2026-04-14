@@ -227,7 +227,7 @@ public:
             auto plugin = dynamic_cast<IPlugin*>(p);
             if (plugin)
             {
-                name = plugin->name();
+                name = plugin->getName();
                 if (plugin->isSynth()) name += " (Synth)";
             }
             else

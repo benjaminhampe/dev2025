@@ -13,6 +13,18 @@ public:
 
     void applySkin();
 
+    void setText(int i, QString msg)
+    {
+        switch (i)
+        {
+            case 0: m_str0 = msg; break;
+            case 1: m_str1 = msg; break;
+            case 2: m_str2 = msg; break;
+            case 3: m_str3 = msg; break;
+            default: break;
+        }
+    }
+
 protected slots:
     void onToggled( bool checked );
 
@@ -43,4 +55,9 @@ private:
     bool m_bIsDragging = false;
 
     QRect m_rcBody;
+
+    QString m_str0 = "VST3 Effect"; // VST3 <Effect|Synth>
+    QString m_str1 = "1.0"; // Version
+    QString m_str2 = "Name"; // Name
+    QString m_str3 = "Vendor"; // Vendor
 };
