@@ -13,6 +13,58 @@
 namespace de {
 namespace audio {
 
+constexpr u64 GUARD = 256;
+
+/*
+clap_process_status st = plugin->process(plugin, &p);
+
+switch (st) {
+    case CLAP_PROCESS_CONTINUE:
+        // keep processing normally
+        break;
+
+    case CLAP_PROCESS_CONTINUE_IF_NOT_QUIET:
+        if (pluginIsSilent(outBuffers)) {
+            // optional optimization: skip next block
+            skipNextBlock = true;
+        }
+        break;
+
+    case CLAP_PROCESS_SLEEP:
+        // plugin wants to sleep
+        processingEnabled = false;
+        break;
+
+    case CLAP_PROCESS_ERROR:
+        // plugin is broken
+        processingEnabled = false;
+        plugin->stop_processing(plugin);
+        // optionally deactivate or unload
+        break;
+}
+*/
+
+std::string getStatusStr( clap_process_status e )
+{
+    switch (e)
+    {
+    // keep processing normally
+    case CLAP_PROCESS_CONTINUE:
+        return "CONTINUE";
+    // optional optimization: skip next block
+    case CLAP_PROCESS_CONTINUE_IF_NOT_QUIET:
+        return "CONTINUE_IF_NOT_QUIET";
+    // plugin wants to sleep
+    case CLAP_PROCESS_SLEEP:
+        return "SLEEP";
+    // plugin is broken
+    case CLAP_PROCESS_ERROR:
+        return "BROKEN";
+    default:
+        return "";
+    }
+}
+
 struct CLAP_OutputStream
 {
     clap_ostream_t stream;
@@ -29,22 +81,220 @@ struct CLAP_OutputStream
 
 };
 
-// u32 dumpSampleRate(const clap_plugin* m_plugin)
-// {
-//     auto cfg = (const clap_plugin_audio_ports_config_t*)
-//         m_plugin->get_extension(m_plugin, CLAP_EXT_AUDIO_PORTS_CONFIG);
+/*
+class CLAP_EventPool
+{
+public:
+    static constexpr int MAX_EVENTS = 2048;
+    static constexpr int EVENT_SIZE = 256;
+private:
+    void* m_pool[MAX_EVENTS];
+    std::atomic<int> m_index;
+public:
+    CLAP_EventPool()
+    {
+        for (int i = 0; i < MAX_EVENTS; ++i)
+        {
+            m_pool[i] = _aligned_malloc(64, EVENT_SIZE);
+        }
+        reset();
+    }
 
-//     if (cfg) {
-//         uint32_t count = cfg->count(plugin);
-//         for (uint32_t i = 0; i < count; i++) {
-//             clap_audio_ports_config_t info;
-//             if (cfg->get(plugin, i, &info)) {
-//                 double sample_rate = info.sample_rate;
-//                 uint32_t block_size = info.max_block_size;
-//             }
-//         }
-//     }
-// }
+    ~CLAP_EventPool()
+    {
+        for (int i = 0; i < MAX_EVENTS; ++i)
+        {
+            _aligned_free(m_pool[i]);
+        }
+    }
+
+    void reset()
+    {
+        m_index.store(0, std::memory_order_relaxed);
+    }
+
+    template<typename T>
+    T* alloc()
+    {
+        int i = m_index.fetch_add(1, std::memory_order_relaxed);
+        return (i < MAX_EVENTS) ?
+            reinterpret_cast<T*>(m_pool[i]) : nullptr;
+    }
+};
+
+class CLAP_EventBus
+{
+private:
+    CLAP_EventPool& m_pool;
+
+    std::vector<clap_event_header_t*> m_pendingEvents;
+    std::vector<clap_event_header_t*> m_inputEvents;
+    std::mutex m_mutex;
+
+    clap_input_events_t inEvents{};
+
+    // --- STATIC CALLBACKS REQUIRED BY CLAP ---
+
+    static uint32_t
+    sizeCallback(const clap_input_events_t* self)
+    {
+        auto q = static_cast<const CLAP_EventBus*>(self->ctx);
+        return q->m_inputEvents.size();
+    }
+
+    static const clap_event_header_t*
+    getCallback( const clap_input_events_t* self, uint32_t index)
+    {
+        auto q = static_cast<const CLAP_EventBus*>(self->ctx);
+        return q->m_inputEvents[index];
+    }
+
+public:
+    CLAP_EventBus(CLAP_EventPool& pool)
+        : m_pool(pool)
+    {
+        m_inputEvents.reserve(1024);
+
+        inEvents.ctx  = this;
+        inEvents.size = &CLAP_EventBus::sizeCallback;
+        inEvents.get  = &CLAP_EventBus::getCallback;
+    }
+
+    void sendShortMidi(u32 deltaFrames, uint8_t b0, uint8_t b1, uint8_t b2, uint8_t b3)
+    {
+        uint8_t status = b0 & 0xF0;
+        uint8_t channel = b0 & 0x0F;
+
+        // --- NOTE ON ---
+        if (status == 0x90 && b2 > 0) {
+            auto* ev = m_pool.alloc<clap_event_note_t>();
+            if (!ev) return;
+
+            ev->header.size     = sizeof(clap_event_note_t);
+            ev->header.time     = deltaFrames;
+            ev->header.space_id = CLAP_CORE_EVENT_SPACE_ID;
+            ev->header.type     = CLAP_EVENT_NOTE_ON;
+            ev->header.flags    = 0;
+
+            ev->note_id    = -1;      // let plugin assign voice
+            ev->port_index = 0;
+            ev->channel    = channel;
+            ev->key        = b1;
+            ev->velocity   = b2 / 127.0f;
+
+            std::lock_guard<std::mutex> lock(mutex);
+            pendingEvents.push_back(&ev->header);
+            return;
+        }
+
+        // --- NOTE OFF (either 0x80 or 0x90 with velocity 0) ---
+        if (status == 0x80 || (status == 0x90 && b2 == 0)) {
+            auto* ev = pool.alloc<clap_event_note_t>();
+            if (!ev) return;
+
+            ev->header.size     = sizeof(clap_event_note_t);
+            ev->header.time     = deltaFrames;
+            ev->header.space_id = CLAP_CORE_EVENT_SPACE_ID;
+            ev->header.type     = CLAP_EVENT_NOTE_OFF;
+            ev->header.flags    = 0;
+
+            ev->note_id    = -1;
+            ev->port_index = 0;
+            ev->channel    = channel;
+            ev->key        = b1;
+            ev->velocity   = 0.0f;
+
+            std::lock_guard<std::mutex> lock(mutex);
+            pendingEvents.push_back(&ev->header);
+            return;
+        }
+
+        // --- OTHER MIDI (CC, pitchbend, etc.) ---
+        auto* ev = pool.alloc<clap_event_midi_t>();
+        if (!ev) return;
+
+        ev->header.size     = sizeof(clap_event_midi_t);
+        ev->header.time     = deltaFrames;
+        ev->header.space_id = CLAP_CORE_EVENT_SPACE_ID;
+        ev->header.type     = CLAP_EVENT_MIDI;
+        ev->header.flags    = 0;
+
+        ev->port_index = 0;
+        ev->data[0] = b0;
+        ev->data[1] = b1;
+        ev->data[2] = b2;
+        ev->data[3] = b3;
+
+        std::lock_guard<std::mutex> lock(mutex);
+        pendingEvents.push_back(&ev->header);
+    }
+
+    // Called from GUI/MIDI thread
+    void sendShortMidi(u32 deltaFrames, uint8_t b0, uint8_t b1, uint8_t b2, uint8_t b3)
+    {
+        auto* ev = pool.alloc<clap_event_midi_t>();
+        if (!ev)
+            return;
+
+        ev->header.size     = sizeof(clap_event_midi_t);
+        ev->header.time     = deltaFrames;
+        ev->header.space_id = CLAP_CORE_EVENT_SPACE_ID;
+        ev->header.type     = CLAP_EVENT_MIDI;
+        ev->header.flags    = 0;
+
+        ev->port_index = 0;
+        ev->data[0] = b0;
+        ev->data[1] = b1;
+        ev->data[2] = b2;
+        ev->data[3] = b3;
+
+        std::lock_guard<std::mutex> lock(mutex);
+        pendingEvents.push_back(&ev->header);
+    }
+
+    // Called from audio thread
+    void beginBlock() {
+        std::lock_guard<std::mutex> lock(mutex);
+        inputEvents.clear();
+        inputEvents.insert(inputEvents.end(),
+                           pendingEvents.begin(),
+                           pendingEvents.end());
+        pendingEvents.clear();
+    }
+
+    void endBlock()
+    {
+        std::lock_guard<std::mutex> lock(mutex);
+        pool.reset();
+    }
+
+    const clap_input_events_t* in() const { return &inEvents; }
+
+};
+*/
+
+u32 dumpPresets(const clap_plugin* m_plugin)
+{
+    auto presetLoad = (const clap_plugin_preset_load_t*)
+        m_plugin->get_extension(m_plugin, CLAP_EXT_PRESET_LOAD);
+
+    // presetLoad->from_location(m_plugin, "/path/to/preset.clap-preset");
+
+    // auto state = (const clap_plugin_state_t*)
+    //     m_plugin->get_extension(m_plugin, CLAP_EXT_STATE);
+
+    // state->save(m_plugin, stream);
+    // state->load(m_plugin, stream);
+
+    // auto presets = //(const clap_plugin_factory_presets_t*)
+    //     m_plugin->get_extension(m_plugin, CLAP_EXT_FACTORY_PRESETS);
+
+    // auto* presetDiscovery = (const clap_plugin_preset_discovery_t*)
+    //     m_plugin->get_extension(m_plugin, CLAP_EXT_PRESET_DISCOVERY);
+
+    return 0;
+}
+
 
 u32 dumpInputs(const clap_plugin* m_plugin)
 {
@@ -65,32 +315,13 @@ u32 dumpInputs(const clap_plugin* m_plugin)
         clap_audio_port_info_t info;
         if (audioPorts->get(m_plugin, i, 1, &info))
         {
-            DE_WARN("Input[",i,"].ID = ",info.id)
-            DE_WARN("Input[",i,"].Name = ",info.name)
-            DE_WARN("Input[",i,"].Channels = ", info.channel_count)
-            // ---
-            // This port is the main audio input or output.
-            // There can be only one main input and main output.
-            // Main port must be at index 0.
-            // CLAP_AUDIO_PORT_IS_MAIN = 1 << 0,
-            // ---
-            // This port can be used with 64 bits audio
-            // CLAP_AUDIO_PORT_SUPPORTS_64BITS = 1 << 1,
-            // ---
-            // 64 bits audio is preferred with this port
-            // CLAP_AUDIO_PORT_PREFERS_64BITS = 1 << 2,
-            // ---
-            // This port must be used with the same sample size as all the other ports which have this flag.
-            // In other words if all ports have this flag then the plugin may either be used entirely with
-            // 64 bits audio or 32 bits audio, but it can't be mixed.
-            // CLAP_AUDIO_PORT_REQUIRES_COMMON_SAMPLE_SIZE = 1 << 3,
-            DE_WARN("Input[",i,"].Flags = ",dbHex(info.flags))
-            // CLAP_PORT_MONO
-            // CLAP_PORT_STEREO
-            // CLAP_PORT_SURROUND (defined in the surround extension)
-            // CLAP_PORT_AMBISONIC (defined in the ambisonic extension)
-            DE_WARN("Input[",i,"].Type = ", info.port_type ? info.port_type : "unknown");
-            DE_WARN("Input[",i,"].InPlacePairID = ", info.in_place_pair)
+            DE_TRACE("[",i,"] "
+                "ID(",dbHex(info.id), "), "
+                "Name(",info.name, "), "
+                "Ch(", info.channel_count, "), "
+                "Flags(",dbHex(info.flags), "), "
+                "Type(", (info.port_type ? info.port_type : "unknown"), "), "
+                "PairID(",dbHex(info.in_place_pair), ")")
         }
     }
     return n;
@@ -115,32 +346,13 @@ u32 dumpOutputs(const clap_plugin* m_plugin)
         clap_audio_port_info_t info;
         if (audioPorts->get(m_plugin, i, 0, &info))
         {
-            DE_WARN("Output[",i,"].ID = ",info.id)
-            DE_WARN("Output[",i,"].Name = ",info.name)
-            DE_WARN("Output[",i,"].Channels = ", info.channel_count)
-            // ---
-            // This port is the main audio input or output.
-            // There can be only one main input and main output.
-            // Main port must be at index 0.
-            // CLAP_AUDIO_PORT_IS_MAIN = 1 << 0,
-            // ---
-            // This port can be used with 64 bits audio
-            // CLAP_AUDIO_PORT_SUPPORTS_64BITS = 1 << 1,
-            // ---
-            // 64 bits audio is preferred with this port
-            // CLAP_AUDIO_PORT_PREFERS_64BITS = 1 << 2,
-            // ---
-            // This port must be used with the same sample size as all the other ports which have this flag.
-            // In other words if all ports have this flag then the plugin may either be used entirely with
-            // 64 bits audio or 32 bits audio, but it can't be mixed.
-            // CLAP_AUDIO_PORT_REQUIRES_COMMON_SAMPLE_SIZE = 1 << 3,
-            DE_WARN("Output[",i,"].Flags = ",dbHex(info.flags))
-            // CLAP_PORT_MONO
-            // CLAP_PORT_STEREO
-            // CLAP_PORT_SURROUND (defined in the surround extension)
-            // CLAP_PORT_AMBISONIC (defined in the ambisonic extension)
-            DE_WARN("Output[",i,"].Type = ", info.port_type ? info.port_type : "unknown");
-            DE_WARN("Output[",i,"].InPlacePairID = ", info.in_place_pair)
+            DE_TRACE("[",i,"] "
+                "ID(",dbHex(info.id), "), "
+                "Name(",info.name, "), "
+                "Ch(", info.channel_count, "), "
+                "Flags(",dbHex(info.flags), "), "
+                "Type(", (info.port_type ? info.port_type : "unknown"), "), "
+                "PairID(",dbHex(info.in_place_pair), ")")
         }
     }
     return n;
@@ -165,60 +377,358 @@ u32 dumpParams(const clap_plugin* m_plugin)
         clap_param_info_t info;
         if (!params->get_info(m_plugin, i, &info))
         {
-            DE_ERROR("Param[",i,"] NOT_EXIST")
+            DE_ERROR("[",i,"] NOT_EXIST")
             continue;
         }
-
-        DE_TRACE("Param[",i,"].ID = ", info.id)
-        DE_TRACE("Param[",i,"].Name = ", info.name)
-        DE_TRACE("Param[",i,"].Module = ", info.module)
-        DE_TRACE("Param[",i,"].Min = ", info.min_value)
-        DE_TRACE("Param[",i,"].Max = ", info.max_value)
-        DE_TRACE("Param[",i,"].Default = ", info.default_value)
-        DE_TRACE("Param[",i,"].Flags = ", dbHex(info.flags))
 
         double value;
         if (!params->get_value(m_plugin, info.id, &value))
         {
-            DE_ERROR("Param[",i,"].Value = NOT_EXIST")
-        }
-        else
-        {
-            DE_TRACE("Param[",i,"].Value = ",value)
+            DE_ERROR("[",i,"].Value = NOT_EXIST")
         }
 
-        DE_TRACE("")
+        DE_TRACE("[",i,"] "
+            "ID(", dbHex(info.id),"), "
+            "Name(",info.name,"), "
+            "Val(", value, "), "
+            "Min(", info.min_value, "), "
+            "Max(", info.max_value, "), "
+            "Def(", info.default_value, "), "
+            "Flags(", dbHex(info.flags), "), "
+            "Module(", info.module, ")")
     }
 
     return n;
 }
 
 //===============================
-struct CLAP_Plugin_Impl
+struct CLAP_AudioBuffers
 //===============================
 {
-    u32 m_pluginId = 0;
-    bool m_bIsPluginOpen = false;
-    bool m_bIsDsoInit = false; // if (true) then call clap->uninit();
-    bool m_bNeedSetup = true;
-    bool m_bIsSynth = false;
-    bool m_bIsBypassed = false;
+    TAlignedVector<float> m_L;
+    TAlignedVector<float> m_R;
 
-    ITrack* m_track = nullptr;
-    PluginEditorWindow* m_editor = nullptr;
-    IDspChainElement* m_inputSignal = nullptr;
+    // Audio bus storage
+    std::vector<clap_audio_buffer_t > m_iBuses;
+    std::vector<clap_audio_buffer_t > m_oBuses;
 
-    int64_t m_steadyTime = 0;
-    u32 m_sampleRate = 0;
-    u32 m_blockSize = 480;
-    u32 m_minBlock = 64;
-    u32 m_maxBlock = 2048;
-    u32 m_numInputs = 2;
-    u32 m_numOutputs = 2;
-    u32 m_numPrograms = 0;
-    u32 m_numParams = 0;
+    // Bus[].Channels[].Buffer
+    std::vector<std::vector<TAlignedVector<float>>> m_iBuffers;
+    std::vector<std::vector<TAlignedVector<float>>> m_oBuffers;
 
-    std::atomic< u64 > m_framePos = 0;
+    // Bus[].Channels*
+    std::vector<std::vector<float*>> m_iHeads;
+    std::vector<std::vector<float*>> m_oHeads;
+
+    // const clap_plugin* m_plugin,
+    void setup(
+        const clap_plugin* m_plugin,
+        const clap_plugin_audio_ports_t* m_ports,
+        u32 blockSize)
+    {
+        if (!m_plugin)
+        {
+            DE_ERROR("No clap_plugin")
+            return;
+        }
+
+        if (!m_ports)
+        {
+            DE_ERROR("No clap_plugin_audio_ports_t")
+            return;
+        }
+
+        DE_WARN("========= SETUP =========== blockSize = ", blockSize)
+
+        m_L.resize(blockSize + GUARD);
+        m_R.resize(blockSize + GUARD);
+
+        const bool bOutput = false;
+        const bool bInput = true;
+        const u32 nPortOut = m_ports->count(m_plugin, bOutput);
+        const u32 nPortIn = m_ports->count(m_plugin, bInput);
+
+        m_iBuses.resize(nPortIn);
+        m_oBuses.resize(nPortOut);
+
+        m_iBuffers.resize(nPortIn);
+        m_oBuffers.resize(nPortOut);
+
+        m_iHeads.resize(nPortIn);
+        m_oHeads.resize(nPortOut);
+
+        // ============
+        // Inputs
+        // ============
+
+        DE_DEBUG("Port.In.Count = ",nPortIn)
+
+        u32 nChI = 0;
+        for (u32 i = 0; i < nPortIn; i++)
+        {
+            clap_audio_port_info_t pi;
+            if (!m_ports->get(m_plugin, i, bInput, &pi))
+            {
+                DE_ERROR("No Input[",i,"]")
+            }
+
+            nChI += pi.channel_count;
+
+            m_iBuffers[i].resize(pi.channel_count);
+            m_iHeads[i].resize(pi.channel_count);
+            for (auto & b : m_iBuffers[i])
+            {
+                b.resize(blockSize + GUARD);
+            }
+            for (u32 k = 0; k < pi.channel_count; k++)
+            {
+                m_iHeads[i][k] = m_iBuffers[i][k].data();
+            }
+
+            clap_audio_buffer_t & bus = m_iBuses[i];
+            bus.data32 = m_iHeads[i].data();
+            bus.data64 = nullptr;
+            bus.channel_count = m_iHeads[i].size();
+            bus.latency = 0;
+            bus.constant_mask = 0;
+        }
+
+        DE_DEBUG("Port.In.Channels = ",nChI)
+
+        // ============
+        // Outputs
+        // ============
+
+        u32 nChO = 0;
+
+        DE_DEBUG("Port.Out.Count = ",nPortOut)
+
+        for (u32 i = 0; i < nPortOut; i++)
+        {
+            clap_audio_port_info_t pi;
+            if (!m_ports->get(m_plugin, i, bOutput, &pi))
+            {
+                DE_ERROR("No Output[",i,"]")
+            }
+
+            nChO += pi.channel_count;
+
+            m_oBuffers[i].resize(pi.channel_count);
+            m_oHeads[i].resize(pi.channel_count);
+            for (auto & b : m_oBuffers[i])
+            {
+                b.resize(blockSize + GUARD);
+            }
+            for (u32 k = 0; k < pi.channel_count; k++)
+            {
+                m_oHeads[i][k] = m_oBuffers[i][k].data();
+            }
+
+            clap_audio_buffer_t & bus = m_oBuses[i];
+            bus.data32 = m_oHeads[i].data();
+            bus.data64 = nullptr;
+            bus.channel_count = m_oHeads[i].size();
+            bus.latency = 0;
+            bus.constant_mask = 0;
+        }
+
+        DE_DEBUG("Port.Out.Channels = ",nChO)
+    }
+
+    void copy1( u32 blockSize )
+    {
+        if (blockSize < 1)
+        {
+            DE_ERROR("No blockSize")
+            return;
+        }
+
+        // Fill all with zeroes, just to make sure...
+        for (auto & b : m_iBuffers)
+        {
+            for (auto & c : b)
+            {
+                std::fill(c.begin(), c.end(), 0.0f);
+            }
+        }
+
+        const auto bytesPerChannel = u64(blockSize) * sizeof(f32);
+
+        // Copy L+R to vst3 buffers, if any...
+        u32 n = 0;
+        for (auto & b : m_iBuffers)
+        {
+            for (auto & c : b)
+            {
+                if (n == 0)
+                {
+                    std::memcpy(m_L.data(), c.data(), bytesPerChannel);
+                    n++;
+                }
+                else if (n == 1)
+                {
+                    std::memcpy(m_R.data(), c.data(), bytesPerChannel);
+                    n++;
+                }
+                else
+                {
+                    break;
+                }
+            }
+        }
+    }
+};
+
+//===============================
+struct CLAP_NoteProcessor
+//===============================
+{
+    std::vector<clap_event_note_t> m_notes;
+
+    CLAP_NoteProcessor()
+    {
+        m_notes.reserve(1024);
+    }
+
+    void clear()
+    {
+        m_notes.clear();
+    }
+
+    static uint32_t
+    size(const clap_input_events_t* self)
+    {
+        auto q = (CLAP_NoteProcessor*)self->ctx;
+        return q->m_notes.size();
+    }
+
+    static const clap_event_header_t*
+    get(const clap_input_events_t* self, uint32_t index)
+    {
+        auto q = (CLAP_NoteProcessor*)self->ctx;
+        return &q->m_notes[index].header;
+    }
+};
+
+//===============================
+struct CLAP_NoteIncoming // We push notes here.
+//===============================
+{
+    std::vector<clap_event_note_t> m_notes;
+    std::mutex mutable m_mutex;
+
+    //std::unique_lock< std::mutex >
+    //lock() const { return std::unique_lock<std::mutex>(m_mutex); }
+
+    CLAP_NoteIncoming()
+    {
+        std::unique_lock<std::mutex> l(m_mutex);
+        m_notes.reserve(1024);
+    }
+
+    void clear()
+    {
+        std::unique_lock<std::mutex> l(m_mutex);
+        m_notes.clear();
+    }
+
+    void push( clap_event_note_t note )
+    {
+        std::unique_lock<std::mutex> l(m_mutex);
+        m_notes.emplace_back( std::move( note ) );
+        // if (m_notes.size())
+        // {
+        //     DE_DEBUG("Got ", m_notes.size(), " notes")
+        // }
+    }
+
+    void swap(CLAP_NoteProcessor & processor)
+    {
+        std::unique_lock<std::mutex> l(m_mutex);
+
+        // if (m_notes.size())
+        // {
+        //     DE_DEBUG("Had ", m_notes.size(), " notes")
+        // }
+
+        std::swap(m_notes, processor.m_notes);
+    }
+};
+
+
+// | Event type                 | Struct            |
+// | -------------------------- | ----------------- |
+// | CLAP_EVENT_NOTE_ON         | clap_event_note_t |
+// | CLAP_EVENT_NOTE_OFF        | clap_event_note_t |
+// | CLAP_EVENT_NOTE_CHOKE      | clap_event_note_t |
+// | CLAP_EVENT_NOTE_EXPRESSION | clap_event_note_expression_t |
+// | CLAP_EVENT_PARAM_VALUE     | clap_event_param_value_t |
+// | CLAP_EVENT_PARAM_MOD       | clap_event_param_mod_t |
+// | CLAP_EVENT_PARAM_GESTURE_BEGIN | clap_event_param_gesture_t |
+// | CLAP_EVENT_PARAM_GESTURE_END | clap_event_param_gesture_t |
+// | CLAP_EVENT_TRANSPORT       | clap_event_transport_t |
+// | CLAP_EVENT_MIDI            | clap_event_midi_t |
+// | CLAP_EVENT_MIDI_SYSEX      | clap_event_midi_sysex_t |
+// | CLAP_EVENT_MIDI2           | clap_event_midi2_t |
+
+//===============================
+struct CLAP_OutputEventQueue
+//===============================
+{
+    size_t m_counter = 0;
+    std::vector<clap_event_header_t*> m_events;
+
+    static bool
+    try_push(const clap_output_events_t* self,
+             const clap_event_header_t* event)
+    {
+        auto q = (CLAP_OutputEventQueue*)self->ctx;
+        q->m_counter++;
+
+        //q->events.push_back((clap_event_header_t*)event);
+
+        return true;
+    }
+
+    void clear()
+    {
+        if (m_counter > 0)
+        {
+            DE_DEBUG("Got ",m_counter," output events")
+            m_counter = 0;
+        }
+        m_events.clear();
+    }
+};
+
+//===============================
+class CLAP_Plugin_Impl
+//===============================
+{
+public:
+    u32 m_pluginId;
+    bool m_bIsPluginOpen;
+    bool m_bIsSynth;
+    bool m_bIsBypassed;
+    bool m_bIgnoreQtResize; // to avoid feedback loops;
+    ITrack* m_track;
+    PluginEditorWindow* m_editor;
+    IDspChainElement* m_inputSignal;
+    const clap_plugin_entry_t* m_entry;
+    const clap_plugin_factory* m_factory;
+    const clap_plugin* m_plugin;
+    const clap_plugin_audio_ports_t* m_ports;
+    const clap_plugin_gui_t* m_gui;
+
+    u32 m_sampleRate;
+    u32 m_blockSize;
+    u32 m_numInputs;
+    u32 m_numOutputs;
+    u32 m_numPrograms;
+    u32 m_numParams;
+
+    double m_timeStart;
+    std::atomic< u64 > m_framePos;
 
     std::string m_uri;
     std::string m_directoryMultiByte;
@@ -228,49 +738,210 @@ struct CLAP_Plugin_Impl
     SymbolLoader m_symLoader;
     PluginClock m_midiClock;
 
-    const clap_plugin_factory* m_factory = nullptr;
-    const clap_plugin* m_plugin = nullptr;
+    CLAP_AudioBuffers m_buffers;
 
-    std::vector<clap_event_header_t*> m_inEventList;
-    std::vector<clap_event_header_t*> m_outEventList;
-
-/*
-    AEffect* m_vst = nullptr;
-    VstTimeInfo m_timeInfo;
-
-    VST2_SampleBuffers m_sampleBuffers;
-    // VST seems to work channelwise / planar, not interleaved audio.
-    // std::vector< f32 > m_outBuffer;
-    // std::vector< f32*> m_outBufferHeads;
-    // std::vector< f32 > m_inBuffer;
-    // std::vector< f32*> m_inBufferHeads;
-
-    // VST midi event handling
-    std::vector< VstMidiEvent > m_vstMidiEvents;
-    std::vector< char > m_vstEventBuffer;
-
-    struct MyVstMidi
+    static void
+    host_resize_hints_changed(const clap_host_t *host)
     {
-        std::unique_lock< std::mutex >
-        lock() const { return std::unique_lock<std::mutex>(m_mutex); }
-        std::vector< VstMidiEvent > events;
-    private:
-        std::mutex mutable m_mutex;
-    } m_vstMidi;
+        auto me = static_cast<CLAP_Plugin_Impl*>(host->host_data);
+        if (!me)
+        {
+            DE_ERROR("No host")
+            return;
+        }
+        DE_TRACE("")
 
-    // PluginEditorWindow* m_editorWindow = nullptr; // PluginEditorWindow HWND
+        clap_gui_resize_hints_t hints;
+        if (!me->m_gui->get_resize_hints)
+        {
+            DE_ERROR("No get_resize_hints")
+            return;
+        }
 
-    bool getFlags( int32_t m ) const
-    {
-        return m_vst ? ((m_vst->flags & m) == m) : 0;
+        if (me->m_gui->get_resize_hints(me->m_plugin, &hints))
+        {
+            DE_TRACE("can_resize_horizontally = ",hints.can_resize_horizontally)
+            DE_TRACE("can_resize_vertically = ",hints.can_resize_vertically)
+            DE_TRACE("preserve_aspect_ratio = ",hints.preserve_aspect_ratio)
+            DE_TRACE("aspect_ratio_width = ",hints.aspect_ratio_width)
+            DE_TRACE("aspect_ratio_height = ",hints.aspect_ratio_height)
+
+            // Update your window constraints
+            //set_window_min_size(plugin->window, hints.min_width, hints.min_height);
+            //set_window_max_size(plugin->window, hints.max_width, hints.max_height);
+        }
     }
-*/
+
+    static bool
+    host_request_resize(const clap_host_t* host, uint32_t w, uint32_t h)
+    {
+        auto me = static_cast<CLAP_Plugin_Impl*>(host->host_data);
+        if (!me)
+        {
+            DE_ERROR("No host")
+            return false;
+        }
+        if (!me->m_editor)
+        {
+            DE_ERROR("No editor")
+            return false;
+        }
+
+        DE_TRACE("w(",w,"), h(",h,")")
+        me->m_bIgnoreQtResize = true;          // avoid triggering host→plugin resize back
+        me->m_editor->resize(w, h);
+        me->m_editor->updateGeometry();
+        me->m_bIgnoreQtResize = false;
+
+        return true; // accepted
+    }
+
+    static bool
+    host_request_show(const clap_host_t *host)
+    {
+        auto me = static_cast<CLAP_Plugin_Impl*>(host->host_data);
+        if (!me)
+        {
+            DE_ERROR("No host")
+            return false;
+        }
+        if (!me->m_editor)
+        {
+            DE_ERROR("No editor")
+            return false;
+        }
+
+        DE_TRACE("")
+        me->m_editor->show();
+        return true;
+    }
+
+    static bool
+    host_request_hide(const clap_host_t *host)
+    {
+        auto me = static_cast<CLAP_Plugin_Impl*>(host->host_data);
+        if (!me)
+        {
+            DE_ERROR("No host")
+            return false;
+        }
+        if (!me->m_editor)
+        {
+            DE_ERROR("No editor")
+            return false;
+        }
+        DE_TRACE("")
+        me->m_editor->hide();
+        return true;
+    }
+
+    static void
+    host_closed(const clap_host_t *host, bool was_destroyed)
+    {
+        DE_TRACE("")
+    }
+
+    static const void*
+    host_get_extension(const clap_host_t *host, const char *id)
+    {
+        auto me = static_cast<CLAP_Plugin_Impl*>(host->host_data);
+        DE_TRACE("")
+        if (!strcmp(id, CLAP_EXT_GUI))
+            return &me->m_host_gui;
+        return nullptr;
+    }
+
+    static void
+    host_request_restart(const clap_host_t *host)
+    {
+        auto me = static_cast<CLAP_Plugin_Impl*>(host->host_data);
+        DE_TRACE("")
+
+        // WHY:
+        // Plugin changed something fundamental (ports, latency, tail, etc.)
+        // Host must re-query plugin metadata.
+    }
+
+    static void
+    host_request_process(const clap_host_t *host)
+    {
+        auto me = static_cast<CLAP_Plugin_Impl*>(host->host_data);
+        DE_TRACE("")
+
+        // WHY:
+        // Plugin wants the host to call process() again.
+        // Usually because it woke from sleep.
+        // me->isProcessing = true;
+    }
+
+    static void
+    host_request_callback(const clap_host_t *host)
+    {
+        auto me = static_cast<CLAP_Plugin_Impl*>(host->host_data);
+        DE_TRACE("")
+
+        // WHY:
+        // Plugin needs a main-thread callback.
+        // You schedule it in Qt:
+        // QMetaObject::invokeMethod(
+        //     me->m_editor,
+        //     [](){ /* call plugin->on_main_thread() */ },
+        //     Qt::QueuedConnection
+        // );
+    }
+
+    CLAP_NoteProcessor m_noteProcessor;
+    CLAP_NoteIncoming m_noteIncoming;
+    CLAP_OutputEventQueue m_outputEventQueue;
+    clap_input_events_t m_inEvents;
+    clap_output_events_t m_outEvents;
+
+    clap_host_t m_host;
+    clap_host_gui_t m_host_gui;
 
     // ============================================================================
     CLAP_Plugin_Impl()
     // ============================================================================
+        : m_pluginId{ 0 }
+        , m_bIsPluginOpen{ false }
+        , m_bIsSynth{ false }
+        , m_bIsBypassed{ false }
+        , m_bIgnoreQtResize{ false }
+        , m_track{ nullptr }
+        , m_editor{ nullptr }
+        , m_inputSignal{ nullptr }
+        , m_entry{ nullptr }
+        , m_factory{ nullptr }
+        , m_plugin{ nullptr }
+        , m_ports{ nullptr }
+        , m_gui{ nullptr }
+        , m_sampleRate{ 0 }
+        , m_blockSize{ 0 }
+        , m_numInputs{ 0 }
+        , m_numOutputs{ 0 }
+        , m_numPrograms{ 0 }
+        , m_numParams{ 0 }
+        , m_timeStart{ 0.0 }
+        , m_framePos{ 0 }
     {
         DE_DEBUG("")
+
+        m_host.clap_version     = CLAP_VERSION;
+        m_host.name             = "AbentonChain_qt6";
+        m_host.vendor           = "<benjaminhampe@gmx.de>";
+        m_host.url              = "https://github.com/benjaminhampe";
+        m_host.version          = "1.0";
+        m_host.host_data        = this;
+        m_host.get_extension    = host_get_extension;
+        m_host.request_restart  = host_request_restart;
+        m_host.request_process  = host_request_process;
+        m_host.request_callback = host_request_callback;
+
+        m_host_gui.resize_hints_changed = host_resize_hints_changed;
+        m_host_gui.request_resize = host_request_resize;
+        m_host_gui.request_show   = host_request_show;
+        m_host_gui.request_hide   = host_request_hide;
+        m_host_gui.closed         = host_closed;
     }
 
     ~CLAP_Plugin_Impl()
@@ -300,6 +971,19 @@ struct CLAP_Plugin_Impl
         //      emit removedSynth( this ); // Unregister synth from MIDI keyboards
         //   }
 
+        if (m_editor)
+        {
+            DE_TRACE("Close editor")
+            //if (m_gui) m_gui->hide(m_plugin);
+            if (m_gui) m_gui->destroy(m_plugin);
+            m_editor->enableClosing();
+            m_editor->close();
+            m_editor->deleteLater();
+            m_editor = nullptr;
+        }
+
+        m_gui = nullptr;
+
         DE_WARN("Stop vst plugin")
         if (m_plugin)
         {
@@ -307,29 +991,15 @@ struct CLAP_Plugin_Impl
             m_plugin = nullptr;
         }
 
+        if (m_entry)
+        {
+            m_entry->deinit();
+            m_entry = nullptr;
+        }
+
         m_symLoader.close();
 
         m_framePos = 0;
-    }
-
-    // ---------------------------------------------------------
-    // Host Descriptor
-    // ---------------------------------------------------------
-    static const clap_host* getHost()
-    {
-        static clap_host host {
-            .clap_version = CLAP_VERSION,
-            .host_data = nullptr,
-            .name = "QtClapHost",
-            .vendor = "Qt CLAP Host",
-            .url = "https://github.com/benjaminhampe",
-            .version = "1.0",
-            .get_extension = nullptr,
-            .request_restart = nullptr,
-            .request_process = nullptr,
-            .request_callback = nullptr
-        };
-        return &host;
     }
 
     void openPlugin( std::string uri )
@@ -363,43 +1033,42 @@ struct CLAP_Plugin_Impl
             return;
         }
 
-        typedef const clap_plugin_entry_t*(__cdecl *ClapEntryProc)(void);
+        //typedef const clap_plugin_entry_t*(__cdecl *ClapEntryProc)(void);
 
-        auto proc = (ClapEntryProc)m_symLoader.getSymbol("clap_entry");
-        if (!proc)
+        auto sym = m_symLoader.getSymbol("clap_entry");
+        if (!sym)
         {
-            DE_ERROR("No 'clap_entry' proc found. ",uri)
+            DE_ERROR("No 'clap_entry' sym found. ",uri)
             return;
         }
 
-        DE_TRACE("Got proc")
+        // DE_TRACE("Got sym")
 
-        const clap_plugin_entry_t* entry = proc();
-        if (!entry)
+        m_entry = reinterpret_cast<const clap_plugin_entry_t*>(sym);
+        if (!m_entry)
         {
             DE_ERROR("No entry. ",uri)
             return;
         }
 
-        DE_TRACE("Got entry")
+        // DE_TRACE("Got entry")
 
-        m_bIsDsoInit = entry->init( uri.c_str());
-        if (!m_bIsDsoInit)
+        if (!m_entry->init( uri.c_str()))
         {
-            DE_ERROR("No init. ",uri)
+            DE_ERROR("No entry->init. ",uri)
             return;
         }
 
-        DE_TRACE("Got init")
+        // DE_TRACE("Got init")
 
-        m_factory = (const clap_plugin_factory*)entry->get_factory(CLAP_PLUGIN_FACTORY_ID);
+        m_factory = (const clap_plugin_factory*)m_entry->get_factory(CLAP_PLUGIN_FACTORY_ID);
         if (!m_factory)
         {
             DE_ERROR("No factory. ",uri)
             return;
         }
 
-        DE_TRACE("Got factory")
+        // DE_TRACE("Got factory")
 
         u32 numPlugins = m_factory->get_plugin_count(m_factory);
         if (numPlugins == 0)
@@ -410,23 +1079,37 @@ struct CLAP_Plugin_Impl
 
         DE_OK("Got (",numPlugins,") plugins.")
 
-        const clap_plugin_descriptor* desc = m_factory->get_plugin_descriptor(m_factory, 0);
+        const clap_plugin_descriptor_t* desc =
+            m_factory->get_plugin_descriptor(m_factory, 0);
         if (!desc)
         {
             DE_ERROR("No plugin[0] descriptor. ",uri)
             return;
         }
 
-        DE_TRACE("Got desc")
 
-        m_plugin = m_factory->create_plugin(m_factory, getHost(), desc->id);
+        m_bIsSynth = false;
+
+        for (uint32_t i = 0; desc->features[i]; i++)
+        {
+            DE_DEBUG("Feature[",i,"] ",desc->features[i])
+
+            if (strcmp(desc->features[i], CLAP_PLUGIN_FEATURE_INSTRUMENT) == 0)
+            {
+                m_bIsSynth = true;
+            }
+        }
+
+        // DE_TRACE("Got desc")
+
+        m_plugin = m_factory->create_plugin(m_factory, &m_host, desc->id);
         if (!m_plugin)
         {
             DE_ERROR("No plugin[0] created. ",uri)
             return;
         }
 
-        DE_TRACE("Got plugin")
+        // DE_TRACE("Got plugin")
 
         if (!m_plugin->init(m_plugin))
         {
@@ -436,15 +1119,28 @@ struct CLAP_Plugin_Impl
             return;
         }
 
-        DE_TRACE("Got plugin init")
+        if (!m_plugin->activate)
+        {
+            DE_ERROR("No activate")
+            return;
+        }
+
+        m_ports = (const clap_plugin_audio_ports_t*)
+            m_plugin->get_extension(m_plugin, CLAP_EXT_AUDIO_PORTS);
+        if (!m_ports)
+        {
+            DE_ERROR("No clap_plugin_audio_ports_t. ",uri)
+            return;
+        }
+
 
         m_numInputs = dumpInputs(m_plugin);
         m_numOutputs = dumpOutputs(m_plugin);
         m_numParams = dumpParams(m_plugin);
 
-        DE_TRACE("m_numInputs = ",m_numInputs)
-        DE_TRACE("m_numOutputs = ",m_numOutputs)
-        DE_TRACE("m_numParams = ",m_numParams)
+        // DE_TRACE("m_numInputs = ",m_numInputs)
+        // DE_TRACE("m_numOutputs = ",m_numOutputs)
+        // DE_TRACE("m_numParams = ",m_numParams)
 /*
         auto state = (const clap_plugin_state_t*)
             m_plugin->get_extension(m_plugin, CLAP_EXT_STATE);
@@ -472,23 +1168,7 @@ struct CLAP_Plugin_Impl
         }
 */
 
-        dsp_init( 4*512, 2, 48000 );
-
-        // reactivate();
-
-        if (!m_plugin->activate)
-        {
-            DE_ERROR("No activate")
-            return;
-        }
-
-        if (!m_plugin->activate(m_plugin,
-            m_sampleRate,
-            m_blockSize,
-            m_blockSize))
-        {
-            DE_ERROR("")
-        }
+        dsp_init( 128, 2, 48000 );
 /*
         DE_DEBUG("VST plugin = ", dbFileBase(m_uri))
         DE_DEBUG("VST plugin dir = ", m_directoryMultiByte)
@@ -511,7 +1191,36 @@ struct CLAP_Plugin_Impl
         }
 */
 
-        // setBypassed( isBypassed() );
+        m_gui = (const clap_plugin_gui_t*)
+            m_plugin->get_extension(m_plugin, CLAP_EXT_GUI);
+
+        if (!m_gui)
+        {
+            DE_ERROR("No gui")
+        }
+        else
+        {
+            if (!m_gui->is_api_supported(m_plugin, CLAP_WINDOW_API_WIN32, false))
+            {
+                DE_ERROR("plugin does not support Win32 GUI")
+            }
+            else
+            {
+                if (!m_gui->create(m_plugin, CLAP_WINDOW_API_WIN32, false))
+                {
+                    DE_ERROR("failed to create GUI")
+                }
+                else
+                {
+                    m_editor = new CLAP_Editor(m_bIgnoreQtResize,
+                                               m_plugin, m_gui, nullptr );
+                }
+            }
+        }
+
+        m_timeStart = dbTimeInSeconds();
+        m_framePos = 0;
+        m_midiClock.restart();
         m_bIsBypassed = false;
         m_bIsPluginOpen = true;
     }
@@ -533,38 +1242,59 @@ struct CLAP_Plugin_Impl
 
     void dsp_init(u64 frames, u32 channels, u32 sampleRate)
     {
+        bool bNeedRealloc = false;
+        bool bNeedReconfig = false;
+
         if ( m_blockSize != frames )
         {
-            m_blockSize = frames;
-            m_bNeedSetup = true;
+
+            bNeedRealloc = true;
+            bNeedReconfig = true;
         }
 
         if ( m_sampleRate != sampleRate )
         {
-            m_sampleRate = sampleRate;
-            m_bNeedSetup = true;
-        }
-#if 0
-        if ( m_vst && m_bNeedSetup )
-        {
-            m_bNeedSetup = false;
 
-            dispatcher(effStopProcess);
-            dispatcher(effMainsChanged, 0, 0);
+            bNeedReconfig = true;
+        }
+
+        if ( !m_plugin )
+        {
+            DE_ERROR("No plugin")
+            return;
+        }
+
+        if ( bNeedReconfig )
+        {
+            m_blockSize = frames;
+            m_sampleRate = sampleRate;
+
+            // 1. Stop calling process()
+            m_plugin->stop_processing(m_plugin);
+
+            // 2. Stop calling process()
+            m_plugin->deactivate(m_plugin);
 
             // Prepare input buffer + input channel heads ( planar = non-interleaved )
             // Prepare output buffer + output channel heads ( planar = non-interleaved )
-            m_sampleBuffers.setup(m_numInputs,m_numOutputs, m_blockSize);
+            if (bNeedRealloc)
+            {
+                m_buffers.setup(m_plugin, m_ports, m_blockSize);
+            }
 
-            // Setup VST plugin
-            dispatcher(effSetSampleRate, 0, 0, 0, float( m_sampleRate ) );
-            dispatcher(effSetBlockSize, 0, m_blockSize);
-            dispatcher(effSetProcessPrecision, 0, kVstProcessPrecision32);
-            dispatcher(effMainsChanged, 0, 1);
-            dispatcher(effStartProcess);
-            //dispatcher(effSetProgram, 0, 0, 0);
+            // 3. Re-activate with new sample rate and block size
+            if (!m_plugin->activate(m_plugin, m_sampleRate, m_blockSize, m_blockSize))
+            {
+                DE_ERROR("No activate")
+            }
+
+            // 4. Re-start processing
+            if (!m_plugin->start_processing(m_plugin))
+            {
+                DE_ERROR("No start_processing")
+            }
         }
-#endif
+
     }
 
     void dsp_read(f64 pts,
@@ -577,16 +1307,17 @@ struct CLAP_Plugin_Impl
         {
             throw std::runtime_error("No dst audio dsp buffer in VST2_Plugin::readSamples()!");
         }
-#if 0
+
         //===============================
-        // VST2 processing is inactive:
+        // Bypassed:
         //===============================
 
         if ( !m_bIsPluginOpen || m_bIsBypassed)
         {
             if ( m_inputSignal )
             {
-                m_inputSignal->dsp_read( pts, frames, sampleRate, outL, outR );
+                m_inputSignal->dsp_read( pts,
+                    frames, sampleRate, outL, outR );
             }
             else
             {
@@ -597,8 +1328,20 @@ struct CLAP_Plugin_Impl
             return; // We relayed samples or filled output with zeroes
         }
 
+        if ( !m_plugin )
+        {
+            DE_ERROR("No plugin")
+            return;
+        }
+
+        if ( !m_plugin->process )
+        {
+            DE_ERROR("No plugin->process")
+            return;
+        }
+
         //===============================
-        // VST2 processing is active:
+        // Active:
         //===============================
 
         dsp_init(frames,2,sampleRate);
@@ -606,127 +1349,145 @@ struct CLAP_Plugin_Impl
         if ( m_inputSignal )
         {
             m_inputSignal->dsp_read( pts, frames, sampleRate,
-                m_sampleBuffers.m_iBuffers.at(0).data(),
-                m_sampleBuffers.m_iBuffers.at(1).data() );
-
-            for (int i = 2; i < int(m_numInputs); ++i)
-            {
-                m_sampleBuffers.zeroInput(i);
-            }
+                m_buffers.m_L.data(),
+                m_buffers.m_R.data() );
         }
         else
         {
-            m_sampleBuffers.zeroInputs();
+            std::fill(m_buffers.m_L.begin(),
+                      m_buffers.m_L.end(), 0.0f);
+            std::fill(m_buffers.m_R.begin(),
+                      m_buffers.m_R.end(), 0.0f);
         }
 
+        m_buffers.copy1( frames );
+
         // ======================================================
-        // We support legacy (worst-case) "in-place" processing
-        // by copying numInputs to output buffers.
+        // Transport:
+        // ======================================================
+
+        clap_event_transport_t tr{};
+        tr.header.size     = sizeof(tr);
+        tr.header.time     = 0;   // event happens at start of block
+        tr.header.space_id = CLAP_CORE_EVENT_SPACE_ID;
+        tr.header.type     = CLAP_EVENT_TRANSPORT;
+        tr.header.flags    = 0;
+
+        // What changed since last block?
+        tr.flags = CLAP_TRANSPORT_IS_PLAYING
+                 | CLAP_TRANSPORT_HAS_SECONDS_TIMELINE
+                 // | CLAP_TRANSPORT_HAS_TEMPO
+                 // | CLAP_TRANSPORT_HAS_TIME_SIGNATURE
+                 //| CLAP_TRANSPORT_HAS_BEATS_TIMELINE
+
+                 //| CLAP_TRANSPORT_HAS_LOOP
+                 //| CLAP_TRANSPORT_IS_RECORDING
+                 //| CLAP_TRANSPORT_IS_LOOP_ACTIVE
+        ;
+
+        // Transport state
+        double t = dbTimeInSeconds() - m_timeStart;
+        tr.song_pos_beats   = std::round(128.0 * double(CLAP_BEATTIME_FACTOR)); // currently at beat 128 (bar 33 in 4/4)
+        tr.song_pos_seconds = std::round(t * double(CLAP_SECTIME_FACTOR)); // 60.123 seconds into the song
+
+        // Tempo
+        tr.tempo = 120.0;                // 120 BPM
+
+        // Time signature
+        tr.tsig_num = 4;
+        tr.tsig_denom = 4;
+
+        // Loop region
+        tr.loop_start_beats   = std::round(128.0 * double(CLAP_BEATTIME_FACTOR)); // loop starts at beat 128
+        tr.loop_end_beats     = std::round(136.0 * double(CLAP_BEATTIME_FACTOR)); // loop ends at beat 136
+        tr.loop_start_seconds = std::round(60.0  * double(CLAP_SECTIME_FACTOR));
+        tr.loop_end_seconds   = std::round(63.75 * double(CLAP_SECTIME_FACTOR));
+
+        clap_process_t p{};
+
+        // ======================================================
+        // Process MIDI:
+        // ======================================================
+        processMidiInputEvents( p );
+
+        // ======================================================
+        // Process Audio:
+        // ======================================================
+        p.steady_time = m_framePos;
+        p.frames_count = frames;
+        p.transport = &tr;
+        p.audio_inputs = m_buffers.m_iBuses.data();
+        p.audio_outputs = m_buffers.m_oBuses.data();
+        p.audio_inputs_count = m_buffers.m_iBuses.size();
+        p.audio_outputs_count = m_buffers.m_oBuses.size();
+
+        //clap_process_status e;
+        auto e = m_plugin->process(m_plugin, &p);
+        if (e != CLAP_PROCESS_CONTINUE)
+        {
+            DE_WARN("m_plugin->process(). ", getStatusStr(e))
+        }
+
+        m_framePos += frames; // atomic.
+
+        // 5. Handle output events (automation, note events, etc.)
+        processMidiOutputEvents();
+
+        // ======================================================
+        // Write (L+R) CLAP audio output back to DspChain.
         // ======================================================
 
         const auto bytesPerChannel = u64(frames) * sizeof(float);
 
-        // TODO: Maybe move to m_vst->process() case only.
-        // Copy available input to output channels:
-        for (int i = 0; i < m_numInputs; ++i)
+        u32 n = 0;
+        for (auto & b : m_buffers.m_oBuffers)
         {
-            std::memcpy(m_sampleBuffers.m_oBuffers.at(i).data(),
-                        m_sampleBuffers.m_iBuffers.at(i).data(),
-                        bytesPerChannel);
-        }
-
-        // Fill remaining output channels with silence (0.0f).
-        for (int i = m_numInputs; i < m_sampleBuffers.m_maxChannels; ++i)
-        {
-            std::memset(m_sampleBuffers.m_oBuffers.at(i).data(),
-                        0, bytesPerChannel);
-        }
-
-        // ======================================================
-        // Process MIDI messages:
-        // ======================================================
-        processVstMidiEvents();
-
-        // ======================================================
-        // Process Audio samples:
-        // ======================================================
-        if (m_vst->processReplacing)
-        {
-            m_vst->processReplacing(
-                m_vst,
-                m_sampleBuffers.m_iHeads.data(),
-                m_sampleBuffers.m_oHeads.data(),
-                frames );
-        }
-        else
-        {
-            if (m_vst->process)
+            for (auto & c : b)
             {
-                m_vst->process(
-                    m_vst,
-                    m_sampleBuffers.m_iHeads.data(),
-                    m_sampleBuffers.m_oHeads.data(),
-                    frames );
-            }
-            else
-            {
-                DE_ERROR("Either only double processing or no processing at all!")
+                // Copy [L]eft channel:
+                if (n == 0)
+                {
+                    std::memcpy(outL, c.data(), bytesPerChannel);
+                    n++;
+                }
+                // Copy [R]ight channel:
+                else if (n == 1)
+                {
+                    std::memcpy(outR, c.data(), bytesPerChannel);
+                    n++;
+                }
+                else
+                {
+                    break;
+                }
             }
         }
 
-        // ======================================================
-        // Write (L+R) VST audio output back to DspChain.
-        // ======================================================
-
-        m_framePos += frames; // atomic.
-
-        // Copy [L]eft channel:
-        std::memcpy(outL,
-                    m_sampleBuffers.m_oBuffers.at(0).data(),
-                    bytesPerChannel);
-
-        // Copy [R]ight channel:
-        std::memcpy(outR,
-                    m_sampleBuffers.m_oBuffers.at(1).data(),
-                    bytesPerChannel);
-
-#endif
         // Thank you for participating in our DspChain dear plugin.
     }
 
     // This function is called from refillCallback() which is running in audio thread.
-    void
-    processVstMidiEvents()
+    void processMidiInputEvents( clap_process_t& p)
     {
         m_midiClock.restart();
 
-#if 0
-        m_vstMidiEvents.clear();
-        if ( auto l = m_vstMidi.lock() )
-        {
-            std::swap( m_vstMidiEvents, m_vstMidi.events );
-            //m_vstMidi.events.clear();
-        }
+        m_noteProcessor.clear();
+        m_noteIncoming.swap( m_noteProcessor );
 
-        auto const n = m_vstMidiEvents.size();
-        if ( n > 0 )
-        {
-            auto const m = sizeof( VstEvents ) +
-                           sizeof( VstEvent* ) * n;
-            m_vstEventBuffer.resize( m );
-            auto vstEvents = reinterpret_cast< VstEvents* >( m_vstEventBuffer.data() );
-            memset( vstEvents, 0, sizeof( VstEvents ) );
+        m_inEvents.ctx  = &m_noteProcessor;
+        m_inEvents.size = CLAP_NoteProcessor::size;
+        m_inEvents.get  = CLAP_NoteProcessor::get;
 
-            vstEvents->numEvents = n;
-            vstEvents->reserved = 0;
-            for ( size_t i = 0; i < n; ++i )
-            {
-                vstEvents->events[ i ] = reinterpret_cast< VstEvent* >( &m_vstMidiEvents[ i ] );
-            }
-            //DE_ERROR("Dispatch MIDI n = ",n)
-            dispatcher( effProcessEvents, 0, 0, vstEvents );
-        }
-#endif
+        m_outEvents.ctx = &m_outputEventQueue;
+        m_outEvents.try_push = CLAP_OutputEventQueue::try_push;
+
+        p.in_events = &m_inEvents;
+        p.out_events = &m_outEvents;
+    }
+
+    void processMidiOutputEvents()
+    {
+        m_outputEventQueue.clear();
     }
 
     void onShortMidiMessage(f64 pts, const midi::ShortMidiMessage& msg)
@@ -735,61 +1496,110 @@ struct CLAP_Plugin_Impl
         {
             return;
         }
-#if 0
-        VstMidiEvent e;
-        e.type        = kVstMidiType;
-        e.byteSize    = sizeof( VstMidiEvent );
-        e.flags       = kVstMidiEventIsRealtime;
-        e.midiData[0] = static_cast<char>( msg.status);
-        e.midiData[1] = static_cast<char>( msg.data1 );
-        e.midiData[2] = static_cast<char>( msg.data2 );
 
-        // HOPEFULLY that fixes missing NoteOff events:
-        // Pianos work ok without that, but monophonic synth are
-        // beasts on a higher level...
         double dt = m_midiClock.now(); // Clock is restarted every callback call.
         int deltaFrames = std::clamp(
                             int(dt * m_sampleRate),
                             int(0),
                             int(m_blockSize) - 10);
 
-        // if (deltaFrames < 0)
-        // {
-        //     //DE_WARN("deltaFrames(",deltaFrames,") < 0")
-        //     deltaFrames = 0;
-        // }
-        // if (deltaFrames > m_blockSize - 10)
-        // {
-        //     //DE_WARN("deltaFrames(",deltaFrames,") >= blockSize(",m_blockSize,")")
-        //     deltaFrames = m_blockSize - 10;
-        // }
-        e.deltaFrames = deltaFrames; // <- Yay relative to start of audio callback
+        // m_eventBus.sendShortMidi(static_cast<u32>(deltaFrames),
+        //                         msg.status,msg.data1,msg.data2,msg.data3);
 
-        // Special event: All Notes Off (Bn 7B 00):
-        if (((msg.status & 0xF0) == 0xB0) &&
-             (msg.data1 == 0x7B) &&
-             (msg.data2 == 0x00) )
-        {
-            if ( auto l = m_vstMidi.lock() )
-            {
-                m_vstMidi.events.clear();
-            }
-            return;
-        }
+        uint8_t command = msg.status & 0xF0;
+        uint8_t channel = msg.status & 0x0F;
+        uint8_t velocity = msg.data2;
 
-        //size_t n = 0;
-        if ( auto l = m_vstMidi.lock() )
+        // if (command == 0x90 && msg.data2 != 0) // Note On
+        // {
+        //     e.type = Steinberg::Vst::Event::kNoteOnEvent;
+        //     e.noteOn.channel = int16_t(channel);
+        //     e.noteOn.pitch = int16_t(msg.data1);
+        //     e.noteOn.velocity = float(msg.data2) / 127.0f;
+        //     e.sampleOffset = deltaFrames; // at start of block
+        // }
+        // else if (command == 0x80 || (command == 0x90 && msg.data2 == 0)) // Note Off
+        // {
+
+        // --- NOTE ON ---
+        if (command == 0x90 && velocity > 0)
         {
-            m_vstMidi.events.push_back( e );
-            //n = m_vstMidi.events.size();
+            clap_event_note_t note;
+            note.header.size     = sizeof(clap_event_note_t);
+            note.header.time     = deltaFrames;
+            note.header.space_id = CLAP_CORE_EVENT_SPACE_ID;
+            note.header.type     = CLAP_EVENT_NOTE_ON;
+            note.header.flags    = CLAP_EVENT_IS_LIVE;
+
+            note.note_id    = -1; // let plugin assign voice
+            note.port_index = -1;
+            note.channel    = static_cast<s16>(channel);
+            note.key        = static_cast<s16>(msg.data1);
+            note.velocity   = double(velocity) / 127.0;
+
+            //std::lock_guard<std::mutex> lock(mutex);
+            //pendingEvents.push_back(&ev->header);
+            m_noteIncoming.push( note );
         }
-#endif
+        // --- NOTE OFF ---
+        else if (command == 0x80 || (command == 0x90 && velocity == 0))
+        {
+            clap_event_note_t note;
+            note.header.size     = sizeof(clap_event_note_t);
+            note.header.time     = deltaFrames;
+            note.header.space_id = CLAP_CORE_EVENT_SPACE_ID;
+            note.header.type     = CLAP_EVENT_NOTE_OFF;
+            note.header.flags    = CLAP_EVENT_IS_LIVE;
+
+            note.note_id    = -1;
+            note.port_index = -1;
+            note.channel    = static_cast<s16>(channel);
+            note.key        = static_cast<s16>(msg.data1);
+            note.velocity   = double(velocity) / 127.0;
+
+            //std::lock_guard<std::mutex> lock(mutex);
+            //pendingEvents.push_back(&ev->header);
+            m_noteIncoming.push( note );
+        }
+        // // Special event: All Notes Off (Bn 7B 00):
+        // else if (((msg.status & 0xF0) == 0xB0) &&
+        //      (msg.data1 == 0x7B) &&
+        //      (msg.data2 == 0x00) )
+        // {
+        //     if ( auto l = m_vstMidi.lock() )
+        //     {
+        //         m_vstMidi.events.clear();
+        //     }
+        //     return;
+        // }
+
         // DE_DEBUG("events(",n,"), byte1(",dbHex(byte1),"), data1(",dbHex(data1),"), data2(",dbHex(data2),")")
     }
 
     void onMidiMessage(f64 pts, const midi::MidiMessage& msg)
     {
         DE_WARN("Not implemented, ", msg.size())
+
+/*
+        // --- OTHER MIDI (CC, pitchbend, etc.) ---
+        auto* ev = pool.alloc<clap_event_midi_t>();
+        if (!ev) return;
+
+        ev->header.size     = sizeof(clap_event_midi_t);
+        ev->header.time     = deltaFrames;
+        ev->header.space_id = CLAP_CORE_EVENT_SPACE_ID;
+        ev->header.type     = CLAP_EVENT_MIDI;
+        ev->header.flags    = 0;
+
+        ev->port_index = 0;
+        ev->data[0] = b0;
+        ev->data[1] = b1;
+        ev->data[2] = b2;
+        ev->data[3] = b3;
+
+        std::lock_guard<std::mutex> lock(mutex);
+        pendingEvents.push_back(&ev->header);
+*/
     }
 
 };

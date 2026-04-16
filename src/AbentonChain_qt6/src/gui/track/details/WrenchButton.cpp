@@ -72,15 +72,15 @@ void WrenchButton::applySkin()
             .arg(toSvg(outlineColor))//%1
             .arg(toSvg(fillColor));  //%2
 
-            dbSaveTextA( s.toStdString(), "abenton_wrench.svg" );
+            // dbSaveTextA( s.toStdString(), "abenton_wrench.svg" );
 
             return mkSvg( s, buttonWidth );
         };
 
         m_active = mkSvg_Wrench(b, onColor, outlineColor );
         m_deactive = mkSvg_Wrench(b, offColor, outlineColor );
-        m_active.save("WrenchButton.Active.png");
-        m_deactive.save("WrenchButton.Deactive.png");
+        //m_active.save("WrenchButton.Active.png");
+        //m_deactive.save("WrenchButton.Deactive.png");
     }
 
     if (isCheckable() && !isChecked())

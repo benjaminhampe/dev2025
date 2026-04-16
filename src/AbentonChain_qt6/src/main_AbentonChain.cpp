@@ -87,6 +87,11 @@ int main(int argc, char **argv)
     win.setWindowState((win.windowState() & ~Qt::WindowMinimized)
                         | Qt::WindowActive );
 
+    QRect r_screen = win.screen()->geometry();
+    int w = r_screen.width();
+    int h = r_screen.height();
+    win.move(0,h-1-100-win.frameGeometry().height());
+
     int retVal = app.exec();
 
     delete App::instance();

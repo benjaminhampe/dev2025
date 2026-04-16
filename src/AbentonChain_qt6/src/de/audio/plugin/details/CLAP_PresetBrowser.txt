@@ -1,0 +1,147 @@
+// ✔ Scans preset folders
+// ✔ Reads .clap-preset metadata (JSON header)
+// ✔ Displays preset names in Qt
+// ✔ Loads preset into plugin using CLAP_EXT_STATE  
+// ✔ Works with any CLAP plugin that supports state save/load
+// ✔ No vendor‑specific APIs needed
+
+// This is exactly how real hosts (Bitwig, REAPER, etc.) handle presets.
+
+#pragma once
+#include <QWidget>
+#include <QListWidget>
+#include <QPushButton>
+#include <QVBoxLayout>
+#include <QFile>
+#include <QJsonDocument>
+#include <QJsonObject>
+
+#include "clap/clap.h"
+#include "clap/ext/state.h"
+
+class ClapPresetBrowser : public QWidget
+{
+    Q_OBJECT
+
+public:
+    ClapPresetBrowser(const clap_plugin_t* plugin, QWidget* parent = nullptr)
+        : QWidget(parent), m_plugin(plugin)
+    {
+        m_state = (const clap_plugin_state_t*)
+            plugin->get_extension(plugin, CLAP_EXT_STATE);
+
+        auto* layout = new QVBoxLayout(this);
+
+        m_list = new QListWidget(this);
+        layout->addWidget(m_list);
+
+        auto* loadBtn = new QPushButton("Load Preset", this);
+        layout->addWidget(loadBtn);
+
+        connect(loadBtn, &QPushButton::clicked, this, &ClapPresetBrowser::loadSelectedPreset);
+
+        scanPresetFolders();
+    }
+
+private:
+    const clap_plugin_t* m_plugin;
+    const clap_plugin_state_t* m_state = nullptr;
+
+    QListWidget* m_list = nullptr;
+    QStringList m_presetPaths;
+
+    void scanPresetFolders()
+    {
+        QString base = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation)
+                       + "/CLAP/Presets";
+
+        QDir dir(base);
+        if (!dir.exists())
+            return;
+
+        QStringList files = dir.entryList(QStringList() << "*.clap-preset",
+                                          QDir::Files | QDir::NoSymLinks,
+                                          QDir::Name);
+
+        for (auto& f : files)
+        {
+            QString full = dir.absoluteFilePath(f);
+            m_presetPaths << full;
+
+            QString displayName = readPresetName(full);
+            m_list->addItem(displayName);
+        }
+    }
+
+    QString readPresetName(const QString& path)
+    {
+        QFile file(path);
+        if (!file.open(QIODevice::ReadOnly))
+            return path;
+
+        QByteArray data = file.readAll();
+        file.close();
+
+        // .clap-preset = JSON header + binary chunk
+        // JSON ends at first "\n\n"
+        int sep = data.indexOf("\n\n");
+        if (sep < 0)
+            return path;
+
+        QByteArray jsonPart = data.left(sep);
+        QJsonDocument doc = QJsonDocument::fromJson(jsonPart);
+        if (!doc.isObject())
+            return path;
+
+        QJsonObject obj = doc.object();
+        return obj.value("name").toString(path);
+    }
+
+    void loadSelectedPreset()
+    {
+        if (!m_state)
+            return;
+
+        int row = m_list->currentRow();
+        if (row < 0)
+            return;
+
+        QString path = m_presetPaths[row];
+
+        QFile file(path);
+        if (!file.open(QIODevice::ReadOnly))
+            return;
+
+        QByteArray data = file.readAll();
+        file.close();
+
+        // Skip JSON header
+        int sep = data.indexOf("\n\n");
+        if (sep < 0)
+            return;
+
+        QByteArray binaryChunk = data.mid(sep + 2);
+
+        // Provide a CLAP stream wrapper
+        struct QtStream : clap_istream_t {
+            QByteArray* buf;
+            size_t pos = 0;
+
+            static int64_t read(const clap_istream_t* s, void* dst, uint64_t size) {
+                auto self = (QtStream*)s;
+                if (self->pos + size > (uint64_t)self->buf->size())
+                    size = self->buf->size() - self->pos;
+
+                memcpy(dst, self->buf->data() + self->pos, size);
+                self->pos += size;
+                return size;
+            }
+        };
+
+        QtStream stream{};
+        stream.buf = &binaryChunk;
+        stream.read = QtStream::read;
+
+        m_state->load(m_plugin, &stream);
+    }
+};

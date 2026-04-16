@@ -75,7 +75,7 @@ void ArrowButton::applySkin()
             .arg(toSvg(textColor))  // %3
             ;
 
-            dbSaveTextA( s.toStdString(), "abenton_arrow_down.svg" );
+            // dbSaveTextA( s.toStdString(), "abenton_arrow_down.svg" );
 
             return mkSvg( s, buttonWidth );
         };
@@ -107,7 +107,7 @@ void ArrowButton::applySkin()
             .arg(toSvg(textColor))  // %3
             ;
 
-            dbSaveTextA( s.toStdString(), "abenton_arrow_right.svg" );
+            // dbSaveTextA( s.toStdString(), "abenton_arrow_right.svg" );
 
             return mkSvg( s, buttonWidth );
         };
@@ -118,8 +118,8 @@ void ArrowButton::applySkin()
         m_deactive = mkSvg_ArrowRight(b, offColor,
                                 lineColor, textColor );
 
-        m_active.save("ArrowButton.Active.png");
-        m_deactive.save("ArrowButton.Deactive.png");
+        //m_active.save("ArrowButton.Active.png");
+        //m_deactive.save("ArrowButton.Deactive.png");
     }
 
     if (isCheckable() && !isChecked())

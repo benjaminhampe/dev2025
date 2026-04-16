@@ -75,7 +75,7 @@ void EditorButton::applySkin()
             .arg(toSvg(outlineColor))   // %2
             .arg(toSvg(textColor));     // %3
 
-            dbSaveTextA( s.toStdString(), "abenton_editor.svg" );
+            //dbSaveTextA( s.toStdString(), "abenton_editor.svg" );
 
             return mkSvg( s, buttonWidth );
         };
@@ -86,8 +86,8 @@ void EditorButton::applySkin()
         m_deactive = mkSvg_Editor(b,
             offColor, outlineColor, textColor);
 
-        m_active.save("EditorButton.Active.png");
-        m_deactive.save("EditorButton.Deactive.png");
+        //m_active.save("EditorButton.Active.png");
+        //m_deactive.save("EditorButton.Deactive.png");
     }
 
     if (isCheckable() && !isChecked())

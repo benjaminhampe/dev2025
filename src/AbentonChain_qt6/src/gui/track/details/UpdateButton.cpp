@@ -77,14 +77,14 @@ void UpdateButton::applySkin()
             .arg(toSvg(lineColor))//%2
             .arg(toSvg(textColor))//%3
             ;
-            dbSaveTextA( s.toStdString(), "abenton_update.svg" );
+            //dbSaveTextA( s.toStdString(), "abenton_update.svg" );
             return mkSvg( s, buttonWidth );
         };
 
         m_active = mkSvg_Update(b, onColor, lineColor, textColor );
         m_deactive = mkSvg_Update(b, offColor, lineColor, textColor );
-        m_active.save("UpdateButton.Active.png");
-        m_deactive.save("UpdateButton.Deactive.png");
+        //m_active.save("UpdateButton.Active.png");
+        //m_deactive.save("UpdateButton.Deactive.png");
     }
 
     if (isCheckable() && !isChecked())

@@ -75,8 +75,8 @@ void EnableButton::applySkin()
         m_active = mkSvg_Power(b, onColor, lineColor );
         m_deactive = mkSvg_Power(b, offColor, lineColor );
 
-        m_active.save("EnableButton.Active.png");
-        m_deactive.save("EnableButton.Deactive.png");
+        //m_active.save("EnableButton.Active.png");
+        //m_deactive.save("EnableButton.Deactive.png");
     }
 
     if (isCheckable() && !isChecked())

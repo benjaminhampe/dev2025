@@ -269,14 +269,14 @@ public:
     // Called when plugin UI begins editing a parameter
     Steinberg::tresult PLUGIN_API beginEdit (Steinberg::Vst::ParamID id) override
     {
-        DE_TRACE("[Host] beginEdit param ",id)
+        //DE_TRACE("[Host] beginEdit param ",id)
         return Steinberg::kResultOk;
     }
 
     // Called continuously while the parameter changes (automation or UI)
     Steinberg::tresult PLUGIN_API performEdit (Steinberg::Vst::ParamID id, Steinberg::Vst::ParamValue value) override
     {
-        DE_TRACE("[Host] performEdit param ",id," = ",value)
+        //DE_TRACE("[Host] performEdit param ",id," = ",value)
 
         // Update host-side parameter storage
         paramValues[id] = value;
@@ -289,7 +289,7 @@ public:
     // Called when plugin UI ends editing a parameter
     Steinberg::tresult PLUGIN_API endEdit (Steinberg::Vst::ParamID id) override
     {
-        DE_TRACE("[Host] endEdit param ",id)
+        //DE_TRACE("[Host] endEdit param ",id)
         return Steinberg::kResultOk;
     }
 
@@ -1027,7 +1027,7 @@ public:
         }
 
         //===============================
-        // VST3 processing is inactive:
+        // Bypassed:
         //===============================
 
         if (!m_bIsPluginOpen || m_bIsBypassed)
@@ -1046,7 +1046,7 @@ public:
         }
 
         //===============================
-        // VST3 processing is active:
+        // Active:
         //===============================
 
         dsp_init(frames,2,sampleRate);

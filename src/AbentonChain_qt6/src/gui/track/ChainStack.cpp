@@ -121,9 +121,9 @@ void ChainStack::onUpdateScrollRange()
 	// Scroll range = how much content exceeds the visible area
     int range = qMax(0, childWidth - viewportWidth);
 
-    DE_WARN("childWidth = ",childWidth)
-    DE_WARN("viewportWidth = ",viewportWidth)
-    DE_WARN("range = ",range)
+    // DE_WARN("childWidth = ",childWidth)
+    // DE_WARN("viewportWidth = ",viewportWidth)
+    // DE_WARN("range = ",range)
 
 	// Set scrollbar range dynamically
     m_scrollBar->setRange(0, range);
