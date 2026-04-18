@@ -69,6 +69,9 @@ void Plugin::setPlugin(de::audio::IPlugin* plugin)
     // Disconnect old
     if (m_plugin)
     {
+        m_audioMeter->stopUpdateTimer();
+        m_audioMeter->setPlugin(nullptr);
+
         auto editor = m_plugin->getEditor();
         if (editor)
         {
@@ -90,6 +93,9 @@ void Plugin::setPlugin(de::audio::IPlugin* plugin)
     // Connect new:
     if (m_plugin)
     {
+        m_audioMeter->setPlugin(m_plugin);
+        m_audioMeter->playUpdateTimer();
+
         m_title = QString::fromStdString(m_plugin->getName());
         m_btnEnable->setChecked(true);
         m_btnExpand->setChecked(false);

@@ -91,6 +91,9 @@ public:
 
     void setParameter(int i, f32 value) override;
 
+
+    float getSpecialValue( eSpecialValue type ) const override;
+
     VST2_Plugin_Impl* _d;
 };
 

@@ -1,6 +1,78 @@
 #include <de/audio/plugin/details/BasePluginUtils.h>
-
 #include <de/Core.h>
+
+namespace de {
+namespace audio {
+
+//===============================
+void NormalizedSumComputer::calc(
+            const float* __restrict__ L,
+            const float* __restrict__ R,
+            uint32_t blockSize)
+//===============================
+{
+    if (blockSize < 1)
+    {
+        m_sumL = 0.0f;
+        m_sumR = 0.0f;
+        return;
+    }
+
+    if (m_blockSize != blockSize)
+    {
+        m_blockSize = blockSize;
+        m_blockSizeInv = 1.0f / float(blockSize);
+    }
+
+#if 1
+
+    float sumL = 0.0f;
+
+    #pragma omp parallel for reduction(+:sumL)
+    for (size_t i = 0; i < blockSize; i++)
+    {
+        sumL += std::abs(L[i]);
+    }
+
+    m_sumL = sumL * m_blockSizeInv; // Normalized
+
+    //DE_TRACE("sumL = ", m_sumL)
+
+    float sumR = 0.0f;
+
+    #pragma omp parallel for reduction(+:sumR)
+    for (size_t i = 0; i < blockSize; i++)
+    {
+        sumR += std::abs(R[i]);
+    }
+
+    m_sumR = sumR * m_blockSizeInv; // Normalized
+
+    //DE_TRACE("sumR = ", m_sumR)
+
+#else
+
+    const float sumL = std::reduce(
+                    std::execution::par_unseq,
+                    L,
+                    L + blockSize,
+                    0.0f);
+
+    m_sumL = sumL * m_blockSizeInv; // Normalized
+
+    const float sumR = std::reduce(
+                    std::execution::par_unseq,
+                    R,
+                    R + blockSize,
+                    0.0f);
+
+    m_sumR = sumR * m_blockSizeInv; // Normalized
+
+#endif
+}
+
+} // end namespace audio.
+} // end namespace de.
 
 #ifdef _WIN32
     #ifndef WIN32_LEAN_AND_MEAN

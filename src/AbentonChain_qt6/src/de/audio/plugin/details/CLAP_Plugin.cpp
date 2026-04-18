@@ -739,6 +739,7 @@ public:
     PluginClock m_midiClock;
 
     CLAP_AudioBuffers m_buffers;
+    NormalizedSumComputer m_normalizedSumComputer;
 
     static void
     host_resize_hints_changed(const clap_host_t *host)
@@ -1463,6 +1464,9 @@ public:
             }
         }
 
+        // For audio-level-meter
+        m_normalizedSumComputer.calc(outL, outR, frames);
+
         // Thank you for participating in our DspChain dear plugin.
     }
 
@@ -1759,6 +1763,20 @@ void CLAP_Plugin::setParameter(int i, f32 value)
 {
 
 }
+
+
+
+float CLAP_Plugin::getSpecialValue( eSpecialValue type ) const
+{
+    switch (type)
+    {
+        case IPlugin::eSV_NormalizedSumL: return _d->m_normalizedSumComputer.m_sumL;
+        case IPlugin::eSV_NormalizedSumR: return _d->m_normalizedSumComputer.m_sumR;
+        default: return 0.0f;
+    }
+}
+
+
 
 } // end namespace audio.
 } // end namespace de.

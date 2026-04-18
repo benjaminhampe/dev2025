@@ -353,6 +353,7 @@ public:
     PluginClock m_midiClock;
 
     VST3_SampleBuffers m_sampleBuffers;
+    NormalizedSumComputer m_normalizedSumComputer;
 
     // MIDI + automation
     Steinberg::Vst::EventList        m_midiEventListIn;
@@ -1147,6 +1148,9 @@ public:
             }
         }
 
+        // For audio-level-meter
+        m_normalizedSumComputer.calc(outL, outR, frames);
+
         // Thank you for participating in our DspChain dear plugin.
     }
 
@@ -1453,6 +1457,23 @@ void VST3_Plugin::setParameter(int i, f32 value)
 {
 
 }
+
+
+
+
+
+float VST3_Plugin::getSpecialValue( eSpecialValue type ) const
+{
+    switch (type)
+    {
+        case IPlugin::eSV_NormalizedSumL: return _d->m_normalizedSumComputer.m_sumL;
+        case IPlugin::eSV_NormalizedSumR: return _d->m_normalizedSumComputer.m_sumR;
+        default: return 0.0f;
+    }
+}
+
+
+
 
 } // end namespace audio.
 } // end namespace de.

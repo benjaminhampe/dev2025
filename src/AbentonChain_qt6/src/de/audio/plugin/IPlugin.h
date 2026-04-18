@@ -18,6 +18,10 @@
 #define BENNI_USE_CLAP
 #endif
 
+// #ifndef BENNI_USE_LV2
+// #define BENNI_USE_LV2
+// #endif
+
 namespace de {
 namespace audio {
 
@@ -154,7 +158,12 @@ public:
 
     // virtual std::vector<ParamInfo> getParamInfos() = 0;
 
+    enum eSpecialValue {
+        eSV_NormalizedSumL,
+        eSV_NormalizedSumR,
+    };
 
+    virtual float getSpecialValue( eSpecialValue type ) const = 0;
 /*
     // =====================================
     // interface: IDspChainElement

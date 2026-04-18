@@ -66,6 +66,11 @@ else()
     target_link_libraries(${APP_NAME} PRIVATE de_vst3sdk_380)
     target_link_libraries(${APP_NAME} PRIVATE de_clap)
 
+    # OpenMP
+    target_compile_options(${APP_NAME} PRIVATE -fopenmp)
+    target_link_options(${APP_NAME} PRIVATE -fopenmp)
+
+
 	target_link_options(${APP_NAME} PRIVATE
 		-static
 		-stdlib=libc++

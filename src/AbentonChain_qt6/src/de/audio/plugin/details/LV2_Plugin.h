@@ -1,20 +1,20 @@
 #pragma once
 #include <de/audio/plugin/IPlugin.h>
 
-#ifdef BENNI_USE_CLAP
+#ifdef BENNI_USE_LV2
 
 namespace de {
 namespace audio {
 
-struct CLAP_Plugin_Impl;
+struct LV2_Plugin_Impl;
 
 // ============================================================================
-struct CLAP_Plugin : public IPlugin
+struct LV2_Plugin : public IPlugin
 // ============================================================================
 {
 public:
-    CLAP_Plugin();
-    ~CLAP_Plugin() override;
+    LV2_Plugin();
+    ~LV2_Plugin() override;
 
     void dsp_init(u64 frames,
                   u32 channels,
@@ -47,7 +47,7 @@ public:
     void setPluginId(u32 pluginId) override;
 
 
-    eType getType() const override { return eT_CLAP; }
+    eType getType() const override { return eT_VST3; }
 
     std::string getUri() const override;
 
@@ -94,11 +94,11 @@ public:
 
     float getSpecialValue( eSpecialValue type ) const override;
 
-    CLAP_Plugin_Impl* _d;
+    LV2_Plugin_Impl* _d;
 };
 
 
 } // end namespace audio.
 } // end namespace de.
 
-#endif // BENNI_USE_CLAP
+#endif

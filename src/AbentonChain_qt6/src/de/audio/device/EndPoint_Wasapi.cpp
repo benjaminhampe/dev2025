@@ -21,6 +21,10 @@
 #include <audioclient.h>
 #include <commdlg.h>
 
+// #include <atlbase.h>
+#include <mmdeviceapi.h>
+#include <functiondiscoverykeys_devpkey.h>
+
 #define ASSERT_THROW(c,e)   if(!(c)) { throw std::runtime_error(e); }
 #define CLOSE_HANDLE(x)     if((x)) { CloseHandle(x); x = nullptr; }
 #define RELEASE(x)          if((x)) { (x)->Release(); x = nullptr; }
@@ -143,8 +147,8 @@ public:
     IDspChainElement* m_inputSignal;
 
     HANDLE                  m_hThread;
-    IMMDeviceEnumerator*    m_mmDeviceEnumerator;
-    IMMDevice*              m_mmDevice;
+    IMMDeviceEnumerator*    m_deviceEnumerator;
+    IMMDevice*              m_device;
     IAudioClient*           m_audioClient;
     IAudioRenderClient*     m_audioRenderClient;
     WAVEFORMATEX*           m_mixFormat;
@@ -176,8 +180,8 @@ public:
         , m_channels(2)
         , m_inputSignal(nullptr)
         , m_hThread { nullptr }
-        , m_mmDeviceEnumerator{ nullptr }
-        , m_mmDevice { nullptr }
+        , m_deviceEnumerator{ nullptr }
+        , m_device { nullptr }
         , m_audioClient { nullptr }
         , m_audioRenderClient { nullptr }
         , m_mixFormat { nullptr }
@@ -216,13 +220,57 @@ public:
             m_hRefillEvent = CreateEventEx(0, 0, 0, EVENT_MODIFY_STATE | SYNCHRONIZE);
             //this->refillFunc = refillFunc;
 
-            hr = CoCreateInstance(__uuidof(MMDeviceEnumerator), 0, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&m_mmDeviceEnumerator));
+            hr = CoCreateInstance(__uuidof(MMDeviceEnumerator), 0, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&m_deviceEnumerator));
             ASSERT_THROW(SUCCEEDED(hr), "CoCreateInstance(MMDeviceEnumerator) failed");
 
-            hr = m_mmDeviceEnumerator->GetDefaultAudioEndpoint(eRender, eMultimedia, &m_mmDevice);
+            // CComPtr<IMMDeviceCollection> coll;
+            // enumr->EnumAudioEndpoints(eRender, DEVICE_STATE_ACTIVE, &coll);
+
+            // UINT count = 0;
+            // coll->GetCount(&count);
+
+            // for (UINT i = 0; i < count; i++) {
+            //     CComPtr<IMMDevice> dev;
+            //     coll->Item(i, &dev);
+            //     // dev is the device at index i
+            // }
+
+            IMMDeviceCollection* deviceCollection = nullptr;
+            m_deviceEnumerator->EnumAudioEndpoints(eRender, DEVICE_STATE_ACTIVE, &deviceCollection);
+
+            UINT count = 0;
+            deviceCollection->GetCount(&count);
+
+            DE_DEBUG("OutputDevice.Count = ",count)
+
+            for (UINT i = 0; i < count; i++)
+            {
+                IMMDevice* dev = nullptr;
+                deviceCollection->Item(i, &dev);
+
+                IPropertyStore* props = nullptr;
+                dev->OpenPropertyStore(STGM_READ, &props);
+
+                PROPVARIANT name;
+                PropVariantInit(&name);
+                props->GetValue(PKEY_Device_FriendlyName, &name);
+
+                DE_TRACE("OutputDevice[",i,"] ", de_mbstr(name.pwszVal))
+
+                PropVariantClear(&name);
+                props->Release();
+                dev->Release();
+            }
+
+            deviceCollection->Release();
+            // m_deviceEnumerator->Release();
+
+
+
+            hr = m_deviceEnumerator->GetDefaultAudioEndpoint(eRender, eMultimedia, &m_device);
             ASSERT_THROW(SUCCEEDED(hr), "mmDeviceEnumerator->GetDefaultAudioEndpoint() failed");
 
-            hr = m_mmDevice->Activate(__uuidof(IAudioClient), CLSCTX_INPROC_SERVER, 0, reinterpret_cast<void**>(&m_audioClient));
+            hr = m_device->Activate(__uuidof(IAudioClient), CLSCTX_INPROC_SERVER, 0, reinterpret_cast<void**>(&m_audioClient));
             ASSERT_THROW(SUCCEEDED(hr), "mmDevice->Activate() failed");
 
             m_audioClient->GetMixFormat(&m_mixFormat);
@@ -353,8 +401,8 @@ public:
 
         RELEASE(m_audioRenderClient);
         RELEASE(m_audioClient);
-        RELEASE(m_mmDevice);
-        RELEASE(m_mmDeviceEnumerator);
+        RELEASE(m_device);
+        RELEASE(m_deviceEnumerator);
 
         DE_OK("Closed stream")
     }
@@ -503,6 +551,40 @@ void EndPoint_Wasapi::play()
 void EndPoint_Wasapi::stop()
 {
     _d->stop();
+}
+
+bool EndPoint_Wasapi::is_playing() const
+{
+    return _d->m_bIsPlaying;
+}
+
+s32 EndPoint_Wasapi::getOutputDeviceId() const
+{
+    return -1;
+}
+s32 EndPoint_Wasapi::getInputDeviceId() const
+{
+    return -1;
+}
+
+s32 EndPoint_Wasapi::getChannelCount() const
+{
+    return _d->m_channels;
+}
+
+s32 EndPoint_Wasapi::getSampleRate() const
+{
+    return _d->m_sampleRate;
+}
+
+s32 EndPoint_Wasapi::getBlockSizeDsp() const
+{
+    return _d->m_blockSizeDsp;
+}
+
+s32 EndPoint_Wasapi::getBlockSizeWasapi() const
+{
+    return _d->m_blockSizeWasapi;
 }
 
 } // end namespace audio.

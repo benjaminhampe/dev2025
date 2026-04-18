@@ -84,6 +84,61 @@ void AudioMeter::paintEvent( QPaintEvent* event )
     dc.drawRect( m_rcLeftMark );
     dc.drawRect( m_rcRightMark );
 
+    if (m_plugin)
+    {
+        m_Lnow = m_plugin->getSpecialValue(de::audio::IPlugin::eSV_NormalizedSumL);
+        m_Rnow = m_plugin->getSpecialValue(de::audio::IPlugin::eSV_NormalizedSumR);
+        //DE_TRACE("L(",m_Lnow,") + R(",m_Rnow,")")
+    }
+
+    { // Draw [L]
+        int x = m_rcLeft.x();
+        int y = m_rcLeft.y();
+        int w = m_rcLeft.width();
+        int h = m_rcLeft.height();
+
+        int h2 = int( m_Lnow * h );
+        int h1 = h - h2;
+
+        auto color = QColor(50,200,50);
+        if (m_Lnow >= 0.9f)
+        {
+            color = QColor(255,255,50);
+        }
+        else if (m_Lnow >= 0.99f)
+        {
+            color = QColor(255,50,50);
+        }
+
+        dc.setPen( Qt::NoPen );
+        dc.setBrush( QBrush( color ) );
+        dc.drawRect( QRect(x,y+h1,w,h2) );
+    }
+
+    { // Draw [R]
+        int x = m_rcRight.x();
+        int y = m_rcRight.y();
+        int w = m_rcRight.width();
+        int h = m_rcRight.height();
+
+        int h2 = int( m_Rnow * h );
+        int h1 = h - h2;
+
+        auto color = QColor(50,200,50);
+        if (m_Lnow >= 0.9f)
+        {
+            color = QColor(255,255,50);
+        }
+        else if (m_Lnow >= 0.99f)
+        {
+            color = QColor(255,50,50);
+        }
+
+        dc.setPen( Qt::NoPen );
+        dc.setBrush( QBrush( color ) );
+        dc.drawRect( QRect(x,y+h1,w,h2) );
+    }
+
 /*
     //DE_DEBUG("m_Lmax = ", m_Lmax )
     int yL = int( (1.0f - m_Lmax) * h );
@@ -117,4 +172,25 @@ void AudioMeter::paintEvent( QPaintEvent* event )
     drawRectBorder( dc, rect(), QColor(255,255,255) );
     }
 */
+}
+
+void AudioMeter::playUpdateTimer()
+{
+    if (m_updateTimerId) return; // Already running
+    m_updateTimerId = startTimer(50);
+    DE_TRACE("")
+}
+void AudioMeter::stopUpdateTimer()
+{
+    if (!m_updateTimerId) return; // Already stopped
+    killTimer(m_updateTimerId);
+    m_updateTimerId = 0;
+    DE_TRACE("")
+}
+void AudioMeter::timerEvent( QTimerEvent* event )
+{
+    if (event->timerId() == m_updateTimerId)
+    {
+        update();
+    }
 }

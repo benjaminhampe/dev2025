@@ -120,6 +120,7 @@ struct VST2_Plugin_Impl
     std::string m_pluginVendor;
 
     VST2_SampleBuffers m_sampleBuffers;
+    NormalizedSumComputer m_normalizedSumComputer;
     // VST seems to work channelwise / planar, not interleaved audio.
     // std::vector< f32 > m_outBuffer;
     // std::vector< f32*> m_outBufferHeads;
@@ -564,6 +565,9 @@ struct VST2_Plugin_Impl
                     m_sampleBuffers.m_oBuffers.at(1).data(),
                     bytesPerChannel);
 
+        // For audio-level-meter
+        m_normalizedSumComputer.calc(outL, outR, frames);
+
         // Thank you for participating in our DspChain dear plugin.
     }
 
@@ -941,6 +945,17 @@ void VST2_Plugin::setParameter(int i, f32 value)
     }
 
     _d->m_vst->setParameter(_d->m_vst, i, value);
+}
+
+
+float VST2_Plugin::getSpecialValue( eSpecialValue type ) const
+{
+    switch (type)
+    {
+        case IPlugin::eSV_NormalizedSumL: return _d->m_normalizedSumComputer.m_sumL;
+        case IPlugin::eSV_NormalizedSumR: return _d->m_normalizedSumComputer.m_sumR;
+        default: return 0.0f;
+    }
 }
 
 // 🎯 1. Get plugin name
