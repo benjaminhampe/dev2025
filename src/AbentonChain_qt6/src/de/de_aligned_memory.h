@@ -180,7 +180,7 @@ namespace de {
             //DE_OK("[",caller,"] size(", m_collect.size(),"), m_used(",m_used,")"
             //       " :: push(",nSamples,")")
 
-            if (size() < nSamples)
+            if (nSamples > size())
             {
                 resize(nSamples);
             }
@@ -551,7 +551,6 @@ namespace de {
     typedef TAlignedShiftVector<f32>    AlignedFloatShiftVector;
     typedef TAlignedShiftVector<u8>     AlignedByteShiftVector;
 
-
     // Manages a rows that are automaticly shifted when new data arrives.
     //
     // 3D meshes are created out of this data to render with OpenGLES.
@@ -573,187 +572,43 @@ namespace de {
     //
     // Since push() is called constantly we delay expensive postfx like log10f() until render().
     // render() collects data from the matrix using m_samples, not m_orig or m_copy.
-    template < typename T >
     // =======================================================================
-    struct TAlignedShiftMatrix
+    struct AlignedFloatShiftMatrix
     // =======================================================================
     {
+        typedef float T;
         typedef TAlignedVector< T > TData;
         typedef std::vector< T* > TRowVector;
 
+        u32 m_colCount;  // Count matrix cols = m_shiftBuffer.size()
+        u32 m_rowCount;  // Count matrix rows
         TData m_data;
         TRowVector m_rows; // Row Viewer ( original rows )
-        TRowVector m_view; // Row Viewer ( shuffled rows )
+        TRowVector m_temp; // Row Viewer ( shuffled rows )
 
-        u32 m_colCount;         // Count matrix cols = m_shiftBuffer.size()
-        u32 m_rowCount;        // Count matrix rows
-        u32 m_pushCount;        // Debug collection of new rows of samples
-        u32 m_dummy;        // Count m_shiftBuffer fill status to control shift tigger.
+        AlignedFloatShiftMatrix();
+        void resize( u32 colCount, u32 rowCount );
+        void push( T const* __restrict__ src, u32 srcFrames );
+        u32 rowCount() const;
+        u32 columnCount() const;
+        BBox1f getMinMax() const;
+        const T* getRow(int32_t row) const;
+        T getPixel(int32_t col, int32_t row, float defaultValue = 0.0f) const;
 
-        TAlignedShiftMatrix()
-            : m_colCount( 1024 )
-            , m_rowCount( 64 )
-            , m_pushCount( 0 )
-            , m_dummy( 0 )
-        {
-            m_data.resize( m_rowCount * m_colCount );
-            m_rows.resize( m_rowCount );
-            m_view.resize( m_rowCount );
-            for (size_t i = 0; i < m_rowCount; i++)
-            {
-                auto rowPtr = &m_data[m_colCount*i];
-                m_rows[ i ] = rowPtr;
-                m_view[ i ] = rowPtr;
-            }
-        }
+        static void
+        shiftVectorLeft(TRowVector & orig, TRowVector & temp);
 
-        BBox1f getMinMax() const
-        {
-            float lMin = std::numeric_limits< float >::max();
-            float lMax = std::numeric_limits< float >::lowest();
+        static void
+        shiftVectorRight(TRowVector & orig, TRowVector & temp);
 
-            for ( const auto & f : m_data )
-            {
-                lMin = std::min( lMin, f );
-                lMax = std::max( lMax, f );
-            }
 
-            return BBox1f(lMin,lMax);
-        }
-
-        const T* getRow(int32_t row) const
-        {
-            if (row < 0 || row >= m_rowCount )
-            {
-                //DE_WARN("row(",row,") >= rowCount(",m_rowCount,")")
-                return nullptr;
-            }
-            return m_view[row]; // m_data.data() + row * m_colCount;
-        }
-
-        T getPixel(int32_t col, int32_t row, float defaultValue = 0.0f) const
-        {
-            if (col < 0 || col >= m_colCount )
-            {
-                //DE_WARN("col(",col,") >= colCount(",m_colCount,")")
-                return defaultValue;
-            }
-            if (row < 0 || row >= m_rowCount )
-            {
-                //DE_WARN("row(",row,") >= rowCount(",m_rowCount,")")
-                return defaultValue;
-            }
-            const T* pRow = getRow(row);
-            return pRow[ col ];
-        }
-
-        bool getFrontVector( TData & oFront ) const
-        {
-            oFront.resize( columnCount() );
-            for (size_t i = 0; i < columnCount(); i++ )
-            {
-                oFront[i] = getPixel(i,0);
-            }
-            return true;
-        }
-
-        bool getBackVector( TData & oBack ) const
-        {
-            oBack.resize( columnCount() );
-            for (size_t i = 0; i < columnCount(); i++ )
-            {
-                oBack[i] = getPixel(columnCount() - 1 - i, rowCount() - 1);
-            }
-            return true;
-        }
-
-        bool getLeftVector( TData & oLeft ) const
-        {
-            oLeft.resize( rowCount() );
-            for (size_t i = 0; i < rowCount(); i++ )
-            {
-                oLeft[i] = getPixel(0,rowCount() - 1 - i);
-            }
-            return true;
-        }
-
-        bool getRightVector( TData & oRight ) const
-        {
-            oRight.resize( rowCount() );
-            for (size_t i = 0; i < rowCount(); i++ )
-            {
-                oRight[i] = getPixel(columnCount() - 1,i);
-            }
-            return true;
-        }
-
-        void resize( u32 colCount, u32 rowCount )
-        {
-            if ( colCount < 1 || rowCount < 1 )
-            {
-                DE_WARN("colCount < 1 || rowCount < 1")
-                return;
-            }
-
-            if ( (m_rowCount != rowCount) || (m_colCount != colCount) )
-            {
-                m_data.resize( rowCount * colCount );
-                m_rows.resize( rowCount );
-                m_view.resize( rowCount );
-                for ( size_t i = 0; i < rowCount; i++ )
-                {
-                    auto rowPtr = &m_data[colCount*i];
-                    m_rows[ i ] = rowPtr;
-                    m_view[ i ] = rowPtr;
-                }
-                m_colCount = colCount;
-                m_rowCount = rowCount;
-            }
-        }
-
-        u32 rowCount() const { return m_rowCount; }
-        u32 columnCount() const { return m_colCount; }
-
-        // Only mono channel data is allowed.
-        void push( TAlignedVector<T> const& src )
-        {
-            push( src.data(), src.size() );
-        }
-
-        // Only mono channel data is allowed.
-        void push( T const* src, u32 srcFrames )
-        {
-            if (!src) { DE_WARN("!src") return; }
-            if (srcFrames < 1) { DE_WARN("srcFrames < 1") return; }
-            resize( srcFrames, m_rowCount );
-            m_pushCount++;
-
-            auto firstRow = m_view[ 0 ];
-            auto lastRow = m_view[ m_rowCount-1 ];
-
-            for ( size_t i = 0; i < m_rowCount; ++i )
-            {
-                std::swap(m_view[ m_rowCount-2-i ],
-                          m_view[ m_rowCount-1-i ]);
-            }
-
-            // New front:
-            m_view[ 0 ] = lastRow;
-
-            // New front: fill data from push()
-            f32* dst = m_view.front();
-            memcpy( dst, src, srcFrames * sizeof( f32 ));
-        }
-
+        static void test();
+        static void testShiftLeft();
+        static void testShiftRight();
     };
-
-    typedef TAlignedShiftMatrix<f32> AlignedFloatShiftMatrix;
-    // typedef TAlignedShiftMatrix<u8>  AlignedByteShiftMatrix;
 
 } // end namespace de.
 
 typedef de::AlignedFloatVector      DE_AlignedFloatVector;
 typedef de::AlignedFloatShiftVector DE_AlignedFloatShiftVector;
 typedef de::AlignedFloatShiftMatrix DE_AlignedFloatShiftMatrix;
-
-

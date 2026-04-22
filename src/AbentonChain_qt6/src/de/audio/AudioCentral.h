@@ -2,6 +2,7 @@
 #include <de/audio/ITrack.h>
 #include <de/audio/plugin/PluginFactory.h>
 #include <de/midi/MidiCentral.h>
+#include <de/audio/dsp/DspSampleCollector.h>
 
 namespace de {
 namespace audio {
@@ -60,6 +61,16 @@ public:
     virtual midi::MidiCentral& getMidiCentral() = 0;
 
     virtual const midi::MidiCentral& getMidiCentral() const = 0;
+
+    //=========================
+    // SampleCollector
+    //=========================
+
+    virtual DspSampleCollector& getDspSampleCollector() = 0;
+
+    virtual const DspSampleCollector& getDspSampleCollector() const = 0;
+
+    virtual const DE_AlignedFloatShiftMatrix& getFftMatrix() const = 0;
 };
 
 class AudioCentral_Private;
@@ -113,6 +124,16 @@ public:
     midi::MidiCentral& getMidiCentral() override;
 
     const midi::MidiCentral& getMidiCentral() const override;
+
+    //=========================
+    // SampleCollector
+    //=========================
+
+    DspSampleCollector& getDspSampleCollector() override;
+
+    const DspSampleCollector& getDspSampleCollector() const override;
+
+    const DE_AlignedFloatShiftMatrix& getFftMatrix() const override;
 
 private:
     AudioCentral_Private* _d = nullptr;

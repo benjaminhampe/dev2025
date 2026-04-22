@@ -1,17 +1,25 @@
 #include "App.h"
+#include <gui/viz/GL_Canvas.h>
 
 // Singleton instance pointer.
 App* App::m_pInstance = nullptr;
 
 App::App(QObject* parent)
     : QObject(parent)
+    , m_canvas{ nullptr }
 {
     qDebug() << "Created App.";
+
 }
 
 App::~App()
 {
     qDebug() << "Deleted App.";
+
+    if (m_canvas)
+    {
+        DE_ERROR("Canvas still active")
+    }
 }
 
 App* App::instance()
@@ -20,6 +28,39 @@ App* App::instance()
         m_pInstance = new App;
 
     return m_pInstance;
+}
+
+// void App::playAudio()
+// {
+//     m_audioCentral.playAudio();
+//     m_canvas->getRenderer()->setRenderingEnabled(true);
+// }
+
+void App::setCanvas( GL_Canvas* canvas )
+{
+    m_canvas = canvas;
+}
+
+void App::cleanupAll()
+{
+    // Your cleanup before destruction
+    DE_WARN("===============   App::cleanupAll   ==================")
+
+    if (!m_canvas)
+    {
+        DE_ERROR("No canvas")
+    }
+    else
+    {
+        // The renderer accesses DSP data. We need to stop that
+        // before the DspChain gets deleted while the renderer
+        // is still running!
+        m_canvas->stopFpsTimer();
+        m_canvas->setRenderingEnabled(false);
+        DE_OK("Stop canvas rendering audio data")
+    }
+
+    m_audioCentral.cleanupAll();
 }
 
 const Skin&

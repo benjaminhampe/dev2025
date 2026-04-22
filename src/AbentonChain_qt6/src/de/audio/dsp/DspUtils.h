@@ -120,28 +120,23 @@ inline void DSP_MONO(
     }
 }
 
-inline void DSP_ADD(
-    f32* __restrict__ dst_values,
-    u64 n,
-    const f32* __restrict__ src_values)
+inline void DSP_ADD(float* __restrict dst, u64 n, const float* __restrict src_a, const float* __restrict src_b )
 {
-    if (n<1) return;
-    for (u64 i = 0; i < n; i++)
-    {
-        (*dst_values) = (*src_values);
-        src_values++;
-        dst_values++;
-    }
+    for (u64 i = 0; i < n; ++i) { dst[i] = src_a[i] + src_b[i]; }
 }
 
-inline void DSP_COPY(
-    f32* __restrict__ dst,
-    u64 n,
-    const f32* __restrict__ src,
-    u64 src_stride = 1,
-    u64 dst_stride = 1)
+inline void DSP_ADD(float* __restrict__ dst, u64 n, const float* __restrict__ src)
 {
-    if (n<1) return;
+    for (u64 i = 0; i < n; ++i) { dst[i] += src[i]; }
+}
+
+inline void DSP_COPY(float* __restrict__ dst, u64 n, const float* __restrict__ src)
+{
+    for (u64 i = 0; i < n; ++i) { dst[i] = src[i]; }
+}
+
+inline void DSP_COPY(float* __restrict__ dst, u64 n, const float* __restrict__ src, u64 src_stride, u64 dst_stride)
+{
     for (u64 i = 0; i < n; i++)
     {
         *dst = *src;

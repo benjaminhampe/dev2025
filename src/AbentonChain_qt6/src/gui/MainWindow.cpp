@@ -1,9 +1,14 @@
 #include "MainWindow.h"
 #include "gui/track/ChainStack.h"
-#include "App.h"
+#include <App.h>
 
 #include <QDebug>
 #include <QWidget>
+#include <QMenuBar>
+#include <QVBoxLayout>
+#include <QSurfaceFormat>
+#include <QOpenGLContext>
+#include <QOffscreenSurface>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -11,12 +16,62 @@ MainWindow::MainWindow(QWidget *parent)
     DE_TRACE("")
     setFocusPolicy(Qt::StrongFocus);
 
-    // Install event filter on the whole window
-    this->installEventFilter(this);
+    m_keyboard2MidiNoteMapping.addGermanLayout();
+
+    // Create a custom OpenGL context
+    QSurfaceFormat format;
+    format.setVersion(4, 3);
+    format.setProfile(QSurfaceFormat::CoreProfile); // CoreProfile
+    format.setOption(QSurfaceFormat::DebugContext);
+    format.setDepthBufferSize(24);
+    format.setStencilBufferSize(8);
+    format.setSamples(0);
+    format.setAlphaBufferSize(0);
+    format.setSwapBehavior(QSurfaceFormat::DoubleBuffer); // DoubleBuffer
+    //format.setColorSpace(QSurfaceFormat::sRGBColorSpace);
+    format.setStereo(false);
+    format.setSwapInterval(1);
+    QSurfaceFormat::setDefaultFormat(format);
+
+    m_customContext = new QOpenGLContext;
+    m_customContext->setFormat(format);
+    if (!m_customContext->create())
+    {
+        qDebug() << "Failed to create custom OpenGL context";
+        //return -1;
+    }
+
+    // Create a temporary offscreen surface to make the custom context current
+    m_offscreenSurface = new QOffscreenSurface;
+    m_offscreenSurface->setFormat(m_customContext->format());
+    m_offscreenSurface->create();
+
+    m_customContext->makeCurrent(m_offscreenSurface);
+
+    m_canvas = new GL_Canvas(m_customContext);
+    m_canvas->setContentsMargins(0,0,0,0);
+    m_canvas->setVisible(false);
+    m_canvas->setMinimumHeight(64);
+    App::instance()->setCanvas(m_canvas);
 
     auto track = new ChainStack(this);
 
-    setCentralWidget(track);
+    auto v = new QVBoxLayout;
+    v->setContentsMargins(0,0,0,0);
+    v->setSpacing(0);
+    v->addWidget(m_canvas,1);
+    v->addWidget(track);
+
+    auto content = new QWidget(this);
+    content->setLayout(v);
+
+
+
+    // Install event filter on the whole window
+    this->installEventFilter(this);
+
+
+    setCentralWidget(content);
     resize(1000, 300);
     show();
 
@@ -26,6 +81,37 @@ MainWindow::MainWindow(QWidget *parent)
 
     m_appTitle = "AbentonChain_qt6";
     setWindowTitle(m_appTitle);
+
+    // Create FILE menu
+    QMenu* menuFile = menuBar()->addMenu("File");
+    QAction* actionExitProgram = new QAction("Exit Program", this);
+    menuFile->addAction(actionExitProgram);
+    connect(actionExitProgram, &QAction::triggered, this, &MainWindow::on_exitProgram);
+
+    // Create CONFIG menu
+    QMenu* menuConfig = menuBar()->addMenu("Config");
+    QAction* actionAudioConfig = new QAction("Audio Config", this);
+    menuConfig->addAction(actionAudioConfig);
+    connect(actionAudioConfig, &QAction::triggered, this, &MainWindow::on_openAudioConfigDialog);
+    QAction* actionMidiConfig = new QAction("MIDI Config", this);
+    menuConfig->addAction(actionMidiConfig);
+    connect(actionMidiConfig, &QAction::triggered, this, &MainWindow::on_openMidiConfigDialog);
+
+    // Create VIZ menu
+    QMenu* menuViz = menuBar()->addMenu("Viz");
+    QAction* actionVizEnabled = new QAction("Enable Vizualizations", this);
+    actionVizEnabled->setCheckable(true);
+    actionVizEnabled->setChecked(false);
+    menuViz->addAction(actionVizEnabled);
+    connect(actionVizEnabled, &QAction::triggered, this, &MainWindow::on_vizualizeEnabled);
+
+    menuViz->addSeparator();
+
+    QAction* actionVizMatrixFft = new QAction("Show FFT Matrix3D", this);
+    actionVizMatrixFft->setCheckable(true);
+    actionVizMatrixFft->setChecked(true);
+    menuViz->addAction(actionVizMatrixFft);
+    connect(actionVizMatrixFft, &QAction::triggered, this, &MainWindow::on_vizualizeFftMatrix);
 }
 
 MainWindow::~MainWindow()
@@ -33,11 +119,52 @@ MainWindow::~MainWindow()
     DE_TRACE("")
 }
 
+void MainWindow::on_exitProgram()
+{
+    close();
+}
+
+void MainWindow::on_openMidiConfigDialog()
+{
+    auto dlg = new MidiConfigDialog(this);
+    dlg->show();
+}
+
+void MainWindow::on_openAudioConfigDialog()
+{
+    auto dlg = new AudioConfigDialog(this);
+    dlg->show();
+}
+
+void MainWindow::on_vizualizeEnabled( bool bChecked )
+{
+    if (bChecked)
+    {
+        m_canvas->setVisible(bChecked);
+        m_canvas->setRenderingEnabled(bChecked);
+        App::instance()->getAudioCentral().getDspSampleCollector().setBypassed(false);
+    }
+    else
+    {
+        // Save some collecting CPU cycles when drawing is disabled
+        App::instance()->getAudioCentral().getDspSampleCollector().setBypassed(true);
+        m_canvas->setRenderingEnabled(bChecked);
+        m_canvas->setVisible(bChecked);
+    }
+
+}
+
+void MainWindow::on_vizualizeFftMatrix( bool bChecked )
+{
+    // App::instance()->getAudioCentral()
+    //     .getDspSampleCollector()
+    //     .setBypassed(bChecked);
+    // m_canvas->setVisibleFftMatrix(bChecked);
+}
+
 void MainWindow::closeEvent(QCloseEvent* event)
 {
-    // Your cleanup before destruction
-    DE_WARN("=======================================")
-    App::instance()->getAudioCentral().cleanupAll();
+    App::instance()->cleanupAll();
 
     // Let Qt continue closing the window
     QMainWindow::closeEvent(event);
@@ -78,6 +205,7 @@ void MainWindow::updateWindowTitle()
         .arg(App::instance()->getZoom());
     setWindowTitle(s);
 }
+
 void MainWindow::zoomIn()
 {
     int pc = App::instance()->getZoom();
@@ -94,135 +222,35 @@ void MainWindow::zoomOut()
     updateWindowTitle();
 }
 
-
-
 void MainWindow::keyPressEvent( QKeyEvent* event )
 {
-    auto noteOn = [&] ( int midiNote, int velocity = 90 )
-    {
-        App::instance()->getMidiCentral().sendNoteOn( 0, midiNote, velocity );
-    };
-
     if ( !event->isAutoRepeat() )
     {
         auto key = event->key();
 
-        int k = 12+59;
-        if ( key == Qt::Key_1 )          { noteOn( k ); } k++;
-
-        k = 72;
-        if ( key == Qt::Key_Q )          { noteOn( k ); } k++; // C
-        if ( key == Qt::Key_2 )          { noteOn( k ); } k++;
-        if ( key == Qt::Key_W )          { noteOn( k ); } k++; // D
-        if ( key == Qt::Key_3 )          { noteOn( k ); } k++;
-        if ( key == Qt::Key_E )          { noteOn( k ); } k++; // E
-        if ( key == Qt::Key_R )          { noteOn( k ); } k++; // F
-        if ( key == Qt::Key_5 )          { noteOn( k ); } k++;
-        if ( key == Qt::Key_T )          { noteOn( k ); } k++; // G
-        if ( key == Qt::Key_6 )          { noteOn( k ); } k++;
-        if ( key == Qt::Key_Z )          { noteOn( k ); } k++; // A
-        if ( key == Qt::Key_7 )          { noteOn( k ); } k++;
-        if ( key == Qt::Key_U )          { noteOn( k ); } k++; // H
-
-        if ( key == Qt::Key_I )          { noteOn( k ); } k++; // C
-        if ( key == Qt::Key_9 )          { noteOn( k ); } k++;
-        if ( key == Qt::Key_O )          { noteOn( k ); } k++; // D
-        if ( key == Qt::Key_0 )          { noteOn( k ); } k++;
-        if ( key == Qt::Key_P )          { noteOn( k ); } k++; // E
-        if ( key == Qt::Key_Udiaeresis ) { noteOn( k ); } k++; // F
-        // if ( key == Qt::Key_ssharp )     { noteOn( k ); } k++;
-        if ( key == Qt::Key_acute )      { noteOn( k ); } k++;
-        if ( key == Qt::Key_Plus )       { noteOn( k ); } k++; // G
-
-        k = 48;
-        if ( key == Qt::Key_Greater )    { noteOn( k ); }
-        if ( key == Qt::Key_Less )       { noteOn( k ); } k++;
-        if ( key == Qt::Key_A )          { noteOn( k ); } k++;
-        if ( key == Qt::Key_Y )          { noteOn( k ); } k++;
-        if ( key == Qt::Key_S )          { noteOn( k ); } k++;
-        if ( key == Qt::Key_X )          { noteOn( k ); } k++;
-        if ( key == Qt::Key_C )          { noteOn( k ); } k++;
-        if ( key == Qt::Key_F )          { noteOn( k ); } k++;
-        if ( key == Qt::Key_V )          { noteOn( k ); } k++;
-        if ( key == Qt::Key_G )          { noteOn( k ); } k++;
-        if ( key == Qt::Key_B )          { noteOn( k ); } k++;
-        if ( key == Qt::Key_H )          { noteOn( k ); } k++;
-        if ( key == Qt::Key_N )          { noteOn( k ); } k++;
-        if ( key == Qt::Key_M )          { noteOn( k ); } k++;
-        if ( key == Qt::Key_K )          { noteOn( k ); } k++;
-        if ( key == Qt::Key_Comma )      { noteOn( k ); } k++;
-        if ( key == Qt::Key_L )          { noteOn( k ); } k++;
-        if ( key == Qt::Key_Period )     { noteOn( k ); } k++;
-        if ( key == Qt::Key_Minus )      { noteOn( k ); } k++; // F
-        if ( key == Qt::Key_Odiaeresis ) { noteOn( k ); } k++; // Ö = F#
-        if ( key == Qt::Key_Adiaeresis ) { noteOn( k ); } k++; // Ä = F#
-        if ( key == Qt::Key_NumberSign ) { noteOn( k ); } k++; // # = G#
+        auto midiNote = m_keyboard2MidiNoteMapping.get(key);
+        if (midiNote > -1)
+        {
+            int velocity = 90;
+            App::instance()->getMidiCentral().sendNoteOn( 0, midiNote, velocity );
+        }
     }
     event->accept();
 }
 
 void MainWindow::keyReleaseEvent( QKeyEvent* event )
 {
-    auto noteOff = [&] ( int midiNote, int velocity = 90 )
-    {
-        App::instance()->getMidiCentral().sendNoteOff( 0, midiNote, velocity );
-    };
-
     if ( !event->isAutoRepeat() )
     {
         auto key = event->key();
 
-        // DE_DEBUG("keyRelease(",key,")")
+        auto midiNote = m_keyboard2MidiNoteMapping.get(key);
+        if (midiNote > -1)
+        {
+            int velocity = 90;
+            App::instance()->getMidiCentral().sendNoteOff( 0, midiNote, velocity );
+        }
 
-        int k = 12+59;
-        if ( key == Qt::Key_1 )          { noteOff( k ); } k++;
-        k = 72;
-        if ( key == Qt::Key_Q )          { noteOff( k ); } k++; // C
-        if ( key == Qt::Key_2 )          { noteOff( k ); } k++;
-        if ( key == Qt::Key_W )          { noteOff( k ); } k++; // D
-        if ( key == Qt::Key_3 )          { noteOff( k ); } k++;
-        if ( key == Qt::Key_E )          { noteOff( k ); } k++; // E
-        if ( key == Qt::Key_R )          { noteOff( k ); } k++; // F
-        if ( key == Qt::Key_5 )          { noteOff( k ); } k++;
-        if ( key == Qt::Key_T )          { noteOff( k ); } k++; // G
-        if ( key == Qt::Key_6 )          { noteOff( k ); } k++;
-        if ( key == Qt::Key_Z )          { noteOff( k ); } k++; // A
-        if ( key == Qt::Key_7 )          { noteOff( k ); } k++;
-        if ( key == Qt::Key_U )          { noteOff( k ); } k++; // H
-
-        if ( key == Qt::Key_I )          { noteOff( k ); } k++; // C
-        if ( key == Qt::Key_9 )          { noteOff( k ); } k++;
-        if ( key == Qt::Key_O )          { noteOff( k ); } k++; // D
-        if ( key == Qt::Key_0 )          { noteOff( k ); } k++;
-        if ( key == Qt::Key_P )          { noteOff( k ); } k++; // E
-        if ( key == Qt::Key_Udiaeresis ) { noteOff( k ); } k++; // F
-        // if ( key == Qt::Key_ssharp )     { noteOff( k ); } k++;
-        if ( key == Qt::Key_acute )      { noteOff( k ); } k++;
-        if ( key == Qt::Key_Plus )       { noteOff( k ); } k++; // G
-
-        k = 48;
-        if ( key == Qt::Key_Greater )    { noteOff( k ); }
-        if ( key == Qt::Key_Less )       { noteOff( k ); } k++;
-        if ( key == Qt::Key_A )          { noteOff( k ); } k++;
-        if ( key == Qt::Key_Y )          { noteOff( k ); } k++;
-        if ( key == Qt::Key_S )          { noteOff( k ); } k++;
-        if ( key == Qt::Key_X )          { noteOff( k ); } k++;
-        if ( key == Qt::Key_C )          { noteOff( k ); } k++;
-        if ( key == Qt::Key_F )          { noteOff( k ); } k++;
-        if ( key == Qt::Key_V )          { noteOff( k ); } k++;
-        if ( key == Qt::Key_G )          { noteOff( k ); } k++;
-        if ( key == Qt::Key_B )          { noteOff( k ); } k++;
-        if ( key == Qt::Key_H )          { noteOff( k ); } k++;
-        if ( key == Qt::Key_N )          { noteOff( k ); } k++;
-        if ( key == Qt::Key_M )          { noteOff( k ); } k++;
-        if ( key == Qt::Key_K )          { noteOff( k ); } k++;
-        if ( key == Qt::Key_Comma )      { noteOff( k ); } k++;
-        if ( key == Qt::Key_L )          { noteOff( k ); } k++;
-        if ( key == Qt::Key_Period )     { noteOff( k ); } k++;
-        if ( key == Qt::Key_Minus )      { noteOff( k ); } k++; // F
-        if ( key == Qt::Key_Odiaeresis ) { noteOff( k ); } k++; // Ö = F#
-        if ( key == Qt::Key_Adiaeresis ) { noteOff( k ); } k++; k++; // Ä = F#
-        if ( key == Qt::Key_NumberSign ) { noteOff( k ); } k++; // # = G#
     }
     event->accept();
 }

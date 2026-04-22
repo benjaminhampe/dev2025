@@ -50,12 +50,30 @@ public:
             return Steinberg::kResultFalse;
         }
 
-        m_parentWidget->setGeometry(
-            m_parentWidget->x(),
-            m_parentWidget->y(),
-            newSize->right - newSize->left,
-            newSize->bottom - newSize->top
-        );
+        int w = newSize->getWidth();
+        int h = newSize->getHeight();
+        if (w < 1)
+        {
+            DE_ERROR("Got stupid plugin width ",w)
+            w = 100;
+        }
+        else if (w > 10000)
+        {
+            DE_ERROR("Got stupid plugin width ",w)
+            w = 1024;
+        }
+
+        if (h < 1)
+        {
+            DE_ERROR("Got stupid plugin height ",h)
+            h = 100;
+        }
+        else if (h > 10000)
+        {
+            DE_ERROR("Got stupid plugin height ",h)
+            h = 1024;
+        }
+        m_parentWidget->setGeometry( m_parentWidget->x(), m_parentWidget->y(), w,h);
 
         return Steinberg::kResultOk;
     }
@@ -80,7 +98,7 @@ public:
 
         m_plugView->setFrame(m_plugFrame);
 
-        Steinberg::ViewRect r(0, 0, width(), height());
+        //Steinberg::ViewRect r(0, 0, width(), height());
         void* nativeHandle = reinterpret_cast<void*>(winId());
         m_plugView->attached(nativeHandle, "HWND");   // Windows
         //m_plugView->attached(nativeHandle, "NSView"); // macOS
@@ -100,7 +118,32 @@ public:
 
         if (m_plugView)
         {
-            Steinberg::ViewRect r(0, 0, width(), height());
+
+            int w = width();
+            int h = height();
+            if (w < 1)
+            {
+                DE_ERROR("Got stupid widget width ",w)
+                w = 100;
+            }
+            else if (w > 10000)
+            {
+                DE_ERROR("Got stupid widget width ",w)
+                w = 1024;
+            }
+
+            if (h < 1)
+            {
+                DE_ERROR("Got stupid widget height ",h)
+                h = 100;
+            }
+            else if (h > 10000)
+            {
+                DE_ERROR("Got stupid widget height ",h)
+                h = 1024;
+            }
+
+            Steinberg::ViewRect r(0, 0, w, h);
             m_plugView->onSize(&r);
         }
     }

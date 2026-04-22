@@ -6,6 +6,8 @@
 
 void enableConsoleOutput();
 
+class GL_Canvas;
+
 // ============================================
 class App : public QObject
 // ============================================
@@ -15,22 +17,14 @@ public:
     App(QObject* parent = nullptr);
     ~App();
 
-    de::audio::AudioCentral& getAudioCentral()
-    {
-        return m_audioCentral;
-    }
-    const de::audio::AudioCentral& getAudioCentral() const
-    {
-        return m_audioCentral;
-    }
-    de::midi::MidiCentral& getMidiCentral()
-    {
-        return m_audioCentral.getMidiCentral();
-    }
-    const de::midi::MidiCentral& getMidiCentral() const
-    {
-        return m_audioCentral.getMidiCentral();
-    }
+    //void playAudio();
+    void cleanupAll();
+
+
+    de::audio::AudioCentral& getAudioCentral() { return m_audioCentral; }
+    const de::audio::AudioCentral& getAudioCentral() const { return m_audioCentral; }
+    de::midi::MidiCentral& getMidiCentral() { return m_audioCentral.getMidiCentral(); }
+    const de::midi::MidiCentral& getMidiCentral() const { return m_audioCentral.getMidiCentral(); }
 
     static App* instance();
     const Skin& currentSkin() const;
@@ -38,6 +32,7 @@ public:
 
     int getZoom() const;
 
+    void setCanvas( GL_Canvas* canvas );
 protected:
 public slots:
     void setZoom(int percent);
@@ -53,4 +48,6 @@ public:
     SkinManager m_skinManager;
 
     de::audio::AudioCentral m_audioCentral;
+
+    GL_Canvas* m_canvas;
 };

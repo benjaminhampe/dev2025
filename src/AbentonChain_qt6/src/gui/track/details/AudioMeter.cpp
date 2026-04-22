@@ -5,7 +5,22 @@
 // ============================================================================
 AudioMeter::AudioMeter( QWidget* parent )
 // ============================================================================
-   : QWidget(parent)
+    : QWidget(parent)
+    , m_plugin{ nullptr }
+    , m_updateTimerId{ 0 }
+    , m_Lnow{ 0.f }
+    , m_Rnow{ 0.f }
+    , m_Lmin{ 0.f }
+    , m_Rmin{ 0.f }
+    , m_Lmax{ 0.f }
+    , m_Rmax{ 0.f }
+    , m_baseWidth{ 4 }
+    , m_baseHeight{ 216 }
+    , m_baseTop{ 22 }
+    , m_baseSpacing{ 2 }
+    , m_fillColor{ 36,36,36 }
+    , m_markColor{ 165,165,165 }
+
 {
 	setObjectName( "AudioMeter" );
 	setContentsMargins(0,0,0,0);
@@ -86,8 +101,9 @@ void AudioMeter::paintEvent( QPaintEvent* event )
 
     if (m_plugin)
     {
-        m_Lnow = m_plugin->getSpecialValue(de::audio::IPlugin::eSV_NormalizedSumL);
-        m_Rnow = m_plugin->getSpecialValue(de::audio::IPlugin::eSV_NormalizedSumR);
+        auto p = m_plugin.load();
+        m_Lnow = p->getSpecialValue(de::audio::IPlugin::eSV_NormalizedSumL);
+        m_Rnow = p->getSpecialValue(de::audio::IPlugin::eSV_NormalizedSumR);
         //DE_TRACE("L(",m_Lnow,") + R(",m_Rnow,")")
     }
 

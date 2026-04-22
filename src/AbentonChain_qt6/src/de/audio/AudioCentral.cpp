@@ -1,6 +1,7 @@
 #include <de/audio/AudioCentral.h>
 //#include <de/audio/device/EndPoint_RtAudio.h>
 #include <de/audio/device/EndPoint_Wasapi.h>
+//#include <App.h>
 
 namespace de {
 namespace audio {
@@ -338,6 +339,8 @@ public:
 
     Track m_track0;
 
+    DspSampleCollector m_dspSampleCollector;
+
     //EndPoint_RtAudio m_endPoint;
     EndPoint_Wasapi m_endPoint;
 
@@ -382,7 +385,8 @@ public:
 
     void playAudio()
     {
-        m_endPoint.setInputSignal(m_track);
+        m_dspSampleCollector.dsp_setInputSignal(m_track);
+        m_endPoint.setInputSignal(&m_dspSampleCollector);
         m_endPoint.play();
     }
 
@@ -439,11 +443,28 @@ public:
         // m_track0
     }
 
+    //=========================
+    // MidiApi
+    //=========================
+
     midi::MidiCentral&
     getMidiCentral() { return m_midiCentral; }
 
     const midi::MidiCentral&
     getMidiCentral() const { return m_midiCentral; }
+
+    //=========================
+    // SampleCollector
+    //=========================
+
+    DspSampleCollector&
+    getDspSampleCollector() { return m_dspSampleCollector; }
+
+    const DspSampleCollector&
+    getDspSampleCollector() const { return m_dspSampleCollector; }
+
+    const DE_AlignedFloatShiftMatrix&
+    getFftMatrix() const { return m_dspSampleCollector.getMatrix(); }
 };
 
 // ===========================================================================
@@ -546,7 +567,27 @@ AudioCentral::getMidiCentral() { return _d->m_midiCentral; }
 const midi::MidiCentral&
 AudioCentral::getMidiCentral() const { return _d->m_midiCentral; }
 
+//=========================
+// SampleCollector
+//=========================
 
+DspSampleCollector&
+AudioCentral::getDspSampleCollector()
+{
+    return _d->getDspSampleCollector();
+}
+
+const DspSampleCollector&
+AudioCentral::getDspSampleCollector() const
+{
+    return _d->getDspSampleCollector();
+}
+
+const DE_AlignedFloatShiftMatrix&
+AudioCentral::getFftMatrix() const
+{
+    return _d->getFftMatrix();
+}
 
 } // end namespace audio.
 } // end namespace de.

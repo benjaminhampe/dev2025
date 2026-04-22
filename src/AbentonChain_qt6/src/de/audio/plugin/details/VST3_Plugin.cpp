@@ -1,5 +1,9 @@
 #include "VST3_Plugin.h"
 
+#include <string>
+#include <codecvt>
+#include <locale>
+
 #ifdef BENNI_USE_VST3
 
 #include <de/audio/plugin/details/VST3_Editor.h>
@@ -47,161 +51,6 @@ std::string getErrorDesc(Steinberg::tresult e)
         default: return "Unknown";
     }
 }
-
-//===============================
-struct VST3_SampleBuffers
-//===============================
-{
-    TAlignedVector<float> m_L;
-    TAlignedVector<float> m_R;
-
-    // Audio bus storage
-    std::vector<Steinberg::Vst::AudioBusBuffers> m_iBuses;
-    std::vector<Steinberg::Vst::AudioBusBuffers> m_oBuses;
-
-    // Bus[].Channels[].Buffer
-    std::vector<std::vector<TAlignedVector<float>>> m_iBuffers;
-    std::vector<std::vector<TAlignedVector<float>>> m_oBuffers;
-
-    // Bus[].Channels*
-    std::vector<std::vector<float*>> m_iHeads;
-    std::vector<std::vector<float*>> m_oHeads;
-
-    void setup(Steinberg::IPtr<Steinberg::Vst::IComponent>& comp, u32 blockSize)
-    {
-        if (!comp) { DE_WARN("No component") return; } // Nothing todo
-
-        m_L.resize(blockSize + GUARD);
-        m_R.resize(blockSize + GUARD);
-
-        DE_WARN("========= SETUP =========== blockSize = ", blockSize)
-
-        // ============
-        // Inputs
-        // ============
-
-        auto busTyp = Steinberg::Vst::MediaTypes::kAudio;
-        auto busDir = Steinberg::Vst::kInput;
-
-        const u32 nBusAudioIn  = comp->getBusCount(busTyp, busDir);
-        u32 nChannelsIn = 0;
-        m_iBuses.resize(nBusAudioIn);
-        m_iBuffers.resize(nBusAudioIn);
-        m_iHeads.resize(nBusAudioIn);
-
-        DE_TRACE("BusAudioIn.Count = ", nBusAudioIn)
-        for (u32 i = 0; i < nBusAudioIn; i++)
-        {
-            Steinberg::Vst::BusInfo info;
-            auto e = comp->getBusInfo(busTyp, busDir, i, info);
-            if (e != Steinberg::kResultOk)
-            {
-                DE_ERROR("BusAudioIn[",i,"] ", getErrorDesc(e))
-            }
-
-            nChannelsIn += info.channelCount;
-
-            m_iBuffers[i].resize(info.channelCount);
-            m_iHeads[i].resize(info.channelCount);
-            for (auto & b : m_iBuffers[i])
-            {
-                b.resize(blockSize + GUARD);
-            }
-            for (u32 k = 0; k < info.channelCount; k++)
-            {
-                m_iHeads[i][k] = m_iBuffers[i][k].data();
-            }
-
-            m_iBuses[i].numChannels = info.channelCount;
-            m_iBuses[i].silenceFlags = 0;
-            m_iBuses[i].channelBuffers32 = m_iHeads[i].data();
-        }
-        DE_TRACE("BusAudioIn.Channels = ", nChannelsIn)
-
-        // ============
-        // Outputs
-        // ============
-        busDir = Steinberg::Vst::kOutput;
-        const u32 nBusAudioOut = comp->getBusCount(busTyp, busDir);
-        DE_TRACE("BusAudioOut.Count = ", nBusAudioOut)
-        u32 nChannelsOut = 0;
-        m_oBuses.resize(nBusAudioOut);
-        m_oBuffers.resize(nBusAudioOut);
-        m_oHeads.resize(nBusAudioOut);
-
-        for (u32 i = 0; i < nBusAudioOut; i++)
-        {
-            Steinberg::Vst::BusInfo info;
-            auto e = comp->getBusInfo(busTyp, busDir, i, info);
-            if (e != Steinberg::kResultOk)
-            {
-                DE_ERROR("No OutputBusInfo[",i,"]. ", getErrorDesc(e))
-            }
-
-            nChannelsOut += info.channelCount;
-
-            m_oBuffers[i].resize(info.channelCount);
-            m_oHeads[i].resize(info.channelCount);
-            for (auto & b : m_oBuffers[i])
-            {
-                b.resize(blockSize + GUARD);
-            }
-            for (u32 k = 0; k < info.channelCount; k++)
-            {
-                m_oHeads[i][k] = m_oBuffers[i][k].data();
-            }
-
-            m_oBuses[i].numChannels = info.channelCount;
-            m_oBuses[i].silenceFlags = 0;
-            m_oBuses[i].channelBuffers32 = m_oHeads[i].data();
-        }
-
-        DE_TRACE("BusAudioOut.Channels = ", nChannelsOut)
-    }
-
-    void copy1( u32 blockSize )
-    {
-        if (blockSize < 1)
-        {
-            DE_ERROR("No blockSize")
-            return;
-        }
-
-        // Fill all with zeroes, just to make sure...
-        for (auto & b : m_iBuffers)
-        {
-            for (auto & c : b)
-            {
-                std::fill(c.begin(), c.end(), 0.0f);
-            }
-        }
-
-        const auto bytesPerChannel = u64(blockSize) * sizeof(f32);
-
-        // Copy L+R to vst3 buffers, if any...
-        u32 n = 0;
-        for (auto & b : m_iBuffers)
-        {
-            for (auto & c : b)
-            {
-                if (n == 0)
-                {
-                    std::memcpy(m_L.data(), c.data(), bytesPerChannel);
-                    n++;
-                }
-                else if (n == 1)
-                {
-                    std::memcpy(m_R.data(), c.data(), bytesPerChannel);
-                    n++;
-                }
-                else
-                {
-                    break;
-                }
-            }
-        }
-    }
-};
 
 class HostApp : public Steinberg::Vst::IHostApplication
 {
@@ -317,6 +166,119 @@ public:
     }
 };
 
+//===============================
+struct VST3_SampleBuffers
+//===============================
+{
+    TAlignedVector<float> m_L;
+    TAlignedVector<float> m_R;
+
+    // Audio bus storage
+    std::vector<Steinberg::Vst::AudioBusBuffers> m_iBuses;
+    std::vector<Steinberg::Vst::AudioBusBuffers> m_oBuses;
+
+    // Bus[].Channels[].Buffer
+    std::vector<std::vector<TAlignedVector<float>>> m_iBuffers;
+    std::vector<std::vector<TAlignedVector<float>>> m_oBuffers;
+
+    // Bus[].Channels*
+    std::vector<std::vector<float*>> m_iHeads;
+    std::vector<std::vector<float*>> m_oHeads;
+
+    void setup(Steinberg::IPtr<Steinberg::Vst::IComponent>& comp, u32 blockSize)
+    {
+        m_L.resize(blockSize + GUARD);
+        m_R.resize(blockSize + GUARD);
+
+        if (!comp) { DE_WARN("No component") return; } // Nothing todo
+
+        DE_WARN("========= SETUP =========== blockSize = ", blockSize)
+
+        // ============
+        // Inputs
+        // ============
+
+        auto busTyp = Steinberg::Vst::MediaTypes::kAudio;
+        auto busDir = Steinberg::Vst::kInput;
+
+        const u32 nBusAudioIn  = comp->getBusCount(busTyp, busDir);
+        //u32 nChannelsIn = 0;
+        m_iBuses.resize(nBusAudioIn);
+        m_iBuffers.resize(nBusAudioIn);
+        m_iHeads.resize(nBusAudioIn);
+
+        //DE_TRACE("BusAudioIn.Count = ", nBusAudioIn)
+        for (u32 i = 0; i < nBusAudioIn; ++i)
+        {
+            Steinberg::Vst::BusInfo info;
+            auto e = comp->getBusInfo(busTyp, busDir, i, info);
+            if (e != Steinberg::kResultOk)
+            {
+                DE_ERROR("BusAudioIn[",i,"] ", getErrorDesc(e))
+            }
+
+            //nChannelsIn += info.channelCount;
+
+            m_iBuffers[i].resize(info.channelCount);
+            m_iHeads[i].resize(info.channelCount);
+            for (auto & b : m_iBuffers[i])
+            {
+                b.resize(blockSize + GUARD);
+            }
+            for (u32 k = 0; k < info.channelCount; k++)
+            {
+                m_iHeads[i][k] = m_iBuffers[i][k].data();
+            }
+
+            m_iBuses[i].numChannels = info.channelCount;
+            m_iBuses[i].silenceFlags = 0;
+            m_iBuses[i].channelBuffers32 = m_iHeads[i].data();
+        }
+        //DE_TRACE("BusAudioIn.Channels = ", nChannelsIn)
+
+        // ============
+        // Outputs
+        // ============
+        busDir = Steinberg::Vst::kOutput;
+        const u32 nBusAudioOut = comp->getBusCount(busTyp, busDir);
+        //DE_TRACE("BusAudioOut.Count = ", nBusAudioOut)
+        //u32 nChannelsOut = 0;
+        m_oBuses.resize(nBusAudioOut);
+        m_oBuffers.resize(nBusAudioOut);
+        m_oHeads.resize(nBusAudioOut);
+
+        for (u32 i = 0; i < nBusAudioOut; ++i)
+        {
+            Steinberg::Vst::BusInfo info;
+            auto e = comp->getBusInfo(busTyp, busDir, i, info);
+            if (e != Steinberg::kResultOk)
+            {
+                DE_ERROR("No OutputBusInfo[",i,"]. ", getErrorDesc(e))
+            }
+
+            //nChannelsOut += info.channelCount;
+
+            m_oBuffers[i].resize(info.channelCount);
+            m_oHeads[i].resize(info.channelCount);
+            for (auto & b : m_oBuffers[i])
+            {
+                b.resize(blockSize + GUARD);
+            }
+            for (u32 k = 0; k < info.channelCount; k++)
+            {
+                m_oHeads[i][k] = m_oBuffers[i][k].data();
+            }
+
+            m_oBuses[i].numChannels = info.channelCount;
+            m_oBuses[i].silenceFlags = 0;
+            m_oBuses[i].channelBuffers32 = m_oHeads[i].data();
+        }
+
+        //DE_TRACE("BusAudioOut.Channels = ", nChannelsOut)
+    }
+
+};
+
 } // end namespace
 
 class VST3_Plugin_Impl
@@ -352,7 +314,7 @@ public:
     std::string m_pluginVendor;
     PluginClock m_midiClock;
 
-    VST3_SampleBuffers m_sampleBuffers;
+    VST3_SampleBuffers m_buffers;
     NormalizedSumComputer m_normalizedSumComputer;
 
     // MIDI + automation
@@ -471,6 +433,11 @@ public:
             m_audioProcessor = nullptr;
         }
 
+        if (m_component)
+        {
+            m_component->setActive(false);
+        }
+
         if (m_editor)
         {
             DE_TRACE("Close editor")
@@ -496,9 +463,8 @@ public:
 
         if (m_component)
         {
-            m_component->setActive(false);
             m_component->terminate();
-            m_component      = nullptr;
+            m_component = nullptr;
         }
 
         m_hostApp.reset();
@@ -508,22 +474,106 @@ public:
         m_bIsPluginOpen = false;
     }
 
+
+    std::string de_mbstr(const Steinberg::Vst::String128& s)
+    {
+        // find null terminator
+        size_t len = 0;
+        while (len < 128 && s[len] != 0)
+            ++len;
+
+        std::u16string u16(s, len);
+
+        std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t> conv;
+        return conv.to_bytes(u16);
+    }
+
+
     void dumpBusses()
     {
         using Steinberg::Vst::MediaTypes::kEvent;
         using Steinberg::Vst::MediaTypes::kAudio;
         using Steinberg::Vst::kInput;
         using Steinberg::Vst::kOutput;
+        using Steinberg::Vst::BusInfo;
 
         int numBusEventIn  = m_component->getBusCount(kEvent, kInput);
         int numBusEventOut = m_component->getBusCount(kEvent, kOutput);
         int numBusAudioIn  = m_component->getBusCount(kAudio, kInput);
         int numBusAudioOut = m_component->getBusCount(kAudio, kOutput);
 
-        DE_TRACE("numBusEventIn = ", numBusEventIn)
-        DE_TRACE("numBusEventOut = ", numBusEventOut)
-        DE_TRACE("numBusAudioIn = ", numBusAudioIn)
-        DE_TRACE("numBusAudioOut = ", numBusAudioOut)
+        DE_TRACE("Bus.EventIn.Count = ", numBusEventIn)
+        DE_TRACE("Bus.EventOut.Count = ", numBusEventOut)
+
+        // AudioInputs:
+
+        DE_TRACE("Bus.AudioIn.Count = ", numBusAudioIn)
+        int nChannelsIn = 0;
+        for (int i = 0; i < numBusAudioIn; i++)
+        {
+            BusInfo bi;
+            auto e = m_component->getBusInfo(kAudio, kInput, i, bi);
+            if (e != Steinberg::kResultOk)
+            {
+                DE_ERROR("BusAudioIn[",i,"] ", getErrorDesc(e))
+                continue;
+            }
+
+            nChannelsIn += bi.channelCount;
+        }
+        DE_TRACE("Bus.AudioIn.Channels = ", nChannelsIn)
+
+        for (int i = 0; i < numBusAudioIn; i++)
+        {
+            BusInfo bi;
+            auto e = m_component->getBusInfo(kAudio, kInput, i, bi);
+            if (e != Steinberg::kResultOk)
+            {
+                DE_ERROR("BusAudioIn[",i,"] ", getErrorDesc(e))
+                continue;
+            }
+
+            DE_TRACE("Bus.AudioIn[",i,"].Name = ", de_mbstr(bi.name))
+            DE_TRACE("Bus.AudioIn[",i,"].Channels = ", bi.channelCount)
+            DE_TRACE("Bus.AudioIn[",i,"].BusType = ", bi.busType)
+            DE_TRACE("Bus.AudioIn[",i,"].DefaultActive = ", (bi.flags & BusInfo::kDefaultActive))
+            DE_TRACE("Bus.AudioIn[",i,"].isCV = ", (bi.flags & BusInfo::kIsControlVoltage))
+        }
+
+        // AudioOutputs:
+
+        DE_TRACE("Bus.AudioOut.Count = ", numBusAudioOut)
+        int nChannelsOut = 0;
+        for (int i = 0; i < numBusAudioOut; i++)
+        {
+            BusInfo bi;
+            auto e = m_component->getBusInfo(kAudio, kOutput, i, bi);
+            if (e != Steinberg::kResultOk)
+            {
+                DE_ERROR("BusAudioOut[",i,"] ", getErrorDesc(e))
+                continue;
+            }
+
+            nChannelsOut += bi.channelCount;
+        }
+        DE_TRACE("Bus.AudioOut.Channels = ", nChannelsOut)
+
+        for (int i = 0; i < numBusAudioOut; i++)
+        {
+            BusInfo bi;
+            auto e = m_component->getBusInfo(kAudio, kOutput, i, bi);
+            if (e != Steinberg::kResultOk)
+            {
+                DE_ERROR("BusAudioOut[",i,"] ", getErrorDesc(e))
+                continue;
+            }
+
+            DE_TRACE("Bus.AudioOut[",i,"].Name = ", de_mbstr(bi.name))
+            DE_TRACE("Bus.AudioOut[",i,"].Channels = ", bi.channelCount)
+            DE_TRACE("Bus.AudioOut[",i,"].BusType = ", bi.busType)
+            DE_TRACE("Bus.AudioOut[",i,"].DefaultActive = ", (bi.flags & BusInfo::kDefaultActive))
+            DE_TRACE("Bus.AudioOut[",i,"].isCV = ", (bi.flags & BusInfo::kIsControlVoltage))
+        }
     }
 
     void determineIsSynth()
@@ -549,7 +599,7 @@ public:
         auto busDir = Steinberg::Vst::kInput;
 
         const int n = m_component->getBusCount(busTyp, busDir);
-        DE_TRACE("BusAudioIn = ", n)
+        //DE_TRACE("BusAudioIn = ", n)
         for (int i = 0; i < n; i++)
         {
             auto e = m_component->activateBus(busTyp, busDir, i, bActive);
@@ -570,7 +620,7 @@ public:
         auto busDir = Steinberg::Vst::kOutput;
 
         const int n = m_component->getBusCount(busTyp, busDir);
-        DE_TRACE("BusAudioOut = ", n)
+        //DE_TRACE("BusAudioOut = ", n)
         for (int i = 0; i < n; i++)
         {
             auto e = m_component->activateBus(busTyp, busDir, i, true);
@@ -591,7 +641,7 @@ public:
         auto busDir = Steinberg::Vst::kInput;
 
         const int n = m_component->getBusCount(busTyp, busDir);
-        DE_TRACE("BusEventIn = ", n)
+        //DE_TRACE("BusEventIn = ", n)
         for (int i = 0; i < n; i++)
         {
             auto e = m_component->activateBus(busTyp, busDir, i, bActive);
@@ -612,7 +662,7 @@ public:
         auto busDir = Steinberg::Vst::kOutput;
 
         const int n = m_component->getBusCount(busTyp, busDir);
-        DE_TRACE("BusEventOut = ", n)
+        //DE_TRACE("BusEventOut = ", n)
         for (int i = 0; i < n; i++)
         {
             auto e = m_component->activateBus(busTyp, busDir, i, bActive);
@@ -767,25 +817,6 @@ public:
         componentStateStream.setSize(0);
         m_component->setState(&componentStateStream);
 
-        // III. Activate MIDI event processing:
-        determineIsSynth();
-
-        m_sampleBuffers.setup(m_component, 2048);
-        setAudioIn( true );
-        setAudioOut( true );
-        setEventIn( true );
-        setEventOut( false );
-
-        // IV: Activate component
-        #if 0
-        e = m_component->setActive(true);
-        if (e != Steinberg::kResultOk)
-        {
-            DE_ERROR("No m_component setActive(true). ", getErrorDesc(e))
-            return;
-        }
-        #endif
-
         // V. Setup edit controller
         if (m_editController)
         {
@@ -807,6 +838,7 @@ public:
             }
         }
 
+#if 1
         // 3. Host connects processor ↔ controller
         IConnectionPoint* procCP = nullptr;
         e = m_component->queryInterface(IConnectionPoint::iid, (void**)&procCP);
@@ -833,6 +865,7 @@ public:
         {
             DE_ERROR("")
         }
+#endif
 
         // 5.A.
         Steinberg::Vst::IAudioProcessor* audio = nullptr;
@@ -849,12 +882,51 @@ public:
             return;
         }
 
-        // 5.A.
-        e = m_audioProcessor->setProcessing(false);
+        // 5.B.
+        e = m_audioProcessor->canProcessSampleSize(Steinberg::Vst::kSample32);
         if (e != Steinberg::kResultOk)
         {
-            DE_ERROR("No m_audioProcessor->setProcessing(false). ", getErrorDesc(e))
+            DE_ERROR("Cannot kSample32. ", getErrorDesc(e))
         }
+        else
+        {
+            DE_OK("Can kSample32.")
+        }
+
+        // 5.C.
+        e = m_audioProcessor->canProcessSampleSize(Steinberg::Vst::kSample64);
+        if (e != Steinberg::kResultOk)
+        {
+            DE_ERROR("Cannot kSample64. ", getErrorDesc(e))
+        }
+        else
+        {
+            DE_OK("Can kSample64.")
+        }
+
+        // 5.D.
+        uint32_t latencyFrames = m_audioProcessor->getLatencySamples();
+        DE_OK("latencyFrames = ",latencyFrames)
+
+        // ACTIVATION PHASE:
+        // component->setActive(true)
+        // component->activateBus(...)
+        // component->setBusArrangements(...)
+        // audioProcessor->setupProcessing(...)
+
+
+
+        // III. Activate MIDI event processing:
+        determineIsSynth();
+        m_sampleRate = 48000;
+        m_blockSize = 256;
+        DE_WARN("Busses Before:")
+        dumpBusses();
+        m_buffers.setup(m_component, m_blockSize);
+        setAudioIn( true );
+        setAudioOut( true );
+        setEventIn( true );
+        setEventOut( false );
 
         // 5.B.
         auto stereo = Steinberg::Vst::SpeakerArr::kStereo;
@@ -871,19 +943,20 @@ public:
             DE_ERROR("No m_audioProcessor->setBusArrangements(Stereo). ", getErrorDesc(e))
         }
 
-
-        m_sampleBuffers.setup(m_component, m_blockSize);
-        setAudioIn( true );
-        setAudioOut( true );
-        setEventIn( true );
-        setEventOut( false );
+        DE_WARN("Busses After:")
+        dumpBusses();
+        // setAudioIn( true );
+        // setAudioOut( true );
+        // setEventIn( true );
+        // setEventOut( false );
 
         // 5.C.
         Steinberg::Vst::ProcessSetup setup {};
-        setup.processMode        = Steinberg::Vst::kRealtime;
-        setup.symbolicSampleSize = Steinberg::Vst::kSample32;
         setup.maxSamplesPerBlock = m_blockSize;
         setup.sampleRate         = m_sampleRate;
+        setup.processMode        = Steinberg::Vst::kRealtime;
+        setup.symbolicSampleSize = Steinberg::Vst::kSample32;
+
         e = m_audioProcessor->setupProcessing(setup);
         if (e != Steinberg::kResultOk)
         {
@@ -910,7 +983,7 @@ public:
         // X. Open editor
         if (m_editController)
         {
-            Steinberg::IPlugView* plugView = m_editController->createView(Steinberg::Vst::ViewType::kEditor);
+            auto plugView = m_editController->createView(Steinberg::Vst::ViewType::kEditor);
             if (plugView)
             {
                 DE_OK("Got IPlugView")
@@ -943,7 +1016,18 @@ public:
 
     void dsp_init(u64 frames, u32 channels, u32 sampleRate)
     {
+        // 1. setProcessing(false)
+        // 2. setActive(false)
+        // 2.2. activateBus(..., false)      // optional, only if bus activation changes
+        // 2.3. setBusArrangements(...)      // only if channel layout changes
+        // 3. setupProcessing(...)         // always required after any reconfiguration
+        // 4. setActive(true)
+        // 5. setProcessing(true)
+
         (void)channels;
+
+        m_buffers.m_L.resize(frames + GUARD);
+        m_buffers.m_R.resize(frames + GUARD);
 
         bool bNeedUpdate = false;
         bool bNewBufferSize = false;
@@ -966,53 +1050,61 @@ public:
         {
             DE_WARN("frames(",frames,"), channels(",channels,"), sampleRate(",sampleRate,")")
 
-            auto e = m_component->setActive(false);
-            if (e != Steinberg::kResultOk)
-            {
-                DE_ERROR("No m_component->setActive(false). ", getErrorDesc(e))
-            }
-
-            // 5.E.
-            e = m_audioProcessor->setProcessing(false);
+            // [1.]
+            auto e = m_audioProcessor->setProcessing(false);
             if (e != Steinberg::kResultOk)
             {
                 DE_ERROR("No m_audioProcessor->setProcessing(false). ", getErrorDesc(e))
             }
 
-            if (bNewBufferSize)
+            // [2.]
+            e = m_component->setActive(false);
+            if (e != Steinberg::kResultOk)
             {
-                m_sampleBuffers.setup(m_component,m_blockSize);
-                setAudioIn( true );
-                setAudioOut( true );
-                setEventIn( true );
-                setEventOut( false );
+                DE_ERROR("No m_component->setActive(false). ", getErrorDesc(e))
             }
 
+            // [3.]
+            if (bNewBufferSize)
+            {
+                m_buffers.setup(m_component,m_blockSize);
+            }
+            // // [4.]
+            // setAudioIn( true );
+            // setAudioOut( true );
+            // setEventIn( true );
+            // setEventOut( false );
+
+            // [3.]
             Steinberg::Vst::ProcessSetup setup {};
             setup.processMode        = Steinberg::Vst::kRealtime;
             setup.symbolicSampleSize = Steinberg::Vst::kSample32;
             setup.maxSamplesPerBlock = m_blockSize;
             setup.sampleRate         = m_sampleRate;
-
             e = m_audioProcessor->setupProcessing(setup);
             if (e != Steinberg::kResultOk)
             {
                 DE_ERROR("No m_audioProcessor->setupProcessing(setup). ", getErrorDesc(e))
             }
 
+            // [4.]
             e = m_component->setActive(true);
             if (e != Steinberg::kResultOk)
             {
                 DE_ERROR("No m_component->setActive(true). ", getErrorDesc(e))
             }
 
-            // 5.E.
+            // [5.]
             e = m_audioProcessor->setProcessing(true);
             if (e != Steinberg::kResultOk)
             {
                 DE_ERROR("No m_audioProcessor->setProcessing(true). ", getErrorDesc(e))
             }
+        }
 
+        if (m_inputSignal)
+        {
+            m_inputSignal->dsp_init(frames,channels,sampleRate);
         }
     }
 
@@ -1027,6 +1119,12 @@ public:
             throw std::runtime_error("No dst audio dsp buffer in VST2_Plugin::readSamples()!");
         }
 
+        if (frames < 1)
+        {
+            DE_ERROR("No frames")
+            return;
+        }
+
         //===============================
         // Bypassed:
         //===============================
@@ -1037,12 +1135,6 @@ public:
             {
                 m_inputSignal->dsp_read( pts, frames, sampleRate, outL, outR );
             }
-            else
-            {
-                std::fill(outL,outL+frames,0.0f);
-                std::fill(outR,outR+frames,0.0f);
-            }
-
             return; // We relayed samples or filled output with zeroes
         }
 
@@ -1054,19 +1146,49 @@ public:
 
         if ( m_inputSignal )
         {
-            m_inputSignal->dsp_read( pts, frames, sampleRate,
-                m_sampleBuffers.m_L.data(),
-                m_sampleBuffers.m_R.data() );
+            float* __restrict__ inL = m_buffers.m_L.data();
+            float* __restrict__ inR = m_buffers.m_R.data();
+            m_inputSignal->dsp_read( pts, frames, sampleRate, inL, inR );
         }
         else
         {
-            std::fill(m_sampleBuffers.m_L.begin(),
-                      m_sampleBuffers.m_L.end(), 0.0f);
-            std::fill(m_sampleBuffers.m_R.begin(),
-                      m_sampleBuffers.m_R.end(), 0.0f);
+            float* __restrict__ inL = m_buffers.m_L.data();
+            float* __restrict__ inR = m_buffers.m_R.data();
+            std::fill(inL, inL + frames, 0.0f);
+            std::fill(inR, inR + frames, 0.0f);
         }
 
-        m_sampleBuffers.copy1( frames );
+        // m_buffers.copy1( frames );
+
+        const auto bytesPerChannel = u64(frames) * sizeof(f32);
+
+        // Fill VST3 input buffers, if any (Effects or Fx|Instrument)
+        u32 n = 0;
+        for (auto & b : m_buffers.m_iBuffers)
+        {
+            for (auto & c : b)
+            {
+                if (n == 0)
+                {
+                    const float* __restrict__ pSrc = m_buffers.m_L.data();
+                    float* __restrict__ pDst = c.data();
+                    std::memcpy(pDst, pSrc, bytesPerChannel); // Copy (L) to first VST3 input buffer
+                    n++;
+                }
+                else if (n == 1)
+                {
+                    const float* __restrict__ pSrc = m_buffers.m_R.data();
+                    float* __restrict__ pDst = c.data();
+                    std::memcpy(pDst, pSrc, bytesPerChannel); // Copy (R) to second VST3 input buffer
+                    n++;
+                }
+                else
+                {
+                    std::fill(c.data(), c.data() + frames, 0.0f); // Silencio?
+                }
+
+            }
+        }
 
         Steinberg::Vst::ProcessContext ctx{};
         ctx.state = Steinberg::Vst::ProcessContext::kTempoValid
@@ -1086,21 +1208,21 @@ public:
         ctx.timeSigDenominator = 4;
 
         // Musical position in quarter notes
-        ctx.projectTimeMusic = (double)ctx.projectTimeSamples / m_sampleRate * (ctx.tempo / 60.0);
+        ctx.projectTimeMusic = (double(ctx.projectTimeSamples) / double(m_sampleRate)) * (ctx.tempo / 60.0);
 
         // Transport state
         //ctx.transportState = Steinberg::Vst::ProcessContext::kPlaying;
 
         // --- Audio buses ---
         Steinberg::Vst::ProcessData data {};
-        data.numSamples         = m_blockSize;
+        data.numSamples         = frames;
         data.processMode        = Steinberg::Vst::kRealtime;
         data.symbolicSampleSize = Steinberg::Vst::kSample32;
-        data.numInputs  = int(m_sampleBuffers.m_iBuses.size());
-        data.numOutputs = int(m_sampleBuffers.m_oBuses.size());
-        data.inputs     = m_sampleBuffers.m_iBuses.data();
-        data.outputs    = m_sampleBuffers.m_oBuses.data();
-        data.processContext = &ctx;
+        data.numInputs          = int(m_buffers.m_iBuses.size());
+        data.numOutputs         = int(m_buffers.m_oBuses.size());
+        data.inputs             = m_buffers.m_iBuses.data();
+        data.outputs            = m_buffers.m_oBuses.data();
+        data.processContext     = &ctx;
 
         // ======================================================
         // Process MIDI messages:
@@ -1122,29 +1244,45 @@ public:
 
         m_framePos += frames; // atomic.
 
-        const auto bytesPerChannel = u64(frames) * sizeof(float);
-
-        u32 n = 0;
-        for (auto & b : m_sampleBuffers.m_oBuffers)
+        n = 0;
+        for (auto & b : m_buffers.m_oBuffers)
         {
             for (auto & c : b)
             {
                 // Copy [L]eft channel:
                 if (n == 0)
                 {
-                    std::memcpy(outL, c.data(), bytesPerChannel);
+                    const float* __restrict__ pSrc = c.data();
+                    std::memcpy(outL, pSrc, bytesPerChannel);
                     n++;
                 }
                 // Copy [R]ight channel:
                 else if (n == 1)
                 {
-                    std::memcpy(outR, c.data(), bytesPerChannel);
+                    const float* __restrict__ pSrc = c.data();
+                    std::memcpy(outR, pSrc, bytesPerChannel);
                     n++;
                 }
                 else
                 {
                     break;
                 }
+            }
+        }
+
+        // If synth (no pcm inputs) -> relay m_L + m_R from inputSignal -> Chain multiple synths together :-)
+        if (m_buffers.m_iBuffers.empty())
+        {
+            // Add inputSignal[L] to output[L]
+            for (size_t i = 0; i < frames; ++i)
+            {
+                outL[i] += m_buffers.m_L[i];
+            }
+
+            // Add inputSignal[R] to output[R]
+            for (size_t i = 0; i < frames; ++i)
+            {
+                outR[i] += m_buffers.m_R[i];
             }
         }
 

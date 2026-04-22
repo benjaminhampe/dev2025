@@ -17,6 +17,9 @@ struct VST2_SampleBuffers
 {
     u32 m_maxChannels = 0;
 
+    TAlignedVector<float> m_L;
+    TAlignedVector<float> m_R;
+
     std::vector<TAlignedVector<float>> m_iBuffers;
     std::vector<TAlignedVector<float>> m_oBuffers;
 
@@ -25,6 +28,9 @@ struct VST2_SampleBuffers
 
     void setup(int numInputs, int numOutputs, int blockSize)
     {
+        m_L.resize(blockSize + GUARD);
+        m_R.resize(blockSize + GUARD);
+
         // Input & Output side get same worst case amount
         // of channels to enable "in-place" legacy/old mode.
         const auto maxChannels = std::max(2, // Atleast stereo
@@ -119,7 +125,7 @@ struct VST2_Plugin_Impl
     std::string m_pluginName;
     std::string m_pluginVendor;
 
-    VST2_SampleBuffers m_sampleBuffers;
+    VST2_SampleBuffers m_buffers;
     NormalizedSumComputer m_normalizedSumComputer;
     // VST seems to work channelwise / planar, not interleaved audio.
     // std::vector< f32 > m_outBuffer;
@@ -141,12 +147,74 @@ struct VST2_Plugin_Impl
         std::mutex mutable m_mutex;
     } m_vstMidi;
 
-    // PluginEditorWindow* m_editorWindow = nullptr; // PluginEditorWindow HWND
-
-    bool getFlags( int32_t m ) const
-    {
+private:
+    bool getFlags( long m ) const {
         return m_vst ? ((m_vst->flags & m) == m) : 0;
     }
+
+    u32 numMidiInputs() const {
+        return static_cast<u32>( dispatcher( effGetNumMidiInputChannels ) );
+    }
+
+    u32 numMidiOutputs() const {
+        return static_cast<u32>( dispatcher( effGetNumMidiOutputChannels ) );
+    }
+
+    bool canDo( const char* query ) const
+    {
+        auto c = reinterpret_cast<const void*>(query);
+        auto p = const_cast<void*>( c );
+        return int( dispatcher( effCanDo, 0, 0, p ) ) > 0;
+    }
+
+    void dumpCapabilities()
+    {
+        static char const* s_avail_caps[] =
+        {
+            "sendVstEvents",                    // 0
+            "sendVstMidiEvents",                // 1
+            "sizeWindow",                       // 2
+            "startStopProcess",                 // 3
+            "sendVstMidiEventFlagIsRealtime",   // 4
+            "receiveVstEvents",                 // 5
+            "receiveVstMidiEvent",              // 6
+            "sendVstTimeInfo",                  // 7
+            "receiveVstTimeInfo",               // 8
+            "reportConnectionChanges",          // 9
+            "shellCategory",                    // 10
+            "supplyIdle",                       // 11
+            nullptr                             // 12
+        };
+
+
+        std::vector< std::string > caps;
+        caps.reserve(12);
+
+        for ( char const** cap = s_avail_caps; *cap; ++cap)
+        {
+            if ( canDo( *cap ) ) // _stricmp((char*)ptr, "sendvstevents") == 0
+            {
+                caps.emplace_back( *cap );
+            }
+        }
+
+        DE_DEBUG("Caps.Count = ",caps.size())
+        for (size_t i = 0; i < caps.size(); i++)
+        {
+            DE_TRACE("Cap[",i,"] ",caps[i])
+        }
+    }
+
+    bool canMidiInput() const {
+        return canDo("receiveVstMidiEvent");
+    }
+
+    bool canMidiOutput() const {
+        return canDo("sendVstMidiEvent");
+    }
+
+
+public:
 
     // ============================================================================
     VST2_Plugin_Impl()
@@ -315,7 +383,7 @@ struct VST2_Plugin_Impl
 
         dispatcher(effOpen);
 
-        m_sampleBuffers.setup(m_numInputs,m_numOutputs, m_blockSize);
+        m_buffers.setup(m_numInputs,m_numOutputs, m_blockSize);
         m_bNeedSetup = true;
         dsp_init(256, 2, 48000);
 
@@ -332,6 +400,12 @@ struct VST2_Plugin_Impl
         DE_TRACE("VST2 plugin CanFloat32 = ",getFlags(effFlagsCanReplacing ))
         DE_TRACE("VST2 plugin CanFloat64 = ",getFlags(effFlagsCanDoubleReplacing ))
         DE_TRACE("VST2 plugin CanProgramChunks = ",getFlags(effFlagsProgramChunks))
+
+        DE_TRACE("VST2 plugin CanMidiInput = ", canMidiInput())
+        DE_TRACE("VST2 plugin CanMidiOutput = ", canMidiOutput())
+        DE_TRACE("VST2 plugin NumMidiInputs = ", numMidiInputs())
+        DE_TRACE("VST2 plugin NumMidiOutputs = ", numMidiOutputs())
+        dumpCapabilities();
 
         if (bHasEditor)
         {
@@ -478,20 +552,59 @@ struct VST2_Plugin_Impl
 
         dsp_init(frames,2,sampleRate);
 
+#if OLD
         if ( m_inputSignal )
         {
             m_inputSignal->dsp_read( pts, frames, sampleRate,
-                m_sampleBuffers.m_iBuffers.at(0).data(),
-                m_sampleBuffers.m_iBuffers.at(1).data() );
+                m_buffers.m_iBuffers.at(0).data(),
+                m_buffers.m_iBuffers.at(1).data() );
 
             for (int i = 2; i < int(m_numInputs); ++i)
             {
-                m_sampleBuffers.zeroInput(i);
+                m_buffers.zeroInput(i);
             }
         }
         else
         {
-            m_sampleBuffers.zeroInputs();
+            m_buffers.zeroInputs();
+        }
+#endif
+
+        //========================================================
+        // Get L+R sample data from previous signal, or zeroes.
+        //========================================================
+        if ( m_inputSignal )
+        {
+            m_inputSignal->dsp_read( pts, frames, sampleRate,
+                m_buffers.m_L.data(),
+                m_buffers.m_R.data() );
+        }
+        else
+        {
+            std::fill(m_buffers.m_L.begin(), m_buffers.m_L.begin() + frames, 0.0f);
+            std::fill(m_buffers.m_R.begin(), m_buffers.m_R.begin() + frames, 0.0f);
+        }
+
+        //========================================================
+        // Copy L+R sample data to VST input.
+        //========================================================
+
+        const auto bytesPerChannel = u64(frames) * sizeof(float);
+
+        // Fill input[0] with L data:
+        std::memcpy(m_buffers.m_iBuffers.at(0).data(),  // dst L
+                    m_buffers.m_L.data(),               // src L
+                    bytesPerChannel);
+
+        // Fill input[1] with R data:
+        std::memcpy(m_buffers.m_iBuffers.at(1).data(),  // dst R
+                    m_buffers.m_R.data(),               // src R
+                    bytesPerChannel);
+
+        // Fill input[2...N-1] with zeroes:
+        for (int i = 2; i < int(m_numInputs); ++i)
+        {
+            std::memset(m_buffers.m_iBuffers.at(i).data(), 0, bytesPerChannel);
         }
 
         // ======================================================
@@ -499,21 +612,19 @@ struct VST2_Plugin_Impl
         // by copying numInputs to output buffers.
         // ======================================================
 
-        const auto bytesPerChannel = u64(frames) * sizeof(float);
-
         // TODO: Maybe move to m_vst->process() case only.
         // Copy available input to output channels:
         for (int i = 0; i < m_numInputs; ++i)
         {
-            std::memcpy(m_sampleBuffers.m_oBuffers.at(i).data(),
-                        m_sampleBuffers.m_iBuffers.at(i).data(),
+            std::memcpy(m_buffers.m_oBuffers.at(i).data(),
+                        m_buffers.m_iBuffers.at(i).data(),
                         bytesPerChannel);
         }
 
         // Fill remaining output channels with silence (0.0f).
-        for (int i = m_numInputs; i < m_sampleBuffers.m_maxChannels; ++i)
+        for (int i = m_numInputs; i < m_buffers.m_maxChannels; ++i)
         {
-            std::memset(m_sampleBuffers.m_oBuffers.at(i).data(),
+            std::memset(m_buffers.m_oBuffers.at(i).data(),
                         0, bytesPerChannel);
         }
 
@@ -529,8 +640,8 @@ struct VST2_Plugin_Impl
         {
             m_vst->processReplacing(
                 m_vst,
-                m_sampleBuffers.m_iHeads.data(),
-                m_sampleBuffers.m_oHeads.data(),
+                m_buffers.m_iHeads.data(),
+                m_buffers.m_oHeads.data(),
                 frames );
         }
         else
@@ -539,8 +650,8 @@ struct VST2_Plugin_Impl
             {
                 m_vst->process(
                     m_vst,
-                    m_sampleBuffers.m_iHeads.data(),
-                    m_sampleBuffers.m_oHeads.data(),
+                    m_buffers.m_iHeads.data(),
+                    m_buffers.m_oHeads.data(),
                     frames );
             }
             else
@@ -555,15 +666,21 @@ struct VST2_Plugin_Impl
 
         m_framePos += frames; // atomic.
 
-        // Copy [L]eft channel:
-        std::memcpy(outL,
-                    m_sampleBuffers.m_oBuffers.at(0).data(),
-                    bytesPerChannel);
+        // TODO: Maybe add all output buffers in the hopes to catch some missing data.
 
-        // Copy [R]ight channel:
-        std::memcpy(outR,
-                    m_sampleBuffers.m_oBuffers.at(1).data(),
-                    bytesPerChannel);
+        if (m_bIsSynth)
+        {
+            DSP_ADD(outL, frames, m_buffers.m_oBuffers.at(0).data(), m_buffers.m_L.data());
+            DSP_ADD(outR, frames, m_buffers.m_oBuffers.at(1).data(), m_buffers.m_R.data());
+        }
+        else
+        {
+            // Copy [L]eft channel:
+            std::memcpy(outL, m_buffers.m_oBuffers.at(0).data(), bytesPerChannel);
+
+            // Copy [R]ight channel:
+            std::memcpy(outR, m_buffers.m_oBuffers.at(1).data(), bytesPerChannel);
+        }
 
         // For audio-level-meter
         m_normalizedSumComputer.calc(outL, outR, frames);
