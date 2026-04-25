@@ -2,7 +2,7 @@
 #include "Plugin.h"
 #include <vector>
 #include <QHBoxLayout>
-#include <de/audio/ITrack.h>
+#include <de/audio/Track.h>
 
 // ============================================
 class Track : public QWidget
@@ -10,11 +10,11 @@ class Track : public QWidget
 {
     Q_OBJECT
 public:
-    Track(de::audio::ITrack* track, QWidget* parent = nullptr);
+    Track(de::audio::Track* track, QWidget* parent = nullptr);
     ~Track() override;
 
-    const de::audio::ITrack* getTrack() const { return m_track; }
-    de::audio::ITrack* getTrack() { return m_track; }
+    const de::audio::Track* getTrack() const { return m_track; }
+    de::audio::Track* getTrack() { return m_track; }
 
     // const std::vector<uint32_t>& getPluginIds() const
     // {
@@ -76,7 +76,7 @@ private:
     //     }
     // }
 
-    de::audio::ITrack* m_track;
+    de::audio::Track* m_track;
     // uint32_t m_trackId = 0; // AudioCentral
     // std::vector<uint32_t> m_pluginIds; // AudioCentral
 

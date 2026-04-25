@@ -7,8 +7,15 @@ App* App::m_pInstance = nullptr;
 App::App(QObject* parent)
     : QObject(parent)
     , m_canvas{ nullptr }
+    , m_inputDeviceId(0)
+    , m_outputDeviceId(0)
+    , m_blockSize(0)
+    , m_channels(0)
+    , m_sampleRate(0)
+    , m_track(nullptr)
 {
     DE_TRACE("")
+    m_track = &m_track0;
 }
 
 App::~App()
@@ -28,12 +35,6 @@ App* App::instance()
     return m_pInstance;
 }
 
-// void App::playAudio()
-// {
-//     m_audioCentral.playAudio();
-//     m_canvas->getRenderer()->setRenderingEnabled(true);
-// }
-
 void App::setCanvas( GL_Canvas* canvas )
 {
     DE_TRACE("")
@@ -44,6 +45,8 @@ void App::cleanupAll()
 {
     // Your cleanup before destruction
     DE_WARN("")
+
+    stopAudio();
 
     if (!m_canvas)
     {
@@ -59,7 +62,12 @@ void App::cleanupAll()
         m_canvas = nullptr;
     }
 
-    m_audioCentral.cleanupAll();
+    std::this_thread::sleep_for(
+        std::chrono::nanoseconds(100000));
+
+    m_dspSampleCollector.stop();
+
+    m_track0.cleanupAll();
 }
 
 const Skin&
@@ -89,3 +97,71 @@ void App::setZoom(int percent)
         emit skinChanged();
     }
 }
+
+//=========================
+// DriverApi
+//=========================
+
+void App::confAudio(int outputDevice, // = -1,
+               int inputDevice, // = -1,
+               int sampleRate, // = 48000,
+               int blockSize, // = 128,
+               int channels) // = 2 )
+{
+    //m_endPoint.start();
+}
+
+void App::playAudio()
+{
+    m_dspSampleCollector.dsp_setInputSignal(m_track);
+    m_endPoint.setInputSignal(&m_dspSampleCollector);
+    m_endPoint.play();
+}
+
+void App::stopAudio()
+{
+    m_endPoint.stop();
+}
+
+//=========================
+// TrackApi
+//=========================
+
+int App::addTrack( std::string name )
+{
+    return m_track->getTrackId();
+}
+
+de::audio::Track* App::getTrack( int id )
+{
+    return m_track;
+}
+
+void App::removeTrack( int id )
+{
+    // m_track0
+}
+
+//=========================
+// PluginApi
+//=========================
+de::audio::PluginFactory&
+App::getPluginFactory() { return m_pluginFactory; }
+const de::audio::PluginFactory&
+App::getPluginFactory() const { return m_pluginFactory; }
+
+//=========================
+// MidiApi
+//=========================
+de::midi::MidiCentral&
+App::getMidiCentral() { return m_midiCentral; }
+const de::midi::MidiCentral&
+App::getMidiCentral() const { return m_midiCentral; }
+
+//=========================
+// SampleCollector
+//=========================
+de::audio::DspSampleCollector&
+App::getDspSampleCollector() { return m_dspSampleCollector; }
+const de::audio::DspSampleCollector&
+App::getDspSampleCollector() const { return m_dspSampleCollector; }

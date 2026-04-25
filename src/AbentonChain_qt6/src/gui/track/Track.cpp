@@ -2,7 +2,7 @@
 #include "App.h"
 
 // ==================================================
-Track::Track(de::audio::ITrack* track, QWidget* parent)
+Track::Track(de::audio::Track* track, QWidget* parent)
 // ==================================================
     : QWidget(parent)
     , m_track(track)

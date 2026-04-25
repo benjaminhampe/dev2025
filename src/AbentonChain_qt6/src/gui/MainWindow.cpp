@@ -149,12 +149,12 @@ void MainWindow::on_vizualizeEnabled( bool bChecked )
     {
         m_canvas->setVisible(bChecked);
         m_canvas->setRenderingEnabled(bChecked);
-        App::instance()->getAudioCentral().getDspSampleCollector().setBypassed(false);
+        App::instance()->getDspSampleCollector().setBypassed(false);
     }
     else
     {
         // Save some collecting CPU cycles when drawing is disabled
-        App::instance()->getAudioCentral().getDspSampleCollector().setBypassed(true);
+        App::instance()->getDspSampleCollector().setBypassed(true);
         m_canvas->setRenderingEnabled(bChecked);
         m_canvas->setVisible(bChecked);
     }
@@ -168,8 +168,7 @@ void MainWindow::on_vizualizePerfOverlay( bool bChecked )
 
 void MainWindow::on_vizualizeFftMatrix( bool bChecked )
 {
-    App::instance()->getAudioCentral()
-        .getDspSampleCollector()
+    App::instance()->getDspSampleCollector()
         .setCollectAccumMatrix(bChecked);
     m_canvas->setVisibleFftMatrix(bChecked);
 }

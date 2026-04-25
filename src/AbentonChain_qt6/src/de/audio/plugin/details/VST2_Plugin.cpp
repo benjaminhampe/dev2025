@@ -106,7 +106,7 @@ struct VST2_Plugin_Impl
     bool m_bIsSynth = false;
     bool m_bIsBypassed = false;
 
-    ITrack* m_track = nullptr;
+    Track* m_track = nullptr;
     PluginEditorWindow* m_editor = nullptr;
     IDspChainElement* m_inputSignal = nullptr;
     AEffect* m_vst = nullptr;
@@ -955,11 +955,11 @@ void VST2_Plugin::setBypassed( bool bBypassed )
 
 // ===================================================
 
-const ITrack* VST2_Plugin::getTrack() const { return _d->m_track; }
+const Track* VST2_Plugin::getTrack() const { return _d->m_track; }
 
-ITrack* VST2_Plugin::getTrack() { return _d->m_track; }
+Track* VST2_Plugin::getTrack() { return _d->m_track; }
 
-void VST2_Plugin::setTrack(ITrack* track) { _d->m_track = track; }
+void VST2_Plugin::setTrack(Track* track) { _d->m_track = track; }
 
 // ===================================================
 

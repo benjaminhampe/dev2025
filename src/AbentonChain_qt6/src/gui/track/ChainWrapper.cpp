@@ -45,7 +45,7 @@ ChainWrapper::ChainWrapper(QWidget* parent)
     //connect(scrollArea->verticalScrollBar(), &QScrollBar::valueChanged,
     //        myScroll, &QSlider::setValue);
 
-    auto track = App::instance()->getAudioCentral().getTrack(0);
+    auto track = App::instance()->getTrack(0);
     m_track = new Track(track, this);
 
     m_scrollArea->setWidget(m_track);

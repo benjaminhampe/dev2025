@@ -25,7 +25,7 @@
 namespace de {
 namespace audio {
 
-class ITrack;
+class Track;
 
 // ===========================================================================
 class IPlugin : public IDspChainElement,
@@ -48,11 +48,11 @@ public:
 
     // virtual ~IPlugin() {}
 
-    virtual const ITrack* getTrack() const = 0;
+    virtual const Track* getTrack() const = 0;
 
-    virtual ITrack* getTrack() = 0;
+    virtual Track* getTrack() = 0;
 
-    virtual void setTrack(ITrack* track) = 0;
+    virtual void setTrack(Track* track) = 0;
 
 
     virtual u32 getPluginId() const = 0;

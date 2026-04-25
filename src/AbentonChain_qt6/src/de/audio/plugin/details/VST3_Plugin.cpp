@@ -305,7 +305,7 @@ public:
     u32 m_sampleRate;
     u32 m_blockSize;
     u32 m_pluginId;
-    ITrack* m_track;
+    Track* m_track;
     VST3_Editor* m_editor;
     IDspChainElement* m_inputSignal;
 
@@ -1558,11 +1558,11 @@ void VST3_Plugin::setBypassed( bool bBypassed )
 }
 // ===================================================
 
-const ITrack* VST3_Plugin::getTrack() const { return _d->m_track; }
+const Track* VST3_Plugin::getTrack() const { return _d->m_track; }
 
-ITrack* VST3_Plugin::getTrack() { return _d->m_track; }
+Track* VST3_Plugin::getTrack() { return _d->m_track; }
 
-void VST3_Plugin::setTrack(ITrack* track) { _d->m_track = track; }
+void VST3_Plugin::setTrack(Track* track) { _d->m_track = track; }
 
 // ===================================================
 
