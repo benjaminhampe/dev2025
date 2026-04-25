@@ -13,28 +13,56 @@ class DspSampleCollector : public IDspChainElement
     u32 m_cols;
     u32 m_rows;
     int m_windowFunc;
+    bool m_bStopped;
     bool m_bBypassed;
-    DE_FFT_pffft m_fft;
+    bool m_bCollectAccumMatrix;
+    DE_FFT_pffft m_accum_fft;
 
-    // L+R are summed up into, before injected into shift-buffer.
-    DE_AlignedFloatVector m_L;
-    DE_AlignedFloatVector m_R;
-    DE_AlignedFloatVector m_sum;
+    AlignedFloatVector m_L;
+    AlignedFloatVector m_R;
 
-    // ->
-    DE_AlignedFloatShiftVector m_accum;
-    DE_AlignedFloatVector m_fft_input;
-    DE_AlignedFloatVector m_fft_output;
-    DE_AlignedFloatShiftMatrix m_matrix;
+    // L+R are summed up for FFT
+    AlignedFloatVector m_sum;
+
+    // blockSize FFT (potentially not a power of 2)
+    // AlignedFloatShiftVector m_raw;
+    // AlignedFloatVector m_raw_fft_in;
+    // AlignedFloatVector m_raw_fft_out;
+    // AlignedFloatShiftMatrix m_raw_fft_matrix;
+
+    // shiftVector FFT
+    AlignedFloatShiftVector m_accum;
+    AlignedFloatVector m_accum_vec_in;
+    AlignedFloatVector m_accum_vec_out;
+    AlignedFloatShiftMatrix m_accum_mat;
 
 public:
-    const DE_AlignedFloatShiftMatrix& getMatrix() const { return m_matrix; }
+    const AlignedFloatVector& getL() const { return m_L; }
+    const AlignedFloatVector& getR() const { return m_R; }
+
+    const AlignedFloatVector& getAccumVecIn() const { return m_accum_vec_in; }
+    const AlignedFloatVector& getAccumVecOut() const { return m_accum_vec_out; }
+    const AlignedFloatShiftMatrix& getAccumMat() const { return m_accum_mat; }
 
     DspSampleCollector();
+    ~DspSampleCollector();
+
+    void stop()
+    {
+        m_bStopped = true;
+        m_inputSignal = nullptr;
+        m_accum.setCallback_onFullVector(
+            [](const TAlignedVector<float>& ){});
+    }
 
     void setBypassed( bool bBypassed )
     {
         m_bBypassed = bBypassed;
+    }
+
+    void setCollectAccumMatrix( bool bBypassed )
+    {
+        m_bCollectAccumMatrix = bBypassed;
     }
 
     void setWindowFunc( int windowFunc )
@@ -52,7 +80,10 @@ public:
         m_rows = std::max(8u,rows);
     }
 
-    void applyWindow(int winType, float* __restrict__ dst, const float* __restrict__ src, size_t n);
+    void applyWindow(int winType,
+                     const float* __restrict__ src,
+                     float* __restrict__ dst,
+                     size_t n);
 
     void dsp_init( u64 frames, u32 channels, u32 sampleRate ) override;
 

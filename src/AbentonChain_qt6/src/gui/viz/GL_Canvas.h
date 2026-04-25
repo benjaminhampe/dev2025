@@ -1,5 +1,5 @@
 #pragma once
-#include <gui/viz/GL_Spectrum3D.h>
+#include <gui/viz/GL_Renderer.h>
 #include <QOpenGLWidget>
 #include <QOpenGLContext>
 #include <QOpenGLFunctions>
@@ -31,13 +31,9 @@ private:
     // FpsCounter m_fpsCounter;
     int m_fpsTimerId;
     bool m_bRenderingEnabled;
-    bool m_bRenderPerfOverlay;
+    bool m_bVisiblePerfOverlay;
     QOpenGLContext* m_sharedContext;
     de::gpu::VideoDriver* m_driver;
-    de::gpu::Camera m_camera;
-    GL_Spectrum3D m_renderer;
-
-
 
     std::array<bool, 1024> m_keyStates;
 
@@ -55,15 +51,25 @@ private:
     int m_mouseMoveX;
     int m_mouseMoveY;
 
-    double m_time_now;
-    double m_time_start;
-    double m_time_lastRenderUpdate;
-    double m_time_lastWindowTitleUpdate;
-    double m_time_lastCameraUpdate;
+    // double m_time_now;
+    // double m_time_start;
+    // double m_time_lastRenderUpdate;
+    // double m_time_lastWindowTitleUpdate;
+    // double m_time_lastCameraUpdate;
+
+    GL_Renderer m_renderer;
 
 public:
     GL_Canvas(QOpenGLContext *sharedContext, QWidget *parent = nullptr);
     ~GL_Canvas() override;
+
+    void cleanupAll()
+    {
+        stopFpsTimer();
+        m_bRenderingEnabled = false;
+        delete m_driver;
+        m_driver = nullptr;
+    }
 
     void setRenderingEnabled( bool bEnabled )
     {
@@ -78,6 +84,12 @@ public:
         }
     }
 
+    void setVisiblePerfOverlay( bool bVisible )
+    {
+        m_bVisiblePerfOverlay = bVisible;
+        update();
+    }
+
     // void setVisible( bool bVisible ) override
     // {
     //     QOpenGLWidget::setVisible( bVisible );
@@ -89,25 +101,27 @@ public:
         update();
     }
 
-    bool event(QEvent *event) override;
-    //void setSampleSource( DspSampleCollector* sampleSource );
     void startFpsTimer();
     void stopFpsTimer();
-    GL_Spectrum3D* getRenderer() { return &m_renderer; }
-    de::gpu::Camera* getCamera() { return &m_camera; }
+
+    GL_Renderer* getRenderer() { return &m_renderer; }
+
 protected:
-    bool gestureEvent(QGestureEvent* event);
-    bool pinchTriggered(QPinchGesture* event);
-    bool swipeTriggered(QSwipeGesture* event);
-    bool panTriggered(QPanGesture* event);
     void timerEvent(QTimerEvent* event) override;
     void initializeGL() override;
     void resizeGL(int w, int h) override;
     void paintGL() override;
+/*
+    bool event(QEvent *event) override;
+    bool gestureEvent(QGestureEvent* event);
+    bool pinchTriggered(QPinchGesture* event);
+    bool swipeTriggered(QSwipeGesture* event);
+    bool panTriggered(QPanGesture* event);
     void mouseMoveEvent( QMouseEvent* event ) override;
     void wheelEvent( QWheelEvent* event ) override;
     void mousePressEvent( QMouseEvent* event ) override;
     void mouseReleaseEvent( QMouseEvent* event ) override;
+*/
 };
 
 /*

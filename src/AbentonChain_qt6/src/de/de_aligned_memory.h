@@ -45,7 +45,23 @@ namespace de {
     template <typename T, std::size_t Alignment>
     struct TAlignedVectorAllocator
     {
+        static_assert((Alignment & (Alignment - 1)) == 0, "Alignment must be power of two");
+        static_assert(Alignment >= alignof(T), "Alignment must be >= alignof(T)");
+
         using value_type = T;
+        using pointer = T*;
+        using const_pointer = const T*;
+        using size_type = std::size_t;
+        using difference_type = std::ptrdiff_t;
+        using propagate_on_container_move_assignment = std::true_type;
+        //using propagate_on_container_copy_assignment = std::true_type;
+        using propagate_on_container_swap = std::true_type;
+        using is_always_equal = std::true_type;
+
+        // template <typename U>
+        // struct rebind {
+        //     using other = TAlignedVectorAllocator<U, Alignment>;
+        // };
 
         // Rebind support
         template <typename U> struct rebind
@@ -55,7 +71,23 @@ namespace de {
 
         T* allocate(std::size_t n)
         {
-            void* ptr = _aligned_malloc(n * sizeof(T), Alignment); // std::aligned_alloc(Alignment, n * sizeof(T));
+            if (n > max_size())
+            {
+                throw std::bad_alloc();
+            }
+
+            size_t nBytes = n * sizeof(T);
+            if (nBytes % Alignment != 0)
+            {
+                DE_ERROR(nBytes," not a multiple of Alignment(",Alignment,")")
+                size_t nMofA = nBytes / Alignment;
+                nBytes = (nMofA+1) * Alignment;
+                DE_ERROR(nBytes," adapted to a multiple of Alignment(",Alignment,")")
+                size_type padded = (nBytes + (Alignment - 1)) & ~(Alignment - 1);
+                DE_ERROR(padded," padded to a multiple of Alignment(",Alignment,")")
+            }
+            void* ptr = _aligned_malloc(nBytes, Alignment);
+            //std::aligned_alloc(Alignment, n * sizeof(T));
             if (!ptr) throw std::bad_alloc();
             return static_cast<T*>(ptr);
         }
@@ -68,15 +100,16 @@ namespace de {
             }
         }
 
-        // Optional: equality operators
-        bool operator==(const TAlignedVectorAllocator&) const noexcept { return true; }
-        bool operator!=(const TAlignedVectorAllocator&) const noexcept { return false; }
+        std::size_t max_size() const noexcept
+        {
+            return std::numeric_limits<std::size_t>::max() / sizeof(T);
+        }
+
+        //bool operator==(const TAlignedVectorAllocator&) const noexcept { return true; }
+        //bool operator!=(const TAlignedVectorAllocator&) const noexcept { return false; }
     };
 
-    //template <typename T>
-    //class TAlignedVector : public std::vector<T, TAlignedVectorAllocator<T, 64>>
-    //{};
-
+#if 0
     // AVX2 32-byte aligned vector
     template <typename T>
     using TAlignedVector = std::vector<T, TAlignedVectorAllocator<T, 32>>;
@@ -87,8 +120,15 @@ namespace de {
 
     typedef TAlignedVector<f32> AlignedFloatVector;
     typedef TAlignedVector<u8>  AlignedByteVector;
-    //typedef TAlignedVector<s16> AlignedShortVector;
-    //typedef TAlignedVector<u32> AlignedImageVector;
+
+#else
+    template <typename T>
+    using TAlignedVector = std::vector<T>;
+
+    typedef TAlignedVector<f32> AlignedFloatVector;
+    typedef TAlignedVector<u8>  AlignedByteVector;
+
+#endif
 
     inline BBox1f
     computeMinMax(AlignedFloatVector const & v)
@@ -582,11 +622,12 @@ namespace de {
 
         u32 m_colCount;  // Count matrix cols = m_shiftBuffer.size()
         u32 m_rowCount;  // Count matrix rows
-        TData m_data;
         TRowVector m_rows; // Row Viewer ( original rows )
         TRowVector m_temp; // Row Viewer ( shuffled rows )
+        TData m_data;
 
         AlignedFloatShiftMatrix();
+        ~AlignedFloatShiftMatrix();
         void resize( u32 colCount, u32 rowCount );
         void push( T const* __restrict__ src, u32 srcFrames );
         u32 rowCount() const;

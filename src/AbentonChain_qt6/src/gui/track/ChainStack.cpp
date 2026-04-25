@@ -49,13 +49,7 @@ ChainStack::~ChainStack()
 
 void ChainStack::applySkin()
 {
-    // // DE_DEBUG("")
     static_cast<ChainWrapper*>(m_stack->currentWidget())->applySkin();
-    // m_btnSavePreset->applySkin();
-    // m_cbxPreset->applySkin();
-    // m_pad->applySkin();
-    // m_cbxParam1->applySkin();
-    // m_cbxParam2->applySkin();
 
     const auto& skin = App::instance()->currentSkin();
     m_windowColor = skin.windowColor;
@@ -65,7 +59,6 @@ void ChainStack::applySkin()
 
     update();
 }
-
 
 void ChainStack::addPage(QWidget *page)
 {

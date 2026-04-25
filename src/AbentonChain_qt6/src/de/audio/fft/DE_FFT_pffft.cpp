@@ -50,8 +50,13 @@ struct DE_FFT_pffft_Private
         m_n = 0;
     }
 
+    inline bool isPowerOfTwo(uint32_t x)
+    {
+        return x && !(x & (x - 1));
+    }
+
     void fft_real( const float* __restrict__ pSrc,
-        float* __restrict__ pDst, size_t n)
+        float* __restrict__ pDst, uint32_t n)
     {
         if (n<1 || n>10000000)
         {
@@ -67,6 +72,10 @@ struct DE_FFT_pffft_Private
 
         if ( n != size())
         {
+            if (!isPowerOfTwo(n))
+            {
+                DE_ERROR("Not power of 2, n = ",n)
+            }
             close();
             open(n);
 
@@ -89,7 +98,7 @@ struct DE_FFT_pffft_Private
         // Copy result to output
         const float* __restrict__ src = m_output.data();
         float* __restrict__ dst = pDst;
-        for (size_t i = 0; i < n/2; i++)
+        for (size_t i = 0; i < n/2; ++i)
         {
             float re = *src++;
             float im = *src++;

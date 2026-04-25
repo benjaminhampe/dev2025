@@ -10,7 +10,15 @@
 #endif
 #include <windows.h>
 
-void forceForeground(QWidget* w)
+inline void enableConsoleOutput()
+{
+    AllocConsole();
+    freopen("CONOUT$", "w", stdout);
+    freopen("CONOUT$", "w", stderr);
+}
+
+
+inline void forceForeground(QWidget* w)
 {
     HWND hwnd = (HWND)w->winId();
     SetForegroundWindow(hwnd);
@@ -18,12 +26,12 @@ void forceForeground(QWidget* w)
     ShowWindow(hwnd, SW_RESTORE);
 }
 #else
-void forceForeground(QWidget* w)
+inline void forceForeground(QWidget* w)
 {
 }
 #endif
 
-void dbLoadFont(QString uri)
+inline void dbLoadFont(QString uri)
 {
     int id = QFontDatabase::addApplicationFont(uri);
 

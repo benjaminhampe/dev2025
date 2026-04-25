@@ -10,24 +10,48 @@ DspSampleCollector::DspSampleCollector()
     , m_rows{ 32 }
     , m_windowFunc{ 2 }
     , m_bBypassed{ true }
+    , m_bStopped{ false }
+    , m_bCollectAccumMatrix{ true }
 {
+    DE_TRACE("")
     m_accum.setCallback_onFullVector(
         [&](const DE_AlignedFloatVector& v)
         {
             auto n = v.size();
+            if (n<8)
+            {
+                DE_ERROR("")
+                return;
+            }
 
             // Apply window function
-            applyWindow(m_windowFunc, m_fft_input.data(), m_accum.data(), n);
+            applyWindow(m_windowFunc, m_accum.data(),
+                        m_accum_vec_in.data(), n);
 
             // Apply fft
-            m_fft.fft(m_fft_input.data(), m_fft_output.data(), n);
+            m_accum_fft.fft(m_accum_vec_in.data(),
+                            m_accum_vec_out.data(), n);
 
-            m_matrix.push(m_fft_output.data(), m_fft_output.size());
+            // Push fft row to AccumShiftMatrix.
+            if (m_bCollectAccumMatrix)
+            {
+                m_accum_mat.push(
+                    m_accum_vec_out.data(),
+                    m_accum_vec_out.size());
+            }
         }
     );
 }
+
+// ===================================================================
+DspSampleCollector::~DspSampleCollector()
+{
+    DE_TRACE("")
+}
+
 void
-DspSampleCollector::applyWindow(int winType, float* __restrict__ dst, const float* __restrict__ src, size_t n)
+DspSampleCollector::applyWindow(int winType,
+    const float* __restrict__ src, float* __restrict__ dst, size_t n)
 {
     if (winType == 1)
     {
@@ -52,18 +76,23 @@ DspSampleCollector::dsp_setInputSignal( IDspChainElement* inputSignal, int i )
 void
 DspSampleCollector::dsp_init( u64 frames, u32 channels, u32 sampleRate )
 {
+    if (frames < 1)
+    {
+        DE_ERROR("")
+        return;
+    }
+    m_L.resize(frames);
+    m_R.resize(frames);
+    m_sum.resize(frames);
     if (m_cols < frames / 2)
     {
         m_cols = frames / 2;
         DE_WARN("Limit cols to ", m_cols)
     }
-    m_L.resize(frames);
-    m_R.resize(frames);
-    m_sum.resize(frames);
     m_accum.resize(m_cols*2);
-    m_fft_input.resize(m_cols*2);
-    m_fft_output.resize(m_cols);
-    m_matrix.resize(m_cols, m_rows);
+    m_accum_vec_in.resize(m_cols*2);
+    m_accum_vec_out.resize(m_cols);
+    m_accum_mat.resize(m_cols, m_rows);
 
     if (m_inputSignal)
     {
@@ -75,18 +104,11 @@ void
 DspSampleCollector::dsp_read(f64 pts, u32 frames, u32 sampleRate,
                              f32* __restrict__ L, f32* __restrict__ R)
 {
-    if (m_cols < frames / 2)
+    if (m_bStopped || frames < 1)
     {
-        m_cols = frames / 2;
-        DE_WARN("Limit cols to ", m_cols)
+        DE_ERROR("")
+        return;
     }
-    m_L.resize(frames);
-    m_R.resize(frames);
-    m_sum.resize(frames);
-    m_accum.resize(m_cols*2);
-    m_fft_input.resize(m_cols*2);
-    m_fft_output.resize(m_cols);
-    m_matrix.resize(m_cols, m_rows);
 
     if (m_bBypassed)
     {
@@ -101,6 +123,19 @@ DspSampleCollector::dsp_read(f64 pts, u32 frames, u32 sampleRate,
         // }
         return;
     }
+
+    m_L.resize(frames);
+    m_R.resize(frames);
+    m_sum.resize(frames);
+    if (m_cols < frames / 2)
+    {
+        m_cols = frames / 2;
+        DE_WARN("Limit cols to ", m_cols)
+    }
+    m_accum.resize(m_cols*2);
+    m_accum_vec_in.resize(m_cols*2);
+    m_accum_vec_out.resize(m_cols);
+    m_accum_mat.resize(m_cols, m_rows);
 
     if ( m_inputSignal )
     {

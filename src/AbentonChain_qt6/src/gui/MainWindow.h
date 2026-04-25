@@ -28,6 +28,7 @@ protected:
     void on_openMidiConfigDialog();
     void on_openAudioConfigDialog();
     void on_vizualizeEnabled( bool bChecked );
+    void on_vizualizePerfOverlay( bool bChecked );
     void on_vizualizeFftMatrix( bool bChecked );
 
 private:

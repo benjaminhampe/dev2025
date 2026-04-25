@@ -102,22 +102,30 @@ void AlignedFloatShiftMatrix::shiftVectorRight(TRowVector & orig, TRowVector & t
 
 // =======================================================================
 AlignedFloatShiftMatrix::AlignedFloatShiftMatrix()
-    : m_colCount( 1024 )
-    , m_rowCount( 64 )
+    : m_colCount( 0 )
+    , m_rowCount( 0 )
     //, m_pushCount( 0 )
     //, m_dummy( 0 )
 {
     test();
 
-    m_data.resize( m_rowCount * m_colCount );
-    m_rows.resize( m_rowCount );
-    m_temp.resize( m_rowCount );
-    for (size_t i = 0; i < m_rowCount; i++)
-    {
-        auto rowPtr = &m_data[m_colCount*i];
-        m_rows[ i ] = rowPtr;
-        m_temp[ i ] = rowPtr;
-    }
+    DE_TRACE("")
+
+    // m_data.resize( m_rowCount * m_colCount );
+    // m_rows.resize( m_rowCount );
+    // m_temp.resize( m_rowCount );
+    // for (size_t i = 0; i < m_rowCount; i++)
+    // {
+    //     auto rowPtr = &m_data[m_colCount*i];
+    //     m_rows[ i ] = rowPtr;
+    //     m_temp[ i ] = rowPtr;
+    // }
+}
+
+AlignedFloatShiftMatrix::~AlignedFloatShiftMatrix()
+{
+    DE_TRACE("")
+
 }
 
 u32 AlignedFloatShiftMatrix::rowCount() const { return m_rowCount; }
@@ -140,9 +148,9 @@ BBox1f AlignedFloatShiftMatrix::getMinMax() const
 const AlignedFloatShiftMatrix::T*
 AlignedFloatShiftMatrix::getRow(int32_t row) const
 {
-    if (row < 0 || row >= m_rowCount )
+    if (row < 0 || row >= int(m_rows.size()) )
     {
-        //DE_WARN("row(",row,") >= rowCount(",m_rowCount,")")
+        DE_WARN("row(",row,") >= rows(",m_rows.size(),")")
         return nullptr;
     }
     return m_rows[row]; // m_data.data() + row * m_colCount;
@@ -151,27 +159,27 @@ AlignedFloatShiftMatrix::getRow(int32_t row) const
 AlignedFloatShiftMatrix::T
 AlignedFloatShiftMatrix::getPixel(int32_t col, int32_t row, float defaultValue ) const
 {
+    const T* pRow = getRow(row);
+    if (!pRow)
+    {
+        DE_WARN("No row(",row,") >= rows(",m_rows.size(),")")
+        return defaultValue;
+    }
     if (col < 0 || col >= m_colCount )
     {
-        //DE_WARN("col(",col,") >= colCount(",m_colCount,")")
+        DE_WARN("No col(",col,") >= colCount(",m_colCount,")")
         return defaultValue;
     }
-    if (row < 0 || row >= m_rowCount )
-    {
-        //DE_WARN("row(",row,") >= rowCount(",m_rowCount,")")
-        return defaultValue;
-    }
-    const T* pRow = getRow(row);
     return pRow[ col ];
 }
 
 void AlignedFloatShiftMatrix::resize( u32 colCount, u32 rowCount )
 {
-    if ( colCount < 1 || rowCount < 1 )
-    {
-        DE_WARN("colCount < 1 || rowCount < 1")
-        return;
-    }
+    if (colCount < 1) { DE_WARN("Invalid colCount") return; }
+    if (rowCount < 1) { DE_WARN("Invalid rowCount") return; }
+
+    if (colCount > 4096) { DE_WARN("Invalid colCount ", colCount) return; }
+    if (rowCount > 4096) { DE_WARN("Invalid rowCount ", rowCount) return; }
 
     if ((m_colCount != colCount) || (m_rowCount != rowCount))
     {
@@ -190,7 +198,6 @@ void AlignedFloatShiftMatrix::resize( u32 colCount, u32 rowCount )
     }
 }
 
-
 // Only mono channel data is allowed.
 void AlignedFloatShiftMatrix::push( T const* __restrict__ src, u32 srcFrames )
 {
@@ -200,27 +207,16 @@ void AlignedFloatShiftMatrix::push( T const* __restrict__ src, u32 srcFrames )
     // Shift 'orig' and store in 'view'...
     shiftVectorRight(m_rows,m_temp);
 
-#if 0
-    // <shift-right>
-    auto firstRow = m_view[ 0 ];
-    auto lastRow = m_view[ m_rowCount-1 ];
-
-    for ( size_t i = 0; i < m_rowCount; ++i )
-    {
-        std::swap(m_view[ m_rowCount-2-i ],
-                  m_view[ m_rowCount-1-i ]);
-    }
-
-    // New front:
-    m_view[ 0 ] = lastRow;
-    // </shift-right>
-#endif
-
     // New front: fill data from push()
     f32* dst = m_rows.front();
-    memcpy( dst, src, srcFrames * sizeof( f32 ));
-
-
+    if (dst)
+    {
+        memcpy( dst, src, srcFrames * sizeof( f32 ));
+    }
+    else
+    {
+        DE_ERROR("No dst")
+    }
 }
 
 } // end namespace de.

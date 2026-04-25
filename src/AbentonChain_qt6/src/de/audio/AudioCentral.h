@@ -69,8 +69,6 @@ public:
     virtual DspSampleCollector& getDspSampleCollector() = 0;
 
     virtual const DspSampleCollector& getDspSampleCollector() const = 0;
-
-    virtual const DE_AlignedFloatShiftMatrix& getFftMatrix() const = 0;
 };
 
 class AudioCentral_Private;
@@ -132,8 +130,6 @@ public:
     DspSampleCollector& getDspSampleCollector() override;
 
     const DspSampleCollector& getDspSampleCollector() const override;
-
-    const DE_AlignedFloatShiftMatrix& getFftMatrix() const override;
 
 private:
     AudioCentral_Private* _d = nullptr;

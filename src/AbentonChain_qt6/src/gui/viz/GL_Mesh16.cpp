@@ -1,6 +1,5 @@
 #include "GL_Mesh16.h"
 #include <de_opengl.h>
-//#include <DarkAudio.h>
 
 inline uint64_t db1D(uint32_t x, uint32_t y, uint32_t w)
 {
@@ -14,40 +13,12 @@ inline void db2D(uint64_t id, uint32_t w, uint32_t& x, uint32_t& y)
     x = id - elements_upto_y;
 }
 
-/*
-#version 330 core
-
-uniform int rows;
-uniform int cols;
-uniform vec3 size;
-uniform sampler2D heightTex;
-
-ivec2 gridCoord(int id, int cols) {
-    int z = id / cols;
-    int x = id - z * cols;
-    return ivec2(x, z);
-}
-
-void main() {
-    ivec2 c = gridCoord(gl_VertexID, cols);
-
-    float fx = float(c.x) / float(cols - 1);
-    float fz = float(c.y) / float(rows - 1);
-
-    float y = texture(heightTex, vec2(fx, fz)).r;
-
-    vec3 pos = vec3(fx, y, fz) * size;
-
-    gl_Position = vec4(pos, 1.0);
-}
-*/
 GL_Mesh16::GL_Mesh16()
     : PrimType(de::gpu::PrimitiveType::Points)
     , VAO(0)
     , VBO(0)
     , IBO(0)
 {
-
 }
 
 void GL_Mesh16::destroy()
@@ -93,7 +64,7 @@ void GL_Mesh16::upload( bool bNeedVertexUpload, bool bNeedIndexUpload )
         bNeedRebind = true;
         bNeedVertexUpload = true;
     }
-    if ( !IBO ) //  && Indices.size() > 0
+    if ( !IBO && Indices.size() > 0 )
     {
         glGenBuffers(1, &IBO);
         bNeedRebind = true;
@@ -107,7 +78,11 @@ void GL_Mesh16::upload( bool bNeedVertexUpload, bool bNeedIndexUpload )
         {
             glBindBuffer(GL_ARRAY_BUFFER, VBO);
             glEnableVertexAttribArray( 0 );
+#if 0
             glVertexAttribPointer( 0, 4, GL_HALF_FLOAT, GL_FALSE, sizeof(GL_Mesh16_Vertex), reinterpret_cast<void*>(0) );
+#else
+            glVertexAttribPointer( 0, 4, GL_FLOAT, GL_FALSE, sizeof(GL_Mesh16_Vertex), reinterpret_cast<void*>(0) );
+#endif
             auto n = Vertices.size() * sizeof(GL_Mesh16_Vertex);
             auto p = reinterpret_cast< const uint8_t* >( Vertices.data() );
             glBufferData(GL_ARRAY_BUFFER, GLsizeiptr(n), p, GL_STATIC_DRAW);
@@ -115,7 +90,7 @@ void GL_Mesh16::upload( bool bNeedVertexUpload, bool bNeedIndexUpload )
             DE_OK("Upload ",n," vertices")
         }
 
-        // IBO
+        if (IBO)
         {
             auto n = Indices.size() * sizeof(uint32_t);
             auto p = reinterpret_cast< const uint8_t* >( Indices.data() );
@@ -135,20 +110,14 @@ void GL_Mesh16::upload( bool bNeedVertexUpload, bool bNeedIndexUpload )
         auto p = reinterpret_cast< const uint8_t* >( Vertices.data() );
         glBindBuffer(GL_ARRAY_BUFFER, VBO);
         glBufferData(GL_ARRAY_BUFFER, GLsizeiptr(n), p, GL_STATIC_DRAW);
-        //glBindBuffer(GL_ARRAY_BUFFER, 0);
-        //if (n<1) { DE_WARN("Uploading 0 vertices") }
-        //DE_OK("Upload ",n," vertices")
     }
 
-    if ( bNeedIndexUpload )
+    if ( IBO && bNeedIndexUpload )
     {
         auto n = Indices.size() * sizeof(uint32_t);
         auto p = reinterpret_cast< const uint8_t* >( Indices.data() );
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IBO);
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, GLsizeiptr(n), p, GL_STATIC_DRAW);
-        //glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-        //if (n<1) { DE_WARN("Uploading 0 indices") }
-        //DE_OK("Upload ",n," indices")
     }
 }
 
@@ -320,6 +289,288 @@ void GL_Mesh16::addIndexedQuad(uint32_t A,uint32_t B,uint32_t C,uint32_t D)
     Indices.push_back( C );   // D - 2
     Indices.push_back( D );   // C - 3
 }
+
+
+/*
+#version 330 core
+
+uniform int rows;
+uniform int cols;
+uniform vec3 size;
+uniform sampler2D heightTex;
+
+ivec2 gridCoord(int id, int cols) {
+    int z = id / cols;
+    int x = id - z * cols;
+    return ivec2(x, z);
+}
+
+void main() {
+    ivec2 c = gridCoord(gl_VertexID, cols);
+
+    float fx = float(c.x) / float(cols - 1);
+    float fz = float(c.y) / float(rows - 1);
+
+    float y = texture(heightTex, vec2(fx, fz)).r;
+
+    vec3 pos = vec3(fx, y, fz) * size;
+
+    gl_Position = vec4(pos, 1.0);
+}
+*/
+
+// ===========================================================================
+GL_Mesh16_Shader3D::GL_Mesh16_Shader3D()
+// ===========================================================================
+    : m_driver(nullptr)
+    , m_shader(nullptr)
+    , m_u_mvp(-1)
+    , m_u_tex(-1)
+{
+}
+
+void GL_Mesh16_Shader3D::destroy()
+{
+    //glDeleteProgram(m_programId);
+}
+
+void GL_Mesh16_Shader3D::setDriver( de::gpu::VideoDriver* driver )
+{
+    m_driver = driver;
+}
+
+void GL_Mesh16_Shader3D::setMaterial( const GL_Mesh16_Material & material, const glm::mat4& modelMat )
+{
+    if (!m_driver)
+    {
+        DE_ERROR("No shader")
+        return;
+    }
+
+    if (!material.tex0.tex)
+    {
+        DE_ERROR("No tex0")
+        return;
+    }
+
+    if (!m_shader)
+    {
+        const char* g_vs = R"(
+            //#version 330 core
+            //precision highp float;
+            layout(location = 0) in vec4 a_pos; // x,y,z,t Position attribute
+            uniform mat4 u_mvp;
+            out float v_tex;
+            void main()
+            {
+                gl_PointSize = 5.0;
+                gl_Position = u_mvp * vec4(a_pos.xyz, 1.0);
+                v_tex = a_pos.w;
+            }
+        )";
+
+        const char* g_fs = R"(
+            //#version 330 core
+            //precision highp float;
+            out vec4 o_fragColor;
+            in float v_tex;
+            uniform sampler2D u_tex;
+            void main()
+            {
+                o_fragColor = texture( u_tex, vec2( v_tex, 0.0f ) );
+            }
+        )";
+        m_shader = m_driver->createShader( "3DMesh16", g_vs, g_fs );
+        if (m_shader)
+        {
+            m_u_mvp = glGetUniformLocation(m_shader->id, "u_mvp");
+            m_u_tex = glGetUniformLocation(m_shader->id, "u_tex");
+        }
+    }
+
+    m_driver->useShader(m_shader);
+
+    // u_mvp
+    glm::mat4 viewProjMat(1.0f);
+    auto camera = m_driver->getCamera();
+    if (camera)
+    {
+        viewProjMat = camera->getViewProjectionMatrix();
+    }
+    glm::mat4 u_mvp = viewProjMat * modelMat;
+    glUniformMatrix4fv(m_u_mvp, 1, GL_FALSE, glm::value_ptr(u_mvp));
+
+    // u_tex
+    glBindTextureUnit( 0, material.tex0.tex->id() );
+    glUniform1i(m_u_tex, 0);
+
+    if (material.blend)
+    {
+        m_driver->setBlend( de::gpu::Blend::alphaBlend() );
+    }
+    else
+    {
+        m_driver->setBlend( de::gpu::Blend::disabled() );
+    }
+}
+
+
+
+// ===========================================================================
+GL_Mesh16_Shader2D::GL_Mesh16_Shader2D()
+// ===========================================================================
+    : m_driver(nullptr)
+    , m_shader(nullptr)
+    , m_u_screenSize(-1)
+    , m_u_tex(-1)
+{
+}
+
+void GL_Mesh16_Shader2D::destroy()
+{
+    //glDeleteProgram(m_programId);
+}
+
+void GL_Mesh16_Shader2D::setDriver( de::gpu::VideoDriver* driver )
+{
+    m_driver = driver;
+}
+
+void GL_Mesh16_Shader2D::setMaterial(
+        const GL_Mesh16_Material & material,
+        const de::Rectf& pos )
+{
+    if (!m_driver)
+    {
+        DE_ERROR("No shader")
+        return;
+    }
+
+    if (!material.tex0.tex)
+    {
+        DE_ERROR("No tex0")
+        return;
+    }
+
+    if (!m_shader)
+    {
+        const char* g_vs = R"(
+            //#version 330 core
+            //precision highp float;
+            layout(location = 0) in vec4 a_pos; // x,y,z,t Position attribute
+
+            uniform vec2 u_screenSize;
+
+            uniform vec4 u_posTransform;
+
+            out float v_tex;
+            void main()
+            {
+                gl_PointSize = 5.0;
+
+                vec2 T = u_posTransform.xy;
+                vec2 S = u_posTransform.zw;
+                vec2 pos = S * a_pos.xy + T;
+
+                vec2 ndc = (2.0 * vec2( pos.x, u_screenSize.y - 1.0 - pos.y ) / u_screenSize ) - 1.0;
+                gl_Position = vec4( ndc, 0.0, 1.0 );
+
+                v_tex = a_pos.w;
+            }
+        )";
+
+        const char* g_fs = R"(
+            //#version 330 core
+            //precision highp float;
+            out vec4 o_fragColor;
+            in float v_tex;
+            uniform sampler2D u_tex;
+
+            // uniform vec4 u_texTransform;
+
+            void main()
+            {
+                // vec2 atlasPos = u_texTransform.xy;
+                // vec2 atlasSiz = u_texTransform.zw;
+                // vec2 atlasUV = atlasSiz * fract( v_tex ) + atlasPos;
+                // vec4 Td = texture( u_tex, atlasUV );
+
+                o_fragColor = texture( u_tex, vec2( v_tex, 0.0f ) );
+            }
+        )";
+        m_shader = m_driver->createShader( "2DMesh16", g_vs, g_fs );
+        if (m_shader)
+        {
+            m_u_screenSize = glGetUniformLocation(m_shader->id, "u_screenSize");
+            m_u_tex = glGetUniformLocation(m_shader->id, "u_tex");
+            m_u_posTransform = glGetUniformLocation(m_shader->id, "u_posTransform");
+            //m_u_texTransform = glGetUniformLocation(m_shader->id, "u_texTransform");
+        }
+    }
+
+    m_driver->useShader(m_shader);
+    const int w = m_driver->getScreenWidth();
+    const int h = m_driver->getScreenHeight();
+    glm::vec2 u_screenSize{ w, h };
+    glUniform2fv(m_u_screenSize, 1, glm::value_ptr( u_screenSize ));
+
+    glm::vec4 u_posTransform{ pos.x(),pos.y(),pos.w(),pos.h() };
+    glUniform4fv(m_u_posTransform, 1, glm::value_ptr( u_posTransform ));
+
+    glBindTextureUnit( 0, material.tex0.tex->id() );
+    glUniform1i(m_u_tex, 0);
+
+    //glm::vec4 u_texTransform{ 0,0,1,1 };
+    //glUniform4fv(m_u_texTransform, 1, glm::value_ptr( u_texTransform ));
+
+    if (material.blend)
+    {
+        m_driver->setBlend( de::gpu::Blend::alphaBlend() );
+    }
+    else
+    {
+        m_driver->setBlend( de::gpu::Blend::disabled() );
+    }
+}
+
+
+/*
+void GL_Mesh16_Shader::setModelMat( glm::mat4 const & modelMat )
+{
+    m_modelMat = modelMat;
+}
+void GL_Mesh16_Shader::setModelPos( glm::vec3 const & modelPos )
+{
+    m_modelMat = glm::translate(glm::mat4(1.0f), modelPos);
+}
+void GL_Mesh16_Shader::setModelPos( float x, float y, float z )
+{
+    setModelPos( V3(x,y,z) );
+}
+void GL_Mesh16_Shader::setModelScale( glm::vec3 const & scale )
+{
+    m_modelMat = glm::scale(glm::mat4(1.0f), scale);
+}
+void GL_Mesh16_Shader::setModelScale( float x, float y, float z )
+{
+    setModelScale( V3(x,y,z) );
+}
+void GL_Mesh16_Shader::setModelEuler( glm::vec3 const & eulerAngles )
+{
+    auto R_x = glm::rotate( glm::mat4(1.0f), eulerAngles.x, glm::vec3(1,0,0) );
+    auto R_y = glm::rotate( glm::mat4(1.0f), eulerAngles.y, glm::vec3(0,1,0) );
+    auto R_z = glm::rotate( glm::mat4(1.0f), eulerAngles.z, glm::vec3(0,0,1) );
+    auto R = R_x * (R_y * R_z);
+    m_modelMat = R;
+}
+void GL_Mesh16_Shader::setModelEuler( float x, float y, float z )
+{
+    setModelEuler( V3(x,y,z) );
+}
+*/
+
+
+
 
 #if 0
 void GL_Mesh16::createWavMatrix(GL_Mesh16 & m, glm::vec3 const & d,
@@ -744,141 +995,3 @@ void GL_Mesh16::createFftMatrix(GL_Mesh16 & m, glm::vec3 const & d,
     m.upload( true );
 }
 #endif
-
-
-// ===========================================================================
-GL_Mesh16_Shader::GL_Mesh16_Shader()
-// ===========================================================================
-    : m_driver(nullptr)
-    , m_shader(nullptr)
-    , m_u_mvp(-1)
-    , m_u_tex(-1)
-    , m_blend(false)
-{
-}
-
-// ===========================================================================
-GL_Mesh16_Shader::~GL_Mesh16_Shader()
-// ===========================================================================
-{
-}
-
-void GL_Mesh16_Shader::destroy()
-{
-    //glDeleteProgram(m_programId);
-}
-
-void GL_Mesh16_Shader::setMaterial( const GL_Mesh16_Material & material, const M4& modelMat )
-{
-    if (!m_driver)
-    {
-        DE_ERROR("No shader")
-        return;
-    }
-
-    if (!material.tex0.tex)
-    {
-        DE_ERROR("No tex0")
-        return;
-    }
-
-    if (!m_shader)
-    {
-        const char* g_vs = R"(
-            //#version 330 core
-            //precision highp float;
-            layout(location = 0) in vec4 a_pos; // x,y,z,t Position attribute
-            uniform mat4 u_mvp;
-            out float v_tex;
-            void main()
-            {
-                gl_PointSize = 5.0;
-                gl_Position = u_mvp * vec4(a_pos.xyz, 1.0);
-                v_tex = a_pos.w;
-            }
-        )";
-
-        const char* g_fs = R"(
-            //#version 330 core
-            //precision highp float;
-            out vec4 o_fragColor;
-            in float v_tex;
-            uniform sampler2D u_tex;
-            void main()
-            {
-                o_fragColor = texture( u_tex, vec2( v_tex, 0.0f ) );
-            }
-        )";
-        m_shader = m_driver->createShader( "GL_Mesh16", g_vs, g_fs );
-        if (m_shader)
-        {
-            m_u_mvp = glGetUniformLocation(m_shader->id, "u_mvp");
-            m_u_tex = glGetUniformLocation(m_shader->id, "u_tex");
-        }
-    }
-
-    M4 viewProjMat(1.0f);
-    auto camera = m_driver->getCamera();
-    if (camera)
-    {
-        viewProjMat = camera->getViewProjectionMatrix();
-    }
-    M4 u_mvp = viewProjMat * modelMat;
-
-    m_driver->useShader(m_shader);
-    // glUseProgram(m_programId);
-    glUniformMatrix4fv(m_u_mvp, 1, GL_FALSE, glm::value_ptr(u_mvp));
-
-    glBindTextureUnit( 0, material.tex0.tex->id() );
-    glUniform1i(m_u_tex, 0);
-    //glUniform4f(m_u_color, 0.0f, 0.8f, 1.0f, 1.0f); // Solid color
-
-    if (material.blend)
-    {
-        m_driver->setBlend( de::gpu::Blend::alphaBlend() );
-    }
-    else
-    {
-        m_driver->setBlend( de::gpu::Blend::disabled() );
-    }
-}
-
-void GL_Mesh16_Shader::setDriver( de::gpu::VideoDriver* driver )
-{
-    m_driver = driver;
-}
-
-/*
-void GL_Mesh16_Shader::setModelMat( glm::mat4 const & modelMat )
-{
-    m_modelMat = modelMat;
-}
-void GL_Mesh16_Shader::setModelPos( glm::vec3 const & modelPos )
-{
-    m_modelMat = glm::translate(glm::mat4(1.0f), modelPos);
-}
-void GL_Mesh16_Shader::setModelPos( float x, float y, float z )
-{
-    setModelPos( V3(x,y,z) );
-}
-void GL_Mesh16_Shader::setModelScale( glm::vec3 const & scale )
-{
-    m_modelMat = glm::scale(glm::mat4(1.0f), scale);
-}
-void GL_Mesh16_Shader::setModelScale( float x, float y, float z )
-{
-    setModelScale( V3(x,y,z) );
-}
-void GL_Mesh16_Shader::setModelEuler( glm::vec3 const & eulerAngles )
-{
-    auto R_x = glm::rotate( glm::mat4(1.0f), eulerAngles.x, glm::vec3(1,0,0) );
-    auto R_y = glm::rotate( glm::mat4(1.0f), eulerAngles.y, glm::vec3(0,1,0) );
-    auto R_z = glm::rotate( glm::mat4(1.0f), eulerAngles.z, glm::vec3(0,0,1) );
-    auto R = R_x * (R_y * R_z);
-    m_modelMat = R;
-}
-void GL_Mesh16_Shader::setModelEuler( float x, float y, float z )
-{
-    setModelEuler( V3(x,y,z) );
-}
-*/

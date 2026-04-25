@@ -296,10 +296,7 @@ public:
     bool m_bIsPluginOpen;
     bool m_bIsBypassed;
     bool m_bIsSynth;
-    bool m_bIsSingleComponent; // Says only
-    bool m_bCanFloat32;
-    bool m_bCanFloat64;
-    u32 m_latency; // plugin reported latency in frames
+    // bool m_bHasEditor = false;
     u32 m_numInputs;
     u32 m_numOutputs;
     u32 m_sampleRate;
@@ -391,10 +388,6 @@ public:
         : m_bIsPluginOpen{ false }
         , m_bIsBypassed{ false }
         , m_bIsSynth{ false }
-        , m_bIsSingleComponent{ false }
-        , m_bCanFloat32{ false }
-        , m_bCanFloat64{ false }
-        , m_latency{ 0 }
         , m_numInputs{ 0 }
         , m_numOutputs{ 0 }
         , m_sampleRate{ 0 }
@@ -406,6 +399,9 @@ public:
         , m_framePos{ 0 }
     {
         DE_DEBUG("")
+        m_hostApp = Steinberg::IPtr<HostApp>(new HostApp());
+
+        m_hostHandler = Steinberg::IPtr<HostComponentHandler>(new HostComponentHandler());
     }
 
     ~VST3_Plugin_Impl()
@@ -415,11 +411,6 @@ public:
         {
             DE_ERROR("No closePlugin() called.")
             closePlugin();
-
-            // QMetaObject::invokeMethod(
-            //     qApp,
-            //     [this]() { closePlugin(); },
-            //     Qt::QueuedConnection);
         }
     }
 
@@ -428,18 +419,6 @@ public:
         return m_bIsPluginOpen;
     }
 
-    uint32_t getRefCount(Steinberg::FUnknown* obj)
-    {
-        if (!obj) return 0;
-
-        uint32_t rc = obj->addRef();  // returns the real refcount + 1
-        obj->release();             // returns to original state
-        return rc;                  // DO NOT subtract 1
-    }
-
-    // ------------------------------------------------------------
-    // Unload DLL
-    // ------------------------------------------------------------
     void closePlugin()
     {
         if (!m_bIsPluginOpen)
@@ -447,14 +426,6 @@ public:
             DE_WARN("Already closed")
             return;
         }
-
-        DE_WARN("m_audioProcessor = ", getRefCount(m_audioProcessor))
-        DE_WARN("m_component = ", getRefCount(m_component))
-        DE_WARN("m_plugView = ", getRefCount(m_plugView))
-        DE_WARN("m_editController = ", getRefCount(m_editController))
-        DE_WARN("m_hostHandler = ", getRefCount(m_hostHandler))
-        DE_WARN("m_hostApp = ", getRefCount(m_hostApp))
-        DE_WARN("m_module = ", m_module.use_count())
 
         if (m_audioProcessor)
         {
@@ -467,68 +438,42 @@ public:
             m_component->setActive(false);
         }
 
+        if (m_editor)
+        {
+            DE_TRACE("Close editor")
+            //dispatcher(effEditClose, 0, 0, nullptr, 0.0f);
+            m_editor->enableClosing();
+            m_editor->close();
+            m_editor->deleteLater();
+            //delete m_editor;
+            m_editor = nullptr;
+        }
+
         if (m_plugView)
         {
             m_plugView->removed();
             m_plugView = nullptr;
         }
 
-        if (m_editor)
+        if (m_editController)
         {
-            DE_TRACE("Close editor")
-            // If Qt owns the editor (parent or WA_DeleteOnClose):
-            m_editor->enableClosing();
-            m_editor->close(); // Qt will delete it
-            // delete m_editor;
-            // m_editor = nullptr;             // m_editor->deleteLater();
-
-            // If YOU own the editor manually, use this instead:
-            //delete m_editor;
-            m_editor = nullptr;
+            m_editController->terminate();
+            m_editController = nullptr;
         }
 
-        // ------------------------------------------------------------
-        // 6. Terminate controller (ONLY for dual-component)
-        // ------------------------------------------------------------
-        if (m_bIsSingleComponent)
+        if (m_component)
         {
-            if (m_editController)
-            {
-                m_editController->setComponentHandler(nullptr);
-                m_editController = nullptr;
-            }
-
-            if (m_component)
-            {
-                m_component->terminate();
-                m_component = nullptr;
-            }
-        }
-        else
-        {
-            if (m_editController)
-            {
-                m_editController->setComponentHandler(nullptr);
-                m_editController->terminate();
-                m_editController = nullptr;
-
-            }
-
-            if (m_component)
-            {
-                m_component->terminate();
-                m_component = nullptr;
-            }
+            m_component->terminate();
+            m_component = nullptr;
         }
 
-        m_hostHandler = nullptr;
-        m_hostApp = nullptr;
-
-        m_module = nullptr;     // DLL unloads here
+        m_hostApp.reset();
+        m_hostHandler.reset();
+        m_module.reset();
 
         m_bIsPluginOpen = false;
-        m_bIsSingleComponent = false;
     }
+
 
     std::string de_mbstr(const Steinberg::Vst::String128& s)
     {
@@ -631,7 +576,7 @@ public:
         }
     }
 
-    bool determineIsSynth() const
+    void determineIsSynth()
     {
         using Steinberg::Vst::MediaTypes::kEvent;
         using Steinberg::Vst::MediaTypes::kAudio;
@@ -641,7 +586,11 @@ public:
         int eventIn  = m_component->getBusCount(kEvent, kInput);
         int audioIn  = m_component->getBusCount(kAudio, kInput);
 
-        return (audioIn == 0) && (eventIn > 0);
+        if ((audioIn == 0) && (eventIn > 0))
+        {
+            m_bIsSynth = true;
+        }
+        DE_TRACE("m_bIsSynth = ", m_bIsSynth)
     }
 
     void setAudioIn( bool bActive )
@@ -727,6 +676,133 @@ public:
             }
         }
     }
+/*
+    A solid, spec‑conformant sequence looks like this:
+
+    Create component
+        Call: IPluginFactory::createInstance(..., IComponent::iid, ...)
+
+    Create controller
+        Call: IPluginFactory::createInstance(..., IEditController::iid, ...)
+        Or via IComponent::getControllerClassId() if needed
+
+    Initialize both
+        Call:
+            component->initialize(hostContext)
+            controller->initialize(hostContext)
+
+    Set component state (if you have stored state)
+        Call:
+            component->setState(stateStream)
+        Often before bus setup, but many plugins tolerate both orders
+
+    Set bus arrangements
+        Call:
+            component->setBusArrangements(inputArr, numIn, outputArr, numOut)
+        This defines the audio I/O layout the host wants.
+
+    Activate buses
+        Call:
+            component->activateBus(mediaType, dir, index, true) for the buses you want active
+        Some hosts also call activateBus(..., false) later when deactivating.
+
+    Connect processor ↔ controller (IConnectionPoint)
+        Call (only if both sides support it):
+
+        FUnknownPtr<IConnectionPoint> procCP(m_component);
+        FUnknownPtr<IConnectionPoint> ctrlCP(m_editController);
+
+        if (procCP && ctrlCP)
+        {
+            procCP->connect(ctrlCP);
+            ctrlCP->connect(procCP);
+        }
+
+        Important:
+            Do this after initialize()
+            Do this after bus layout is known (so both sides know the context)
+            Do this before setActive() / setupProcessing() / GUI
+
+    Set active
+        Call: component->setActive(true)
+
+    Setup processing
+        Call: component->setupProcessing(processSetup)
+
+    Set processing
+        Call: component->setProcessing(true) when you’re ready to run audio
+
+    Controller state / parameters
+        Call: controller->setComponentState(stateStream) (if you have state for the controller)
+        Parameter initialization, etc.
+
+    Create GUI
+        Call: controller->createView("editor")
+*/
+
+/*
+VST3 HOST INITIALIZATION ORDER (FULL + CORRECT)
+
+1) Load module
+   - load DLL / bundle
+   - get IPluginFactory
+
+2) Create component
+   factory->createInstance(componentCID, IComponent::iid, &component)
+
+3) Create controller
+   component->getControllerClassId(controllerCID)
+   factory->createInstance(controllerCID, IEditController::iid, &controller)
+
+4) Set component handler on controller (MANDATORY)
+   controller->setComponentHandler(hostHandler)
+
+5) Initialize both
+   component->initialize(hostContext)
+   controller->initialize(hostContext)
+
+6) Restore component state (optional)
+   component->setState(stateStream)
+
+7) Restore controller state (optional)
+   controller->setComponentState(stateStream)
+
+8) Query bus info
+   component->getBusCount(...)
+   component->getBusInfo(...)
+
+9) Set bus arrangements
+   component->setBusArrangements(inputArr, numInputs,
+                                 outputArr, numOutputs)
+
+10) Activate buses
+    component->activateBus(kAudio, kInput, index, true)
+    component->activateBus(kAudio, kOutput, index, true)
+
+11) Connect processor <-> controller (IConnectionPoint)
+    if (component supports IConnectionPoint AND controller supports it)
+        procCP->connect(ctrlCP)
+        ctrlCP->connect(procCP)
+
+12) Set active
+    component->setActive(true)
+
+13) Setup processing
+    component->setupProcessing(processSetup)
+
+14) Set processing
+    component->setProcessing(true)
+
+15) Create GUI
+    controller->createView("editor")
+
+16) Attach GUI to host window
+    view->attached(parentWindow, platformType)
+
+17) Start audio processing
+    component->process(...)
+*/
+
 
     void openPlugin( std::string uri )
     {
@@ -742,43 +818,22 @@ public:
         using Steinberg::Vst::kOutput;
         using Steinberg::Vst::IConnectionPoint;
 
-        if (m_bIsPluginOpen)
-        {
-            DE_ERROR("Already open")
-            return;
-        }
+        if (m_bIsPluginOpen) { DE_ERROR("Already open") return; }
+        if (!m_hostApp) { DE_ERROR("No hostApp") return; }
 
-        m_hostApp = Steinberg::IPtr<HostApp>(new HostApp());
-        if (!m_hostApp)
-        {
-            DE_ERROR("No hostApp")
-            return;
-        }
-
-        m_hostHandler = Steinberg::IPtr<HostComponentHandler>(new HostComponentHandler());
-        if (!m_hostHandler)
-        {
-            DE_ERROR("No hostHandler")
-            return;
-        }
-
-        // 0.
+        // [1.]
         std::string errorDesc;
         m_module = Module::create(uri,errorDesc);
-        if (!m_module)
-        {
-            DE_ERROR("No module")
-            return;
-        }
+        if (!m_module) { DE_ERROR("No module") return; }
 
         m_uri = uri;
         m_pluginName = dbFileBase(uri);
         m_pluginVendor = "";
 
-        // 0.1.
+        // 1.1.
         const PluginFactory& factory = m_module->getFactory();
 
-        // 0.2 Read factory info
+        // 1.2 Read factory info
         VST3::Hosting::FactoryInfo factoryInfo = factory.info();
         m_pluginVendor = factoryInfo.vendor();
 
@@ -788,7 +843,7 @@ public:
         DE_TRACE("Plugin.Email: ",factoryInfo.email())
         DE_TRACE("Plugin.Flags: ",factoryInfo.flags())
 
-        // 0.3 Read class IDs
+        // 1.3 Read class IDs
         Steinberg::TUID processorCID {};
         Steinberg::TUID controllerCID {};
         bool foundProcessor  = false;
@@ -831,16 +886,30 @@ public:
             return;
         }
 
-        // I.A. Find component
+        // [2.] Create component
         m_component = factory.createInstance<IComponent>(processorCID);
-        if (!m_component)
+        if (!m_component) { DE_ERROR("No component.") return; }
+
+        Steinberg::tresult e = Steinberg::kResultOk;
+
+        // [3.] Create controller
+        if (foundController)
         {
-            DE_ERROR("No component.")
-            return;
+            m_editController = factory.createInstance<IEditController>(controllerCID);
+            if (!m_editController) { DE_ERROR("No m_editController") return; }
+
+            // [4.] Set component handler (MANDATORY)
+            e = m_editController->setComponentHandler(m_hostHandler);
+            if (e != Steinberg::kResultOk)
+            {
+                DE_ERROR("No m_editController->setComponentHandler(m_hostHandler). ", getErrorDesc(e))
+                return;
+            }
         }
 
-        // I.B. Init component
-        Steinberg::tresult e;
+        // [5] Initialize both
+
+        // [5.1] Initialize component
         e = m_component->initialize(m_hostApp);
         if (e != Steinberg::kResultOk)
         {
@@ -848,134 +917,81 @@ public:
             return;
         }
 
-        // I.C. Set state (better do nothing than providing a dummy)
-        // MemoryStream componentStateStream;
-        // componentStateStream.setSize(0);
-        // m_component->setState(&componentStateStream);
-
-        // II.A. Find editController
-        if (foundController)
-        {
-            m_editController = factory.createInstance<IEditController>(controllerCID);
-            if (!m_editController)
-            {
-                DE_ERROR("No m_editController")
-                return;
-            }
-        }
-        else
-        {
-#if 0
-            IEditController* ctrl = nullptr;
-            if (m_component->queryInterface(IEditController::iid, (void**)&ctrl) == Steinberg::kResultOk)
-            {
-                m_editController = ctrl;  // IPtr takes ownership
-                // DO NOT call addRef() manually
-                m_bIsSingleComponent = true;
-                DE_OK("Got single component editController")
-            }
-            else
-            {
-                DE_ERROR("No single component editController")
-            }
-#else
-            Steinberg::FUnknownPtr<IEditController> editController(m_component);
-            if (!editController)
-            {
-                DE_ERROR("No single component editController")
-            }
-            else
-            {
-                m_bIsSingleComponent = true;
-                m_editController = editController;
-                DE_OK("Got single component editController")
-                editController->release();
-            }
-#endif
-        }
-
-        // II.B Init editController
+        // [5.2] Initialize edit controller
         if (m_editController)
         {
-            // DE_OK("m_editController->setComponentState()")
-            // MemoryStream stateStream;
-            // stateStream.setSize(0);
-            // e = m_editController->setComponentState(&stateStream);
-            // if (e != Steinberg::kResultOk)
-            // {
-            //     DE_ERROR("No m_editController->setComponentState(&stateStream). ", getErrorDesc(e))
-            //     // return;
-            // }
-
-            // II.C Initialize edit controller
             e = m_editController->initialize(m_hostApp);
             if (e != Steinberg::kResultOk)
             {
                 DE_ERROR("No m_editController->initialize(m_hostApp). ", getErrorDesc(e))
-            }
-
-            DE_OK("m_editController->initialize()")
-
-            // II.D. Set componentHandler (automation)
-            e = m_editController->setComponentHandler(m_hostHandler);
-            if (e != Steinberg::kResultOk)
-            {
-                DE_ERROR("No m_editController->setComponentHandler(m_hostHandler). ", getErrorDesc(e))
-            }
-
-            DE_OK("m_editController->initialize()")
-
-            // II.E. Connect component <-> editController
-            if (!m_bIsSingleComponent)
-            {
-                Steinberg::FUnknownPtr<IConnectionPoint> procCP(m_component);
-                Steinberg::FUnknownPtr<IConnectionPoint> ctrlCP(m_editController);
-
-                if (procCP && ctrlCP)
-                {
-                    procCP->connect(ctrlCP);
-                    ctrlCP->connect(procCP);
-                    DE_OK("Connected component <-> editController")
-                }
-                else
-                {
-                    DE_ERROR("No connection component <-> editController")
-                }
+                return;
             }
         }
 
-        // 3.A.
+        // [6.] State of component
+        MemoryStream componentStateStream;
+        componentStateStream.setSize(0);
+        e = m_component->setState(&componentStateStream);
+        if (e != Steinberg::kResultOk)
+        {
+            DE_ERROR("No m_component->setState(). ", getErrorDesc(e))
+        }
+
+        // [7.] State of controller
+        if (m_editController)
+        {
+            MemoryStream controllerStateStream;
+            controllerStateStream.setSize(0);
+            e = m_editController->setState(&controllerStateStream);
+            if (e != Steinberg::kResultOk)
+            {
+                DE_ERROR("No m_editController->setState(). ", getErrorDesc(e))
+            }
+        }
+
+        // VIII.A.
         Steinberg::Vst::IAudioProcessor* audio = nullptr;
         e = m_component->queryInterface(Steinberg::Vst::IAudioProcessor::iid, (void**)&audio);
         if (e != Steinberg::kResultOk)
         {
-            DE_ERROR("No queryInterface(IAudioProcessor). ", getErrorDesc(e))
+            DE_ERROR("No m_component->queryInterface(Steinberg::Vst::IAudioProcessor). ", getErrorDesc(e))
+            return;
+        }
+
+        // VIII.B.
+        m_audioProcessor = audio;
+        if (!m_audioProcessor) { DE_ERROR("No audioProcessor") return; }
+
+        DE_OK("AudioProcessor passed")
+
+        // VIII.C.
+        e = m_audioProcessor->canProcessSampleSize(Steinberg::Vst::kSample32);
+        if (e != Steinberg::kResultOk)
+        {
+            DE_ERROR("Cannot kSample32. ", getErrorDesc(e))
         }
         else
         {
-            m_audioProcessor = audio;
+            DE_OK("Can kSample32.")
         }
 
-        // 3.B.
-        if (!m_audioProcessor) { DE_ERROR("No processor") return; }
+        // VIII.D.
+        e = m_audioProcessor->canProcessSampleSize(Steinberg::Vst::kSample64);
+        if (e != Steinberg::kResultOk)
+        {
+            DE_ERROR("Cannot kSample64. ", getErrorDesc(e))
+        }
+        else
+        {
+            DE_OK("Can kSample64.")
+        }
 
-        // 3.C.
-        m_bCanFloat32 = (m_audioProcessor->canProcessSampleSize(Steinberg::Vst::kSample32) == Steinberg::kResultOk);
-        m_bCanFloat32 = (m_audioProcessor->canProcessSampleSize(Steinberg::Vst::kSample64) == Steinberg::kResultOk);
-        m_latency = m_audioProcessor->getLatencySamples();
-        DE_OK("CanFloat32 = ",m_bCanFloat32)
-        DE_OK("CanFloat64 = ",m_bCanFloat64)
-        DE_OK("PlugLatency = ",m_latency)
+        // VIII.D.
+        uint32_t latencyFrames = m_audioProcessor->getLatencySamples();
+        DE_OK("latencyFrames = ",latencyFrames)
 
-        // ACTIVATION PHASE:
-        // component->setActive(true)
-        // component->activateBus(...)
-        // component->setBusArrangements(...)
-        // audioProcessor->setupProcessing(...)
-
-        // 4. Activate MIDI event processing:
-        m_bIsSynth = determineIsSynth();
-        DE_TRACE("m_bIsSynth = ", m_bIsSynth)
+        // [8.] Query bus info
+        determineIsSynth();
         m_sampleRate = 48000;
         m_blockSize = 256;
         DE_WARN("Busses Before:")
@@ -986,7 +1002,7 @@ public:
         setEventIn( true );
         setEventOut( false );
 
-        // 5.B.
+        // [9.] Set bus arrangements
         auto stereo = Steinberg::Vst::SpeakerArr::kStereo;
         if (m_bIsSynth)
         {
@@ -1003,12 +1019,66 @@ public:
 
         DE_WARN("Busses After:")
         dumpBusses();
+        m_buffers.setup(m_component, m_blockSize);
+
+        // [10.] Activate buses
         setAudioIn( true );
         setAudioOut( true );
         setEventIn( true );
         setEventOut( false );
 
-        // 5.C.
+        // [11]
+        Steinberg::FUnknownPtr<IConnectionPoint> procCP(m_component);
+        Steinberg::FUnknownPtr<IConnectionPoint> ctrlCP(m_editController);
+
+        if (procCP && ctrlCP)
+        {
+            procCP->connect(ctrlCP);
+            ctrlCP->connect(procCP);
+            DE_TRACE("Connected component <-> editController")
+        }
+        else
+        {
+            DE_WARN("No connection")
+        }
+
+#if 0
+        // 3. Host connects processor ↔ controller
+        IConnectionPoint* procCP = nullptr;
+        e = m_component->queryInterface(IConnectionPoint::iid, (void**)&procCP);
+        if (e != Steinberg::kResultOk)
+        {
+            DE_ERROR("No m_component->queryInterface(Steinberg::Vst::IConnectionPoint). ", getErrorDesc(e))
+            procCP = nullptr;
+        }
+
+        IConnectionPoint* ctrlCP = nullptr;
+        e = m_editController->queryInterface(IConnectionPoint::iid, (void**)&ctrlCP);
+        if (e != Steinberg::kResultOk)
+        {
+            DE_ERROR("No m_editController->queryInterface(Steinberg::Vst::IConnectionPoint). ", getErrorDesc(e))
+            ctrlCP = nullptr;
+        }
+
+        if (procCP && ctrlCP)
+        {
+            procCP->connect(ctrlCP);
+            ctrlCP->connect(procCP);
+        }
+        else
+        {
+            DE_WARN("")
+        }
+#endif
+        // [12.] Set active
+        e = m_component->setActive(true);
+        if (e != Steinberg::kResultOk)
+        {
+            DE_ERROR("No m_component setActive(true). ", getErrorDesc(e))
+            return;
+        }
+
+        // [13.] Setup processing
         Steinberg::Vst::ProcessSetup setup {};
         setup.maxSamplesPerBlock = m_blockSize;
         setup.sampleRate         = m_sampleRate;
@@ -1021,15 +1091,7 @@ public:
             // return;
         }
 
-        // 5.D.
-        e = m_component->setActive(true);
-        if (e != Steinberg::kResultOk)
-        {
-            DE_ERROR("No m_component setActive(true). ", getErrorDesc(e))
-            return;
-        }
-
-        // 5.E.
+        // [14.] Set processing
         e = m_audioProcessor->setProcessing(true);
         if (e != Steinberg::kResultOk)
         {
@@ -1037,14 +1099,14 @@ public:
             // return;
         }
 
-        // X. Open editor
+        // [15.] GUI
         if (m_editController)
         {
             auto plugView = m_editController->createView(Steinberg::Vst::ViewType::kEditor);
             if (plugView)
             {
                 DE_OK("Got IPlugView")
-                m_editor = new VST3_Editor(plugView);
+                m_editor = new VST3_Editor(plugView, nullptr);
             }
             else
             {

@@ -8,14 +8,12 @@ App::App(QObject* parent)
     : QObject(parent)
     , m_canvas{ nullptr }
 {
-    qDebug() << "Created App.";
-
+    DE_TRACE("")
 }
 
 App::~App()
 {
-    qDebug() << "Deleted App.";
-
+    DE_TRACE("")
     if (m_canvas)
     {
         DE_ERROR("Canvas still active")
@@ -38,13 +36,14 @@ App* App::instance()
 
 void App::setCanvas( GL_Canvas* canvas )
 {
+    DE_TRACE("")
     m_canvas = canvas;
 }
 
 void App::cleanupAll()
 {
     // Your cleanup before destruction
-    DE_WARN("===============   App::cleanupAll   ==================")
+    DE_WARN("")
 
     if (!m_canvas)
     {
@@ -55,9 +54,9 @@ void App::cleanupAll()
         // The renderer accesses DSP data. We need to stop that
         // before the DspChain gets deleted while the renderer
         // is still running!
-        m_canvas->stopFpsTimer();
-        m_canvas->setRenderingEnabled(false);
+        m_canvas->cleanupAll();
         DE_OK("Stop canvas rendering audio data")
+        m_canvas = nullptr;
     }
 
     m_audioCentral.cleanupAll();
@@ -89,20 +88,4 @@ void App::setZoom(int percent)
         m_skinManager.current().zoom = percent;
         emit skinChanged();
     }
-}
-
-// ============================================================
-
-// ============================================================
-
-#ifndef WIN32_LEAN_AND_MEAN
-#define WIN32_LEAN_AND_MEAN
-#endif
-#include <windows.h>
-
-void enableConsoleOutput()
-{
-    AllocConsole();
-    freopen("CONOUT$", "w", stdout);
-    freopen("CONOUT$", "w", stderr);
 }

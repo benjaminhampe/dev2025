@@ -1,8 +1,12 @@
 #pragma once
-#include "Matrix3D.h"
+#include <gui/viz/Matrix3D.h>
+#include <gui/viz/create2DWav.h>
+
+// This class exists to split QtOpenGL from our custom GLEW rendering.
+// Qt hates our GLEW headers and pollutes the console with warnings.
 
 // ==========================================================
-class GL_Spectrum3D // : protected QOpenGLFunctions_4_5_Core
+class GL_Renderer
 // ==========================================================
 {
     typedef float T;
@@ -15,10 +19,15 @@ class GL_Spectrum3D // : protected QOpenGLFunctions_4_5_Core
     //bool m_bRenderingEnabled;
     bool m_showFftMatrix3D;
 
-    GL_Mesh16_Shader m_mesh16Shader;
+    GL_Mesh16_Shader2D m_mesh16Shader2D;
+    GL_Mesh16_Shader3D m_mesh16Shader3D;
     GL_Mesh16_Material m_mesh16Material;
     Matrix3D m_matrix_fft;
 
+    GL_Mesh16 m_lineStripL;
+    GL_Mesh16 m_lineStripR;
+
+    GL_Mesh16 m_lineStripFft;
     // de::LinearColorGradient m_wav_colorGradient;
     // de::LinearColorGradient m_fft_colorGradient;
 
@@ -29,13 +38,8 @@ class GL_Spectrum3D // : protected QOpenGLFunctions_4_5_Core
     // DE_AlignedFloatVector m_back;
 
 public:
-    GL_Spectrum3D();
-    ~GL_Spectrum3D(); // override;
-
-    // void setRenderingEnabled( bool bEnabled )
-    // {
-    //     m_bRenderingEnabled = bEnabled;
-    // }
+    GL_Renderer();
+    ~GL_Renderer(); // override;
 
     void setVisibleFftMatrix( bool bVisible )
     {
@@ -44,5 +48,14 @@ public:
 
     void initializeGL(de::gpu::VideoDriver* driver);
     void paintGL();
+
+    void draw2DLineStripL();
+    void draw2DLineStripR();
+
+    void draw3DAccumFftMatrix();
+    void draw3DLineStripL();
+    void draw3DLineStripR();
+
+    void draw2DLineStripFft();
 
 };

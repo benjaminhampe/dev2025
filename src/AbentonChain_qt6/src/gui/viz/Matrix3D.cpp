@@ -1,8 +1,26 @@
-#include "Matrix3D.h"
+#include <gui/viz/Matrix3D.h>
+#include <App.h>
 #include <de/gpu/VideoDriver.h>
 #include <de_opengl.h>
-#include <App.h>
-#include "rainbow_1k_webp.h"
+
+Matrix3D::Matrix3D()
+    : m_rows{0}
+    , m_cols{0}
+    , m_scaleModeX{ 1 } // 0 = linear, 1 = log10
+    , m_pos{ 0,0,0 }
+    , m_size{ 4000, 250, 2000 }
+    , m_modelMat{ 1.0f }
+    , m_bbox{ m_pos, m_pos + m_size }
+    , m_mesh16()
+    , m_name{ "Matrix3D" }
+{
+
+}
+
+Matrix3D::~Matrix3D()
+{
+
+}
 
 de::BBox3f Matrix3D::recomputeBoundingBox(V3 const & d, DE_AlignedFloatShiftMatrix const & table)
 {
@@ -25,7 +43,7 @@ void Matrix3D::init(V3 size, V3 pos, std::string name)
 }
 
 void Matrix3D::draw(
-    GL_Mesh16_Shader& shader,
+    GL_Mesh16_Shader3D& shader,
     const GL_Mesh16_Material& material,
     const DE_AlignedFloatShiftMatrix& table)
 {
@@ -37,7 +55,7 @@ void Matrix3D::draw(
     //             * glm::rotate(glm::mat4(1.0f), angle, axis)
     //             * glm::scale(glm::mat4(1.0f), scale);
     auto T = glm::translate(glm::mat4(1.0f), m_pos);
-    auto S = glm::translate(glm::mat4(1.0f), m_size);
+    //auto S = glm::scale(glm::mat4(1.0f), m_size);
     shader.setMaterial(material, T);
     m_mesh16.draw();
 }
@@ -115,16 +133,21 @@ void Matrix3D::updateVertices(DE_AlignedFloatShiftMatrix const & table )
         bNeedIndexUpload = true;
 
         // X-axis is scaled logarithmicly.
-        if (cols != m_mesh16.XMap.size())
+        if (cols != m_XMap.size())
         {
-            m_mesh16.XMap.resize(cols);
+            m_XMap.resize(cols);
 
-            const float f = 1.0f / log10f( float(cols) );
+            // / (sampleRate_over_fftSize * colCount);
+            const float sampleRate = 48000.0f;
+            const float fftSize = cols;
+
+            const float sampleRate_over_fftSize = sampleRate / fftSize;
+            const float f = sampleRate_over_fftSize; //  / log10f( float(cols) );
 
             for ( size_t col = 0; col < cols; col++ )
             {
                 //  - 1.5f -1 = shift by 10^-1
-                m_mesh16.XMap[ col ] = f * log10f( float(col+1) );
+                m_XMap[ col ] = f * log10f( float(col+1) );
             }
         }
     }
@@ -136,13 +159,15 @@ void Matrix3D::updateVertices(DE_AlignedFloatShiftMatrix const & table )
     auto dBmin = -120.0f;
     auto dBmax = 60.0f;
 
-    const float dx = m_size.x / float ( cols - 1 ); // / (sampleRate_over_fftSize * colCount);
+    //const float dx = m_size.x / float ( cols - 1 );
+    const float dx = m_size.x / m_XMap.back(); // / (sampleRate_over_fftSize * colCount);
     const float dy = m_size.y;
     const float dz = m_size.z / float ( rows - 1 );
 
-    m_mesh16.PrimType = de::gpu::PrimitiveType::Triangles;
-    m_mesh16.Vertices.clear();
-    m_mesh16.Vertices.reserve(
+    auto & m = m_mesh16;
+    m.PrimType = de::gpu::PrimitiveType::Triangles;
+    m.Vertices.clear();
+    m.Vertices.reserve(
         rows * cols // top
         // + 2*cols // front
         // + 2*cols // back
@@ -164,10 +189,10 @@ void Matrix3D::updateVertices(DE_AlignedFloatShiftMatrix const & table )
             {
                 float dB = table.getPixel( col, row );  // The row data
                 float t = (dB - dBmin) * dBrangeInv;
-                float x = dx * m_mesh16.XMap[ col ];
+                float x = dx * m_XMap[ col ];
                 float y = dy * t;
                 float z = dz * row;
-                m_mesh16.Vertices.emplace_back( x,y,z,t );
+                m.Vertices.emplace_back( x,y,z,t );
             }
         }
     }
@@ -183,13 +208,12 @@ void Matrix3D::updateVertices(DE_AlignedFloatShiftMatrix const & table )
                 float x = dx * col;
                 float y = dy * t;
                 float z = dz * row;
-                m_mesh16.Vertices.emplace_back( x,y,z,t );
+                m.Vertices.emplace_back( x,y,z,t );
             }
         }
     }
 
-    // m_mesh16.uploadVertices();
-    m_mesh16.upload(true, bNeedIndexUpload);
+    m.upload(true, bNeedIndexUpload);
 
 #if 0
     // [Front]:

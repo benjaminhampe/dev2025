@@ -4,8 +4,6 @@
 #include <QColor>
 #include <de/audio/AudioCentral.h>
 
-void enableConsoleOutput();
-
 class GL_Canvas;
 
 // ============================================

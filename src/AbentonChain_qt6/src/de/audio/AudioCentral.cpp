@@ -367,6 +367,11 @@ public:
     {
         stopAudio();
 
+        std::this_thread::sleep_for(
+            std::chrono::nanoseconds(100000));
+
+        m_dspSampleCollector.stop();
+
         m_track0.cleanupAll();
     }
 
@@ -409,21 +414,6 @@ public:
         return m_pluginFactory;
     }
 
-    // u32 createPlugin( std::string uri ) override
-    // {
-    //     return m_pluginManager.createPlugin(uri);
-    // }
-
-    // IPlugin* getPlugin( u32 id ) override
-    // {
-    //     return m_pluginManager.getPlugin(id);
-    // }
-
-    // void removePlugin( u32 id ) override
-    // {
-    //     m_pluginManager.removePlugin(id);
-    // }
-
     //=========================
     // TrackApi
     //=========================
@@ -462,9 +452,6 @@ public:
 
     const DspSampleCollector&
     getDspSampleCollector() const { return m_dspSampleCollector; }
-
-    const DE_AlignedFloatShiftMatrix&
-    getFftMatrix() const { return m_dspSampleCollector.getMatrix(); }
 };
 
 // ===========================================================================
@@ -523,21 +510,6 @@ const PluginFactory& AudioCentral::getPluginFactory() const
     return _d->getPluginFactory();
 }
 
-// IPlugin* AudioCentral::createPlugin( std::string uri )
-// {
-//     return _d->createPlugin(uri);
-// }
-
-// IPlugin* AudioCentral::getPlugin( u32 id )
-// {
-//     return _d->getPlugin(id);
-// }
-
-// void AudioCentral::removePlugin( u32 id )
-// {
-//     _d->removePlugin(id);
-// }
-
 //=========================
 // TrackApi
 //=========================
@@ -581,12 +553,6 @@ const DspSampleCollector&
 AudioCentral::getDspSampleCollector() const
 {
     return _d->getDspSampleCollector();
-}
-
-const DE_AlignedFloatShiftMatrix&
-AudioCentral::getFftMatrix() const
-{
-    return _d->getFftMatrix();
 }
 
 } // end namespace audio.

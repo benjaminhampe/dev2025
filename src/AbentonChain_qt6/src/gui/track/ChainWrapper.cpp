@@ -9,8 +9,6 @@ ChainWrapper::ChainWrapper(QWidget* parent)
     : QWidget(parent)
 {
     DE_TRACE("")
-
-    // setFocusPolicy(Qt::StrongFocus);
     setContentsMargins(0,8,8,8);
     setStyleSheet("background: transparent;");
 
@@ -24,11 +22,12 @@ ChainWrapper::ChainWrapper(QWidget* parent)
     m_scrollArea->setAttribute(Qt::WA_NoSystemBackground, true);
     m_scrollArea->setStyleSheet("background: transparent;");
 
-    if (m_scrollArea->viewport())
+    auto viewPort = m_scrollArea->viewport();
+    if (viewPort)
     {
-        //m_scrollArea->viewport()->setFrameShape(QFrame::NoFrame);
-        m_scrollArea->viewport()->setAttribute(Qt::WA_NoSystemBackground, true);
-        m_scrollArea->viewport()->setStyleSheet("background: transparent;");
+      //viewPort->setFrameShape(QFrame::NoFrame);
+        viewPort->setAttribute(Qt::WA_NoSystemBackground, true);
+        viewPort->setStyleSheet("background: transparent;");
     }
     else
     {

@@ -1,21 +1,12 @@
 #include "GL_Canvas.h"
 
-// #include <AudioEngine.h>
-// #include <QWidget>
-// #include <QKeyEvent>
-// #include <QGridLayout>
-// #include <QVBoxLayout>
-// #include <QScrollArea>
-// #include <QDial>
-// #include <QLabel>
-
 // ===========================================================================
 GL_Canvas::GL_Canvas(QOpenGLContext *sharedContext, QWidget *parent)
 // ===========================================================================
     : QOpenGLWidget(parent)
     , m_fpsTimerId{ 0 }
     , m_bRenderingEnabled{ false }
-    , m_bRenderPerfOverlay{ true }
+    , m_bVisiblePerfOverlay{ true }
     , m_sharedContext(sharedContext)
     , m_driver{ nullptr }
     , m_firstMouse{ true }
@@ -30,11 +21,11 @@ GL_Canvas::GL_Canvas(QOpenGLContext *sharedContext, QWidget *parent)
     , m_mouseMoveX{ 0 }
     , m_mouseMoveY{ 0 }
 {
-    m_time_start = dbTimeInSeconds();
-    m_time_now = 0.0;
-    m_time_lastRenderUpdate = 0.0;
-    m_time_lastWindowTitleUpdate = 0.0;
-    m_time_lastCameraUpdate = 0.0;
+    // m_time_start = dbTimeInSeconds();
+    // m_time_now = 0.0;
+    // m_time_lastRenderUpdate = 0.0;
+    // m_time_lastWindowTitleUpdate = 0.0;
+    // m_time_lastCameraUpdate = 0.0;
 
     setContentsMargins(0,0,0,0);
     grabGesture(Qt::PinchGesture);
@@ -46,8 +37,13 @@ GL_Canvas::GL_Canvas(QOpenGLContext *sharedContext, QWidget *parent)
 
 GL_Canvas::~GL_Canvas()
 {
-    stopFpsTimer();
-    delete m_driver;
+    DE_TRACE("Begin")
+    //stopFpsTimer();
+    if (m_driver)
+    {
+        delete m_driver;
+    }
+    DE_TRACE("End")
 }
 
 void GL_Canvas::startFpsTimer()
@@ -80,15 +76,14 @@ void GL_Canvas::initializeGL()
     initializeOpenGLFunctions();
 
     m_driver = de::gpu::createVideoDriver(2*640,2*480,winId());
-    m_driver->setCamera(&m_camera);
 
     m_renderer.initializeGL(m_driver);
 
-    m_time_start = dbTimeInSeconds();
-    m_time_now = 0.0;
-    m_time_lastRenderUpdate = 0.0;
-    m_time_lastWindowTitleUpdate = 0.0;
-    m_time_lastCameraUpdate = 0.0;
+    // m_time_start = dbTimeInSeconds();
+    // m_time_now = 0.0;
+    // m_time_lastRenderUpdate = 0.0;
+    // m_time_lastWindowTitleUpdate = 0.0;
+    // m_time_lastCameraUpdate = 0.0;
 }
 
 void
@@ -119,7 +114,7 @@ GL_Canvas::paintGL()
 
     if (m_driver)
     {
-        m_driver->resize(w,h);
+        //m_driver->resize(w,h);
         m_driver->beginRender();
 
         m_renderer.paintGL();
@@ -133,7 +128,7 @@ GL_Canvas::paintGL()
             draw2DText(10,10,s,0XFF80FFFF,de::Align::Default,de::Font5x8(5,5,0,0,5,5));
         #endif
 
-        if (m_bRenderPerfOverlay)
+        if (m_bVisiblePerfOverlay)
         {
             m_driver->draw2DPerfOverlay();
         }
@@ -150,12 +145,14 @@ void GL_Canvas::timerEvent(QTimerEvent* event)
     }
 }
 
+/*
 bool GL_Canvas::event(QEvent *event)
 {
     if (event->type() == QEvent::Gesture)
     {
         return gestureEvent(static_cast<QGestureEvent*>(event));
     }
+
     return QWidget::event(event);
 }
 
@@ -182,6 +179,19 @@ bool GL_Canvas::gestureEvent(QGestureEvent *event)
 
 bool GL_Canvas::swipeTriggered(QSwipeGesture *swipe)
 {
+    if (!m_driver)
+    {
+        DE_ERROR("No driver")
+        return false;
+    }
+
+    auto camera = m_driver->getCamera();
+    if (!camera)
+    {
+        DE_ERROR("No camera")
+        return false;
+    }
+
     if (swipe->state() == Qt::GestureFinished)
     {
         if (swipe->horizontalDirection() == QSwipeGesture::Left
@@ -201,27 +211,27 @@ bool GL_Canvas::swipeTriggered(QSwipeGesture *swipe)
 
         if ( swipe->horizontalDirection() == QSwipeGesture::Left )
         {
-            auto pos = m_camera.getPos();
+            auto pos = camera->getPos();
             pos.x -= 1.0f;
-            m_camera.setPos(pos);
+            camera->setPos(pos);
         }
         else if ( swipe->horizontalDirection() == QSwipeGesture::Right )
         {
-            auto pos = m_camera.getPos();
+            auto pos = camera->getPos();
             pos.x += 1.0f;
-            m_camera.setPos(pos);
+            camera->setPos(pos);
         }
         if ( swipe->verticalDirection() == QSwipeGesture::Up )
         {
-            auto pos = m_camera.getPos();
+            auto pos = camera->getPos();
             pos.z += 1.0f;
-            m_camera.setPos(pos);
+            camera->setPos(pos);
         }
         else if ( swipe->verticalDirection() == QSwipeGesture::Down )
         {
-            auto pos = m_camera.getPos();
+            auto pos = camera->getPos();
             pos.z -= 1.0f;
-            m_camera.setPos(pos);
+            camera->setPos(pos);
         }
         update();
     }
@@ -233,10 +243,21 @@ bool GL_Canvas::panTriggered(QPanGesture *pan)
     return true;
 }
 
-
-
 bool GL_Canvas::pinchTriggered(QPinchGesture * pinch)
 {
+    if (!m_driver)
+    {
+        DE_ERROR("No driver")
+        return false;
+    }
+
+    auto camera = m_driver->getCamera();
+    if (!camera)
+    {
+        DE_ERROR("No camera")
+        return false;
+    }
+
     if (!pinch)
     {
         return false;
@@ -261,28 +282,28 @@ bool GL_Canvas::pinchTriggered(QPinchGesture * pinch)
             "C(",dbStrVal(center.x()), ",", center.y(),")")
         if ( S < 1.0f )
         {
-            m_camera.move( -0.1f );
+            camera->move( -0.1f );
         }
         else if ( S > 1.0f )
         {
-            m_camera.move( 0.1f );
+            camera->move( 0.1f );
         }
 
         if ( R < 1.0f )
         {
-            m_camera.roll( -0.01f * R );
+            camera->roll( -0.01f * R );
         }
         else if ( R > 1.0f )
         {
-            m_camera.roll( 0.01f * R );
+            camera->roll( 0.01f * R );
         }
 
         if ( std::abs(T.x()) > 0.1f || std::abs(T.y()) > 0.1f)
         {
-            auto pos = m_camera.getPos();
+            auto pos = camera->getPos();
             pos.x += T.x();
             pos.z += T.y();
-            m_camera.setPos(pos);
+            camera->setPos(pos);
         }
     }
     else if (pinch->state() == Qt::GestureFinished)
@@ -317,10 +338,23 @@ GL_Canvas::mouseMoveEvent( QMouseEvent* event )
     const bool lookAround = m_isCameraFreeLook; // m_isKeySpacePressed || m_isMouseLeftPressed;
     if (lookAround)
     {
+        if (!m_driver)
+        {
+            DE_ERROR("No driver")
+            return;
+        }
+
+        auto camera = m_driver->getCamera();
+        if (!camera)
+        {
+            DE_ERROR("No camera")
+            return;
+        }
+
         //std::cout << "MousePos(" << mx << "," << my << ")" << std::endl;
         //std::cout << "MouseMove(" << m_mouseMoveX << "," << m_mouseMoveY << ")" << std::endl;
-        m_camera.yaw( 0.0035f * m_mouseMoveX );
-        m_camera.pitch( 0.0035f * m_mouseMoveY );
+        camera->yaw( 0.0035f * m_mouseMoveX );
+        camera->pitch( 0.0035f * m_mouseMoveY );
     }
 
     m_mouseMoveX = 0; // Reset
@@ -330,15 +364,20 @@ GL_Canvas::mouseMoveEvent( QMouseEvent* event )
 void
 GL_Canvas::wheelEvent( QWheelEvent* event )
 {
+    if (!m_driver) { DE_ERROR("No driver") return; }
+
+    auto camera = m_driver->getCamera();
+    if (!camera) { DE_ERROR("No camera") return; }
+
     //printf("MouseWheelEvent(%s)\n", event.str().c_str() );
     const float wheel_y = event->angleDelta().y();
     if ( wheel_y < 0.0f )
     {
-        m_camera.move( -1.0f );
+        camera->move( -1.0f );
     }
     else if ( wheel_y > 0.0f )
     {
-        m_camera.move( 1.0f );
+        camera->move( 1.0f );
     }
 }
 
@@ -380,4 +419,5 @@ GL_Canvas::mouseReleaseEvent( QMouseEvent* event )
     }
 }
 
+*/
 
