@@ -31,13 +31,12 @@ struct Matrix3D
 
     void
     draw(GL_Mesh16_Shader3D& shader,
-        const GL_Mesh16_Material& material,
-        const DE_AlignedFloatShiftMatrix& table);
+        const GL_Mesh16_Material& material);
 
     static de::BBox3f
     recomputeBoundingBox(const V3& d, const DE_AlignedFloatShiftMatrix& table);
 
-protected:
-    void updateVertices(DE_AlignedFloatShiftMatrix const & table);
-    void updateIndices(DE_AlignedFloatShiftMatrix const & table);
+// protected:
+//     void updateVertices(DE_AlignedFloatShiftMatrix const & table);
+//     void updateIndices(DE_AlignedFloatShiftMatrix const & table);
 };

@@ -61,7 +61,7 @@ else()
     target_link_libraries(${APP_NAME} PRIVATE Qt6::Widgets)
     target_link_libraries(${APP_NAME} PRIVATE Qt6::Svg)
 
-    target_link_libraries(${APP_NAME} PRIVATE DarkImage_2504)
+    target_link_libraries(${APP_NAME} PRIVATE DarkImage_2604)
 
     target_link_libraries(${APP_NAME} PRIVATE de_kissfft_cpp)
     target_link_libraries(${APP_NAME} PRIVATE de_pffft)

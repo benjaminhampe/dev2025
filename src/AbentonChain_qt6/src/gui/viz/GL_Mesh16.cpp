@@ -1,6 +1,7 @@
 #include "GL_Mesh16.h"
 #include <de_opengl.h>
 
+/*
 inline uint64_t db1D(uint32_t x, uint32_t y, uint32_t w)
 {
     return (uint64_t(w) * y) + x; // fma(w,y,x); // fma3 = (a*b)+c
@@ -12,6 +13,7 @@ inline void db2D(uint64_t id, uint32_t w, uint32_t& x, uint32_t& y)
     uint64_t elements_upto_y = y * w;
     x = id - elements_upto_y;
 }
+*/
 
 GL_Mesh16::GL_Mesh16()
     : PrimType(de::gpu::PrimitiveType::Points)
@@ -19,6 +21,30 @@ GL_Mesh16::GL_Mesh16()
     , VBO(0)
     , IBO(0)
 {
+}
+
+void GL_Mesh16::addIndexedLine(uint32_t A,uint32_t B)
+{
+    Indices.push_back( A );   // A - 0
+    Indices.push_back( B );   // C - 3
+}
+
+void GL_Mesh16::addIndexedTriangle(uint32_t A,uint32_t B,uint32_t C)
+{
+    Indices.push_back( A );   // A - 0
+    Indices.push_back( C );   // C - 3
+    Indices.push_back( B );   // B - 1
+}
+
+void GL_Mesh16::addIndexedQuad(uint32_t A,uint32_t B,uint32_t C,uint32_t D)
+{
+    Indices.push_back( A );   // A - 0
+    Indices.push_back( C );   // C - 3
+    Indices.push_back( B );   // B - 1
+
+    Indices.push_back( A );   // A - 0
+    Indices.push_back( D );   // D - 2
+    Indices.push_back( C );   // C - 3
 }
 
 void GL_Mesh16::destroy()
@@ -79,9 +105,9 @@ void GL_Mesh16::upload( bool bNeedVertexUpload, bool bNeedIndexUpload )
             glBindBuffer(GL_ARRAY_BUFFER, VBO);
             glEnableVertexAttribArray( 0 );
 #if 0
-            glVertexAttribPointer( 0, 4, GL_HALF_FLOAT, GL_FALSE, sizeof(GL_Mesh16_Vertex), reinterpret_cast<void*>(0) );
-#else
             glVertexAttribPointer( 0, 4, GL_FLOAT, GL_FALSE, sizeof(GL_Mesh16_Vertex), reinterpret_cast<void*>(0) );
+#else
+            glVertexAttribPointer( 0, 4, GL_HALF_FLOAT, GL_FALSE, sizeof(GL_Mesh16_Vertex), reinterpret_cast<void*>(0) );
 #endif
             auto n = Vertices.size() * sizeof(GL_Mesh16_Vertex);
             auto p = reinterpret_cast< const uint8_t* >( Vertices.data() );
@@ -174,7 +200,7 @@ void GL_Mesh16::upload( bool bForceUpload, bool bNeedIndexUpload )
         glBindVertexArray(0);
     }
 }
-#endif
+
 
 void GL_Mesh16::initVAO( bool bUseIndices )
 {
@@ -265,31 +291,7 @@ void GL_Mesh16::uploadIndices()
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IBO);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, GLsizeiptr(indexBytes), pIndices, GL_STATIC_DRAW);
 }
-
-void GL_Mesh16::addIndexedLine(uint32_t A,uint32_t B)
-{
-    Indices.push_back( A );   // A - 0
-    Indices.push_back( B );   // C - 3
-}
-
-void GL_Mesh16::addIndexedTriangle(uint32_t A,uint32_t B,uint32_t C)
-{
-    Indices.push_back( A );   // A - 0
-    Indices.push_back( B );   // C - 3
-    Indices.push_back( C );   // B - 1
-}
-
-void GL_Mesh16::addIndexedQuad(uint32_t A,uint32_t B,uint32_t C,uint32_t D)
-{
-    Indices.push_back( A );   // A - 0
-    Indices.push_back( B );   // C - 3
-    Indices.push_back( C );   // B - 1
-
-    Indices.push_back( A );   // A - 0
-    Indices.push_back( C );   // D - 2
-    Indices.push_back( D );   // C - 3
-}
-
+#endif
 
 /*
 #version 330 core

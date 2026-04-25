@@ -205,11 +205,38 @@ else()
     if (CMAKE_BUILD_TYPE STREQUAL "Release")
         # set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -fexpensive-optimizations -ftree-vectorize")
 
-        if (BENNI_USE_UNSAFE)
-            message("[benni] HAVE_FASTMATH -fstrict-aliasing -ffast-math")
-            set(MY_C_FLAGS "${MY_C_FLAGS} -fstrict-aliasing -ffast-math")
-            set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -fstrict-aliasing -ffast-math")
-        endif()
+        # -O3 -Ofast -ffast-math
+        # -march=native -mtune=native
+        # -fstrict-aliasing
+        # -fomit-frame-pointer
+        # -fvisibility=hidden
+        # -flto
+        # -fno-exceptions -fno-rtti
+        # -Wl,-O3 -Wl,--gc-sections
+        # -ffunction-sections -fdata-sections -fomit-frame-pointer
+
+        set(MY_C_FLAGS     "${MY_C_FLAGS} -Ofast -ffast-math -fstrict-aliasing -fvisibility=hidden")
+        set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -Ofast -ffast-math -fstrict-aliasing -fvisibility=hidden")
+        # set(MY_C_FLAGS     "${MY_C_FLAGS} -O3")
+        # set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -O3")
+        set(MY_C_FLAGS     "${MY_C_FLAGS} -march=native -mtune=native")
+        set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -march=native -mtune=native")
+        # set(MY_C_FLAGS     "${MY_C_FLAGS} -fno-exceptions")
+        # set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -fno-exceptions")
+        # set(MY_C_FLAGS     "${MY_C_FLAGS} -fno-rtti")
+        # set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -fno-rtti")
+        set(MY_C_FLAGS     "${MY_C_FLAGS} -fomit-frame-pointer -ffunction-sections -fdata-sections")
+        set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -fomit-frame-pointer -ffunction-sections -fdata-sections")
+
+        set(MY_LD_FLAGS "${MY_LD_FLAGS} -flto")
+        set(MY_LD_FLAGS "${MY_LD_FLAGS} -Wl,-O3")
+        set(MY_LD_FLAGS "${MY_LD_FLAGS} -Wl,--gc-sections")
+
+        # if (BENNI_USE_UNSAFE)
+        #     message("[benni] HAVE_FASTMATH -fstrict-aliasing -ffast-math")
+        #     set(MY_C_FLAGS "${MY_C_FLAGS} -fstrict-aliasing -ffast-math")
+        #     set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -fstrict-aliasing -ffast-math")
+        # endif()
 
         #set(MY_C_FLAGS "${MY_C_FLAGS} -mfpmath=sse -msse3 -mmmx -O2")
         #set(MY_C_FLAGS "${MY_C_FLAGS} -fno-asynchronous-unwind-tables")
@@ -231,9 +258,9 @@ else()
         #set(MY_C_FLAGS "${MY_C_FLAGS} -funroll-loops")
 
         # -fms-extensions -fms-compatibility x86_64-w64-mingw32uwp x86_64-w64-windows-gnu
-        set(MY_C_FLAGS "${MY_C_FLAGS} -fvisibility=hidden")
-        set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -fvisibility=hidden")
-        set(MY_LD_FLAGS "${MY_LD_FLAGS} -fvisibility=hidden")
+        # set(MY_C_FLAGS "${MY_C_FLAGS} -fvisibility=hidden")
+        # set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -fvisibility=hidden")
+        # set(MY_LD_FLAGS "${MY_LD_FLAGS} -fvisibility=hidden")
 
         # if (BENNI_USE_OPENMP)
         #     message("[benni] HAVE_OPENMP -fopenmp")
@@ -241,84 +268,84 @@ else()
         #     set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -fopenmp")
         # endif()
 
-        if (BENNI_USE_GPROF)
-            message("${BoldGreen}[Benni] Using GPROF performance analysis instrumentation!${ColourReset}")
-            # set(MY_C_FLAGS "${MY_C_FLAGS} -pg") #  -no-pie
-            # set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -pg") # -no-pie
-            # set(MY_LD_FLAGS "${MY_LD_FLAGS} -pg -lgmon") # -no-pie
+        # if (BENNI_USE_GPROF)
+        #     message("${BoldGreen}[Benni] Using GPROF performance analysis instrumentation!${ColourReset}")
+        #     # set(MY_C_FLAGS "${MY_C_FLAGS} -pg") #  -no-pie
+        #     # set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -pg") # -no-pie
+        #     # set(MY_LD_FLAGS "${MY_LD_FLAGS} -pg -lgmon") # -no-pie
 
-            set(MY_C_FLAGS "${MY_C_FLAGS} -g2 -gstabs+")
-            set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -g2 -gstabs+")
-            # add_compile_options(-pg)
-            # add_link_options(-pg)
-            # add_link_libraries(gmon gcrt2.o)
+        #     set(MY_C_FLAGS "${MY_C_FLAGS} -g2 -gstabs+")
+        #     set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -g2 -gstabs+")
+        #     # add_compile_options(-pg)
+        #     # add_link_options(-pg)
+        #     # add_link_libraries(gmon gcrt2.o)
 
-            set(CMAKE_POSITION_INDEPENDENT_CODE OFF)
-        else()
-            set(MY_LD_FLAGS "${MY_LD_FLAGS} -fuse-ld=lld")
-            set(CMAKE_POSITION_INDEPENDENT_CODE ON)
-        endif()
+        #     set(CMAKE_POSITION_INDEPENDENT_CODE OFF)
+        # else()
+        #     set(MY_LD_FLAGS "${MY_LD_FLAGS} -fuse-ld=lld")
+        #     set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+        # endif()
 
-        # Enable compiler messages about SIMD vectorizations and loop unrolling attempts (Misses + Hits).
-        if (BENNI_USE_SIMD_DIAG)
-            message("${BoldGreen}[Benni] Use vectorization diagnostics:${ColourReset}")
-            if (MINGW)
-                message("[Benni] Using MinGW -fopt-info-vec")
-                set(MY_C_FLAGS "${MY_C_FLAGS} -fopt-info-vec")
-                set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -fopt-info-vec")
-            else()
-                message("[Benni] Using Clang -Rpass=loop-vectorize -Rpass-missed=loop-vectorize -Rpass-analysis=loop-vectorize")
-                set(MY_C_FLAGS "${MY_C_FLAGS} -Rpass=loop-vectorize -Rpass-missed=loop-vectorize -Rpass-analysis=loop-vectorize")
-                set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -Rpass=loop-vectorize -Rpass-missed=loop-vectorize -Rpass-analysis=loop-vectorize")
-            endif()
-        endif()
+        # # Enable compiler messages about SIMD vectorizations and loop unrolling attempts (Misses + Hits).
+        # if (BENNI_USE_SIMD_DIAG)
+        #     message("${BoldGreen}[Benni] Use vectorization diagnostics:${ColourReset}")
+        #     if (MINGW)
+        #         message("[Benni] Using MinGW -fopt-info-vec")
+        #         set(MY_C_FLAGS "${MY_C_FLAGS} -fopt-info-vec")
+        #         set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -fopt-info-vec")
+        #     else()
+        #         message("[Benni] Using Clang -Rpass=loop-vectorize -Rpass-missed=loop-vectorize -Rpass-analysis=loop-vectorize")
+        #         set(MY_C_FLAGS "${MY_C_FLAGS} -Rpass=loop-vectorize -Rpass-missed=loop-vectorize -Rpass-analysis=loop-vectorize")
+        #         set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -Rpass=loop-vectorize -Rpass-missed=loop-vectorize -Rpass-analysis=loop-vectorize")
+        #     endif()
+        # endif()
 
-        # My CPU Intel 165U only. Very sad now after i discovered i don't seem to have AVX512F.
-        # clang -march=native -E - -o /dev/null -### < /dev/null 2>&1 | grep target-feature
-        if (BENNI_USE_NATIVE) #  -march=native -mtune=native
-            message("[benni] HAVE_NATIVE_OPTIM -march=native -mtune=native")
-            set(MY_C_FLAGS "${MY_C_FLAGS} -march=native -mtune=native")
-            set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -march=native -mtune=native")
+        # # My CPU Intel 165U only. Very sad now after i discovered i don't seem to have AVX512F.
+        # # clang -march=native -E - -o /dev/null -### < /dev/null 2>&1 | grep target-feature
+        # if (BENNI_USE_NATIVE) #  -march=native -mtune=native
+        #     message("[benni] HAVE_NATIVE_OPTIM -march=native -mtune=native")
+        #     set(MY_C_FLAGS "${MY_C_FLAGS} -march=native -mtune=native")
+        #     set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -march=native -mtune=native")
 
-            # message("[benni] HAVE_NATIVE_OPTIM -O3 -msse2 -msse3 -mssse3 -msse4.1 -msse4.2 -mavx -mavx2 -mfma -mf16c -mbmi -mbmi2 -mlzcnt -mpopcnt -maes -mvaes -mpclmul -mvpclmulqdq -msha -mrdrnd -mrdseed -madx -mgfni")
-            # set(MY_C_FLAGS "${MY_C_FLAGS} -O3 -msse2 -msse3 -mssse3 -msse4.1 -msse4.2 -mavx -mavx2 -mfma -mf16c -mbmi -mbmi2 -mlzcnt -mpopcnt -maes -mvaes -mpclmul -mvpclmulqdq -msha -mrdrnd -mrdseed -madx -mgfni")
-            # set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -O3 -msse2 -msse3 -mssse3 -msse4.1 -msse4.2 -mavx -mavx2 -mfma -mf16c -mbmi -mbmi2 -mlzcnt -mpopcnt -maes -mvaes -mpclmul -mvpclmulqdq -msha -mrdrnd -mrdseed -madx -mgfni")
-            # set(BENNI_USE_AVX2 1)
-            # add_compile_definitions(HAVE_FMA3)
-            # add_compile_definitions(HAVE_AVX2)
-            # add_compile_definitions(HAVE_AVX)
-            # add_compile_definitions(HAVE_SSE4_2)
-            # add_compile_definitions(HAVE_SSE4_1)
-            # add_compile_definitions(HAVE_SSSE3)
-            # add_compile_definitions(HAVE_SSE3)
-            # add_compile_definitions(HAVE_SSE2)
-            # add_compile_definitions(HAVE_SSE)
-            # add_compile_definitions(HAVE_MMX)
-        else()
-            set(MY_C_FLAGS "${MY_C_FLAGS} -march=haswell")
-            set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -march=haswell")
-        endif()
+        #     # message("[benni] HAVE_NATIVE_OPTIM -O3 -msse2 -msse3 -mssse3 -msse4.1 -msse4.2 -mavx -mavx2 -mfma -mf16c -mbmi -mbmi2 -mlzcnt -mpopcnt -maes -mvaes -mpclmul -mvpclmulqdq -msha -mrdrnd -mrdseed -madx -mgfni")
+        #     # set(MY_C_FLAGS "${MY_C_FLAGS} -O3 -msse2 -msse3 -mssse3 -msse4.1 -msse4.2 -mavx -mavx2 -mfma -mf16c -mbmi -mbmi2 -mlzcnt -mpopcnt -maes -mvaes -mpclmul -mvpclmulqdq -msha -mrdrnd -mrdseed -madx -mgfni")
+        #     # set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -O3 -msse2 -msse3 -mssse3 -msse4.1 -msse4.2 -mavx -mavx2 -mfma -mf16c -mbmi -mbmi2 -mlzcnt -mpopcnt -maes -mvaes -mpclmul -mvpclmulqdq -msha -mrdrnd -mrdseed -madx -mgfni")
+        #     # set(BENNI_USE_AVX2 1)
+        #     # add_compile_definitions(HAVE_FMA3)
+        #     # add_compile_definitions(HAVE_AVX2)
+        #     # add_compile_definitions(HAVE_AVX)
+        #     # add_compile_definitions(HAVE_SSE4_2)
+        #     # add_compile_definitions(HAVE_SSE4_1)
+        #     # add_compile_definitions(HAVE_SSSE3)
+        #     # add_compile_definitions(HAVE_SSE3)
+        #     # add_compile_definitions(HAVE_SSE2)
+        #     # add_compile_definitions(HAVE_SSE)
+        #     # add_compile_definitions(HAVE_MMX)
+        # else()
+        #     set(MY_C_FLAGS "${MY_C_FLAGS} -march=haswell")
+        #     set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -march=haswell")
+        # endif()
 
-        if (BENNI_USE_LTO)
-            message("[benni] HAVE_LTO -flto -fuse-linker-plugin -Wl,-O1")
-            set(MY_LD_FLAGS "${MY_LD_FLAGS} -flto -fuse-linker-plugin -Wl,-O1")
-        endif()
+        # if (BENNI_USE_LTO)
+        #     message("[benni] HAVE_LTO -flto -fuse-linker-plugin -Wl,-O1")
+        #     set(MY_LD_FLAGS "${MY_LD_FLAGS} -flto -fuse-linker-plugin -Wl,-O1")
+        # endif()
 
-        if (BENNI_USE_SPEED)
-            message("[benni] HAVE_EXPENSIVE_OPTIM -ftree-vectorize -funroll-loops") #  -fexpensive-optimizations
-            set(MY_C_FLAGS "${MY_C_FLAGS} -ftree-vectorize -funroll-loops") #  -fexpensive-optimizations
-            set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -ftree-vectorize -funroll-loops") #  -fexpensive-optimizations
-        endif()
+        # if (BENNI_USE_SPEED)
+        #     message("[benni] HAVE_EXPENSIVE_OPTIM -ftree-vectorize -funroll-loops") #  -fexpensive-optimizations
+        #     set(MY_C_FLAGS "${MY_C_FLAGS} -ftree-vectorize -funroll-loops") #  -fexpensive-optimizations
+        #     set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -ftree-vectorize -funroll-loops") #  -fexpensive-optimizations
+        # endif()
 
-        if (BENNI_USE_OMIT_FRAMEPOINTER)
-            message("[benni] HAVE_OMIT_FRAMEPOINTER -fomit-frame-pointer")
-            set(MY_C_FLAGS "${MY_C_FLAGS} -fomit-frame-pointer")
-            set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -fomit-frame-pointer")
-        else()
-            message("[benni] HAVE_NO_OMIT_FRAMEPOINTER -fno-omit-frame-pointer")
-            set(MY_C_FLAGS "${MY_C_FLAGS} -fno-omit-frame-pointer")
-            set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -fno-omit-frame-pointer")
-        endif()
+        # if (BENNI_USE_OMIT_FRAMEPOINTER)
+        #     message("[benni] HAVE_OMIT_FRAMEPOINTER -fomit-frame-pointer")
+        #     set(MY_C_FLAGS "${MY_C_FLAGS} -fomit-frame-pointer")
+        #     set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -fomit-frame-pointer")
+        # else()
+        #     message("[benni] HAVE_NO_OMIT_FRAMEPOINTER -fno-omit-frame-pointer")
+        #     set(MY_C_FLAGS "${MY_C_FLAGS} -fno-omit-frame-pointer")
+        #     set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -fno-omit-frame-pointer")
+        # endif()
 
         # 🛠 Key Compiler Flags
         #

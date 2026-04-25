@@ -20,6 +20,7 @@
 
 struct GL_Mesh16_Vertex // 8 Bytes
 {
+#if 0 // WORKING 32-bit
     float m_x; // 1D FVF_POSITION16_XYZ
     float m_y; // 2D
     float m_z; // 3D
@@ -49,7 +50,8 @@ struct GL_Mesh16_Vertex // 8 Bytes
     float z() const { return m_z; }
     float t() const { return m_t; }
 
-#if 0 // wORKING
+#else // WORKING 16-bit
+
     uint16_t m_x; // 1D FVF_POSITION16_XYZ
     uint16_t m_y; // 2D
     uint16_t m_z; // 3D
@@ -128,8 +130,8 @@ struct GL_Mesh16
     uint32_t VBO;
     uint32_t IBO;
 
-    std::vector< TVertex > Vertices;
-    std::vector< uint32_t > Indices;
+    de::TAlignedVector< TVertex > Vertices;
+    de::TAlignedVector< uint32_t > Indices;
 
     GL_Mesh16();
     void addIndexedLine(uint32_t A,uint32_t B);
@@ -139,11 +141,11 @@ struct GL_Mesh16
     void upload( bool bNeedVertexUpload = true, bool bNeedIndexUpload = false );
     void draw() const;
 
-    // New: (the matrix mesh has const index buffer, so we split)
-
+#if 0 // BAD
     void initVAO( bool bUseIndices = true );
     void uploadVertices();
     void uploadIndices();
+#endif
 };
 
 // ===========================================================================

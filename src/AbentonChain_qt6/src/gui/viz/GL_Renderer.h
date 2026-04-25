@@ -1,5 +1,4 @@
 #pragma once
-#include <gui/viz/Matrix3D.h>
 #include <gui/viz/create2DWav.h>
 
 // This class exists to split QtOpenGL from our custom GLEW rendering.
@@ -22,7 +21,13 @@ class GL_Renderer
     GL_Mesh16_Shader2D m_mesh16Shader2D;
     GL_Mesh16_Shader3D m_mesh16Shader3D;
     GL_Mesh16_Material m_mesh16Material;
-    Matrix3D m_matrix_fft;
+
+    // Matrix3D
+    uint32_t m_matrix_fft_cols;
+    uint32_t m_matrix_fft_rows;
+    uint32_t m_matrix_fft_xmode;
+    std::vector< float > m_matrix_fft_xmap; // Log10
+    GL_Mesh16 m_matrix_fft;
 
     GL_Mesh16 m_lineStripL;
     GL_Mesh16 m_lineStripR;

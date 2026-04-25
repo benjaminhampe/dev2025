@@ -13,11 +13,11 @@ DspSampleCollector::DspSampleCollector()
     , m_bBypassed{ true }
     , m_bStopped{ false }
     , m_bCollectAccumMatrix{ true }
-    , m_L("samcoll_L")
-    , m_R("samcoll_R")
-    , m_sum("samcoll_sum")
-    , m_accum_vec_in("samcoll_accum_vec_in")
-    , m_accum_vec_out("samcoll_accum_vec_out")
+    //, m_L("samcoll_L")
+    //, m_R("samcoll_R")
+    //, m_sum("samcoll_sum")
+    //, m_accum_vec_in("samcoll_accum_vec_in")
+    //, m_accum_vec_out("samcoll_accum_vec_out")
 {
     DE_TRACE("")
 
@@ -33,69 +33,25 @@ DspSampleCollector::DspSampleCollector()
                 return;
             }
 
-            assert(m_L.pre == 0xDEADBEEF);
-            assert(m_L.post == 0xCAFEBABE);
-            assert(m_R.pre == 0xDEADBEEF);
-            assert(m_R.post == 0xCAFEBABE);
-            assert(m_sum.pre == 0xDEADBEEF);
-            assert(m_sum.post == 0xCAFEBABE);
-            assert(m_accum_vec_in.pre == 0xDEADBEEF);
-            assert(m_accum_vec_in.post == 0xCAFEBABE);
-            assert(m_accum_vec_out.pre == 0xDEADBEEF);
-            assert(m_accum_vec_out.post == 0xCAFEBABE);
-
             // Apply window function
             applyWindow(
                 m_windowFunc,
                 m_accum.data(),
-                m_accum_vec_in.data.data(), n);
-
-            assert(m_L.pre == 0xDEADBEEF);
-            assert(m_L.post == 0xCAFEBABE);
-            assert(m_R.pre == 0xDEADBEEF);
-            assert(m_R.post == 0xCAFEBABE);
-            assert(m_sum.pre == 0xDEADBEEF);
-            assert(m_sum.post == 0xCAFEBABE);
-            assert(m_accum_vec_in.pre == 0xDEADBEEF);
-            assert(m_accum_vec_in.post == 0xCAFEBABE);
-            assert(m_accum_vec_out.pre == 0xDEADBEEF);
-            assert(m_accum_vec_out.post == 0xCAFEBABE);
+                m_accum_vec_in.data(), n);
 
             // Apply fft
             if (m_accum_fft)
                 m_accum_fft->fft(
-                    m_accum_vec_in.data.data(), m_accum_vec_in.data.size(),
-                    m_accum_vec_out.data.data(), m_accum_vec_out.data.size());
-
-            assert(m_L.pre == 0xDEADBEEF);
-            assert(m_L.post == 0xCAFEBABE);
-            assert(m_R.pre == 0xDEADBEEF);
-            assert(m_R.post == 0xCAFEBABE);
-            assert(m_sum.pre == 0xDEADBEEF);
-            assert(m_sum.post == 0xCAFEBABE);
-            assert(m_accum_vec_in.pre == 0xDEADBEEF);
-            assert(m_accum_vec_in.post == 0xCAFEBABE);
-            assert(m_accum_vec_out.pre == 0xDEADBEEF);
-            assert(m_accum_vec_out.post == 0xCAFEBABE);
+                    m_accum_vec_in.data(), m_accum_vec_in.size(),
+                    m_accum_vec_out.data(), m_accum_vec_out.size());
 
             // Push fft row to AccumShiftMatrix.
             if (m_bCollectAccumMatrix)
             {
                 m_accum_mat.push(
-                    m_accum_vec_out.data.data(),
-                    m_accum_vec_out.data.size());
+                    m_accum_vec_out.data(),
+                    m_accum_vec_out.size());
             }
-
-            assert(m_L.pre == 0xDEADBEEF);
-            assert(m_L.post == 0xCAFEBABE);
-            assert(m_R.pre == 0xDEADBEEF);
-            assert(m_R.post == 0xCAFEBABE);
-            assert(m_sum.pre == 0xDEADBEEF);
-            assert(m_sum.post == 0xCAFEBABE);
-            assert(m_accum_vec_in.pre == 0xDEADBEEF);
-            assert(m_accum_vec_in.post == 0xCAFEBABE);
-            assert(m_accum_vec_out.pre == 0xDEADBEEF);
-            assert(m_accum_vec_out.post == 0xCAFEBABE);
         }
     );
 }
@@ -138,13 +94,13 @@ DspSampleCollector::dsp_init( u64 frames, u32 channels, u32 sampleRate )
         DE_ERROR("")
         return;
     }
-    m_L.data.resize(frames);
-    m_R.data.resize(frames);
-    m_sum.data.resize(frames);
+    m_L.resize(frames);
+    m_R.resize(frames);
+    m_sum.resize(frames);
     m_accum.resize(m_fftSize);
     if (m_accum_fft) m_accum_fft->resize(m_fftSize);
-    m_accum_vec_in.data.resize(m_fftSize);
-    m_accum_vec_out.data.resize(m_cols);
+    m_accum_vec_in.resize(m_fftSize);
+    m_accum_vec_out.resize(m_cols);
     m_accum_mat.resize(m_cols, m_rows);
 
     if (m_inputSignal)
@@ -177,38 +133,38 @@ DspSampleCollector::dsp_read(f64 pts, u32 frames, u32 sampleRate,
         return;
     }
 
-    m_L.data.resize(frames);
-    m_R.data.resize(frames);
-    m_sum.data.resize(frames);
+    m_L.resize(frames);
+    m_R.resize(frames);
+    m_sum.resize(frames);
     m_accum.resize(m_fftSize);
     if (m_accum_fft) m_accum_fft->resize(m_fftSize);
-    m_accum_vec_in.data.resize(m_fftSize);
-    m_accum_vec_out.data.resize(m_cols);
+    m_accum_vec_in.resize(m_fftSize);
+    m_accum_vec_out.resize(m_cols);
     m_accum_mat.resize(m_cols, m_rows);
 
     if ( m_inputSignal )
     {
         m_inputSignal->dsp_read( pts, frames, sampleRate,
-                                 m_L.data.data(), m_R.data.data() );
+                                 m_L.data(), m_R.data() );
     }
     else
     {
-        std::fill(m_L.data.data(), m_L.data.data() + frames, 0.0f);
-        std::fill(m_R.data.data(), m_R.data.data() + frames, 0.0f);
+        std::fill(m_L.data(), m_L.data() + frames, 0.0f);
+        std::fill(m_R.data(), m_R.data() + frames, 0.0f);
     }
 
     // Sum L+R
     for (size_t i = 0; i < frames; ++i)
     {
-        m_sum.data[i] = 0.5f * (m_L.data[i] + m_R.data[i]);
+        m_sum[i] = 0.5f * (m_L[i] + m_R[i]);
     }
 
     // Push sum L+R into accumulator
-    m_accum.push(m_sum.data.data(), m_sum.data.size());
+    m_accum.push(m_sum.data(), m_sum.size());
 
     // Relay data
-    std::memcpy(L, m_L.data.data(), frames * sizeof(float));
-    std::memcpy(R, m_R.data.data(), frames * sizeof(float));
+    std::memcpy(L, m_L.data(), frames * sizeof(float));
+    std::memcpy(R, m_R.data(), frames * sizeof(float));
 }
 
 } // end namespace audio.

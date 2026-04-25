@@ -15,6 +15,9 @@ add_subdirectory(DarkMidi-25.04)
 add_subdirectory(DarkSIMD-25.04)
 add_subdirectory(DarkAudio)
 
+add_subdirectory(DarkImage-26.04)
+add_subdirectory(DarkGPU-26.04)
+
 add_subdirectory(de-opencv-4.13.0)
 
 add_subdirectory(de-QtAdvancedDockingSystem-4.4.1)

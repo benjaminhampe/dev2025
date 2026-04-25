@@ -13,14 +13,14 @@ struct DE_FFT_pffft_Private
 {
     PFFFT_Setup* m_ctx;
     uint32_t m_fftSize;
-    DE_GuardedBuffer m_input;
-    DE_GuardedBuffer m_output;
+    DE_AlignedFloatVector m_input;
+    DE_AlignedFloatVector m_output;
 
     DE_FFT_pffft_Private()
         : m_ctx(nullptr)
         , m_fftSize(0)
-        , m_input("pffft_input")
-        , m_output("pffft_output")
+        //, m_input("pffft_input")
+        //, m_output("pffft_output")
     {
         DE_TRACE("")
     }
@@ -81,13 +81,8 @@ struct DE_FFT_pffft_Private
             n = 16u*1024u;
         }
 
-        assert(m_input.pre == 0xDEADBEEF);
-        assert(m_input.post == 0xCAFEBABE);
-        assert(m_output.pre == 0xDEADBEEF);
-        assert(m_output.post == 0xCAFEBABE);
-
-        m_input.data.resize(n);
-        m_output.data.resize(n);
+        m_input.resize(n);
+        m_output.resize(n);
 
         if (m_ctx)
         {
@@ -106,11 +101,6 @@ struct DE_FFT_pffft_Private
             m_fftSize = 0;
             DE_ERROR("No new context. ", n)
         }
-
-        assert(m_input.pre == 0xDEADBEEF);
-        assert(m_input.post == 0xCAFEBABE);
-        assert(m_output.pre == 0xDEADBEEF);
-        assert(m_output.post == 0xCAFEBABE);
     }
 
     void fft_real(const float* __restrict__ pSrc, uint32_t nSrc,
@@ -156,82 +146,53 @@ struct DE_FFT_pffft_Private
             return;
         }
 
-        assert(m_input.pre == 0xDEADBEEF);
-        assert(m_input.post == 0xCAFEBABE);
-        assert(m_output.pre == 0xDEADBEEF);
-        assert(m_output.post == 0xCAFEBABE);
-
         // Fill input data:
-        auto nAct = std::min(nSrc,uint32_t(m_input.data.size()));
+        auto nAct = std::min(nSrc,uint32_t(m_input.size()));
         for (size_t i = 0; i < nAct; ++i)
         {
-            m_input.data[i] = *pSrc++;
+            m_input[i] = *pSrc++;
         }
-        for (size_t i = nAct; i < m_input.data.size(); ++i)
+        for (size_t i = nAct; i < m_input.size(); ++i)
         {
-            m_input.data[i] = 0.0f;
+            m_input[i] = 0.0f;
         }
 
-        // memcpy(m_input.data.data(), pSrc, nSrc * sizeof(float));
-
-        assert(m_input.pre == 0xDEADBEEF);
-        assert(m_input.post == 0xCAFEBABE);
-        assert(m_output.pre == 0xDEADBEEF);
-        assert(m_output.post == 0xCAFEBABE);
+        // memcpy(m_input.data(), pSrc, nSrc * sizeof(float));
 
         // Fill input zeroes:
         // const uint32_t mSrc = m_fftSize - nSrc;
         // if (mSrc > 0)
         // {
-        //     std::memset(m_input.data.data() + nSrc * sizeof(float),
+        //     std::memset(m_input.data() + nSrc * sizeof(float),
         //         0, mSrc * sizeof(float));
         // }
-
-
-        assert(m_input.pre == 0xDEADBEEF);
-        assert(m_input.post == 0xCAFEBABE);
-        assert(m_output.pre == 0xDEADBEEF);
-        assert(m_output.post == 0xCAFEBABE);
 
         // Perform FFT
         pffft_transform_ordered(
             m_ctx,
-            m_input.data.data(),
-            m_output.data.data(),
+            m_input.data(),
+            m_output.data(),
             NULL,
             PFFFT_FORWARD);
-
-        assert(m_input.pre == 0xDEADBEEF);
-        assert(m_input.post == 0xCAFEBABE);
-        assert(m_output.pre == 0xDEADBEEF);
-        assert(m_output.post == 0xCAFEBABE);
 
         // Copy result to output
         float* __restrict__ dst = pDst;
 
         *dst++ = -240.0f; // minimum dB
 
-        assert(m_input.pre == 0xDEADBEEF);
-        assert(m_input.post == 0xCAFEBABE);
-        assert(m_output.pre == 0xDEADBEEF);
-        assert(m_output.post == 0xCAFEBABE);
+        assert(nDst + m_fftSize/2 <= m_output.size());
 
-        assert(nDst + m_fftSize/2 <= m_output.data.size());
-
-        for (size_t i = 1; i < nDst; ++i)
+        for (size_t i = 1; i < nDst - 1; ++i)
         {
             //      log10f( 1e-12 ) = -12
             // 20 * log10f( 1e-12 ) = -240dB
-            const float re = m_output.data[i];
-            const float im = m_output.data[i + m_fftSize/2];
+            const float re = m_output[i];
+            const float im = m_output[i + m_fftSize/2];
             const float ll = std::fmaxf(1.0e-12f, (re*re) + (im*im));
             *dst++ = 20.0f*log10f( ll );
         }
 
-        assert(m_input.pre == 0xDEADBEEF);
-        assert(m_input.post == 0xCAFEBABE);
-        assert(m_output.pre == 0xDEADBEEF);
-        assert(m_output.post == 0xCAFEBABE);
+        *dst++ = -240.0f; // minimum dB
     }
 };
 

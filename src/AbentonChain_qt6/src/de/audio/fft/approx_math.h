@@ -32,6 +32,24 @@ namespace math {
         return v;
     }
 
+    inline float clampf(float x, float lo, float hi)
+    {
+        return fminf(fmaxf(x, lo), hi);
+    }
+
+    // #include <xmmintrin.h>
+
+    // inline float clampf_sse(float x, float lo, float hi)
+    // {
+    //     __m128 v = _mm_set_ss(x);
+    //     __m128 l = _mm_set_ss(lo);
+    //     __m128 h = _mm_set_ss(hi);
+    //     v = _mm_max_ss(v, l);
+    //     v = _mm_min_ss(v, h);
+    //     return _mm_cvtss_f32(v);
+    // }
+
+
     template <typename T>
     bool isPositiveInfinity(const T t)
     {

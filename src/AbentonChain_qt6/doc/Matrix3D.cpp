@@ -44,13 +44,8 @@ void Matrix3D::init(V3 size, V3 pos, std::string name)
 
 void Matrix3D::draw(
     GL_Mesh16_Shader3D& shader,
-    const GL_Mesh16_Material& material,
-    const DE_AlignedFloatShiftMatrix& table)
+    const GL_Mesh16_Material& material)
 {
-    //updateIndices(table);
-    updateVertices(table);
-
-    // modelMat = T*R*S
     // glm::mat4 M = glm::translate(glm::mat4(1.0f), pos)
     //             * glm::rotate(glm::mat4(1.0f), angle, axis)
     //             * glm::scale(glm::mat4(1.0f), scale);
@@ -60,6 +55,7 @@ void Matrix3D::draw(
     m_mesh16.draw();
 }
 
+#if 0
 void Matrix3D::updateIndices(DE_AlignedFloatShiftMatrix const & table)
 {
     const uint32_t c = table.columnCount();
@@ -156,8 +152,8 @@ void Matrix3D::updateVertices(DE_AlignedFloatShiftMatrix const & table )
     // Create Vertices:
     //#############################
 
-    auto dBmin = -120.0f;
-    auto dBmax = 60.0f;
+    auto dBmin = -240.0f;
+    auto dBmax = 120.0f;
 
     //const float dx = m_size.x / float ( cols - 1 );
     const float dx = m_size.x / m_XMap.back(); // / (sampleRate_over_fftSize * colCount);
@@ -174,7 +170,6 @@ void Matrix3D::updateVertices(DE_AlignedFloatShiftMatrix const & table )
         // + 2*rows // left
         // + 2*rows // right
     );
-
 
     float dBrange = dBmax - dBmin;
     if ( dBrange < 1.0f ) dBrange = 1.0f;
@@ -279,3 +274,5 @@ void Matrix3D::updateVertices(DE_AlignedFloatShiftMatrix const & table )
     //de::gpu::SMeshBufferTool::computeNormals( o );
 #endif
 }
+
+#endif

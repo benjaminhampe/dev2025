@@ -9,6 +9,9 @@ GL_Renderer::GL_Renderer()
 // ===========================================================================
     : m_driver{ nullptr }
     , m_showFftMatrix3D{ true }
+    , m_matrix_fft_cols{ 0 }
+    , m_matrix_fft_rows{ 0 }
+    , m_matrix_fft_xmode{ 1 } // 0 = linear, 1 = log10
 {
 #if 0
     m_wav_colorGradient.addStop( 0, dbRGBA(0,0,0) );
@@ -72,8 +75,8 @@ void GL_Renderer::initializeGL(de::gpu::VideoDriver* driver)
 
     dbRandomize();
 
-    auto d = glm::vec3(4000,250,2000);
-    m_matrix_fft.init(d, V3(-0.5f * d.x,0,0));
+    // auto d = glm::vec3(4000,500,2000);
+    // m_matrix_fft.init(d, V3(-0.5f * d.x,0,0));
 }
 
 void GL_Renderer::paintGL()
@@ -83,6 +86,18 @@ void GL_Renderer::paintGL()
         DE_ERROR("No driver")
         return;
     }
+
+    // glEnable(GL_DEPTH_TEST);
+    // glDepthFunc(GL_LESS);          // Default depth comparison
+    // glDepthMask(GL_TRUE);          // Allow depth writes
+    // glClearDepth(1.0);             // Depth buffer clear value
+    m_driver->setDepth(de::gpu::Depth());
+
+    // glEnable(GL_CULL_FACE);
+    // glCullFace(GL_BACK);           // Cull back-facing triangles
+    // glFrontFace(GL_CCW);           // Counter-clockwise = front
+    m_driver->setCulling(de::gpu::Culling());
+
     // m_lineShader.resetModelMat();
     // m_lineShader.draw( bks_lines );
     // m_lineShader.draw( bks_x_lines );
@@ -101,15 +116,126 @@ void GL_Renderer::paintGL()
 
 void GL_Renderer::draw3DAccumFftMatrix()
 {
-    if (m_showFftMatrix3D)
+    if (!m_showFftMatrix3D)
     {
-        auto s = App::instance()->getSampleCollector();
-
-        m_matrix_fft.draw(
-            m_mesh16Shader3D,
-            m_mesh16Material,
-            s->getAccumMat());
+        return;
     }
+
+    auto s = App::instance()->getSampleCollector();
+    const auto& d = s->getAccumMat();
+    auto & m = m_matrix_fft;
+
+    auto siz3d = glm::vec3(4000,500,2000);
+    auto pos3d = glm::vec3{-0.5f * siz3d.x,0,0 };
+
+    auto cols = d.columnCount();
+    auto rows = d.rowCount();
+    if ( rows < 2 ) { DE_ERROR("No rows") return; }
+    if ( cols < 2 ) { DE_ERROR("No cols") return; }
+
+    //#############################
+    // Create Indices:
+    //#############################
+
+    bool bNeedIndexUpload = false;
+    if ((cols != m_matrix_fft_cols) || (rows != m_matrix_fft_rows))
+    {
+        m_matrix_fft_cols = cols;
+        m_matrix_fft_rows = rows;
+        m.Indices.clear();
+        m.Indices.reserve( (cols) * (rows) * 6);
+
+        for ( size_t j = 0; j < rows-1; j++ )
+        {
+            for ( size_t i = 0; i < cols-1; i++ )
+            {
+                const uint32_t A = (cols * j) + i;       // A - 0
+                const uint32_t B = (cols * (j+1)) + i;   // B - 1
+                const uint32_t C = (cols * (j+1)) + i+1; // C - 3
+                const uint32_t D = (cols * j) + i+1;     // D - 2
+                m.addIndexedQuad( A,B,C,D );
+            }
+        }
+        bNeedIndexUpload = true;
+
+        // X-axis is scaled logarithmicly.
+        if (m_matrix_fft_xmap.size() != cols)
+        {
+            m_matrix_fft_xmap.resize(cols);
+
+            // / (sampleRate_over_fftSize * colCount);
+            const float sampleRate = 48000.0f;
+            const float fftSize = cols;
+
+            const float sampleRate_over_fftSize = sampleRate / fftSize;
+            const float f = sampleRate_over_fftSize; //  / log10f( float(cols) );
+
+            for ( size_t col = 0; col < cols; col++ )
+            {
+                //  - 1.5f -1 = shift by 10^-1
+                m_matrix_fft_xmap[ col ] = f * log10f( float(col+1) );
+            }
+        }
+    }
+
+    //#############################
+    // Create Vertices:
+    //#############################
+
+    float dBmin = -180.0f;
+    float dBmax = 120.0f;
+    float dBrange = dBmax - dBmin;
+    float dBrangeInv = 1.0f / dBrange;
+
+    //const float dx = m_size.x / float ( cols - 1 );
+    const float dx = siz3d.x / m_matrix_fft_xmap.back(); // / (sampleRate_over_fftSize * colCount);
+    const float dy = siz3d.y;
+    const float dz = siz3d.z / float ( rows - 1 );
+
+    m.PrimType = de::gpu::PrimitiveType::Triangles;
+    m.Vertices.clear();
+    m.Vertices.reserve(rows * cols);
+
+    // Matrix Top
+    if ( m_matrix_fft_xmode == 1 ) // X-axis is scaled logarithmicly.
+    {
+        for ( size_t row = 0; row < rows; ++row )
+        {
+            const float* __restrict__ pRow = d.m_rows[row];
+            for ( size_t col = 0; col < cols; ++col )
+            {
+                float dB = *pRow++; // d.getPixel( col, row );  // The row data
+                float t = de::audio::math::clampf((dB - dBmin) * dBrangeInv,0.f,1.f);
+                float x = dx * m_matrix_fft_xmap[ col ];
+                float y = dy * t;
+                float z = dz * row;
+                m.Vertices.emplace_back( x,y,z,t );
+            }
+        }
+    }
+    // Matrix Top
+    else // if ( m_matrix_fft_xmode == 0 ) // X-axis is linear.
+    {
+        for ( size_t row = 0; row < rows; ++row )
+        {
+            const float* __restrict__ pRow = d.m_rows[row];
+            for ( size_t col = 0; col < cols; ++col )
+            {
+                float dB = *pRow++; // d.getPixel( col, row );  // The row data
+                float t = de::audio::math::clampf((dB - dBmin) * dBrangeInv,0.f,1.f);
+                float x = dx * col;
+                float y = dy * t;
+                float z = dz * row;
+                m.Vertices.emplace_back( x,y,z,t );
+            }
+        }
+    }
+
+    m.upload(true, bNeedIndexUpload);
+
+    auto T = glm::translate(glm::mat4(1.0f), pos3d);
+    m_mesh16Shader3D.setMaterial(m_mesh16Material, T);
+    m.draw();
 }
 
 void GL_Renderer::draw3DLineStripL()

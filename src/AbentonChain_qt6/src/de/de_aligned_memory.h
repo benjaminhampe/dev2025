@@ -109,7 +109,7 @@ namespace de {
         //bool operator!=(const TAlignedVectorAllocator&) const noexcept { return false; }
     };
 
-#if 0
+#if 1
     // AVX2 32-byte aligned vector
     template <typename T>
     using TAlignedVector = std::vector<T, TAlignedVectorAllocator<T, 32>>;
