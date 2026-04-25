@@ -90,6 +90,7 @@ else()
     # target_include_directories(${LIB_NAME} PRIVATE ${LIB_HEADER_DIR}/libjpeg)
 
     target_compile_definitions(${LIB_NAME} PUBLIC HAVE_TIFF=1)
+    target_compile_definitions(${LIB_NAME} PUBLIC HAVE_LIBTIFF=1)
 
     # target_compile_definitions(${LIB_NAME} PUBLIC HAVE_MINIGMP=1)
     # target_compile_definitions(${LIB_NAME} PUBLIC HAVE_GMP_MINI=1)
