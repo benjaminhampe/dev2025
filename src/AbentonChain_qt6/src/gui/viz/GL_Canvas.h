@@ -67,8 +67,11 @@ public:
     {
         stopFpsTimer();
         m_bRenderingEnabled = false;
-        delete m_driver;
-        m_driver = nullptr;
+        if (m_driver)
+        {
+            delete m_driver;
+            m_driver = nullptr;
+        }
     }
 
     void setRenderingEnabled( bool bEnabled )

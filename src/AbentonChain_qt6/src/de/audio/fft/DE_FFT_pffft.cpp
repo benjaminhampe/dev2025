@@ -1,5 +1,9 @@
 #include <de/audio/fft/DE_FFT_pffft.h>
+#include <de/audio/fft/approx_math.h>
 
+#if 1
+
+#include <cassert>
 extern "C"
 {
 	#include <pffft.h>
@@ -8,105 +12,226 @@ extern "C"
 struct DE_FFT_pffft_Private
 {
     PFFFT_Setup* m_ctx;
-    size_t m_n;
-
-    DE_AlignedFloatVector m_input;
-    DE_AlignedFloatVector m_output;
+    uint32_t m_fftSize;
+    DE_GuardedBuffer m_input;
+    DE_GuardedBuffer m_output;
 
     DE_FFT_pffft_Private()
-        : m_ctx(nullptr), m_n(0)
+        : m_ctx(nullptr)
+        , m_fftSize(0)
+        , m_input("pffft_input")
+        , m_output("pffft_output")
     {
-        open(128);
+        DE_TRACE("")
     }
 
-    ~DE_FFT_pffft_Private() { close(); }
-
-    size_t size() const { return m_n; }
-
-    bool open(size_t n)
+    ~DE_FFT_pffft_Private()
     {
-        if (m_ctx) { return true; }
-
-        m_ctx = pffft_new_setup(n, PFFFT_REAL);
-        if (!m_ctx)
+        //DE_TRACE("")
+        if (m_ctx)
         {
-            DE_ERROR("Failed to create PFFFT setup")
-            m_n = 0;
+            pffft_destroy_setup(m_ctx);
+            m_ctx = nullptr;
         }
-        else
-        {
-            m_n = n;
-        }
-        return true;
     }
+
+    uint32_t fftSize() const { return m_fftSize; }
 
     void close()
     {
-        if (!m_ctx) { return; }
-
-        // Clean up
-        pffft_destroy_setup(m_ctx);
-        m_ctx = nullptr;
-        m_n = 0;
-    }
-
-    inline bool isPowerOfTwo(uint32_t x)
-    {
-        return x && !(x & (x - 1));
-    }
-
-    void fft_real( const float* __restrict__ pSrc,
-        float* __restrict__ pDst, uint32_t n)
-    {
-        if (n<1 || n>10000000)
+        if (m_ctx)
         {
-            DE_ERROR("Invalid input n = ",n)
+            pffft_destroy_setup(m_ctx);
+            m_ctx = nullptr;
+        }
+
+        m_fftSize = 0;
+    }
+
+    // Input ist n floats (dicht gepackte reale pcm).
+    // Output ist auch n floats (clever gepacktes halbspectrum)
+    // k        Realteil	Imaginärteil
+    // 0        out[0]      0
+    // 1..N/2‑1	out[k]      out[N/2 + k]
+    // N/2      out[N/2]	0
+    void resize(uint32_t n) // n = fftSize
+    {
+        if (n == m_fftSize)
+        {
+            //DE_WARN("Nothing todo.")
+            return; // Nothing todo
+        }
+
+        if (n<8)
+        {
+            DE_ERROR("fftSize ", n, " too small.")
             return;
         }
-		
+
+        if (!de::audio::math::isPowerOfTwo(n))
+        {
+            DE_ERROR("fftSize ", n, " not a power of 2.")
+            n = de::audio::math::nextPowerOf2(n);
+            DE_ERROR("Computed fftSize ", n)
+        }
+
+        if (n>16u*1024u)
+        {
+            DE_ERROR("fftSize ", n, " too large clamp to 16k.")
+            n = 16u*1024u;
+        }
+
+        assert(m_input.pre == 0xDEADBEEF);
+        assert(m_input.post == 0xCAFEBABE);
+        assert(m_output.pre == 0xDEADBEEF);
+        assert(m_output.post == 0xCAFEBABE);
+
+        m_input.data.resize(n);
+        m_output.data.resize(n);
+
+        if (m_ctx)
+        {
+            pffft_destroy_setup(m_ctx);
+            m_ctx = nullptr;
+        }
+
+        m_ctx = pffft_new_setup(n, PFFFT_REAL);
+        if (m_ctx)
+        {
+            DE_OK("New context. ",n)
+            m_fftSize = n;
+        }
+        else
+        {
+            m_fftSize = 0;
+            DE_ERROR("No new context. ", n)
+        }
+
+        assert(m_input.pre == 0xDEADBEEF);
+        assert(m_input.post == 0xCAFEBABE);
+        assert(m_output.pre == 0xDEADBEEF);
+        assert(m_output.post == 0xCAFEBABE);
+    }
+
+    void fft_real(const float* __restrict__ pSrc, uint32_t nSrc,
+                        float* __restrict__ pDst, uint32_t nDst)
+    {
+        if (!pSrc)
+        {
+            DE_ERROR("")
+        }
+
+        if (!pDst)
+        {
+            DE_ERROR("")
+        }
+
+        if (nSrc > m_fftSize)
+        {
+            DE_WARN("nSrc(",nSrc,") too large ",m_fftSize)
+            nSrc = m_fftSize; // clamp.
+        }
+
+        if (nDst > m_fftSize/2)
+        {
+            DE_WARN("nDst(",nDst,") too large ",m_fftSize)
+            nDst = m_fftSize/2; // clamp.
+        }
+
+        if (nSrc < 1)
+        {
+            DE_ERROR("Nothing todo for nSrc ",nSrc)
+            return;
+        }
+
+        if (nDst < 1)
+        {
+            DE_ERROR("Nothing todo for nDst ",nDst)
+            return;
+        }
+
         if (!m_ctx)
         {
-            DE_ERROR("No PFFFT")
+            DE_ERROR("No context")
             return;
         }
 
-        if ( n != size())
-        {
-            if (!isPowerOfTwo(n))
-            {
-                DE_ERROR("Not power of 2, n = ",n)
-            }
-            close();
-            open(n);
+        assert(m_input.pre == 0xDEADBEEF);
+        assert(m_input.post == 0xCAFEBABE);
+        assert(m_output.pre == 0xDEADBEEF);
+        assert(m_output.post == 0xCAFEBABE);
 
-            m_input.resize(n);
-            m_output.resize(n);
-            // DE_WARN("Resize(",n,")")
+        // Fill input data:
+        auto nAct = std::min(nSrc,uint32_t(m_input.data.size()));
+        for (size_t i = 0; i < nAct; ++i)
+        {
+            m_input.data[i] = *pSrc++;
+        }
+        for (size_t i = nAct; i < m_input.data.size(); ++i)
+        {
+            m_input.data[i] = 0.0f;
         }
 
-        // Copy input to aligned buffer
-        memcpy(m_input.data(), pSrc, n * sizeof(float));
+        // memcpy(m_input.data.data(), pSrc, nSrc * sizeof(float));
+
+        assert(m_input.pre == 0xDEADBEEF);
+        assert(m_input.post == 0xCAFEBABE);
+        assert(m_output.pre == 0xDEADBEEF);
+        assert(m_output.post == 0xCAFEBABE);
+
+        // Fill input zeroes:
+        // const uint32_t mSrc = m_fftSize - nSrc;
+        // if (mSrc > 0)
+        // {
+        //     std::memset(m_input.data.data() + nSrc * sizeof(float),
+        //         0, mSrc * sizeof(float));
+        // }
+
+
+        assert(m_input.pre == 0xDEADBEEF);
+        assert(m_input.post == 0xCAFEBABE);
+        assert(m_output.pre == 0xDEADBEEF);
+        assert(m_output.post == 0xCAFEBABE);
 
         // Perform FFT
         pffft_transform_ordered(
             m_ctx,
-            m_input.data(),
-            m_output.data(),
+            m_input.data.data(),
+            m_output.data.data(),
             NULL,
             PFFFT_FORWARD);
 
+        assert(m_input.pre == 0xDEADBEEF);
+        assert(m_input.post == 0xCAFEBABE);
+        assert(m_output.pre == 0xDEADBEEF);
+        assert(m_output.post == 0xCAFEBABE);
+
         // Copy result to output
-        const float* __restrict__ src = m_output.data();
         float* __restrict__ dst = pDst;
-        for (size_t i = 0; i < n/2; ++i)
+
+        *dst++ = -240.0f; // minimum dB
+
+        assert(m_input.pre == 0xDEADBEEF);
+        assert(m_input.post == 0xCAFEBABE);
+        assert(m_output.pre == 0xDEADBEEF);
+        assert(m_output.post == 0xCAFEBABE);
+
+        assert(nDst + m_fftSize/2 <= m_output.data.size());
+
+        for (size_t i = 1; i < nDst; ++i)
         {
-            float re = *src++;
-            float im = *src++;
-            float ll = std::max(re*re + im*im, 1.0e-12f);
-            //      log10f( 1e-24 ) = -12
-            // 10 * log10f( 1e-24 ) = -120dB
-            *dst++ = 10.0f*log10f( ll );
+            //      log10f( 1e-12 ) = -12
+            // 20 * log10f( 1e-12 ) = -240dB
+            const float re = m_output.data[i];
+            const float im = m_output.data[i + m_fftSize/2];
+            const float ll = std::fmaxf(1.0e-12f, (re*re) + (im*im));
+            *dst++ = 20.0f*log10f( ll );
         }
+
+        assert(m_input.pre == 0xDEADBEEF);
+        assert(m_input.post == 0xCAFEBABE);
+        assert(m_output.pre == 0xDEADBEEF);
+        assert(m_output.post == 0xCAFEBABE);
     }
 };
 
@@ -120,7 +245,20 @@ DE_FFT_pffft::~DE_FFT_pffft()
     delete _d;
 }
 
-void DE_FFT_pffft::fft(const float* __restrict__ src, float* __restrict__ dst, size_t n)
+uint32_t DE_FFT_pffft::fftSize() const
 {
-    _d->fft_real(src,dst,n);
+    return _d->m_fftSize;
 }
+
+void DE_FFT_pffft::resize( uint32_t fftSize )
+{
+    _d->resize(fftSize);
+}
+
+void DE_FFT_pffft::fft(const float* __restrict__ src, uint32_t nSrc,
+                             float* __restrict__ dst, uint32_t nDst)
+{
+    _d->fft_real(src,nSrc,dst,nDst);
+}
+
+#endif

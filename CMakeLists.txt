@@ -46,9 +46,9 @@ set(BENNI_USE_SIMD_DIAG 0) # Enable compiler output for vectorization success an
 set(BENNI_USE_UNSAFE 0)   # Enable -fstrict-aliasing -ffast-math
 set(BENNI_USE_SPEED 1)    # Enable -O3 -fexpensive-optimizations -ftree-vectorize -funroll-loops
 set(BENNI_USE_LTO 1)      # Enable -flto
-set(BENNI_USE_OPENMP 1)   # Enable -fopenmp
+# set(BENNI_USE_OPENMP 1)   # Enable -fopenmp
 
-set(BENNI_USE_NATIVE 0)   # Enable My CPU only Intel 165U Meteor Lake or similar.
+set(BENNI_USE_NATIVE 1)   # Enable My CPU only Intel 165U Meteor Lake or similar.
 set(BENNI_USE_AVX512 0)   # Enable all AVX512 extensions.
 set(BENNI_USE_AVX512F 0)  # Float + Double extensions.
 set(BENNI_USE_AVX512DQ 0) # Double quad extensions
@@ -124,243 +124,340 @@ if (BUILD_SHARED_LIBS)
    message("[benni] BUILD_SHARED")
 else()
    message("[benni] BUILD_STATIC")
-   # set(MY_LD_FLAGS "${MY_LD_FLAGS} -static -static-libgcc -static-libstdc++")
 endif()
 
 # </BUILD_TYPE>
 
-# 🛠 Key Compiler Flags
-#
-# Flag	        Meaning	Use Case
-# -march=native	Sets the target architecture to match the host CPU. Enables all instruction sets supported by your CPU (e.g., AVX2, AVX-512, SSE4.2, etc.).	Best for maximum performance on the machine you’re compiling on.
-# -mtune=native	Tunes the generated code for the host CPU’s microarchitecture (pipeline, scheduling, etc.), but doesn’t enable new instructions.	Useful if you want portable binaries but still optimize scheduling for your CPU.
-# -O2, -O3, -Ofast	Optimization levels. -O3 and -Ofast enable aggressive optimizations, including vectorization.	Combine with -march=native for best speed.
-# -fopenmp	    Enables OpenMP parallelization if supported.	For multi-threaded workloads.
-# -flto	        Enables link-time optimization.	Improves whole-program optimization.
-#
-# Flag	        Meaning	What It Enables
-# -mavx512f	    AVX-512 Foundation	The base set of AVX-512 instructions. Provides 512-bit registers (ZMM0–ZMM31), mask registers, and core vector operations (add, multiply, logical ops, etc.). Required before using other AVX-512 subsets.
-# -mavx512dq	Doubleword and Quadword Instructions	Adds support for operations on 32-bit (doubleword) and 64-bit (quadword) integers. Enables more flexible integer arithmetic, comparisons, and conversions.
-# -mavx512bw	Byte and Word Instructions	Extends AVX-512 to handle 8-bit (byte) and 16-bit (word) integers. Useful for text processing, image/video codecs, and other workloads needing smaller integer types.
-# -mavx512vl	Vector Length Extensions	Allows AVX-512 instructions to operate on 128-bit (XMM) and 256-bit (YMM) registers, not just 512-bit ZMM. This improves efficiency when full 512-bit vectors aren’t needed, reducing power and register pressure.
-#
-# SIMD Level	Compiler Flag	Defined Macro(s)	Intrinsics Header(s)
-# AMX (Tile)	-mamx-tile	    __AMX__, __AMXTILE__	<amxintrin.h>
-# AVX-VNNI	    -mavxvnni	    __AVXVNNI__             <immintrin.h>
-# AVX-512VNNI	-mavx512vnni	__AVX512VNNI__          <immintrin.h>
-# AVX-512VBMI	-mavx512vbmi	__AVX512VBMI__          <immintrin.h>
-# AVX-512CD	    -mavx512cd	    __AVX512CD__            <immintrin.h>
-# AVX-512VL	    -mavx512vl	    __AVX512VL__            <immintrin.h>
-# AVX-512BW	    -mavx512bw	    __AVX512BW__            <immintrin.h>
-# AVX-512DQ	    -mavx512dq	    __AVX512DQ__            <immintrin.h>
-# AVX-512F	    -mavx512f	    __AVX512F__             <immintrin.h>
-# BMI2          -mbmi2          __BMI2__                <immintrin.h>
-# BMI1          -mbmi           __BMI__                 <immintrin.h>
-# FMA3          -mfma           __FMA__                 <immintrin.h>
-# AVX2          -mavx2          __AVX2__                <immintrin.h>
-# AVX           -mavx           __AVX__                 <immintrin.h>
-# PCLMULQDQ	    -mpclmul	    __PCLMUL__              <wmmintrin.h>
-# AES-NI        -maes           __AES__                 <wmmintrin.h>
-# POPCNT        -mpopcnt	    __POPCNT__              <popcntintrin.h>
-# SSE4.2        -msse4.2	    __SSE4_2__              <nmmintrin.h>
-# SSE4.1        -msse4.1	    __SSE4_1__              <smmintrin.h>
-# SSSE3         -mssse3         __SSSE3__               <tmmintrin.h>
-# SSE3          -msse3          __SSE3__                <pmmintrin.h>
-# SSE2          -msse2          __SSE2__                <emmintrin.h>
-# SSE           -msse           __SSE__                 <xmmintrin.h>
-# MMX           -mmmx           __MMX__                 <mmintrin.h>
+# =============================================================
+# Debug=default BuildType
+# =============================================================
+if(CMAKE_BUILD_TYPE STREQUAL "")
+   set(CMAKE_BUILD_TYPE "Debug")
+endif()
+
+# =============================================================
+# Defines for BuildTypes
+# =============================================================
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+   set(BUILD_DEBUG=1) # Used in applications to add "d" postfix to TARGET_NAME
+   add_compile_definitions(_DEBUG=1)
+   add_compile_definitions(BUILD_DEBUG=1)
+endif()
+if(CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
+   add_compile_definitions(BUILD_RELEASE=1)
+endif()
+if(CMAKE_BUILD_TYPE STREQUAL "Release")
+   add_compile_definitions(NDEBUG=1)
+   add_compile_definitions(BUILD_RELEASE=1)
+endif()
+if(CMAKE_BUILD_TYPE STREQUAL "MinSizeRel")
+   add_compile_definitions(NDEBUG=1)
+   add_compile_definitions(BUILD_RELEASE=1)
+endif()
+message("[benni] CMAKE_BUILD_TYPE = ${CMAKE_BUILD_TYPE}")
+
+set(MY_C_FLAGS "")
+set(MY_CXX_FLAGS "")
+set(MY_LD_FLAGS "")
+
+if (MSVC)
+else()
+    set(MY_C_FLAGS "${MY_C_FLAGS} -target x86_64-w64-windows-gnu")
+    set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -target x86_64-w64-windows-gnu")
+
+    if (CMAKE_BUILD_TYPE STREQUAL "Debug")
+        message(STATUS ">>> Debug mode enabled")
+        set(MY_C_FLAGS     "${MY_C_FLAGS} -g")
+        set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -g")
+        set(MY_C_FLAGS     "${MY_C_FLAGS} -O0")
+        set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -O0")
+        set(MY_C_FLAGS     "${MY_C_FLAGS} -fno-omit-frame-pointer")
+        set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -fno-omit-frame-pointer")
+        set(MY_C_FLAGS     "${MY_C_FLAGS} -fstack-protector-strong")
+        set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -fstack-protector-strong")
+        set(MY_C_FLAGS     "${MY_C_FLAGS} -ftrivial-auto-var-init=pattern")
+        set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -ftrivial-auto-var-init=pattern")
+
+        # set(MY_C_FLAGS     "${MY_C_FLAGS} -fsanitize=address,undefined")
+        # set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -fsanitize=address,undefined")
+
+        # ❌ -lasan → not needed
+        # ❌ -lubsan → not needed
+        # ❌ -lclang_rt.asan → not needed
+
+        # clang_rt.asan_dynamic-x86_64.dll
+        # clang_rt.asan-x86_64.a
+        # clang_rt.ubsan_standalone-x86_64.a
+
+        # set(MY_C_FLAGS "${MY_C_FLAGS} -O0 -g2")
+        # set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -O0 -g2")
+        # set(MY_C_FLAGS "${MY_C_FLAGS} -Wl,--demangle")
+        # set(MY_LD_FLAGS "${MY_LD_FLAGS} -Wl,--demangle")
+        #set(MY_C_FLAGS "${MY_C_FLAGS} -fsanitize=address")
+        #set(MY_LD_FLAGS "${MY_LD_FLAGS} -lasan")
+    endif()
+    if (CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
+        # set(MY_C_FLAGS "${MY_C_FLAGS} -O2 -g2")
+        #set(MY_C_FLAGS "${MY_C_FLAGS} -fsanitize=address")
+        #set(MY_LD_FLAGS "${MY_LD_FLAGS} -lasan")
+    endif()
+
+    if (CMAKE_BUILD_TYPE STREQUAL "Release")
+        # set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -fexpensive-optimizations -ftree-vectorize")
+
+        if (BENNI_USE_UNSAFE)
+            message("[benni] HAVE_FASTMATH -fstrict-aliasing -ffast-math")
+            set(MY_C_FLAGS "${MY_C_FLAGS} -fstrict-aliasing -ffast-math")
+            set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -fstrict-aliasing -ffast-math")
+        endif()
+
+        #set(MY_C_FLAGS "${MY_C_FLAGS} -mfpmath=sse -msse3 -mmmx -O2")
+        #set(MY_C_FLAGS "${MY_C_FLAGS} -fno-asynchronous-unwind-tables")
+        # set(MY_C_FLAGS "${MY_C_FLAGS} -Wno-unused-but-set-variable")
+        # set(MY_C_FLAGS "${MY_C_FLAGS} -Wno-unknown-pragmas")
+        # set(MY_C_FLAGS "${MY_C_FLAGS} -Wno-sign-compare")
+        # set(MY_C_FLAGS "${MY_C_FLAGS} -Wno-unused-variable")
+        # set(MY_C_FLAGS "${MY_C_FLAGS} -Wno-unused-function")
+        # set(MY_C_FLAGS "${MY_C_FLAGS} -Wno-comment")
+        # set(MY_C_FLAGS "${MY_C_FLAGS} -Wno-strict-aliasing")
+        # set(MY_C_FLAGS "${MY_C_FLAGS} -Wno-maybe-uninitialized")
+
+        # set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -fno-rtti")
+        # set(MY_C_FLAGS "${MY_C_FLAGS} -fno-exceptions")
+        # set(MY_C_FLAGS "${MY_C_FLAGS} -fstrict-aliasing")
+        #set(MY_C_FLAGS "${MY_C_FLAGS} -ffast-math")
+        #set(MY_C_FLAGS "${MY_C_FLAGS} -fassociative-math")
+        #set(MY_C_FLAGS "${MY_C_FLAGS} -funsafe-math-optimizations")
+        #set(MY_C_FLAGS "${MY_C_FLAGS} -funroll-loops")
+
+        # -fms-extensions -fms-compatibility x86_64-w64-mingw32uwp x86_64-w64-windows-gnu
+        set(MY_C_FLAGS "${MY_C_FLAGS} -fvisibility=hidden")
+        set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -fvisibility=hidden")
+        set(MY_LD_FLAGS "${MY_LD_FLAGS} -fvisibility=hidden")
+
+        # if (BENNI_USE_OPENMP)
+        #     message("[benni] HAVE_OPENMP -fopenmp")
+        #     set(MY_C_FLAGS "${MY_C_FLAGS} -fopenmp")
+        #     set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -fopenmp")
+        # endif()
+
+        if (BENNI_USE_GPROF)
+            message("${BoldGreen}[Benni] Using GPROF performance analysis instrumentation!${ColourReset}")
+            # set(MY_C_FLAGS "${MY_C_FLAGS} -pg") #  -no-pie
+            # set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -pg") # -no-pie
+            # set(MY_LD_FLAGS "${MY_LD_FLAGS} -pg -lgmon") # -no-pie
+
+            set(MY_C_FLAGS "${MY_C_FLAGS} -g2 -gstabs+")
+            set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -g2 -gstabs+")
+            # add_compile_options(-pg)
+            # add_link_options(-pg)
+            # add_link_libraries(gmon gcrt2.o)
+
+            set(CMAKE_POSITION_INDEPENDENT_CODE OFF)
+        else()
+            set(MY_LD_FLAGS "${MY_LD_FLAGS} -fuse-ld=lld")
+            set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+        endif()
+
+        # Enable compiler messages about SIMD vectorizations and loop unrolling attempts (Misses + Hits).
+        if (BENNI_USE_SIMD_DIAG)
+            message("${BoldGreen}[Benni] Use vectorization diagnostics:${ColourReset}")
+            if (MINGW)
+                message("[Benni] Using MinGW -fopt-info-vec")
+                set(MY_C_FLAGS "${MY_C_FLAGS} -fopt-info-vec")
+                set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -fopt-info-vec")
+            else()
+                message("[Benni] Using Clang -Rpass=loop-vectorize -Rpass-missed=loop-vectorize -Rpass-analysis=loop-vectorize")
+                set(MY_C_FLAGS "${MY_C_FLAGS} -Rpass=loop-vectorize -Rpass-missed=loop-vectorize -Rpass-analysis=loop-vectorize")
+                set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -Rpass=loop-vectorize -Rpass-missed=loop-vectorize -Rpass-analysis=loop-vectorize")
+            endif()
+        endif()
+
+        # My CPU Intel 165U only. Very sad now after i discovered i don't seem to have AVX512F.
+        # clang -march=native -E - -o /dev/null -### < /dev/null 2>&1 | grep target-feature
+        if (BENNI_USE_NATIVE) #  -march=native -mtune=native
+            message("[benni] HAVE_NATIVE_OPTIM -march=native -mtune=native")
+            set(MY_C_FLAGS "${MY_C_FLAGS} -march=native -mtune=native")
+            set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -march=native -mtune=native")
+
+            # message("[benni] HAVE_NATIVE_OPTIM -O3 -msse2 -msse3 -mssse3 -msse4.1 -msse4.2 -mavx -mavx2 -mfma -mf16c -mbmi -mbmi2 -mlzcnt -mpopcnt -maes -mvaes -mpclmul -mvpclmulqdq -msha -mrdrnd -mrdseed -madx -mgfni")
+            # set(MY_C_FLAGS "${MY_C_FLAGS} -O3 -msse2 -msse3 -mssse3 -msse4.1 -msse4.2 -mavx -mavx2 -mfma -mf16c -mbmi -mbmi2 -mlzcnt -mpopcnt -maes -mvaes -mpclmul -mvpclmulqdq -msha -mrdrnd -mrdseed -madx -mgfni")
+            # set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -O3 -msse2 -msse3 -mssse3 -msse4.1 -msse4.2 -mavx -mavx2 -mfma -mf16c -mbmi -mbmi2 -mlzcnt -mpopcnt -maes -mvaes -mpclmul -mvpclmulqdq -msha -mrdrnd -mrdseed -madx -mgfni")
+            # set(BENNI_USE_AVX2 1)
+            # add_compile_definitions(HAVE_FMA3)
+            # add_compile_definitions(HAVE_AVX2)
+            # add_compile_definitions(HAVE_AVX)
+            # add_compile_definitions(HAVE_SSE4_2)
+            # add_compile_definitions(HAVE_SSE4_1)
+            # add_compile_definitions(HAVE_SSSE3)
+            # add_compile_definitions(HAVE_SSE3)
+            # add_compile_definitions(HAVE_SSE2)
+            # add_compile_definitions(HAVE_SSE)
+            # add_compile_definitions(HAVE_MMX)
+        else()
+            set(MY_C_FLAGS "${MY_C_FLAGS} -march=haswell")
+            set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -march=haswell")
+        endif()
+
+        if (BENNI_USE_LTO)
+            message("[benni] HAVE_LTO -flto -fuse-linker-plugin -Wl,-O1")
+            set(MY_LD_FLAGS "${MY_LD_FLAGS} -flto -fuse-linker-plugin -Wl,-O1")
+        endif()
+
+        if (BENNI_USE_SPEED)
+            message("[benni] HAVE_EXPENSIVE_OPTIM -ftree-vectorize -funroll-loops") #  -fexpensive-optimizations
+            set(MY_C_FLAGS "${MY_C_FLAGS} -ftree-vectorize -funroll-loops") #  -fexpensive-optimizations
+            set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -ftree-vectorize -funroll-loops") #  -fexpensive-optimizations
+        endif()
+
+        if (BENNI_USE_OMIT_FRAMEPOINTER)
+            message("[benni] HAVE_OMIT_FRAMEPOINTER -fomit-frame-pointer")
+            set(MY_C_FLAGS "${MY_C_FLAGS} -fomit-frame-pointer")
+            set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -fomit-frame-pointer")
+        else()
+            message("[benni] HAVE_NO_OMIT_FRAMEPOINTER -fno-omit-frame-pointer")
+            set(MY_C_FLAGS "${MY_C_FLAGS} -fno-omit-frame-pointer")
+            set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -fno-omit-frame-pointer")
+        endif()
+
+        # 🛠 Key Compiler Flags
+        #
+        # Flag	        Meaning	Use Case
+        # -march=native	Sets the target architecture to match the host CPU. Enables all instruction sets supported by your CPU (e.g., AVX2, AVX-512, SSE4.2, etc.).	Best for maximum performance on the machine you’re compiling on.
+        # -mtune=native	Tunes the generated code for the host CPU’s microarchitecture (pipeline, scheduling, etc.), but doesn’t enable new instructions.	Useful if you want portable binaries but still optimize scheduling for your CPU.
+        # -O2, -O3, -Ofast	Optimization levels. -O3 and -Ofast enable aggressive optimizations, including vectorization.	Combine with -march=native for best speed.
+        # -fopenmp	    Enables OpenMP parallelization if supported.	For multi-threaded workloads.
+        # -flto	        Enables link-time optimization.	Improves whole-program optimization.
+        #
+        # Flag	        Meaning	What It Enables
+        # -mavx512f	    AVX-512 Foundation	The base set of AVX-512 instructions. Provides 512-bit registers (ZMM0–ZMM31), mask registers, and core vector operations (add, multiply, logical ops, etc.). Required before using other AVX-512 subsets.
+        # -mavx512dq	Doubleword and Quadword Instructions	Adds support for operations on 32-bit (doubleword) and 64-bit (quadword) integers. Enables more flexible integer arithmetic, comparisons, and conversions.
+        # -mavx512bw	Byte and Word Instructions	Extends AVX-512 to handle 8-bit (byte) and 16-bit (word) integers. Useful for text processing, image/video codecs, and other workloads needing smaller integer types.
+        # -mavx512vl	Vector Length Extensions	Allows AVX-512 instructions to operate on 128-bit (XMM) and 256-bit (YMM) registers, not just 512-bit ZMM. This improves efficiency when full 512-bit vectors aren’t needed, reducing power and register pressure.
+        #
+        # SIMD Level	Compiler Flag	Defined Macro(s)	Intrinsics Header(s)
+        # AMX (Tile)	-mamx-tile	    __AMX__, __AMXTILE__	<amxintrin.h>
+        # AVX-VNNI	    -mavxvnni	    __AVXVNNI__             <immintrin.h>
+        # AVX-512VNNI	-mavx512vnni	__AVX512VNNI__          <immintrin.h>
+        # AVX-512VBMI	-mavx512vbmi	__AVX512VBMI__          <immintrin.h>
+        # AVX-512CD	    -mavx512cd	    __AVX512CD__            <immintrin.h>
+        # AVX-512VL	    -mavx512vl	    __AVX512VL__            <immintrin.h>
+        # AVX-512BW	    -mavx512bw	    __AVX512BW__            <immintrin.h>
+        # AVX-512DQ	    -mavx512dq	    __AVX512DQ__            <immintrin.h>
+        # AVX-512F	    -mavx512f	    __AVX512F__             <immintrin.h>
+        # BMI2          -mbmi2          __BMI2__                <immintrin.h>
+        # BMI1          -mbmi           __BMI__                 <immintrin.h>
+        # FMA3          -mfma           __FMA__                 <immintrin.h>
+        # AVX2          -mavx2          __AVX2__                <immintrin.h>
+        # AVX           -mavx           __AVX__                 <immintrin.h>
+        # PCLMULQDQ	    -mpclmul	    __PCLMUL__              <wmmintrin.h>
+        # AES-NI        -maes           __AES__                 <wmmintrin.h>
+        # POPCNT        -mpopcnt	    __POPCNT__              <popcntintrin.h>
+        # SSE4.2        -msse4.2	    __SSE4_2__              <nmmintrin.h>
+        # SSE4.1        -msse4.1	    __SSE4_1__              <smmintrin.h>
+        # SSSE3         -mssse3         __SSSE3__               <tmmintrin.h>
+        # SSE3          -msse3          __SSE3__                <pmmintrin.h>
+        # SSE2          -msse2          __SSE2__                <emmintrin.h>
+        # SSE           -msse           __SSE__                 <xmmintrin.h>
+        # MMX           -mmmx           __MMX__                 <mmintrin.h>
+
+        # <SIMD> Don't use add_compile_options(), it would pollute ASM commandLines.
+
+        if (BENNI_USE_AVX512)
+            message("[benni] HAVE_AVX512 -mavx512f -mavx512dq -mavx512bw -mavx512vl")
+            message("[benni] HAVE_AVX512F -mavx512f")
+            message("[benni] HAVE_AVX512DQ -mavx512dq") # Doubleword and Quadword Instructions
+            message("[benni] HAVE_AVX512BW -mavx512bw")
+            message("[benni] HAVE_AVX512LV -mavx512vl")
+            set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -mavx512f -mavx512dq -mavx512bw -mavx512vl")
+            set(MY_C_FLAGS "${MY_C_FLAGS} -mavx512f -mavx512dq -mavx512bw -mavx512vl")
+            add_compile_definitions(HAVE_AVX512)
+            add_compile_definitions(HAVE_AVX512F)
+            set(BENNI_USE_FMA3 1)
+        else()
+            add_compile_definitions(USE_AVX512=0)
+            add_compile_definitions(USE_VNNI=0)
+            add_compile_definitions(HAVE_AVX512=0)
+            add_compile_definitions(HAVE_AVX512F=0)
+            add_compile_definitions(HAVE_AVX512BW=0)
+            add_compile_definitions(HAVE_AVX512VL=0)
+            add_compile_definitions(HAVE_AVX512VNNI=0)
+            set(MY_C_FLAGS "${MY_C_FLAGS} -mno-avx512f -mno-avx512vl -mno-avx512bw -mno-avx512dq -mno-vpclmulqdq")
+            set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -mno-avx512f -mno-avx512vl -mno-avx512bw -mno-avx512dq -mno-vpclmulqdq")
+        endif()
+
+        if (BENNI_USE_FMA3)
+            message("[benni] HAVE_FMA3")
+            set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -mfma")
+            set(MY_C_FLAGS "${MY_C_FLAGS} -mfma")
+            add_compile_definitions(HAVE_FMA3)
+            set(BENNI_USE_AVX2 1)
+        endif()
+
+        if (BENNI_USE_AVX2)
+            message("[benni] HAVE_AVX2")
+            set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -mavx2")
+            set(MY_C_FLAGS "${MY_C_FLAGS} -mavx2")
+            add_compile_definitions(HAVE_AVX2)
+            set(BENNI_USE_AVX 1)
+        endif()
+
+        if (BENNI_USE_AVX)
+            message("[benni] HAVE_AVX")
+            set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -mavx")
+            set(MY_C_FLAGS "${MY_C_FLAGS} -mavx")
+            add_compile_definitions(HAVE_AVX)
+            set(BENNI_USE_SSE42 1)
+        endif()
+
+        if (BENNI_USE_SSE42)
+            message("[benni] HAVE_SSE42")
+            set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -msse4.2")
+            set(MY_C_FLAGS "${MY_C_FLAGS} -msse4.2")
+            add_compile_definitions(HAVE_SSE4_2)
+            set(BENNI_USE_SSE41 1)
+        endif()
+
+        if (BENNI_USE_SSE41)
+            message("[benni] HAVE_SSE41")
+            set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -msse4.1")
+            set(MY_C_FLAGS "${MY_C_FLAGS} -msse4.1")
+            add_compile_definitions(HAVE_SSE4_1)
+            set(BENNI_USE_SSSE3 1)
+        endif()
+
+        if (BENNI_USE_SSSE3)
+            message("[benni] HAVE_SSSE3")
+            set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -mssse3")
+            set(MY_C_FLAGS "${MY_C_FLAGS} -mssse3")
+            add_compile_definitions(HAVE_SSSE3)
+            set(BENNI_USE_SSE3 1)
+        endif()
+
+        if (BENNI_USE_SSE3)
+            message("[benni] HAVE_SSE3")
+            set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -msse3")
+            set(MY_C_FLAGS "${MY_C_FLAGS} -msse3")
+            add_compile_definitions(HAVE_SSE3)
+            set(BENNI_USE_SSE2 1)
+        endif()
+
+        if (BENNI_USE_SSE2)
+            message("[benni] HAVE_SSE2")
+            set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -msse2")
+            set(MY_C_FLAGS "${MY_C_FLAGS} -msse2")
+            add_compile_definitions(HAVE_SSE2)
+            add_compile_definitions(HAVE_SSE)
+            add_compile_definitions(HAVE_MMX)
+        endif()
+    endif()
+
+endif()
+
 
 # <INIT>
-# -fms-extensions -fms-compatibility x86_64-w64-mingw32uwp x86_64-w64-windows-gnu
-set(MY_C_FLAGS "-fvisibility=hidden -target x86_64-w64-windows-gnu")
-set(MY_CXX_FLAGS "-fvisibility=hidden -target x86_64-w64-windows-gnu")
-set(MY_LD_FLAGS "-fvisibility=hidden")
 
-# add_compile_options(-fvisibility=hidden)
-
-if (BENNI_USE_GPROF)
-    message("${BoldGreen}[Benni] Using GPROF performance analysis instrumentation!${ColourReset}")
-    # set(MY_C_FLAGS "${MY_C_FLAGS} -pg") #  -no-pie
-    # set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -pg") # -no-pie
-    # set(MY_LD_FLAGS "${MY_LD_FLAGS} -pg -lgmon") # -no-pie
-
-    set(MY_C_FLAGS "${MY_C_FLAGS} -g2 -gstabs+")
-    set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -g2 -gstabs+")
-    # add_compile_options(-pg)
-    # add_link_options(-pg)
-    # add_link_libraries(gmon gcrt2.o)
-
-    set(CMAKE_POSITION_INDEPENDENT_CODE OFF)
-else()
-    set(MY_LD_FLAGS "${MY_LD_FLAGS} -fuse-ld=lld")
-    set(CMAKE_POSITION_INDEPENDENT_CODE ON)
-endif()
-
-# Enable compiler messages about SIMD vectorizations and loop unrolling attempts (Misses + Hits).
-if (BENNI_USE_SIMD_DIAG)
-    message("${BoldGreen}[Benni] Use vectorization diagnostics:${ColourReset}")
-    if (MINGW)
-        message("[Benni] Using MinGW -fopt-info-vec")
-        set(MY_C_FLAGS "${MY_C_FLAGS} -fopt-info-vec")
-        set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -fopt-info-vec")
-    else()
-        message("[Benni] Using Clang -Rpass=loop-vectorize -Rpass-missed=loop-vectorize -Rpass-analysis=loop-vectorize")
-        set(MY_C_FLAGS "${MY_C_FLAGS} -Rpass=loop-vectorize -Rpass-missed=loop-vectorize -Rpass-analysis=loop-vectorize")
-        set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -Rpass=loop-vectorize -Rpass-missed=loop-vectorize -Rpass-analysis=loop-vectorize")
-    endif()
-endif()
-
-# My CPU Intel 165U only. Very sad now after i discovered i don't seem to have AVX512F.
-# clang -march=native -E - -o /dev/null -### < /dev/null 2>&1 | grep target-feature
-if (BENNI_USE_NATIVE) #  -march=native -mtune=native
-    message("[benni] HAVE_NATIVE_OPTIM -march=native -mtune=native")
-    set(MY_C_FLAGS "${MY_C_FLAGS} -march=native -mtune=native")
-    set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -march=native -mtune=native")
-
-    # message("[benni] HAVE_NATIVE_OPTIM -O3 -msse2 -msse3 -mssse3 -msse4.1 -msse4.2 -mavx -mavx2 -mfma -mf16c -mbmi -mbmi2 -mlzcnt -mpopcnt -maes -mvaes -mpclmul -mvpclmulqdq -msha -mrdrnd -mrdseed -madx -mgfni")
-    # set(MY_C_FLAGS "${MY_C_FLAGS} -O3 -msse2 -msse3 -mssse3 -msse4.1 -msse4.2 -mavx -mavx2 -mfma -mf16c -mbmi -mbmi2 -mlzcnt -mpopcnt -maes -mvaes -mpclmul -mvpclmulqdq -msha -mrdrnd -mrdseed -madx -mgfni")
-    # set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -O3 -msse2 -msse3 -mssse3 -msse4.1 -msse4.2 -mavx -mavx2 -mfma -mf16c -mbmi -mbmi2 -mlzcnt -mpopcnt -maes -mvaes -mpclmul -mvpclmulqdq -msha -mrdrnd -mrdseed -madx -mgfni")
-    # set(BENNI_USE_AVX2 1)
-    # add_compile_definitions(HAVE_FMA3)
-    # add_compile_definitions(HAVE_AVX2)
-    # add_compile_definitions(HAVE_AVX)
-    # add_compile_definitions(HAVE_SSE4_2)
-    # add_compile_definitions(HAVE_SSE4_1)
-    # add_compile_definitions(HAVE_SSSE3)
-    # add_compile_definitions(HAVE_SSE3)
-    # add_compile_definitions(HAVE_SSE2)
-    # add_compile_definitions(HAVE_SSE)
-    # add_compile_definitions(HAVE_MMX)
-else()
-    set(MY_C_FLAGS "${MY_C_FLAGS} -march=haswell")
-    set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -march=haswell")
-endif()
-
-if (BENNI_USE_LTO)
-    message("[benni] HAVE_LTO -flto -fuse-linker-plugin -Wl,-O1")
-    set(MY_LD_FLAGS "${MY_LD_FLAGS} -flto -fuse-linker-plugin -Wl,-O1")
-endif()
-
-if (BENNI_USE_OPENMP)
-    message("[benni] HAVE_OPENMP -fopenmp")
-    set(MY_C_FLAGS "${MY_C_FLAGS} -fopenmp")
-    set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -fopenmp")
-endif()
-
-if (BENNI_USE_UNSAFE)
-    message("[benni] HAVE_FASTMATH -fstrict-aliasing -ffast-math")
-    set(MY_C_FLAGS "${MY_C_FLAGS} -fstrict-aliasing -ffast-math")
-    set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -fstrict-aliasing -ffast-math")
-endif()
-
-if (BENNI_USE_SPEED)
-    message("[benni] HAVE_EXPENSIVE_OPTIM -ftree-vectorize -funroll-loops") #  -fexpensive-optimizations
-    set(MY_C_FLAGS "${MY_C_FLAGS} -ftree-vectorize -funroll-loops") #  -fexpensive-optimizations
-    set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -ftree-vectorize -funroll-loops") #  -fexpensive-optimizations
-endif()
-
-if (BENNI_USE_OMIT_FRAMEPOINTER)
-    message("[benni] HAVE_OMIT_FRAMEPOINTER -fomit-frame-pointer")
-    set(MY_C_FLAGS "${MY_C_FLAGS} -fomit-frame-pointer")
-    set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -fomit-frame-pointer")
-else()
-    message("[benni] HAVE_NO_OMIT_FRAMEPOINTER -fno-omit-frame-pointer")
-    set(MY_C_FLAGS "${MY_C_FLAGS} -fno-omit-frame-pointer")
-    set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -fno-omit-frame-pointer")
-endif()
-
-# <SIMD> Don't use add_compile_options(), it would pollute ASM commandLines.
-
-if (BENNI_USE_AVX512)
-    message("[benni] HAVE_AVX512 -mavx512f -mavx512dq -mavx512bw -mavx512vl")
-    message("[benni] HAVE_AVX512F -mavx512f")
-    message("[benni] HAVE_AVX512DQ -mavx512dq") # Doubleword and Quadword Instructions
-    message("[benni] HAVE_AVX512BW -mavx512bw")
-    message("[benni] HAVE_AVX512LV -mavx512vl")
-    set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -mavx512f -mavx512dq -mavx512bw -mavx512vl")
-    set(MY_C_FLAGS "${MY_C_FLAGS} -mavx512f -mavx512dq -mavx512bw -mavx512vl")
-    add_compile_definitions(HAVE_AVX512)
-    add_compile_definitions(HAVE_AVX512F)
-    set(BENNI_USE_FMA3 1)
-else()
-    add_compile_definitions(USE_AVX512=0)
-    add_compile_definitions(USE_VNNI=0)
-    add_compile_definitions(HAVE_AVX512=0)
-    add_compile_definitions(HAVE_AVX512F=0)
-    add_compile_definitions(HAVE_AVX512BW=0)
-    add_compile_definitions(HAVE_AVX512VL=0)
-    add_compile_definitions(HAVE_AVX512VNNI=0)
-    set(MY_C_FLAGS "${MY_C_FLAGS} -mno-avx512f -mno-avx512vl -mno-avx512bw -mno-avx512dq -mno-vpclmulqdq")
-    set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -mno-avx512f -mno-avx512vl -mno-avx512bw -mno-avx512dq -mno-vpclmulqdq")
-endif()
-
-if (BENNI_USE_FMA3)
-    message("[benni] HAVE_FMA3")
-    set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -mfma")
-    set(MY_C_FLAGS "${MY_C_FLAGS} -mfma")
-    add_compile_definitions(HAVE_FMA3)
-    set(BENNI_USE_AVX2 1)
-endif()
-
-if (BENNI_USE_AVX2)
-    message("[benni] HAVE_AVX2")
-    set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -mavx2")
-    set(MY_C_FLAGS "${MY_C_FLAGS} -mavx2")
-    add_compile_definitions(HAVE_AVX2)
-    set(BENNI_USE_AVX 1)
-endif()
-
-if (BENNI_USE_AVX)
-    message("[benni] HAVE_AVX")
-    set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -mavx")
-    set(MY_C_FLAGS "${MY_C_FLAGS} -mavx")
-    add_compile_definitions(HAVE_AVX)
-    set(BENNI_USE_SSE42 1)
-endif()
-
-if (BENNI_USE_SSE42)
-    message("[benni] HAVE_SSE42")
-    set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -msse4.2")
-    set(MY_C_FLAGS "${MY_C_FLAGS} -msse4.2")
-    add_compile_definitions(HAVE_SSE4_2)
-    set(BENNI_USE_SSE41 1)
-endif()
-
-if (BENNI_USE_SSE41)
-    message("[benni] HAVE_SSE41")
-    set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -msse4.1")
-    set(MY_C_FLAGS "${MY_C_FLAGS} -msse4.1")
-    add_compile_definitions(HAVE_SSE4_1)
-    set(BENNI_USE_SSSE3 1)
-endif()
-
-if (BENNI_USE_SSSE3)
-    message("[benni] HAVE_SSSE3")
-    set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -mssse3")
-    set(MY_C_FLAGS "${MY_C_FLAGS} -mssse3")
-    add_compile_definitions(HAVE_SSSE3)
-    set(BENNI_USE_SSE3 1)
-endif()
-
-if (BENNI_USE_SSE3)
-    message("[benni] HAVE_SSE3")
-    set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -msse3")
-    set(MY_C_FLAGS "${MY_C_FLAGS} -msse3")
-    add_compile_definitions(HAVE_SSE3)
-    set(BENNI_USE_SSE2 1)
-endif()
-
-if (BENNI_USE_SSE2)
-    message("[benni] HAVE_SSE2")
-    set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -msse2")
-    set(MY_C_FLAGS "${MY_C_FLAGS} -msse2")
-    add_compile_definitions(HAVE_SSE2)
-    add_compile_definitions(HAVE_SSE)
-    add_compile_definitions(HAVE_MMX)
-endif()
-
-
-project(DarkC++_Qt6_mingw64_1706_llvm)
+project(AbentonChain_Qt6_mingw64_1706_llvm)
 
 # set(CMAKE_ASM_NASM_COMPILER "C:/sdk/nasm/nasm.exe" CACHE FILEPATH "Path to NASM executable")
 # enable_language(ASM_NASM)
@@ -473,81 +570,6 @@ execute_process(COMMAND ${GIT_EXECUTABLE} rev-parse --short HEAD
 #     set (CMAKE_CXX_LINKER_FLAGS_DEBUG "${CMAKE_CXX_LINKER_FLAGS_DEBUG} -fno-omit-frame-pointer -fsanitize=address -lasan")
 # endif()
 
-# =============================================================
-# Detect debug type, e.g. build Release, Debug, MinSizeRel=default
-# =============================================================
-if(CMAKE_BUILD_TYPE STREQUAL "")
-   set(CMAKE_BUILD_TYPE "Release")
-endif()
-if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-   set(BUILD_DEBUG=1) # Used in applications to add "d" postfix to TARGET_NAME
-   add_compile_definitions(_DEBUG=1)
-   # add_compile_definitions(DEBUG=1)
-   add_compile_definitions(BUILD_DEBUG=1)
-endif()
-if(CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
-   # add_compile_definitions(NDEBUG=0)
-   add_compile_definitions(BUILD_RELEASE=1)
-endif()
-if(CMAKE_BUILD_TYPE STREQUAL "Release")
-   add_compile_definitions(NDEBUG=1)
-   add_compile_definitions(BUILD_RELEASE=1)
-endif()
-if(CMAKE_BUILD_TYPE STREQUAL "MinSizeRel")
-   add_compile_definitions(NDEBUG=1)
-   add_compile_definitions(BUILD_RELEASE=1)
-endif()
-message("[benni] CMAKE_BUILD_TYPE = ${CMAKE_BUILD_TYPE}")
-
-if(WIN32)
-   # set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -mwindows")
-endif()
-
-if (MSVC)
-else()
-    # set(MY_CXX_FLAGS "${MY_C_FLAGS} -Wall -Wfatal-errors -fext-numeric-literals") #  -Werror=no-return
-    # set(MY_C_FLAGS "-fpic")
-    # set(MY_C_FLAGS "${MY_C_FLAGS} -mtune=native")
-    # set(MY_C_FLAGS "${MY_C_FLAGS} -march=native")
-
-    if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-       # set(MY_C_FLAGS "${MY_C_FLAGS} -O0 -g2")
-       # set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -O0 -g2")
-       # set(MY_C_FLAGS "${MY_C_FLAGS} -Wl,--demangle")
-       # set(MY_LD_FLAGS "${MY_LD_FLAGS} -Wl,--demangle")
-       #set(MY_C_FLAGS "${MY_C_FLAGS} -fsanitize=address")
-       #set(MY_LD_FLAGS "${MY_LD_FLAGS} -lasan")
-    endif()
-    if(CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
-       # set(MY_C_FLAGS "${MY_C_FLAGS} -O2 -g2")
-       #set(MY_C_FLAGS "${MY_C_FLAGS} -fsanitize=address")
-       #set(MY_LD_FLAGS "${MY_LD_FLAGS} -lasan")
-    endif()
-
-    if(CMAKE_BUILD_TYPE STREQUAL "Release")
-       # set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -fexpensive-optimizations -ftree-vectorize")
-
-       #set(MY_C_FLAGS "${MY_C_FLAGS} -mfpmath=sse -msse3 -mmmx -O2")
-       #set(MY_C_FLAGS "${MY_C_FLAGS} -fno-asynchronous-unwind-tables")
-       # set(MY_C_FLAGS "${MY_C_FLAGS} -Wno-unused-but-set-variable")
-       # set(MY_C_FLAGS "${MY_C_FLAGS} -Wno-unknown-pragmas")
-       # set(MY_C_FLAGS "${MY_C_FLAGS} -Wno-sign-compare")
-       # set(MY_C_FLAGS "${MY_C_FLAGS} -Wno-unused-variable")
-       # set(MY_C_FLAGS "${MY_C_FLAGS} -Wno-unused-function")
-       # set(MY_C_FLAGS "${MY_C_FLAGS} -Wno-comment")
-       # set(MY_C_FLAGS "${MY_C_FLAGS} -Wno-strict-aliasing")
-       # set(MY_C_FLAGS "${MY_C_FLAGS} -Wno-maybe-uninitialized")
-
-       # set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -fno-rtti")
-       # set(MY_C_FLAGS "${MY_C_FLAGS} -fno-exceptions")
-       # set(MY_C_FLAGS "${MY_C_FLAGS} -fstrict-aliasing")
-       #set(MY_C_FLAGS "${MY_C_FLAGS} -ffast-math")
-       #set(MY_C_FLAGS "${MY_C_FLAGS} -fassociative-math")
-       #set(MY_C_FLAGS "${MY_C_FLAGS} -funsafe-math-optimizations")
-       #set(MY_C_FLAGS "${MY_C_FLAGS} -funroll-loops")
-    endif()
-
-endif()
 
 # set(CMAKE_LINKER_FLAGS "-pthread" CACHE STRING "Linker Flags" FORCE)
 # add_definitions(MY_CXX)

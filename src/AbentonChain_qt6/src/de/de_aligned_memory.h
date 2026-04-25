@@ -169,6 +169,8 @@ namespace de {
             }
         }
 
+        void setCallback_onFullVector( FN_onFullVector const & onFullVector ) { m_onFullVector = onFullVector; }
+
         BBox1f getMinMax() const { return computeMinMax(m_data); }
 
         void resize( size_t desired )
@@ -178,61 +180,38 @@ namespace de {
                 m_data.resize( desired );
                 m_used = 0;
                 m_free = m_data.size();
-
-                // DE_WARN("desired = ",m_data.size())
             }
         }
 
-        // push samples until vector full, emit signal to process old buffer, write to new buffer
-        void push(const std::string & caller, const Vector & v, bool debug = false )
-        {
-            push(caller, v.data(), v.size(), debug);
-        }
-
-        // push samples at back of vector, destroy n older elements by shifting
-
-        // TAlignedShiftVector<float>(8)
+        // ShiftVector<float>(8)
         // +-------+-------+-------+-------+-------+-------+-------+-------+
         // |   ?   |   ?   |   ?   |   ?   |   ?   |   ?   |   ?   |   ?   |
         // +-------+-------+-------+-------+-------+-------+-------+-------+
-        // TAlignedShiftVector<float>(8).push([0,1,2,3,4,5,6])
+        // ShiftVector<float>(8).push([0,1,2,3,4,5,6])
         // +-------+-------+-------+-------+-------+-------+-------+-------+
         // |   0   |   1   |   2   |   3   |   4   |   5   |   6   |   ?   |
         // +-------+-------+-------+-------+-------+-------+-------+-------+
-        // TAlignedShiftVector<float>(8).push([7,8])
+        // ShiftVector<float>(8).push([7,8])
         // +-------+-------+-------+-------+-------+-------+-------+-------+
         // |   1   |   2   |   3   |   4   |   5   |   6   |   7   |   8   |
         // +-------+-------+-------+-------+-------+-------+-------+-------+
-        // TAlignedShiftVector<float>(8).push([A,B,C,D])
+        // ShiftVector<float>(8).push([A,B,C,D])
         // +-------+-------+-------+-------+-------+-------+-------+-------+
         // |   5   |   6   |   7   |   8   |   A   |   B   |   C   |   D   |
         // +-------+-------+-------+-------+-------+-------+-------+-------+;
-        // TAlignedShiftVector<float>(8).push([E,F,B])
+        // ShiftVector<float>(8).push([E,F,B])
         // +-------+-------+-------+-------+-------+-------+-------+-------+
         // |   8   |   A   |   B   |   C   |   D   |   E   |   F   |   B   |
         // +-------+-------+-------+-------+-------+-------+-------+-------+;
 
-        void push(const std::string & caller,
-                  const T* __restrict__ pSamples,
-                  size_t nSamples,
-                  bool debug = false )
+        void push(const T* __restrict__ pSamples, u32 nSamples)
         {
-            //DE_OK("[",caller,"] size(", m_collect.size(),"), m_used(",m_used,")"
-            //       " :: push(",nSamples,")")
-
             if (nSamples > size())
             {
-                resize(nSamples);
+                // resize(nSamples);
+                DE_ERROR("Split logic is not recursive. nSamples too large for single iteration.")
+                nSamples = size();
             }
-
-            // if ( nSamples > m_collect.size() )
-            // {
-            //     DE_ERROR("caller(",caller,") -> ShiftBuffer too small "
-            //                                 "m_data(", m_collect.size(),") < "
-            //              "nSamples(",nSamples,"), "
-            //              "used(",m_used,")")
-            //     return;
-            // }
 
             if (size() == nSamples)
             {
@@ -245,40 +224,42 @@ namespace de {
                 return;
             }
 
-            // TAlignedShiftVector<float>(8) v8: m_used = 0;
+            // TAlignedShiftVector<float>(8) v8: nAvail=8
             // ++---+---+---+---++---+---+---+---++
             // ||   |   |   |   ||   |   |   |   ||
             // ++---+---+---+---++---+---+---+---++
 
-            // v8.push([0,1,2,3,4]) :: nSamples = 5, m_used = 5;
+            // 0.) push([0,1,2,3,4])
+            // - Before: nAvail=8, nSamples=5       (nAvail >= nSamples)
+            // - After:  nAvail=3
             // ++---+---+---+---++---+---+---+---++
             // || 0 | 1 | 2 | 3 || 4 | ? | ? | ? ||
             // ++---+---+---+---++---+---+---+---++
 
-            // v8.push([5,6,7,8,9]) :: nSamples = 5, m_used = 8;
+            // 1.) push([5,6,7,8,9])                (nAvail >= nSamples)
+            // - Before: nAvail=3, nSamples=5
 
-            // = v8.push([5,6,7]) :: nLeft = 3 = nSamples - (m_size - m_used);
+            // 2.) push([5,6,7])
+            // - After:  nAvail=0, nSamples=2         ---> Notify onFullRow()
+            // - After:  nAvail=8, nSamples=2       (nAvail > nSamples)
             // ++---+---+---+---++---+---+---+---++
-            // || 0 | 1 | 2 | 3 || 4 | 5 | 6 | 7 ||  ---> Notify onFullRow()
+            // || 0 | 1 | 2 | 3 || 4 | 5 | 6 | 7 ||
             // ++---+---+---+---++---+---+---+---++
 
-            // + v8.push([8,9]) :: nRight = 2 = nSamples - Left, m_used = 2;
+            // 3.) push([8,9])
+            // - After:  nAvail=6, nSamples=0
             // ++---+---+---+---++---+---+---+---++
             // || 8 | 9 |   |   ||   |   |   |   ||
             // ++---+---+---+---++---+---+---+---++
 
-            // push([5,6,7]) :: n1 = 3 = nSamples - (m_size - m_used);
-            // push([8,9]) :: n2 = 2 = nSamples - n1;
-
             if (nSamples + used() > size())
             {
-                // DE_OK("END")
                 // push([5,6,7,8,9]) :: nSamples = 5, nAvail = size(8)-used(5);
-                int64_t nAvail = avail();
-                // I. push([5,6,7]) :: nLeft = n - nAvail = 3;
-                int64_t n1 = int64_t(nSamples) - nAvail;
-                // II. push([8,9]) :: nRight = n - nLeft = 2;
-                int64_t n2 = int64_t(nSamples) - n1;
+                u64 nAvail = avail();
+                // I. push([5,6,7]) :: nLeft = min(nSamples,nAvail) = min(nSamples,3) = 3;
+                u64 n1 = std::min<u64>(nSamples, nAvail);
+                // II. push([8,9]) :: nRight = nSamples - nLeft = 2;
+                u64 n2 = nSamples - n1;
 
                 // I. Copy until end of row ... ( push([5,6,7]) )
                 // ++---+---+---+---++---+---+---+---++
@@ -286,8 +267,8 @@ namespace de {
                 // ++---+---+---+---++---+---+---+---++
                 if (n1 > 0)
                 {
-                    const T* src = pSamples;  // src=[5,6,7|8,9]
-                    T* dst = data() + used(); // dst=[0,1,2,3,4|?,?,?]
+                    const T* __restrict__ src = pSamples;  // src=[5,6,7|8,9]
+                    T* __restrict__ dst = data() + used(); // dst=[0,1,2,3,4|?,?,?]
                     std::memcpy(dst, src, n1 * sizeof(T));
                 }
 
@@ -314,8 +295,8 @@ namespace de {
                 // m_used = 2;
                 if (n2 > 0)
                 {
-                    const T* src = pSamples + n1; // Read remain input token.
-                    T* dst = data(); // Write to begin() of shiftbuffer.
+                    const T* __restrict__ src = pSamples + n1; // Read remain input token.
+                    T* __restrict__ dst = data(); // Write to begin() of shiftbuffer.
                     std::memcpy( dst, src, n2 * sizeof(T) );
                     m_used = n2;
                 }
@@ -323,8 +304,8 @@ namespace de {
             else
             {
                 // DE_OK("MID")
-                const T* src = pSamples;
-                T* dst = data() + used();
+                const T* __restrict__ src = pSamples;
+                T* __restrict__ dst = data() + used();
                 std::memcpy( dst, src, nSamples * sizeof(T));
                 m_used += nSamples;
             }
@@ -352,63 +333,8 @@ namespace de {
         u64 size() const { return m_data.size(); }
         u64 capacity() const { return m_data.capacity(); }
         void clear() { m_used = 0; m_free = m_data.size(); }
-
         void fill( T const & value ) { for ( T & f : m_data) f = value; }
-
         void fillZero() { for ( auto & f : m_data) f = 0.0f; }
-
-        /*
-        void shiftLeft( u64 shifts, bool debug = false )
-        {
-            if ( shifts >= m_write->size() )
-            {
-                if ( debug )
-                {
-                    DE_ERROR("Nothing to shift(",shifts,"), m_write(",m_write->size(),")")
-                }
-                return; // Nothing todo, we can only overwrite entirely
-            }
-
-            if ( debug )
-            {
-                DE_DEBUG("Shift(",shifts,"), m_write(",m_write->size(),")")
-            }
-
-            for ( u64 i = shifts; i < m_write->size(); ++i )
-            {
-                m_collect[ i - shifts ] = m_write->m_data[ i ];
-            }
-        }
-
-        void pushZero( size_t srcCount )
-        {
-            if ( m_index > m_data.size() )
-            {
-                DE_ERROR("m_fillCounter > m_dat.size()")
-                return;
-            }
-
-            if ( srcCount + m_index >= m_data.size() )
-            {
-                srcCount = m_data.size() - m_index;
-            }
-
-            for ( u64 i = 0; i < srcCount; ++i )
-            {
-                m_data[ i + m_index ] = 0.0f;
-            }
-
-            m_index += srcCount;
-
-            DE_ERROR("srcCount(",srcCount,"), m_index(",m_index,")")
-        }
-        */
-
-        // push samples at back of vector, destroy n older elements by shifting
-        void setCallback_onFullVector( FN_onFullVector const & onFullVector )
-        {
-            m_onFullVector = onFullVector;
-        }
 
         static bool compare( TAlignedVector<T> const & a, TAlignedVector<T> const & b )
         {
@@ -479,8 +405,10 @@ namespace de {
             // ++---+---+---+---++---+---+---+---++
             // || 0 | 1 | 2 | 3 || 4 | ? | ? | ? ||
             // ++---+---+---+---++---+---+---+---++
-            testObj.push("Test(1)", TAlignedVector<T>{0,1,2,3,4});
-            if (testObj.m_data != TAlignedVector<T>{0,1,2,3,4,0,0,0})
+            TAlignedVector<T> a{0,1,2,3,4};
+            testObj.push(a.data(),a.size());
+            TAlignedVector<T> b{0,1,2,3,4,0,0,0};
+            if (testObj.m_data != b)
             {
                 DE_ERROR("Test(1)[n=8] != {0,1,2,3,4,5,6}")
                 return;
@@ -520,7 +448,8 @@ namespace de {
             bool bTestFull1 = false;
             testObj.setCallback_onFullVector([&](TAlignedVector<T> const &v)
                                 { bTestFull1 = true; });
-            testObj.push("Test(2)[n=8]_7_8",TAlignedVector<T>{7,8});
+            TAlignedVector<T> c{7,8};
+            testObj.push(c.data(),c.size());
             if (!bTestFull1)
             {
                 DE_ERROR("!bTestFull1")
@@ -540,7 +469,8 @@ namespace de {
             // +-------+-------+-------+-------+-------+-------+-------+-------+;
             bool bTestFull2 = false;
             testObj.setCallback_onFullVector([&](TAlignedVector<T> const &v){ bTestFull2 = true; });
-            testObj.push("Test(3)[n=8]_4_4_6_0",TAlignedVector<T>{4,4,6,0});
+            TAlignedVector<T> d{4,4,6,0};
+            testObj.push(d.data(),d.size());
 
             if (!bTestFull2)
             {
@@ -559,7 +489,8 @@ namespace de {
             // |   8   |   4   |   4   |   6   |   0   |   1   |   1   |   2   |
             // |       |       |       |       |       |       |       |       |
             // +-------+-------+-------+-------+-------+-------+-------+-------+;
-            testObj.push("Test(4)[n=8]_1_1_2",TAlignedVector<T>{1,1,2});
+            TAlignedVector<T> e{1,1,2};
+            testObj.push(e.data(),e.size());
             if (testObj.m_data != TAlignedVector<T>{8,4,4,6,0,1,1,2})
             {
                 DE_ERROR("Test(4)[n=8]  != {8,4,4,6,0,1,1,2}")
@@ -628,6 +559,7 @@ namespace de {
 
         AlignedFloatShiftMatrix();
         ~AlignedFloatShiftMatrix();
+
         void resize( u32 colCount, u32 rowCount );
         void push( T const* __restrict__ src, u32 srcFrames );
         u32 rowCount() const;
@@ -653,3 +585,13 @@ namespace de {
 typedef de::AlignedFloatVector      DE_AlignedFloatVector;
 typedef de::AlignedFloatShiftVector DE_AlignedFloatShiftVector;
 typedef de::AlignedFloatShiftMatrix DE_AlignedFloatShiftMatrix;
+
+struct DE_GuardedBuffer
+{
+    uint32_t pre = 0xDEADBEEF;
+    DE_AlignedFloatVector data;
+    uint32_t post = 0xCAFEBABE;
+    char m_name[64];
+    DE_GuardedBuffer(const char* name);
+    ~DE_GuardedBuffer();
+};

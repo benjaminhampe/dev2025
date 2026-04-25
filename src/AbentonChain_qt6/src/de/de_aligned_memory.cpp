@@ -1,6 +1,19 @@
 #include <de/de_aligned_memory.h>
 #include <de/Core.h>
 
+DE_GuardedBuffer::DE_GuardedBuffer(const char* name)
+    : m_name{0}
+{
+    size_t n = strlen(name);
+    memcpy(m_name, name, std::min(63ull,n));
+}
+DE_GuardedBuffer::~DE_GuardedBuffer()
+{
+    DE_TRACE(m_name)
+    assert( pre == 0xDEADBEEF && m_name );
+    assert( post == 0xCAFEBABE && m_name );
+}
+
 namespace de {
 
 // static
@@ -186,7 +199,7 @@ void AlignedFloatShiftMatrix::resize( u32 colCount, u32 rowCount )
         m_data.resize( rowCount * colCount );
         m_rows.resize( rowCount );
         m_temp.resize( rowCount );
-        for ( size_t i = 0; i < rowCount; i++ )
+        for ( size_t i = 0; i < rowCount; ++i )
         {
             auto rowPtr = &m_data[colCount*i];
             m_rows[ i ] = rowPtr;
@@ -202,16 +215,18 @@ void AlignedFloatShiftMatrix::resize( u32 colCount, u32 rowCount )
 void AlignedFloatShiftMatrix::push( T const* __restrict__ src, u32 srcFrames )
 {
     if (srcFrames < 1) { DE_WARN("srcFrames < 1") return; }
-    resize( srcFrames, m_rowCount );
+    if (srcFrames != m_colCount) { DE_WARN("srcFrames(",srcFrames,") != colCount(",m_colCount,")") return; }
+
+    //resize( srcFrames, m_rowCount );
 
     // Shift 'orig' and store in 'view'...
     shiftVectorRight(m_rows,m_temp);
 
     // New front: fill data from push()
-    f32* dst = m_rows.front();
+    T* __restrict__ dst = m_rows.front();
     if (dst)
     {
-        memcpy( dst, src, srcFrames * sizeof( f32 ));
+        memcpy( dst, src, srcFrames * sizeof( T ));
     }
     else
     {

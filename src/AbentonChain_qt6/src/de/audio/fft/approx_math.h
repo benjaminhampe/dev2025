@@ -9,6 +9,41 @@ namespace de {
 namespace audio {
 namespace math {
 
+    // π
+    constexpr float TWO_PI = float( 2.0 * M_PI );
+    constexpr double TWO_PI64 = 2.0 * M_PI;
+
+    inline bool isPowerOfTwo(uint32_t x)
+    {
+        return x && !(x & (x - 1));
+    }
+
+    inline uint32_t nextPowerOf2(uint32_t v)
+    {
+        if (v == 0) return 1;   // handle edge case
+
+        v--;
+        v |= v >> 1;
+        v |= v >> 2;
+        v |= v >> 4;
+        v |= v >> 8;
+        v |= v >> 16;
+        v++;
+        return v;
+    }
+
+    template <typename T>
+    bool isPositiveInfinity(const T t)
+    {
+        return std::isinf(t) && !std::signbit(t);
+    }
+
+    template <typename T>
+    bool isNegativeInfinity(const T t)
+    {
+        return std::isinf(t) && std::signbit(t);
+    }
+
     // Simple window functions:
     // TODO: Replace with stateful classes that contain precomputed lookup tables.
 
@@ -57,30 +92,6 @@ namespace math {
                       + 0.08f *cosf(4.0f * M_PI * n / (N - 1));
             dst[n] = src[n] * std::clamp(w, 0.0f, 1.0f);
         }
-    }
-    // π
-    constexpr float TWO_PI = float( 2.0 * M_PI );
-
-    constexpr double TWO_PI64 = 2.0 * M_PI;
-
-    inline bool
-    isPowerOf2(uint32_t x)
-    {
-        return x != 0 && (x & (x - 1)) == 0;
-    }
-
-    template <typename T>
-    bool
-    isPositiveInfinity(const T t)
-    {
-        return std::isinf(t) && !std::signbit(t);
-    }
-
-    template <typename T>
-    bool
-    isNegativeInfinity(const T t)
-    {
-        return std::isinf(t) && std::signbit(t);
     }
 
     // Converts amplitude to decibels (dB)

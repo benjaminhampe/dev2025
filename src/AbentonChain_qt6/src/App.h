@@ -29,7 +29,7 @@ public:
     de::audio::PluginFactory m_pluginFactory;
     de::midi::MidiCentral m_midiCentral;
     de::audio::Track m_track0;
-    de::audio::DspSampleCollector m_dspSampleCollector;
+    de::audio::DspSampleCollector m_sampleCollector;
     de::audio::EndPoint_Wasapi m_endPoint;
     //de::audio::EndPoint_RtAudio m_endPoint;
     de::audio::Track* m_track;
@@ -41,7 +41,7 @@ public:
     //=========================
     // SkinApi
     //=========================
-    static App* instance();
+    static std::shared_ptr<App> instance();
     const Skin& currentSkin() const;
     Skin& currentSkin();
     int getZoom() const;
@@ -75,8 +75,8 @@ public:
     //=========================
     // SampleCollector
     //=========================
-    de::audio::DspSampleCollector& getDspSampleCollector();
-    const de::audio::DspSampleCollector& getDspSampleCollector() const;
+    de::audio::DspSampleCollector* getSampleCollector();
+    const de::audio::DspSampleCollector* getSampleCollector() const;
 
     //=========================
     // PluginApi
@@ -100,7 +100,7 @@ signals:
     void skinChanged();
 
 private:
-    static App* m_pInstance;
+    static std::shared_ptr<App> m_pInstance;
 
 
 };

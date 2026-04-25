@@ -10,19 +10,19 @@ class DspSampleCollector : public IDspChainElement
 // ===================================================================
 {
     IDspChainElement* m_inputSignal;
+    u32 m_fftSize;
     u32 m_cols;
     u32 m_rows;
     int m_windowFunc;
     bool m_bStopped;
     bool m_bBypassed;
     bool m_bCollectAccumMatrix;
-    DE_FFT_pffft m_accum_fft;
 
-    AlignedFloatVector m_L;
-    AlignedFloatVector m_R;
+    DE_GuardedBuffer m_L;
+    DE_GuardedBuffer m_R;
 
     // L+R are summed up for FFT
-    AlignedFloatVector m_sum;
+    DE_GuardedBuffer m_sum;
 
     // blockSize FFT (potentially not a power of 2)
     // AlignedFloatShiftVector m_raw;
@@ -32,16 +32,35 @@ class DspSampleCollector : public IDspChainElement
 
     // shiftVector FFT
     AlignedFloatShiftVector m_accum;
-    AlignedFloatVector m_accum_vec_in;
-    AlignedFloatVector m_accum_vec_out;
+    DE_GuardedBuffer m_accum_vec_in;
+    DE_GuardedBuffer m_accum_vec_out;
     AlignedFloatShiftMatrix m_accum_mat;
 
-public:
-    const AlignedFloatVector& getL() const { return m_L; }
-    const AlignedFloatVector& getR() const { return m_R; }
+    // float a1[8] { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f };
+    // float a2[8] { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f };
+    // float a3[8] { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f };
+    // float a4[8] { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f };
+    // float a5[8] { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f };
+    // float a6[8] { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f };
+    // float a7[8] { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f };
+    // float a8[8] { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f };
 
-    const AlignedFloatVector& getAccumVecIn() const { return m_accum_vec_in; }
-    const AlignedFloatVector& getAccumVecOut() const { return m_accum_vec_out; }
+    // float b1[8] { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f };
+    // float b2[8] { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f };
+    // float b3[8] { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f };
+    // float b4[8] { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f };
+    // float b5[8] { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f };
+    // float b6[8] { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f };
+    // float b7[8] { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f };
+    // float b8[8] { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f };
+
+    std::shared_ptr<DE_FFT_pffft> m_accum_fft;
+public:
+    const AlignedFloatVector& getL() const { return m_L.data; }
+    const AlignedFloatVector& getR() const { return m_R.data; }
+
+    const AlignedFloatVector& getAccumVecIn() const { return m_accum_vec_in.data; }
+    const AlignedFloatVector& getAccumVecOut() const { return m_accum_vec_out.data; }
     const AlignedFloatShiftMatrix& getAccumMat() const { return m_accum_mat; }
 
     DspSampleCollector();

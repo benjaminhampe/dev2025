@@ -37,13 +37,14 @@ GL_Canvas::GL_Canvas(QOpenGLContext *sharedContext, QWidget *parent)
 
 GL_Canvas::~GL_Canvas()
 {
-    DE_TRACE("Begin")
+    //DE_TRACE("Begin")
     //stopFpsTimer();
     if (m_driver)
     {
         delete m_driver;
+        m_driver = nullptr;
     }
-    DE_TRACE("End")
+    //DE_TRACE("End")
 }
 
 void GL_Canvas::startFpsTimer()

@@ -123,7 +123,7 @@ MainWindow::MainWindow(QWidget *parent)
 
 MainWindow::~MainWindow()
 {
-    DE_TRACE("")
+    //DE_TRACE("")
 }
 
 void MainWindow::on_exitProgram()
@@ -149,12 +149,14 @@ void MainWindow::on_vizualizeEnabled( bool bChecked )
     {
         m_canvas->setVisible(bChecked);
         m_canvas->setRenderingEnabled(bChecked);
-        App::instance()->getDspSampleCollector().setBypassed(false);
+        App::instance()
+            ->getSampleCollector()->setBypassed(false);
     }
     else
     {
         // Save some collecting CPU cycles when drawing is disabled
-        App::instance()->getDspSampleCollector().setBypassed(true);
+        App::instance()
+            ->getSampleCollector()->setBypassed(true);
         m_canvas->setRenderingEnabled(bChecked);
         m_canvas->setVisible(bChecked);
     }
@@ -168,8 +170,9 @@ void MainWindow::on_vizualizePerfOverlay( bool bChecked )
 
 void MainWindow::on_vizualizeFftMatrix( bool bChecked )
 {
-    App::instance()->getDspSampleCollector()
-        .setCollectAccumMatrix(bChecked);
+    App::instance()
+        ->getSampleCollector()
+        ->setCollectAccumMatrix(bChecked);
     m_canvas->setVisibleFftMatrix(bChecked);
 }
 
@@ -243,7 +246,7 @@ void MainWindow::keyPressEvent( QKeyEvent* event )
         if (midiNote > -1)
         {
             int velocity = 90;
-            App::instance()->getMidiCentral().sendNoteOn( 0, midiNote, velocity );
+            App::instance()->m_midiCentral.sendNoteOn( 0, midiNote, velocity );
         }
     }
     event->accept();
@@ -259,7 +262,7 @@ void MainWindow::keyReleaseEvent( QKeyEvent* event )
         if (midiNote > -1)
         {
             int velocity = 90;
-            App::instance()->getMidiCentral().sendNoteOff( 0, midiNote, velocity );
+            App::instance()->m_midiCentral.sendNoteOff( 0, midiNote, velocity );
         }
 
     }

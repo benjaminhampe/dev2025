@@ -37,16 +37,12 @@ Track::Track()
 
 Track::~Track()
 {
-	DE_TRACE("")
-	if (!m_plugins.empty())
-	{
-		cleanupAll();
-	}
+    assert(m_plugins.empty() == true && "cleanupAll() was not called");
 }
 
 void Track::cleanupAll()
 {
-	DE_DEBUG("Delete (",m_plugins.size(),") Plugins...")
+    DE_DEBUG("Delete (",m_plugins.size(),") Plugins...")
 	for (size_t i = 0; i < m_plugins.size(); ++i)
 	{
 		auto p = m_plugins[i];

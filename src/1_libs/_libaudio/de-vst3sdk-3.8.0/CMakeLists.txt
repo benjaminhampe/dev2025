@@ -235,6 +235,12 @@ else()
         ${LIB_SOURCE_DIR}/public.sdk/source/vst/vstsinglecomponenteffect.cpp
     )
 	
+    set_source_files_properties(
+        ${LIB_SOURCES}
+        PROPERTIES
+        COMPILE_FLAGS "-fno-sanitize=address,undefined"
+    )
+
 	# if(WIN32)
         # enable_language(RC)
         # list(APPEND LIB_SOURCES ${CMAKE_CURRENT_LIST_DIR}/res/resource.h)

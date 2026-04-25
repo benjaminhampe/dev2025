@@ -55,6 +55,9 @@ inline void dbLoadFont(QString uri)
 // ------------------------------------------------------------
 int main(int argc, char **argv)
 {
+    bool bTest = true;
+    assert(bTest);
+
 // Fixes OpenGL issues with Qt6:
 // OpenGLWidget returns fully broken widget size with Qt's dpi scaling
 // Has (1/x) error or so. Bad math.
@@ -102,7 +105,7 @@ int main(int argc, char **argv)
 
     int retVal = app.exec();
 
-    delete App::instance();
+    // delete App::instance();
 
     return retVal;
 }

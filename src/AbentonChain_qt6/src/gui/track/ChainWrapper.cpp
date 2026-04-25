@@ -60,7 +60,7 @@ ChainWrapper::ChainWrapper(QWidget* parent)
     h -> addWidget(m_scrollArea,1);
     setLayout(h);
 
-    connect(App::instance(), &App::skinChanged,
+    connect(App::instance().get(), &App::skinChanged,
             this, &ChainWrapper::applySkin);
 
     setAudioOnly(false);

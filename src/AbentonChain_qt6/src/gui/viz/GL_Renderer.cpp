@@ -103,18 +103,21 @@ void GL_Renderer::draw3DAccumFftMatrix()
 {
     if (m_showFftMatrix3D)
     {
-        const auto& m = App::instance()->getDspSampleCollector()
-            .getAccumMat();
-        m_matrix_fft.draw(m_mesh16Shader3D, m_mesh16Material, m);
+        auto s = App::instance()->getSampleCollector();
+
+        m_matrix_fft.draw(
+            m_mesh16Shader3D,
+            m_mesh16Material,
+            s->getAccumMat());
     }
 }
 
 void GL_Renderer::draw3DLineStripL()
 {
     // auto d = glm::vec3(4000,250,2000);
+    auto s = App::instance()->getSampleCollector();
 
-    const auto& vL = App::instance()->getDspSampleCollector()
-        .getL();
+    const auto& vL = s->getL();
 
     auto siz = glm::vec2{2000,500};
     auto pos = glm::vec3{-2000.f,0,1000.0f};
@@ -134,9 +137,9 @@ void GL_Renderer::draw3DLineStripL()
 void GL_Renderer::draw3DLineStripR()
 {
     // auto d = glm::vec3(4000,250,2000);
+    auto s = App::instance()->getSampleCollector();
 
-    const auto& vR = App::instance()->getDspSampleCollector()
-        .getR();
+    const auto& vR = s->getR();
 
     create2DWav_LineStrip(
         m_lineStripR,
@@ -160,8 +163,9 @@ void GL_Renderer::draw2DLineStripL()
     m_driver->getScreenRenderer()->draw2DLine(0,y1,w,y1,
         0xFFFFFFFF, 0xFFFFFFFF);
 
-    const auto& vL = App::instance()->getDspSampleCollector()
-        .getL();
+    auto s = App::instance()->getSampleCollector();
+
+    const auto& vL = s->getL();
 
     auto n = vL.size();
     auto & m = m_lineStripL;
@@ -199,8 +203,9 @@ void GL_Renderer::draw2DLineStripR()
     m_driver->getScreenRenderer()->draw2DLine(0,y1,w,y1,
         0xFFFFFFFF, 0xFFFFFFFF);
 
-    const auto& vR = App::instance()->getDspSampleCollector()
-        .getR();
+    auto s = App::instance()->getSampleCollector();
+
+    const auto& vR = s->getR();
 
     auto n = vR.size();
     auto & m = m_lineStripR;
@@ -237,8 +242,8 @@ void GL_Renderer::draw2DLineStripFft()
     int w = m_driver->getScreenWidth();
     int h = m_driver->getScreenHeight();
 
-    const auto& v = App::instance()->getDspSampleCollector()
-        .getAccumVecOut(); // fftOut
+    auto s = App::instance()->getSampleCollector();
+    const auto& v = s->getAccumVecOut(); // fftOut
 
     auto n = v.size();
     if ( n < 2 ) { DE_ERROR("No n") return; }

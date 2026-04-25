@@ -22,11 +22,20 @@ struct DE_FFT_pffft_Private;
 struct DE_FFT_pffft
 {
     DE_FFT_pffft();
+    //{}
     ~DE_FFT_pffft();
+    //{}
+    void resize(uint32_t fftSize);
+    //{}
+    uint32_t fftSize() const;
+    //{ return 512; }
 
-    void fft(const float* __restrict__ src,
-             float* __restrict__ dst,
-             size_t n);
+    // nSrc should be smaller or maximal size m_fftSize
+    // nDst should be smaller or maximal size m_fftSize
+    void fft(const float* __restrict__ src, uint32_t nSrc,
+                   float* __restrict__ dst, uint32_t nDst);
+    //{}
 
+private:
     DE_FFT_pffft_Private* _d;
 };

@@ -2,7 +2,7 @@
 #include <gui/viz/GL_Canvas.h>
 
 // Singleton instance pointer.
-App* App::m_pInstance = nullptr;
+std::shared_ptr<App> App::m_pInstance = nullptr;
 
 App::App(QObject* parent)
     : QObject(parent)
@@ -16,21 +16,18 @@ App::App(QObject* parent)
 {
     DE_TRACE("")
     m_track = &m_track0;
+    //m_sampleCollector = std::make_shared<de::audio::DspSampleCollector>();
 }
 
 App::~App()
 {
-    DE_TRACE("")
-    if (m_canvas)
-    {
-        DE_ERROR("Canvas still active")
-    }
+    assert(m_canvas == nullptr && "cleanupAll() was not called");
 }
 
-App* App::instance()
+std::shared_ptr<App> App::instance()
 {
     if (!m_pInstance)   // Only allow one instance of class to be generated.
-        m_pInstance = new App;
+        m_pInstance = std::make_shared<App>();
 
     return m_pInstance;
 }
@@ -48,24 +45,24 @@ void App::cleanupAll()
 
     stopAudio();
 
+    getSampleCollector()->stop();
+
     if (!m_canvas)
     {
-        DE_ERROR("No canvas")
+    //     DE_ERROR("No canvas")
     }
     else
     {
-        // The renderer accesses DSP data. We need to stop that
-        // before the DspChain gets deleted while the renderer
-        // is still running!
-        m_canvas->cleanupAll();
-        DE_OK("Stop canvas rendering audio data")
-        m_canvas = nullptr;
+    //     // The renderer accesses DSP data. We need to stop that
+    //     // before the DspChain gets deleted while the renderer
+    //     // is still running!
+    //     m_canvas->cleanupAll();
+    //     DE_OK("Stop canvas rendering audio data")
+         m_canvas = nullptr;
     }
 
     std::this_thread::sleep_for(
         std::chrono::nanoseconds(100000));
-
-    m_dspSampleCollector.stop();
 
     m_track0.cleanupAll();
 }
@@ -113,8 +110,8 @@ void App::confAudio(int outputDevice, // = -1,
 
 void App::playAudio()
 {
-    m_dspSampleCollector.dsp_setInputSignal(m_track);
-    m_endPoint.setInputSignal(&m_dspSampleCollector);
+    getSampleCollector()->dsp_setInputSignal(m_track);
+    m_endPoint.setInputSignal(getSampleCollector());
     m_endPoint.play();
 }
 
@@ -161,7 +158,7 @@ App::getMidiCentral() const { return m_midiCentral; }
 //=========================
 // SampleCollector
 //=========================
-de::audio::DspSampleCollector&
-App::getDspSampleCollector() { return m_dspSampleCollector; }
-const de::audio::DspSampleCollector&
-App::getDspSampleCollector() const { return m_dspSampleCollector; }
+de::audio::DspSampleCollector*
+App::getSampleCollector() { return &m_sampleCollector; }
+const de::audio::DspSampleCollector*
+App::getSampleCollector() const { return &m_sampleCollector; }
