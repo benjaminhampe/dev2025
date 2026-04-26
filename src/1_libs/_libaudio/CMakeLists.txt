@@ -44,7 +44,7 @@ add_subdirectory(de-vst3sdk-3.8.0)
 add_subdirectory(de-tuning-library)
 add_subdirectory(de-oddsound-mts-esp)
 
-# add_subdirectory(de-ffmpeg-4.3.2-win64-gcc-shared) # Import/Export MP4, AVI, MKV, etc...
+add_subdirectory(de-ffmpeg-4.3.2-win64-gcc-shared) # Import/Export MP4, AVI, MKV, etc...
 
 add_subdirectory(de-taglib-1.11.1)  # MP3 id3 metadata, extract CoverArt.
 

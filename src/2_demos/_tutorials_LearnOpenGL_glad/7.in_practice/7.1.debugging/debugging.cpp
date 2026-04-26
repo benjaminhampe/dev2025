@@ -144,13 +144,13 @@ int main()
  
    // directories
    // -------------------------
-   std::string shaderDir = "../../src/7.in_practice/7.1.debugging/";
-   std::string mediaDir = "../../media/textures/";
+   std::string shaderDir = "media/LearnOpenGL/";
+   std::string mediaDir = "media/LearnOpenGL/textures/";
 
     // OpenGL initial state
     Shader shader("shader",
-      loadString( shaderDir + "debugging.vs"), 
-      loadString( shaderDir + "debugging.fs") );
+      loadString( shaderDir + "7.1.debugging.vs"),
+      loadString( shaderDir + "7.1.debugging.fs") );
 
     // configure 3D cube
     GLuint cubeVAO, cubeVBO;

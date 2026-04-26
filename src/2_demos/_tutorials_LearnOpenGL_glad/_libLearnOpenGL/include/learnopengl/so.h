@@ -8,6 +8,10 @@
 #include <iostream>
 #include <vector>
 
+// OpenGL headers
+#include <glad/glad.h>   // my DesktopOpenGL version supports up to 4.2, d.k. if enough for compute shader.
+#include <GLFW/glfw3.h>  // uses DesktopOpenGL glad itself
+
 // GLM headers
 #ifndef GLM_ENABLE_EXPERIMENTAL
 #define GLM_ENABLE_EXPERIMENTAL
@@ -30,10 +34,6 @@
 #include <glm/gtc/matrix_transform.hpp> // ortho, lookAt
 #include <glm/gtc/quaternion.hpp>
 #include <glm/gtx/euler_angles.hpp>
-
-// OpenGL headers
-#include <glad/glad.h>   // my DesktopOpenGL version supports up to 4.2, d.k. if enough for compute shader.
-#include <GLFW/glfw3.h>  // uses DesktopOpenGL glad itself
 
 // QuickDev headers
 #include <learnopengl/irrstyle_types.h>

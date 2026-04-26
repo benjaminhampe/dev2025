@@ -27,14 +27,15 @@ else()
 	
     include(${CMAKE_SOURCE_DIR}/src/embed_static_runtime.cmake)
     target_link_libraries(${APP_NAME} PRIVATE de_glm)
-    target_link_libraries(${APP_NAME} PRIVATE de_glfw_glew)
+	target_link_libraries(${APP_NAME} PRIVATE de_glew)
+    target_link_libraries(${APP_NAME} PRIVATE de_glfw)
     target_link_libraries(${APP_NAME} PRIVATE de_assimp)
 
    # target_link_libraries(${APP_NAME} PRIVATE de_stb_image)
 
     # Copy media:
-    set(SRC_DIR ${CMAKE_CURRENT_LIST_DIR}/media)
-    set(DST_DIR ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
-    file(COPY ${SRC_DIR} DESTINATION ${DST_DIR})
+    # set(SRC_DIR ${CMAKE_CURRENT_LIST_DIR}/media)
+    # set(DST_DIR ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
+    # file(COPY ${SRC_DIR} DESTINATION ${DST_DIR})
 
 endif()

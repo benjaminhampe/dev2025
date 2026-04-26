@@ -53,9 +53,10 @@ else()
     endif()
 
     target_link_libraries(${LIB_NAME} PUBLIC de_glm)
-    target_link_libraries(${LIB_NAME} PUBLIC de_assimp)
-    target_link_libraries(${LIB_NAME} PUBLIC de_glad)
+    target_link_libraries(${LIB_NAME} PUBLIC de_glad_450_compat)
     target_link_libraries(${LIB_NAME} PUBLIC de_glfw)
-    target_link_libraries(${LIB_NAME} PRIVATE de_stb_image)
+    target_link_libraries(${LIB_NAME} PRIVATE de_stb_image)  
     # target_link_libraries(${LIB_NAME} PUBLIC de_soil)
+	target_link_libraries(${LIB_NAME} PUBLIC de_assimp)
+
 endif()

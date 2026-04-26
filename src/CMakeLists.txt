@@ -1,39 +1,42 @@
 add_subdirectory(0_tools)
 add_subdirectory(1_libs)
-add_subdirectory(minimal_vst2x_host)
+add_subdirectory(2_demos)
 
-add_subdirectory(RoundRectShader)
-add_subdirectory(RoundRectShader2)
-add_subdirectory(RoundRectShader3)
-add_subdirectory(RoundRectShader4)
-add_subdirectory(Minecraft_54k)
-# if (BENNI_USE_QT)
-	# add_subdirectory(VHS_qt6)
-# endif()
-
-# add_subdirectory(VST_benni)
-# add_subdirectory(H3_Siedler)
-
-# # add_subdirectory(2_demos)
-
-# if (BENNI_USE_JUCE)
-    # add_subdirectory(4_juce)
-# endif()
-
-# add_subdirectory(raylib)
-
-# if (BENNI_USE_VCV)
-	# add_subdirectory(vcv-rack2)
-# endif()
+if (BENNI_USE_JUCE)
+    add_subdirectory(4_juce)
+endif()
 
 if (BENNI_USE_QT)
 	add_subdirectory(AbentonChain_qt6)
 	# sadd_subdirectory(AbentonLive_qt6)
 endif()
 
-# add_subdirectory(whisper.cpp)
+add_subdirectory(H3_Siedler)
+#add_subdirectory(Kinescope)
+add_subdirectory(Minecraft_54k)
+add_subdirectory(minimal_vst2x_host)
+add_subdirectory(raylib)
+add_subdirectory(RoundRectShader)
+add_subdirectory(RoundRectShader2)
+add_subdirectory(RoundRectShader3)
+add_subdirectory(RoundRectShader4)
+# add_subdirectory(stream_WASAPI)
+
+if (BENNI_USE_VCV)
+	add_subdirectory(vcv-rack2)
+endif()
+
+if (BENNI_USE_QT)
+	add_subdirectory(VHS_qt6)
+endif()
+
+add_subdirectory(VST_benni)
+
+add_subdirectory(whisper.cpp)
+
+
 # add_subdirectory(DirectML_test)
-# add_subdirectory(minimal_vst2x_host)
+# 
 # add_subdirectory(minimal_vst3_host)
 # add_subdirectory(AbletonLive64-qt6) # uses old RtAudio_5
 # add_subdirectory(AudioPluginHost-qt6)

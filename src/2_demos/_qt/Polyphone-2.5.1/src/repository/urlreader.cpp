@@ -114,10 +114,12 @@ void UrlReader::download()
             QHttpPart filePart;
             filePart.setHeader(QNetworkRequest::ContentDispositionHeader, QVariant("form-data; name=\"" + key + "\""));
             QFile * file = new QFile(_fileArguments[key]);
-            file->open(QIODevice::ReadOnly);
-            filePart.setBodyDevice(file);
-            file->setParent(_multiPart); // It will be deleted with the multiPart
-            _multiPart->append(filePart);
+            if (file->open(QIODevice::ReadOnly))
+            {
+                filePart.setBodyDevice(file);
+                file->setParent(_multiPart); // It will be deleted with the multiPart
+                _multiPart->append(filePart);
+            }
         }
 
         // Send the query

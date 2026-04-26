@@ -29,7 +29,7 @@ if (TARGET ${APP_NAME})
     target_link_libraries(${APP_NAME} PRIVATE learnopengl)
 
     # Copy media:
-    set(SRC_DIR ${CMAKE_CURRENT_LIST_DIR}/media)
-    set(DST_DIR ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
-    file(COPY ${SRC_DIR} DESTINATION ${DST_DIR})
+    # set(SRC_DIR ${CMAKE_CURRENT_LIST_DIR}/media)
+    # set(DST_DIR ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
+    # file(COPY ${SRC_DIR} DESTINATION ${DST_DIR})
 endif()

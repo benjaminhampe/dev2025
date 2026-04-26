@@ -29,7 +29,8 @@ else()
 	
     include(${CMAKE_SOURCE_DIR}/src/embed_static_runtime.cmake)
     target_link_libraries(${APP_NAME} PRIVATE de_glm)
-    target_link_libraries(${APP_NAME} PRIVATE de_glfw_glew)
+    target_link_libraries(${APP_NAME} PRIVATE de_glew)
+    target_link_libraries(${APP_NAME} PRIVATE de_glfw)
     target_link_libraries(${APP_NAME} PRIVATE de_assimp)
 
    # target_link_libraries(${APP_NAME} PRIVATE de_stb_image)

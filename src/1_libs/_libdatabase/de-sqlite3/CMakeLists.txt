@@ -10,6 +10,12 @@ else()
     set(LIB_HEADERS ${LIB_HEADER_DIR}/sqlite3.h)
     set(LIB_SOURCES ${LIB_SOURCE_DIR}/sqlite3.c)
 
+    set_source_files_properties(
+        ${LIB_SOURCES}
+        PROPERTIES
+        COMPILE_FLAGS "-fno-fast-math"
+    )
+	
     if (BUILD_SHARED_LIBS)
         message("${BoldBlue}[benni] DLL: ${LIB_NAME}${ColourReset}")
         add_library(${LIB_NAME} SHARED "")

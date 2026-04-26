@@ -84,14 +84,14 @@ int main()
    // build and compile shaders
    // -------------------------
    Shader pbrShader( "pbrShader",
-      loadString( "media/LearnOpenGL/textures/6.2.1.1.pbr.vs"), 
-      loadString( "media/LearnOpenGL/textures/6.2.1.1.pbr.fs") );
+      loadString( "media/LearnOpenGL/6.2.1.1.pbr.vs"),
+      loadString( "media/LearnOpenGL/6.2.1.1.pbr.fs") );
    Shader equirectangularToCubemapShader( "equirectangularToCubemapShader",
-      loadString( "media/LearnOpenGL/textures/6.2.1.1.cubemap.vs"), 
-      loadString( "media/LearnOpenGL/textures/6.2.1.1.equirectangular_to_cubemap.fs") );
+      loadString( "media/LearnOpenGL/6.2.1.1.cubemap.vs"),
+      loadString( "media/LearnOpenGL/6.2.1.1.equirectangular_to_cubemap.fs") );
    Shader backgroundShader( "backgroundShader",
-      loadString( "media/LearnOpenGL/textures/6.2.1.1.background.vs"), 
-      loadString( "media/LearnOpenGL/textures/6.2.1.1.background.fs") );
+      loadString( "media/LearnOpenGL/6.2.1.1.background.vs"),
+      loadString( "media/LearnOpenGL/6.2.1.1.background.fs") );
 
 
     pbrShader.use();

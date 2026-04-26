@@ -607,7 +607,7 @@ set(GGML_CPU_REPACK ON) # "ggml: use runtime weight conversion of Q4_0 to Q4_X_X
         # ${LIB_SOURCE_DIR}/ggml-opencl/kernels/tsembd.cl
         # ${LIB_SOURCE_DIR}/ggml-opencl/kernels/upscale.cl	
 	)
-	
+
     # if (WIN32)
         # enable_language(RC)
         # list(APPEND LIB_SOURCES ${CMAKE_CURRENT_LIST_DIR}/res/resource.h)
@@ -690,6 +690,13 @@ set(GGML_CPU_REPACK ON) # "ggml: use runtime weight conversion of Q4_0 to Q4_X_X
         target_link_libraries(${LIB_NAME} PUBLIC de_vulkan_loader_shared)
     endif()
 
+	# GGML hates -Ofast, aka -ffast-math
+	set_source_files_properties(
+		${LIB_SOURCES}
+		PROPERTIES
+        COMPILE_FLAGS "-fno-finite-math-only"
+	)
+	
     target_sources(${LIB_NAME} PUBLIC ${LIB_HEADERS} PRIVATE ${LIB_SOURCES})
 
     target_compile_definitions(${LIB_NAME} PRIVATE GGML_VERSION_MAJOR=0)

@@ -5,10 +5,7 @@
 // #define GLEW_STATIC
 // #include <GL/glew.h>
 
-// GLFW
-#include <GLFW/glfw3.h>
-
-// GL includes
+// GL + GLFW
 #include <learnopengl/loadTexture.h>
 #include <learnopengl/shader.h>
 #include <learnopengl/camera.h>
@@ -17,6 +14,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
+
 
 using namespace learnopengl;
 

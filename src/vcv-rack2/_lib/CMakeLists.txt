@@ -1,4 +1,4 @@
-add_subdirectory(de-resample)
+# add_subdirectory(de-resample)
 add_subdirectory(de-oscpack)
 add_subdirectory(de-OpenSimplexNoise)
 

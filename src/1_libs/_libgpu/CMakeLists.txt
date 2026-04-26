@@ -16,6 +16,13 @@ add_subdirectory(de_vulkan_loader_shared_1.4.335.0-1)
 # Graphics
 add_subdirectory(de-glew-2.1.0)
 add_subdirectory(de-glad-4.2)
+add_subdirectory(de-glad-4.3-compat)
+add_subdirectory(de-glad-4.3-core)
+add_subdirectory(de-glad-4.5-compat)
+add_subdirectory(de-glad-4.5-core)
+add_subdirectory(de-glad-4.6-compat)
+add_subdirectory(de-glad-4.6-core)
+
 add_subdirectory(de-soil)
 # add_subdirectory(de-nanovg)
 add_subdirectory(de-nanovg-tint)

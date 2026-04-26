@@ -1,6 +1,6 @@
 add_subdirectory(__rack_binary2cpp)
 add_subdirectory(de-rack2-fuzzysearchdatabase)
-add_subdirectory(de-rack2-speexdsp)
+# add_subdirectory(de-rack2-speexdsp)
 add_subdirectory(libRack2)
 add_subdirectory(Rack2)
 add_subdirectory(plugin_00_Fundamental)

@@ -15,7 +15,7 @@ endif()
 # add_subdirectory(_raylib)
 
 if (BENNI_USE_OPENGL_TUTORIALS)
-	add_subdirectory(_tutorials_AntonsOpenGL_glew)
+	# add_subdirectory(_tutorials_AntonsOpenGL_glew)
 	add_subdirectory(_tutorials_LearnOpenGL_glad)
 	add_subdirectory(_tutorials_NorbertsTutorials_glew) # TODO: repair
 else()

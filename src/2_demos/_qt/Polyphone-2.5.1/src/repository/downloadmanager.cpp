@@ -133,10 +133,12 @@ void DownloadManager::fileDownloaded(QString error)
 
         // Save the file
         QFile file(pathWithoutExtension + "." + extension);
-        file.open(QIODevice::WriteOnly);
-        file.write(_reader->getRawData());
-        file.close();
-
+        bool ok = file.open(QIODevice::WriteOnly);
+        if (ok)
+        {
+            file.write(_reader->getRawData());
+            file.close();
+        }
         // The download is complete, notify it
         emit progressChanged(100, _currentDownloadId, currentDownload, pathWithoutExtension + "." + extension);
     }
