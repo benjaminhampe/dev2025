@@ -87,6 +87,10 @@ void GL_Renderer::paintGL()
         return;
     }
 
+    auto s = App::instance()->getSampleCollector();
+    const auto& d = s->getL();
+    if (d.size() < 8) { return; }
+
     // glEnable(GL_DEPTH_TEST);
     // glDepthFunc(GL_LESS);          // Default depth comparison
     // glDepthMask(GL_TRUE);          // Allow depth writes
@@ -105,8 +109,8 @@ void GL_Renderer::paintGL()
     // m_lineShader.draw( bks_z_lines );
 
     draw3DAccumFftMatrix();
-    draw3DLineStripL();
-    draw3DLineStripR();
+    // draw3DLineStripL();
+    // draw3DLineStripR();
 
     draw2DLineStripL();
     draw2DLineStripR();
@@ -123,10 +127,17 @@ void GL_Renderer::draw3DAccumFftMatrix()
 
     auto s = App::instance()->getSampleCollector();
     const auto& d = s->getAccumMat();
+
     auto & m = m_matrix_fft;
 
-    auto siz3d = glm::vec3(4000,500,2000);
+    auto siz3d = glm::vec3(3500,500,2000);
     auto pos3d = glm::vec3{-0.5f * siz3d.x,0,0 };
+
+    // In log10 Mode shift mesh left. (or camera right)
+    if (m_matrix_fft_xmode==1)
+    {
+        pos3d.x -= 0.06f * siz3d.x;
+    }
 
     auto cols = d.columnCount();
     auto rows = d.rowCount();
@@ -142,8 +153,10 @@ void GL_Renderer::draw3DAccumFftMatrix()
     {
         m_matrix_fft_cols = cols;
         m_matrix_fft_rows = rows;
-        m.Indices.clear();
-        m.Indices.reserve( (cols) * (rows) * 6);
+
+        // Matrix16 FFT indices:
+        m_matrix_fft.Indices.clear();
+        m_matrix_fft.Indices.reserve( (cols) * (rows) * 6);
 
         for ( size_t j = 0; j < rows-1; j++ )
         {
@@ -153,7 +166,7 @@ void GL_Renderer::draw3DAccumFftMatrix()
                 const uint32_t B = (cols * (j+1)) + i;   // B - 1
                 const uint32_t C = (cols * (j+1)) + i+1; // C - 3
                 const uint32_t D = (cols * j) + i+1;     // D - 2
-                m.addIndexedQuad( A,B,C,D );
+                m_matrix_fft.addIndexedQuad( A,B,C,D );
             }
         }
         bNeedIndexUpload = true;
@@ -182,7 +195,7 @@ void GL_Renderer::draw3DAccumFftMatrix()
     // Create Vertices:
     //#############################
 
-    float dBmin = -180.0f;
+    float dBmin = -120.0f;
     float dBmax = 120.0f;
     float dBrange = dBmax - dBmin;
     float dBrangeInv = 1.0f / dBrange;
@@ -192,9 +205,9 @@ void GL_Renderer::draw3DAccumFftMatrix()
     const float dy = siz3d.y;
     const float dz = siz3d.z / float ( rows - 1 );
 
-    m.PrimType = de::gpu::PrimitiveType::Triangles;
-    m.Vertices.clear();
-    m.Vertices.reserve(rows * cols);
+    m_matrix_fft.PrimType = de::gpu::PrimitiveType::Triangles;
+    m_matrix_fft.Vertices.clear();
+    m_matrix_fft.Vertices.reserve(rows * cols);
 
     // Matrix Top
     if ( m_matrix_fft_xmode == 1 ) // X-axis is scaled logarithmicly.
@@ -209,7 +222,7 @@ void GL_Renderer::draw3DAccumFftMatrix()
                 float x = dx * m_matrix_fft_xmap[ col ];
                 float y = dy * t;
                 float z = dz * row;
-                m.Vertices.emplace_back( x,y,z,t );
+                m_matrix_fft.Vertices.emplace_back( x,y,z,t );
             }
         }
     }
@@ -226,58 +239,43 @@ void GL_Renderer::draw3DAccumFftMatrix()
                 float x = dx * col;
                 float y = dy * t;
                 float z = dz * row;
-                m.Vertices.emplace_back( x,y,z,t );
+                m_matrix_fft.Vertices.emplace_back( x,y,z,t );
             }
         }
     }
 
-    m.upload(true, bNeedIndexUpload);
+    m_matrix_fft.upload(true, bNeedIndexUpload);
+
+
+    //#############################
+    // Create front:
+    //#############################
+
+    m_matrix_fft_front.PrimType = de::gpu::PrimitiveType::TriangleStrip;
+    m_matrix_fft_front.Vertices.clear();
+    m_matrix_fft_front.Vertices.reserve(cols*2);
+    m_matrix_fft_front.Indices.clear();
+
+    auto & vertices = m_matrix_fft.Vertices; // Use Matrix3D vertices to build front mesh
+    for ( size_t col = 0; col < cols; ++col )
+    {
+        auto a = vertices[col];
+        auto b = a;
+        b.set_y(0.0f);
+        m_matrix_fft_front.Vertices.emplace_back( std::move(a) );
+        m_matrix_fft_front.Vertices.emplace_back( std::move(b) );
+    }
+
+    m_matrix_fft_front.upload(true, false);
+
+    //#############################
+    // Draw front + top (matrix)
+    //#############################
 
     auto T = glm::translate(glm::mat4(1.0f), pos3d);
     m_mesh16Shader3D.setMaterial(m_mesh16Material, T);
-    m.draw();
-}
-
-void GL_Renderer::draw3DLineStripL()
-{
-    // auto d = glm::vec3(4000,250,2000);
-    auto s = App::instance()->getSampleCollector();
-
-    const auto& vL = s->getL();
-
-    auto siz = glm::vec2{2000,500};
-    auto pos = glm::vec3{-2000.f,0,1000.0f};
-
-    create2DWav_LineStrip(
-        m_lineStripL,
-        siz,
-        vL.data(),
-        vL.size());
-
-    auto T  = glm::translate(glm::mat4(1.0f), pos);
-    auto Ry = glm::rotate(glm::mat4(1.0f), 90.0f, glm::vec3{0,1,0});
-    m_mesh16Shader3D.setMaterial(m_mesh16Material, T * Ry);
-    m_lineStripL.draw();
-}
-
-void GL_Renderer::draw3DLineStripR()
-{
-    // auto d = glm::vec3(4000,250,2000);
-    auto s = App::instance()->getSampleCollector();
-
-    const auto& vR = s->getR();
-
-    create2DWav_LineStrip(
-        m_lineStripR,
-        glm::vec2{2000,500},
-        vR.data(),
-        vR.size());
-
-    auto T  = glm::translate(glm::mat4(1.0f), glm::vec3{2000.f,0,1000.0f});
-    auto Ry = glm::rotate(glm::mat4(1.0f), 90.0f, glm::vec3{0,1,0});
-    m_mesh16Shader3D.setMaterial(m_mesh16Material, T * Ry);
-    m_lineStripR.draw();
-
+    m_matrix_fft_front.draw();
+    m_matrix_fft.draw();
 }
 
 void GL_Renderer::draw2DLineStripL()
@@ -374,27 +372,20 @@ void GL_Renderer::draw2DLineStripFft()
     auto n = v.size();
     if ( n < 2 ) { DE_ERROR("No n") return; }
 
-    //#############################
-    // Create Vertices:
-    //#############################
-
-    auto dBmin = -120.0f;
-    auto dBmax = 60.0f;
-
+    const float dBmin = -120.0f;
+    const float dBmax = 120.0f;
+    const float dBrange = dBmax - dBmin;
+    const float dBrangeInv = 1.0f / dBrange;
     const float dx = float(w) / float ( n - 1 ); // / (sampleRate_over_fftSize * colCount);
     const float dy = float(h) * 0.125f;
 
-    auto & m = m_lineStripFft;
-
-    m.PrimType = de::gpu::PrimitiveType::LineStrip;
-    m.Vertices.clear();
-    m.Vertices.reserve(n);
-    m.Indices.clear();
-
-    float dBrange = dBmax - dBmin;
-    if ( dBrange < 1.0f ) dBrange = 1.0f;
-    float dBrangeInv = 1.0f / dBrange;
-
+    //##############################################
+    // LineStrip 2D FFT:
+    //##############################################
+    m_lineStripFft.PrimType = de::gpu::PrimitiveType::LineStrip;
+    m_lineStripFft.Vertices.clear();
+    m_lineStripFft.Vertices.reserve(n);
+    m_lineStripFft.Indices.clear();
     for (size_t i = 0; i < n; ++i)
     {
         float dB = v[ i ];
@@ -402,12 +393,97 @@ void GL_Renderer::draw2DLineStripFft()
         float x = dx * i; // m.XMap[ i ]
         float y = float(h) - dy * t;
         float z = 0.0f;
-        m.Vertices.emplace_back( x,y,z,t );
+        m_lineStripFft.Vertices.emplace_back( x,y,z,t );
     }
+    m_lineStripFft.upload(true, false);
 
-    // m_mesh16.uploadVertices();
-    m.upload(true, false);
+    //#############################
+    // TriangleStrip 2D FFT:
+    //#############################
+    m_triStripFft.PrimType = de::gpu::PrimitiveType::TriangleStrip;
+    m_triStripFft.Vertices.clear();
+    m_triStripFft.Vertices.reserve(n * 2);
+    m_triStripFft.Indices.clear();
+    for (size_t i = 0; i < n; ++i)
+    {
+        auto a = m_lineStripFft.Vertices[i];
+        auto b = a;
+        b.set_y(h);
+        m_triStripFft.Vertices.emplace_back( std::move(a) );
+        m_triStripFft.Vertices.emplace_back( std::move(b) );
+    }
+    m_triStripFft.upload(true, false);
+
+    //#############################
+    // Draw:
+    //#############################
+    GL_Mesh16_Material material2 = m_mesh16Material;
+    material2.alpha = 0.75f;
+    m_mesh16Shader2D.setMaterial(material2, de::Rectf(0,0,1,1));
+    m_triStripFft.draw();
 
     m_mesh16Shader2D.setMaterial(m_mesh16Material, de::Rectf(0,0,1,1));
-    m.draw();
+    m_lineStripFft.draw();
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// BORING:
+
+
+void GL_Renderer::draw3DLineStripL()
+{
+    // auto d = glm::vec3(4000,250,2000);
+    auto s = App::instance()->getSampleCollector();
+
+    const auto& vL = s->getL();
+
+    auto siz = glm::vec2{2000,500};
+    auto pos = glm::vec3{-2000.f,0,1000.0f};
+
+    create2DWav_LineStrip(
+        m_lineStripL,
+        siz,
+        vL.data(),
+        vL.size());
+
+    auto T  = glm::translate(glm::mat4(1.0f), pos);
+    auto Ry = glm::rotate(glm::mat4(1.0f), 90.0f, glm::vec3{0,1,0});
+    m_mesh16Shader3D.setMaterial(m_mesh16Material, T * Ry);
+    m_lineStripL.draw();
+}
+
+void GL_Renderer::draw3DLineStripR()
+{
+    // auto d = glm::vec3(4000,250,2000);
+    auto s = App::instance()->getSampleCollector();
+
+    const auto& vR = s->getR();
+
+    create2DWav_LineStrip(
+        m_lineStripR,
+        glm::vec2{2000,500},
+        vR.data(),
+        vR.size());
+
+    auto T  = glm::translate(glm::mat4(1.0f), glm::vec3{2000.f,0,1000.0f});
+    auto Ry = glm::rotate(glm::mat4(1.0f), 90.0f, glm::vec3{0,1,0});
+    m_mesh16Shader3D.setMaterial(m_mesh16Material, T * Ry);
+    m_lineStripR.draw();
+
 }

@@ -31,6 +31,7 @@ public:
     de::audio::Track m_track0;
     de::audio::DspSampleCollector m_sampleCollector;
     de::audio::EndPoint_Wasapi m_endPoint;
+    bool m_deviceGuardFlag;
     //de::audio::EndPoint_RtAudio m_endPoint;
     de::audio::Track* m_track;
 public:
@@ -96,6 +97,8 @@ public slots:
     void setZoom(int percent);
 
 private slots:
+    void onAudioDeviceLost();
+
 signals:
     void skinChanged();
 

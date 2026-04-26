@@ -13,11 +13,19 @@ class EndPoint_Wasapi
 // =======================================================
 {
 public:
-    EndPoint_Wasapi();
+
+    // notifyClient->onDeviceLost = [this]() {
+    //     QMetaObject::invokeMethod(
+    //         this,
+    //         "onDeviceInvalidated",
+    //         Qt::QueuedConnection
+    //     );
+
+    EndPoint_Wasapi(const std::function<void()>& deviceLostFunc);
     ~EndPoint_Wasapi();
 
     void setInputSignal( IDspChainElement* inputSignal );
-    void play();
+    void play(bool * guardFlag);
     void stop();
     bool is_playing() const;
 

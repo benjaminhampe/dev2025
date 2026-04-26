@@ -153,7 +153,7 @@ struct GL_Mesh16_Material
 // ===========================================================================
 {
     de::gpu::TexRef tex0;
-    bool blend = false;
+    float alpha = 1.0f;
 };
 
 // ===========================================================================
@@ -183,6 +183,7 @@ struct GL_Mesh16_Shader2D
     int m_u_tex = -1;
     int m_u_texTransform = -1;
     int m_u_posTransform = -1;
+    int m_u_alpha = -1;
 
     GL_Mesh16_Shader2D();
     void setDriver( de::gpu::VideoDriver* driver );

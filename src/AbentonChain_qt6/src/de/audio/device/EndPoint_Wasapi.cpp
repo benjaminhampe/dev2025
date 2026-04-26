@@ -1,6 +1,7 @@
 #include <de/audio/device/EndPoint_Wasapi.h>
 //#include <de/audio/device/AlignedRingBuffer.h>
 #include <de/audio/device/AlignedAccumBuffer.h>
+#include <string>
 
 #ifndef UNICODE
 #define UNICODE
@@ -135,6 +136,202 @@ void dumpSampleType(const WAVEFORMATEX* fmt)
     }
 }
 
+
+std::string WasapiErrorToString(HRESULT hr)
+{
+    switch (hr)
+    {
+        case AUDCLNT_E_NOT_INITIALIZED:
+            return "AUDCLNT_E_NOT_INITIALIZED: Audio client not initialized";
+
+        case AUDCLNT_E_ALREADY_INITIALIZED:
+            return "AUDCLNT_E_ALREADY_INITIALIZED: Audio client already initialized";
+
+        case AUDCLNT_E_WRONG_ENDPOINT_TYPE:
+            return "AUDCLNT_E_WRONG_ENDPOINT_TYPE: Wrong endpoint type";
+
+        case AUDCLNT_E_DEVICE_INVALIDATED:
+            return "AUDCLNT_E_DEVICE_INVALIDATED: Device was removed or disabled";
+
+        case AUDCLNT_E_NOT_STOPPED:
+            return "AUDCLNT_E_NOT_STOPPED: Must stop audio client before reinitializing";
+
+        case AUDCLNT_E_BUFFER_TOO_LARGE:
+            return "AUDCLNT_E_BUFFER_TOO_LARGE: Requested buffer size too large";
+
+        case AUDCLNT_E_OUT_OF_ORDER:
+            return "AUDCLNT_E_OUT_OF_ORDER: Call made in the wrong order";
+
+        case AUDCLNT_E_UNSUPPORTED_FORMAT:
+            return "AUDCLNT_E_UNSUPPORTED_FORMAT: Audio format not supported";
+
+        case AUDCLNT_E_INVALID_SIZE:
+            return "AUDCLNT_E_INVALID_SIZE: Invalid buffer size";
+
+        case AUDCLNT_E_DEVICE_IN_USE:
+            return "AUDCLNT_E_DEVICE_IN_USE: Device already in use";
+
+        case AUDCLNT_E_BUFFER_OPERATION_PENDING:
+            return "AUDCLNT_E_BUFFER_OPERATION_PENDING: Buffer operation pending";
+
+        case AUDCLNT_E_THREAD_NOT_REGISTERED:
+            return "AUDCLNT_E_THREAD_NOT_REGISTERED: Thread not registered for MMCSS";
+
+        case AUDCLNT_E_EXCLUSIVE_MODE_NOT_ALLOWED:
+            return "AUDCLNT_E_EXCLUSIVE_MODE_NOT_ALLOWED: Exclusive mode not allowed";
+
+        case AUDCLNT_E_ENDPOINT_OFFLOAD_NOT_CAPABLE:
+            return "AUDCLNT_E_ENDPOINT_OFFLOAD_NOT_CAPABLE: Endpoint not offload capable";
+
+        case AUDCLNT_E_RESOURCES_INVALIDATED:
+            return "AUDCLNT_E_RESOURCES_INVALIDATED: Audio resources invalidated";
+
+        case HRESULT_FROM_WIN32(ERROR_DEVICE_NOT_CONNECTED):
+            return "ERROR_DEVICE_NOT_CONNECTED: Device not connected";
+
+        default:
+            break;
+    }
+
+    // Fallback: use Windows to format the message
+    char* msg = nullptr;
+    FormatMessageA(
+        FORMAT_MESSAGE_ALLOCATE_BUFFER |
+        FORMAT_MESSAGE_FROM_SYSTEM |
+        FORMAT_MESSAGE_IGNORE_INSERTS,
+        nullptr,
+        hr,
+        MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+        (LPSTR)&msg,
+        0,
+        nullptr
+    );
+
+    std::string result;
+
+    if (msg)
+    {
+        result = msg;
+        LocalFree(msg);
+    }
+    else
+    {
+        char buf[64];
+        sprintf_s(buf, "Unknown HRESULT: 0x%08X", hr);
+        result = buf;
+    }
+
+    return result;
+}
+
+/*
+void AudioManager::Run()
+{
+    StartAudioThread();
+
+    while (true)
+    {
+        if (g_deviceInvalidated)
+        {
+            printf("Audio device lost — restarting...\n");
+
+            StopAudioThread();   // join thread
+            CleanupWasapi();     // release all COM objects
+            InitWasapi();        // pick new default device
+            StartAudioThread();  // relaunch thread
+
+            g_deviceInvalidated = false;
+        }
+
+        Sleep(50);
+    }
+}
+*/
+
+class DeviceLostNotifyClient : public IMMNotificationClient
+{
+    LONG refCount = 1;
+
+public:
+    std::atomic<bool>* m_deviceLostFlag;
+    std::function<void(void)> m_deviceLostFunc;
+
+    DeviceLostNotifyClient(std::atomic<bool>* flag, const std::function<void()>& deviceLostFunc)
+        : m_deviceLostFlag(flag)
+        , m_deviceLostFunc(deviceLostFunc)
+    {}
+
+    // IUnknown
+    ULONG STDMETHODCALLTYPE AddRef() override {
+        return InterlockedIncrement(&refCount);
+    }
+
+    ULONG STDMETHODCALLTYPE Release() override {
+        ULONG ulRef = InterlockedDecrement(&refCount);
+        if (0 == ulRef) delete this;
+        return ulRef;
+    }
+
+    HRESULT STDMETHODCALLTYPE QueryInterface(REFIID riid, VOID **ppvInterface) override {
+        if (IID_IUnknown == riid || __uuidof(IMMNotificationClient) == riid) {
+            AddRef();
+            *ppvInterface = (IMMNotificationClient*)this;
+            return S_OK;
+        }
+        *ppvInterface = nullptr;
+        return E_NOINTERFACE;
+    }
+
+    // IMMNotificationClient
+    HRESULT STDMETHODCALLTYPE OnDeviceStateChanged(LPCWSTR deviceId, DWORD newState) override
+    {
+        if (newState == DEVICE_STATE_NOTPRESENT ||
+            newState == DEVICE_STATE_UNPLUGGED ||
+            newState == DEVICE_STATE_DISABLED)
+        {
+            *m_deviceLostFlag = true;
+            if (m_deviceLostFunc)
+            {
+                m_deviceLostFunc();
+            }
+        }
+        return S_OK;
+    }
+
+    HRESULT STDMETHODCALLTYPE OnDefaultDeviceChanged(EDataFlow flow, ERole role, LPCWSTR newDefaultDeviceId) override
+    {
+        // If you're using the default device, this matters
+        *m_deviceLostFlag = true;
+        return S_OK;
+    }
+
+    HRESULT STDMETHODCALLTYPE OnDeviceAdded(LPCWSTR) override { return S_OK; }
+    HRESULT STDMETHODCALLTYPE OnDeviceRemoved(LPCWSTR) override { return S_OK; }
+    HRESULT STDMETHODCALLTYPE OnPropertyValueChanged(LPCWSTR, const PROPERTYKEY) override { return S_OK; }
+};
+
+/*
+IMMDeviceEnumerator* enumerator = nullptr;
+CoCreateInstance(__uuidof(MMDeviceEnumerator), nullptr,
+                 CLSCTX_ALL, __uuidof(IMMDeviceEnumerator),
+                 (void**)&enumerator);
+
+auto* notify = new DeviceNotificationClient(&g_deviceInvalidated);
+
+enumerator->RegisterEndpointNotificationCallback(notify);
+
+
+
+notifyClient->onDeviceLost = [this]() {
+    QMetaObject::invokeMethod(
+        this,
+        "onDeviceInvalidated",
+        Qt::QueuedConnection
+    );
+};
+
+*/
+
 class EndPoint_Wasapi_Impl
 {
 public:
@@ -158,7 +355,9 @@ public:
 
     double                  m_timeStart;
     std::atomic<int64_t>    m_iFramePos64;
-
+    std::atomic<bool>       m_deviceLostFlag;
+    DeviceLostNotifyClient* m_deviceLostNotifyClient;
+    std::function<void()>   m_deviceLostFunc;
     AlignedFloatVector      m_L;
     AlignedFloatVector      m_R;
     AlignedFloatVector      m_I; // Interleaved;
@@ -171,7 +370,7 @@ public:
     //AudioRingBuffer m_iRing;
     //AudioRingBuffer m_oRing; // (4096, numChannels);
 public:
-    EndPoint_Wasapi_Impl()
+    EndPoint_Wasapi_Impl(const std::function<void()>& deviceLostFunc)
         : m_bIsPlaying(false)
         , m_sampleRate(48000)
         , m_blockSizeDsp(256)
@@ -190,8 +389,10 @@ public:
         // , m_bufferFrameCount{ 0 }
         , m_timeStart{ 0 }
         , m_iFramePos64{ 0 }
+        , m_deviceLostFlag{ false }
+        , m_deviceLostNotifyClient { nullptr }
+        , m_deviceLostFunc{ deviceLostFunc }
     {
-
     }
 
     ~EndPoint_Wasapi_Impl()
@@ -204,8 +405,14 @@ public:
         m_inputSignal = inputSignal;
     }
 
-    void play()
+    void play(bool * guardFlag)
     {
+        // if (guardFlag && *guardFlag)
+        // {
+        //     DE_ERROR("Prevent infinite restart loop")
+        //     return;
+        // }
+
         if (m_bIsPlaying)
         {
             DE_WARN("Already playing")
@@ -216,12 +423,17 @@ public:
         {
             HRESULT hr = S_OK;
 
+            m_deviceLostFlag = false;
+
             m_hCloseEvent = CreateEventEx(0, 0, 0, EVENT_MODIFY_STATE | SYNCHRONIZE);
             m_hRefillEvent = CreateEventEx(0, 0, 0, EVENT_MODIFY_STATE | SYNCHRONIZE);
             //this->refillFunc = refillFunc;
 
             hr = CoCreateInstance(__uuidof(MMDeviceEnumerator), 0, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&m_deviceEnumerator));
             ASSERT_THROW(SUCCEEDED(hr), "CoCreateInstance(MMDeviceEnumerator) failed");
+
+            m_deviceLostNotifyClient = new DeviceLostNotifyClient(&m_deviceLostFlag, m_deviceLostFunc);
+            m_deviceEnumerator->RegisterEndpointNotificationCallback(m_deviceLostNotifyClient);
 
             // CComPtr<IMMDeviceCollection> coll;
             // enumr->EnumAudioEndpoints(eRender, DEVICE_STATE_ACTIVE, &coll);
@@ -359,6 +571,12 @@ public:
             hr = m_audioClient->Start();
             ASSERT_THROW(SUCCEEDED(hr), "audioClient->Start() failed");
 
+            if (guardFlag && (*guardFlag))
+            {
+				*guardFlag = false;
+				DE_OK("Reset GuardFlag to false.")
+            }
+
             m_bIsPlaying = true;
             DE_OK("Playing...")
         }
@@ -397,6 +615,16 @@ public:
         {
             CoTaskMemFree(m_mixFormat);
             m_mixFormat = nullptr;
+        }
+
+        if ( m_deviceLostNotifyClient )
+        {
+            if (m_deviceEnumerator)
+            {
+                m_deviceEnumerator->UnregisterEndpointNotificationCallback(m_deviceLostNotifyClient);
+            }
+            m_deviceLostNotifyClient->Release();
+            m_deviceLostNotifyClient = nullptr;
         }
 
         RELEASE(m_audioRenderClient);
@@ -452,86 +680,111 @@ private:
     {
         //ComInit comInit {};
 
-
-
-        const HANDLE events[2] = { m_hCloseEvent, m_hRefillEvent };
-        for (bool run = true; run; )
+        while (!m_deviceLostFlag)
         {
-            const auto r = WaitForMultipleObjects(_countof(events), events, FALSE, INFINITE);
-
-            if (WAIT_OBJECT_0 == r) // m_hCloseEvent
+            const HANDLE events[2] = { m_hCloseEvent, m_hRefillEvent };
+            for (bool run = true; run; )
             {
-                run = false;
-            }
-            else if (WAIT_OBJECT_0+1 == r) // m_hRefillEvent
-            {
-                UINT32 padding = 0;
-                m_audioClient->GetCurrentPadding(&padding);
+                const auto r = WaitForMultipleObjects(_countof(events), events, FALSE, INFINITE);
 
-                int32_t oFrames = int32_t(m_blockSizeWasapi) - int32_t(padding);
-
-                if (oFrames > 0)
+                if (WAIT_OBJECT_0 == r) // m_hCloseEvent
                 {
-                    float* wasapiBuffer = nullptr;
-                    m_audioRenderClient->GetBuffer(oFrames, reinterpret_cast<BYTE**>(&wasapiBuffer));
+                    run = false;
+                }
+                else if (WAIT_OBJECT_0+1 == r) // m_hRefillEvent
+                {
+                    UINT32 padding = 0;
+                    HRESULT hr = m_audioClient->GetCurrentPadding(&padding);
 
-                    // FillZeroes:
-                    float* __restrict__ dst = static_cast<float*>(wasapiBuffer);
-                    uint32_t oChannels = m_mixFormat->nChannels;
-                    uint64_t oSamples = oFrames * oChannels;
-                    memset(dst, 0, oSamples * sizeof(float));
-
-                    // Run DSP in fixed chunks to stabilize Dsp
-                    // and to get rid of WASAPI jitter (fast
-                    // alternating blockSizes 480,520,512).
-                    while (oFrames > m_oRing.getAvailFrames())
+                    if (FAILED(hr))
                     {
-                        std::fill(m_L.begin(),m_L.end(),0.0f);
-                        std::fill(m_R.begin(),m_R.end(),0.0f);
-                        std::fill(m_I.begin(),m_I.end(),0.0f);
-
-                        // Process
-                        if (m_inputSignal)
+                        DE_ERROR(WasapiErrorToString(hr))
+                        if (hr == AUDCLNT_E_DEVICE_INVALIDATED ||
+                            hr == HRESULT_FROM_WIN32(ERROR_DEVICE_NOT_CONNECTED))
                         {
-                            m_inputSignal->dsp_read(
-                                dbTimeInSeconds() - m_timeStart,
-                                m_blockSizeDsp,
-                                m_sampleRate,
-                                m_L.data(),
-                                m_R.data());
+                            m_deviceLostFlag = true;
+                            break;
                         }
-
-                        interleave(m_L.data(),
-                                   m_R.data(),
-                                   m_I.data(),
-                                   m_blockSizeDsp,
-                                   m_channels);
-
-                        m_oRing.produce(m_I.data(), m_blockSizeDsp);
                     }
 
-                    // read out to WASAPI
-                    m_oRing.consume(dst,oFrames);
+                    int32_t oFrames = int32_t(m_blockSizeWasapi) - int32_t(padding);
 
-                    m_audioRenderClient->ReleaseBuffer(oFrames, 0); // retFrames ? 0 : AUDCLNT_BUFFERFLAGS_SILENT
+                    if (oFrames > 0)
+                    {
+                        float* wasapiBuffer = nullptr;
+                        hr = m_audioRenderClient->GetBuffer(oFrames, reinterpret_cast<BYTE**>(&wasapiBuffer));
 
-                    m_iFramePos64 += oFrames;
-                }
-                else
-                {
-                    // DE_ERROR("Wasapi really called with 0 frames, idiot!")
+                        if (FAILED(hr))
+                        {
+                            DE_ERROR(WasapiErrorToString(hr))
+                            if (hr == AUDCLNT_E_DEVICE_INVALIDATED ||
+                                hr == HRESULT_FROM_WIN32(ERROR_DEVICE_NOT_CONNECTED))
+                            {
+                                m_deviceLostFlag = true;
+                                break;
+                            }
+                            continue;
+                        }
+
+                        // FillZeroes:
+                        float* __restrict__ dst = static_cast<float*>(wasapiBuffer);
+                        uint32_t oChannels = m_mixFormat->nChannels;
+                        uint64_t oSamples = oFrames * oChannels;
+                        memset(dst, 0, oSamples * sizeof(float));
+
+                        // Run DSP in fixed chunks to stabilize Dsp
+                        // and to get rid of WASAPI jitter (fast
+                        // alternating blockSizes 480,520,512).
+                        while (oFrames > m_oRing.getAvailFrames())
+                        {
+                            std::fill(m_L.begin(),m_L.end(),0.0f);
+                            std::fill(m_R.begin(),m_R.end(),0.0f);
+                            std::fill(m_I.begin(),m_I.end(),0.0f);
+
+                            // Process
+                            if (m_inputSignal)
+                            {
+                                m_inputSignal->dsp_read(
+                                    dbTimeInSeconds() - m_timeStart,
+                                    m_blockSizeDsp,
+                                    m_sampleRate,
+                                    m_L.data(),
+                                    m_R.data());
+                            }
+
+                            interleave(m_L.data(),
+                                       m_R.data(),
+                                       m_I.data(),
+                                       m_blockSizeDsp,
+                                       m_channels);
+
+                            m_oRing.produce(m_I.data(), m_blockSizeDsp);
+                        }
+
+                        // read out to WASAPI
+                        m_oRing.consume(dst,oFrames);
+
+                        m_audioRenderClient->ReleaseBuffer(oFrames, 0); // retFrames ? 0 : AUDCLNT_BUFFERFLAGS_SILENT
+
+                        m_iFramePos64 += oFrames;
+                    }
+                    else
+                    {
+                        // DE_ERROR("Wasapi really called with 0 frames, idiot!")
+                    }
                 }
             }
         }
+		DE_TRACE("Exit AudioThread")
         return 0;
     }
 };
 
 
 // =============================================
-EndPoint_Wasapi::EndPoint_Wasapi()
+EndPoint_Wasapi::EndPoint_Wasapi(const std::function<void()>& deviceLostFunc)
 // =============================================
-    : _d( new EndPoint_Wasapi_Impl() )
+    : _d( new EndPoint_Wasapi_Impl(deviceLostFunc) )
 {
 }
 
@@ -544,9 +797,9 @@ void EndPoint_Wasapi::setInputSignal( IDspChainElement* inputSignal )
 {
     _d->setInputSignal( inputSignal );
 }
-void EndPoint_Wasapi::play()
+void EndPoint_Wasapi::play(bool * guardFlag)
 {
-    _d->play();
+    _d->play(guardFlag);
 }
 void EndPoint_Wasapi::stop()
 {

@@ -22,17 +22,20 @@ class GL_Renderer
     GL_Mesh16_Shader3D m_mesh16Shader3D;
     GL_Mesh16_Material m_mesh16Material;
 
-    // Matrix3D
+    // Draw: Matrix3D + Front3D
     uint32_t m_matrix_fft_cols;
     uint32_t m_matrix_fft_rows;
     uint32_t m_matrix_fft_xmode;
     std::vector< float > m_matrix_fft_xmap; // Log10
     GL_Mesh16 m_matrix_fft;
+    GL_Mesh16 m_matrix_fft_front;
 
     GL_Mesh16 m_lineStripL;
     GL_Mesh16 m_lineStripR;
 
+    // Draw: Matrix3D + Front3D
     GL_Mesh16 m_lineStripFft;
+    GL_Mesh16 m_triStripFft;
     // de::LinearColorGradient m_wav_colorGradient;
     // de::LinearColorGradient m_fft_colorGradient;
 
@@ -58,9 +61,12 @@ public:
     void draw2DLineStripR();
 
     void draw3DAccumFftMatrix();
-    void draw3DLineStripL();
-    void draw3DLineStripR();
 
     void draw2DLineStripFft();
+
+
+// Boring:
+    void draw3DLineStripL();
+    void draw3DLineStripR();
 
 };

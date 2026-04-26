@@ -12,6 +12,8 @@ App::App(QObject* parent)
     , m_blockSize(0)
     , m_channels(0)
     , m_sampleRate(0)
+    , m_endPoint{ [this]() { QMetaObject::invokeMethod( this, "onAudioDeviceLost", Qt::QueuedConnection); } }
+    , m_deviceGuardFlag{ false }
     , m_track(nullptr)
 {
     DE_TRACE("")
@@ -112,12 +114,24 @@ void App::playAudio()
 {
     getSampleCollector()->dsp_setInputSignal(m_track);
     m_endPoint.setInputSignal(getSampleCollector());
-    m_endPoint.play();
+    m_endPoint.play(&m_deviceGuardFlag);
 }
 
 void App::stopAudio()
 {
     m_endPoint.stop();
+}
+
+void App::onAudioDeviceLost()
+{
+    if (m_deviceGuardFlag)
+        return; // prevents infinite loops
+
+    m_deviceGuardFlag = true;
+
+    stopAudio();
+    DE_ERROR("AudioDevice lost, restart...")
+    playAudio();
 }
 
 //=========================
