@@ -1,9 +1,9 @@
 #pragma once
 #include <de/de_aligned_memory.h>
-#include <cstdint>
+//#include <cstdint>
 #include <cstring> // for memcpy
-#include <vector>
-#include <atomic>
+//#include <vector>
+//#include <atomic>
 
 namespace de {
 namespace audio {

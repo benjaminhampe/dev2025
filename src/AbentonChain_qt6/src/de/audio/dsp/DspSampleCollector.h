@@ -1,5 +1,6 @@
 #include <de/audio/dsp/IDspChainElement.h>
-#include <de/audio/fft/approx_math.h>
+//#include <de/audio/fft/approx_math.h>
+#include <de/audio/fft/WindowFunction.h>
 #include <de/audio/fft/DE_FFT_pffft.h>
 
 namespace de {
@@ -10,10 +11,10 @@ class DspSampleCollector : public IDspChainElement
 // ===================================================================
 {
     IDspChainElement* m_inputSignal;
+    u32 m_blockSize;
     u32 m_fftSize;
     u32 m_cols;
     u32 m_rows;
-    int m_windowFunc;
     bool m_bStopped;
     bool m_bBypassed;
     bool m_bCollectAccumMatrix;
@@ -31,6 +32,7 @@ class DspSampleCollector : public IDspChainElement
     // AlignedFloatShiftMatrix m_raw_fft_matrix;
 
     // shiftVector FFT
+    WindowFunction m_accum_win;
     AlignedFloatShiftVector m_accum;
     AlignedFloatVector m_accum_vec_in;
     AlignedFloatVector m_accum_vec_out;
@@ -66,6 +68,12 @@ public:
     DspSampleCollector();
     ~DspSampleCollector();
 
+    uint32_t blockSize() const { return m_blockSize; }
+    uint32_t fftSize() const { return m_fftSize; }
+    uint32_t cols() const { return m_cols; }
+    uint32_t rows() const { return m_rows; }
+    WindowFunction::eFunc windowFunc() const { return m_accum_win.function(); }
+
     void stop()
     {
         m_bStopped = true;
@@ -86,7 +94,14 @@ public:
 
     void setWindowFunc( int windowFunc )
     {
-        m_windowFunc = windowFunc;
+        m_accum_win.setFunction((WindowFunction::eFunc)windowFunc);
+    }
+
+    void setFftSize( int fftSize )
+    {
+        m_fftSize = fftSize;
+        if (m_accum_fft)
+            m_accum_fft->setFftSize(fftSize);
     }
 
     void setColumnCount( u32 columns )
@@ -98,11 +113,6 @@ public:
     {
         m_rows = std::max(8u,rows);
     }
-
-    void applyWindow(int winType,
-                     const float* __restrict__ src,
-                     float* __restrict__ dst,
-                     size_t n);
 
     void dsp_init( u64 frames, u32 channels, u32 sampleRate ) override;
 

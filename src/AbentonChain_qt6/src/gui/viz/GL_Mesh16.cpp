@@ -17,34 +17,45 @@ inline void db2D(uint64_t id, uint32_t w, uint32_t& x, uint32_t& y)
 
 GL_Mesh16::GL_Mesh16()
     : PrimType(de::gpu::PrimitiveType::Points)
+    , IndexType(de::gpu::IndexType::U16)
     , VAO(0)
     , VBO(0)
     , IBO(0)
 {
 }
 
+void GL_Mesh16::addIndex(uint32_t index)
+{
+    if (index > 65535)
+    {
+        DE_ERROR("Got index ",index," > 16-bit")
+        return;
+    }
+    Indices.push_back( index );
+}
+
 void GL_Mesh16::addIndexedLine(uint32_t A,uint32_t B)
 {
-    Indices.push_back( A );   // A - 0
-    Indices.push_back( B );   // C - 3
+    addIndex( A );   // A - 0
+    addIndex( B );   // C - 3
 }
 
 void GL_Mesh16::addIndexedTriangle(uint32_t A,uint32_t B,uint32_t C)
 {
-    Indices.push_back( A );   // A - 0
-    Indices.push_back( C );   // C - 3
-    Indices.push_back( B );   // B - 1
+    addIndex( A );   // A - 0
+    addIndex( C );   // C - 3
+    addIndex( B );   // B - 1
 }
 
 void GL_Mesh16::addIndexedQuad(uint32_t A,uint32_t B,uint32_t C,uint32_t D)
 {
-    Indices.push_back( A );   // A - 0
-    Indices.push_back( C );   // C - 3
-    Indices.push_back( B );   // B - 1
+    addIndex( A );   // A - 0
+    addIndex( C );   // C - 3
+    addIndex( B );   // B - 1
 
-    Indices.push_back( A );   // A - 0
-    Indices.push_back( D );   // D - 2
-    Indices.push_back( C );   // C - 3
+    addIndex( A );   // A - 0
+    addIndex( D );   // D - 2
+    addIndex( C );   // C - 3
 }
 
 void GL_Mesh16::destroy()
@@ -60,14 +71,15 @@ void GL_Mesh16::draw() const
 
     if (VBO)
     {
-        GLenum const primType = de::gpu::PrimitiveType::toOpenGL( PrimType );
+        const GLenum primType = de::gpu::PrimitiveType::toOpenGL( PrimType );
         if ( IBO )
         {
-            glDrawElements( primType, GLint(Indices.size()), GL_UNSIGNED_INT, nullptr );
+            const GLenum indexType = de::gpu::IndexType::toOpenGL( IndexType );
+            glDrawElements( primType, GLsizei(Indices.size()), indexType, nullptr );
         }
         else
         {
-            glDrawArrays( primType, 0, GLint(Vertices.size()) );
+            glDrawArrays( primType, 0, GLsizei(Vertices.size()) );
         }
     }
 
@@ -118,10 +130,17 @@ void GL_Mesh16::upload( bool bNeedVertexUpload, bool bNeedIndexUpload )
 
         if (IBO)
         {
+#if 0 // 32-bit
             auto n = Indices.size() * sizeof(uint32_t);
             auto p = reinterpret_cast< const uint8_t* >( Indices.data() );
             glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IBO);
             glBufferData(GL_ELEMENT_ARRAY_BUFFER, GLsizeiptr(n), p, GL_STATIC_DRAW);
+#else // 16-bit
+            auto n = Indices.size() * sizeof(uint16_t);
+            auto p = reinterpret_cast< const uint8_t* >( Indices.data() );
+            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IBO);
+            glBufferData(GL_ELEMENT_ARRAY_BUFFER, GLsizeiptr(n), p, GL_STATIC_DRAW);
+#endif
             if (n<1) { DE_WARN("Uploading 0 indices") }
             DE_OK("Upload ",n," indices")
         }
@@ -140,10 +159,17 @@ void GL_Mesh16::upload( bool bNeedVertexUpload, bool bNeedIndexUpload )
 
     if ( IBO && bNeedIndexUpload )
     {
+#if 0 // 32-bit
         auto n = Indices.size() * sizeof(uint32_t);
         auto p = reinterpret_cast< const uint8_t* >( Indices.data() );
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IBO);
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, GLsizeiptr(n), p, GL_STATIC_DRAW);
+#else // 16-bit
+        auto n = Indices.size() * sizeof(uint16_t);
+        auto p = reinterpret_cast< const uint8_t* >( Indices.data() );
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IBO);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, GLsizeiptr(n), p, GL_STATIC_DRAW);
+#endif
     }
 }
 

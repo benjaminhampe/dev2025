@@ -797,9 +797,18 @@ public:
         int32_t cc = factory.classCount();
         DE_TRACE("Class.Count = ",cc)
 
+        bool m_bIsInstrument = false;
+
         size_t i = 0;
         for (ClassInfo const& ci : factory.classInfos())
         {
+            if (ci.subCategoriesString().find("Instrument") !=
+                std::string::npos)
+            {
+                DE_OK("Found Instrument")
+                m_bIsInstrument = true;
+            }
+
             DE_TRACE("ClassInfo[",i,"].ID = ",ci.ID().toString())
             DE_TRACE("ClassInfo[",i,"].Name = ",ci.name())
             DE_DEBUG("ClassInfo[",i,"].Category = ",ci.category())
@@ -975,6 +984,7 @@ public:
 
         // 4. Activate MIDI event processing:
         m_bIsSynth = determineIsSynth();
+        m_bIsSynth |= m_bIsInstrument;
         DE_TRACE("m_bIsSynth = ", m_bIsSynth)
         m_sampleRate = 48000;
         m_blockSize = 256;

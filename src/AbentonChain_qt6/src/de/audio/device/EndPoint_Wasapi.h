@@ -1,5 +1,5 @@
 #pragma once
-#include <de/audio/dsp/IDspChainElement.h>
+#include <de/audio/device/IEndPoint.h>
 //#include <cstdint>
 //#include <functional>
 
@@ -9,7 +9,7 @@ namespace audio {
 class EndPoint_Wasapi_Impl;
 
 // =======================================================
-class EndPoint_Wasapi
+class EndPoint_Wasapi : public IEndPoint
 // =======================================================
 {
 public:
@@ -23,28 +23,20 @@ public:
 
     EndPoint_Wasapi(const std::function<void()>& deviceLostFunc);
     ~EndPoint_Wasapi();
-
-    void setInputSignal( IDspChainElement* inputSignal );
-    void play(bool * guardFlag);
-    void stop();
-    bool is_playing() const;
+    bool isPlaying() const override;
+    void play(bool * guardFlag) override;
+    void stop() override;
+    void setInputSignal( IDspChainElement* inputSignal ) override;
 
     s32 getOutputDeviceId() const;
     s32 getInputDeviceId() const;
-    s32 getChannelCount() const;
-    s32 getSampleRate() const;
-    s32 getBlockSizeDsp() const;
-    s32 getBlockSizeWasapi() const;
-
-    float getLatencyWasapi() const
-    {
-        return (1000.0f * getBlockSizeWasapi()) / float(getSampleRate());
-    }
-
-    float getLatencyDsp() const
-    {
-        return (1000.0f * getBlockSizeDsp()) / float(getSampleRate());
-    }
+    s32 getChannelCount() const override;
+    s32 getSampleRate() const override;
+    s32 getBlockSizeDsp() const override;
+    s32 getBlockSizeNow() const override;
+    s32 getBlockSizeMin() const override;
+    s32 getBlockSizeDef() const override;
+    s32 getBlockSizeMax() const override; // Wasapi GetBufferSize
 
     // void enumerateDevices();
 

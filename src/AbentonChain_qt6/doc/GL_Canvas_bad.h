@@ -1,26 +1,30 @@
 #pragma once
-#include <QtCore/qglobal.h>
-
-// Q_OS_WIN	Any Windows OS
-// Q_OS_WIN32	32‑bit Windows (rare today)
-// Q_OS_WIN64	64‑bit Windows
-// Q_OS_LINUX	Linux
-// Q_OS_MACOS	macOS
-// Q_OS_UNIX	Any Unix-like OS (Linux, macOS, BSD…)
-
-#ifdef Q_OS_WIN
-#include <gui/viz/GL_Widget_WGL.h>
-#include <gui/viz/GL_Window_WGL.h>
-#endif
 #include <gui/viz/GL_Renderer.h>
+#include <QOpenGLWidget>
+#include <QOpenGLWindow>
+#include <QOpenGLContext>
+#include <QOpenGLFunctions>
+#include <QSurfaceFormat>
+#include <QOffscreenSurface>
+#include <QTimer>
+#include <QDebug>
+#include <QOpenGLFunctions_4_3_Core>
+//#include <QOpenGLFunctions_4_5_Core>
+#include <QtGlobal>
 #include <QTimerEvent>
 #include <QMouseEvent>
 #include <QGestureEvent>
 
+#if QT_VERSION_MAJOR == 5
+#elif QT_VERSION_MAJOR == 6
+    #include <QOpenGLVersionFunctionsFactory>
+#else
+#endif
+
 #include <de/gpu/VideoDriver.h>
 
 // ===========================================================================
-class GL_Canvas : public GL_Window_WGL
+class GL_Canvas : public QOpenGLWidget, protected QOpenGLFunctions_4_3_Core
 // ===========================================================================
 {
     Q_OBJECT
@@ -29,6 +33,7 @@ private:
     int m_fpsTimerId;
     bool m_bRenderingEnabled;
     bool m_bVisiblePerfOverlay;
+    QOpenGLContext* m_sharedContext;
     de::gpu::VideoDriver* m_driver;
     de::gpu::IRenderTarget* m_renderTarget;
     std::array<bool, 1024> m_keyStates;
@@ -56,7 +61,7 @@ private:
     GL_Renderer m_renderer;
 
 public:
-    explicit GL_Canvas(QWidget *parent = nullptr);
+    GL_Canvas(QOpenGLContext *sharedContext, QWidget *parent = nullptr);
     ~GL_Canvas() override;
 
     void cleanupAll()
@@ -86,7 +91,7 @@ public:
     void setVisiblePerfOverlay( bool bVisible )
     {
         m_bVisiblePerfOverlay = bVisible;
-        requestUpdate();
+        update();
     }
 
     // void setVisible( bool bVisible ) override
@@ -97,31 +102,29 @@ public:
     void setVisibleFftMatrix( bool bVisible )
     {
         m_renderer.setVisibleFftMatrix(bVisible);
-        requestUpdate();
+        update();
     }
 
     void startFpsTimer();
     void stopFpsTimer();
 
-    void draw2DFftOverlay();
     GL_Renderer* getRenderer() { return &m_renderer; }
 
 protected:
-    // void timerEvent(QTimerEvent* event) override;
+    void timerEvent(QTimerEvent* event) override;
     void initializeGL() override;
     void resizeGL(int w, int h) override;
     void paintGL() override;
 
     bool event(QEvent *event) override;
-
-    // bool gestureEvent(QGestureEvent* event);
-    // bool pinchTriggered(QPinchGesture* event);
-    // bool swipeTriggered(QSwipeGesture* event);
-    // bool panTriggered(QPanGesture* event);
-    // void mouseMoveEvent( QMouseEvent* event ) override;
-    // void wheelEvent( QWheelEvent* event ) override;
-    // void mousePressEvent( QMouseEvent* event ) override;
-    // void mouseReleaseEvent( QMouseEvent* event ) override;
+    bool gestureEvent(QGestureEvent* event);
+    bool pinchTriggered(QPinchGesture* event);
+    bool swipeTriggered(QSwipeGesture* event);
+    bool panTriggered(QPanGesture* event);
+    void mouseMoveEvent( QMouseEvent* event ) override;
+    void wheelEvent( QWheelEvent* event ) override;
+    void mousePressEvent( QMouseEvent* event ) override;
+    void mouseReleaseEvent( QMouseEvent* event ) override;
 
 };
 

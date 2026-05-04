@@ -120,7 +120,7 @@ AlignedFloatShiftMatrix::AlignedFloatShiftMatrix()
     //, m_pushCount( 0 )
     //, m_dummy( 0 )
 {
-    test();
+    // test();
 
     DE_TRACE("")
 

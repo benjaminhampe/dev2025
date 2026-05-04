@@ -56,6 +56,11 @@ public:
     //=========================
     // DriverApi
     //=========================
+    const de::audio::IEndPoint*
+    getEndPoint() const { return &m_endPoint; }
+    de::audio::IEndPoint*
+    getEndPoint() { return &m_endPoint; }
+
 
     void confAudio( int outputDevice = -1,
                     int inputDevice = -1,

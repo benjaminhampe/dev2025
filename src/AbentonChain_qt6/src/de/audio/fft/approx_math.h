@@ -49,6 +49,57 @@ namespace math {
     //     return _mm_cvtss_f32(v);
     // }
 
+    // ✅ 1. Frequency of each FFT bin (PFFFT)
+
+    // f[ i ] = i * sampleRate / fftSize;
+
+    inline float bin2freq(int i, float sampleRate, float fftSize)
+    {
+        return (sampleRate / fftSize) * i;
+    }
+
+    // ✅ 2. Linear mapping from frequency → x coordinate
+
+    // x( f ) = width * f / nyquist; nyquist = sampleRate/2;
+
+    inline float freq2lin(float f, float fMin, float fMax, float sampleRate)
+    {
+        fMin = std::fmaxf(fMin,0.0f);
+        fMax = std::fminf(fMax,sampleRate * 0.5f); // nyquist
+        return (f - fMin) / (fMax - fMin); // normalized in range [0,1]
+    }
+
+    inline float lin2freq(float x_norm, float fMin, float fMax, float sampleRate)
+    {
+        fMin = std::fmaxf(fMin,0.0f);
+        fMax = std::fminf(fMax,sampleRate * 0.5f); // nyquist
+        return x_norm * (fMax - fMin) + fMin;
+    }
+
+    // ✅ 3. Logarithmic mapping from frequency → x coordinate
+
+    // x( f ) = width * (log(f) - log(fMin))/(log(fMax) - log(fMin));
+
+    inline float freq2log(float f, float fMin, float fMax, float sampleRate)
+    {
+        fMin = std::fmaxf(fMin,1.0f);
+        fMax = std::fminf(fMax,sampleRate * 0.5f); // nyquist
+        const float lMin = std::logf(fMin);
+        const float lRange = std::logf(fMax) - lMin;
+        f = ::de::audio::math::clampf(f, fMin, fMax);
+        return (std::log(f) - lMin) / lRange; // normalized in range [0,1]
+    }
+
+    inline float log2freq(float x_norm, float fMin, float fMax, float sampleRate)
+    {
+        fMin = std::fmaxf(fMin,1.0f);
+        fMax = std::fminf(fMax,sampleRate * 0.5f); // nyquist
+        const float lMin = std::logf(fMin);
+        const float lMax = std::logf(fMax);
+        float logF = x_norm * (lMax - lMin) + lMin;
+        return std::exp(logF);
+    }
+
 
     template <typename T>
     bool isPositiveInfinity(const T t)

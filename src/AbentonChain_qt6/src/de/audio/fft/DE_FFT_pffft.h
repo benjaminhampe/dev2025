@@ -24,17 +24,19 @@ struct DE_FFT_pffft
     DE_FFT_pffft();
     //{}
     ~DE_FFT_pffft();
-    //{}
+
+    uint32_t getFftSize() const;
+
+    // Called by external thread, like GUI.
+    void setFftSize( uint32_t requestFftSize );
+
+    // Called only by AudioThread, like DspSampleCollector::dsp_init().
     void resize(uint32_t fftSize);
-    //{}
-    uint32_t fftSize() const;
-    //{ return 512; }
 
     // nSrc should be smaller or maximal size m_fftSize
     // nDst should be smaller or maximal size m_fftSize
     void fft(const float* __restrict__ src, uint32_t nSrc,
                    float* __restrict__ dst, uint32_t nDst);
-    //{}
 
 private:
     DE_FFT_pffft_Private* _d;

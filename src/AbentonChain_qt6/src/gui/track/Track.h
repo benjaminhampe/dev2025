@@ -94,7 +94,7 @@ private:
     int m_dropTargetWidth;
 
     QString m_msg1 = "Ziehen Sie Audio-Effekte hierhin";
-    QString m_msg2 = "Ziehen Sie MIDI-Effekte, Audio-Effekte, Instrumente oder Samples hierhin";
+    QString m_msg2 = "Drag & Drop VST2|VST3|CLAP|LV2 Audio-Instrument or Audio-Effect files here";
 
     QColor m_windowColor;
     QColor m_panelColor;

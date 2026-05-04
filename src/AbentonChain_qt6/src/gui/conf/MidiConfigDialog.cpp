@@ -3,19 +3,19 @@
 
 namespace {
 
-inline std::string getApiDisplayName(RtMidi::Api api)
-{
-    switch (api)
+    inline std::string getApiDisplayName(RtMidi::Api api)
     {
-        case RtMidi::UNSPECIFIED: return "Unspecified";
-        case RtMidi::MACOSX_CORE: return "CoreMIDI";
-        case RtMidi::LINUX_ALSA:  return "ALSA";
-        case RtMidi::UNIX_JACK:   return "JACK";
-        case RtMidi::WINDOWS_MM:  return "Windows MM";
-        case RtMidi::RTMIDI_DUMMY:return "Dummy";
-        default:                  return "Unknown";
+        switch (api)
+        {
+            case RtMidi::UNSPECIFIED: return "Unspecified";
+            case RtMidi::MACOSX_CORE: return "CoreMIDI";
+            case RtMidi::LINUX_ALSA:  return "ALSA";
+            case RtMidi::UNIX_JACK:   return "JACK";
+            case RtMidi::WINDOWS_MM:  return "Windows MM";
+            case RtMidi::RTMIDI_DUMMY:return "Dummy";
+            default:                  return "Unknown";
+        }
     }
-}
 
 } // end namespace.
 
@@ -80,8 +80,8 @@ void MidiConfigDialog::populateInputPorts()
     auto api = static_cast<RtMidi::Api>(m_apiCombo->currentData().toInt());
     RtMidiIn midiIn(api);
 
-    unsigned int count = midiIn.getPortCount();
-    for (unsigned int i = 0; i < count; ++i)
+    uint32_t count = midiIn.getPortCount();
+    for (uint32_t i = 0; i < count; ++i)
     {
         auto s = QString::fromStdString(midiIn.getPortName(i));
         m_inputCombo->addItem(s, i);

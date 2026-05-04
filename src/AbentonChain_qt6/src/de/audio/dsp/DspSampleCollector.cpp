@@ -6,10 +6,10 @@ namespace audio {
 // ===================================================================
 DspSampleCollector::DspSampleCollector()
     : m_inputSignal{ nullptr }
+    , m_blockSize{ 0 }
     , m_fftSize{ 2048 }
-    , m_cols{ m_fftSize/8 } // 256
-    , m_rows{ 32 }
-    , m_windowFunc{ 2 }
+    , m_cols{ 512 }
+    , m_rows{ 64 }
     , m_bBypassed{ true }
     , m_bStopped{ false }
     , m_bCollectAccumMatrix{ true }
@@ -20,6 +20,8 @@ DspSampleCollector::DspSampleCollector()
     //, m_accum_vec_out("samcoll_accum_vec_out")
 {
     DE_TRACE("")
+
+    m_accum_win.setFunction(WindowFunction::Blackman);
 
     m_accum_fft = std::make_shared<DE_FFT_pffft>();
 
@@ -34,16 +36,18 @@ DspSampleCollector::DspSampleCollector()
             }
 
             // Apply window function
-            applyWindow(
-                m_windowFunc,
-                m_accum.data(),
-                m_accum_vec_in.data(), n);
+            m_accum_win.apply( m_accum.data(),
+                               m_accum.size(),
+                               m_accum_vec_in.data(),
+                               m_accum_vec_in.size());
 
             // Apply fft
             if (m_accum_fft)
+            {
                 m_accum_fft->fft(
                     m_accum_vec_in.data(), m_accum_vec_in.size(),
                     m_accum_vec_out.data(), m_accum_vec_out.size());
+            }
 
             // Push fft row to AccumShiftMatrix.
             if (m_bCollectAccumMatrix)
@@ -63,24 +67,6 @@ DspSampleCollector::~DspSampleCollector()
 }
 
 void
-DspSampleCollector::applyWindow(int winType,
-    const float* __restrict__ src, float* __restrict__ dst, size_t n)
-{
-    if (winType == 1)
-    {
-        de::audio::math::apply_blackman(dst, src, n);
-    }
-    else if (winType == 2)
-    {
-        de::audio::math::apply_hamming(dst, src, n);
-    }
-    else if (winType == 3)
-    {
-        de::audio::math::apply_hann(dst, src, n);
-    }
-}
-
-void
 DspSampleCollector::dsp_setInputSignal( IDspChainElement* inputSignal, int i )
 {
     m_inputSignal = inputSignal;
@@ -94,14 +80,22 @@ DspSampleCollector::dsp_init( u64 frames, u32 channels, u32 sampleRate )
         DE_ERROR("")
         return;
     }
+
+    m_blockSize = frames;
     m_L.resize(frames);
     m_R.resize(frames);
     m_sum.resize(frames);
+
     m_accum.resize(m_fftSize);
     if (m_accum_fft) m_accum_fft->resize(m_fftSize);
     m_accum_vec_in.resize(m_fftSize);
     m_accum_vec_out.resize(m_cols);
     m_accum_mat.resize(m_cols, m_rows);
+
+    DE_WARN("blockSize = ", m_blockSize)
+    DE_WARN("fftSize = ", m_fftSize)
+    DE_WARN("cols = ", m_cols)
+    DE_WARN("rows = ", m_rows)
 
     if (m_inputSignal)
     {

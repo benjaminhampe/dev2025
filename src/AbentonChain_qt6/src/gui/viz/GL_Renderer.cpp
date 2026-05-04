@@ -3,6 +3,54 @@
 #include <de_opengl.h>
 #include <App.h>
 #include "rainbow_1k_webp.h"
+#include <vector>
+#include <utility>
+#include <de/audio/fft/approx_math.h>
+
+// ===========================================================================
+struct Axis
+// ===========================================================================
+{
+    uint32_t m_sampleRate;
+    uint32_t m_fftSize;
+    uint32_t m_scaleMode; // 0=linear, 1=logarithm
+    float m_scaleFactor;
+    float m_fMin;
+    float m_fMax;
+
+    Axis()
+        : m_sampleRate{ 48000 }
+        , m_fftSize{ 2048 }
+        , m_scaleMode{ 1 } // 0=linear, 1=logarithm
+        , m_scaleFactor{ 1.0f }
+        , m_fMin{ 0 }
+        , m_fMax{ 256 }
+    {
+
+    }
+
+    double x( double freq )
+    {
+        if ( m_scaleMode == 1 )
+            return de::audio::math::freq2log(freq, m_fMin, m_fMax, m_sampleRate );
+        else
+            return de::audio::math::freq2lin(freq, m_fMin, m_fMax, m_sampleRate );
+    }
+/*
+    // / (sampleRate_over_fftSize * colCount);
+    const float sampleRate = 48000.0f;
+    const float fftSize = cols;
+
+    const float sampleRate_over_fftSize = sampleRate / fftSize;
+    const float f = sampleRate_over_fftSize; //  / log10f( float(cols) );
+
+    for ( size_t col = 0; col < cols; col++ )
+    {
+    //  - 1.5f -1 = shift by 10^-1
+        m_matrix_fft_xmap[ col ] = f * log10f( float(col+1) );
+    }
+*/
+};
 
 // ===========================================================================
 GL_Renderer::GL_Renderer()
@@ -77,6 +125,21 @@ void GL_Renderer::initializeGL(de::gpu::VideoDriver* driver)
 
     // auto d = glm::vec3(4000,500,2000);
     // m_matrix_fft.init(d, V3(-0.5f * d.x,0,0));
+
+    de::Image sky;
+    dbLoadImage(sky,"../../media/Abenton/skybox.png");
+
+    int a = sky.w() / 4;
+    int b = sky.h() / 3;
+    de::Image nx = sky.copy(de::Recti(0*a,b,a,b));
+    de::Image pz = sky.copy(de::Recti(1*a,b,a,b));
+    de::Image px = sky.copy(de::Recti(2*a,b,a,b));
+    de::Image nz = sky.copy(de::Recti(3*a,b,a,b));
+    de::Image py = sky.copy(de::Recti(1*a,0*b,a,b));
+    de::Image ny = sky.copy(de::Recti(1*a,2*b,a,b));
+    m_driver->getSkyboxRenderer()->load(&nx,&px,&ny,&py,&nz,&pz);
+
+
 }
 
 void GL_Renderer::paintGL()
@@ -118,6 +181,28 @@ void GL_Renderer::paintGL()
     draw2DLineStripFft();
 }
 
+void buildTerrainStrip(uint32_t M, uint32_t N, GL_Mesh16 & mesh)
+{
+    mesh.Indices.clear();
+    mesh.Indices.reserve(M * N * 2);
+
+    for (uint32_t y = 0; y < N - 1; ++y)
+    {
+        uint32_t r0 = y * M;
+        uint32_t r1 = (y+1) * M;
+
+        mesh.Indices.emplace_back(r1);
+
+        for (uint32_t x = 0; x < M; ++x) // left -> right
+        {
+            mesh.addIndex(r1 + x);
+            mesh.addIndex(r0 + x);
+        }
+
+        mesh.Indices.emplace_back(mesh.Indices.back());
+    }
+}
+
 void GL_Renderer::draw3DAccumFftMatrix()
 {
     if (!m_showFftMatrix3D)
@@ -156,6 +241,9 @@ void GL_Renderer::draw3DAccumFftMatrix()
 
         // Matrix16 FFT indices:
         m_matrix_fft.Indices.clear();
+
+// OLD: Easy but Expensive Triangles
+/*
         m_matrix_fft.Indices.reserve( (cols) * (rows) * 6);
 
         for ( size_t j = 0; j < rows-1; j++ )
@@ -169,24 +257,26 @@ void GL_Renderer::draw3DAccumFftMatrix()
                 m_matrix_fft.addIndexedQuad( A,B,C,D );
             }
         }
+*/
+        // NEW: Faster TriangleStrips
+        buildTerrainStrip(cols,rows,m_matrix_fft);
         bNeedIndexUpload = true;
 
         // X-axis is scaled logarithmicly.
         if (m_matrix_fft_xmap.size() != cols)
         {
             m_matrix_fft_xmap.resize(cols);
-
-            // / (sampleRate_over_fftSize * colCount);
             const float sampleRate = 48000.0f;
-            const float fftSize = cols;
-
-            const float sampleRate_over_fftSize = sampleRate / fftSize;
-            const float f = sampleRate_over_fftSize; //  / log10f( float(cols) );
-
+            const float fftSize = 2048;
+            const float factor = fftSize / cols;
+            const float fNyquist = sampleRate * 0.5f;
+            const float fMin = 100.0f;
+            const float fMax = fNyquist / factor;
             for ( size_t col = 0; col < cols; col++ )
             {
-                //  - 1.5f -1 = shift by 10^-1
-                m_matrix_fft_xmap[ col ] = f * log10f( float(col+1) );
+                float f = de::audio::math::bin2freq(col,sampleRate,fftSize);
+                float x = siz3d.x * de::audio::math::freq2log(f,fMin,fMax,sampleRate);
+                m_matrix_fft_xmap[ col ] = x;
             }
         }
     }
@@ -205,7 +295,7 @@ void GL_Renderer::draw3DAccumFftMatrix()
     const float dy = siz3d.y;
     const float dz = siz3d.z / float ( rows - 1 );
 
-    m_matrix_fft.PrimType = de::gpu::PrimitiveType::Triangles;
+    m_matrix_fft.PrimType = de::gpu::PrimitiveType::TriangleStrip;
     m_matrix_fft.Vertices.clear();
     m_matrix_fft.Vertices.reserve(rows * cols);
 
@@ -246,11 +336,9 @@ void GL_Renderer::draw3DAccumFftMatrix()
 
     m_matrix_fft.upload(true, bNeedIndexUpload);
 
-
     //#############################
     // Create front:
     //#############################
-
     m_matrix_fft_front.PrimType = de::gpu::PrimitiveType::TriangleStrip;
     m_matrix_fft_front.Vertices.clear();
     m_matrix_fft_front.Vertices.reserve(cols*2);
@@ -261,7 +349,8 @@ void GL_Renderer::draw3DAccumFftMatrix()
     {
         auto a = vertices[col];
         auto b = a;
-        b.set_y(0.0f);
+        b.set_y(0.0f); //
+        //b.set_y(-b.y()); // 0.0f
         m_matrix_fft_front.Vertices.emplace_back( std::move(a) );
         m_matrix_fft_front.Vertices.emplace_back( std::move(b) );
     }
@@ -276,6 +365,31 @@ void GL_Renderer::draw3DAccumFftMatrix()
     m_mesh16Shader3D.setMaterial(m_mesh16Material, T);
     m_matrix_fft_front.draw();
     m_matrix_fft.draw();
+
+    //#############################
+    // Draw x-axis
+    //#############################
+/*
+    m_matrix_fft_axis_x.PrimType = de::gpu::PrimitiveType::Lines;
+    m_matrix_fft_axis_x.Indices.clear();
+    m_matrix_fft_axis_x.Vertices.clear();
+    m_matrix_fft_axis_x.Vertices.reserve(cols * 2);
+
+    for ( size_t col = 0; col < cols; ++col )
+    {
+        auto a = m_matrix_fft.Vertices[col];
+        auto b = a;
+        a.set_y(0.0f);
+        b.set_y(-100.0f);
+        b.set_z(-100.0f);
+        m_matrix_fft_axis_x.Vertices.emplace_back( std::move(a) );
+        m_matrix_fft_axis_x.Vertices.emplace_back( std::move(b) );
+    }
+
+    m_matrix_fft_axis_x.upload(true, false);
+    m_mesh16Shader3D.setMaterial(m_mesh16Material, T);
+    m_matrix_fft_axis_x.draw();
+*/
 }
 
 void GL_Renderer::draw2DLineStripL()
@@ -308,7 +422,7 @@ void GL_Renderer::draw2DLineStripL()
         const float y = dy * s;
         const float z = 0.0f;
         const float t = std::clamp((0.5f * s) + 0.5f, 0.f, 1.f);
-        m.Vertices.push_back( GL_Mesh16_Vertex( x, y, z, t ) );
+        m.Vertices.emplace_back( x, y, z, t );
     }
 
     m.upload( true );

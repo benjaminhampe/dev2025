@@ -12,7 +12,8 @@
 
 namespace de {
 namespace audio {
-
+namespace {
+	
 constexpr u64 GUARD = 256;
 
 /*
@@ -701,6 +702,8 @@ struct CLAP_OutputEventQueue
     }
 };
 
+} // end namespace
+
 //===============================
 class CLAP_Plugin_Impl
 //===============================
@@ -928,7 +931,7 @@ public:
         DE_DEBUG("")
 
         m_host.clap_version     = CLAP_VERSION;
-        m_host.name             = "AbentonChain_qt6";
+        m_host.name             = "Abenton Instrument Qt6";
         m_host.vendor           = "<benjaminhampe@gmx.de>";
         m_host.url              = "https://github.com/benjaminhampe";
         m_host.version          = "1.0";

@@ -126,14 +126,16 @@ struct GL_Mesh16
     typedef GL_Mesh16_Vertex TVertex;
 
     de::gpu::PrimitiveType PrimType;
+    de::gpu::IndexType IndexType;
     uint32_t VAO;
     uint32_t VBO;
     uint32_t IBO;
-
     de::TAlignedVector< TVertex > Vertices;
-    de::TAlignedVector< uint32_t > Indices;
+    de::TAlignedVector< uint16_t > Indices;
+    //de::TAlignedVector< uint32_t > Indices;
 
     GL_Mesh16();
+    void addIndex(uint32_t i);
     void addIndexedLine(uint32_t A,uint32_t B);
     void addIndexedTriangle(uint32_t A,uint32_t B,uint32_t C);
     void addIndexedQuad(uint32_t A,uint32_t B,uint32_t C,uint32_t D);

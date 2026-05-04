@@ -7,8 +7,8 @@
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 
+#include <de/audio/device/IEndPoint.h>
 #include "AudioTestEngine.h"
-
 
 class AudioConfigDialog : public QDialog
 {
@@ -22,33 +22,44 @@ signals:
 
 private slots:
     void onBackendChanged(int index);
-    void refreshEnumeration();
+    void enumerateDeviceInfos();
 
 private:
-    void populateBackends();
     void populateApis();
-    void populateDevices();
+    void populateInputDevices();
+    void populateOutputDevices();
+    void populateDeviceInfo( const de::audio::DeviceInfo* di );
     void populateStaticOptions();
 
-    QComboBox *m_backendCombo;
-    QComboBox *m_apiCombo;
-    QComboBox *m_channelCountCombo;
-    QComboBox *m_sampleRateCombo;
-    QComboBox *m_blockSizeCombo;
-    QComboBox *m_firstChannelCombo;
-    QComboBox *m_inputDeviceCombo;
-    QComboBox *m_outputDeviceCombo;
+    QComboBox* m_backendCombo;
+    QComboBox* m_apiCombo;
 
-    QPushButton *m_btnApply;
-    QPushButton *m_btnRefresh;
-    QPushButton *m_btnCancel;
+    QComboBox* m_inputDeviceCombo;
+    QComboBox* m_outputDeviceCombo;
+
+    QComboBox* m_channelCountCombo;
+    QComboBox* m_firstChannelCombo;
+
+    QComboBox* m_sampleRateCombo;
+    QComboBox* m_sampleTypeCombo;
+
+    QComboBox* m_blockSizeDspCombo;
+    QComboBox* m_blockSizeCombo;
+
+    QComboBox* m_granularityCombo;
+    QComboBox* m_latencyCombo;
+
+    QPushButton* m_btnApply;
+    QPushButton* m_btnCancel;
 	
-	
+    std::vector<de::audio::DeviceInfo> m_inputDeviceInfos;
+    std::vector<de::audio::DeviceInfo> m_outputDeviceInfos;
+
 // <TestEngine>
 	AudioTestEngine m_testEngine;
 
-	QPushButton *m_btnTestSine;
-	QPushButton *m_btnTestClick;
-	QPushButton *m_btnTestStop;
+    QPushButton* m_btnTestSine;
+    QPushButton* m_btnTestClick;
+    QPushButton* m_btnTestStop;
 // </TestEngine>
 };

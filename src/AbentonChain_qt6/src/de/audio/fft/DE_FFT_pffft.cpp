@@ -13,6 +13,7 @@ struct DE_FFT_pffft_Private
 {
     PFFFT_Setup* m_ctx;
     uint32_t m_fftSize;
+    uint32_t m_fftSizeRequest;
     DE_AlignedFloatVector m_input;
     DE_AlignedFloatVector m_output;
 
@@ -75,10 +76,10 @@ struct DE_FFT_pffft_Private
             DE_ERROR("Computed fftSize ", n)
         }
 
-        if (n>16u*1024u)
+        if (n>64u*1024u)
         {
-            DE_ERROR("fftSize ", n, " too large clamp to 16k.")
-            n = 16u*1024u;
+            DE_ERROR("fftSize ", n, " too large clamp to 64k.")
+            n = 64u*1024u;
         }
 
         m_input.resize(n);
@@ -95,10 +96,12 @@ struct DE_FFT_pffft_Private
         {
             DE_OK("New context. ",n)
             m_fftSize = n;
+            m_fftSizeRequest = n;
         }
         else
         {
             m_fftSize = 0;
+            m_fftSizeRequest = 0;
             DE_ERROR("No new context. ", n)
         }
     }
@@ -115,6 +118,8 @@ struct DE_FFT_pffft_Private
         {
             DE_ERROR("")
         }
+
+        resize(m_fftSizeRequest);
 
         if (nSrc > m_fftSize)
         {
@@ -206,9 +211,14 @@ DE_FFT_pffft::~DE_FFT_pffft()
     delete _d;
 }
 
-uint32_t DE_FFT_pffft::fftSize() const
+uint32_t DE_FFT_pffft::getFftSize() const
 {
     return _d->m_fftSize;
+}
+
+void DE_FFT_pffft::setFftSize( uint32_t requestFftSize )
+{
+    _d->m_fftSizeRequest = requestFftSize;
 }
 
 void DE_FFT_pffft::resize( uint32_t fftSize )

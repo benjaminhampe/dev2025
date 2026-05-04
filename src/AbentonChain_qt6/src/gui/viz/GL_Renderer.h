@@ -29,7 +29,7 @@ class GL_Renderer
     std::vector< float > m_matrix_fft_xmap; // Log10
     GL_Mesh16 m_matrix_fft;
     GL_Mesh16 m_matrix_fft_front;
-
+    GL_Mesh16 m_matrix_fft_axis_x;
     GL_Mesh16 m_lineStripL;
     GL_Mesh16 m_lineStripR;
 

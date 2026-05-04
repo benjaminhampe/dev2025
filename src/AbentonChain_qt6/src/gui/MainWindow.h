@@ -31,6 +31,8 @@ protected:
     void on_vizualizePerfOverlay( bool bChecked );
     void on_vizualizeFftMatrix( bool bChecked );
 
+    void createMenuFft();
+
 private:
     void zoomIn();
     void zoomOut();
@@ -40,7 +42,8 @@ private:
     QString m_appTitle;
 
     //AudioEngine m_audioEngine;
-    QOpenGLContext* m_customContext;
-    QOffscreenSurface* m_offscreenSurface;
+    // QOpenGLContext* m_customContext;
+    // QOffscreenSurface* m_offscreenSurface;
+    QWidget* m_canvasContainer;
     GL_Canvas* m_canvas;
 };

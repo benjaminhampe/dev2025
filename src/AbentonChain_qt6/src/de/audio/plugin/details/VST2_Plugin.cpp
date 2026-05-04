@@ -214,6 +214,67 @@ private:
     }
 
 
+    void dumpPrograms()
+    {
+        const int currentProgram = dispatcher(effGetProgram);
+        std::vector< IPlugin::ProgramInfo > programs;
+        programs.reserve(m_numPrograms);
+        for (int i = 0; i < m_numPrograms; ++i)
+        {
+            IPlugin::ProgramInfo pi;
+            pi.id = i;
+
+            dispatcher(effSetProgram, 0, i);
+
+            char name[kVstMaxProgNameLen+GUARD] = {0};
+            dispatcher(effGetProgramName, i, 0, name, 0);
+            pi.name = name;
+
+            programs.emplace_back( std::move( pi ) );
+        }
+
+        dispatcher(effSetProgram, 0, currentProgram);
+
+        DE_DEBUG("Program.Count = ",programs.size())
+        for (auto & pi : programs)
+        {
+            DE_DEBUG("Program",pi.str())
+        }
+    }
+
+    void dumpParams()
+    {
+        std::vector< IPlugin::ParamInfo > params;
+        params.reserve(m_numParams);
+        for (int i = 0; i < m_numParams; ++i)
+        {
+            IPlugin::ParamInfo pi;
+            pi.id = i;
+            pi.nowValue = m_vst->getParameter(m_vst, i);
+
+            // GUARD already solved a "out of bounds" bug in a plugin
+            // where it overwrote pi.id, so totally worth it!!!
+            char name[kVstMaxParamStrLen+GUARD] = {0};
+            dispatcher(effGetParamName, i, 0, name, 0);
+            pi.name = name;
+
+            char label[kVstMaxParamStrLen+GUARD] = {0};
+            dispatcher(effGetParamLabel, i, 0, label, 0);
+            pi.unit = label;
+
+            char display[kVstMaxParamStrLen+GUARD] = {0};
+            dispatcher(effGetParamDisplay, i, 0, display, 0);
+            pi.disp = display;
+
+            params.emplace_back( std::move( pi ) );
+        }
+
+        DE_DEBUG("Param.Count = ",params.size())
+        for (auto & pi : params)
+        {
+            DE_DEBUG("Param",pi.str())
+        }
+    }
 public:
 
     // ============================================================================
@@ -412,62 +473,8 @@ public:
             m_editor = new VST2_Editor(m_vst, nullptr );
         }
 
-        const int currentProgram = dispatcher(effGetProgram);
-        std::vector< IPlugin::ProgramInfo > programs;
-        programs.reserve(m_numPrograms);
-        for (int i = 0; i < m_numPrograms; ++i)
-        {
-            IPlugin::ProgramInfo pi;
-            pi.id = i;
-
-            dispatcher(effSetProgram, 0, i);
-
-            char name[kVstMaxProgNameLen+GUARD] = {0};
-            dispatcher(effGetProgramName, i, 0, name, 0);
-            pi.name = name;
-
-            programs.emplace_back( std::move( pi ) );
-        }
-
-        dispatcher(effSetProgram, 0, currentProgram);
-
-        DE_DEBUG("Program.Count = ",programs.size())
-        for (auto & pi : programs)
-        {
-            DE_DEBUG("Program",pi.str())
-        }
-
-        std::vector< IPlugin::ParamInfo > params;
-        params.reserve(m_numParams);
-        for (int i = 0; i < m_numParams; ++i)
-        {
-            IPlugin::ParamInfo pi;
-            pi.id = i;
-            pi.nowValue = m_vst->getParameter(m_vst, i);
-
-            // GUARD already solved a "out of bounds" bug in a plugin
-            // where it overwrote pi.id, so totally worth it!!!
-            char name[kVstMaxParamStrLen+GUARD] = {0};
-            dispatcher(effGetParamName, i, 0, name, 0);
-            pi.name = name;
-
-            char label[kVstMaxParamStrLen+GUARD] = {0};
-            dispatcher(effGetParamLabel, i, 0, label, 0);
-            pi.unit = label;
-
-            char display[kVstMaxParamStrLen+GUARD] = {0};
-            dispatcher(effGetParamDisplay, i, 0, display, 0);
-            pi.disp = display;
-
-            params.emplace_back( std::move( pi ) );
-        }
-
-        DE_DEBUG("Param.Count = ",params.size())
-        for (auto & pi : params)
-        {
-            DE_DEBUG("Param",pi.str())
-        }
-
+        //dumpPrograms();
+        //dumpParams();
         m_bIsBypassed = false;
         m_bIsPluginOpen = true;
     }

@@ -1,16 +1,14 @@
 #include "GL_Canvas.h"
-#include <App.h>
-#include <de_opengl.h>
+#include <QOpenGLDebugLogger>
 
 // ===========================================================================
-GL_Canvas::GL_Canvas(QWidget *parent)
+GL_Canvas::GL_Canvas(QOpenGLContext *sharedContext, QWidget *parent)
 // ===========================================================================
-    #ifdef Q_OS_WIN
-    : GL_Window_WGL()
-    #endif
+    : QOpenGLWidget(parent)
     , m_fpsTimerId{ 0 }
     , m_bRenderingEnabled{ false }
     , m_bVisiblePerfOverlay{ true }
+    , m_sharedContext(sharedContext)
     , m_driver{ nullptr }
     , m_firstMouse{ true }
     , m_isCameraFreeLook{ false }
@@ -30,10 +28,10 @@ GL_Canvas::GL_Canvas(QWidget *parent)
     // m_time_lastWindowTitleUpdate = 0.0;
     // m_time_lastCameraUpdate = 0.0;
 
-    // setContentsMargins(0,0,0,0);
-    // grabGesture(Qt::PinchGesture);
-    // grabGesture(Qt::SwipeGesture);
-    // grabGesture(Qt::PanGesture);
+    setContentsMargins(0,0,0,0);
+    grabGesture(Qt::PinchGesture);
+    grabGesture(Qt::SwipeGesture);
+    grabGesture(Qt::PanGesture);
 
     for ( bool & bValue : m_keyStates ) { bValue = false; }
 }
@@ -75,6 +73,20 @@ void GL_Canvas::stopFpsTimer()
 
 void GL_Canvas::initializeGL()
 {
+    context()->setShareContext(m_sharedContext);
+
+    initializeOpenGLFunctions();
+
+    QOpenGLDebugLogger* logger = new QOpenGLDebugLogger(this);
+    logger->initialize();
+    logger->enableMessages();
+
+    connect(logger, &QOpenGLDebugLogger::messageLogged,
+            [](const QOpenGLDebugMessage &msg){
+                qDebug() << "QT GL:" << msg;
+            });
+
+
     m_driver = de::gpu::createVideoDriver(2*640,2*480,winId());
 
     m_renderer.initializeGL(m_driver);
@@ -86,8 +98,8 @@ void GL_Canvas::initializeGL()
     // m_time_lastCameraUpdate = 0.0;
 
 
-    // m_renderTarget = m_driver->createRenderTarget_HDR("msaa",
-    //                     1024, 768);
+    m_renderTarget = m_driver->createRenderTarget_HDR("msaa",
+                        1024, 768);
 }
 
 void
@@ -105,32 +117,6 @@ GL_Canvas::paintGL()
 {
     if (!isVisible() || width()<1 || height()<1) return;
 
-    //=======================
-    // No RenderTarget
-    //=======================
-    const int w = width();
-    const int h = height();
-    // glDisable(GL_SCISSOR_TEST);
-    // glScissor(0,0,w,h);
-    // glViewport(0,0,w,h);
-    // glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
-    // glClearDepthf(1.0f);
-    // glClearStencil(0);
-    // glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-
-    // glEnable(GL_DEPTH_TEST);
-
-    // // Simple test: draw a triangle with GLEW-loaded functions available
-    // glBegin(GL_TRIANGLES);
-    // glColor3f(1.f, 0.f, 0.f);
-    // glVertex2f(-0.6f, -0.4f);
-    // glColor3f(0.f, 1.f, 0.f);
-    // glVertex2f(0.6f, -0.4f);
-    // glColor3f(0.f, 0.f, 1.f);
-    // glVertex2f(0.0f, 0.6f);
-    // glEnd();
-
-
     if (!m_bRenderingEnabled)
     {
         DE_WARN("Rendering disabled")
@@ -143,37 +129,6 @@ GL_Canvas::paintGL()
         return;
     }
 
-#if 1
-    //=======================
-    // No RenderTarget
-    //=======================
-    m_driver->beginRender();
-
-    auto camera = m_driver->getCamera();
-    if (camera)
-    {
-        int w = m_driver->getRenderWidth();
-        int h = m_driver->getRenderHeight();
-        camera->setScreenSize(w,h);
-        camera->update();
-    }
-
-    m_driver->getSkyboxRenderer()->render();
-
-    m_renderer.paintGL();
-
-    // int w = m_driver->getRenderWidth();
-    // int h = m_driver->getRenderHeight();
-    // rend->draw2D(de::Rectf(0,0,w,h),tex,true);
-
-    if (m_bVisiblePerfOverlay)
-    {
-        m_driver->draw2DPerfOverlay();
-        draw2DFftOverlay();
-    }
-    m_driver->endRender();
-
-#else
     //=======================
     // Draw to RenderTarget
     //=======================
@@ -214,78 +169,27 @@ GL_Canvas::paintGL()
         m_driver->draw2DPerfOverlay();
     }
     m_driver->endRender();
-#endif
 }
 
-
-void GL_Canvas::draw2DFftOverlay()
+void GL_Canvas::timerEvent(QTimerEvent* event)
 {
-    if (!m_driver) return;
-    const int w = width();
-    const int h = height();
-    const int p = 10;
-
-    uint32_t bgColor = dbRGBA(0,0,0,200);
-    de::Align a = de::Align::TopRight;
-    de::Font5x8 font5(6,6,0,0,1,1);
-    de::Font5x8 font4(4,4,0,0,1,1);
-    de::Font5x8 font3(3,3,0,0,1,1);
-
-    auto p1 = App::instance()->getSampleCollector();
-    auto p2 = App::instance()->getEndPoint();
-
-    auto s0 = dbStr("SampleRate.Hz = ",p2->getSampleRate());
-    auto s1 = dbStr("FFT-Size = ",p1->fftSize());
-    auto s2 = dbStr("FFT-Window = ",de::audio::WindowFunction::getString(p1->windowFunc()));
-    auto s3 = dbStr("Matrix3D.Cols = ",p1->cols());
-    auto s4 = dbStr("Matrix3D.Rows = ",p1->rows());
-    auto s5 = dbStr("BlockSize.Now = ",p2->getBlockSizeNow());
-    auto s6 = dbStr("BlockSize.Min = ",p2->getBlockSizeMin());
-    auto s7 = dbStr("BlockSize.Def = ",p2->getBlockSizeDef());
-    auto s8 = dbStr("BlockSize.Max = ",p2->getBlockSizeMax());
-    auto s9 = dbStr("BlockSize.Dsp = ",p2->getBlockSizeDsp());
-
-    int ln = font4.getTextSize("W").height + p;
-    int x = w - 1 - p;
-    int y = h - 1 - 10*ln;
-    m_driver->draw2DText( x,y, s0, dbRGBA(255,255,100), a, font4, bgColor, 1 ); y += ln;
-    m_driver->draw2DText( x,y, s1, dbRGBA(255,200,100), a, font4, bgColor, 1 ); y += ln;
-    m_driver->draw2DText( x,y, s2, dbRGBA(255,155,100), a, font4, bgColor, 1 ); y += ln;
-    m_driver->draw2DText( x,y, s3, dbRGBA(255,100,100), a, font4, bgColor, 1 ); y += ln;
-    m_driver->draw2DText( x,y, s4, dbRGBA(255, 55,100), a, font4, bgColor, 1 ); y += ln;
-    m_driver->draw2DText( x,y, s5, dbRGBA(155,100,100), a, font4, bgColor, 1 ); y += ln;
-    m_driver->draw2DText( x,y, s6, dbRGBA( 55,100,100), a, font4, bgColor, 1 ); y += ln;
-    m_driver->draw2DText( x,y, s7, dbRGBA( 55,155,100), a, font4, bgColor, 1 ); y += ln;
-    m_driver->draw2DText( x,y, s8, dbRGBA( 55,200,100), a, font4, bgColor, 1 ); y += ln;
-    m_driver->draw2DText( x,y, s9, dbRGBA( 55,100,200), a, font4, bgColor, 1 ); y += ln;
-}
-
-// void GL_Canvas::timerEvent(QTimerEvent* event)
-// {
-//     if ( event->timerId() == m_fpsTimerId )
-//     {
-//         update();
-//         //DE_TRACE("Timer ",m_fpsTimerId," called.")
-//     }
-// }
-
-bool GL_Canvas::event(QEvent* e)
-{
-    if (e->type() == QEvent::UpdateRequest)
+    if ( event->timerId() == m_fpsTimerId )
     {
-        renderNow();
-        return true;
+        update();
+        //DE_TRACE("Timer ",m_fpsTimerId," called.")
+    }
+}
+
+bool GL_Canvas::event(QEvent *event)
+{
+    if (event->type() == QEvent::Gesture)
+    {
+        return gestureEvent(static_cast<QGestureEvent*>(event));
     }
 
-    // if (e->type() == QEvent::Gesture)
-    // {
-    //     return gestureEvent(static_cast<QGestureEvent*>(e));
-    // }
-
-    return QWindow::event(e);
+    return QWidget::event(event);
 }
 
-/*
 bool GL_Canvas::gestureEvent(QGestureEvent *event)
 {
     // qCDebug(lcExample) << "gestureEvent():" << event;
@@ -548,5 +452,4 @@ GL_Canvas::mouseReleaseEvent( QMouseEvent* event )
         m_isMouseMiddlePressed = false;
     }
 }
-*/
 

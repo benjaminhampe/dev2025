@@ -131,7 +131,7 @@ void App::onAudioDeviceLost()
 
     stopAudio();
     DE_ERROR("AudioDevice lost, restart...")
-    playAudio();
+    // playAudio();
 }
 
 //=========================

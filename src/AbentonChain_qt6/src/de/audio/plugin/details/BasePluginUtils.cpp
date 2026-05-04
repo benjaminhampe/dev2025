@@ -29,7 +29,7 @@ void NormalizedSumComputer::calc(
     float sumL = 0.0f;
 
     #pragma omp parallel for reduction(+:sumL)
-    for (size_t i = 0; i < blockSize; i++)
+    for (size_t i = 0; i < blockSize; ++i)
     {
         sumL += std::abs(L[i]);
     }
@@ -41,7 +41,7 @@ void NormalizedSumComputer::calc(
     float sumR = 0.0f;
 
     #pragma omp parallel for reduction(+:sumR)
-    for (size_t i = 0; i < blockSize; i++)
+    for (size_t i = 0; i < blockSize; ++i)
     {
         sumR += std::abs(R[i]);
     }

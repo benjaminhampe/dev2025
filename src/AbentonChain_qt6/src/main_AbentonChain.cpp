@@ -4,6 +4,7 @@
 #include <QFontDatabase>
 #include <QDebug>
 
+#include <QAbstractNativeEventFilter>
 #ifdef _WIN32
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
@@ -50,6 +51,28 @@ inline void dbLoadFont(QString uri)
     qDebug() << "Loaded font families:" << families;
 }
 
+class Win32EventFilter : public QAbstractNativeEventFilter
+{
+public:
+    bool nativeEventFilter(const QByteArray& eventType,
+                           void* message,
+                           qintptr* result) override
+    {
+#ifdef Q_OS_WIN
+        if (eventType == "windows_generic_MSG") {
+            MSG* msg = static_cast<MSG*>(message);
+
+            if (msg->message == WM_ERASEBKGND) {
+                *result = 1;     // tell Windows we handled it
+                return true;     // block background erase
+            }
+        }
+#endif
+        return false;
+    }
+};
+
+
 // ------------------------------------------------------------
 // main
 // ------------------------------------------------------------
@@ -65,14 +88,27 @@ int main(int argc, char **argv)
     qputenv("QT_ENABLE_HIGHDPI_SCALING", "0");
 #endif
 
-    qputenv("QT3D_RENDERER", "opengl");
-    qputenv("QSG_RHI_BACKEND", "opengl");
+    // qputenv("QT3D_RENDERER", "opengl");
+    // qputenv("QSG_RHI_BACKEND", "opengl");
+
+    //qputenv("QT3D_RENDERER", "rhi");
+    //qputenv("QSG_RHI_BACKEND", "d3d11");
 
     // Is this really necessary?
-    QCoreApplication::setAttribute(Qt::AA_UseDesktopOpenGL);
-    //QCoreApplication::setAttribute(Qt::AA_NativeWindows);
+    //QCoreApplication::setAttribute(Qt::AA_UseOpenGLES);
+    //QCoreApplication::setAttribute(Qt::AA_UseDesktopOpenGL);
+    //QCoreApplication::setAttribute(Qt::AA_UseSoftwareOpenGL);
+    //qqqqqqqqqQCoreApplication::setAttribute(Qt::AA_NativeWindows);
+    //QCoreApplication::setAttribute(Qt::AA_DisableShaderDiskCache);
+    //QCoreApplication::setAttribute(Qt::AA_DisableOpenGLFramebufferDiscard);
+
 
     QApplication app(argc, argv);
+
+    static Win32EventFilter filter;
+    app.installNativeEventFilter(&filter);
+
+
     app.setWindowIcon(QIcon(":/winico"));
 
     dbLoadFont(":/fonts/NotoSans-Bold.ttf");

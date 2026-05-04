@@ -1,14 +1,21 @@
 #include "MainWindow.h"
 #include "gui/track/ChainStack.h"
 #include <App.h>
-
-#include <QDebug>
+#include <QApplication>
+//#include <QDebug>
 #include <QWidget>
 #include <QMenuBar>
 #include <QVBoxLayout>
-#include <QSurfaceFormat>
-#include <QOpenGLContext>
-#include <QOffscreenSurface>
+// #include <QSurfaceFormat>
+// #include <QOpenGLContext>
+// #include <QOffscreenSurface>
+#include <QWidgetAction>
+#include <QActionGroup>
+#include <QLabel>
+#include <QComboBox>
+#include <QLineEdit>
+#include <QCheckBox>
+#include <QGroupBox>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -17,7 +24,7 @@ MainWindow::MainWindow(QWidget *parent)
     setFocusPolicy(Qt::StrongFocus);
 
     m_keyboard2MidiNoteMapping.addGermanLayout();
-
+/*
     // Create a custom OpenGL context
     QSurfaceFormat format;
     format.setVersion(4, 3);
@@ -49,17 +56,20 @@ MainWindow::MainWindow(QWidget *parent)
     m_customContext->makeCurrent(m_offscreenSurface);
 
     m_canvas = new GL_Canvas(m_customContext);
-    m_canvas->setContentsMargins(0,0,0,0);
-    m_canvas->setVisible(false);
-    m_canvas->setMinimumHeight(64);
-    App::instance()->setCanvas(m_canvas);
+*/
+    m_canvas = new GL_Canvas(this);
+    m_canvasContainer = QWidget::createWindowContainer(m_canvas);
+    m_canvasContainer->setMinimumSize(320, 240);
+    m_canvasContainer->setVisible(false);
+    // m_canvas->setMinimumHeight(64);
+    //App::instance()->setCanvas(m_canvas);
 
     auto track = new ChainStack(this);
 
     auto v = new QVBoxLayout;
     v->setContentsMargins(0,0,0,0);
     v->setSpacing(0);
-    v->addWidget(m_canvas,1);
+    v->addWidget(m_canvasContainer,1);
     v->addWidget(track);
 
     auto content = new QWidget(this);
@@ -79,7 +89,7 @@ MainWindow::MainWindow(QWidget *parent)
     if (centralWidget())
         centralWidget()->installEventFilter(this);
 
-    m_appTitle = "AbentonChain_qt6";
+    m_appTitle = "AbentonChain_qt6 | Benjamin Hampe (c) 2026 <benjaminhampe.gmx.de>";
     setWindowTitle(m_appTitle);
 
     // Create FILE menu
@@ -119,6 +129,7 @@ MainWindow::MainWindow(QWidget *parent)
     menuViz->addAction(actionVizPerfOverlay);
     menuViz->addAction(actionVizMatrixFft);
 
+    createMenuFft();
 }
 
 MainWindow::~MainWindow()
@@ -147,7 +158,7 @@ void MainWindow::on_vizualizeEnabled( bool bChecked )
 {
     if (bChecked)
     {
-        m_canvas->setVisible(bChecked);
+        m_canvasContainer->setVisible(bChecked);
         m_canvas->setRenderingEnabled(bChecked);
         App::instance()
             ->getSampleCollector()->setBypassed(false);
@@ -158,7 +169,7 @@ void MainWindow::on_vizualizeEnabled( bool bChecked )
         App::instance()
             ->getSampleCollector()->setBypassed(true);
         m_canvas->setRenderingEnabled(bChecked);
-        m_canvas->setVisible(bChecked);
+        m_canvasContainer->setVisible(bChecked);
     }
 
 }
@@ -267,4 +278,126 @@ void MainWindow::keyReleaseEvent( QKeyEvent* event )
 
     }
     event->accept();
+}
+
+
+void MainWindow::createMenuFft()
+{
+    auto menu = menuBar()->addMenu("FFT");
+    // menu->addAction(actionVizEnabled);
+    // menu->addSeparator();
+    // menu->addAction(actionVizPerfOverlay);
+    // menuViz->addAction(actionVizMatrixFft);
+
+    auto act_fftSize = new QWidgetAction(menu);
+    auto lbl_fftSize = new QLabel("FFT-Size: ");
+    auto cbx_fftSize = new QComboBox(menu);
+    auto h1 = new QHBoxLayout();
+    h1->addWidget(lbl_fftSize);
+    h1->addWidget(cbx_fftSize);
+    auto w1 = new QWidget(menu);
+    w1->setLayout(h1);
+    act_fftSize->setDefaultWidget(w1);
+    menu->addAction(act_fftSize);
+
+    // combo->setFrame(false);
+    // combo->setContentsMargins(0, 0, 0, 0);
+    // combo->setStyleSheet("QComboBox { padding: 0px; margin: 0px; }");
+
+    cbx_fftSize->addItem("512",512);
+    cbx_fftSize->addItem("1024",1024);
+    cbx_fftSize->addItem("2048",1024*2);
+    cbx_fftSize->addItem("4096",1024*4);
+    cbx_fftSize->addItem("8192",1024*8);
+    cbx_fftSize->addItem("16k",1024*16);
+
+    connect(cbx_fftSize,
+        QOverload<int>::of(&QComboBox::currentIndexChanged),
+        this,
+        [=](int index) {
+            qDebug() << "FFT Size changed:" << index;
+
+            int fftSize = cbx_fftSize->currentData().toInt();
+
+            App::instance()->getSampleCollector()->setFftSize(fftSize);
+
+        });
+
+    // [Submenu] Window Function for FFT
+    {
+        auto menuWinFunc = menu->addMenu("FFT Window Function");
+        menuWinFunc->setStyleSheet(R"(
+            QMenu {
+                font-size: 14pt;
+            }
+            QMenu::indicator {
+                width: 48px;
+                height: 48px;
+            }
+            QMenu::indicator:checked {
+                width: 48px;
+                height: 48px;
+            }
+            QMenu::indicator:unchecked {
+                width: 48px;
+                height: 48px;
+            }
+            QMenu::indicator:exclusive {
+                width: 48px;
+                height: 48px;
+            }
+            QMenu::indicator:exclusive:checked {
+                width: 64px;
+                height: 64px;
+                image: url(:/svg/check_big.svg);
+            }
+            QMenu::indicator:exclusive:unchecked {
+                width: 48px;
+                height: 48px;
+                image: none;
+            }
+        )");
+        // fftMenu->setStyleSheet(R"(
+        //     QMenu::indicator:checked {
+        //         image: url(:/icons/big_check.png);
+        //     }
+        //     QMenu::indicator:unchecked {
+        //         image: none;
+        //     }
+        // )");
+        // Create an exclusive action group
+        auto group = new QActionGroup(menuWinFunc);
+        group->setExclusive(true);
+
+        auto currWinFunc = App::instance()->getSampleCollector()->windowFunc();
+        for (int i = 0; i < de::audio::WindowFunction::eFuncMax; ++i)
+        {
+            //auto ico = QApplication::style()->standardIcon(QStyle::SP_ArrowRight);
+            auto t = (de::audio::WindowFunction::eFunc)i;
+            auto s = QString::fromStdString(de::audio::WindowFunction::getString(t));
+            auto a = menuWinFunc->addAction(s);
+            a->setCheckable(true);
+            a->setData(i);
+
+            // QFont f = a->font();
+            // f.setPointSize(14);        // or setPointSizeF(...)
+            // a->setFont(f);
+
+            group->addAction(a);
+
+            // Default selection
+            if (currWinFunc == t)
+            {
+                a->setChecked(true);
+            }
+        }
+
+        // Connect to selection changes
+        connect(group, &QActionGroup::triggered, this, [=](QAction* a)
+        {
+            auto t = (de::audio::WindowFunction::eFunc)a->data().toInt();
+            DE_WARN("Got ", de::audio::WindowFunction::getString(t))
+            App::instance()->getSampleCollector()->setWindowFunc(t);
+        });
+    }
 }
