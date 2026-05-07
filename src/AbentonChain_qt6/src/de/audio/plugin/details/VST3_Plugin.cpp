@@ -1,4 +1,6 @@
 #include "VST3_Plugin.h"
+//#include "base/source/fstring.h"
+#include "pluginterfaces/vst/ivstunits.h"
 
 #include <string>
 #include <codecvt>
@@ -34,6 +36,149 @@ namespace audio {
 namespace {
 
 constexpr u64 GUARD = 64; // 64 extra bytes for "out-of-bounds" bugs.
+
+std::string de_mbstr(const Steinberg::Vst::String128& s)
+{
+    // find null terminator
+    size_t len = 0;
+    while (len < 128 && s[len] != 0)
+        ++len;
+
+    std::u16string u16(s, len);
+
+    std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t> conv;
+    return conv.to_bytes(u16);
+}
+
+// kNoFlags = 0,
+// kCanAutomate // Parameter can be automated.
+// kIsReadOnly // Parameter cannot be changed from outside the plug-in, (implies that kCanAutomate is NOT set).
+// kIsWrapAround // Attempts to set the parameter value out of the limits will result in a wrap around.
+// kIsList // Parameter should be displayed as list in generic editor or automation editing.
+// kIsHidden // Parameter should be NOT displayed and cannot be changed from outside the plug-in. It implies that kCanAutomate is NOT set and kIsReadOnly is set.
+// kIsProgramChange // Parameter is a program change (unitId gives info about associated unit - see \ref vst3ProgramLists).
+// kIsBypass // Special bypass parameter (only one allowed): plug-in can handle bypass. Highly recommended to export a bypass parameter for effect plug-in.
+std::string paramFlagsToString(int32_t flags)
+{
+    std::string out;
+
+    auto add = [&](const char* s)
+    {
+        if (!out.empty()) out += " | ";
+        out += s;
+    };
+
+    using namespace Steinberg::Vst;
+    if (flags & ParameterInfo::kCanAutomate)    add("CanAutomate");
+    if (flags & ParameterInfo::kIsReadOnly)     add("ReadOnly");
+    if (flags & ParameterInfo::kIsWrapAround)   add("WrapAround");
+    if (flags & ParameterInfo::kIsList)         add("List");
+    if (flags & ParameterInfo::kIsHidden)       add("Hidden");
+    if (flags & ParameterInfo::kIsProgramChange)add("ProgramChange");
+    if (flags & ParameterInfo::kIsBypass)       add("Bypass");
+    if (out.empty()) out = "NoFlags";
+    return out;
+}
+
+void dumpParams(Steinberg::Vst::IEditController* controller)
+{
+    using namespace Steinberg;
+    using namespace Steinberg::Vst;
+
+    if (!controller)
+    {
+        DE_TRACE("dumbParams: controller is null");
+        return;
+    }
+
+    const int32 count = controller->getParameterCount();
+
+    DE_DEBUG("--------------------------------------------------");
+    DE_DEBUG("VST3 Parameter Count:", count);
+    DE_DEBUG("--------------------------------------------------");
+
+    for (int32 i = 0; i < count; ++i)
+    {
+        ParameterInfo info{};
+        if (controller->getParameterInfo(i, info) != kResultOk)
+        {
+            DE_ERROR("Param[",i,"] FAILED getParameterInfo");
+            continue;
+        }
+
+        std::string name      = de_mbstr(info.title);
+        std::string shortName = de_mbstr(info.shortTitle);
+        std::string units      = de_mbstr(info.units);
+        std::string flagsStr   = paramFlagsToString(info.flags);
+        DE_TRACE("Param[",i,"] "
+                "id(",info.id, "), "
+                "name(", name,"), "
+                "short(", shortName,"), "
+                "units(", units,"), "
+                "stepCount:", info.stepCount, ") "
+                "default(", info.defaultNormalizedValue, ") "
+                "unitId(", info.unitId, ") "
+                "flags(", flagsStr,")")
+    }
+}
+
+void dumpPresets(Steinberg::Vst::IEditController* controller)
+{
+    if (!controller)
+    {
+        DE_ERROR("dumpPresets: controller is null");
+        return;
+    }
+
+    // Query IUnitInfo (preset interface)
+    Steinberg::FUnknownPtr<Steinberg::Vst::IUnitInfo> unitInfo(controller);
+    if (!unitInfo)
+    {
+        DE_WARN("No IUnitInfo → plugin has no presets");
+        return;
+    }
+
+    int32_t numLists = unitInfo->getProgramListCount();
+    DE_DEBUG("--------------------------------------------------");
+    DE_DEBUG("VST3 ProgramList.Count:", numLists);
+    DE_DEBUG("--------------------------------------------------");
+
+    for (int32_t i = 0; i < numLists; ++i)
+    {
+        Steinberg::Vst::ProgramListInfo li{};
+        if (unitInfo->getProgramListInfo(i, li) != Steinberg::kResultOk)
+        {
+            DE_TRACE("ProgramList[",i,"] FAILED getProgramListInfo");
+            continue;
+        }
+
+        DE_TRACE("ProgramList[",i,"] "
+                 "id(", li.id,") "
+                 "name(", de_mbstr(li.name),") "
+                 "programCount(", li.programCount,")")
+
+        // Dump all programs inside this list
+        for (int32_t p = 0; p < li.programCount; ++p)
+        {
+            Steinberg::Vst::String128 name{};
+            if (unitInfo->getProgramName(li.id, p, name) != Steinberg::kResultOk)
+            {
+                DE_TRACE("Program[",i,"][",p,"] FAILED getProgramName");
+                continue;
+            }
+
+            DE_TRACE("Program[",i,"][",p,"] ", de_mbstr(name) )
+
+            // Optional: get program info (attributes)
+            Steinberg::Vst::String128 attrName{};
+            Steinberg::Vst::CString attrId;
+            if (unitInfo->getProgramInfo(li.id, p, attrId, attrName) == Steinberg::kResultOk)
+            {
+                DE_TRACE("ProgramInfo[",p,"] ", attrName, ", programId(", attrId, ")")
+            }
+        }
+    }
+}
 
 std::string getErrorDesc(Steinberg::tresult e)
 {
@@ -315,6 +460,9 @@ public:
     std::string m_directoryMultiByte;
     std::string m_pluginName;
     std::string m_pluginVendor;
+    std::string m_pluginVersion;
+    double m_pluginRuntime;
+    PluginTimer m_perfTimer;
     PluginClock m_midiClock;
 
     VST3_SampleBuffers m_buffers;
@@ -385,7 +533,7 @@ public:
     Steinberg::IPtr<Steinberg::Vst::IHostApplication> m_hostApp;
     Steinberg::IPtr<Steinberg::Vst::IComponentHandler> m_hostHandler;
     Steinberg::IPtr<Steinberg::IPlugView>            m_plugView;
-
+    //Steinberg::IPtr<Steinberg::Vst::IUnitInfo>     m_unitInfo;
 public:
     VST3_Plugin_Impl() // const std::wstring& path
         : m_bIsPluginOpen{ false }
@@ -529,20 +677,6 @@ public:
         m_bIsPluginOpen = false;
         m_bIsSingleComponent = false;
     }
-
-    std::string de_mbstr(const Steinberg::Vst::String128& s)
-    {
-        // find null terminator
-        size_t len = 0;
-        while (len < 128 && s[len] != 0)
-            ++len;
-
-        std::u16string u16(s, len);
-
-        std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t> conv;
-        return conv.to_bytes(u16);
-    }
-
 
     void dumpBusses()
     {
@@ -774,6 +908,8 @@ public:
         m_uri = uri;
         m_pluginName = dbFileBase(uri);
         m_pluginVendor = "";
+        m_pluginVersion = "";
+        m_pluginRuntime = 0.0;
 
         // 0.1.
         const PluginFactory& factory = m_module->getFactory();
@@ -811,6 +947,7 @@ public:
 
             DE_TRACE("ClassInfo[",i,"].ID = ",ci.ID().toString())
             DE_TRACE("ClassInfo[",i,"].Name = ",ci.name())
+            DE_TRACE("ClassInfo[",i,"].Version = ",ci.version())
             DE_DEBUG("ClassInfo[",i,"].Category = ",ci.category())
             DE_TRACE("ClassInfo[",i,"].SubCategories = ",ci.subCategoriesString())
             DE_TRACE("ClassInfo[",i,"].ClassFlags = ",dbHex(ci.classFlags()))
@@ -821,6 +958,7 @@ public:
             if (ci.category() == kVstAudioEffectClass)
             {
                 DE_TRACE("ClassInfo[",i,"] Found kVstAudioEffectClass")
+                m_pluginVersion = ci.version();
                 Steinberg::copyTUID(processorCID, ci.ID().data());
                 foundProcessor = true;
             }
@@ -1062,6 +1200,8 @@ public:
             }
         }
 
+        dumpPresets(m_editController);
+        dumpParams(m_editController);
         m_uri = uri;
         m_bIsPluginOpen = true;
     }
@@ -1180,7 +1320,9 @@ public:
                   u32 sampleRate,
                   f32* __restrict__ outL,
                   f32* __restrict__ outR)
-    {    
+    {
+        const double timeStart = m_perfTimer.now();
+
         if ( !outL || !outR )
         {
             throw std::runtime_error("No dst audio dsp buffer in VST2_Plugin::readSamples()!");
@@ -1357,6 +1499,9 @@ public:
         m_normalizedSumComputer.calc(outL, outR, frames);
 
         // Thank you for participating in our DspChain dear plugin.
+        const double timeEnd = m_perfTimer.now();
+
+        m_pluginRuntime = timeEnd - timeStart;
     }
 
     void processVstMidiEvents( Steinberg::Vst::ProcessData & data )
@@ -1588,6 +1733,10 @@ std::string VST3_Plugin::getName() const { return _d->m_pluginName; }
 
 std::string VST3_Plugin::getVendor() const { return _d->m_pluginVendor; }
 
+std::string VST3_Plugin::getVersion() const { return _d->m_pluginVersion; }
+
+double VST3_Plugin::getRuntime() const { return _d->m_pluginRuntime; }
+
 // ===================================================
 
 void VST3_Plugin::openPlugin( std::string uri )
@@ -1630,10 +1779,92 @@ void VST3_Plugin::onShortMidiMessage(f64 pts, const midi::ShortMidiMessage& msg)
 }
 
 // ===================================================
+/*
+if (!controller)
+{
+    DE_ERROR("dumpPresets: controller is null");
+    return;
+}
+
+// Query IUnitInfo (preset interface)
+Steinberg::FUnknownPtr<Steinberg::Vst::IUnitInfo> unitInfo(controller);
+if (!unitInfo)
+{
+    DE_WARN("No IUnitInfo → plugin has no presets");
+    return;
+}
+
+int32_t numLists = unitInfo->getProgramListCount();
+DE_DEBUG("--------------------------------------------------");
+DE_DEBUG("VST3 ProgramList.Count:", numLists);
+DE_DEBUG("--------------------------------------------------");
+
+for (int32_t i = 0; i < numLists; ++i)
+{
+    Steinberg::Vst::ProgramListInfo li{};
+    if (unitInfo->getProgramListInfo(i, li) != Steinberg::kResultOk)
+    {
+        DE_TRACE("ProgramList[",i,"] FAILED getProgramListInfo");
+        continue;
+    }
+
+    DE_TRACE("ProgramList[",i,"] "
+                                "id(", li.id,") "
+             "name(", de_mbstr(li.name),") "
+             "programCount(", li.programCount,")")
+
+    // Dump all programs inside this list
+    for (int32_t p = 0; p < li.programCount; ++p)
+    {
+        Steinberg::Vst::String128 name{};
+        if (unitInfo->getProgramName(li.id, p, name) != Steinberg::kResultOk)
+        {
+            DE_TRACE("Program[",i,"][",p,"] FAILED getProgramName");
+            continue;
+        }
+
+        DE_TRACE("Program[",i,"][",p,"] ", de_mbstr(name) )
+
+        // Optional: get program info (attributes)
+        Steinberg::Vst::String128 attrName{};
+        Steinberg::Vst::CString attrId;
+        if (unitInfo->getProgramInfo(li.id, p, attrId, attrName) == Steinberg::kResultOk)
+        {
+            DE_TRACE("ProgramInfo[",p,"] ", attrName, ", programId(", attrId, ")")
+        }
+    }
+}
+*/
 
 u32 VST3_Plugin::getProgramCount() const
 {
-    return 0;
+    if (!_d->m_editController)
+    {
+        return 0;
+    }
+
+    // Query IUnitInfo (preset interface)
+    Steinberg::FUnknownPtr<Steinberg::Vst::IUnitInfo> unitInfo(_d->m_editController);
+    if (!unitInfo)
+    {
+        DE_WARN("No IUnitInfo");
+        return 0;
+    }
+
+    u32 nPrograms = 0;
+
+    for (int32_t i = 0; i < unitInfo->getProgramListCount(); ++i)
+    {
+        Steinberg::Vst::ProgramListInfo li{};
+        if (unitInfo->getProgramListInfo(i, li) != Steinberg::kResultOk)
+        {
+            continue;
+        }
+
+        nPrograms += li.programCount;
+    }
+
+    return nPrograms;
 }
 
 int VST3_Plugin::getProgram() const
@@ -1650,22 +1881,69 @@ void VST3_Plugin::setProgram( int i )
 
 u32 VST3_Plugin::getParameterCount() const
 {
-    return 0;
+    if (!_d->m_editController) { return 0; }
+    return _d->m_editController->getParameterCount();
+}
+
+std::string VST3_Plugin::getParameterName(int i) const
+{
+    u32 n = getParameterCount();
+    if (i < 0 || i > int(n))
+    {
+        DE_ERROR("Invalid index ",i)
+        return "";
+    }
+
+    Steinberg::Vst::ParameterInfo info;
+    _d->m_editController->getParameterInfo(i, info);
+
+    return de_mbstr(info.title);
 }
 
 f32 VST3_Plugin::getParameter(int i) const
 {
-    return 0.0f;
+    u32 n = getParameterCount();
+    if (i < 0 || i > int(n))
+    {
+        DE_ERROR("Invalid index ",i)
+        return 0.0f;
+    }
+
+    Steinberg::Vst::ParameterInfo info;
+    _d->m_editController->getParameterInfo(i, info);
+
+    // info.id
+    // info.title
+    // info.shortTitle
+    // info.units
+    // info.stepCount
+    // info.defaultNormalizedValue
+    // info.flags
+
+    return _d->m_editController->getParamNormalized(info.id);
 }
 
 void VST3_Plugin::setParameter(int i, f32 value)
 {
+    u32 n = getParameterCount();
+    if (i < 0 || i > int(n))
+    {
+        DE_ERROR("Invalid index ",i)
+    }
 
+    Steinberg::Vst::ParameterInfo info;
+    _d->m_editController->getParameterInfo(i, info);
+
+    // info.id
+    // info.title
+    // info.shortTitle
+    // info.units
+    // info.stepCount
+    // info.defaultNormalizedValue
+    // info.flags
+
+    _d->m_editController->setParamNormalized(info.id, value);
 }
-
-
-
-
 
 float VST3_Plugin::getSpecialValue( eSpecialValue type ) const
 {

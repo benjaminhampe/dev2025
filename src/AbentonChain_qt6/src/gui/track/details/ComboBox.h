@@ -1,5 +1,6 @@
 #pragma once
 #include <QComboBox>
+#include <QAbstractItemView>
 
 // ============================================
 class ComboBox : public QComboBox
@@ -18,7 +19,7 @@ protected slots:
 
 protected:
     // void paintEvent(QPaintEvent* event) override;
-
+    void showPopup() override;
 
 private:
     //int m_baseWidth = 30; // -6 = symbolSize

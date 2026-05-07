@@ -1,6 +1,6 @@
 add_subdirectory(0_tools)
 add_subdirectory(1_libs)
-add_subdirectory(2_demos)
+# add_subdirectory(2_demos)
 
 if (BENNI_USE_JUCE)
     add_subdirectory(4_juce)
@@ -32,7 +32,7 @@ endif()
 
 add_subdirectory(VST_benni)
 
-add_subdirectory(whisper.cpp)
+# add_subdirectory(whisper.cpp)
 
 
 # add_subdirectory(DirectML_test)

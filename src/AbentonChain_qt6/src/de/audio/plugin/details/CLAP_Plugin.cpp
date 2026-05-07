@@ -50,21 +50,193 @@ std::string getStatusStr( clap_process_status e )
     switch (e)
     {
     // keep processing normally
-    case CLAP_PROCESS_CONTINUE:
-        return "CONTINUE";
+    case CLAP_PROCESS_CONTINUE: return "CONTINUE";
     // optional optimization: skip next block
-    case CLAP_PROCESS_CONTINUE_IF_NOT_QUIET:
-        return "CONTINUE_IF_NOT_QUIET";
+    case CLAP_PROCESS_CONTINUE_IF_NOT_QUIET: return "CONTINUE_IF_NOT_QUIET";
+    // Rely upon the plugin's tail to determine if the plugin should continue to process.
+    // see clap_plugin_tail
+    case CLAP_PROCESS_TAIL: return "CLAP_PROCESS_TAIL";
     // plugin wants to sleep
-    case CLAP_PROCESS_SLEEP:
-        return "SLEEP";
+    case CLAP_PROCESS_SLEEP: return "SLEEP";
     // plugin is broken
-    case CLAP_PROCESS_ERROR:
-        return "BROKEN";
+    case CLAP_PROCESS_ERROR: return "BROKEN";
     default:
-        return "";
+        return std::string("Unknown") + std::to_string((int)e);
     }
 }
+
+inline std::string clapParamFlagsToString(clap_param_info_flags flags)
+{
+    std::string out;
+
+    auto add = [&](const char* s)
+    {
+        if (!out.empty()) out += " | ";
+        out += s;
+    };
+
+    if (flags & CLAP_PARAM_IS_STEPPED)            add("STEPPED");
+    if (flags & CLAP_PARAM_IS_PERIODIC)           add("PERIODIC");
+    if (flags & CLAP_PARAM_IS_HIDDEN)             add("HIDDEN");
+    if (flags & CLAP_PARAM_IS_READONLY)           add("READONLY");
+    if (flags & CLAP_PARAM_IS_BYPASS)             add("BYPASS");
+    if (flags & CLAP_PARAM_IS_AUTOMATABLE)        add("AUTOMATABLE");
+    if (flags & CLAP_PARAM_IS_AUTOMATABLE_PER_NOTE_ID) add("AUTO_PER_NOTE");
+    if (flags & CLAP_PARAM_IS_AUTOMATABLE_PER_KEY)     add("AUTO_PER_KEY");
+    if (flags & CLAP_PARAM_IS_AUTOMATABLE_PER_CHANNEL) add("AUTO_PER_CHANNEL");
+    if (flags & CLAP_PARAM_IS_AUTOMATABLE_PER_PORT)    add("AUTO_PER_PORT");
+    if (flags & CLAP_PARAM_IS_MODULATABLE)        add("MODULATABLE");
+    if (flags & CLAP_PARAM_IS_MODULATABLE_PER_NOTE_ID) add("MOD_PER_NOTE");
+    if (flags & CLAP_PARAM_IS_MODULATABLE_PER_KEY)     add("MOD_PER_KEY");
+    if (flags & CLAP_PARAM_IS_MODULATABLE_PER_CHANNEL) add("MOD_PER_CHANNEL");
+    if (flags & CLAP_PARAM_IS_MODULATABLE_PER_PORT)    add("MOD_PER_PORT");
+
+    if (out.empty())
+        out = "None";
+
+    return out;
+}
+
+u32 dumpParams(const clap_plugin* plugin)
+{
+    auto params = (const clap_plugin_params_t*)
+    plugin->get_extension(plugin, CLAP_EXT_PARAMS);
+
+    if (!params)
+    {
+        DE_ERROR("No CLAP_EXT_PARAMS")
+        return 0;
+    }
+
+    const u32 n = params->count(plugin);
+    DE_DEBUG("--------------------------------------------------");
+    DE_DEBUG("CLAP Params.Count = ",n)
+    DE_DEBUG("--------------------------------------------------");
+    for (uint32_t i = 0; i < n; i++)
+    {
+        clap_param_info_t info;
+        if (!params->get_info(plugin, i, &info))
+        {
+            DE_ERROR("[",i,"] NOT_EXIST")
+            continue;
+        }
+
+        double value;
+        if (!params->get_value(plugin, info.id, &value))
+        {
+            DE_ERROR("[",i,"].Value = NOT_EXIST")
+        }
+
+        std::string flagsStr = clapParamFlagsToString(info.flags);
+
+        DE_TRACE("CLAP Params[",i,"] "
+                         "ID(", dbHex(info.id),"), "
+                 "Name(",info.name,"), "
+                 "Val(", value, "), "
+                 "Min(", info.min_value, "), "
+                 "Max(", info.max_value, "), "
+                 "Def(", info.default_value, "), "
+                 "Flags(", flagsStr, "), "
+                 "Cookie(", (uintptr_t)info.cookie, "), "
+                 "Module(", info.module, ")")
+
+        if (info.flags & CLAP_PARAM_IS_STEPPED)
+            DE_TRACE("  step_count:", (int)(info.max_value - info.min_value + 1));
+    }
+
+    return n;
+}
+
+u32 dumpPresets(const clap_plugin* plugin)
+{
+    // auto presetLoad = (const clap_plugin_preset_load_t*)
+    //     plugin->get_extension(plugin, CLAP_EXT_PRESET_LOAD);
+
+    if (!plugin)
+    {
+        // DE_TRACE("dumpPresets(CLAP): plugin is null");
+        return 0;
+    }
+
+    // presetLoad->from_location(m_plugin, "/path/to/preset.clap-preset");
+
+    // auto state = (const clap_plugin_state_t*)
+    //     m_plugin->get_extension(m_plugin, CLAP_EXT_STATE);
+
+    // state->save(m_plugin, stream);
+    // state->load(m_plugin, stream);
+
+    // auto presets = //(const clap_plugin_factory_presets_t*)
+    //     m_plugin->get_extension(m_plugin, CLAP_EXT_FACTORY_PRESETS);
+
+    // auto* presetDiscovery = (const clap_plugin_preset_discovery_t*)
+    //     m_plugin->get_extension(m_plugin, CLAP_EXT_PRESET_DISCOVERY);
+
+    return 0;
+}
+
+u32 dumpInputs(const clap_plugin* m_plugin)
+{
+    auto audioPorts = (const clap_plugin_audio_ports_t*)
+    m_plugin->get_extension(m_plugin, CLAP_EXT_AUDIO_PORTS);
+
+    if (!audioPorts)
+    {
+        DE_ERROR("No CLAP_EXT_AUDIO_PORTS")
+        return 0;
+    }
+
+    const u32 n = audioPorts->count(m_plugin, 1);
+    DE_DEBUG("Inputs.Count = ",n)
+
+    for (uint32_t i = 0; i < n; i++)
+    {
+        clap_audio_port_info_t info;
+        if (audioPorts->get(m_plugin, i, 1, &info))
+        {
+            DE_TRACE("[",i,"] "
+                             "ID(",dbHex(info.id), "), "
+                     "Name(",info.name, "), "
+                     "Ch(", info.channel_count, "), "
+                     "Flags(",dbHex(info.flags), "), "
+                     "Type(", (info.port_type ? info.port_type : "unknown"), "), "
+                     "PairID(",dbHex(info.in_place_pair), ")")
+        }
+    }
+    return n;
+}
+
+u32 dumpOutputs(const clap_plugin* m_plugin)
+{
+    auto audioPorts = (const clap_plugin_audio_ports_t*)
+    m_plugin->get_extension(m_plugin, CLAP_EXT_AUDIO_PORTS);
+
+    if (!audioPorts)
+    {
+        DE_ERROR("No CLAP_EXT_AUDIO_PORTS")
+        return 0;
+    }
+
+    const u32 n = audioPorts->count(m_plugin, 0);
+    DE_DEBUG("Outputs.Count = ",n)
+
+    for (uint32_t i = 0; i < n; i++)
+    {
+        clap_audio_port_info_t info;
+        if (audioPorts->get(m_plugin, i, 0, &info))
+        {
+            DE_TRACE("[",i,"] "
+                             "ID(",dbHex(info.id), "), "
+                     "Name(",info.name, "), "
+                     "Ch(", info.channel_count, "), "
+                     "Flags(",dbHex(info.flags), "), "
+                     "Type(", (info.port_type ? info.port_type : "unknown"), "), "
+                     "PairID(",dbHex(info.in_place_pair), ")")
+        }
+    }
+    return n;
+}
+
 
 struct CLAP_OutputStream
 {
@@ -273,134 +445,6 @@ public:
 
 };
 */
-
-u32 dumpPresets(const clap_plugin* m_plugin)
-{
-    auto presetLoad = (const clap_plugin_preset_load_t*)
-        m_plugin->get_extension(m_plugin, CLAP_EXT_PRESET_LOAD);
-
-    // presetLoad->from_location(m_plugin, "/path/to/preset.clap-preset");
-
-    // auto state = (const clap_plugin_state_t*)
-    //     m_plugin->get_extension(m_plugin, CLAP_EXT_STATE);
-
-    // state->save(m_plugin, stream);
-    // state->load(m_plugin, stream);
-
-    // auto presets = //(const clap_plugin_factory_presets_t*)
-    //     m_plugin->get_extension(m_plugin, CLAP_EXT_FACTORY_PRESETS);
-
-    // auto* presetDiscovery = (const clap_plugin_preset_discovery_t*)
-    //     m_plugin->get_extension(m_plugin, CLAP_EXT_PRESET_DISCOVERY);
-
-    return 0;
-}
-
-
-u32 dumpInputs(const clap_plugin* m_plugin)
-{
-    auto audioPorts = (const clap_plugin_audio_ports_t*)
-        m_plugin->get_extension(m_plugin, CLAP_EXT_AUDIO_PORTS);
-
-    if (!audioPorts)
-    {
-        DE_ERROR("No CLAP_EXT_AUDIO_PORTS")
-        return 0;
-    }
-
-    const u32 n = audioPorts->count(m_plugin, 1);
-    DE_DEBUG("Inputs.Count = ",n)
-
-    for (uint32_t i = 0; i < n; i++)
-    {
-        clap_audio_port_info_t info;
-        if (audioPorts->get(m_plugin, i, 1, &info))
-        {
-            DE_TRACE("[",i,"] "
-                "ID(",dbHex(info.id), "), "
-                "Name(",info.name, "), "
-                "Ch(", info.channel_count, "), "
-                "Flags(",dbHex(info.flags), "), "
-                "Type(", (info.port_type ? info.port_type : "unknown"), "), "
-                "PairID(",dbHex(info.in_place_pair), ")")
-        }
-    }
-    return n;
-}
-
-u32 dumpOutputs(const clap_plugin* m_plugin)
-{
-    auto audioPorts = (const clap_plugin_audio_ports_t*)
-        m_plugin->get_extension(m_plugin, CLAP_EXT_AUDIO_PORTS);
-
-    if (!audioPorts)
-    {
-        DE_ERROR("No CLAP_EXT_AUDIO_PORTS")
-        return 0;
-    }
-
-    const u32 n = audioPorts->count(m_plugin, 0);
-    DE_DEBUG("Outputs.Count = ",n)
-
-    for (uint32_t i = 0; i < n; i++)
-    {
-        clap_audio_port_info_t info;
-        if (audioPorts->get(m_plugin, i, 0, &info))
-        {
-            DE_TRACE("[",i,"] "
-                "ID(",dbHex(info.id), "), "
-                "Name(",info.name, "), "
-                "Ch(", info.channel_count, "), "
-                "Flags(",dbHex(info.flags), "), "
-                "Type(", (info.port_type ? info.port_type : "unknown"), "), "
-                "PairID(",dbHex(info.in_place_pair), ")")
-        }
-    }
-    return n;
-}
-
-u32 dumpParams(const clap_plugin* m_plugin)
-{
-    auto params = (const clap_plugin_params_t*)
-        m_plugin->get_extension(m_plugin, CLAP_EXT_PARAMS);
-
-    if (!params)
-    {
-        DE_ERROR("No CLAP_EXT_PARAMS")
-        return 0;
-    }
-
-    const u32 n = params->count(m_plugin);
-    DE_DEBUG("Params.Count = ",n)
-
-    for (uint32_t i = 0; i < n; i++)
-    {
-        clap_param_info_t info;
-        if (!params->get_info(m_plugin, i, &info))
-        {
-            DE_ERROR("[",i,"] NOT_EXIST")
-            continue;
-        }
-
-        double value;
-        if (!params->get_value(m_plugin, info.id, &value))
-        {
-            DE_ERROR("[",i,"].Value = NOT_EXIST")
-        }
-
-        DE_TRACE("[",i,"] "
-            "ID(", dbHex(info.id),"), "
-            "Name(",info.name,"), "
-            "Val(", value, "), "
-            "Min(", info.min_value, "), "
-            "Max(", info.max_value, "), "
-            "Def(", info.default_value, "), "
-            "Flags(", dbHex(info.flags), "), "
-            "Module(", info.module, ")")
-    }
-
-    return n;
-}
 
 //===============================
 struct CLAP_AudioBuffers
@@ -737,8 +781,11 @@ public:
     std::string m_directoryMultiByte;
     std::string m_pluginName;
     std::string m_pluginVendor;
+    std::string m_pluginVersion;
+    double m_pluginRuntime;
 
     SymbolLoader m_symLoader;
+    PluginTimer m_perfTimer;
     PluginClock m_midiClock;
 
     CLAP_AudioBuffers m_buffers;
@@ -858,8 +905,8 @@ public:
     static void
     host_request_restart(const clap_host_t *host)
     {
-        auto me = static_cast<CLAP_Plugin_Impl*>(host->host_data);
-        DE_TRACE("")
+        //auto me = static_cast<CLAP_Plugin_Impl*>(host->host_data);
+        //DE_TRACE("")
 
         // WHY:
         // Plugin changed something fundamental (ports, latency, tail, etc.)
@@ -869,8 +916,8 @@ public:
     static void
     host_request_process(const clap_host_t *host)
     {
-        auto me = static_cast<CLAP_Plugin_Impl*>(host->host_data);
-        DE_TRACE("")
+        //auto me = static_cast<CLAP_Plugin_Impl*>(host->host_data);
+        //DE_TRACE("")
 
         // WHY:
         // Plugin wants the host to call process() again.
@@ -881,8 +928,8 @@ public:
     static void
     host_request_callback(const clap_host_t *host)
     {
-        auto me = static_cast<CLAP_Plugin_Impl*>(host->host_data);
-        DE_TRACE("")
+        //auto me = static_cast<CLAP_Plugin_Impl*>(host->host_data);
+        //DE_TRACE("")
 
         // WHY:
         // Plugin needs a main-thread callback.
@@ -1026,6 +1073,7 @@ public:
         m_directoryMultiByte = dbFileDir(uri);
         m_pluginName = dbFileBase(uri);
         m_pluginVendor = "";
+        m_pluginVersion = "";
 
         DE_TRACE("uri = ",m_uri)
         DE_TRACE("dir = ",m_directoryMultiByte)
@@ -1091,20 +1139,43 @@ public:
             return;
         }
 
+        m_pluginName = desc->name ? desc->name : "nullptr!";
+        m_pluginVendor = desc->vendor ? desc->vendor : "nullptr!";
+        m_pluginVersion = desc->version ? desc->version : "nullptr!";
 
-        m_bIsSynth = false;
+        DE_TRACE("CLAP plugin id = ", desc->id ? desc->id : "nullptr!")
+        DE_TRACE("CLAP plugin name = ", desc->name ? desc->name : "nullptr!")
+        DE_TRACE("CLAP plugin vendor = ", desc->vendor ? desc->vendor : "nullptr!")
+        DE_TRACE("CLAP plugin url = ", desc->url ? desc->url : "nullptr!")
+        DE_TRACE("CLAP plugin manual_url = ", desc->manual_url ? desc->manual_url : "nullptr!")
+        DE_TRACE("CLAP plugin support_url = ", desc->support_url ? desc->support_url : "nullptr!")
+        DE_TRACE("CLAP plugin version = ", desc->version ? desc->version : "nullptr!")
+        DE_TRACE("CLAP plugin description = ", desc->description ? desc->description : "nullptr!")
 
-        for (uint32_t i = 0; desc->features[i]; i++)
+        if (desc->features != nullptr)
         {
-            DE_DEBUG("Feature[",i,"] ",desc->features[i])
-
-            if (strcmp(desc->features[i], CLAP_PLUGIN_FEATURE_INSTRUMENT) == 0)
+            for (uint32_t i = 0; desc->features[i] != nullptr; ++i)
             {
-                m_bIsSynth = true;
+                const char* feature = desc->features[i];
+                DE_TRACE("CLAP plugin feature[",i,"] = ", feature)
+            }
+
+            m_bIsSynth = false;
+
+            for (uint32_t i = 0; desc->features[i]; i++)
+            {
+                DE_DEBUG("Feature[",i,"] ",desc->features[i])
+
+                if (strcmp(desc->features[i], CLAP_PLUGIN_FEATURE_INSTRUMENT) == 0)
+                {
+                    m_bIsSynth = true;
+                }
             }
         }
-
-        // DE_TRACE("Got desc")
+        else
+        {
+            DE_ERROR("CLAP plugin features = nullptr! No SYNTH detection possible!")
+        }
 
         m_plugin = m_factory->create_plugin(m_factory, &m_host, desc->id);
         if (!m_plugin)
@@ -1307,6 +1378,8 @@ public:
                   f32* __restrict__ outL,
                   f32* __restrict__ outR)
     {
+        const double timeStart = m_perfTimer.now();
+
         if ( !outL || !outR )
         {
             throw std::runtime_error("No dst audio dsp buffer in VST2_Plugin::readSamples()!");
@@ -1425,12 +1498,12 @@ public:
         p.audio_inputs_count = m_buffers.m_iBuses.size();
         p.audio_outputs_count = m_buffers.m_oBuses.size();
 
-        //clap_process_status e;
-        auto e = m_plugin->process(m_plugin, &p);
-        if (e != CLAP_PROCESS_CONTINUE)
-        {
-            DE_WARN("m_plugin->process(). ", getStatusStr(e))
-        }
+        //clap_process_status e =
+            m_plugin->process(m_plugin, &p);
+        // if (e != CLAP_PROCESS_CONTINUE)
+        // {
+        //     DE_WARN("m_plugin->process(). ", getStatusStr(e))
+        // }
 
         m_framePos += frames; // atomic.
 
@@ -1471,6 +1544,9 @@ public:
         m_normalizedSumComputer.calc(outL, outR, frames);
 
         // Thank you for participating in our DspChain dear plugin.
+        const double timeEnd = m_perfTimer.now();
+
+        m_pluginRuntime = timeEnd - timeStart;
     }
 
     // This function is called from refillCallback() which is running in audio thread.
@@ -1694,6 +1770,10 @@ std::string CLAP_Plugin::getName() const { return _d->m_pluginName; }
 
 std::string CLAP_Plugin::getVendor() const { return _d->m_pluginVendor; }
 
+std::string CLAP_Plugin::getVersion() const { return _d->m_pluginVersion; }
+
+double CLAP_Plugin::getRuntime() const { return _d->m_pluginRuntime; }
+
 // ===================================================
 
 void CLAP_Plugin::openPlugin( std::string uri )
@@ -1754,20 +1834,127 @@ void CLAP_Plugin::setProgram( int i )
 
 u32 CLAP_Plugin::getParameterCount() const
 {
-    return 0;
+    auto plugin = _d->m_plugin;
+    auto params = (const clap_plugin_params_t*)
+        plugin->get_extension(plugin, CLAP_EXT_PARAMS);
+
+    if (!params)
+    {
+        DE_ERROR("No CLAP_EXT_PARAMS")
+        return 0;
+    }
+
+    return params->count(plugin);
 }
 
 f32 CLAP_Plugin::getParameter(int i) const
 {
-    return 0.0f;
+    auto plugin = _d->m_plugin;
+    auto params = (const clap_plugin_params_t*)
+                  plugin->get_extension(plugin, CLAP_EXT_PARAMS);
+
+    if (!params)
+    {
+        DE_ERROR("No params")
+        return 0.0f;
+    }
+
+    u32 n = params->count(plugin);
+
+    clap_param_info_t pi;
+    if (!params->get_info(plugin, i, &pi))
+    {
+        DE_ERROR("No Param[",i,"].info.")
+        return 0.0f;
+    }
+
+    double value;
+    if (!params->get_value(plugin, pi.id, &value))
+    {
+        DE_ERROR("No Param[",i,"].value.")
+        return 0.0f;
+    }
+
+    return value;
+}
+
+std::string CLAP_Plugin::getParameterName(int i) const
+{
+    auto plugin = _d->m_plugin;
+    auto params = (const clap_plugin_params_t*)
+                  plugin->get_extension(plugin, CLAP_EXT_PARAMS);
+
+    if (!params)
+    {
+        DE_ERROR("No params")
+        return "";
+    }
+
+    u32 n = params->count(plugin);
+
+    clap_param_info_t pi;
+    if (!params->get_info(plugin, i, &pi))
+    {
+        DE_ERROR("No Param[",i,"].info.")
+        return "";
+    }
+
+    return pi.name;
+}
+
+void setClapParamRT(const clap_plugin_t* plugin,
+                    const clap_host_t* host,
+                    clap_id paramId,
+                    double value)
+{
+    auto hostParams = (const clap_host_params*)
+        host->get_extension(host, CLAP_EXT_PARAMS);
+
+    if (!hostParams || !hostParams->request_flush)
+        return;
+
+    clap_event_param_value ev{};
+    ev.header.size      = sizeof(ev);
+    ev.header.time      = 0; // sample offset
+    ev.header.space_id  = CLAP_CORE_EVENT_SPACE_ID;
+    ev.header.type      = CLAP_EVENT_PARAM_VALUE;
+    ev.header.flags     = 0;
+
+    ev.param_id         = paramId;
+    ev.cookie           = nullptr;
+    ev.note_id          = -1;
+    ev.port_index       = -1;
+    ev.channel          = -1;
+    ev.key              = -1;
+    ev.value            = value;
+
+    // Queue the event for the plugin to process
+    hostParams->request_flush(host);
+
+    // The plugin will pull this event during process()
 }
 
 void CLAP_Plugin::setParameter(int i, f32 value)
 {
+    auto plugin = _d->m_plugin;
+    auto params = (const clap_plugin_params_t*)
+            plugin->get_extension(plugin, CLAP_EXT_PARAMS);
 
+    if (!params)
+    {
+        DE_ERROR("No params")
+        return;
+    }
+
+    clap_param_info_t pi;
+    if (!params->get_info(plugin, i, &pi))
+    {
+        DE_ERROR("No Param[",i,"].info.")
+        return;
+    }
+
+    setClapParamRT(plugin, &_d->m_host, pi.id, value);
 }
-
-
 
 float CLAP_Plugin::getSpecialValue( eSpecialValue type ) const
 {
@@ -1778,8 +1965,6 @@ float CLAP_Plugin::getSpecialValue( eSpecialValue type ) const
         default: return 0.0f;
     }
 }
-
-
 
 } // end namespace audio.
 } // end namespace de.

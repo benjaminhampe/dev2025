@@ -18,7 +18,9 @@ public:
     //QSize minimumSizeHint() const override;
 
     Pad* getPad() { return m_pad; }
-
+    ComboBox* getComboPreset() { return m_cbxPreset; }
+    ComboBox* getComboParam1() { return m_cbxParam1; }
+    ComboBox* getComboParam2() { return m_cbxParam2; }
     void applySkin();
 
 protected slots:

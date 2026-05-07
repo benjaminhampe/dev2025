@@ -1235,7 +1235,7 @@ State::operator!= ( State const & rhs ) const { return !( *this == rhs ); }
 
 // ===========================================================================
 PrimitiveType::PrimitiveType()
-    // ===========================================================================
+// ===========================================================================
     : m_type(Points)
 {}
 
@@ -1366,6 +1366,72 @@ PrimitiveType::toOpenGL( PrimitiveType const primitiveType )
 }
 
 
+// ===========================================================================
+IndexType::IndexType()
+// ===========================================================================
+    : m_type(U32)
+{}
+
+IndexType::IndexType( EType type )
+    : m_type(type)
+{}
+
+IndexType::IndexType( const IndexType & other )
+    : m_type(other.m_type)
+{}
+
+IndexType&
+IndexType::operator=( const IndexType & other )
+{
+    m_type = other.m_type;
+    return *this;
+}
+
+//PrimitiveType::operator uint32_t() const { return m_type; }
+std::string
+IndexType::str() const
+{
+    return getString( *this );
+}
+
+// static
+std::string
+IndexType::getString( IndexType const indexType )
+{
+    switch ( indexType )
+    {
+    case U32: return "U32";
+    case U16: return "U16";
+    case U8: return "U8";
+    default: return "U32";
+    }
+}
+
+// static
+IndexType
+IndexType::fromOpenGL( uint32_t const indexType )
+{
+    switch ( indexType )
+    {
+    case GL_UNSIGNED_INT: return IndexType::U32;
+    case GL_UNSIGNED_SHORT: return IndexType::U16;
+    case GL_UNSIGNED_BYTE: return IndexType::U8;
+    default: return IndexType::U32;
+    }
+}
+
+// static
+uint32_t
+IndexType::toOpenGL( IndexType const indexType )
+{
+    switch ( indexType )
+    {
+    case IndexType::U32: return GL_UNSIGNED_INT;
+    case IndexType::U16: return GL_UNSIGNED_SHORT;
+    case IndexType::U8: return GL_UNSIGNED_BYTE;
+    default: return GL_UNSIGNED_INT;
+    }
+}
 
 // ===========================================================================
 SamplerOptions::SamplerOptions()

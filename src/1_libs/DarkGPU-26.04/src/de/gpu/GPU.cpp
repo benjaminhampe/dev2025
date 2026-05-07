@@ -1095,8 +1095,8 @@ bool TexManager::uploadTexture2D( Texture* &tex, int w, int h, void const* const
     tex->m_layer = 0;
 
          if (fmt == PixelFormat::R8)        { tex->set( GL_RED, GL_RED, GL_UNSIGNED_BYTE ); }
-    else if (fmt == PixelFormat::R8G8B8)    { tex->set( GL_RGB, GL_RGB, GL_UNSIGNED_BYTE); } // GL_SRGB
-    else if (fmt == PixelFormat::R8G8B8A8)  { tex->set( GL_RGBA, GL_RGBA, GL_UNSIGNED_BYTE ); } // gammaCorrection ? GL_SRGB_ALPHA
+    else if (fmt == PixelFormat::R8G8B8)    { tex->set( GL_RGB8, GL_RGB, GL_UNSIGNED_BYTE); } // GL_SRGB
+    else if (fmt == PixelFormat::R8G8B8A8)  { tex->set( GL_RGBA8, GL_RGBA, GL_UNSIGNED_BYTE ); } // gammaCorrection ? GL_SRGB_ALPHA
     else if (fmt == PixelFormat::R32F)      { tex->set( GL_R32F, GL_RED, GL_FLOAT); }
     else if (fmt == PixelFormat::RGB16F)    { tex->set( GL_RGB16F, GL_RGB, GL_FLOAT ); }
     else if (fmt == PixelFormat::RGBA16F)   { tex->set( GL_RGBA16F, GL_RGBA, GL_FLOAT ); }

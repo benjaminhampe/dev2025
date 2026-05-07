@@ -44,8 +44,7 @@ std::string glGetStdString( u32 value )
     auto p = (char const*)glGetString( value );
     if ( p )
     {
-        std::string t = p;
-        return t;
+        return p;
     }
     else
     {
@@ -139,6 +138,11 @@ void
 RT_RGB::init( VideoDriver* driver, int w, int h )
 {
     m_driver = driver;
+
+    // GLuint fbo = 0;
+    // glGenFramebuffers(1, &fbo);
+    // glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+
     if (!m_fbo)
     {
         glGenFramebuffers(1, &m_fbo);
@@ -153,37 +157,125 @@ RT_RGB::init( VideoDriver* driver, int w, int h )
                       SamplerOptions::Wrap::ClampToEdge,
                       SamplerOptions::Wrap::ClampToEdge);
 
-    auto color = driver->createTexture2D("rtHdr_color32", w, h, nullptr, PixelFormat::R8G8B8A8, so );
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, color->target(), color->id(), 0);
+    // ------------------------------------------------------------
+    // Color attachment: R8G8B8A8 (GL_RGBA8)
+    // ------------------------------------------------------------
+    // GLuint texColor = 0;
+    // glGenTextures(1, &texColor);
+    // glBindTexture(GL_TEXTURE_2D, texColor);
+    // glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0,
+    //              GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
 
-    auto depthStencil = driver->createTexture2D("rtHdr_d24s8", w, h, nullptr, PixelFormat::D24S8, so );
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, depthStencil->target(), depthStencil->id(), 0);
+    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    // glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+    //                        GL_TEXTURE_2D, texColor, 0);
+
+    auto tC = m_driver->createTexture2D("rt_r8g8b8a8", w, h, nullptr, PixelFormat::R8G8B8A8, so );
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, tC->target(), tC->id(), 0);
+    GL_VALIDATE
+    // ------------------------------------------------------------
+    // Depth-stencil attachment: D24S8
+    // ------------------------------------------------------------
+    // GLuint texDepthStencil = 0;
+    // glGenTextures(1, &texDepthStencil);
+    // glBindTexture(GL_TEXTURE_2D, texDepthStencil);
+
+    // glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH24_STENCIL8, width, height, 0,
+    //              GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8, nullptr);
+
+    // glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT,
+    //                        GL_TEXTURE_2D, texDepthStencil, 0);
+
+    auto tDS = m_driver->createTexture2D("rt_d24s8", w, h, nullptr, PixelFormat::D24S8, so );
+
+    glGenTextures(1, &m_depthView);
+    glTextureView(m_depthView, GL_TEXTURE_2D, tDS->id(),
+                    GL_DEPTH_COMPONENT24, 0, 1, 0, 1);
+
+    glGenTextures(1, &m_stencilView);
+    glTextureView(m_stencilView, GL_TEXTURE_2D, tDS->id(),
+                GL_STENCIL_INDEX8, 0, 1, 0, 1);
+
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,
+                GL_TEXTURE_2D, m_depthView, 0);
+
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT,
+                GL_TEXTURE_2D, m_stencilView, 0);
+
+    // glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, tDS->target(), tDS->id(), 0);
+    // GL_VALIDATE
+    // ------------------------------------------------------------
+    // Validate FBO
+    // ------------------------------------------------------------
+    // if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
+    //     std::cerr << "FBO incomplete\n";
+    // }
+
+    // glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
     // Check if the framebuffer is complete
     if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
     {
         DE_ERROR("Error: Framebuffer is not complete!")
     }
+    else
+    {
+        DE_OK("Framebuffer complete. fbo = ",m_fbo)
+    }
 
+    GL_VALIDATE
     glBindFramebuffer(GL_FRAMEBUFFER, 0); // Unbind the framebuffer
     GL_VALIDATE
 
-    m_color.tex = color;
+    m_color.view = 0;
+    m_color.tex = tC;
     m_color.fmt = PixelFormat::R8G8B8A8;
     m_color.attach = GL_COLOR_ATTACHMENT0;
 
-    m_depthStencil.tex = depthStencil;
-    m_depthStencil.fmt = PixelFormat::D24S8;
-    m_depthStencil.attach = GL_DEPTH_STENCIL_ATTACHMENT;
+    m_depth.view = m_depthView;
+    m_depth.tex = tDS;
+    m_depth.fmt = PixelFormat::D24S8;
+    m_depth.attach = GL_DEPTH_ATTACHMENT;
+
+    m_stencil.view = m_stencilView;
+    m_stencil.tex = tDS;
+    m_stencil.fmt = PixelFormat::D24S8;
+    m_stencil.attach = GL_STENCIL_ATTACHMENT;
 }
 
 
 void RT_RGB::bind()
 {
+    if (!m_fbo)
+    {
+        DE_ERROR("No FBO")
+        return;
+    }
     glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);  GL_VALIDATE
 }
 void RT_RGB::unbind()
 {
+    if (!m_fbo)
+    {
+        DE_ERROR("No FBO")
+        return;
+    }
+
+    GLint curFBO = -1;
+    glGetIntegerv(GL_FRAMEBUFFER_BINDING, &curFBO);
+    DE_TRACE("Current FBO = ",curFBO)
+
+    GLenum attachments[] = {
+        // GL_COLOR_ATTACHMENT0,
+        GL_DEPTH_ATTACHMENT,
+        GL_STENCIL_ATTACHMENT,
+        // GL_DEPTH_STENCIL_ATTACHMENT
+    };
+
+    glInvalidateFramebuffer(GL_FRAMEBUFFER, 1, attachments);
+
     glBindFramebuffer(GL_FRAMEBUFFER, 0); GL_VALIDATE
 }
 void RT_RGB::clear( const glm::vec4& color )
@@ -339,9 +431,9 @@ bool VideoDriver::open(int w, int h)
     // s_GL_SHADING_LANGUAGE_VERSION = (char const*)glGetString(GL_SHADING_LANGUAGE_VERSION);
 
     auto extensionList = glGetStdString(GL_EXTENSIONS);
+    // DE_INFO("GL_EXTENSIONS = ", extensionList)
 
     auto extensions = StringUtil::split(extensionList,' ');
-
     DE_INFO("GL_EXTENSIONS = ", extensions.size())
     // for (size_t i = 0; i < extensions.size(); ++i)
     // {
@@ -366,7 +458,7 @@ bool VideoDriver::open(int w, int h)
     // TexManager
     m_texMgr.init();
 
-    addRenderTarget_HDR("hdr",1024,768);
+    // createRenderTarget_HDR("hdr",1024,768);
 
     // RenderStates
     m_culling = Culling::query();
@@ -408,6 +500,7 @@ bool VideoDriver::open(int w, int h)
 
     m_line3dRenderer.init( this );
     m_postFxRenderer.init( this );
+    m_screenQuadRenderer.init( this );
 
     m_sceneManager.init( this );
 
@@ -438,6 +531,7 @@ void VideoDriver::close()
     //m_shaderManager.destroy();
     //clearShaders();
     //m_texMgr.deinit();
+    clearRenderTargets();
 }
 
 void VideoDriver::resize( int w, int h )
@@ -448,7 +542,6 @@ void VideoDriver::resize( int w, int h )
         return;
     }
 
-    DE_OK("w(",w,"), h(",h,")")
     m_screenWidth = w;
     m_screenHeight = h;
 
@@ -459,31 +552,38 @@ void VideoDriver::resize( int w, int h )
     }
 }
 
-void VideoDriver::beginRender( IRenderTarget* rt )
+void VideoDriver::beginRender()
 {
     m_timeNow = dbTimeInSeconds() - m_timeEpoch;
+
+    if (m_rt)
+    {
+        DE_WARN("RenderTarget still bound")
+        m_rt = nullptr;
+    }
+
     const int w = getScreenWidth();
     const int h = getScreenHeight();
     // glDisable(GL_SCISSOR_TEST);
     // glScissor(0,0,w,h);
     glViewport(0,0,w,h);
-    // glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
-    // glClearDepthf(1.0f);
-    // glClearStencil(0);
+    glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+    glClearDepthf(1.0f);
+    glClearStencil(0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
     //GL_VALIDATE
 
-    auto camera = getCamera();
-    if (camera)
-    {
-        camera->setScreenSize(w,h);
-        camera->update();
-    }
+    // auto camera = getCamera();
+    // if (camera)
+    // {
+    //     camera->setScreenSize(w,h);
+    //     camera->update();
+    // }
 }
 
 void VideoDriver::endRender()
 {
-    glFlush();
+    //glFlush();
     //m_window->swapBuffers();
     // Add item to frame history... (not yet)
 
@@ -507,6 +607,54 @@ void VideoDriver::endRender()
     //m_drawCallsPerFrame = m_drawCalls - m_drawCallsLastFrame;
     //m_drawCallsLastFrame = m_drawCalls;
 }
+
+void VideoDriver::beginRender( IRenderTarget* rt, const glm::vec4& clearColor )
+{
+    if (!rt)
+    {
+        DE_ERROR("No renderTarget")
+        return;
+    }
+
+    if (m_rt)
+    {
+        // m_rt->unbind();
+        DE_ERROR("RenderTarget still bound")
+    }
+
+    m_rt = rt;
+    int w = m_rt->w();
+    int h = m_rt->h();
+    glViewport(0,0,w,h);
+
+    // auto camera = getCamera();
+    // if (camera)
+    // {
+    //     camera->setScreenSize(w,h);
+    //     camera->update();
+    // }
+
+    m_rt->bind();
+    m_rt->clear(clearColor);
+}
+
+void VideoDriver::endRender( IRenderTarget* rt )
+{
+    if (!rt)
+    {
+        DE_ERROR("No renderTarget")
+        return;
+    }
+
+    rt->unbind();
+
+    m_rt = nullptr;
+}
+
+int VideoDriver::getScreenWidth() const { return m_screenWidth; }
+int VideoDriver::getScreenHeight() const { return m_screenHeight; }
+int VideoDriver::getRenderWidth() const { return m_rt ? m_rt->w() : m_screenWidth; }
+int VideoDriver::getRenderHeight() const { return m_rt ? m_rt->h() : m_screenHeight; }
 
 uint64_t VideoDriver::getFrameCount() const
 {
@@ -786,6 +934,18 @@ void VideoDriver::setClearStencil( uint8_t s ) { de_glClearStencil( s ); }
 // ### RenderTargetManager ###
 // ###########################
 
+void VideoDriver::clearRenderTargets()
+{
+    m_rt = nullptr;
+
+    for (auto & rt : m_rts)
+    {
+        delete rt;
+    }
+
+    m_rts.clear();
+}
+
 IRenderTarget* VideoDriver::getRenderTarget()
 {
     return m_rt;
@@ -807,7 +967,7 @@ VideoDriver::setRenderTarget(IRenderTarget* rt)
     }
 }
 
-IRenderTarget* VideoDriver::getRenderTarget(std::string name)
+IRenderTarget* VideoDriver::getRenderTarget(const std::string& name)
 {
     const auto it = std::find_if(m_rts.begin(),m_rts.end(),
         [&](const IRenderTarget* const cached){ return cached && cached->name() == name; });
@@ -826,8 +986,11 @@ uint32_t VideoDriver::getRenderTargetCount() const
     return m_rts.size();
 }
 
-IRenderTarget* VideoDriver::addRenderTarget(std::string name, int w, int h,
-                                            PixelFormat color, PixelFormat depthStencil)
+IRenderTarget*
+VideoDriver::createRenderTarget(const std::string& name,
+                                int w, int h,
+                                PixelFormat color,
+                                PixelFormat depthStencil)
 {
     auto rt = getRenderTarget(name);
     if (rt)
@@ -843,8 +1006,12 @@ IRenderTarget* VideoDriver::addRenderTarget(std::string name, int w, int h,
     return rt;
 }
 
-IRenderTarget* VideoDriver::addRenderTarget_HDR(std::string name, int w, int h,
-                                                PixelFormat color, PixelFormat depth, PixelFormat stencil)
+IRenderTarget*
+VideoDriver::createRenderTarget_HDR(const std::string& name,
+                                int w, int h,
+                                PixelFormat color,
+                                PixelFormat depth,
+                                PixelFormat stencil)
 {
     auto rt = getRenderTarget(name);
     if (rt)

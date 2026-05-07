@@ -280,6 +280,20 @@ void MainWindow::keyReleaseEvent( QKeyEvent* event )
     event->accept();
 }
 
+// #include <QSvgRenderer>
+// #include <QPixmap>
+// #include <QIcon>
+// #include <QPainter>
+
+QIcon svgStringToIcon(const QString& svg, int w, int h)
+{
+    QSvgRenderer renderer(svg.toUtf8());
+    QPixmap pix(w, h);
+    pix.fill(Qt::transparent);
+    QPainter p(&pix);
+    renderer.render(&p);
+    return QIcon(pix);
+}
 
 void MainWindow::createMenuFft()
 {
@@ -326,45 +340,38 @@ void MainWindow::createMenuFft()
     // [Submenu] Window Function for FFT
     {
         auto menuWinFunc = menu->addMenu("FFT Window Function");
-        menuWinFunc->setStyleSheet(R"(
-            QMenu {
-                font-size: 14pt;
-            }
-            QMenu::indicator {
-                width: 48px;
-                height: 48px;
-            }
-            QMenu::indicator:checked {
-                width: 48px;
-                height: 48px;
-            }
-            QMenu::indicator:unchecked {
-                width: 48px;
-                height: 48px;
-            }
-            QMenu::indicator:exclusive {
-                width: 48px;
-                height: 48px;
-            }
-            QMenu::indicator:exclusive:checked {
-                width: 64px;
-                height: 64px;
-                image: url(:/svg/check_big.svg);
-            }
-            QMenu::indicator:exclusive:unchecked {
-                width: 48px;
-                height: 48px;
-                image: none;
-            }
-        )");
-        // fftMenu->setStyleSheet(R"(
+        // menuWinFunc->setStyleSheet(R"(
+        //     QMenu {
+        //         font-size: 14pt;
+        //     }
+        //     QMenu::indicator {
+        //         width: 48px;
+        //         height: 48px;
+        //     }
         //     QMenu::indicator:checked {
-        //         image: url(:/icons/big_check.png);
+        //         width: 48px;
+        //         height: 48px;
         //     }
         //     QMenu::indicator:unchecked {
+        //         width: 48px;
+        //         height: 48px;
+        //     }
+        //     QMenu::indicator:exclusive {
+        //         width: 48px;
+        //         height: 48px;
+        //     }
+        //     QMenu::indicator:exclusive:checked {
+        //         width: 64px;
+        //         height: 64px;
+        //         image: url(:/svg/check_big.svg);
+        //     }
+        //     QMenu::indicator:exclusive:unchecked {
+        //         width: 48px;
+        //         height: 48px;
         //         image: none;
         //     }
         // )");
+
         // Create an exclusive action group
         auto group = new QActionGroup(menuWinFunc);
         group->setExclusive(true);
@@ -372,10 +379,14 @@ void MainWindow::createMenuFft()
         auto currWinFunc = App::instance()->getSampleCollector()->windowFunc();
         for (int i = 0; i < de::audio::WindowFunction::eFuncMax; ++i)
         {
+            auto func = (de::audio::WindowFunction::eFunc)i;
             //auto ico = QApplication::style()->standardIcon(QStyle::SP_ArrowRight);
-            auto t = (de::audio::WindowFunction::eFunc)i;
-            auto s = QString::fromStdString(de::audio::WindowFunction::getString(t));
-            auto a = menuWinFunc->addAction(s);
+            int w = 64;
+            int h = 64;
+            auto svg = de::audio::WindowFunction::createSVG(func,w,h,256);
+            auto ico = svgStringToIcon(QString::fromStdString(svg),w,h);
+            auto dat = QString::fromStdString(de::audio::WindowFunction::getString(func));
+            auto a = menuWinFunc->addAction(ico,dat);
             a->setCheckable(true);
             a->setData(i);
 
@@ -386,7 +397,7 @@ void MainWindow::createMenuFft()
             group->addAction(a);
 
             // Default selection
-            if (currWinFunc == t)
+            if (func == currWinFunc)
             {
                 a->setChecked(true);
             }

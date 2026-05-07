@@ -143,7 +143,7 @@ bool
 de_glValidate( char const * file, int line, char const * func) // , std::string const & caller
 {
    bool ok = true;
-#if 0
+#if 1
    GLenum e = glGetError();
    while ( e != 0 )
    {

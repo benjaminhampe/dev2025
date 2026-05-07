@@ -362,7 +362,10 @@ void GL_Renderer::draw3DAccumFftMatrix()
     //#############################
 
     auto T = glm::translate(glm::mat4(1.0f), pos3d);
-    m_mesh16Shader3D.setMaterial(m_mesh16Material, T);
+
+    auto material = m_mesh16Material;
+    material.alpha = 1.0f; // float(1.0/200.0);
+    m_mesh16Shader3D.setMaterial(material, T);
     m_matrix_fft_front.draw();
     m_matrix_fft.draw();
 

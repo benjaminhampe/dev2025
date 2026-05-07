@@ -13,14 +13,24 @@ public:
 
     void applySkin();
 
-    void setText(int i, QString msg)
+    enum eText
+    {
+        eT_Type = 0,
+        eT_Runtime, //  of dsp_read()
+        eT_Name,
+        eT_Vendor,
+        eT_Version
+    };
+
+    void setText(eText i, QString msg)
     {
         switch (i)
         {
-            case 0: m_str0 = msg; break;
-            case 1: m_str1 = msg; break;
-            case 2: m_str2 = msg; break;
-            case 3: m_str3 = msg; break;
+            case eT_Type:   m_str0 = msg; break;
+            case eT_Runtime:m_str1 = msg; break;
+            case eT_Name:   m_str2 = msg; break;
+            case eT_Vendor: m_str3 = msg; break;
+            case eT_Version:m_str4 = msg; break;
             default: break;
         }
     }
@@ -57,7 +67,8 @@ private:
     QRect m_rcBody;
 
     QString m_str0 = "VST3 Effect"; // VST3 <Effect|Synth>
-    QString m_str1 = "1.0"; // Version
+    QString m_str1 = "Runtime"; // Runtime of dsp_read
     QString m_str2 = "Name"; // Name
     QString m_str3 = "Vendor"; // Vendor
+    QString m_str4 = "1.0"; // Version
 };

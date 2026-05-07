@@ -1,17 +1,50 @@
 #include "gui/track/Plugin.h"
 #include "App.h"
 #include "gui/Skin.h"
-#include "gui/track/Track.h"
+// #include "gui/track/Track.h"
 
 namespace {
 
-    void bringToFront(QWidget* w)
+    void
+    bringToFront(QWidget* w)
     {
         if (!w) { DE_ERROR("nullptr") return; }
         w->show();
         w->raise();
         w->activateWindow();
         w->setWindowState((w->windowState() & ~Qt::WindowMinimized) | Qt::WindowActive );
+    }
+
+    std::string
+    createPerfStr( double nSeconds )
+    {
+        constexpr uint64_t nanos_per_sec = 1000000000ull;
+
+        uint64_t ns = uint64_t( 0.5 + ( 1.0e9 * std::abs( nSeconds ) ) );
+
+        const uint64_t hh = ns / (nanos_per_sec * 3600);
+        ns -= (nanos_per_sec * hh * 3600);
+        const uint64_t mm = ns / (nanos_per_sec * 60);
+        ns -= (nanos_per_sec * mm * 60);
+        const uint64_t ss = ns / nanos_per_sec;
+        ns -= (nanos_per_sec * ss);
+        const uint64_t ms = ns / 1000000ull;
+        ns -= (1000000ull * ms);
+        const uint64_t us = ns / 1000ull;
+        ns -= (1000ull * us);
+
+        std::ostringstream o;
+
+        if (nSeconds < 0.0) o << "-";
+
+        if (hh > 0) { o << hh << "h "; }
+        if (mm > 0) { o << mm << "min "; }
+        if (ss > 0) { o << ss << "sec "; }
+        if (ms > 0) { o << ms << "ms "; }
+        if (us > 0) { o << us << "µs "; }
+        //if (ns > 0) { o << ns << "ns"; }
+
+        return o.str();
     }
 }
 
@@ -106,6 +139,14 @@ void Plugin::setPlugin(de::audio::IPlugin* plugin)
         auto editor = m_plugin->getEditor();
         if (editor)
         {
+            auto title = QString("%1 | %2 | %3 | %4 | x64 | AbentonLive_qt6")
+                .arg(QString::fromStdString(m_plugin->getName()))
+                .arg(QString::fromStdString(m_plugin->getVersion()))
+                .arg(QString::fromStdString(m_plugin->getVendor()))
+                .arg(QString::fromStdString(m_plugin->getTypeStr()))
+            ;
+            editor->setWindowTitle(title);
+
             bringToFront(editor);
 
             DE_TRACE("Connect editor")
@@ -116,15 +157,43 @@ void Plugin::setPlugin(de::audio::IPlugin* plugin)
                              Qt::QueuedConnection );
         }
 
-        // VST2 <Effect|Synth>
-        auto s0 = QString("%1 %2")
-            .arg(QString::fromStdString(m_plugin->getTypeStr()))
-            .arg(m_plugin->isSynth() ? "Synth" : "Effect");
         auto pad = m_body->getPad();
-        pad->setText(0, s0);
-        pad->setText(1, "");
-        pad->setText(2, QString::fromStdString(m_plugin->getName()));
-        pad->setText(3, QString::fromStdString(m_plugin->getVendor()));
+        pad->setText(Pad::eT_Type, QString("%1 %2")
+                .arg(QString::fromStdString(m_plugin->getTypeStr()))
+                .arg(m_plugin->isSynth() ? "Synth" : "Effect"));
+        pad->setText(Pad::eT_Runtime, QString::fromStdString(createPerfStr(m_plugin->getRuntime())));
+        pad->setText(Pad::eT_Name, QString::fromStdString(m_plugin->getName()));
+        pad->setText(Pad::eT_Vendor, QString::fromStdString(m_plugin->getVendor()));
+        pad->setText(Pad::eT_Version, QString::fromStdString(m_plugin->getVersion()));
+        auto comboP = m_body->getComboPreset();
+        comboP->clear();
+        comboP->addItem(QString::number(m_plugin->getProgramCount()));
+
+        // for (uint32_t i = 0; i < m_plugin->getProgramCount(); ++i)
+        // {
+        //     QString s = m_plugin->getProgram
+        //     comboP->addItem(
+
+        auto combo1 = m_body->getComboParam1();
+        for (uint32_t i = 0; i < m_plugin->getParameterCount(); ++i)
+        {
+            auto s = m_plugin->getParameterName(i);
+            auto q = QString("%1: %2")
+                        .arg(i)
+                        .arg(QString::fromStdString(s));
+            combo1->addItem(q, int(i));
+        }
+
+        auto combo2 = m_body->getComboParam2();
+        for (uint32_t i = 0; i < m_plugin->getParameterCount(); ++i)
+        {
+            auto s = m_plugin->getParameterName(i);
+            auto q = QString("%1: %2")
+                        .arg(i)
+                        .arg(QString::fromStdString(s));
+            combo2->addItem(q, int(i));
+        }
+
     }
     else
     {
@@ -136,10 +205,11 @@ void Plugin::setPlugin(de::audio::IPlugin* plugin)
         m_btnEditor->setChecked(false);
 
         auto pad = m_body->getPad();
-        pad->setText(0, "");
-        pad->setText(1, "");
-        pad->setText(2, "");
-        pad->setText(3, "");
+        pad->setText(Pad::eT_Type, "");
+        pad->setText(Pad::eT_Runtime, "");
+        pad->setText(Pad::eT_Name, "");
+        pad->setText(Pad::eT_Vendor, "");
+        pad->setText(Pad::eT_Version, "");
     }
 }
 
@@ -336,6 +406,15 @@ void Plugin::applySkin()
     update();
 }
 
+void Plugin::resizeEvent(QResizeEvent* e)
+{
+    QWidget::resizeEvent(e);
+
+    const int w = e->size().width();
+    const int h = e->size().width();
+}
+
+
 void drawShell(QPainter & dc, QRect pos,
     int headerHeight, QColor panelColor, int panelRadius,
     QColor headerColor)
@@ -398,6 +477,15 @@ void Plugin::paintEvent(QPaintEvent *)
 {
     QPainter dc(this);
 
+    if (m_plugin && m_body)
+    {
+        auto pad = m_body->getPad();
+        if (pad)
+        {
+            pad->setText(Pad::eT_Runtime, QString::fromStdString(createPerfStr(m_plugin->getRuntime())));
+        }
+    }
+
     // [Draw] Shell
     QRect r_shell(0,0,m_width,m_height);
     drawShell(dc,
@@ -428,16 +516,6 @@ void Plugin::paintEvent(QPaintEvent *)
                    m_title, f);
     }
 }
-
-// void
-// Plugin::setIsDragging(bool isDragging)
-// {
-//     if (m_isDragging != isDragging)
-//     {
-//         m_isDragging = isDragging;
-//         update();
-//     }
-// }
 
 void Plugin::focusInEvent(QFocusEvent* event)
 {

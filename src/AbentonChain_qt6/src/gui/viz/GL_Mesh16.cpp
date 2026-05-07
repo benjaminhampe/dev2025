@@ -432,14 +432,14 @@ void GL_Mesh16_Shader3D::setMaterial( const GL_Mesh16_Material & material, const
     glBindTextureUnit( 0, material.tex0.tex->id() );
     glUniform1i(m_u_tex, 0);
 
-    if (material.alpha < 1.0f)
-    {
-        m_driver->setBlend( de::gpu::Blend::alphaBlend() );
-    }
-    else
-    {
-        m_driver->setBlend( de::gpu::Blend::disabled() );
-    }
+    // if (material.alpha < 1.0f)
+    // {
+    //     m_driver->setBlend( de::gpu::Blend::alphaBlend() );
+    // }
+    // else
+    // {
+         m_driver->setBlend( de::gpu::Blend::disabled() );
+    // }
 }
 
 
@@ -511,33 +511,24 @@ void GL_Mesh16_Shader2D::setMaterial(
             //#version 330 core
             //precision highp float;
 
-            out vec4 o_fragColor;
+            out vec4 fragColor;
             in float v_tex;
 
             uniform sampler2D u_tex;
-            uniform float u_alpha;
+         // uniform float u_alpha;
          // uniform vec4 u_texTransform;
 
             void main()
             {
-                // vec2 atlasPos = u_texTransform.xy;
-                // vec2 atlasSiz = u_texTransform.zw;
-                // vec2 atlasUV = atlasSiz * fract( v_tex ) + atlasPos;
-                // vec4 Td = texture( u_tex, atlasUV );
-
-                vec4 Td = texture( u_tex, vec2( v_tex, 0.0f ) );
-
-                if (u_alpha > 1.0)
-                {
-                    Td.rgb *= u_alpha;
-                    Td.a = 1.0;
-                    Td = min(Td, vec4(1.0,1.0,1.0,1.0));
-                }
-                else
-                {
-                    Td.a = u_alpha;
-                }
-                o_fragColor = Td;
+                // if (v_tex < u_alpha)
+                // {
+                //     fragColor.a = 0.0;
+                // }
+                // else
+                // {
+                    vec4 Td = texture( u_tex, vec2( v_tex, 0.0f ) );
+                    fragColor = Td;
+                //}
             }
         )";
         m_shader = m_driver->createShader( "2DMesh16", g_vs, g_fs );
@@ -547,7 +538,7 @@ void GL_Mesh16_Shader2D::setMaterial(
             m_u_tex = glGetUniformLocation(m_shader->id, "u_tex");
             m_u_posTransform = glGetUniformLocation(m_shader->id, "u_posTransform");
             //m_u_texTransform = glGetUniformLocation(m_shader->id, "u_texTransform");
-            m_u_alpha = glGetUniformLocation(m_shader->id, "u_alpha");
+            //m_u_alpha = glGetUniformLocation(m_shader->id, "u_alpha");
         }
     }
 
@@ -568,20 +559,20 @@ void GL_Mesh16_Shader2D::setMaterial(
     glUniform1i(m_u_tex, 0);
 
     // u_alpha
-    glUniform1f(m_u_alpha, material.alpha);
+    //glUniform1f(m_u_alpha, material.alpha);
 
     // u_texTransform
     //glm::vec4 u_texTransform{ 0,0,1,1 };
     //glUniform4fv(m_u_texTransform, 1, glm::value_ptr( u_texTransform ));
 
-    if (material.alpha < 1.0f)
-    {
-        m_driver->setBlend( de::gpu::Blend::alphaBlend() );
-    }
-    else
-    {
+    // if (material.alpha < 1.0f)
+    // {
+    //     m_driver->setBlend( de::gpu::Blend::alphaBlend() );
+    // }
+    // else
+    // {
         m_driver->setBlend( de::gpu::Blend::disabled() );
-    }
+    //}
 }
 
 

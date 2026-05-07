@@ -85,6 +85,10 @@ public:
 	
     virtual std::string getVendor() const = 0;
 
+    virtual std::string getVersion() const = 0;
+
+    virtual double getRuntime() const = 0; // runtime of dsp_read() in seconds. -> CLAP seems slow, so we added for perf analysis.
+
 
     virtual void openPlugin( std::string uri ) = 0;
 
@@ -111,6 +115,8 @@ public:
 
 
     virtual u32 getParameterCount() const = 0;
+
+    virtual std::string getParameterName(int i) const = 0;
 
     virtual f32 getParameter(int i) const = 0;
 

@@ -55,6 +55,10 @@ public:
 
     std::string getVendor() const override;
 
+    std::string getVersion() const override;
+
+    double getRuntime() const override;
+
 
     void openPlugin( std::string uri ) override;
 
@@ -88,6 +92,8 @@ public:
     u32 getParameterCount() const override;
 
     f32 getParameter(int i) const override;
+
+    std::string getParameterName(int i) const override;
 
     void setParameter(int i, f32 value) override;
 

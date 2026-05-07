@@ -7,11 +7,12 @@
 #include <de/gpu/renderer/FontRenderer5x8.h>
 #include <de/gpu/renderer/FontRenderer.h>
 #include <de/gpu/renderer/SkyboxRenderer.h>
+#include <de/gpu/renderer/Line3D_Renderer.h>
+#include <de/gpu/renderer/PostFxRenderer.h>
+#include <de/gpu/renderer/ScreenQuadRenderer.h>
 #include <de/smesh/SMeshRenderer.h>
 #include <de/smesh/SMeshLibrary.h>
 #include <de/smesh/SMeshIO.h>
-#include <de/gpu/renderer/Line3D_Renderer.h>
-#include <de/gpu/renderer/PostFxRenderer.h>
 
 //#include <de/gpu/mtl/PMesh.h>
 //#include <de/gpu/mtl/PMaterialRenderer.h>
@@ -249,6 +250,7 @@ struct RT_Attachment
         eAT_Unknown
     };
 
+    uint32_t view; // OpenGL 4.3+ glTextureView source.
     uint32_t attach; // GL_COLOR_ATTACHMENT0, GL_DEPTH_ATTACHMENT, GL_STENCIL_ATTACHMENT, GL_RENDERBUFFER
     PixelFormat fmt;
     Texture* tex;
@@ -305,21 +307,23 @@ struct RT_RGB : public IRenderTarget
 {
     VideoDriver* m_driver;
     uint32_t m_fbo;
+    uint32_t m_depthView;
+    uint32_t m_stencilView;
+
     //Recti m_pos;
     int32_t m_w;
     int32_t m_h;
     RT_Attachment m_color; // DiffuseColor RGBA 32 or RGBA_128
-    RT_Attachment m_depthStencil; // DepthStencil D24_S8
+    //RT_Attachment m_depthStencil; // DepthStencil D24_S8
+    RT_Attachment m_depth; // D24
+    RT_Attachment m_stencil; // Stencil S8
     std::string m_name;
 
     RT_RGB();
     ~RT_RGB() override;
-    const std::string& name() const override
-    { return m_name; }
-    uint32_t fbo() const override
-    { return m_fbo; }
-    void setFbo( uint32_t fbo ) override
-    { m_fbo = fbo; }
+    const std::string& name() const override { return m_name; }
+    uint32_t fbo() const override { return m_fbo; }
+    void setFbo( uint32_t fbo ) override { m_fbo = fbo; }
 
     void init( VideoDriver* driver, int w, int h ) override;
     void bind() override;
@@ -336,8 +340,10 @@ struct RT_RGB : public IRenderTarget
     uint32_t stencilAttachmentCount() const override { return 1; }
 
     const RT_Attachment& colorAttachment( int i = 0 ) const override { return m_color; }
-    const RT_Attachment& depthAttachment( int i = 0 ) const override { return m_depthStencil; }
-    const RT_Attachment& stencilAttachment( int i = 0 ) const override { return m_depthStencil; }
+    const RT_Attachment& depthAttachment( int i = 0 ) const override { return m_depth; }
+    const RT_Attachment& stencilAttachment( int i = 0 ) const override { return m_stencil; }
+    // const RT_Attachment& depthAttachment( int i = 0 ) const override { return m_depthStencil; }
+    // const RT_Attachment& stencilAttachment( int i = 0 ) const override { return m_depthStencil; }
 };
 
 // ===========================================================================
@@ -453,11 +459,16 @@ struct VideoDriver
     bool                open(int w, int h);
     void                close();
     void                resize( int w, int h );
-    void                beginRender( IRenderTarget* rt = nullptr );
+    void                beginRender();
     void                endRender();
+    void                beginRender( IRenderTarget* rt, const glm::vec4& clearColor = glm::vec4(0) );
+    void                endRender( IRenderTarget* rt );
 
-    int                 getScreenWidth() const { return m_screenWidth; }
-    int                 getScreenHeight() const { return m_screenHeight; }
+    int                 getScreenWidth() const;
+    int                 getScreenHeight() const;
+    int                 getRenderWidth() const;
+    int                 getRenderHeight() const;
+
     double              getFPS() const;
     double              getTime() const;
     uint64_t            getFrameCount() const;
@@ -482,6 +493,7 @@ struct VideoDriver
     FontRenderer*       getFontRenderer() { return &m_fontRenderer; }
     Line3D_Renderer*    getLine3DRenderer() { return &m_line3dRenderer; }
     PostFxRenderer*     getPostFxRenderer(){ return &m_postFxRenderer; }
+    ScreenQuadRenderer* getScreenQuadRenderer(){ return &m_screenQuadRenderer; }
     //gui::Env*           getGUIEnv() { return &m_guienv; }
 
     const glm::dmat4&   getModelMatrix() const { return m_modelMatrix; }
@@ -529,26 +541,31 @@ struct VideoDriver
     // ### RenderTargetManager ###
     // ###########################
 
+    void clearRenderTargets();
+
     // Get current RenderTarget:
     void setRenderTarget(IRenderTarget* rt = nullptr);
     IRenderTarget* getRenderTarget();
 
     // Get named RenderTarget:
-    IRenderTarget* getRenderTarget(std::string name);
+    IRenderTarget* getRenderTarget(const std::string& name);
 
     // Get cached RenderTarget:
     IRenderTarget* getRenderTarget(uint32_t index);
     uint32_t getRenderTargetCount() const;
 
     // Add RenderTarget with combined depth-stencil attachment:
-    IRenderTarget* addRenderTarget(std::string name, int w, int h,
-                                   PixelFormat color = PixelFormat::R8G8B8A8,
-                                   PixelFormat depthStencil = PixelFormat::D24S8);
+    IRenderTarget* createRenderTarget(const std::string& name,
+                        int w, int h,
+                        PixelFormat color = PixelFormat::R8G8B8A8,
+                        PixelFormat depthStencil = PixelFormat::D24S8);
+
     // Add RenderTarget with separate depth-stencil attachment:
-    IRenderTarget* addRenderTarget_HDR(std::string name, int w, int h,
-                                   PixelFormat color = PixelFormat::RGBA32F,
-                                   PixelFormat depth = PixelFormat::D32F,
-                                   PixelFormat stencil = PixelFormat::S8);
+    IRenderTarget* createRenderTarget_HDR(const std::string& name,
+                        int w, int h,
+                        PixelFormat color = PixelFormat::RGBA32F,
+                        PixelFormat depth = PixelFormat::D32F,
+                        PixelFormat stencil = PixelFormat::S8);
 
     // #####################
     // ### ShaderManager ###
@@ -797,6 +814,8 @@ protected:
     Line3D_Renderer m_line3dRenderer;
 
     PostFxRenderer m_postFxRenderer;
+
+    ScreenQuadRenderer m_screenQuadRenderer;
 
     SceneManager m_sceneManager;
 

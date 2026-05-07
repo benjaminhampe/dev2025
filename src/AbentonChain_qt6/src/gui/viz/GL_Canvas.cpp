@@ -57,8 +57,9 @@ void GL_Canvas::startFpsTimer()
         DE_WARN("Already started")
         return;
     }
-    m_fpsTimerId = startTimer(1000 / 60);
-    DE_OK("Started FPS update timer")
+    auto ms = 1000 / 60;
+    m_fpsTimerId = startTimer(ms - 1);
+    DE_OK("Started FPS update timer ", ms)
 }
 
 void GL_Canvas::stopFpsTimer()
@@ -78,16 +79,6 @@ void GL_Canvas::initializeGL()
     m_driver = de::gpu::createVideoDriver(2*640,2*480,winId());
 
     m_renderer.initializeGL(m_driver);
-
-    // m_time_start = dbTimeInSeconds();
-    // m_time_now = 0.0;
-    // m_time_lastRenderUpdate = 0.0;
-    // m_time_lastWindowTitleUpdate = 0.0;
-    // m_time_lastCameraUpdate = 0.0;
-
-
-    // m_renderTarget = m_driver->createRenderTarget_HDR("msaa",
-    //                     1024, 768);
 }
 
 void

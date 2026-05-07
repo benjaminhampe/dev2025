@@ -20,7 +20,10 @@ add_subdirectory(DarkGPU-26.04)
 
 add_subdirectory(de-opencv-4.13.0)
 
-add_subdirectory(de-QtAdvancedDockingSystem-4.4.1)
+if (BENNI_USE_QT)
+	add_subdirectory(de-QtAdvancedDockingSystem-4.4.1)
+endif()
+
 
 # add_subdirectory(DarkMesh)
 

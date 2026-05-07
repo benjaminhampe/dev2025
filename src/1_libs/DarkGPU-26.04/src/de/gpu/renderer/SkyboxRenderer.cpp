@@ -213,8 +213,8 @@ SkyboxRenderer::render()
 
     // === RenderStates ===
     State state;
-    state.depth = Depth::disabled();
-    state.culling = Culling::disabled();
+    state.depth = Depth::alwaysPass();
+    state.culling = Culling();
     state.blend = Blend::disabled();
     m_driver->setState( state );
 
@@ -222,8 +222,10 @@ SkyboxRenderer::render()
     m_driver->useShader( m_shader );
 
     // === ShaderUniform: MVP matrix ===
-    const float d = 3800.0f;
-    const glm::mat4 modelMat = glm::scale(glm::mat4(1.0f), glm::vec3(d,d,d));
+    const float d = 4800.0f;
+    const glm::mat4 Ry = glm::rotate(glm::mat4(1.0f), -90.0f, glm::vec3(0,1,0));
+    const glm::mat4 S = glm::scale(glm::mat4(1.0f), glm::vec3(d,d,d));
+    const glm::mat4 M = Ry * S;
     glm::mat4 viewProjMat( 1.0f );
     auto camera = m_driver->getCamera();
     if (camera)
@@ -234,7 +236,7 @@ SkyboxRenderer::render()
         camera->update();
         viewProjMat = camera->getViewProjectionMatrix();
     }
-    const glm::mat4 mvp = viewProjMat * modelMat;
+    const glm::mat4 mvp = viewProjMat * M;
     glUniformMatrix4fv(m_locMVP, 1, GL_FALSE, glm::value_ptr(mvp)); GL_VALIDATE
 
     // === ShaderUniform: CubeMap sampler ===

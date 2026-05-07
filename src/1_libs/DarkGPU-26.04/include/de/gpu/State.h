@@ -689,18 +689,48 @@ struct PrimitiveType
     static std::string
     getString( PrimitiveType const primitiveType );
 
+    static uint32_t
+    toOpenGL( PrimitiveType const primitiveType );
+
+    static PrimitiveType
+    fromOpenGL( uint32_t const primitiveType );
+
     static std::string
     getShortString( PrimitiveType const primitiveType );
 
     static uint32_t
     getPrimitiveCount( PrimitiveType const primType,
                       uint32_t const vCount, uint32_t const iCount );
+};
 
-    static PrimitiveType
-    fromOpenGL( uint32_t const primitiveType );
+// ===========================================================================
+struct IndexType
+// ===========================================================================
+{
+    enum EType : uint8_t
+    {
+        U32, U16, U8
+    };
+
+    EType m_type;
+
+    IndexType();
+    IndexType( EType type );
+    IndexType( const IndexType & other );
+    IndexType& operator=( const IndexType & other );
+    operator uint32_t() const { return m_type; }
+
+    std::string
+    str() const;
+
+    static std::string
+    getString( IndexType const indexType );
 
     static uint32_t
-    toOpenGL( PrimitiveType const primitiveType );
+    toOpenGL( IndexType const indexType );
+
+    static IndexType
+    fromOpenGL( uint32_t const indexType );
 };
 
 // ===========================================================================

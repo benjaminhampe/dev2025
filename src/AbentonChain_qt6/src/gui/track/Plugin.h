@@ -31,20 +31,8 @@ public:
 
     void applySkin();
 
-
-    /*
-    QRect labelRect() const
-    {
-        auto child = m_bCollapsed ?
-            static_cast<QWidget*>(m_labelV)
-            : static_cast<QWidget*>(m_labelH);
-        QRect r_child = child->rect();  // rect in child's own coords
-        QPoint topLeft  = child->mapTo(this, r_child.topLeft());
-        QPoint bottomRight = child->mapTo(this, r_child.bottomRight());
-        return QRect(topLeft, bottomRight);
-    }
-    */
 protected:
+    void resizeEvent(QResizeEvent *) override;
     void paintEvent(QPaintEvent *) override;
 
     void mousePressEvent(QMouseEvent* event) override;

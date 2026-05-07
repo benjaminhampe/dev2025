@@ -90,7 +90,6 @@ else()
 		-Wl,-Bdynamic
 	)
 
-
     if (WIN32)
         target_link_libraries(${APP_NAME} PRIVATE kernel32 user32 gdi32 shell32)
         target_link_libraries(${APP_NAME} PRIVATE ole32 oleaut32 comdlg32 comctl32)
@@ -114,4 +113,18 @@ else()
     # target_link_libraries(${APP_NAME} PRIVATE de_sndfile) # Audio
     # target_link_libraries(${APP_NAME} PRIVATE de_ffmpeg)  # Audio + Video
     # target_link_libraries(${APP_NAME} PRIVATE de_lame)    # Audio mp3 encoder
+
+    if (CMAKE_BUILD_TYPE STREQUAL "Release")
+
+        message(STATUS "Building in Release mode, strip symbols")
+        # --strip-debug : Removes only debugging symbols.
+        # --strip-unneeded : Removes debug symbols + other unused symbols (may affect debugging).
+        add_custom_command(
+            TARGET ${APP_NAME}
+            POST_BUILD
+            COMMAND ${CMAKE_OBJCOPY} --strip-unneeded $<TARGET_FILE:${APP_NAME}>
+            COMMENT "Stripping debug symbols"
+        )
+
+    endif()
 endif()

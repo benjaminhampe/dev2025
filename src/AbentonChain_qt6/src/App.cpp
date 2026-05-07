@@ -17,6 +17,9 @@ App::App(QObject* parent)
     , m_track(nullptr)
 {
     DE_TRACE("")
+
+    //de::audio::WindowFunction::test();
+
     m_track = &m_track0;
     //m_sampleCollector = std::make_shared<de::audio::DspSampleCollector>();
 }

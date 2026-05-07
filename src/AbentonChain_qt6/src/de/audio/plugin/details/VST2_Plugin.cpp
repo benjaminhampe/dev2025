@@ -11,6 +11,37 @@ namespace {
 
 constexpr u64 GUARD = 256; // 64 extra bytes for "out-of-bounds" bugs.
 
+std::string decodeVST2Version(int32_t v)
+{
+    if (v <= 0)
+        return "unknown";
+
+    // Pattern 1: ABCD → A.B.CD  (e.g. 1000 → 1.0.0)
+    if (v >= 1000 && v <= 9999)
+    {
+        int major = v / 1000;
+        int minor = (v / 100) % 10;
+        int patch = v % 100;
+        return std::to_string(major) + "." +
+               std::to_string(minor) + "." +
+               std::to_string(patch);
+    }
+
+    // Pattern 2: AABBCC → A.B.C  (e.g. 10203 → 1.2.3)
+    if (v >= 10000 && v <= 999999)
+    {
+        int major = v / 10000;
+        int minor = (v / 100) % 100;
+        int patch = v % 100;
+        return std::to_string(major) + "." +
+               std::to_string(minor) + "." +
+               std::to_string(patch);
+    }
+
+    // Fallback: just return the integer
+    return std::to_string(v);
+}
+
 //===============================
 struct VST2_SampleBuffers
 //===============================
@@ -124,6 +155,8 @@ struct VST2_Plugin_Impl
     std::string m_directoryMultiByte;
     std::string m_pluginName;
     std::string m_pluginVendor;
+    std::string m_pluginVersion;
+    double m_pluginRuntime;
 
     VST2_SampleBuffers m_buffers;
     NormalizedSumComputer m_normalizedSumComputer;
@@ -134,6 +167,7 @@ struct VST2_Plugin_Impl
     // std::vector< f32*> m_inBufferHeads;
 
     // VST midi event handling
+    PluginTimer m_perfTimer;
     PluginClock m_midiClock;
     std::vector< VstMidiEvent > m_vstMidiEvents;
     std::vector< char > m_vstEventBuffer;
@@ -381,6 +415,8 @@ public:
         m_directoryMultiByte = dbFileDir(uri);
         m_pluginName = dbFileBase(uri);
         m_pluginVendor = "";
+        m_pluginVersion = "";
+        m_pluginRuntime = 0.0;
 
         DE_TRACE("uri = ",m_uri)
         DE_TRACE("dir = ",m_directoryMultiByte)
@@ -448,10 +484,14 @@ public:
         m_bNeedSetup = true;
         dsp_init(256, 2, 48000);
 
+        int32_t pluginVersion = dispatcher( effGetVendorVersion, 0, 0, nullptr, 0.0f );
+        m_pluginVersion = decodeVST2Version(pluginVersion);
+
         DE_DEBUG("VST2 plugin File = ", dbFileBase(m_uri))
         DE_DEBUG("VST2 plugin Dir = ", m_directoryMultiByte)
         DE_DEBUG("VST2 plugin Name = ", m_pluginName)
         DE_DEBUG("VST2 plugin Vendor = ", m_pluginVendor)
+        DE_DEBUG("VST2 plugin Version = ", m_pluginVersion)
         DE_TRACE("VST2 plugin Synth = ",m_bIsSynth)
         DE_TRACE("VST2 plugin Editor = ",bHasEditor)
         DE_TRACE("VST2 plugin Programs = ",m_numPrograms)
@@ -472,6 +512,8 @@ public:
         {
             m_editor = new VST2_Editor(m_vst, nullptr );
         }
+
+
 
         //dumpPrograms();
         //dumpParams();
@@ -525,6 +567,8 @@ public:
                   f32* __restrict__ outL,
                   f32* __restrict__ outR)
     {
+        const double timeStart = m_perfTimer.now();
+
         if ( !outL || !outR )
         {
             throw std::runtime_error("No dst audio dsp buffer in VST2_Plugin::readSamples()!");
@@ -693,6 +737,9 @@ public:
         m_normalizedSumComputer.calc(outL, outR, frames);
 
         // Thank you for participating in our DspChain dear plugin.
+        const double timeEnd = m_perfTimer.now();
+
+        m_pluginRuntime = timeEnd - timeStart;
     }
 
     VstIntPtr
@@ -982,6 +1029,10 @@ std::string VST2_Plugin::getName() const { return _d->m_pluginName; }
 
 std::string VST2_Plugin::getVendor() const { return _d->m_pluginVendor; }
 
+std::string VST2_Plugin::getVersion() const { return _d->m_pluginVersion; }
+
+double VST2_Plugin::getRuntime() const { return _d->m_pluginRuntime; }
+
 // ===================================================
 
 void VST2_Plugin::openPlugin( std::string uri )
@@ -1060,6 +1111,15 @@ f32 VST2_Plugin::getParameter(int i) const
     return _d->m_vst->getParameter(_d->m_vst, i);
 }
 
+std::string VST2_Plugin::getParameterName(int i) const
+{
+    char buf[kVstMaxParamStrLen + 32] = {0};
+
+    _d->dispatcher(effGetParamName, i, 0, buf, 0.0f);
+
+    return std::string(buf);
+}
+
 void VST2_Plugin::setParameter(int i, f32 value)
 {
     if (!_d->m_vst)
@@ -1070,7 +1130,6 @@ void VST2_Plugin::setParameter(int i, f32 value)
 
     _d->m_vst->setParameter(_d->m_vst, i, value);
 }
-
 
 float VST2_Plugin::getSpecialValue( eSpecialValue type ) const
 {
