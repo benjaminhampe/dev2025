@@ -172,6 +172,8 @@ struct VST2_Plugin_Impl
     std::vector< VstMidiEvent > m_vstMidiEvents;
     std::vector< char > m_vstEventBuffer;
 
+    ProgramNames m_programNames;
+
     struct MyVstMidi
     {
         std::unique_lock< std::mutex >
@@ -248,41 +250,32 @@ private:
     }
 
 
-    void dumpPrograms()
+    void enumerateProgramNames()
     {
-        const int currentProgram = dispatcher(effGetProgram);
-        std::vector< IPlugin::ProgramInfo > programs;
-        programs.reserve(m_numPrograms);
-        for (int i = 0; i < m_numPrograms; ++i)
-        {
-            IPlugin::ProgramInfo pi;
-            pi.id = i;
+        const int lastProgram = dispatcher(effGetProgram);
 
+        const auto n = static_cast<uint32_t>(m_vst->numPrograms);
+        m_programNames.resize(n);
+
+        for (uint32_t i = 0; i < n; ++i)
+        {
             dispatcher(effSetProgram, 0, i);
 
             char name[kVstMaxProgNameLen+GUARD] = {0};
             dispatcher(effGetProgramName, i, 0, name, 0);
-            pi.name = name;
-
-            programs.emplace_back( std::move( pi ) );
+            m_programNames[i] = name;
         }
 
-        dispatcher(effSetProgram, 0, currentProgram);
-
-        DE_DEBUG("Program.Count = ",programs.size())
-        for (auto & pi : programs)
-        {
-            DE_DEBUG("Program",pi.str())
-        }
+        dispatcher(effSetProgram, 0, lastProgram);
     }
 
     void dumpParams()
     {
-        std::vector< IPlugin::ParamInfo > params;
+        std::vector< Param > params;
         params.reserve(m_numParams);
         for (int i = 0; i < m_numParams; ++i)
         {
-            IPlugin::ParamInfo pi;
+            Param pi;
             pi.id = i;
             pi.nowValue = m_vst->getParameter(m_vst, i);
 
@@ -309,6 +302,7 @@ private:
             DE_DEBUG("Param",pi.str())
         }
     }
+
 public:
 
     // ============================================================================
@@ -513,7 +507,7 @@ public:
             m_editor = new VST2_Editor(m_vst, nullptr );
         }
 
-
+        enumerateProgramNames();
 
         //dumpPrograms();
         //dumpParams();
@@ -1076,7 +1070,12 @@ void VST2_Plugin::onShortMidiMessage(f64 pts, const midi::ShortMidiMessage& msg)
 
 u32 VST2_Plugin::getProgramCount() const
 {
-    return _d->m_numPrograms;
+    return _d->m_programNames.size();
+}
+
+std::string VST2_Plugin::getProgramName( int i ) const
+{
+    return _d->m_programNames.at(i);
 }
 
 int VST2_Plugin::getProgram() const

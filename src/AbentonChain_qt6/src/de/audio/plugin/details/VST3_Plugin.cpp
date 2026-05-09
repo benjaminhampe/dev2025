@@ -1867,6 +1867,11 @@ u32 VST3_Plugin::getProgramCount() const
     return nPrograms;
 }
 
+std::string VST3_Plugin::getProgramName( int i ) const
+{
+    return "Default";
+}
+
 int VST3_Plugin::getProgram() const
 {
     return 0;

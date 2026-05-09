@@ -1,7 +1,7 @@
 #pragma once
 #include <DarkImage.h>
-#include <vector>
-#include <memory>
+//#include <vector>
+//#include <memory>
 #include <de/midi/IMidiMessageListener.h>
 #include <de/audio/dsp/IDspChainElement.h>
 #include <de/audio/plugin/PluginEditorWindow.h>
@@ -18,12 +18,60 @@
 #define BENNI_USE_CLAP
 #endif
 
-// #ifndef BENNI_USE_LV2
-// #define BENNI_USE_LV2
-// #endif
+#ifndef BENNI_USE_LV2
+#define BENNI_USE_LV2
+#endif
 
 namespace de {
 namespace audio {
+
+// ================================================================
+struct Param
+// ================================================================
+{
+    int id = 0;
+    float nowValue = 0.0f;
+    float defValue = 0.0f;
+    float minValue = 0.0f;
+    float maxValue = 1.0f;
+    std::string name;
+    std::string unit;
+    std::string disp; // displayName
+
+    std::string str() const
+    {
+        std::ostringstream o;
+        o << "[" << id << "] " << name;
+        o << ", now(" << nowValue << ")";
+        o << ", def(" << defValue << ")";
+        o << ", min(" << minValue << ")";
+        o << ", max(" << maxValue << ")";
+        o << ", unit(" << unit << ")";
+        o << ", disp(" << disp << ")";
+        return o.str();
+    }
+};
+
+typedef std::vector<Param> Params;
+
+// ================================================================
+struct Program
+// ================================================================
+{
+    int id = 0;
+    std::string name;
+
+    std::string str() const
+    {
+        std::ostringstream o;
+        o << "[" << id << "] " << name;
+        return o.str();
+    }
+};
+
+typedef std::vector<Program> Programs;
+
+typedef std::vector<std::string> ProgramNames;
 
 class Track;
 
@@ -109,6 +157,9 @@ public:
 
     virtual u32 getProgramCount() const = 0;
 
+    virtual std::string getProgramName(int i) const = 0;
+
+
     virtual int getProgram() const = 0;
 
     virtual void setProgram( int i ) = 0;
@@ -122,45 +173,6 @@ public:
 
     virtual void setParameter(int i, f32 value) = 0;
 
-    struct ProgramInfo
-    {
-        int id = 0;
-        std::string name;
-
-        std::string str() const
-        {
-            std::ostringstream o;
-            o << "[" << id << "] " << name;
-            return o.str();
-        }
-    };
-
-    // virtual std::vector<ProgramInfo> getProgramInfos() const = 0;
-
-    struct ParamInfo
-    {
-        int id = 0;
-        float nowValue = 0.0f;
-        float defValue = 0.0f;
-        float minValue = 0.0f;
-        float maxValue = 1.0f;
-        std::string name;
-        std::string unit;
-        std::string disp; // displayName
-
-        std::string str() const
-        {
-            std::ostringstream o;
-            o << "[" << id << "] " << name;
-            o << ", now(" << nowValue << ")";
-            o << ", def(" << defValue << ")";
-            o << ", min(" << minValue << ")";
-            o << ", max(" << maxValue << ")";
-            o << ", unit(" << unit << ")";
-            o << ", disp(" << disp << ")";
-            return o.str();
-        }
-    };
 
     // virtual std::vector<ParamInfo> getParamInfos() = 0;
 

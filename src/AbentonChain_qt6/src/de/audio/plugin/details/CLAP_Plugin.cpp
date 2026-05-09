@@ -1817,7 +1817,12 @@ void CLAP_Plugin::onShortMidiMessage(f64 pts, const midi::ShortMidiMessage& msg)
 
 u32 CLAP_Plugin::getProgramCount() const
 {
-    return 0;
+    return 1;
+}
+
+std::string CLAP_Plugin::getProgramName( int i ) const
+{
+    return "Default";
 }
 
 int CLAP_Plugin::getProgram() const

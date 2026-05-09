@@ -1,0 +1,5 @@
+add_subdirectory(de-zix-0.8.0)
+add_subdirectory(de-serd-0.32.8)
+add_subdirectory(de-sord-0.16.22)
+add_subdirectory(de-lv2-1.18.10)
+add_subdirectory(de-sratom-0.6.22)

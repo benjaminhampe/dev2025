@@ -84,6 +84,9 @@ public:
 
     u32 getProgramCount() const override;
 
+    std::string getProgramName( int i ) const override;
+
+
     int getProgram() const override;
 
     void setProgram( int i ) override;

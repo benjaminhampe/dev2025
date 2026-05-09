@@ -71,6 +71,7 @@ else()
     target_link_libraries(${APP_NAME} PRIVATE de_vst2sdk)
     target_link_libraries(${APP_NAME} PRIVATE de_vst3sdk_380)
     target_link_libraries(${APP_NAME} PRIVATE de_clap)
+    target_link_libraries(${APP_NAME} PRIVATE de_lilv)
 
     target_link_libraries(${APP_NAME} PRIVATE DarkGPU_2604)
     # target_link_libraries(${APP_NAME} PRIVATE Qt6::OpenGL)

@@ -188,7 +188,10 @@ bool GL_Window_WGL::handleNativeGesture(QNativeGestureEvent* e)
 {
     switch (e->gestureType())
     {
-    case Qt::ZoomNativeGesture:
+    case Qt::BeginNativeGesture: break;
+    case Qt::EndNativeGesture: break;
+
+    case Qt::SwipeNativeGesture:
         // e->value() is the zoom delta
         //onZoom(e->value());
         break;
@@ -199,6 +202,11 @@ bool GL_Window_WGL::handleNativeGesture(QNativeGestureEvent* e)
 
     case Qt::PanNativeGesture:
         //onPan(e->value());
+        break;
+
+    case Qt::ZoomNativeGesture:
+        // e->value() is the zoom delta
+        //onZoom(e->value());
         break;
 
     case Qt::SmartZoomNativeGesture:

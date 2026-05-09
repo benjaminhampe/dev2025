@@ -52,3 +52,4 @@ add_subdirectory(de-resample)
 add_subdirectory(de-speexdsp)
 
 add_subdirectory(de-clap-1.2.7)
+add_subdirectory(de-lilv-v0.26.4)

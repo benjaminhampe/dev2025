@@ -35,11 +35,11 @@ public:
     void dsp_clearInputSignals() override;
 
 
-    const ITrack* getTrack() const override;
+    const Track* getTrack() const override;
 
-    ITrack* getTrack() override;
+    Track* getTrack() override;
 
-    void setTrack(ITrack* track) override;
+    void setTrack(Track* track) override;
 
 
     u32 getPluginId() const override;
@@ -54,6 +54,11 @@ public:
     std::string getName() const override;
 
     std::string getVendor() const override;
+
+    std::string getVersion() const override;
+
+    double getRuntime() const override;
+
 
 
     void openPlugin( std::string uri ) override;
@@ -80,12 +85,18 @@ public:
 
     u32 getProgramCount() const override;
 
+    std::string getProgramName( int i ) const override;
+
+
     int getProgram() const override;
 
     void setProgram( int i ) override;
 
 
     u32 getParameterCount() const override;
+
+    std::string getParameterName(int i) const override;
+
 
     f32 getParameter(int i) const override;
 
