@@ -11,7 +11,7 @@ compress_tar_file(
 // ====================================================
 {
     de::File in_file;
-    if (!in_file.open(input_path, "rb"))
+    if (!in_file.open(input_path, de::eFileMode::Read))
     {
         DE_ERROR("Failed to open input file")
         return false;
@@ -35,7 +35,7 @@ compress_tar_file(
     }
 
     de::File out_file;
-    if (!out_file.open(output_path, "wb"))
+    if (!out_file.open(output_path, de::eFileMode::Write))
     {
         DE_ERROR("Failed to open output file");
         return false;
@@ -64,7 +64,7 @@ decompress_tar_file(
 // ====================================================
 {
     de::File in_file;
-    if (!in_file.open(input_path, "rb"))
+    if (!in_file.open(input_path, de::eFileMode::Read))
     {
         DE_ERROR("Failed to open input file");
         return false;
@@ -95,7 +95,7 @@ decompress_tar_file(
 
 
     de::File out_file;
-    if (!out_file.open(output_path, "wb"))
+    if (!out_file.open(output_path, de::eFileMode::Write))
     {
         DE_ERROR("Failed to open output file");
         return false;

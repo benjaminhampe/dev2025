@@ -1,17 +1,30 @@
 #include <de/Core.h>
-#include <chrono>
-#include <array>
-#include <filesystem>
+#include <chrono>       // We love C++17
+#include <filesystem>   // We love C++17
 #include <fstream>
+// #include <array>
+// #include <locale>
+// #include <string>
+// #include <algorithm>
+// #include <locale>
+// #include <string>
 
-#include <locale>
-#include <string>
-#include <codecvt>
-
-#include <algorithm>
-#include <cctype>
-//#include <locale>
-//#include <string>
+#ifdef _WIN32
+    #ifndef WIN32_LEAN_AND_MEAN
+    #define WIN32_LEAN_AND_MEAN
+    #endif
+    #include <windows.h> // MultiByteToWideChar, MAX_PATH
+    #include <io.h>
+    #include <fcntl.h>
+    #include <sys/types.h>
+    #include <sys/stat.h>
+#else
+    #include <unistd.h>
+    #include <fcntl.h>
+    #include <sys/stat.h>
+    #include <codecvt>
+    #include <cctype>
+#endif
 
 int64_t dbTimeInNanoseconds()
 {
@@ -74,7 +87,7 @@ void dbLogMessage( int logLevel, const std::string& msg,
     switch( logLevel )
     {
     case de::LogLevel::Trace: o << dbSetTerminalColors(255,255,255, 200,100,200) << "[Trace]"; break;
-    case de::LogLevel::Debug: o << dbSetTerminalColors(220,100,220, 205,205,205) << "[Debug]"; break;
+    case de::LogLevel::Debug: o << dbSetTerminalColors(255,255,255, 0,0,255) << "[Debug]"; break;
     case de::LogLevel::Ok:    o << dbSetTerminalColors(255,255,255, 0,120,20) << "[Ok]"; break;
     case de::LogLevel::Benni: o << dbSetTerminalColors(0,20,160, 255,255,255) << "[Benni]"; break;
     case de::LogLevel::Info:  o << "[Info]"; break;
@@ -84,9 +97,10 @@ void dbLogMessage( int logLevel, const std::string& msg,
     default:                  o << "[Unknown]"; break;
     }
 
-    o << " " << de::FileSystem::fileName(file) << ":" << line
-      << " " << func << "() :: " << msg << " "
-      << dbResetTerminalColors() << " " << dbResetTerminalColors() ;
+    o << " " << de::FileSystem::fileName(file) << ":" << line <<
+        // " " << func << "()"
+        " :: " << msg <<
+        " " << dbResetTerminalColors();
 
     printf( "%s\n", o.str().c_str() ); // Actual logging
     fflush(stdout);
@@ -134,6 +148,79 @@ PerfMarker::~PerfMarker()
 // ===========================================================================
 // ======= StringUtil ========================================================
 // ===========================================================================
+
+// static
+std::string
+StringUtil::to_str(const wchar_t c)
+{
+    std::wostringstream w; w << c;
+    return to_str( w.str() );
+}
+
+// static
+#ifdef _WIN32
+
+std::string
+StringUtil::to_str(const std::wstring& utf16)
+{
+    if (utf16.empty())
+        return {};
+
+    int size_needed = WideCharToMultiByte(
+        CP_UTF8, 0,
+        utf16.c_str(), (int)utf16.size(),
+        nullptr, 0,
+        nullptr, nullptr
+        );
+
+    std::string utf8(size_needed, 0);
+
+    WideCharToMultiByte(
+        CP_UTF8, 0,
+        utf16.c_str(), (int)utf16.size(),
+        &utf8[0], size_needed,
+        nullptr, nullptr
+        );
+
+    return utf8;
+}
+
+std::wstring
+StringUtil::to_wstr(const std::string& utf8)
+{
+    if (utf8.empty())
+        return std::wstring();
+
+    int nChars = MultiByteToWideChar(CP_UTF8, 0,
+        utf8.c_str(), (int)utf8.size(), nullptr, 0);
+
+    std::wstring utf16(nChars, 0);
+
+    MultiByteToWideChar(CP_UTF8, 0,
+        utf8.c_str(), (int)utf8.size(), &utf16[0], nChars);
+
+    return utf16;
+}
+
+#else
+
+std::string
+StringUtil::to_str(const std::wstring& txt )
+{
+    if (txt.empty()) return {};
+    std::wstring_convert< std::codecvt_utf8< wchar_t > > converter;
+    return converter.to_bytes( txt );
+}
+
+std::wstring
+StringUtil::to_wstr(const std::string& txt)
+{
+    if (txt.empty()) return {};
+    std::wstring_convert<std::codecvt_utf8< wchar_t > > converter;
+    return converter.from_bytes(txt);
+}
+
+#endif
 
 //static
 char
@@ -592,82 +679,6 @@ StringUtil::file2header( uint8_t const* pBytes, size_t nBytes, std::string dataN
     return o.str();
 }
 
-/*
-std::wstring_convert< std::codecvt_utf8< wchar_t> > converter;
-std::wstring wideStr = converter.from_bytes("Straße"); // German "Straße"
-
-std::transform(wideStr.begin(), wideStr.end(), wideStr.begin(),
-               [](wchar_t c) { return std::towlower(c); });
-std::cout << converter.to_bytes(wideStr) << std::endl; // May not yield "strasse"
-*/
-
-// static
-std::string
-StringUtil::to_str(const wchar_t c)
-{
-    std::wostringstream w; w << c;
-    return to_str( w.str() );
-}
-
-// static
-std::string
-StringUtil::to_str(const std::wstring& txt )
-{
-    if (txt.empty()) return {};
-    std::wstring_convert< std::codecvt_utf8< wchar_t > > converter;
-    return converter.to_bytes( txt );
-}
-
-// static
-std::wstring
-StringUtil::to_wstr(const std::string& txt)
-{
-    if (txt.empty()) return {};
-    std::wstring_convert<std::codecvt_utf8< wchar_t > > converter;
-    return converter.from_bytes(txt);
-}
-
-/*
-//static
-void
-StringUtil::lowerCase( std::string & out, std::locale const & loc )
-{
-    for ( size_t i = 0; i < out.size(); ++i )
-    {
-        #ifdef _MSC_VER
-        out[ i ] = static_cast< char >( ::tolower( out[ i ] ) );
-        #else
-        out[ i ] = static_cast< char >( std::tolower< char >( out[ i ], loc ) );
-        #endif
-    }
-}
-
-//static
-void
-StringUtil::upperCase( std::string & out, std::locale const & loc )
-{
-    for ( size_t i = 0; i < out.size(); ++i )
-    {
-        #ifdef _MSC_VER
-        out[ i ] = static_cast< char >( ::toupper( out[ i ] ) );
-        #else
-        out[ i ] = static_cast< char >( std::toupper< char >( out[i], loc ) );
-        #endif
-    }
-}
-*/
-/*
-#include <codecvt>
-#include <locale>
-#include <string>
-
-std::wstring_convert<std::codecvt_utf8<wchar_t>> converter;
-std::wstring wideStr = converter.from_bytes("Straße"); // German "Straße"
-std::transform(wideStr.begin(), wideStr.end(), wideStr.begin(),
-               [](wchar_t c) { return std::towlower(c); });
-std::cout << converter.to_bytes(wideStr) << std::endl; // May not yield "strasse"
-*/
-
 void
 StringUtil::lowerCase(std::string& txt, const std::locale& loc)
 {
@@ -1026,133 +1037,467 @@ StringUtil::trimRight( const std::string& original, const std::string& filter )
 // ===========================================================================
 // ======= RAII_File ========================================================
 // ===========================================================================
-/*
-File::File()
-    : m_file(nullptr), m_size(0)
+
+namespace {
+
+// Access mode (pick exactly one)
+//     _O_RDONLY — open for reading
+//     _O_WRONLY — open for writing
+//     _O_RDWR — open for read/write
+
+// Creation / truncation
+//     _O_CREAT — create file if missing
+//     _O_EXCL — fail if file exists (use with _O_CREAT)
+//     _O_TRUNC — truncate to 0 bytes
+//     _O_APPEND — writes always go to end
+
+// Binary / text
+//     _O_BINARY — raw binary (no CRLF translation), Windows demands it.
+//     _O_TEXT — text mode (CRLF translation)
+//     For anything non‑text, ALWAYS use _O_BINARY.
+
+// Performance hints
+//     _O_SEQUENTIAL
+//     _O_RANDOM
+//     _O_SHORT_LIVED
+//     _O_TEMPORARY
+
+int32_t to_native_openmode(const eFileMode fm)
 {
-    // Empty default ctr
-}
-File::File(std::string const & uri, std::string const & flags)
-    : m_file(nullptr), m_size(0), m_uri(uri), m_flags(flags)
-{
-    // Empty value ctr
+#ifdef _WIN32
+    int f = _O_BINARY;
+#else
+    int f = 0;
+#endif
+    const uint32_t m = static_cast<uint32_t>(fm);
+    const bool isRead = m & static_cast<uint32_t>(eFileMode::Read);
+    const bool isWrite = m & static_cast<uint32_t>(eFileMode::Write);
+    const bool isCreate = m & static_cast<uint32_t>(eFileMode::Create);
+    const bool isTrunc = m & static_cast<uint32_t>(eFileMode::Truncate);
+    const bool isAppend = m & static_cast<uint32_t>(eFileMode::Append);
+
+#ifdef _WIN32
+    if (isRead && isWrite)  { f |= _O_RDWR; }
+    else if (isWrite)       { f |= _O_WRONLY; }
+    else                    { f |= _O_RDONLY; }
+    if (isCreate)           { f |= _O_CREAT; }
+    if (isTrunc)            { f |= _O_TRUNC; }
+    if (isAppend)           { f |= _O_APPEND; }
+#else
+    if (isRead && isWrite)  { f |= O_RDWR; }
+    else if (isWrite)       { f |= O_WRONLY; }
+    else                    { f |= O_RDONLY; }
+    if (isCreate)           { f |= O_CREAT; }
+    if (isTrunc)            { f |= O_TRUNC; }
+    if (isAppend)           { f |= O_APPEND; }
+#endif
+    return f;
 }
 
-uint64_t File::size() const
+} // end namespace.
+
+
+// -------------------------------
+// open
+// -------------------------------
+int32_t file64_open(const char* path, eFileMode fileMode, int32_t permission)
 {
-    return m_size;
+    const int nativeMode = to_native_openmode(fileMode);
+#ifdef _WIN32
+    const std::wstring w = de_wstr(path);
+    return _wopen(w.c_str(), nativeMode, permission);
+#else
+    return open(path, nativeMode, permission);
+#endif
 }
 
-bool File::open(std::string const & uri, std::string const & flags)
+// -------------------------------
+// close
+// -------------------------------
+int32_t file64_close(int32_t fd)
 {
-    close();
+#ifdef _WIN32
+    return _close(fd);
+#else
+    return close(fd);
+#endif
+}
 
-    m_file = fopen(uri.c_str(), flags.c_str());
-    if (!m_file)
+// -------------------------------
+// read
+// -------------------------------
+// - Negative return values indicate errors
+// 0 Zero means EOF
+// + Positive means bytes written/read
+int32_t file64_read(int32_t fd, void* buf, int64_t bytes)
+{
+    if (bytes > std::numeric_limits<int32_t>::max())
     {
-        DE_ERROR("Failed to open input file ", uri, " with flags ",flags)
-        return false;
+        DE_ERROR("You cannot read ", bytes, " in one call, because return value is int!")
+        bytes = std::numeric_limits<int32_t>::max();
     }
 
-    fseek(m_file, 0, SEEK_END);
-    m_size = ftell(m_file);
-    fseek(m_file, 0, SEEK_SET);
-
-    return true;
+#ifdef _WIN32
+    return _read(fd, buf, static_cast<uint32_t>(bytes));
+#else
+    return read(fd, buf, static_cast<uint32_t>(bytes));
+#endif
 }
 
-void File::close()
+// -------------------------------
+// write
+// -------------------------------
+// - Negative return values indicate errors
+// 0 Zero means EOF
+// + Positive means bytes written/read
+int32_t file64_write(int32_t fd, const void* buf, int64_t bytes)
 {
-    if (m_file)
+    if (bytes > std::numeric_limits<int32_t>::max())
     {
-        DE_OK("Close file. ", m_uri)
-        fclose(m_file);
-        m_file = nullptr;
-        m_size = 0;
+        DE_ERROR("You cannot write ", bytes, " in one call, because return value is int!")
+        bytes = std::numeric_limits<int32_t>::max();
     }
+#ifdef _WIN32
+    return _write(fd, buf, static_cast<uint32_t>(bytes));
+#else
+    return write(fd, buf, static_cast<uint32_t>(bytes));
+#endif
 }
 
-void File::write(const void* __restrict__ pSrc, uint64_t asize)
+// -------------------------------
+// seek (64‑bit)
+// -------------------------------
+int64_t file64_seek(int32_t fd, int64_t offset, eSeekMode seekMode)
 {
-    if (!m_file) { DE_ERROR("No file.") return; }
-    fwrite(pSrc, 1, asize, m_file);
+    int nativeMode = SEEK_SET;
+    switch (seekMode)
+    {
+    case eSeekMode::Cur: nativeMode = SEEK_CUR; break;
+    case eSeekMode::End: nativeMode = SEEK_END; break;
+    default: break;
+    }
+
+#ifdef _WIN32
+    return _lseeki64(fd, offset, nativeMode);
+#else
+    return lseek(fd, offset, nativeMode);
+#endif
 }
 
-void File::read(void* __restrict__ pDst, uint64_t asize)
+// -------------------------------
+// tell (64‑bit)
+// -------------------------------
+int64_t file64_tell(int32_t fd)
 {
-    if (!m_file) { DE_ERROR("No file.") return; }
-    fread(pDst, 1, asize, m_file);
+#ifdef _WIN32
+    return _telli64(fd);
+#else
+    off_t pos = lseek(fd, 0, SEEK_CUR); // No move, only tells pos.
+    return static_cast<int64_t>(pos);
+#endif
 }
-*/
 
 // =======================================================================
 File::File()
-// =======================================================================
-    : m_file(nullptr)
+    // =======================================================================
+    : m_fd(-1)
 {}
-
-File::File(const std::string& uri, const std::string& mode)
-    : m_file(nullptr)
-{
-    open( uri, mode );
-}
 
 File::~File()
 {
     close();
 }
 
-bool File::is_open() const
+File::File(const std::string& ut8_uri, eFileMode fm, int permission)
+    : m_fd(-1)
 {
-    return m_file != nullptr;
+    open( ut8_uri, fm, permission );
 }
 
-size_t File::size() const
-{
-    if (!m_file) return 0;
-    ::fseeko64( m_file, 0, SEEK_END );
-    const size_t nBytes = size_t( ::ftello64( m_file ) );
-    ::fseeko64( m_file, 0, SEEK_SET );
-    return nBytes;
-}
 
-bool File::open(const std::string& uri, const std::string& mode)
+bool
+File::open(const std::string& utf8_uri, eFileMode fileMode, int permission)
 {
-    if ( m_file ) { return true; }
-    m_file = ::fopen( uri.c_str(), mode.c_str() );
-    return is_open();
+    if ( is_open() )
+    {
+        DE_ERROR("Already open", utf8_uri)
+        return true;
+    }
+
+    m_fd = file64_open( utf8_uri.c_str(), fileMode, permission );
+    if ( m_fd < 0 )
+    {
+        DE_ERROR("Cannot open ", utf8_uri)
+        return false;
+    }
+
+    return true;
 }
 
 void File::close()
 {
-    if ( m_file )
+    if ( m_fd < 0 )
     {
-        ::fclose( m_file );
-        m_file = nullptr;
+        // DE_WARN("File already closed")
+        return;
+    }
+
+    file64_close( m_fd );
+    m_fd = -1;
+}
+
+bool File::is_open() const
+{
+    return m_fd > -1;
+}
+
+int32_t File::write( const void* __restrict__ src, int64_t nBytes ) const
+{
+    if (!is_open())
+    {
+        DE_ERROR("Not open")
+        return 0;
+    }
+
+    const int32_t nWritten = file64_write( m_fd, src, nBytes );
+    if ( nWritten < nBytes )
+    {
+        DE_ERROR("nWritten(",nWritten,") < nBytes(",nBytes,")")
+    }
+    return nWritten;
+}
+
+int32_t File::read( void* __restrict__ dst, int64_t nBytes ) const
+{
+    if (!is_open())
+    {
+        DE_ERROR("Not open")
+        return 0;
+    }
+
+    const int32_t nRead = file64_read( m_fd, dst, nBytes );
+    if ( nRead < nBytes )
+    {
+        DE_ERROR("nRead(",nRead,") < nBytes(",nBytes,")")
+    }
+    return nRead;
+}
+
+int64_t File::size() const
+{
+    if (!is_open())
+    {
+        DE_ERROR("Not open")
+        return 0;
+    }
+
+    const int64_t lastPos = file64_tell( m_fd );
+    file64_seek(m_fd, 0, eSeekMode::End);
+    const int64_t endPos = file64_tell( m_fd );
+    file64_seek(m_fd, lastPos, eSeekMode::Set);
+    return endPos;
+}
+
+int64_t File::tell() const
+{
+    if (!is_open())
+    {
+        DE_ERROR("Not open")
+        return 0;
+    }
+    return file64_tell( m_fd );
+}
+
+
+int64_t File::seek(int64_t offset, eSeekMode seekMode) const
+{
+    if (!is_open())
+    {
+        DE_ERROR("Not open")
+        return 0;
+    }
+
+    return file64_seek(m_fd,offset,seekMode);
+}
+
+int32_t File::read_u8( uint8_t* out ) const
+{
+    if (!is_open())
+    {
+        DE_ERROR("Not open")
+        return 0;
+    }
+
+    uint8_t byte;
+    const int32_t r = read(&byte,1);
+    if (r != 1)
+    {
+        DE_ERROR("Not 1 byte, got ",r)
+        if (out) { *out = 0; }
+        return 0;
+    }
+    else
+    {
+        if (out) { *out = byte; }
+        return 1; // 1 byte consumed
     }
 }
 
-size_t File::write( const void* __restrict__ src, size_t nBytes ) const
+int32_t File::read_u16_be( uint16_t* out ) const
 {
-    if (!m_file) return 0;
-    size_t nWrittenBytes = ::fwrite( src, 1, nBytes, m_file );
-    if ( nWrittenBytes < nBytes )
+    uint8_t buf[2];
+    const int32_t r = read(buf, 2);
+    if (r != 2)
     {
-        DE_ERROR("nWrittenBytes(",nWrittenBytes,") < nBytes(",nBytes,")")
+        DE_ERROR("No 2 bytes, got ",r)
+        if (out) { *out = 0; }
+        return 0;
     }
-    return nWrittenBytes;
+    else
+    {
+        if (out)
+        {
+            *out = (uint16_t(buf[0]) << 8) | uint16_t(buf[1]);
+        }
+        return 2;
+    }
 }
 
-size_t File::read( void* __restrict__ dst, size_t nBytes ) const
+int32_t File::read_s16_be( int16_t* out ) const
 {
-    if (!m_file) return 0;
-    const size_t nReadBytes = ::fread( dst, 1, nBytes, m_file );
-    if ( nReadBytes < nBytes )
+    uint8_t buf[2];
+    const int32_t r = read(buf, 2);
+    if (r != 2)
     {
-        DE_ERROR("nReadBytes(",nReadBytes,") < nBytes(",nBytes,")")
+        DE_ERROR("No 2 bytes, got ",r)
+        if (out) { *out = 0; }
+        return 0;
     }
-    return nReadBytes;
+    else
+    {
+        if (out)
+        {
+            uint16_t u = (uint16_t(buf[0]) << 8) | uint16_t(buf[1]);
+            *out = static_cast<int16_t>(u);
+        }
+        return 2;
+    }
 }
+
+int32_t File::read_u24_be( uint32_t* out ) const
+{
+    uint8_t buf[3];
+    const int32_t r = read(buf, 3);
+    if (r != 3)
+    {
+        DE_ERROR("No 3 bytes, got ",r)
+        if (out) { *out = 0ul; }
+        return 0;
+    }
+    else
+    {
+        if (out)
+        {
+            *out = (uint32_t(buf[0]) << 16)
+                 | (uint32_t(buf[1]) <<  8)
+                 |  uint32_t(buf[2]);
+        }
+        return 3;
+    }
+}
+
+int32_t File::read_u32_be( uint32_t* out ) const
+{
+    uint8_t buf[4];
+    const int32_t r = read(buf, 4);
+    if (r != 4)
+    {
+        DE_ERROR("No 4 bytes, got ",r)
+        if (out) { *out = 0ul; }
+        return 0;
+    }
+    else
+    {
+        if (out)
+        {
+            *out = (uint32_t(buf[0]) << 24)
+                 | (uint32_t(buf[1]) << 16)
+                 | (uint32_t(buf[2]) <<  8)
+                 | (uint32_t(buf[3]));
+        }
+        return 4;
+    }
+}
+
+int32_t File::read_s32_be( int32_t* out ) const
+{
+    uint8_t buf[4];
+    const int32_t r = read(buf, 4);
+    if (r != 4)
+    {
+        DE_ERROR("No 4 bytes, got ",r)
+        if (out) { *out = 0ul; }
+        return 0;
+    }
+    else
+    {
+        if (out)
+        {
+            uint32_t value = (uint32_t(buf[0]) << 24)
+                           | (uint32_t(buf[1]) << 16)
+                           | (uint32_t(buf[2]) <<  8)
+                           | (uint32_t(buf[3]));
+            *out = static_cast<int32_t>(value);
+        }
+        return 4;
+    }
+}
+
+int32_t File::read_u64_be( uint64_t* out ) const
+{
+    uint8_t buf[8];
+    const int32_t r = read(buf, 8);
+    if (r != 8)
+    {
+        DE_ERROR("No 8 bytes, got ",r)
+        if (out) { *out = 0ull; }
+        return 0;
+    }
+    else
+    {
+        if (out)
+        {
+            *out = (uint64_t(buf[0]) << 56)
+            | (uint64_t(buf[1]) << 48)
+                | (uint64_t(buf[2]) << 40)
+                | (uint64_t(buf[3]) << 32)
+                | (uint64_t(buf[4]) << 24)
+                | (uint64_t(buf[5]) << 16)
+                | (uint64_t(buf[6]) <<  8)
+                | (uint64_t(buf[7]) );
+        }
+        return 8;
+    }
+}
+
+int32_t File::read_char4( char buf[4] ) const
+{
+    const int32_t r = read(buf, 4);
+    if (r != 4)
+    {
+        DE_ERROR("No 4 bytes, got ",r)
+        buf[0] = '\0';
+        buf[1] = '\0';
+        buf[2] = '\0';
+        buf[3] = '\0';
+        return 0;
+    }
+    else
+    {
+        return 4;
+    }
+}
+
 
 /*
 //static
@@ -1264,7 +1609,7 @@ bool
 FileSystem::saveBin( const std::string& uri, const std::vector<uint8_t>& blob )
 {
     //DE_PERF_MARKER
-    File file( uri, "wb" );
+    File file( uri, eFileMode::Write );
     if ( !file.is_open() )
     {
         DE_ERROR("Cant open to write ", uri )
@@ -1308,7 +1653,7 @@ FileSystem::loadBlob( Blob& blob, const std::string& uri )
     // DE_PERF_MARKER
 
     // Open file
-    File file( uri, "rb" );
+    File file( uri, eFileMode::Read );
     if (!file.is_open())
     {
         DE_ERROR("Can't open binary file ", uri )
@@ -1368,7 +1713,7 @@ FileSystem::loadBlob( const std::string& uri )
     // DE_PERF_MARKER
 
     // Open file
-    File file( uri, "rb" );
+    File file( uri, eFileMode::Read );
     if (!file.is_open())
     {
         DE_ERROR("Can't open binary file ", uri )
@@ -1426,7 +1771,7 @@ bool
 FileSystem::saveBlob( const Blob& blob, const std::string& uri )
 {
     // DE_PERF_MARKER
-    File file( uri, "wb" );
+    File file( uri, eFileMode::Write );
     if ( !file.is_open() )
     {
         DE_ERROR("Cant open file to write blob ", uri )
@@ -1452,7 +1797,7 @@ bool
 FileSystem::loadBin( const std::string& uri, std::vector<uint8_t>& blob )
 {
     DE_PERF_MARKER
-    File file( uri, "rb" );
+    File file( uri, eFileMode::Read );
     if ( !file.is_open() )
     {
         DE_ERROR("Can't read binary ", uri )
@@ -3047,7 +3392,7 @@ FileMagic::EFileMagic
 FileMagic::getFileMagicFromFile(const std::string& uri)
 {
     File file;
-    if ( !file.open( uri.c_str(), "rb" ) )
+    if ( !file.open( uri.c_str(), eFileMode::Read ) )
     {
         DE_ERROR("Cant open ", uri )
         return Unknown;

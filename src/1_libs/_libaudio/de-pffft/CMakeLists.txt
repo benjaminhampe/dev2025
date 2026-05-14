@@ -8,11 +8,11 @@ else()
     set(LIB_SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/src)
     set(LIB_HEADERS
         ${LIB_HEADER_DIR}/pffft.h
-        ${LIB_HEADER_DIR}/fftpack.h
+        # ${LIB_HEADER_DIR}/fftpack.h
     )
     set(LIB_SOURCES
         ${LIB_SOURCE_DIR}/pffft.c
-        ${LIB_SOURCE_DIR}/fftpack.c
+        # ${LIB_SOURCE_DIR}/fftpack.c
     )
 
     if (WIN32)
@@ -35,7 +35,11 @@ else()
     target_include_directories(${LIB_NAME} PRIVATE ${LIB_SOURCE_DIR})
 
     target_compile_definitions(${LIB_NAME} PUBLIC HAVE_LIBPFFFT=1)
-    # target_compile_definitions(${LIB_NAME} PRIVATE ZCONVOLVE_USING_INLINE_ASM=1)
+
+    # Prevent FFTPack duplicate symbol with libfaad2.
+    # Pro: Uses internal SIMD for FFT
+    # Con: Only multiple of 2 FFT sizes allowed now.
+    # target_compile_definitions(${LIB_NAME} PRIVATE PFFFT_SIMD_DISABLE_FFTPACK=1)
 
     if (MSVC)
         set_target_properties(${LIB_NAME} PROPERTIES FOLDER _libgpu)

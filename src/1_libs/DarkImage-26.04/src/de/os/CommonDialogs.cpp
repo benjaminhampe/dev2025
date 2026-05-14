@@ -958,7 +958,7 @@ dbOpenFileDlg( de::OpenFileParamsA params )
     dlg.lpstrTitle      = params.caption.c_str();
     dlg.lpstrFile       = szFileName;
     dlg.nMaxFile		= 64*1024;
-    dlg.lpstrFilter     = params.filter.c_str();
+    dlg.lpstrFilter     = nullptr; // params.filter.c_str();
     dlg.Flags           = flags;
     dlg.lpfnHook		= BenniOpenFileA_Proc;
     dlg.lpstrInitialDir = params.initDir.c_str();

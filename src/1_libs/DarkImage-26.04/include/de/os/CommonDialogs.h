@@ -72,7 +72,7 @@ struct OpenFileParamsA
 // ===========================================================================
 {
     std::string caption = "Open file dialog";
-    std::string filter = "All Files (*.*)\0*.*\0";
+    std::string filter = "All Files (*.*)\0*.*\0\0";
     std::string initFileName; // Untitled.txt
     std::string initDir;
     int x = -1;

@@ -1,0 +1,98 @@
+bool Sound::loadFromFile(const std::string& path)
+{
+    m_uri = path;
+    m_samples.clear();
+
+    // 1) MP4 öffnen, um ALACSpecificConfig + sample_count zu lesen
+    FILE* f = fopen(path.c_str(), "rb");
+    if (!f) return false;
+
+    fseek(f, 0, SEEK_END);
+    int64_t fileSize = ftell(f);
+    fseek(f, 0, SEEK_SET);
+
+    MP4D_demux_t mp4{};
+    if (!MP4D_open(&mp4, AlacDecoderMinimp4::read_cb, f, fileSize))
+        return false;
+
+    int trackIndex = -1;
+    for (unsigned i = 0; i < mp4.track_count; ++i)
+        if (mp4.track[i].object_type_indication == 0xA9)
+            trackIndex = i;
+
+    if (trackIndex < 0)
+        return false;
+
+    MP4D_track_t& tr = mp4.track[trackIndex];
+
+    // 2) ALACSpecificConfig extrahieren
+    ALACSpecificConfig cfg{};
+    memcpy(&cfg, tr.dsi, sizeof(ALACSpecificConfig));
+
+    const uint32_t frameLength = cfg.frameLength;
+    const uint32_t channels    = cfg.numChannels;
+    const uint32_t sampleRate  = cfg.sampleRate;
+    const uint64_t frameCount  = tr.sample_count;
+
+    // 3) Gesamtgröße berechnen
+    const uint64_t totalFrames  = frameLength * frameCount;
+    const uint64_t totalSamples = totalFrames * channels;
+
+    // 4) Pre-allocate final float buffer
+    m_samples.resize(totalSamples);
+
+    // 5) FileInfo füllen
+    m_fileInfo.frameCount   = totalFrames;
+    m_fileInfo.sampleRate   = sampleRate;
+    m_fileInfo.channelCount = channels;
+    m_fileInfo.sampleType   = FileInfo::ST_F32;
+    m_fileInfo.duration     =
+        (uint64_t)totalFrames * 1'000'000'000ull / sampleRate;
+
+    // 6) Decoder initialisieren
+    ALACDecoder decoder;
+    decoder.Init(tr.dsi, tr.dsi_bytes);
+
+    std::vector<uint8_t> frameBuf;
+    BitBuffer bits;
+
+    uint64_t writePos = 0; // Position im finalen float-Buffer
+
+    // 7) Frames decodieren
+    for (unsigned i = 0; i < tr.sample_count; ++i)
+    {
+        unsigned frameBytes = 0;
+        unsigned timestamp = 0;
+        unsigned duration = 0;
+
+        MP4D_file_offset_t off =
+            MP4D_frame_offset(&mp4, trackIndex, i,
+                              &frameBytes, &timestamp, &duration);
+
+        frameBuf.resize(frameBytes);
+        fseek(f, (long)off, SEEK_SET);
+        fread(frameBuf.data(), 1, frameBytes, f);
+
+        BitBufferInit(&bits, frameBuf.data(), frameBytes);
+
+        // temporärer int32-Puffer
+        std::vector<int32_t> pcm(frameLength * channels);
+        uint32_t outSamples = 0;
+
+        decoder.Decode(&bits,
+                       (uint8_t*)pcm.data(),
+                       frameLength,
+                       channels,
+                       &outSamples);
+
+        // int32 → float direkt in finalen Buffer
+        const float scale = 1.0f / 2147483648.0f;
+
+        for (uint32_t s = 0; s < outSamples * channels; ++s)
+            m_samples[writePos++] = pcm[s] * scale;
+    }
+
+    MP4D_close(&mp4);
+    fclose(f);
+    return true;
+}

@@ -79,12 +79,12 @@ namespace de {
             size_t nBytes = n * sizeof(T);
             if (nBytes % Alignment != 0)
             {
-                DE_ERROR(nBytes," not a multiple of Alignment(",Alignment,")")
+                DE_WARN(nBytes," not a multiple of Alignment(",Alignment,")")
                 size_t nMofA = nBytes / Alignment;
                 nBytes = (nMofA+1) * Alignment;
-                DE_ERROR(nBytes," adapted to a multiple of Alignment(",Alignment,")")
+                DE_WARN(nBytes," adapted to a multiple of Alignment(",Alignment,")")
                 size_type padded = (nBytes + (Alignment - 1)) & ~(Alignment - 1);
-                DE_ERROR(padded," padded to a multiple of Alignment(",Alignment,")")
+                DE_WARN(padded," padded to a multiple of Alignment(",Alignment,")")
             }
             void* ptr = _aligned_malloc(nBytes, Alignment);
             //std::aligned_alloc(Alignment, n * sizeof(T));

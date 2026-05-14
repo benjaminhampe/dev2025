@@ -74,6 +74,7 @@ else()
 	
     target_compile_definitions(${LIB_NAME} PUBLIC HAVE_LIBSPEEXDSP=1)
     target_compile_definitions(${LIB_NAME} PUBLIC HAVE_CONFIG_H=1)
+    target_compile_definitions(${LIB_NAME} PUBLIC USE_SPEEX=1)
 
     # target_link_libraries(${LIB_NAME} PUBLIC de_rack2_glew)
 

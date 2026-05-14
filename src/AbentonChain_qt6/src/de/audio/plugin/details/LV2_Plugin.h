@@ -47,7 +47,7 @@ public:
     void setPluginId(u32 pluginId) override;
 
 
-    eType getType() const override { return eT_VST3; }
+    eType getType() const override { return eT_LV2; }
 
     std::string getUri() const override;
 

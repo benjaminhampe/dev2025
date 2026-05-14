@@ -50,6 +50,7 @@ else()
     target_include_directories(${LIB_NAME} PRIVATE ${LIB_SOURCE_DIR})
 	
     target_compile_definitions(${LIB_NAME} PUBLIC HAVE_SAMPLERATE=1)
+    target_compile_definitions(${LIB_NAME} PUBLIC HAVE_LIBSAMPLERATE=1)
     target_compile_definitions(${LIB_NAME} PRIVATE HAVE_CONFIG_H=1)
 	
     target_link_libraries(${LIB_NAME} PUBLIC de_sndfile)

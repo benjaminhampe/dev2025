@@ -1,0 +1,90 @@
+#pragma once
+#include <de/file/mp4/Atom.h>
+
+namespace de {
+namespace file {
+namespace mp4 {
+
+/*
+🎯 THE AUDIO DEMUXING PIPELINE (ATOM‑BY‑ATOM)
+
+moov
+ └─ trak (audio track)
+      └─ mdia
+           ├─ hdlr
+           ├─ minf
+           │    └─ stbl
+           │         ├─ stsd
+           │         │    └─ (codec-specific box)
+           │         ├─ stsc
+           │         ├─ stsz / stz2
+           │         ├─ stco / co64
+           │         ├─ stts
+           │         └─ ctts (rare for audio)
+           └─ edts (optional)
+mdat
+*/
+
+struct Atom_stsd
+{
+    Atom atom;
+
+    Atom_stsd()
+    {}
+
+
+
+    std::string str() const
+    {
+        std::ostringstream o; 
+        return o.str();
+    }
+};
+
+/*
+🧩 2. stsd — Detect Codec + Extract Decoder Config
+    This is the most important atom for codec detection.
+
+    Inside stsd you get sample entries:
+    Sample Entry	Codec	What you extract
+    mp4a	AAC	esds → AudioSpecificConfig
+    alac	ALAC	alac atom → magic cookie
+    Opus	Opus	dOps → Opus header
+    fLaC	FLAC	dfLa → FLAC STREAMINFO
+    lpcm	PCM	sample size, channels, rate
+    ac-3 / ec-3	Dolby	dac3 / dec3
+
+What matters inside stsd:
+
+    AAC (mp4a)
+
+    esds → DecoderSpecificInfo → AudioSpecificConfig (ASC)
+    ASC gives:
+      object_type (AAC LC = 2)
+      sample_rate_index
+      channel_config
+
+    ALAC (alac)
+
+    alac atom gives:
+      frameLength
+      bitDepth
+      channels
+      maxFrameBytes
+      Rice parameters
+
+    Opus (Opus)
+
+    dOps gives:
+      version
+      output_channel_count
+      pre_skip
+      input_sample_rate
+      output_gain
+
+    => These configs are required to initialize FAAD2, ALAC decoder, or Opus decoder.
+*/
+
+} // end namespace mp4.
+} // end namespace file.
+} // end namespace de.

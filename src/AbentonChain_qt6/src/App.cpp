@@ -63,7 +63,7 @@ void App::cleanupAll()
     //     // is still running!
     //     m_canvas->cleanupAll();
     //     DE_OK("Stop canvas rendering audio data")
-         m_canvas = nullptr;
+        m_canvas = nullptr;
     }
 
     std::this_thread::sleep_for(

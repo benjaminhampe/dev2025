@@ -17,17 +17,9 @@
 #define USE_DE_LOGGING
 #endif
 
-#ifdef USE_DE_LOGGING
-   #include <cstdint>
-   #include <sstream>
-   #include <thread>
-   //#include <de_core/de_StringUtil.h>
-#endif
-
 #ifndef DE_FORCE_INLINE
 #define DE_FORCE_INLINE inline __attribute__((__always_inline__))
 #endif
-
 
 DE_FORCE_INLINE void* de_aligned_malloc( size_t n, size_t alignBytes )
 {
@@ -44,7 +36,6 @@ DE_FORCE_INLINE void* de_aligned_realloc( void* ptr, size_t n, size_t alignBytes
 {
    return _aligned_realloc( ptr, n, alignBytes );
 }
-
 
 inline void
 better_runtime_error_impl( std::thread::id threadId,
@@ -86,19 +77,18 @@ better_runtime_error_impl( std::thread::id threadId,
 #endif
 
 // ===========================================================================
-// DarkTimer
+// DarkTimer (uses std::chrono)
 // ===========================================================================
 
 int64_t dbTimeInNanoseconds();
 int64_t dbTimeInMicroseconds();
 int32_t dbTimeInMilliseconds();
-double dbTimeInSeconds();
+double  dbTimeInSeconds();
 
 // ===========================================================================
 // DarkRandom
 // ===========================================================================
-
-void dbRandomize();
+void    dbRandomize();
 int32_t dbRND();
 
 /// Since ANSI standard exists only 50yrs (1970!) its to few time for MS to implement it.
@@ -110,10 +100,12 @@ int32_t dbRND();
 /// On Android good luck, but i heard its a Linux ripoff aswell.
 
 /// @brief Write ANSI terminal/console color reset marker.
-inline std::string dbResetTerminalColors() { return "\033[0m"; }
+inline std::string
+dbResetTerminalColors() { return "\033[0m"; }
 
 /// @brief Write ANSI terminal/console color RGB marker. Foreground + Background colors.
-inline std::string dbSetTerminalColors( uint8_t fr, uint8_t fg, uint8_t fb,
+inline std::string
+dbSetTerminalColors( uint8_t fr, uint8_t fg, uint8_t fb,
                      uint8_t br, uint8_t bg, uint8_t bb )
 {
    // The (int) casts are necessary to print decimals and not secret control message hex bytes.
@@ -401,45 +393,153 @@ struct StringUtil
     file2header( uint8_t const* pBytes, size_t nBytes, std::string dataName );
 };
 
-// =======================================================================
-struct File
-// =======================================================================
-{
-    FILE* m_file;
-
-    File();
-    File(const std::string& uri, const std::string& mode = "wb");
-    ~File();
-
-    bool is_open() const;
-    size_t size() const;
-
-    bool open(const std::string& uri, const std::string& mode = "wb");
-    void close();
-
-    size_t write( const void* __restrict__ src, size_t nBytes ) const;
-    size_t read( void* __restrict__ dst, size_t nBytes ) const;
-};
 
 /*
-// ===========================================================================
-struct File
-// ===========================================================================
+📌 eFileMode::Append means:
+
+    Writes always go to the end of the file, regardless of the current file offset.
+    The OS forces the write pointer to EOF on every write() call.
+    Seeking does not change where writes go.
+
+    POSIX   O_APPEND
+    Windows _O_APPEND
+
+    write(fd, ...) → always appends
+    lseek(fd, 0, SEEK_SET) → moves read pointer, but writes still append
+    Safe for multi‑process logging (atomic append)
+
+    Use cases:  Logs, Journals,
+                any file where you never overwrite existing data.
+
+📌 eFileMode::Create means:
+
+    If the file does not exist → create it.
+    If the file does exist → do nothing (unless combined with Truncate).
+
+    POSIX   O_CREAT
+    Windows _O_CREAT
+
+    Requires a mode argument on POSIX (permissions)
+    Does not modify existing files
+    Often combined with O_EXCL to prevent overwriting
+
+    Use cases:  Creating new files,
+                Ensuring a file exists before writing
+                Safe creation with O_CREAT | O_EXCL
+
+📌 eFileMode::Truncate means:
+
+    If the file exists → its size becomes 0 immediately.
+    If the file does not exist → ignored unless combined with Create.
+
+    POSIX   O_TRUNC
+    Windows _O_TRUNC
+
+    Requires write permission (O_WRONLY or O_RDWR)
+    Clears all existing content
+    File pointer starts at offset 0
+
+    Use cases:  Overwriting a file from scratch
+                Resetting a log
+                Rewriting configuration files
+
+
+@param permissionBits = Control access, for create file only.
+
+    Windows uses POSIX‑style permission bits:
+        0400 — owner read
+        0200 — owner write
+        0100 — owner execute
+        0040 — group read
+        0020 — group write
+        0010 — group execute
+        0004 — others read
+        0002 — others write
+        0001 — others execute
+
+    Typical values:
+        0644 — rw‑r‑r (common for data files)
+        0600 — rw‑‑‑‑ (private files)
+        0666 — rw‑rw‑rw (rarely recommended)
+
+*/
+
+enum class eFileMode // Always binary, there is no text mode.
 {
-    FILE* m_file;
-    uint64_t m_size;
-    std::string m_uri;
-    std::string m_flags;
+    Read      = 1,
+    Write     = 2,
+    Append    = 4,
+    Create    = 8,
+    Truncate  = 16,
+    ReadWrite = Read | Write
+};
+
+enum class eSeekMode
+{
+    Set = 0,
+    Cur = 1,
+    End = 2
+};
+
+int32_t file64_open(const char* path, eFileMode fileMode, int32_t permission = 0);
+int32_t file64_close(int32_t fd);
+int32_t file64_read(int32_t fd, void* buf, int64_t bytes);
+int32_t file64_write(int32_t fd, const void* buf, int64_t bytes);
+int64_t file64_seek(int32_t fd, int64_t offset, eSeekMode seekMode);
+int64_t file64_tell(int32_t fd);
+
+// =======================================================================
+struct File
+// =======================================================================
+{
+    int m_fd; // m_fileDescriptor;
 
     File();
-    File(std::string const & uri, std::string const & flags);
-    uint64_t size() const;
-    bool open(std::string const & uri, std::string const & flags);
+    ~File();
+
+    File(const std::string& utf8_uri, eFileMode fm = eFileMode::Read,
+         int permissionBits = 0);
+
+    bool
+    open(const std::string& utf8_uri, eFileMode fm = eFileMode::Read,
+         int permissionBits = 0);
+
     void close();
-    void write(const void* __restrict__ pSrc, uint64_t asize);
-    void read(void* __restrict__ pDst, uint64_t asize);
+    bool is_open() const;
+
+    int64_t size() const;
+    int64_t tell() const;
+
+    // Read/Write are limited to 2GB-1 for ancient reasons.
+    // The return values are int (ancient).
+    //  - Negative return values indicate errors.
+    //  0 Zero return value means EOF.
+    //  + Positive return value means bytes written/read.
+    // We like to know exactly how many bytes are read/written,
+    // and we can only use positive half of int return value, ergo 2GB-1 at max.
+    int32_t write(const void* __restrict__ src, int64_t nBytes ) const;
+    int32_t read(void* __restrict__ dst, int64_t nBytes ) const;
+
+    // @param offset
+    // @param seekMode
+    // eSeekMode::Set — Absolute from beginning, should be positive.
+    // eSeekMode::Cur — from current position, can be positive or negative.
+    // eSeekMode::End — from end of file, should be negative for read-only.
+    // Should never point before file beginning.
+    // @return New absolute position or error.
+    //  >= 0 → new absolute file position
+    //  -1 → error
+    int64_t seek(int64_t offset, eSeekMode seekMode = eSeekMode::Set) const;
+
+    int32_t read_u8( u8* out ) const;
+    int32_t read_u16_be( uint16_t* out ) const; // Big endian
+    int32_t read_s16_be(  int16_t* out ) const; // Big endian
+    int32_t read_u24_be( uint32_t* out ) const; // Big endian
+    int32_t read_u32_be( uint32_t* out ) const; // Big endian
+    int32_t read_s32_be(  int32_t* out ) const; // Big endian
+    int32_t read_u64_be( uint64_t* out ) const; // Big endian
+    int32_t read_char4( char buf[4] ) const;
 };
-*/
 
 typedef std::vector<uint8_t> Blob;
 
@@ -1041,10 +1141,6 @@ struct Recti
         return true;
     }
 
-    // int32_t x() const;
-    // int32_t y() const;
-    // int32_t w() const;
-    // int32_t h() const;
     int32_t centerX() const;
     int32_t centerY() const;
     int32_t x1() const;
@@ -1056,22 +1152,6 @@ struct Recti
     Posi center() const;
     Posi topLeft() const;
     Posi bottomRight() const;
-
-    // int32_t getX() const;
-    // int32_t getY() const;
-    // int32_t getWidth() const;
-    // int32_t getHeight() const;
-    // int32_t getCenterX() const;
-    // int32_t getCenterY() const;
-    // int32_t getX1() const;
-    // int32_t getY1() const;
-    // int32_t getX2() const;
-    // int32_t getY2() const;
-    // glm::ivec2 getPos() const;
-    // glm::ivec2 getSize() const;
-    // glm::ivec2 getCenter() const;
-    // glm::ivec2 getTopLeft() const;
-    // glm::ivec2 getBottomRight() const;
 
     std::string str() const;
 

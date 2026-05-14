@@ -22,43 +22,24 @@ struct ShortMidiMessage // 🎹
     uint8_t data3 = 0;
 
     ShortMidiMessage()
-        : status(0)
-        , data1(0)
-        , data2(0)
-        , data3(0)
-    { }
+        : status(0), data1(0), data2(0), data3(0)
+    {}
 
-    ShortMidiMessage( u8 s, u8 d1, u8 d2, u8 d3 = 0)
-        : status(s)
-        , data1(d1)
-        , data2(d2)
-        , data3(d3)
-    { }
+    ShortMidiMessage( u8 a, u8 b, u8 c, u8 d = 0)
+        : status(a), data1(b), data2(c), data3(d)
+    {}
 
     uint32_t pack() const
     {
-        return (uint32_t(data3) << 24) |
-               (uint32_t(data2) << 16) |
-               (uint32_t(data1) << 8)  |
-                uint32_t(status);
+        return (uint32_t(data3) << 24) | (uint32_t(data2) << 16) |
+               (uint32_t(data1) << 8)  | uint32_t(status);
     }
-/*
-    void set() const
-    {
-        uint8_t status = (uint8_t(command) & 0xF0) | (uint8_t(channel) & 0x0F);
-        uint8_t data1 = uint8_t(midiNote);
-        uint8_t data2 = uint8_t(velocity);
-        uint32_t packet = (uint32_t(data2) << 16) | (uint32_t(data1) << 8) | uint32_t(status);
-        m_midiOut->sendShortMessage( packet );
-    }
-*/
+
     std::string str() const
     {
         std::ostringstream o;
-        o << dbHex( status )<< " "
-          << dbHex( data1 ) << " "
-          << dbHex( data2 ) << " "
-          << dbHex( data3 );
+        o << dbHex( status )<< " " << dbHex( data1 ) << " "
+          << dbHex( data2 ) << " " << dbHex( data3 );
         return o.str();
     }
 };

@@ -2,6 +2,7 @@
 #include <de/audio/plugin/details/VST2_Plugin.h>
 #include <de/audio/plugin/details/VST3_Plugin.h>
 #include <de/audio/plugin/details/CLAP_Plugin.h>
+#include <de/audio/player/Player.h>
 
 // #if defined(DE_IMAGE_READER_JPG_ENABLED) || defined(DE_IMAGE_WRITER_JPG_ENABLED)
    // #include <de/image/Image_JPG.h>
@@ -81,6 +82,13 @@ IPlugin* PluginFactory::createPlugin( std::string uri )
 #ifdef BENNI_USE_CLAP
     else if (suffix == "clap") { plugin = new CLAP_Plugin; }
 #endif
+    else if (
+        (suffix == "mp4") || (suffix == "m4a") ||
+        (suffix == "mp3") ||
+        (suffix == "wav"))
+    {
+        plugin = new Player;
+    }
     else
     {
         DE_ERROR("Unsupported extension (yet) ", suffix)

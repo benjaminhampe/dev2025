@@ -463,7 +463,7 @@ bool ImageWriterBMP::save( Image const & img, std::string const & uri, uint32_t 
         return false;
     }
 
-    File file( uri.c_str(), "wb" );
+    File file( uri.c_str(), eFileMode::Write );
     if ( !file.is_open() )
     {
         DE_ERROR("Cant open for write (",uri,")")

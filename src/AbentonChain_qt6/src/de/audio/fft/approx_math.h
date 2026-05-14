@@ -37,6 +37,15 @@ namespace math {
         return fminf(fmaxf(x, lo), hi);
     }
 
+    inline float absf(float x)
+    {
+        uint32_t bits;
+        memcpy(&bits, &x, sizeof(bits));
+        bits &= 0x7fffffff;
+        memcpy(&x, &bits, sizeof(x));
+        return x;
+    }
+
     // #include <xmmintrin.h>
 
     // inline float clampf_sse(float x, float lo, float hi)

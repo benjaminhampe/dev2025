@@ -1,0 +1,5 @@
+# add_subdirectory(de-minimp4)
+add_subdirectory(de-faad2-2.11.2)
+add_subdirectory(de-alac)
+# add_subdirectory(de-opusfile-0.12)
+# add_subdirectory(de-bento4-1.6.0.641)
