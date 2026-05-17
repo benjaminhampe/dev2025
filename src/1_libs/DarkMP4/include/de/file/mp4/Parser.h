@@ -7,23 +7,19 @@
 #include <de/file/mp4/IParserListener.h>
 
 #include <de/file/mp4/Atom.h>
-#include <de/file/mp4/Atom_ftyp.h>
-#include <de/file/mp4/Atom_moov.h>
+#include <de/file/mp4/ftyp/Atom_ftyp.h>
+#include <de/file/mp4/moov/Atom_moov.h>
 
 namespace de {
 namespace file {
 namespace mp4 {
 
-// ============================================================================
-struct Parser : public IParserListener
-// ============================================================================
+// TopLevel
+struct MP4_File
 {
-    std::vector< IParserListener* > m_listeners; // One and only member
-    File m_file;
+    Atom m_root;
 
-    // Atom m_root;
-
-    std::vector<Atom>       m_atoms; // All atoms (not sure yet for what, maybe debugging)
+    // std::vector<Atom>       m_atoms; // All atoms (not sure yet for what, maybe debugging)
 
     // ✔ TopLevel Atoms [file]:
     // ftyp     normal MP4
@@ -34,9 +30,8 @@ struct Parser : public IParserListener
     // moov     movie metadata
     // mdat     media data
     // meta     metadata container
-    std::vector<Atom>       m_topLevel;
+    // std::vector<Atom>       m_topLevel;
 
-    // TopLevel
     std::vector<Atom_ftyp>  m_ftyp;
     std::vector<Atom>       m_styp;
     std::vector<Atom>       m_free;
@@ -45,11 +40,35 @@ struct Parser : public IParserListener
     std::vector<Atom_moov>  m_moov;
     std::vector<Atom>       m_mdat;
     std::vector<Atom>       m_meta;
+};
+
+// ============================================================================
+struct MP4_Parser
+// ============================================================================
+{
+    static bool parse( const std::string & uri, MP4_File & mp4 );
+};
+
+#if 0
+
+// ============================================================================
+struct Parser : public IParserListener
+// ============================================================================
+{
+    std::vector< IParserListener* > m_listeners; // One and only member
+    File m_file;
+
+
 
     Parser();
 
     bool
     parse( const std::string & uri );
+
+    void
+    parse();
+
+    /*
 
     // Must be atleast 8 bytes.
     std::optional<Atom>
@@ -60,7 +79,6 @@ struct Parser : public IParserListener
     parse_ftyp( Atom_ftyp & atom );
 
 
-/*
     size_t
     parse( uint8_t const* const beg, uint8_t const* const end, const std::string & uri );
 
@@ -275,6 +293,8 @@ struct Parser : public IParserListener
     }
     */
 };
+
+#endif
 
 } // end namespace mp4.
 } // end namespace file.

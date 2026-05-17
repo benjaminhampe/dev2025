@@ -91,15 +91,19 @@ int main( int argc, char** argv )
     DE_DEBUG("HtmlWriter saveUri = ", de_mbstr(saveUri))
 
     // Parser:
-    de::file::mp4::Parser parser;
+    de::file::mp4::MP4_File mp4File;
+    if ( !de::file::mp4::MP4_Parser::parse( de_mbstr(loadUri), mp4File ) )
+    {
+        DE_ERROR("Parser had error, ", de_mbstr(loadUri))
+    }
 
     // Add listener 0: DurationComputer
     //de::DurationComputer durationComputer;
     //parser.addListener( &durationComputer );
 
     // Add listener 1: Html writer
-    DebugHtml html;
-    parser.addListener( &html );
+    // DebugHtml html;
+    // parser.addListener( &html );
 
     // Add listener 2: Standard Midi file listener
     // de::midi::file::File file;
@@ -107,16 +111,16 @@ int main( int argc, char** argv )
     // fileListener.setFile( &file );
     // parser.addListener( &fileListener );
 
-    if ( !parser.parse( de_mbstr(loadUri) ) )
-    {
-        DE_ERROR("Parser had error, ", de_mbstr(loadUri))
-    }
+    // if ( !parser.parse( de_mbstr(loadUri) ) )
+    // {
+    //     DE_ERROR("Parser had error, ", de_mbstr(loadUri))
+    // }
 
     // Write html ( most time intensive part )
-    html.save( de_mbstr(saveUri) );
+    //html.save( de_mbstr(saveUri) );
 
-    DE_DEBUG("Open html file ",de_mbstr(saveUri))
-    open_in_browser(de_mbstr(saveUri));
+    //DE_DEBUG("Open html file ",de_mbstr(saveUri))
+    //open_in_browser(de_mbstr(saveUri));
 
     return 0;
 }

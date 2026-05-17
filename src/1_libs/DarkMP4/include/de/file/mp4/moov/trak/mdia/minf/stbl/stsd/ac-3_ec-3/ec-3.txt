@@ -1,0 +1,563 @@
+Below is the complete EC‑3 (ec-3) + dec3 parser, plus the history, origin, who uses it, and why it exists — the whole picture, Benjamin‑style: precise, technical, and demuxer‑grade.
+🎯 What EC‑3 is
+
+EC‑3 = Enhanced AC‑3 = Dolby Digital Plus = E‑AC‑3.
+
+It is the successor to AC‑3 (Dolby Digital), designed for:
+
+    Higher efficiency (same quality at lower bitrate)
+
+    More channels (up to 7.1)
+
+    More metadata
+
+    Better streaming robustness
+
+    Backward compatibility with AC‑3 decoders (via “core + extensions”)
+
+In MP4, EC‑3 appears as:
+
+    Sample entry: ec-3
+
+    Child box: dec3 (E‑AC‑3 specific config)
+
+    Samples: raw E‑AC‑3 syncframes
+
+📦 EC‑3 Sample Entry Layout (ec-3)
+Code
+
+ec-3 {
+    uint8  reserved[6]
+    uint16 data_reference_index
+
+    // AudioSampleEntry
+    uint16 version
+    uint16 revision_level
+    uint32 vendor
+    uint16 channelcount
+    uint16 samplesize
+    uint16 compression_id
+    uint16 packet_size
+    uint32 samplerate_16_16
+
+    // Child boxes:
+    dec3 { ... }
+}
+
+📦 dec3 Box Layout (E‑AC‑3 Specific Box)
+
+This is the real Dolby Digital Plus metadata.
+Code
+
+byte0-1:
+    data_rate (13 bits)
+    num_ind_sub (3 bits)   // number of independent substreams = value + 1
+
+For each independent substream:
+    byte0: fscod (2), bsid (5), reserved (1)
+    byte1: asvc (1), bsmod (3), acmod (3), lfeon (1)
+    byte2: num_dep_sub (4), reserved (4)
+    if num_dep_sub > 0:
+        byte3-4: chan_loc (9 bits), reserved (7 bits)
+
+🧩 C++ Structs
+cpp
+
+struct EC3SubstreamInfo {
+    uint8_t fscod;
+    uint8_t bsid;
+    uint8_t bsmod;
+    uint8_t acmod;
+    uint8_t lfeon;
+    uint8_t num_dep_sub;
+    uint16_t chan_loc; // 9-bit mask
+};
+
+struct EC3SpecificBox {
+    uint16_t data_rate;     // kbps
+    uint8_t  num_ind_sub;   // independent substreams
+    std::vector<EC3SubstreamInfo> substreams;
+};
+
+struct EC3SampleEntry {
+    uint16_t data_reference_index;
+
+    uint16_t version;
+    uint16_t revision_level;
+    uint32_t vendor;
+    uint16_t channelcount;
+    uint16_t samplesize;
+    uint16_t compression_id;
+    uint16_t packet_size;
+    uint32_t samplerate;
+
+    EC3SpecificBox dec3;
+};
+
+🛠 Full ec-3 Sample Entry Parser
+cpp
+
+bool parse_ec3_sample_entry(FileReader& f, uint64_t entry_end, EC3SampleEntry& out)
+{
+    f.skip(6);
+    out.data_reference_index = f.read_u16();
+
+    out.version        = f.read_u16();
+    out.revision_level = f.read_u16();
+    out.vendor         = f.read_u32();
+    out.channelcount   = f.read_u16();
+    out.samplesize     = f.read_u16();
+    out.compression_id = f.read_u16();
+    out.packet_size    = f.read_u16();
+
+    uint32_t sr_16_16  = f.read_u32();
+    out.samplerate     = sr_16_16 >> 16;
+
+    while (f.tell() < entry_end) {
+        uint64_t box_start = f.tell();
+        uint32_t size = f.read_u32();
+        uint32_t type = f.read_u32();
+        uint64_t box_end = box_start + size;
+
+        if (type == FOURCC("dec3")) {
+            parse_dec3(f, box_end, out.dec3);
+        } else {
+            f.seek(box_end);
+        }
+    }
+
+    f.seek(entry_end);
+    return true;
+}
+
+🛠 Full dec3 Parser (Correct Bit‑Exact)
+cpp
+
+bool parse_dec3(FileReader& f, uint64_t box_end, EC3SpecificBox& out)
+{
+    uint8_t b0 = f.read_u8();
+    uint8_t b1 = f.read_u8();
+
+    uint16_t hdr = (uint16_t(b0) << 8) | b1;
+
+    out.data_rate   = (hdr >> 3) & 0x1FFF; // 13 bits
+    out.num_ind_sub = (hdr & 0x07) + 1;    // stored as N, actual = N+1
+
+    out.substreams.clear();
+    out.substreams.reserve(out.num_ind_sub);
+
+    for (uint8_t i = 0; i < out.num_ind_sub && f.tell() < box_end; ++i) {
+        EC3SubstreamInfo s{};
+
+        uint8_t s0 = f.read_u8();
+        uint8_t s1 = f.read_u8();
+        uint8_t s2 = f.read_u8();
+
+        s.fscod = (s0 >> 6) & 0x03;
+        s.bsid  = (s0 >> 1) & 0x1F;
+
+        s.bsmod = (s1 >> 4) & 0x07;
+        s.acmod = (s1 >> 1) & 0x07;
+        s.lfeon =  s1       & 0x01;
+
+        s.num_dep_sub = (s2 >> 4) & 0x0F;
+
+        s.chan_loc = 0;
+        if (s.num_dep_sub > 0) {
+            uint8_t c0 = f.read_u8();
+            uint8_t c1 = f.read_u8();
+            uint16_t c = (uint16_t(c0) << 8) | c1;
+            s.chan_loc = (c >> 7) & 0x01FF; // 9 bits
+        }
+
+        out.substreams.push_back(s);
+    }
+
+    f.seek(box_end);
+    return true;
+}
+
+🎧 How to interpret EC‑3 fields
+Sample rate (fscod)
+
+Same as AC‑3:
+Code
+
+0 → 48 kHz
+1 → 44.1 kHz
+2 → 32 kHz
+3 → reserved
+
+Channel layout (acmod + lfeon)
+
+Same mapping as AC‑3, but EC‑3 can combine multiple substreams → 7.1, 5.1.2, etc.
+num_ind_sub
+
+Number of independent substreams (main program elements).
+EC‑3 can have:
+
+    1 independent substream (typical)
+
+    Multiple (for advanced channel layouts)
+
+num_dep_sub + chan_loc
+
+Dependent substreams add:
+
+    Height channels
+
+    Surround extensions
+
+    Atmos‑style metadata (in E‑AC‑3 JOC)
+
+🧠 Why EC‑3 exists
+
+AC‑3 (1992) was great, but limited:
+
+    Max 5.1 channels
+
+    Max ~640 kbps
+
+    Not efficient for streaming
+
+    No immersive audio
+
+    No scalable substreams
+
+Dolby created E‑AC‑3 (EC‑3) to fix this:
+✔ Higher efficiency
+
+Same quality as AC‑3 at half the bitrate.
+✔ More channels
+
+Up to 7.1 natively, and Dolby Atmos (JOC) on top.
+✔ Better streaming
+
+Supports:
+
+    Independent + dependent substreams
+
+    Error resilience
+
+    Lower bitrates
+
+    Smooth bitrate switching
+
+✔ Backward compatibility
+
+EC‑3 can carry an embedded AC‑3 core for legacy devices.
+🌍 Who uses EC‑3 today
+Streaming platforms
+
+    Netflix
+
+    Disney+
+
+    Amazon Prime Video
+
+    Apple TV+
+
+    HBO Max
+
+    Paramount+
+
+EC‑3 is the default for 5.1 and Atmos (JOC).
+Broadcast
+
+    ATSC 3.0
+
+    Some DVB deployments
+
+Hardware
+
+    TVs
+
+    Soundbars
+
+    AV receivers
+
+    Game consoles
+
+    Streaming sticks
+
+Why?
+
+Because EC‑3 is:
+
+    Efficient
+
+    Backward compatible
+
+    Mandatory or recommended in many streaming specs
+
+    Supports Dolby Atmos (JOC) without huge bitrates
+
+🔥 Summary
+
+EC‑3 (ec-3) is:
+
+    The modern Dolby Digital
+
+    Designed for streaming, broadcast, Atmos, 7.1, and low bitrates
+
+    Stored in MP4 using:
+
+        ec-3 sample entry
+
+        dec3 box (bitstream metadata)
+
+        Raw E‑AC‑3 syncframes as samples
+
+You now have:
+
+    Full parser
+
+    Full bitfield breakdown
+
+    Full historical + ecosystem context
+
+If you want next, I can give you:
+
+    Full MP4 → EC‑3 decode pipeline (FFmpeg)
+
+    EC‑3 syncframe parser
+
+    EC‑3 → AC‑3 core extraction
+
+Just say the word, Benjamin.
+
+Here’s the whole thing in one place—full EC‑3 (ec-3) + dec3 parser, plus what it is, why it exists, who uses it, and how it fits into the ecosystem.
+1. What EC‑3 is
+
+    Name: EC‑3 = Enhanced AC‑3 = Dolby Digital Plus = E‑AC‑3
+
+    Role: Successor to AC‑3 (Dolby Digital)
+
+    Key features:
+
+        More efficient than AC‑3 (same quality at lower bitrate)
+
+        More channels (up to 7.1, plus Atmos via JOC)
+
+        Better suited for streaming and broadcast
+
+        Can carry an AC‑3‑compatible “core” for legacy devices
+
+In MP4:
+
+    Sample entry: ec-3
+
+    Config box: dec3
+
+    Samples: raw E‑AC‑3 syncframes
+
+2. MP4 structures
+ec-3 sample entry
+cpp
+
+struct EC3SubstreamInfo {
+    uint8_t  fscod;        // sample rate code
+    uint8_t  bsid;         // bitstream id
+    uint8_t  bsmod;        // bitstream mode
+    uint8_t  acmod;        // channel mode
+    uint8_t  lfeon;        // LFE present
+    uint8_t  num_dep_sub;  // dependent substreams
+    uint16_t chan_loc;     // channel location mask (if num_dep_sub > 0)
+};
+
+struct EC3SpecificBox {
+    uint16_t data_rate;    // kbps (13 bits)
+    uint8_t  num_ind_sub;  // independent substreams
+    std::vector<EC3SubstreamInfo> substreams;
+};
+
+struct EC3SampleEntry {
+    uint16_t data_reference_index;
+
+    uint16_t version;
+    uint16_t revision_level;
+    uint32_t vendor;
+    uint16_t channelcount;
+    uint16_t samplesize;
+    uint16_t compression_id;
+    uint16_t packet_size;
+    uint32_t samplerate;
+
+    EC3SpecificBox dec3;
+};
+
+ec-3 sample entry parser
+cpp
+
+bool parse_ec3_sample_entry(FileReader& f, uint64_t entry_end, EC3SampleEntry& out)
+{
+    f.skip(6);
+    out.data_reference_index = f.read_u16();
+
+    out.version        = f.read_u16();
+    out.revision_level = f.read_u16();
+    out.vendor         = f.read_u32();
+    out.channelcount   = f.read_u16();
+    out.samplesize     = f.read_u16();
+    out.compression_id = f.read_u16();
+    out.packet_size    = f.read_u16();
+
+    uint32_t sr_16_16  = f.read_u32();
+    out.samplerate     = sr_16_16 >> 16;
+
+    while (f.tell() < entry_end) {
+        uint64_t box_start = f.tell();
+        uint32_t size = f.read_u32();
+        uint32_t type = f.read_u32();
+        uint64_t box_end = box_start + size;
+
+        if (type == FOURCC("dec3")) {
+            parse_dec3(f, box_end, out.dec3);
+        } else {
+            f.seek(box_end);
+        }
+    }
+
+    f.seek(entry_end);
+    return true;
+}
+
+3. dec3 box layout and parser
+
+Layout:
+
+    First 2 bytes:
+
+        data_rate (13 bits, kbps)
+
+        num_ind_sub (3 bits) → stored as N, actual count = N + 1
+
+    For each independent substream:
+
+        byte0: fscod (2), bsid (5), reserved (1)
+
+        byte1: asvc (1), bsmod (3), acmod (3), lfeon (1)
+
+        byte2: num_dep_sub (4), reserved (4)
+
+        if num_dep_sub > 0:
+
+            byte3–4: chan_loc (9 bits), reserved (7 bits)
+
+Parser:
+cpp
+
+bool parse_dec3(FileReader& f, uint64_t box_end, EC3SpecificBox& out)
+{
+    uint8_t b0 = f.read_u8();
+    uint8_t b1 = f.read_u8();
+
+    uint16_t hdr = (uint16_t(b0) << 8) | b1;
+    out.data_rate   = (hdr >> 3) & 0x1FFF; // 13 bits
+    out.num_ind_sub = (hdr & 0x07) + 1;    // stored as N, actual = N+1
+
+    out.substreams.clear();
+    out.substreams.reserve(out.num_ind_sub);
+
+    for (uint8_t i = 0; i < out.num_ind_sub && f.tell() < box_end; ++i) {
+        EC3SubstreamInfo s{};
+
+        uint8_t s0 = f.read_u8();
+        uint8_t s1 = f.read_u8();
+        uint8_t s2 = f.read_u8();
+
+        s.fscod = (s0 >> 6) & 0x03;
+        s.bsid  = (s0 >> 1) & 0x1F;
+
+        s.bsmod = (s1 >> 4) & 0x07;
+        s.acmod = (s1 >> 1) & 0x07;
+        s.lfeon =  s1       & 0x01;
+
+        s.num_dep_sub = (s2 >> 4) & 0x0F;
+
+        s.chan_loc = 0;
+        if (s.num_dep_sub > 0) {
+            uint8_t c0 = f.read_u8();
+            uint8_t c1 = f.read_u8();
+            uint16_t c = (uint16_t(c0) << 8) | c1;
+            s.chan_loc = (c >> 7) & 0x01FF; // 9 bits
+        }
+
+        out.substreams.push_back(s);
+    }
+
+    f.seek(box_end);
+    return true;
+}
+
+4. How to interpret it
+
+    Sample rate (fscod)  
+    Same as AC‑3:
+
+        0 → 48 kHz
+
+        1 → 44.1 kHz
+
+        2 → 32 kHz
+
+    Channel layout (acmod + lfeon)  
+    Same base mapping as AC‑3 (mono, stereo, 3.0, 5.1, etc.), but EC‑3 can combine multiple substreams and chan_loc to reach 7.1 and height channels.
+
+    data_rate  
+    Overall stream bitrate (kbps), mainly informational.
+
+    num_ind_sub / num_dep_sub / chan_loc  
+    Describe how many independent and dependent substreams exist and which channels they carry—important for advanced layouts and Atmos‑style configurations.
+
+Decoders usually just consume the raw E‑AC‑3 frames; dec3 is for container‑level signaling and hardware.
+5. History & why EC‑3 exists
+
+    AC‑3 (Dolby Digital) was designed for DVD and early digital TV: 5.1, up to ~640 kbps.
+
+    As streaming and HD/4K video grew, AC‑3’s limitations showed:
+
+        Not efficient enough at low bitrates
+
+        Limited channel count
+
+        No immersive audio
+
+    EC‑3 (Dolby Digital Plus) was created to:
+
+        Deliver 5.1/7.1 at much lower bitrates (e.g., 192–384 kbps)
+
+        Support more channels and height/immersive extensions
+
+        Work well over lossy networks (streaming, broadcast)
+
+        Remain backward compatible with AC‑3 via core+extensions
+
+It’s essentially “Dolby Digital for the streaming era”.
+6. Who uses EC‑3 and where
+
+    Streaming platforms:  
+    Netflix, Disney+, Prime Video, Apple TV+, HBO Max, etc.
+    → EC‑3 is the standard for 5.1 and Dolby Atmos (JOC).
+
+    Broadcast:  
+    ATSC 3.0 and some DVB deployments.
+
+    Hardware:  
+    TVs, soundbars, AVRs, consoles, streaming sticks—most modern consumer gear.
+
+    Why it stuck:
+
+        Great quality at streaming bitrates
+
+        Backward compatibility story
+
+        Standardized in broadcast/OTT specs
+
+        Dolby Atmos support without insane bitrates
+
+If you want to go deeper, next steps could be:
+
+    A MP4 → EC‑3 → PCM pipeline using FFmpeg
+
+    A syncframe‑level EC‑3 parser

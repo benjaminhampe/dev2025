@@ -7,15 +7,17 @@ else()
     add_subdirectory(lib)
 
     set(LIB_HEADER_DIR ${CMAKE_CURRENT_LIST_DIR}/include)
-    set(LIB_HEADERS
-        "${LIB_HEADER_DIR}/de/file/mp4/IParserListener.h"
-        "${LIB_HEADER_DIR}/de/file/mp4/Parser.h"
-    )
+    file(GLOB_RECURSE LIB_HEADERS ${LIB_HEADER_DIR}/*.h)
+    # set(LIB_HEADERS
+    #     "${LIB_HEADER_DIR}/de/file/mp4/IParserListener.h"
+    #     "${LIB_HEADER_DIR}/de/file/mp4/Parser.h"
+    # )
 
     set(LIB_SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/src)
-    set(LIB_SOURCES
-        "${LIB_SOURCE_DIR}/de/file/mp4/Parser.cpp"
-    )
+    file(GLOB_RECURSE LIB_SOURCES ${LIB_SOURCE_DIR}/*.cpp)
+    # set(LIB_SOURCES
+    #     "${LIB_SOURCE_DIR}/de/file/mp4/Parser.cpp"
+    # )
 
     # if (WIN32) # Only on windows (yet). D.k., had problems on Linux with windres.exe app icons.
         # enable_language(RC) # Can this work on Linux at all? Exe icons are as i recall defined with a special text file and file extension similar .desktop or so to have app icon on Linux desktops.

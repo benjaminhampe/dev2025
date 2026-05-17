@@ -3,7 +3,120 @@
 namespace de {
 namespace file {
 namespace mp4 {
-    
+
+/*
+✔ Only the atoms you actually need
+
+mvhd
+tkhd
+mdhd
+hdlr
+stsd
+stts
+ctts
+stsc
+stsz
+stco
+
+These are the atoms required to build:
+
+track metadata
+sample tables
+decode timestamps
+composition timestamps
+chunk offsets
+sample sizes
+
+Everything else is skipped.
+*/
+// ============================================================================
+// static
+bool MP4_Parser::parse( const std::string & uri, MP4_File & mp4 )
+{
+    PerformanceTimer perfTimer;
+    perfTimer.start();
+
+    DE_OK("====================================")
+    DE_OK("[Parser] ",uri)
+    DE_OK("====================================")
+
+    File file(uri, eFileMode::Read);
+    if (!file.is_open())
+    {
+        DE_ERROR("Cannot open ", uri)
+        return false;
+    }
+
+    const int64_t fileSize = file.size();
+
+    char rootName[4] = {'r','o','o','t'};
+    mp4.m_root = Atom( rootName, 0, 0, fileSize );
+
+    MiniParser::parse(file, mp4.m_root.dataBeg(), mp4.m_root.dataEnd(),
+    [&](const Atom& atom)
+    {
+        auto & children = mp4.m_root.m_children;
+        children.emplace_back(atom);
+
+        // ✔ TopLevel Atoms [file]:
+        // ftyp     normal MP4
+        // styp     fragmented MP4
+        // free     padding
+        // skip     padding
+        // uuid     user‑defined box
+        // moov     movie metadata
+        // mdat     media data
+        // meta     metadata container
+        if (atom.is("ftyp"))
+        {
+            mp4.m_ftyp.emplace_back();
+            Atom_ftyp & ftyp = mp4.m_ftyp.back();
+            ftyp.atom = atom;
+            ftyp.parse(file);
+            DE_OK(ftyp.str())
+        }
+        else if (atom.is("styp"))
+        {
+            mp4.m_styp.emplace_back( atom );
+            DE_OK(atom.str())
+        }
+        else if (atom.is("free"))
+        {
+            mp4.m_free.emplace_back( atom );
+            DE_OK(atom.str())
+        }
+        else if (atom.is("skip"))
+        {
+            mp4.m_skip.emplace_back( atom );
+            DE_OK(atom.str())
+        }
+        else if (atom.is("moov"))
+        {
+            mp4.m_moov.emplace_back();
+            Atom_moov & moov = mp4.m_moov.back();
+            moov.atom = atom;
+            moov.parse(file);
+            DE_OK(moov.str())
+        }
+        else if (atom.is("mdat"))
+        {
+            mp4.m_mdat.emplace_back( atom );
+            DE_OK(atom.str())
+        }
+        else if (atom.is("meta"))
+        {
+            mp4.m_meta.emplace_back( atom );
+            DE_OK(atom.str())
+        }
+    });
+
+    perfTimer.stop();
+    DE_OK("[Parser] Needed ", perfTimer.ms(), " ms for ", uri )
+    return true;
+}
+
+#if 0
+
 Parser::Parser()
 {
 
@@ -96,7 +209,58 @@ bool parse_ftyp(int fd, uint32_t atom_size, FtypBox& out)
 }
 */
 
+bool Parser::parse( const std::string & uri )
+{
+    PerformanceTimer m_perfTimer;
+    m_perfTimer.start();
 
+    DE_OK("====================================")
+    DE_OK("[Parser] ",uri)
+    DE_OK("====================================")
+
+    uint32_t header_size = 8;
+
+    m_file.close();
+    m_file.open(uri, eFileMode::Read);
+    const int64_t byteCount = m_file.size();
+
+    uint8_t const* beg = nullptr;
+    uint8_t const* end = beg + byteCount;
+
+    onParserStart( beg, end, uri );
+
+    parse();
+
+
+    onParserEnd();
+
+    m_perfTimer.stop();
+    DE_OK("[Parser] Needed ", m_perfTimer.ms(), " ms for ", uri )
+    return true;
+}
+
+void Parser::parse()
+{
+    PerformanceTimer m_perfTimer;
+    m_perfTimer.start();
+
+    MiniParser::parse(m_file, atom.dataBeg(), atom.dataEnd(),
+        [&](const Atom& found)
+        {
+            if (found.is("tkhd"))
+            {
+                Atom_tkhd tkhd;
+                tkhd.atom = found;
+                tkhd.parse(file);
+                m_tkhd = tkhd;
+                DE_OK(m_tkhd->str())
+            }
+            else
+            {
+                DE_OK(found.str())
+            }
+        });
+}
 
 // ✔ Reject only if:
 // size < 8
@@ -269,8 +433,6 @@ Parser::parse_ftyp( Atom_ftyp & atom )
 {
     return true;
 }
-
-#if 0
 
 size_t
 Parser::parse( uint8_t const* const beg, uint8_t const* const end, std::string const & uri )

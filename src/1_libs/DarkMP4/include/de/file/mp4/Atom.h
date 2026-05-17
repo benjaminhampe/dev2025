@@ -1,5 +1,6 @@
 #pragma once
 #include <de/Core.h>
+#include <iomanip>
 #include <de/file/mp4/MP4-Atoms-Tree.h>
 #include <de/file/mp4/MP4-AudioFile.h>
 #include <de/file/mp4/MP4-AudioFileParsing.h>
@@ -62,10 +63,11 @@ struct Atom // 8+8+4+4 = 24 bytes
     {
         m_fileOffset = fileOffset;
         m_atomSize = atomSize;
+        if (m_atomSize < 8) m_atomSize = 8;
         m_headerSize = headerSize;
         memcpy(m_atomName,atomName,4);
 
-        if (!checkSanity())
+        if (!checkSanity() && !is("root"))
         {
             DE_ERROR(str())
         }
@@ -109,45 +111,97 @@ struct Atom // 8+8+4+4 = 24 bytes
         return true; // All good.
     }
 
+    static std::string to_hex(int64_t v)
+    {
+        std::ostringstream o;
+        o << "0x"
+            << std::hex
+            << std::uppercase
+            << std::setw(16)
+            << std::setfill('0')
+            << static_cast<uint64_t>(v);
+        return o.str();
+    }
+
     std::string str() const
     {
         std::ostringstream o; o <<
-        "Atom[" << nameStr() << "] "
-        "o(" << m_fileOffset << "), "
-        "n(" << m_headerSize << " + " << dataSize() << "), "
+        //"Atom"
+        "[" << nameStr() << "] ";
+
+        if (m_fileOffset > int64_t(std::numeric_limits<int32_t>::max()))
+        {
+            o << dbHex(static_cast<uint64_t>(m_fileOffset));
+        }
+        else
+        {
+            o << dbHex(static_cast<uint32_t>(m_fileOffset));
+        }
+        o << " "
+        //"o(" << m_fileOffset << "), "
+        "{" << m_headerSize << "+" << dataSize() << "}"
         // "headerSize(" << m_headerSize << "), "
         // "dataSize(" << dataSize() << "), "
-        "children(" << m_children.size() << ")";
+        //"children(" << m_children.size() << ")";
         //"dataBeg(" << dataBeg() << "), "
         //"dataEnd(" << dataEnd() << ")";
+            ;
         return o.str();
     }
 
     std::string nameStr() const
     {
-        return to_str(m_atomName);
+        return to_str(m_atomName,4);
     }
 
-    static std::string to_str(const char* text) // only use for char[4]!
+    static std::string to_str(const char* text, int n) // for e.g. char language[3]
     {
-        std::string n;
-        for (int i = 0; i < 4; ++i)
+        std::string s;
+        for (int i = 0; i < n; ++i)
         {
-            n += text[i] ? text[i] : '?';
+            s += text[i] ? text[i] : '?';
         }
-        return n;
+        return s;
     }
+
+    // static std::string to_str(const char* text) // only use for char[4]!
+    // {
+    //     std::string n;
+    //     for (int i = 0; i < 4; ++i)
+    //     {
+    //         n += text[i] ? text[i] : '?';
+    //     }
+    //     return n;
+    // }
 
     static std::string to_str(const std::array<char,4>& text)
     {
         std::string n;
-        for (int i = 0; i < 4; ++i)
+        for (int i = 0; i < text.size(); ++i)
         {
             n += text[i] ? text[i] : '?';
         }
         return n;
     }
 
+    static std::string fourcc_to_str(uint32_t v)
+    {
+        char s[5];
+        s[0] = char((v >> 24) & 0xFF);
+        s[1] = char((v >> 16) & 0xFF);
+        s[2] = char((v >>  8) & 0xFF);
+        s[3] = char((v >>  0) & 0xFF);
+        s[4] = 0;
+        return std::string(s);
+    }
+
+    static constexpr uint32_t FOURCC(char a, char b, char c, char d)
+    {
+        return (uint32_t(static_cast<uint8_t>(a)) << 24)
+             | (uint32_t(static_cast<uint8_t>(b)) << 16)
+             | (uint32_t(static_cast<uint8_t>(c)) <<  8)
+             | (uint32_t(static_cast<uint8_t>(d)));
+    }
 };
 
 struct MiniParser
@@ -184,6 +238,19 @@ struct MiniParser
                 headerSize = 16;
                 atomSize = big_size;
             }
+
+            // <prevent-infinite-loops>
+            if (atomSize < headerSize)
+            {
+                auto s1 = Atom::to_str(atomName,4);
+                auto s2 = fileOffset;
+                auto s3 = atomSize;
+                auto s4 = headerSize;
+                DE_ERROR("[",s1,"] fileOffset(",s2,"), atomSize(",s3,") < headerSize(",s4,")")
+                atomSize = headerSize;
+            }
+            // </prevent-infinite-loops>
+
 
             Atom atom(atomName,headerSize,fileOffset,atomSize);
 
