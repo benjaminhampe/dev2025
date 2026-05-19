@@ -15,12 +15,14 @@ public:
     FileInfo m_fileInfo;
     TAlignedVector<float> m_samples; // Interleaved
 
+private:
     IDspChainElement* m_inputSignal;
     u64 m_frameIndex;
     bool m_bLooping;
     TAlignedVector<float> m_L;
     TAlignedVector<float> m_R;
 
+public:
     Sound();
     ~Sound() override;
 /*

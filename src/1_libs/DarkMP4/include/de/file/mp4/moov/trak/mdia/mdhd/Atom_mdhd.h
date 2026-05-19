@@ -123,7 +123,7 @@ struct Atom_mdhd
     {
         std::ostringstream o;
         o << atom.str() << ", "
-        "version(" << version() << "), "
+        //"version(" << version() << "), "
         "lang(" << language() << "), "
         "duration(" << duration() << ")";
         return o.str();

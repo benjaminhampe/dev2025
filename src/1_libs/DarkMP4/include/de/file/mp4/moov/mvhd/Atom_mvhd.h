@@ -166,7 +166,7 @@ struct Atom_mvhd
     {
         std::ostringstream o;
         o << atom.str() << ", "
-        "version(" << int(header.version) << "), "
+        // "version(" << int(header.version) << "), "
         "duration(" << duration() << "), "
         "rate(" << rate() << "), "
         "volume(" << volume() << ")";

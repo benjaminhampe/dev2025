@@ -24,9 +24,9 @@ struct Atom_trak
     Atom atom;
 
     std::vector<Atom_tkhd> m_tkhd; // (Track Header)
+    std::vector<Atom_mdia> m_mdia; // (Media Box)
     std::vector<Atom_tref> m_tref; // (Track References)
     std::vector<Atom_edts> m_edts; // (Edit Box)
-    std::vector<Atom_mdia> m_mdia; // (Media Box)
 
     void parse(File & file)
     {

@@ -25,19 +25,125 @@ moov
 mdat
 */
 
+/*
+//🧩
+ctts {
+    uint32 size
+    uint32 'ctts'
+    uint8  version = 0
+    uint24 flags
+    uint32 entry_count
+
+    for i in 0..entry_count-1:
+        uint32 sample_count
+        uint32 sample_offset   // unsigned
+}
+Version 1 (rare)
+
+Offsets are signed (can be negative).
+Code
+
+*/
+
+//🧩
+struct cttsHeader
+{
+    uint8_t version;
+    uint8_t flags[3];
+    uint32_t entry_count;
+};
+
+//🧩
+struct CTTS_Entry
+{
+    uint32_t sample_count;
+    int32_t  sample_offset; // signed for version 1, cast for version 0
+};
+
+//🧩
+typedef std::vector<CTTS_Entry> MP4_CompositionTimeToSample;
+
+/*
+bool parse_ctts(FileReader& f, uint64_t ctts_end, CTTS& out)
+{
+    out.version = f.read_u8();
+    out.flags   = f.read_u24();
+
+    uint32_t entry_count = f.read_u32();
+    out.entries.clear();
+    out.entries.reserve(entry_count);
+
+    for (uint32_t i = 0; i < entry_count; ++i)
+    {
+        if (f.tell() + 8 > ctts_end)
+            return false;
+
+        CTTS_Entry e;
+        e.sample_count = f.read_u32();
+
+        if (out.version == 0) {
+            // unsigned offset
+            e.sample_offset = (int32_t)f.read_u32();
+        } else {
+            // version 1: signed offset
+            e.sample_offset = (int32_t)f.read_u32();
+        }
+
+        out.entries.push_back(e);
+    }
+
+    f.seek(ctts_end);
+    return true;
+}
+*/
+
 struct Atom_ctts
 {
     Atom atom;
 
+    cttsHeader m_header;
+
+    MP4_CompositionTimeToSample m_entries;
+
     void parse(File & file)
     {
-        DE_ERROR("Not implemented.")
+        file.read_u8(&m_header.version);
+        file.read_u8(&m_header.flags[0]);
+        file.read_u8(&m_header.flags[1]);
+        file.read_u8(&m_header.flags[2]);
+        file.read_u32_be(&m_header.entry_count);
+
+        m_entries.clear();
+        m_entries.reserve(m_header.entry_count);
+
+        for (uint32_t i = 0; i < m_header.entry_count; ++i)
+        {
+            CTTS_Entry e;
+            file.read_u32_be(&e.sample_count);
+
+            uint32_t sample_offset = 0;
+            file.read_u32_be(&sample_offset);
+
+            if (m_header.version == 0) // unsigned offset
+            {
+                e.sample_offset = (int32_t)sample_offset;
+            }
+            else // version 1: signed offset
+            {
+                e.sample_offset = (int32_t)sample_offset;
+            }
+
+            m_entries.push_back(e);
+        }
     }
 
     std::string str() const
     {
         std::ostringstream o;
-        o << atom.str();
+        o << atom.str() << ""
+        ", version(" << int(m_header.version) << ")"
+        ", entries(" << m_entries.size() << ")"
+        ;
         return o.str();
     }
 };

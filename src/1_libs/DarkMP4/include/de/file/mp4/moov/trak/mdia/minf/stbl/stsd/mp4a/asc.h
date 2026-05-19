@@ -312,6 +312,10 @@ inline std::string channel_cfg_str(int cfg)
 //🔥 -> FEED into FAAD2 AAC decoder lib
 struct AscInfo
 {
+    std::vector<uint8_t> raw; // AAC decoder wants these precious 16 bytes.
+
+    // This all is kinda for debugging purposes
+
     uint8_t  aot = 0; // audio_object_type
     uint8_t  eaot = 0; // extension_audio_object_type, SBR/PS if present
 
@@ -342,10 +346,11 @@ struct AscInfo
         return o.str();
     }
 
-
 };
 
-//🧩 Helper
+// This class is kinda only for debugging purposes the parser
+
+//🧩 DebugHelper
 struct BitReader
 {
     File*    file;
@@ -409,7 +414,7 @@ struct BitReader
     }
 };
 
-//🧩 Helper
+//🧩 DebugHelper
 inline uint8_t read_audio_object_type(BitReader& br)
 {
     uint8_t aot = (uint8_t)br.get_bits(5);
@@ -420,15 +425,25 @@ inline uint8_t read_audio_object_type(BitReader& br)
     return aot;
 }
 
-//🧩 Helper
+//🧩 DebugHelper
 inline bool parse_asc(File& file, int64_t beg, int64_t end, AscInfo& out)
 {
-    if (end - beg == 0)
+    int64_t len = end - beg;
+
+    if (len < 1)
     {
-        DE_ERROR("malformed size.")
+        DE_ERROR("malformed len ",len)
         return false;
     }
 
+    // <precious> What AAC decoder wants -> 16 raw ASC bytes.
+    out.raw.resize(len);
+    file.seek(beg);
+    file.read(out.raw.data(),len);
+    // </precious>
+
+    // <debug> Benni's debug ASC parser
+    // TODO: Memory bitreader operating on 'out.raw', not file.
     BitReader br(&file, beg, end);
 
     // audioObjectType
@@ -497,7 +512,7 @@ inline bool parse_asc(File& file, int64_t beg, int64_t end, AscInfo& out)
             }
         }
     }
-
+    //</debug>
     return true;
 }
 

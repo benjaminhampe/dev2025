@@ -91,8 +91,8 @@ int main( int argc, char** argv )
     DE_DEBUG("HtmlWriter saveUri = ", de_mbstr(saveUri))
 
     // Parser:
-    de::file::mp4::MP4_File mp4File;
-    if ( !de::file::mp4::MP4_Parser::parse( de_mbstr(loadUri), mp4File ) )
+    de::file::mp4::MP4 mp4File;
+    if ( !de::file::mp4::Parser::parse( de_mbstr(loadUri), mp4File ) )
     {
         DE_ERROR("Parser had error, ", de_mbstr(loadUri))
     }

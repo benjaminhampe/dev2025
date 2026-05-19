@@ -47,8 +47,8 @@ else()
     else()
         # target_link_options(${APP_NAME} PRIVATE -mwindows)
         target_compile_options(${APP_NAME} PRIVATE -Wno-macro-redefined)
-		target_compile_options(${APP_NAME} PRIVATE -Wno-pragma-pack)
-		# target_compile_options(${APP_NAME} PRIVATE -Wno-macro)
+        target_compile_options(${APP_NAME} PRIVATE -Wno-pragma-pack)
+        # target_compile_options(${APP_NAME} PRIVATE -Wno-macro)
         # target_compile_options(${APP_NAME} PRIVATE -Werror=maybe-uninitialized)
         # target_compile_options(${APP_NAME} PRIVATE -Wno-deprecated-declarations)
         # target_compile_options(${APP_NAME} PRIVATE -Wno-unused-but-set-variable)
@@ -74,14 +74,14 @@ else()
     target_link_libraries(${APP_NAME} PRIVATE de_lilv)
     target_link_libraries(${APP_NAME} PRIVATE de_resample)
 
-    # target_link_libraries(${APP_NAME} PRIVATE DarkMP4)      # MP4
+    target_link_libraries(${APP_NAME} PRIVATE DarkMP4)      # MP4
 
-    # target_link_libraries(${APP_NAME} PRIVATE de_alac)      # MP4 ALAC
-    # target_link_libraries(${APP_NAME} PRIVATE de_faad2)     # MP4 AAC
-    # target_link_libraries(${APP_NAME} PRIVATE de_opus)      # MP4 opus
+    target_link_libraries(${APP_NAME} PRIVATE de_alac)      # MP4 ALAC
+    target_link_libraries(${APP_NAME} PRIVATE de_faad2)     # MP4 AAC
+    target_link_libraries(${APP_NAME} PRIVATE de_opus)      # MP4 opus
     # target_link_libraries(${APP_NAME} PRIVATE de_minimp4)   # MP4 demuxer
     # target_link_libraries(${APP_NAME} PRIVATE de_opusfile)  # MP4 opus
-    
+
     # target_link_libraries(${APP_NAME} PRIVATE de_bento4)    # MP4
 
     target_link_libraries(${APP_NAME} PRIVATE DarkGPU_2604)
@@ -95,12 +95,12 @@ else()
     target_link_options(${APP_NAME} PRIVATE -fopenmp)
 
 
-	target_link_options(${APP_NAME} PRIVATE
-		-static
-		-stdlib=libc++
-		-Wl,-Bstatic -lc++ -lc++abi -lunwind -lwinpthread
-		-Wl,-Bdynamic
-	)
+    target_link_options(${APP_NAME} PRIVATE
+        -static
+        -stdlib=libc++
+        -Wl,-Bstatic -lc++ -lc++abi -lunwind -lwinpthread
+        -Wl,-Bdynamic
+    )
 
     if (WIN32)
         target_link_libraries(${APP_NAME} PRIVATE kernel32 user32 gdi32 shell32)

@@ -1,5 +1,6 @@
 #pragma once
 #include <de/file/mp4/Atom.h>
+#include <de/file/mp4/MP4-Atoms-Tree.h>
 
 namespace de {
 namespace file {
@@ -24,19 +25,77 @@ moov
 mdat
 */
 
+// const std::vector<uint32_t>& stts_sample_count,
+// const std::vector<uint32_t>& stts_sample_delta,
+
+/*
+//📦 Binary layout
+struct stts
+{
+    uint32_t size;
+    uint32_t 'stts';
+    uint8_t version;
+    uint24_t flags;
+    uint32_t entry_count;
+
+    for i in 0..entry_count-1:
+        uint32_t sample_count
+        uint32_t sample_delta
+};
+*/
+
+//🧩 (Decoding Time to Sample)
+struct sttsHeader
+{
+    uint8_t version;
+    uint8_t flags[3];
+    uint32_t entry_count;
+};
+
+//🧩 (Decoding Time to Sample)
+struct STTS_Entry
+{
+    uint32_t sample_count;   // number of consecutive samples
+    uint32_t sample_delta;   // duration of each sample (in timescale units)
+};
+
+//🧩 (Decoding Time to Sample)
+typedef std::vector<STTS_Entry> MP4_DecodingTimeToSample;
+
+
 struct Atom_stts
 {
     Atom atom;
 
+    sttsHeader m_header;
+
+    MP4_DecodingTimeToSample m_entries;
+
     void parse(File & file)
     {
-        DE_ERROR("Not implemented.")
+        file.read_u8(&m_header.version);
+        file.read_u8(&m_header.flags[0]);
+        file.read_u8(&m_header.flags[1]);
+        file.read_u8(&m_header.flags[2]);
+        file.read_u32_be(&m_header.entry_count);
+
+        m_entries.clear();
+        m_entries.reserve(m_header.entry_count);
+
+        for (uint32_t i = 0; i < m_header.entry_count; ++i)
+        {
+            STTS_Entry e;
+            file.read_u32_be(&e.sample_count);
+            file.read_u32_be(&e.sample_delta);
+            m_entries.push_back(e);
+        }
     }
 
     std::string str() const
     {
         std::ostringstream o;
-        o << atom.str();
+        o << atom.str() << ", "
+        "entries(" << m_entries.size() << ")";
         return o.str();
     }
 };
@@ -49,23 +108,19 @@ If you get stts wrong, timestamps will be wrong.
 🎯 What stts actually means
 
 stts maps:
-Code
 
-sample index → decode timestamp (DTS)
+    sample index → decode timestamp (DTS)
 
 It is a run‑length table of:
-Code
 
-(count, delta)
+    (count, delta)
 
 Meaning:
-Code
 
 The next <count> samples each have a duration of <delta> time units.
 
 Time units = track timescale (from mdhd).
 📦 Binary layout
-Code
 
 stts {
     uint32 size
@@ -80,21 +135,21 @@ stts {
 }
 
 🧩 C++ structs
-cpp
 
-struct STTS_Entry {
+struct STTS_Entry
+{
     uint32_t sample_count;   // number of consecutive samples
     uint32_t sample_delta;   // duration of each sample (in timescale units)
 };
 
-struct STTS {
+struct STTS
+{
     uint8_t  version;
     uint32_t flags;
     std::vector<STTS_Entry> entries;
 };
 
 🛠️ Full stts parser
-cpp
 
 bool parse_stts(FileReader& f, uint64_t stts_end, STTS& out)
 {
@@ -123,9 +178,7 @@ bool parse_stts(FileReader& f, uint64_t stts_end, STTS& out)
 
 🔥 How to use stts at runtime
 
-You need to compute DTS for sample n (0‑based).
-Algorithm
-cpp
+You need to compute DTS for sample n (0‑based). Algorithm:
 
 uint64_t stts_compute_dts(const STTS& stts, uint32_t sample_index)
 {
@@ -153,56 +206,43 @@ This is exactly how FFmpeg, Bento4, and QuickTime do it.
 🧠 Example
 
 Given:
-Code
 
 entry 0: sample_count=100, sample_delta=1024
 entry 1: sample_count=200, sample_delta=960
 
 Then:
-
     sample 0 → DTS = 0
-
     sample 1 → 1024
-
     sample 99 → 99 * 1024
-
     sample 100 → 100 * 1024
-
     sample 101 → 100*1024 + 960
-
     sample 299 → 1001024 + 199960
 
 This is how variable‑frame‑rate audio/video is represented.
+
 🧩 How stts interacts with ctts
 
     stts gives DTS (decode timestamp)
-
     ctts gives CTS offset (composition offset)
 
 If ctts exists:
-Code
 
-CTS = DTS + ctts_offset
+    CTS = DTS + ctts_offset
 
 If not:
-Code
 
-CTS = DTS
+    CTS = DTS
 
 🧩 How stts interacts with mdhd
 
-mdhd.timescale tells you how to convert timestamps to seconds:
-Code
+    mdhd.timescale tells you how to convert timestamps to seconds:
 
-seconds = timestamp / timescale
+    seconds = timestamp / timescale
 
 Example:
-Code
-
-timescale = 48000
-delta = 1024
-duration = 1024 / 48000 = 21.333 ms
-
+    timescale = 48000
+    delta = 1024
+    duration = 1024 / 48000 = 21.333 ms
 
 */
 

@@ -71,7 +71,7 @@ struct Atom_hdlr
     {
         std::ostringstream o;
         o << atom.str() << ", "
-            "version(" << version() << "), "
+            //"version(" << version() << "), "
             "media(" << media_type() << "), "
             "name(" << name() << ")";
         return o.str();

@@ -46,11 +46,8 @@ struct Atom_moov
 {
     Atom atom;
 
-    std::optional<Atom_mvhd> m_mvhd;
-    std::optional<Atom_trak> m_trak;
-
-    Atom_moov()
-    {}
+    std::vector<Atom_mvhd> m_mvhd;
+    std::vector<Atom_trak> m_trak;
 
     void parse(File & file)
     {
@@ -61,17 +58,18 @@ struct Atom_moov
                 {
                     Atom_mvhd a;
                     a.atom = found;
-                    a.parse(file); // OK
-                    m_mvhd = a;
+                    a.parse(file);
                     DE_OK(a.str())
+                    m_mvhd.emplace_back( a );
+
                 }
                 else if (found.is("trak"))
                 {
                     Atom_trak a;
                     a.atom = found;
                     a.parse(file);
-                    m_trak = a;
                     DE_OK(a.str())
+                    m_trak.emplace_back( a );
                 }
                 else
                 {
@@ -83,9 +81,9 @@ struct Atom_moov
     std::string str() const
     {
         std::ostringstream o;
-        o << atom.str() << "\n";
-        if (m_mvhd) { o << m_mvhd->str() << "\n"; }
-        if (m_trak) { o << m_trak->str() << "\n"; }
+        o << atom.str();
+        o << ", (" << m_mvhd.size() << ")";
+        o << ", (" << m_trak.size() << ")";
         return o.str();
     }
 };

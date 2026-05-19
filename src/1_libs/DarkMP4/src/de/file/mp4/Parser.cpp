@@ -31,7 +31,7 @@ Everything else is skipped.
 */
 // ============================================================================
 // static
-bool MP4_Parser::parse( const std::string & uri, MP4_File & mp4 )
+bool Parser::parse( const std::string & uri, MP4 & mp4 )
 {
     PerformanceTimer perfTimer;
     perfTimer.start();
@@ -55,8 +55,8 @@ bool MP4_Parser::parse( const std::string & uri, MP4_File & mp4 )
     MiniParser::parse(file, mp4.m_root.dataBeg(), mp4.m_root.dataEnd(),
     [&](const Atom& atom)
     {
-        auto & children = mp4.m_root.m_children;
-        children.emplace_back(atom);
+        // auto & children = mp4.m_root.m_children;
+        // children.emplace_back(atom);
 
         // ✔ TopLevel Atoms [file]:
         // ftyp     normal MP4
@@ -112,6 +112,10 @@ bool MP4_Parser::parse( const std::string & uri, MP4_File & mp4 )
 
     perfTimer.stop();
     DE_OK("[Parser] Needed ", perfTimer.ms(), " ms for ", uri )
+
+    // PostProcess
+    DE_OK(mp4.str())
+
     return true;
 }
 

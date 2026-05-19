@@ -83,10 +83,10 @@ void Sound::dsp_read(f64 pts, u32 frames, u32 sampleRate,
         return;
     }
 
-    if (totalFrames != m_fileInfo.frameCount)
-    {
-        DE_WARN("totalFrames(",totalFrames,") != m_fileInfo.frameCount(",m_fileInfo.frameCount,")")
-    }
+    // if (totalFrames != m_fileInfo.frameCount)
+    // {
+    //     DE_WARN("totalFrames(",totalFrames,") != m_fileInfo.frameCount(",m_fileInfo.frameCount,")")
+    // }
 
     u32 written = 0;
 

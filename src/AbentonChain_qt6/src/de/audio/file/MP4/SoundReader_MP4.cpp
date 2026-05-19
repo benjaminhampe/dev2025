@@ -1,4 +1,6 @@
 #include <de/audio/file/MP4/SoundReader_MP4.h>
+#include <de/audio/file/MP4/AAC/AAC_Decoder.h>
+#include <de/file/mp4/build_sample_table.h>
 
 // #include <Ap4.h>
 // #include <Ap4Interfaces.h>
@@ -11,12 +13,237 @@
 
 // #include <alac/ALACDecoder.h>
 
+/*
+🎯 MP4 TrackType: 'soun'
+        from [moov -> trak -> mdia -> hdlr -> handler_type]
+*/
+
 namespace de {
 namespace audio {
 
 bool load_sound_mp4_f32(Sound& sound, const std::string& uri)
 {
+    DE_BENNI("Parse ",uri)
+
+    de::file::mp4::MP4 mp4;
+
+    if (!de::file::mp4::Parser::parse(uri,mp4))
+    {
+        DE_ERROR("Parser failed")
+        return false;
+    }
+
+    de::file::mp4::MP4::TrackByLibSupport libSupport =
+        mp4.getTrackByLibSupport(de::file::mp4::FAAD2);
+
+    if (!libSupport.trak)
+    {
+        DE_ERROR("No FAAD2 compatible trak")
+        return false;
+    }
+
+    DE_OK("Got FAAD2 compatible trak")
+
+    if (libSupport.stbls.empty())
+    {
+        DE_ERROR("No FAAD2 compatible stbl")
+        return false;
+    }
+
+    DE_OK("Got (",libSupport.stbls.size(),") FAAD2 compatible stbls")
+
+    auto stbl = libSupport.stbls.front();
+
+    // =========================================
+    // Collect MP4_SampleSizes:
+    // =========================================
+
+    file::mp4::MP4_SampleSizes stsz;
+
+    if (stbl->m_stsz.empty())
+    {
+        if (stbl->m_stz2.empty())
+        {
+            DE_ERROR("No stsz or stsz")
+        }
+        else
+        {
+            auto v = stbl->m_stz2.front().m_sample_sizes;
+            DE_OK("Got stz2 ",v.size())
+            stsz.insert(stsz.end(), v.begin(), v.end());
+        }
+    }
+    else
+    {
+        auto v = stbl->m_stsz.front().m_sample_sizes;
+        DE_OK("Got stsz ",v.size())
+        stsz.insert(stsz.end(), v.begin(), v.end());
+    }
+
+    // =========================================
+    // Collect MP4_SampleToChunk:
+    // =========================================
+
+    file::mp4::MP4_SampleToChunk stsc;
+
+    if (stbl->m_stsc.empty())
+    {
+        DE_ERROR("No stsc")
+    }
+    else
+    {
+        auto v = stbl->m_stsc.front().m_entries;
+        DE_OK("Got stsc ",v.size())
+        stsc.insert(stsc.end(), v.begin(), v.end());
+    }
+
+    // =========================================
+    // Collect MP4_ChunkOffsets:
+    // =========================================
+
+    file::mp4::MP4_ChunkOffsets stco;
+
+    if (stbl->m_stco.empty())
+    {
+        if (stbl->m_co64.empty())
+        {
+            DE_ERROR("No stco or co64")
+        }
+        else
+        {
+            for (const auto & a : stbl->m_co64)
+            {
+                const auto & v = a.m_chunk_offsets;
+                DE_OK("Got co64 ",v.size())
+                stco.insert(stco.end(), v.begin(), v.end());
+            }
+        }
+    }
+    else
+    {
+        for (const auto & a : stbl->m_stco)
+        {
+            const auto & v = a.m_chunk_offsets;
+            DE_OK("Got stco ",v.size())
+            stco.insert(stco.end(), v.begin(), v.end());
+        }
+    }
+
+    // =========================================
+    // Collect MP4_DecodingTimeToSample:
+    // =========================================
+
+    file::mp4::MP4_DecodingTimeToSample stts;
+
+    if (stbl->m_stts.empty())
+    {
+        DE_ERROR("No stts")
+    }
+    else
+    {
+        auto v = stbl->m_stts.front().m_entries;
+        DE_OK("Got stts ",v.size())
+        stts.insert(stts.end(), v.begin(), v.end());
+    }
+
+    // =========================================
+    // Collect MP4_CompositionTimeToSample:
+    // =========================================
+
+    file::mp4::MP4_CompositionTimeToSample ctts;
+
+    if (stbl->m_ctts.empty())
+    {
+        DE_ERROR("No ctts")
+    }
+    else
+    {
+        auto v = stbl->m_ctts.front().m_entries;
+        DE_OK("Got ctts ",v.size())
+        ctts.insert(ctts.end(), v.begin(), v.end());
+    }
+
+    DE_OK("Build MP4_SampleInfoTable:")
+    DE_OK("stsz = ",stsz.size())
+    DE_OK("stsc = ",stsc.size())
+    DE_OK("stco = ",stco.size())
+    DE_OK("stts = ",stts.size())
+    DE_OK("ctts = ",ctts.size())
+
+    // =========================================
+    // build_sample_table
+    // =========================================
+    de::file::mp4::MP4_SampleInfoTable table =
+        de::file::mp4::build_sample_table(
+            stsz,
+            stsc,
+            stco,
+            stts,
+            ctts);
+
+    DE_OK("Got MP4_SampleInfoTable ",table.size())
+
+    if (!libSupport.esds)
+    {
+        DE_ERROR("File no esds")
+        return false;
+    }
+
+    const file::mp4::aac::AscInfo & asc = libSupport.esds->m_esd.decConfig.decSpecific.m_asc;
+
+    File file(uri);
+    if (!file.is_open())
+    {
+        DE_ERROR("File not open")
+        return false;
+    }
+
+    AAC_Decoder aacDecoder;
+    aacDecoder.readFileInfo(sound.m_fileInfo, asc, table.size());
+
+    DE_BENNI("FileInfo ", sound.m_fileInfo.str())
+
+    u32 callbacks = 0;
+    aacDecoder.decodeAAC(file,asc,table,
+        [&](const float* pcm, size_t samples, uint32_t channels)
+        {
+            sound.m_samples.insert(sound.m_samples.end(), pcm, pcm + samples);
+        }
+
+        // [&](const std::vector<float>& pcm)
+        // {
+        //     sound.m_samples.insert(sound.m_samples.end(),pcm.begin(),pcm.end());
+        //     //DE_OK("Got ",pcm.size()," pcm samples")
+        //     callbacks++;
+        // }
+    );
+
+
+    DE_BENNI("Got ", callbacks, " pcm callbacks with ", sound.m_samples.size(), " samples")
+
 /*
+    u32 ch = sound.m_fileInfo.channelCount;
+    u64 fc = samples.size() / ch;
+    if (ch > 0)
+    {
+        sound.m_samples.resize(fc);
+        DE_OK("Got L ",fc)
+        for (u64 i = 0; i < fc; ++i)
+        {
+            sound.m_L[i] = samples[i*ch];
+        }
+    }
+
+    if (ch > 1)
+    {
+        sound.m_R.resize(fc);
+        DE_OK("Got R ",fc)
+        for (u64 i = 0; i < fc; ++i)
+        {
+            sound.m_R[i] = samples[i*ch + 1u];
+        }
+    }
+
     AP4_ByteStream* input;
     AP4_Result hr;
     hr = AP4_FileByteStream::Create(uri.c_str(),
@@ -118,7 +345,7 @@ bool load_sound_mp4_f32(Sound& sound, const std::string& uri)
 
 */
     DE_OK("End function")
-    return false;
+    return true;
 }
 
 
@@ -516,7 +743,7 @@ bool load_sound_mp4_f32(Sound& sound, const std::string& uri)
 
 
 bool load_sound_mp4_f32(Sound& sound, const std::string& uri)
-{    
+{
     AP4_ByteStream* stream = nullptr;
     AP4_Result hr = AP4_FileByteStream::Create(uri.c_str(), AP4_FileByteStream::STREAM_MODE_READ, stream);
     if (AP4_FAILED(hr))
