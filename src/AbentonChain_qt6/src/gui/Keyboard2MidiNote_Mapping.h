@@ -7,18 +7,18 @@ struct Keyboard2MidiNote_Mapping
 {
     std::unordered_map<int,int> m_map;
 
-	int get(int qtKey) const
-	{
-		auto it = m_map.find(qtKey);
-		if (it == m_map.end())
-		{
-			return -1;
-		}
-		else
-		{
-			return it->second;
-		}
-	}
+    int get(int qtKey) const
+    {
+        auto it = m_map.find(qtKey);
+        if (it == m_map.end())
+        {
+            return -1;
+        }
+        else
+        {
+            return it->second;
+        }
+    }
 
     void add(int qtKey, int midiNote)
     {
@@ -54,6 +54,8 @@ struct Keyboard2MidiNote_Mapping
         // add( Qt::Key_ssharp, k ); k++;
         add( Qt::Key_acute, k ); k++;
         add( Qt::Key_Plus, k ); k++; // G
+        k++;
+        add( Qt::Key_Backspace, k ); k++; // A
 
         k = 48;
         add( Qt::Key_Greater, k );
@@ -78,5 +80,6 @@ struct Keyboard2MidiNote_Mapping
         add( Qt::Key_Odiaeresis, k ); k++; // Ö = F#
         add( Qt::Key_Adiaeresis, k ); k++; // Ä = F#
         add( Qt::Key_NumberSign, k ); k++; // # = G#
+        add( Qt::Key_Return, k ); k++; // # = A
     }
 };

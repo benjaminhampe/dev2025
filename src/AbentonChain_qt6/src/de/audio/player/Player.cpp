@@ -42,6 +42,10 @@ struct Player_Impl
     Sound m_sound;
     DspResampler m_resampler;
 
+    Programs m_programsList;
+    Parameters m_paramList;
+
+
     Player_Impl()
         : m_pluginId{ 0 }
         , m_bIsPluginOpen{ false }
@@ -290,16 +294,6 @@ void Player::onShortMidiMessage(f64 pts, const midi::ShortMidiMessage& msg)
 
 // ===================================================
 
-u32 Player::getProgramCount() const
-{
-    return 1;
-}
-
-std::string Player::getProgramName( int i ) const
-{
-    return "Default";
-}
-
 int Player::getProgram() const
 {
     return 0;
@@ -309,27 +303,27 @@ void Player::setProgram( int i )
 {
 }
 
-// ===================================================
 
-u32 Player::getParameterCount() const
+const Programs& Player::getPrograms() const
 {
-    return 0;
+    return _d->m_programsList;
 }
 
-f32 Player::getParameter(int i) const
+const Parameters& Player::getParameters() const
 {
-    return 0.0f;
+    return _d->m_paramList;
 }
 
-std::string Player::getParameterName(int i) const
+f64 Player::getParameterValue(uint32_t id) const
 {
-    return "NotImpl";
+    return 0.0;
 }
 
-void Player::setParameter(int i, f32 value)
+void Player::setParameterValue(uint32_t id, f64 value, int64_t framePos)
 {
 
 }
+
 
 float Player::getSpecialValue( eSpecialValue type ) const
 {

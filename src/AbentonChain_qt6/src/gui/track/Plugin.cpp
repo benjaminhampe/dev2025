@@ -85,6 +85,9 @@ Plugin::Plugin(de::audio::IPlugin* plugin, QWidget* parent)
     connect(m_btnEditor, &QPushButton::toggled,
             this, &Plugin::on_pressedBtnEditor);
 
+    connect(m_body->getPad(), &Pad::onParamChanged,
+            this, &Plugin::on_pad);
+
     setPlugin(plugin);
 }
 
@@ -165,35 +168,39 @@ void Plugin::setPlugin(de::audio::IPlugin* plugin)
         pad->setText(Pad::eT_Name, QString::fromStdString(m_plugin->getName()));
         pad->setText(Pad::eT_Vendor, QString::fromStdString(m_plugin->getVendor()));
         pad->setText(Pad::eT_Version, QString::fromStdString(m_plugin->getVersion()));
-        auto comboP = m_body->getComboPreset();
-        comboP->clear();
-        comboP->addItem(QString::number(m_plugin->getProgramCount()));
 
-        // for (uint32_t i = 0; i < m_plugin->getProgramCount(); ++i)
-        // {
-        //     QString s = m_plugin->getProgram
-        //     comboP->addItem(
 
+        // Fill ProgramCombo:
+        auto combo0 = m_body->getComboPreset();
+        combo0->clear();
+
+        const de::audio::Programs& progs = m_plugin->getPrograms();
+        for (uint32_t i = 0; i < progs.size(); ++i)
+        {
+            const de::audio::Program& pi = progs[i];
+            auto name = QString::fromStdString(pi.m_name);
+            auto text = QString("%1: %2").arg(i).arg(name);
+            combo0->addItem(text, i);
+        }
+
+        // Fill ParameterCombos:
         auto combo1 = m_body->getComboParam1();
-        for (uint32_t i = 0; i < m_plugin->getParameterCount(); ++i)
-        {
-            auto s = m_plugin->getParameterName(i);
-            auto q = QString("%1: %2")
-                        .arg(i)
-                        .arg(QString::fromStdString(s));
-            combo1->addItem(q, int(i));
-        }
-
         auto combo2 = m_body->getComboParam2();
-        for (uint32_t i = 0; i < m_plugin->getParameterCount(); ++i)
-        {
-            auto s = m_plugin->getParameterName(i);
-            auto q = QString("%1: %2")
-                        .arg(i)
-                        .arg(QString::fromStdString(s));
-            combo2->addItem(q, int(i));
-        }
+        combo1->clear();
+        combo2->clear();
 
+        const de::audio::Parameters& params = m_plugin->getParameters();
+        for (uint32_t i = 0; i < params.size(); ++i)
+        {
+            const de::audio::Parameter& pi = params[i];
+            if (pi.m_flags & de::audio::Parameter::kCanAutomate)
+            {
+                auto name = QString::fromStdString(pi.m_name);
+                auto text = QString("%1: %2").arg(i).arg(name);
+                combo1->addItem(text, pi.m_id);
+                combo2->addItem(text, pi.m_id);
+            }
+        }
     }
     else
     {
@@ -223,6 +230,28 @@ void Plugin::on_showContextMenu(const QPoint &pos)
 
     if (chosen == removeAct)
         emit requestRemoval(this);
+}
+
+void Plugin::on_pad(float x, float y)
+{
+    if (!m_plugin)
+    {
+        DE_ERROR("No plugin")
+        return;
+    }
+
+    const uint32_t paramIdX = m_body->getComboParam1()->currentData().toInt();
+    const uint32_t paramIdY = m_body->getComboParam2()->currentData().toInt();
+
+    if (paramIdX != UINT32_MAX)
+    {
+        m_plugin->setParameterValue(paramIdX, x);
+    }
+
+    if (paramIdY != UINT32_MAX)
+    {
+        m_plugin->setParameterValue(paramIdY, y);
+    }
 }
 
 
@@ -394,7 +423,7 @@ void Plugin::applySkin()
 
         m_rcLabel = QRect(lx1,2,lx2-lx1,m_headerHeight-4);
 
-        m_body->move( 0,m_headerHeight );
+        m_body->move( 0,m_headerHeight+1 );
 
         m_rcAudioMeter = QRect(m_width,0,aw,m_height);
 
@@ -410,8 +439,8 @@ void Plugin::resizeEvent(QResizeEvent* e)
 {
     QWidget::resizeEvent(e);
 
-    const int w = e->size().width();
-    const int h = e->size().width();
+    // const int w = e->size().width();
+    // const int h = e->size().height();
 }
 
 

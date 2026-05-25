@@ -69,6 +69,11 @@ public:
     double m_pluginRuntime;
 
     NormalizedSumComputer m_normalizedSumComputer;
+
+    Programs m_programList;
+    Parameters m_paramList;
+
+
 public:
     LV2_Plugin_Impl()
         : m_world{ nullptr }
@@ -473,6 +478,25 @@ void LV2_Plugin::onShortMidiMessage(f64 pts, const midi::ShortMidiMessage& msg)
 
 // ===================================================
 
+int LV2_Plugin::getProgram() const
+{
+    return 0;
+}
+
+void LV2_Plugin::setProgram( int i )
+{
+    auto n = _d->m_programList.size();
+    if (i < 0 || i >= n)
+    {
+        DE_ERROR("Invalid index ",i," of ",n)
+        return;
+    }
+    //_d->dispatcher(effSetProgram, 0, i);
+}
+
+
+#if 0
+
 u32 LV2_Plugin::getProgramCount() const
 {
     return 1;
@@ -483,20 +507,6 @@ std::string LV2_Plugin::getProgramName( int i ) const
     return "Default";
 }
 
-int LV2_Plugin::getProgram() const
-{
-    return 0;
-}
-
-void LV2_Plugin::setProgram( int i )
-{
-    if (i < 0 || i >= getProgramCount())
-    {
-        DE_ERROR("Invalid index ",i," of ",getProgramCount())
-        return;
-    }
-    //_d->dispatcher(effSetProgram, 0, i);
-}
 
 // ===================================================
 
@@ -522,6 +532,28 @@ std::string LV2_Plugin::getParameterName(int i) const
 }
 
 void LV2_Plugin::setParameter(int i, f32 value)
+{
+
+}
+
+#endif
+
+const Programs& LV2_Plugin::getPrograms() const
+{
+    return _d->m_programList;
+}
+
+const Parameters& LV2_Plugin::getParameters() const
+{
+    return _d->m_paramList;
+}
+
+f64 LV2_Plugin::getParameterValue(uint32_t id) const
+{
+    return 0.0;
+}
+
+void LV2_Plugin::setParameterValue(uint32_t id, f64 value, int64_t framePos)
 {
 
 }

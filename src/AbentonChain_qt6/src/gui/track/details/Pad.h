@@ -35,6 +35,14 @@ public:
         }
     }
 
+signals:
+    void onParamChanged(float x, float y);
+
+public slots:
+
+    void setParamX(uint32_t id) { m_paramX = id; }
+    void setParamY(uint32_t id) { m_paramY = id; }
+
 protected slots:
     void onToggled( bool checked );
 
@@ -71,4 +79,8 @@ private:
     QString m_str2 = "Name"; // Name
     QString m_str3 = "Vendor"; // Vendor
     QString m_str4 = "1.0"; // Version
+
+    std::optional<uint32_t> m_paramX;
+    std::optional<uint32_t> m_paramY;
+
 };

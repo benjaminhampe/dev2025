@@ -11,15 +11,18 @@
 #endif
 #include <windows.h>
 
+// ============================================================
 inline void enableConsoleOutput()
+// ============================================================
 {
     AllocConsole();
     freopen("CONOUT$", "w", stdout);
     freopen("CONOUT$", "w", stderr);
 }
 
-
+// ============================================================
 inline void forceForeground(QWidget* w)
+// ============================================================
 {
     HWND hwnd = (HWND)w->winId();
     SetForegroundWindow(hwnd);
@@ -32,7 +35,9 @@ inline void forceForeground(QWidget* w)
 }
 #endif
 
+// ============================================================
 inline void dbLoadFont(QString uri)
+// ============================================================
 {
     int id = QFontDatabase::addApplicationFont(uri);
 
@@ -51,7 +56,9 @@ inline void dbLoadFont(QString uri)
     qDebug() << "Loaded font families:" << families;
 }
 
+// ============================================================
 class Win32EventFilter : public QAbstractNativeEventFilter
+// ============================================================
 {
 public:
     bool nativeEventFilter(const QByteArray& eventType,
@@ -73,10 +80,9 @@ public:
 };
 
 
-// ------------------------------------------------------------
-// main
-// ------------------------------------------------------------
+// ============================================================
 int main(int argc, char **argv)
+// ============================================================
 {
     bool bTest = true;
     assert(bTest);
@@ -102,12 +108,10 @@ int main(int argc, char **argv)
     //QCoreApplication::setAttribute(Qt::AA_DisableShaderDiskCache);
     //QCoreApplication::setAttribute(Qt::AA_DisableOpenGLFramebufferDiscard);
 
-
     QApplication app(argc, argv);
 
-    static Win32EventFilter filter;
-    app.installNativeEventFilter(&filter);
-
+    //static Win32EventFilter filter;
+    //app.installNativeEventFilter(&filter);
 
     app.setWindowIcon(QIcon(":/winico"));
 
@@ -119,10 +123,6 @@ int main(int argc, char **argv)
     // Example: set default application font
     // QFont font(families.at(0));
     // QApplication::setFont(font);
-
-    // ... create your UI here ...
-
-
 
     MainWindow win;
     // win.setWindowIcon(QIcon(":/winico"));
@@ -137,7 +137,7 @@ int main(int argc, char **argv)
     QRect r_screen = win.screen()->geometry();
     int w = r_screen.width();
     int h = r_screen.height();
-    win.move(0,h-1-100-win.frameGeometry().height());
+    win.move(0,h-1-120-win.frameGeometry().height());
 
     int retVal = app.exec();
 

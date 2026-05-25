@@ -8,20 +8,116 @@ namespace audio {
 struct DspInitParams // 16 bytes
 // ============================
 {
-    u64 frames;
-    u32 channels;
-    u32 sampleRate;
+    u64 frames = 0;
+    u32 channels = 0;
+    u32 sampleRate = 0;
 };
 
 // ============================
-struct DspReadParams // 32 bytes
+struct AutomationPoint
 // ============================
 {
-    f64 pts;
-    u32 frames;
-    u32 sampleRate;
-    f32* __restrict__ L;
-    f32* __restrict__ R;
+    int64_t framePos = 0;
+    double value = 0.0;
+};
+
+typedef uint32_t ParamID;
+
+// ============================
+struct AutomationCurve
+// ============================
+{
+    ParamID paramId;
+    std::vector<AutomationPoint> points;
+
+    explicit AutomationCurve( ParamID id ) : paramId(id)
+    {
+    }
+};
+
+// ============================
+struct AutomationQueue
+// ============================
+{
+    std::vector<AutomationCurve> curves;
+
+    AutomationQueue()
+    {
+        curves.reserve(32);
+    }
+
+    AutomationCurve& get(ParamID paramId)
+    {
+        auto it = std::find_if(curves.begin(),curves.end(),[&](const AutomationCurve& curve)
+            { return curve.paramId == paramId; });
+
+        if (it == curves.end())
+        {
+            curves.emplace_back(paramId);
+            return curves.back();
+        }
+
+        return *it;
+    }
+
+    // std::unique_lock< std::mutex >
+    // lock() const
+    // {
+    //     return std::unique_lock<std::mutex>(m_mutex);
+    // }
+
+private:
+    // std::mutex mutable m_mutex;
+
+};
+
+// ============================
+enum class eTransport : uint8_t
+// ============================
+{
+    None = 0,
+    Playing = 1,
+    Recording = 2,
+    Looping = 4,
+    Reserved0 = 8,
+    Reserved1 = 16,
+};
+
+// ============================
+struct DspReadParams // 64 bytes
+// ============================
+{
+    // --- 16 Bytes ---
+    uint64_t framePos;
+    uint32_t blockSize;
+    uint32_t sampleRate;
+    // f64 pts = double(framePos) / double(sampleRate);
+
+    // --- 16 Bytes --- TransportFlags / Tempo / Beat / PPQ ---
+    uint8_t channels;   // 2...8
+    uint8_t flags;      // eTransport::<Playing|Looping|Recording>
+    uint8_t timeSigNum; // 4
+    uint8_t timeSigDen; // 4
+    float bpm;          // 120.0f etc.
+
+    // --- 16 Bytes
+    uint64_t loopBeg;   // loop start frame.
+    uint64_t loopEnd;   // loop end frame.
+
+    // --- 16 Bytes
+    double ppqPosition;         // fractional beat position
+    double ppqPerSample;        // (bpm / 60) / sampleRateOut
+
+    // --- Automation (sample-genau)
+    //AutomationQueue* automation; // pointer auf host queue
+
+    // --- Globale Parameter
+    //double globalTempoFactor;   // z.B. für Time-Stretch
+    //double globalPitch;         // semitones
+
+    //f32* outputs[8]; // 32 bytes
+    //f32* __restrict__ L;
+    //f32* __restrict__ R;
 };
 
 // ============================

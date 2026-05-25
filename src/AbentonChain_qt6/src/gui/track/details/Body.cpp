@@ -58,7 +58,7 @@ Body::Body(QWidget* parent)
 
 void Body::applySkin()
 {
-    // DE_DEBUG("")    
+    // DE_DEBUG("")
     m_btnLoadPlugin->applySkin();
     m_btnSavePreset->applySkin();
     m_cbxPreset->applySkin();
@@ -104,19 +104,17 @@ void Body::applySkin()
 
 void Body::paintEvent(QPaintEvent* event)
 {
+    return;
+
+    // <debug>
     if (!isVisible())
     {
         return;
     }
-    QPainter dc(this);
+    // QPainter dc(this);
+    // dc.setPen(QPen(QColor(255,55,55)));
     // dc.setBrush(Qt::NoBrush);
-    // dc.setPen(QPen(QColor(255,0,0)));
     // dc.drawRect(rect().adjusted(1,1,-1,-1));
-
-    // <debug>
-    dc.setPen(QPen(QColor(255,55,55)));
-    dc.setBrush(Qt::NoBrush);
-    dc.drawRect(rect().adjusted(1,1,-1,-1));
     // </debug>
 }
 /*

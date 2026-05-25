@@ -1,3 +1,4 @@
+#pragma once
 #include <de/audio/dsp/IDspChainElement.h>
 //#include <de/audio/fft/approx_math.h>
 #include <de/audio/fft/WindowFunction.h>

@@ -82,23 +82,27 @@ public:
     void onShortMidiMessage(f64 pts, const midi::ShortMidiMessage& msg) override;
 
 
-    u32 getProgramCount() const override;
-
-    std::string getProgramName( int i ) const override;
-
-
     int getProgram() const override;
 
     void setProgram( int i ) override;
 
 
-    u32 getParameterCount() const override;
+    // u32 getParameterCount() const override;
 
-    f32 getParameter(int i) const override;
+    // f32 getParameter(int i) const override;
 
-    std::string getParameterName(int i) const override;
+    // std::string getParameterName(int i) const override;
 
-    void setParameter(int i, f32 value) override;
+    // void setParameter(int i, f32 value) override;
+
+
+    const Programs& getPrograms() const override;
+
+    const Parameters& getParameters() const override;
+
+    f64 getParameterValue(uint32_t id) const override;
+
+    void setParameterValue(uint32_t id, f64 value, int64_t framePos = 0) override;
 
 
     float getSpecialValue( eSpecialValue type ) const override;

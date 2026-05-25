@@ -22,7 +22,7 @@ public:
     ~Plugin() override;
     //QSize sizeHint() const override;
     //QSize minimumSizeHint() const override;
-	
+
     de::audio::IPlugin* getPlugin();
 
     void setPlugin(de::audio::IPlugin* plugin);
@@ -46,7 +46,7 @@ public slots:
     // void setIsDragging(bool);
 
 private slots:
-
+    void on_pad(float x, float y);
     void on_editorWindowClosed();
 
     void on_showContextMenu(const QPoint &pos);

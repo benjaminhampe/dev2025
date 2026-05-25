@@ -155,6 +155,7 @@ void Pad::mousePressEvent(QMouseEvent* e)
         {
             m_fx = fx;
             m_fy = fy;
+            emit onParamChanged(m_fx, m_fy);
             update();
         }
     }
@@ -181,6 +182,7 @@ void Pad::mouseMoveEvent(QMouseEvent* e)
             {
                 m_fx = fx;
                 m_fy = fy;
+                emit onParamChanged(m_fx, m_fy);
                 update();
             }
         }

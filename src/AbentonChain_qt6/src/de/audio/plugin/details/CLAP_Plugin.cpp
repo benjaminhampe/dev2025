@@ -13,7 +13,7 @@
 namespace de {
 namespace audio {
 namespace {
-	
+
 constexpr u64 GUARD = 256;
 
 /*
@@ -173,6 +173,90 @@ u32 dumpPresets(const clap_plugin* plugin)
     //     m_plugin->get_extension(m_plugin, CLAP_EXT_PRESET_DISCOVERY);
 
     return 0;
+}
+
+
+void enumerateParameters(Parameters& paramList, const clap_plugin* plugin)
+{
+    paramList.clear();
+
+    auto params = (const clap_plugin_params_t*)
+    plugin->get_extension(plugin, CLAP_EXT_PARAMS);
+
+    if (!params)
+    {
+        DE_ERROR("No CLAP_EXT_PARAMS")
+        return;
+    }
+
+    const u32 n = params->count(plugin);
+    paramList.reserve(n);
+
+    for (uint32_t i = 0; i < n; i++)
+    {
+        Parameter pi;
+
+        clap_param_info_t info;
+        if (!params->get_info(plugin, i, &info))
+        {
+            DE_ERROR("[",i,"] NOT_EXIST")
+            continue;
+        }
+
+        pi.m_name = info.name;
+        pi.m_id = info.id;
+        pi.m_minValue = info.min_value;
+        pi.m_maxValue = info.max_value;
+        pi.m_defValue = info.default_value;
+        //pi.m_module = info.module;
+        //pi.m_cookie = info.cookie;
+
+        double nowValue;
+        if (!params->get_value(plugin, info.id, &nowValue))
+        {
+            DE_ERROR("Param[",i,"].NowValue = NOT_EXIST")
+        }
+        else
+        {
+            pi.m_nowValue = nowValue;
+        }
+
+        // if (info.flags & CLAP_PARAM_IS_STEPPED)
+        //     pi.m_flags |= Parameter::k;
+        // if (info.flags & CLAP_PARAM_IS_PERIODIC)
+        // pi.m_flags |= Parameter::k
+        if (info.flags & CLAP_PARAM_IS_HIDDEN)
+            pi.m_flags |= Parameter::kIsHidden;
+        if (info.flags & CLAP_PARAM_IS_READONLY)
+            pi.m_flags |= Parameter::kIsReadOnly;
+        if (info.flags & CLAP_PARAM_IS_BYPASS)
+            pi.m_flags |= Parameter::kIsBypass;
+        if (info.flags & CLAP_PARAM_IS_AUTOMATABLE)
+            pi.m_flags |= Parameter::kCanAutomate;
+        if (info.flags & CLAP_PARAM_IS_AUTOMATABLE_PER_NOTE_ID)
+            pi.m_flags |= Parameter::kCanAutomate;
+        if (info.flags & CLAP_PARAM_IS_AUTOMATABLE_PER_KEY)
+            pi.m_flags |= Parameter::kCanAutomate;
+        if (info.flags & CLAP_PARAM_IS_AUTOMATABLE_PER_CHANNEL)
+            pi.m_flags |= Parameter::kCanAutomate;
+        if (info.flags & CLAP_PARAM_IS_AUTOMATABLE_PER_PORT)
+            pi.m_flags |= Parameter::kCanAutomate;
+        if (info.flags & CLAP_PARAM_IS_MODULATABLE)
+            pi.m_flags |= Parameter::kCanAutomate;
+        if (info.flags & CLAP_PARAM_IS_MODULATABLE_PER_NOTE_ID)
+            pi.m_flags |= Parameter::kCanAutomate;
+        if (info.flags & CLAP_PARAM_IS_MODULATABLE_PER_KEY)
+            pi.m_flags |= Parameter::kCanAutomate;
+        if (info.flags & CLAP_PARAM_IS_MODULATABLE_PER_CHANNEL)
+            pi.m_flags |= Parameter::kCanAutomate;
+        if (info.flags & CLAP_PARAM_IS_MODULATABLE_PER_PORT)
+            pi.m_flags |= Parameter::kCanAutomate;
+
+        if (info.flags & CLAP_PARAM_IS_STEPPED)
+            pi.m_stepCount = (int)(info.max_value - info.min_value + 1);
+
+        paramList.emplace_back( std::move(pi) );
+    }
 }
 
 u32 dumpInputs(const clap_plugin* m_plugin)
@@ -771,8 +855,8 @@ public:
     u32 m_blockSize;
     u32 m_numInputs;
     u32 m_numOutputs;
-    u32 m_numPrograms;
-    u32 m_numParams;
+    // u32 m_numPrograms;
+    // u32 m_numParams;
 
     double m_timeStart;
     std::atomic< u64 > m_framePos;
@@ -790,6 +874,9 @@ public:
 
     CLAP_AudioBuffers m_buffers;
     NormalizedSumComputer m_normalizedSumComputer;
+
+    Programs m_programList;
+    Parameters m_paramList;
 
     static void
     host_resize_hints_changed(const clap_host_t *host)
@@ -970,8 +1057,8 @@ public:
         , m_blockSize{ 0 }
         , m_numInputs{ 0 }
         , m_numOutputs{ 0 }
-        , m_numPrograms{ 0 }
-        , m_numParams{ 0 }
+        // , m_numPrograms{ 0 }
+        // , m_numParams{ 0 }
         , m_timeStart{ 0.0 }
         , m_framePos{ 0 }
     {
@@ -1211,7 +1298,7 @@ public:
 
         m_numInputs = dumpInputs(m_plugin);
         m_numOutputs = dumpOutputs(m_plugin);
-        m_numParams = dumpParams(m_plugin);
+        enumerateParameters(m_paramList, m_plugin);
 
         // DE_TRACE("m_numInputs = ",m_numInputs)
         // DE_TRACE("m_numOutputs = ",m_numOutputs)
@@ -1815,16 +1902,6 @@ void CLAP_Plugin::onShortMidiMessage(f64 pts, const midi::ShortMidiMessage& msg)
 
 // ===================================================
 
-u32 CLAP_Plugin::getProgramCount() const
-{
-    return 1;
-}
-
-std::string CLAP_Plugin::getProgramName( int i ) const
-{
-    return "Default";
-}
-
 int CLAP_Plugin::getProgram() const
 {
     return 0;
@@ -1837,8 +1914,22 @@ void CLAP_Plugin::setProgram( int i )
 
 // ===================================================
 
+#if 0
+
+
+u32 CLAP_Plugin::getProgramCount() const
+{
+    return _d->m_programList.size();
+}
+
+std::string CLAP_Plugin::getProgramName( int i ) const
+{
+    return "Default";
+}
+
 u32 CLAP_Plugin::getParameterCount() const
 {
+/*
     auto plugin = _d->m_plugin;
     auto params = (const clap_plugin_params_t*)
         plugin->get_extension(plugin, CLAP_EXT_PARAMS);
@@ -1850,7 +1941,38 @@ u32 CLAP_Plugin::getParameterCount() const
     }
 
     return params->count(plugin);
+*/
+    return _d->m_paramList.size();
 }
+
+std::string CLAP_Plugin::getParameterName(int i) const
+{
+/*
+    auto plugin = _d->m_plugin;
+    auto params = (const clap_plugin_params_t*)
+                  plugin->get_extension(plugin, CLAP_EXT_PARAMS);
+
+    if (!params)
+    {
+        DE_ERROR("No params")
+        return "";
+    }
+
+    u32 n = params->count(plugin);
+
+    clap_param_info_t pi;
+    if (!params->get_info(plugin, i, &pi))
+    {
+        DE_ERROR("No Param[",i,"].info.")
+        return "";
+    }
+
+    return pi.name;
+*/
+
+    return _d->m_paramList.at(i).m_name;
+}
+
 
 f32 CLAP_Plugin::getParameter(int i) const
 {
@@ -1883,29 +2005,6 @@ f32 CLAP_Plugin::getParameter(int i) const
     return value;
 }
 
-std::string CLAP_Plugin::getParameterName(int i) const
-{
-    auto plugin = _d->m_plugin;
-    auto params = (const clap_plugin_params_t*)
-                  plugin->get_extension(plugin, CLAP_EXT_PARAMS);
-
-    if (!params)
-    {
-        DE_ERROR("No params")
-        return "";
-    }
-
-    u32 n = params->count(plugin);
-
-    clap_param_info_t pi;
-    if (!params->get_info(plugin, i, &pi))
-    {
-        DE_ERROR("No Param[",i,"].info.")
-        return "";
-    }
-
-    return pi.name;
-}
 
 void setClapParamRT(const clap_plugin_t* plugin,
                     const clap_host_t* host,
@@ -1959,6 +2058,101 @@ void CLAP_Plugin::setParameter(int i, f32 value)
     }
 
     setClapParamRT(plugin, &_d->m_host, pi.id, value);
+}
+#endif
+
+const Programs& CLAP_Plugin::getPrograms() const
+{
+    return _d->m_programList;
+}
+
+const Parameters& CLAP_Plugin::getParameters() const
+{
+    return _d->m_paramList;
+}
+
+f64 CLAP_Plugin::getParameterValue(uint32_t id) const
+{
+    if (id == UINT32_MAX)
+    {
+        DE_ERROR("Invalid id")
+        return 0.0;
+    }
+
+    auto plugin = _d->m_plugin;
+    if (!plugin)
+    {
+        DE_ERROR("No plugin")
+        return 0.0;
+    }
+
+    auto params = (const clap_plugin_params_t*)
+                  plugin->get_extension(plugin, CLAP_EXT_PARAMS);
+
+    if (!params)
+    {
+        DE_ERROR("No params")
+        return 0.0;
+    }
+
+    double value;
+    if (!params->get_value(plugin, id, &value))
+    {
+        DE_ERROR("No Param[",id,"].value")
+        return 0.0;
+    }
+
+    return value;
+}
+
+void CLAP_Plugin::setParameterValue(uint32_t id, f64 value, int64_t framePos)
+{
+    if (id == UINT32_MAX)
+    {
+        DE_ERROR("Invalid id")
+        return;
+    }
+
+    auto plugin = _d->m_plugin;
+    if (!plugin)
+    {
+        DE_ERROR("No plugin")
+        return;
+    }
+
+    auto hostParams = (const clap_host_params*)
+        _d->m_host.get_extension(&_d->m_host, CLAP_EXT_PARAMS);
+
+    if (!hostParams)
+    {
+        DE_ERROR("No hostParams")
+        return;
+    }
+
+    clap_event_param_value ev{};
+    ev.header.size      = sizeof(ev);
+    ev.header.time      = 0; // sample offset
+    ev.header.space_id  = CLAP_CORE_EVENT_SPACE_ID;
+    ev.header.type      = CLAP_EVENT_PARAM_VALUE;
+    ev.header.flags     = 0;
+    ev.param_id         = id;
+    ev.cookie           = nullptr;
+    ev.note_id          = -1;
+    ev.port_index       = -1;
+    ev.channel          = -1;
+    ev.key              = -1;
+    ev.value            = value;
+
+    // Queue the event for the plugin to process
+
+    if (hostParams->request_flush)
+    {
+        hostParams->request_flush(&_d->m_host);
+    }
+    else
+    {
+        DE_ERROR("No hostParams->request_flush")
+    }
 }
 
 float CLAP_Plugin::getSpecialValue( eSpecialValue type ) const

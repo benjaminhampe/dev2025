@@ -141,8 +141,8 @@ struct VST2_Plugin_Impl
     PluginEditorWindow* m_editor = nullptr;
     IDspChainElement* m_inputSignal = nullptr;
     AEffect* m_vst = nullptr;
-    u32 m_numPrograms = 0;
-    u32 m_numParams = 0;
+    // u32 m_numPrograms = 0;
+    // u32 m_numParams = 0;
     u32 m_numInputs = 0;
     u32 m_numOutputs = 0;
     u32 m_sampleRate = 0;
@@ -172,7 +172,8 @@ struct VST2_Plugin_Impl
     std::vector< VstMidiEvent > m_vstMidiEvents;
     std::vector< char > m_vstEventBuffer;
 
-    ProgramNames m_programNames;
+    Programs m_programList;
+    Parameters m_paramList;
 
     struct MyVstMidi
     {
@@ -250,12 +251,12 @@ private:
     }
 
 
-    void enumerateProgramNames()
+    void enumeratePrograms()
     {
         const int lastProgram = dispatcher(effGetProgram);
 
         const auto n = static_cast<uint32_t>(m_vst->numPrograms);
-        m_programNames.resize(n);
+        m_programList.resize(n);
 
         for (uint32_t i = 0; i < n; ++i)
         {
@@ -263,44 +264,46 @@ private:
 
             char name[kVstMaxProgNameLen+GUARD] = {0};
             dispatcher(effGetProgramName, i, 0, name, 0);
-            m_programNames[i] = name;
+            m_programList[i].m_name = name;
         }
 
         dispatcher(effSetProgram, 0, lastProgram);
     }
 
-    void dumpParams()
+    void enumerateParameters()
     {
-        std::vector< Param > params;
-        params.reserve(m_numParams);
-        for (int i = 0; i < m_numParams; ++i)
+        const auto n = static_cast<uint32_t>(m_vst->numParams);
+        m_paramList.reserve(n);
+
+        for (int i = 0; i < n; ++i)
         {
-            Param pi;
-            pi.id = i;
-            pi.nowValue = m_vst->getParameter(m_vst, i);
+            Parameter pi;
+            pi.m_id = i;
+            pi.m_flags = Parameter::kCanAutomate;
+            pi.m_nowValue = m_vst->getParameter(m_vst, i);
 
             // GUARD already solved a "out of bounds" bug in a plugin
             // where it overwrote pi.id, so totally worth it!!!
             char name[kVstMaxParamStrLen+GUARD] = {0};
             dispatcher(effGetParamName, i, 0, name, 0);
-            pi.name = name;
+            pi.m_name = name;
 
             char label[kVstMaxParamStrLen+GUARD] = {0};
             dispatcher(effGetParamLabel, i, 0, label, 0);
-            pi.unit = label;
+            pi.m_unit = label;
 
             char display[kVstMaxParamStrLen+GUARD] = {0};
             dispatcher(effGetParamDisplay, i, 0, display, 0);
-            pi.disp = display;
+            pi.m_disp = display;
 
-            params.emplace_back( std::move( pi ) );
+            m_paramList.emplace_back( std::move( pi ) );
         }
 
-        DE_DEBUG("Param.Count = ",params.size())
-        for (auto & pi : params)
-        {
-            DE_DEBUG("Param",pi.str())
-        }
+        DE_DEBUG("ParamList.Count = ",m_paramList.size())
+        // for (auto & pi : m_paramList)
+        // {
+        //     DE_DEBUG("Param",pi.str())
+        // }
     }
 
 public:
@@ -317,8 +320,6 @@ public:
         , m_editor{ nullptr }
         , m_inputSignal{ nullptr }
         , m_vst{ nullptr }
-        , m_numPrograms{ 0 }
-        , m_numParams{ 0 }
         , m_numInputs{ 0 }
         , m_numOutputs{ 0 }
         , m_sampleRate{ 0 }
@@ -449,8 +450,6 @@ public:
         }
 
         m_vst->user = this;
-        m_numPrograms = m_vst->numPrograms;
-        m_numParams = m_vst->numParams;
         m_numInputs = m_vst->numInputs;
         m_numOutputs = m_vst->numOutputs;
         m_bIsSynth = getFlags( effFlagsIsSynth );
@@ -488,8 +487,8 @@ public:
         DE_DEBUG("VST2 plugin Version = ", m_pluginVersion)
         DE_TRACE("VST2 plugin Synth = ",m_bIsSynth)
         DE_TRACE("VST2 plugin Editor = ",bHasEditor)
-        DE_TRACE("VST2 plugin Programs = ",m_numPrograms)
-        DE_TRACE("VST2 plugin Parameters = ",m_numParams)
+        // DE_TRACE("VST2 plugin Programs = ",m_numPrograms)
+        // DE_TRACE("VST2 plugin Parameters = ",m_numParams)
         DE_TRACE("VST2 plugin Inputs = ",m_numInputs)
         DE_TRACE("VST2 plugin Outputs = ",m_numOutputs)
         DE_TRACE("VST2 plugin CanFloat32 = ",getFlags(effFlagsCanReplacing ))
@@ -507,10 +506,11 @@ public:
             m_editor = new VST2_Editor(m_vst, nullptr );
         }
 
-        enumerateProgramNames();
+        enumeratePrograms();
+        enumerateParameters();
+        DE_OK("VST2 plugin Parameters = ",m_paramList.size())
+        DE_OK("VST2 plugin Programs = ",m_programList.size())
 
-        //dumpPrograms();
-        //dumpParams();
         m_bIsBypassed = false;
         m_bIsPluginOpen = true;
     }
@@ -1068,16 +1068,6 @@ void VST2_Plugin::onShortMidiMessage(f64 pts, const midi::ShortMidiMessage& msg)
 
 // ===================================================
 
-u32 VST2_Plugin::getProgramCount() const
-{
-    return _d->m_programNames.size();
-}
-
-std::string VST2_Plugin::getProgramName( int i ) const
-{
-    return _d->m_programNames.at(i);
-}
-
 int VST2_Plugin::getProgram() const
 {
     return _d->dispatcher(effGetProgram);
@@ -1085,19 +1075,37 @@ int VST2_Plugin::getProgram() const
 
 void VST2_Plugin::setProgram( int i )
 {
-    if (i < 0 || i >= _d->m_numPrograms)
+    if (i < 0 || !_d->m_vst || i >= _d->m_vst->numPrograms)
     {
-        DE_ERROR("Invalid index ",i," of ",_d->m_numPrograms)
+        DE_ERROR("Invalid index ",i," of ",_d->m_vst->numPrograms)
         return;
     }
     _d->dispatcher(effSetProgram, 0, i);
 }
 
+#if 0
+
+u32 VST2_Plugin::getProgramCount() const
+{
+    return _d->m_programList.size();
+}
+
+std::string VST2_Plugin::getProgramName( int i ) const
+{
+    return _d->m_programList.at(i).m_name;
+}
+
 // ===================================================
+
 
 u32 VST2_Plugin::getParameterCount() const
 {
-    return _d->m_numParams;
+    return _d->m_paramList.size();
+}
+
+std::string VST2_Plugin::getParameterName(int i) const
+{
+    return _d->m_paramList.at(i).m_name;
 }
 
 f32 VST2_Plugin::getParameter(int i) const
@@ -1110,14 +1118,6 @@ f32 VST2_Plugin::getParameter(int i) const
     return _d->m_vst->getParameter(_d->m_vst, i);
 }
 
-std::string VST2_Plugin::getParameterName(int i) const
-{
-    char buf[kVstMaxParamStrLen + 32] = {0};
-
-    _d->dispatcher(effGetParamName, i, 0, buf, 0.0f);
-
-    return std::string(buf);
-}
 
 void VST2_Plugin::setParameter(int i, f32 value)
 {
@@ -1129,6 +1129,53 @@ void VST2_Plugin::setParameter(int i, f32 value)
 
     _d->m_vst->setParameter(_d->m_vst, i, value);
 }
+#endif
+
+const Programs& VST2_Plugin::getPrograms() const
+{
+    return _d->m_programList;
+}
+
+const Parameters& VST2_Plugin::getParameters() const
+{
+    return _d->m_paramList;
+}
+
+f64 VST2_Plugin::getParameterValue(uint32_t id) const
+{
+    if (!_d->m_vst)
+    {
+        DE_ERROR("No vst")
+        return 0.0;
+    }
+
+    if (id >= _d->m_vst->numParams)
+    {
+        DE_ERROR("Invalid id")
+        return 0.0;
+    }
+
+    return _d->m_vst->getParameter(_d->m_vst, id);
+}
+
+void VST2_Plugin::setParameterValue(uint32_t id, f64 value, int64_t framePos)
+{
+    if (!_d->m_vst)
+    {
+        DE_ERROR("No vst")
+        return;
+    }
+
+    if (id >= _d->m_vst->numParams)
+    {
+        DE_ERROR("Invalid id")
+        return;
+    }
+
+    _d->m_vst->setParameter(_d->m_vst, id, static_cast<float>(value));
+}
+
+
 
 float VST2_Plugin::getSpecialValue( eSpecialValue type ) const
 {

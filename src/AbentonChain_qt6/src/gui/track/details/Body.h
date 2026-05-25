@@ -29,8 +29,8 @@ protected:
     void paintEvent(QPaintEvent* event) override;
 
 private:
-    int m_baseWidth = 284;
-    int m_baseHeight = 330; // 342 = 376 - 34
+    int m_baseWidth = 300;
+    int m_baseHeight = 338;
     int m_baseMargin = 10;
 
     int m_width;

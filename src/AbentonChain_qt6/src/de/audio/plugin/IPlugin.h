@@ -25,53 +25,104 @@
 namespace de {
 namespace audio {
 
+class IPlugin;
+
 // ================================================================
-struct Param
+struct Parameter
 // ================================================================
 {
-    int id = 0;
-    float nowValue = 0.0f;
-    float defValue = 0.0f;
-    float minValue = 0.0f;
-    float maxValue = 1.0f;
-    std::string name;
-    std::string unit;
-    std::string disp; // displayName
+    // kNoFlags = 0,
+    // kCanAutomate // Parameter can be automated.
+    // kIsReadOnly // Parameter cannot be changed from outside the plug-in, (implies that kCanAutomate is NOT set).
+    // kIsWrapAround // Attempts to set the parameter value out of the limits will result in a wrap around.
+    // kIsList
+    // kIsHidden
+    // kIsProgramChange
+    // kIsBypass
+    // CLAP_PARAM_IS_STEPPED
+    // CLAP_PARAM_IS_PERIODIC
+    // CLAP_PARAM_IS_HIDDEN
+    // CLAP_PARAM_IS_READONLY
+    // CLAP_PARAM_IS_BYPASS
+    // CLAP_PARAM_IS_AUTOMATABLE
+    // CLAP_PARAM_IS_AUTOMATABLE_PER_NOTE_ID
+    // CLAP_PARAM_IS_AUTOMATABLE_PER_KEY
+    // CLAP_PARAM_IS_AUTOMATABLE_PER_CHANNEL
+    // CLAP_PARAM_IS_AUTOMATABLE_PER_PORT
+    // CLAP_PARAM_IS_MODULATABLE
+    // CLAP_PARAM_IS_MODULATABLE_PER_NOTE_ID
+    // CLAP_PARAM_IS_MODULATABLE_PER_KEY
+    // CLAP_PARAM_IS_MODULATABLE_PER_CHANNEL
+    // CLAP_PARAM_IS_MODULATABLE_PER_PORT
+
+    enum eFlags
+    {
+        kNoFlags = 0,        //
+        kIsReadOnly = 1,    // e.g. LevelMeter, // e.g. Select preset, things that trigger expensive reconfig
+        kIsList = 2, // Parameter should be displayed as list in generic editor or automation editing.
+        kCanAutomate = 4, // e.g. LFO Rate, things that can change sample accurate multiple times per block.
+        kIsHidden = 8,  // Parameter should be NOT displayed and cannot be changed from outside the plug-in. It implies that kCanAutomate is NOT set and kIsReadOnly is set.     // e.g. By plugin injected MIDI CC legacy params.
+        kIsWrapAround = 16, // Attempts to set the parameter value out of the limits will result in a wrap around.
+        kIsProgramChange = 32, // Parameter is a program change (unitId gives info about associated unit - see \ref vst3ProgramLists).
+        kIsBypass = 64, // Special bypass parameter (only one allowed): plug-in can handle bypass. Highly recommended to export a bypass parameter for effect plug-in.
+
+    };
+
+    IPlugin* m_plugin;
+    uint32_t m_id = 0;      ///< unique identifier of this parameter (named tag too)
+    uint32_t m_flags = 0;
+     int32_t m_unitId = 0;    ///< id of unit this parameter belongs to (see \ref vst3Units)
+    uint32_t m_stepCount = 0; // number of discrete steps (0: continuous, 1: toggle, discrete value
+                              // otherwise (corresponding to max - min, for example:
+                              // 127 for min = 0 and max = 127) - see \ref vst3ParameterIntro)
+    float m_defValue = 0.0f; ///< default normalized value [0,1]
+                                       /// in case of discrete value:
+                                       /// defaultNormalizedValue = defDiscreteValue/stepCount
+    float m_nowValue = 0.0f;
+    float m_minValue = 0.0f;
+    float m_maxValue = 1.0f;
+
+    std::string m_name; ///< parameter title (e.g. "Volume")
+    std::string m_disp; ///< parameter shortTitle (e.g. "Vol") displayName|shortName;
+    std::string m_unit; ///< parameter unit (e.g. "dB")
+
 
     std::string str() const
     {
         std::ostringstream o;
-        o << "[" << id << "] " << name;
-        o << ", now(" << nowValue << ")";
-        o << ", def(" << defValue << ")";
-        o << ", min(" << minValue << ")";
-        o << ", max(" << maxValue << ")";
-        o << ", unit(" << unit << ")";
-        o << ", disp(" << disp << ")";
+        o << "[" << m_id << "] " << m_name;
+        o << ", flags(" << dbHex(m_flags) << ")";
+        o << ", now(" << m_nowValue << ")";
+        o << ", def(" << m_defValue << ")";
+        o << ", min(" << m_minValue << ")";
+        o << ", max(" << m_maxValue << ")";
+        o << ", unit(" << m_unit << ")";
+        o << ", disp(" << m_disp << ")";
         return o.str();
     }
 };
 
-typedef std::vector<Param> Params;
+typedef std::vector<Parameter> Parameters;
 
 // ================================================================
 struct Program
 // ================================================================
 {
-    int id = 0;
-    std::string name;
+    int m_progIndex = 0;  // The index inside current list.
+    int m_listIndex = 0;     // Overall list index
+    uint32_t m_listId = 0;   // Overall list id
+    std::string m_name;
 
     std::string str() const
     {
         std::ostringstream o;
-        o << "[" << id << "] " << name;
+        o << "[" << m_progIndex << "][" << m_listId << "] " << m_name;
         return o.str();
     }
 };
 
 typedef std::vector<Program> Programs;
 
-typedef std::vector<std::string> ProgramNames;
 
 class Track;
 
@@ -128,9 +179,9 @@ public:
     }
 
     virtual std::string getUri() const = 0;
-	
+
     virtual std::string getName() const = 0;
-	
+
     virtual std::string getVendor() const = 0;
 
     virtual std::string getVersion() const = 0;
@@ -155,24 +206,34 @@ public:
     virtual void setBypassed( bool bBypassed ) = 0;
 
 
-    virtual u32 getProgramCount() const = 0;
+    // virtual u32 getProgramCount() const = 0;
 
-    virtual std::string getProgramName(int i) const = 0;
-
+    // virtual std::string getProgramName(int i) const = 0;
 
     virtual int getProgram() const = 0;
 
     virtual void setProgram( int i ) = 0;
 
 
-    virtual u32 getParameterCount() const = 0;
+    // virtual u32 getParameterCount() const = 0;
 
-    virtual std::string getParameterName(int i) const = 0;
+    // virtual std::string getParameterName(int i) const = 0;
 
-    virtual f32 getParameter(int i) const = 0;
 
-    virtual void setParameter(int i, f32 value) = 0;
+    virtual const Programs& getPrograms() const = 0;
 
+    virtual const Parameters& getParameters() const = 0;
+
+    virtual f64 getParameterValue(uint32_t id) const = 0;
+
+    virtual void setParameterValue(uint32_t id, f64 value, int64_t framePos = 0) = 0;
+
+
+    // virtual int getActiveProgram( int sublist = 0 ) const = 0;
+
+    // virtual void setActiveProgram( int i, int sublist = 0 ) = 0;
+
+    // virtual void setParameter(uint32_t id, double value, int64_t framePos = 0) = 0;
 
     // virtual std::vector<ParamInfo> getParamInfos() = 0;
 

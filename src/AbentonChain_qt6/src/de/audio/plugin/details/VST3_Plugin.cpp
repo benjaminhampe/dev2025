@@ -50,6 +50,47 @@ std::string de_mbstr(const Steinberg::Vst::String128& s)
     return conv.to_bytes(u16);
 }
 
+std::string getErrorDesc(Steinberg::tresult e)
+{
+    switch (e)
+    {
+        case Steinberg::kNoInterface: return "E_NOINTERFACE";
+        case Steinberg::kResultOk: return "S_OK";
+        //case Steinberg::kResultTrue: return "S_OK";
+        case Steinberg::kResultFalse: return "S_FALSE";
+        case Steinberg::kInvalidArgument: return "E_INVALIDARG";
+        case Steinberg::kNotImplemented: return "E_NOTIMPL";
+        case Steinberg::kInternalError: return "E_FAIL";
+        case Steinberg::kNotInitialized: return "E_UNEXPECTED";
+        case Steinberg::kOutOfMemory: return "E_OUTOFMEMORY";
+        default: return "Unknown";
+    }
+}
+/*
+bool isMidiCCParam(const Steinberg::Vst::ParameterInfo& info)
+{
+    // Rule 3: flags
+    if ((info.flags & Steinberg::Vst::ParameterInfo::kIsReadOnly) &&
+        (info.flags & Steinberg::Vst::ParameterInfo::kIsHidden))
+        return true;
+
+    // Rule 1: paramID range
+    if (info.id >= 0xF000 && info.id <= 0xF07F)
+        return true;
+
+    // Rule 2: title pattern
+    if (strncmp(info.title, "MIDI CC ", 8) == 0)
+        return true;
+
+    // Rule 3: flags
+    if ((info.flags & Steinberg::Vst::ParameterInfo::kIsReadOnly) &&
+        (info.flags & Steinberg::Vst::ParameterInfo::kIsHidden))
+        return true;
+
+    return false;
+}
+*/
+
 // kNoFlags = 0,
 // kCanAutomate // Parameter can be automated.
 // kIsReadOnly // Parameter cannot be changed from outside the plug-in, (implies that kCanAutomate is NOT set).
@@ -80,6 +121,7 @@ std::string paramFlagsToString(int32_t flags)
     return out;
 }
 
+/*
 void dumpParams(Steinberg::Vst::IEditController* controller)
 {
     using namespace Steinberg;
@@ -179,21 +221,128 @@ void dumpPresets(Steinberg::Vst::IEditController* controller)
         }
     }
 }
+*/
 
-std::string getErrorDesc(Steinberg::tresult e)
+
+void enumerateParams(Parameters& params, Steinberg::Vst::IEditController* controller)
 {
-    switch (e)
+    params.clear();
+
+    // using namespace Steinberg;
+    // using namespace Steinberg::Vst;
+
+    if (!controller)
     {
-        case Steinberg::kNoInterface: return "E_NOINTERFACE";
-        case Steinberg::kResultOk: return "S_OK";
-        //case Steinberg::kResultTrue: return "S_OK";
-        case Steinberg::kResultFalse: return "S_FALSE";
-        case Steinberg::kInvalidArgument: return "E_INVALIDARG";
-        case Steinberg::kNotImplemented: return "E_NOTIMPL";
-        case Steinberg::kInternalError: return "E_FAIL";
-        case Steinberg::kNotInitialized: return "E_UNEXPECTED";
-        case Steinberg::kOutOfMemory: return "E_OUTOFMEMORY";
-        default: return "Unknown";
+        DE_ERROR("No controller.")
+        return;
+    }
+
+    const uint32_t n = std::max(controller->getParameterCount(),0);
+    if (n < 1)
+    {
+        DE_DEBUG("No param count")
+        return;
+    }
+
+    params.reserve(n);
+
+    for (size_t i = 0; i < n; ++i)
+    {
+        Steinberg::Vst::ParameterInfo info{};
+        if (controller->getParameterInfo(i, info) != Steinberg::kResultOk)
+        {
+            DE_ERROR("No ParameterInfo[",i,"]")
+            continue;
+        }
+
+        Parameter pi;
+        pi.m_name = de_mbstr(info.title);
+        pi.m_disp = de_mbstr(info.shortTitle);
+        pi.m_unit = de_mbstr(info.units);
+        pi.m_unitId = info.unitId;
+        pi.m_stepCount = info.stepCount;
+        pi.m_flags = 0;
+
+        if (info.flags & Steinberg::Vst::ParameterInfo::kCanAutomate)
+            pi.m_flags |= Parameter::kCanAutomate;
+        if (info.flags & Steinberg::Vst::ParameterInfo::kIsReadOnly)
+            pi.m_flags |= Parameter::kIsReadOnly;
+        if (info.flags & Steinberg::Vst::ParameterInfo::kIsWrapAround)
+            pi.m_flags |= Parameter::kIsWrapAround;
+        if (info.flags & Steinberg::Vst::ParameterInfo::kIsList)
+            pi.m_flags |= Parameter::kIsList;
+        if (info.flags & Steinberg::Vst::ParameterInfo::kIsHidden)
+            pi.m_flags |= Parameter::kIsHidden;
+        if (info.flags & Steinberg::Vst::ParameterInfo::kIsProgramChange)
+            pi.m_flags |= Parameter::kIsProgramChange;
+        if (info.flags & Steinberg::Vst::ParameterInfo::kIsBypass)
+            pi.m_flags |= Parameter::kIsBypass;
+
+        pi.m_defValue = info.defaultNormalizedValue;
+
+        params.emplace_back( std::move(pi) );
+    }
+}
+
+
+void enumeratePrograms(Programs& programs, Steinberg::Vst::IEditController* controller)
+{
+    programs.clear();
+
+    if (!controller)
+    {
+        DE_ERROR("dumpPresets: controller is null")
+        return;
+    }
+
+    Steinberg::FUnknownPtr<Steinberg::Vst::IUnitInfo> unitInfo(controller);
+    if (!unitInfo)
+    {
+        DE_WARN("No IUnitInfo → plugin has no presets")
+        return;
+    }
+
+    int32_t numLists = unitInfo->getProgramListCount();
+
+    for (int32_t listIndex = 0; listIndex < numLists; ++listIndex)
+    {
+        Steinberg::Vst::ProgramListInfo listInfo{};
+        if (unitInfo->getProgramListInfo(listIndex, listInfo) != Steinberg::kResultOk)
+        {
+            DE_ERROR("No programInfo for List[",listIndex,"]")
+            continue;
+        }
+
+        // DE_TRACE("ProgramList[",i,"] "
+        //          "id(", li.id,") "
+        //          "name(", de_mbstr(li.name),") "
+        //          "programCount(", li.programCount,")")
+
+        // Dump all programs inside this list
+        for (int32_t progIndex = 0; progIndex < listInfo.programCount; ++progIndex)
+        {
+            Steinberg::Vst::String128 name{};
+            if (unitInfo->getProgramName(listInfo.id, progIndex, name) != Steinberg::kResultOk)
+            {
+                DE_ERROR("No programName[",progIndex,"] in list[",listIndex,"].");
+                continue;
+            }
+
+            // Optional: get program info (attributes)
+            Steinberg::Vst::String128 attrName{};
+            Steinberg::Vst::CString attrId{};
+            if (unitInfo->getProgramInfo(listInfo.id, progIndex, attrId, attrName) != Steinberg::kResultOk)
+            {
+                DE_ERROR("No programInfo[",progIndex,"] in list[",listIndex,"].");
+            }
+
+            Program pro;
+            pro.m_name = de_mbstr(name);
+            pro.m_progIndex = progIndex;
+            pro.m_listIndex = listIndex;
+            pro.m_listId = listInfo.id;
+            programs.emplace_back( std::move( pro ) );
+        }
     }
 }
 
@@ -263,14 +412,14 @@ public:
     // Called when plugin UI begins editing a parameter
     Steinberg::tresult PLUGIN_API beginEdit (Steinberg::Vst::ParamID id) override
     {
-        //DE_TRACE("[Host] beginEdit param ",id)
+        DE_TRACE("[Host] beginEdit param ",id)
         return Steinberg::kResultOk;
     }
 
     // Called continuously while the parameter changes (automation or UI)
     Steinberg::tresult PLUGIN_API performEdit (Steinberg::Vst::ParamID id, Steinberg::Vst::ParamValue value) override
     {
-        //DE_TRACE("[Host] performEdit param ",id," = ",value)
+        DE_TRACE("[Host] performEdit param ",id," = ",value)
 
         // Update host-side parameter storage
         paramValues[id] = value;
@@ -283,7 +432,7 @@ public:
     // Called when plugin UI ends editing a parameter
     Steinberg::tresult PLUGIN_API endEdit (Steinberg::Vst::ParamID id) override
     {
-        //DE_TRACE("[Host] endEdit param ",id)
+        DE_TRACE("[Host] endEdit param ",id)
         return Steinberg::kResultOk;
     }
 
@@ -424,6 +573,85 @@ struct VST3_SampleBuffers
 
 };
 
+struct VST3_MidiEventQueue
+{
+    Steinberg::Vst::EventList events;
+    //std::vector<Steinberg::Vst::Event> events;
+
+    std::unique_lock< std::mutex >
+    lock() const
+    {
+        return std::unique_lock<std::mutex>(m_mutex);
+    }
+private:
+    std::mutex mutable m_mutex;
+};
+
+// ============================
+struct VST3_AutomationPoint
+// ============================
+{
+    int64_t framePos;
+    double value;
+
+    VST3_AutomationPoint()
+        : framePos(0), value(0.0) {}
+
+    VST3_AutomationPoint(int64_t frame, double val )
+        : framePos(frame), value(val) {}
+
+};
+
+// ============================
+struct VST3_AutomationCurve
+// ============================
+{
+    Steinberg::Vst::ParamID paramId;
+    std::vector<VST3_AutomationPoint> points;
+
+    explicit VST3_AutomationCurve( Steinberg::Vst::ParamID id ) : paramId(id)
+    {
+    }
+};
+
+struct VST3_ParamChangeQueue
+{
+    // std::vector<std::pair<Steinberg::Vst::ParamID, double>> params;
+
+    VST3_ParamChangeQueue()
+    {
+        curves.reserve(32);
+    }
+
+    void addPoint(Steinberg::Vst::ParamID paramId, int64_t framePos, double value)
+    {
+        get(paramId).points.emplace_back(framePos, value);
+    }
+
+    VST3_AutomationCurve& get(Steinberg::Vst::ParamID paramId)
+    {
+        auto it = std::find_if(curves.begin(),curves.end(),
+                    [&](const auto& curve) { return curve.paramId == paramId; });
+        if (it == curves.end())
+        {
+            curves.emplace_back(paramId);
+            return curves.back();
+        }
+
+        return *it;
+    }
+
+    std::unique_lock< std::mutex >
+    lock() const
+    {
+        return std::unique_lock<std::mutex>(m_mutex);
+    }
+private:
+    std::mutex mutable m_mutex;
+public:
+    std::vector<VST3_AutomationCurve> curves;
+};
+
 } // end namespace
 
 class VST3_Plugin_Impl
@@ -454,7 +682,7 @@ public:
     VST3_Editor* m_editor;
     IDspChainElement* m_inputSignal;
 
-    std::atomic< u64 > m_framePos;
+    std::atomic< int64_t > m_framePos;
 
     std::string m_uri;
     std::string m_directoryMultiByte;
@@ -469,39 +697,14 @@ public:
     NormalizedSumComputer m_normalizedSumComputer;
 
     // MIDI + automation
-    Steinberg::Vst::EventList        m_midiEventListIn;
-    Steinberg::Vst::ParameterChanges m_paramChanges;
-
-    struct VST3_MidiEventQueue
-    {
-        Steinberg::Vst::EventList events;
-        //std::vector<Steinberg::Vst::Event> events;
-
-        std::unique_lock< std::mutex >
-        lock() const
-        {
-            return std::unique_lock<std::mutex>(m_mutex);
-        }
-    private:
-        std::mutex mutable m_mutex;
-    };
+    Steinberg::Vst::EventList        m_vstInputEventList;
+    Steinberg::Vst::ParameterChanges m_vstInputParamChanges;
 
     VST3_MidiEventQueue m_midiEventQueueIn;
+    VST3_ParamChangeQueue m_userInputParamChanges;
 
-    struct VST3_ParamChangeQueue
-    {
-        std::vector<std::pair<Steinberg::Vst::ParamID, double>> params;
-
-        std::unique_lock< std::mutex >
-        lock() const
-        {
-            return std::unique_lock<std::mutex>(m_mutex);
-        }
-    private:
-        std::mutex mutable m_mutex;
-    };
-
-    VST3_ParamChangeQueue m_paramChangesIn;
+    Programs m_programList;
+    Parameters m_paramList;
 
     // VstTimeInfo m_timeInfo;
     // std::vector< VstMidiEvent > m_vstMidiEvents;
@@ -938,17 +1141,16 @@ public:
         size_t i = 0;
         for (ClassInfo const& ci : factory.classInfos())
         {
-            if (ci.subCategoriesString().find("Instrument") !=
-                std::string::npos)
+            if (ci.subCategoriesString().find("Instrument") != std::string::npos)
             {
-                DE_OK("Found Instrument")
+                // DE_OK("Found Instrument")
                 m_bIsInstrument = true;
             }
 
+            DE_DEBUG("ClassInfo[",i,"].Category = ",ci.category())
             DE_TRACE("ClassInfo[",i,"].ID = ",ci.ID().toString())
             DE_TRACE("ClassInfo[",i,"].Name = ",ci.name())
             DE_TRACE("ClassInfo[",i,"].Version = ",ci.version())
-            DE_DEBUG("ClassInfo[",i,"].Category = ",ci.category())
             DE_TRACE("ClassInfo[",i,"].SubCategories = ",ci.subCategoriesString())
             DE_TRACE("ClassInfo[",i,"].ClassFlags = ",dbHex(ci.classFlags()))
             DE_TRACE("ClassInfo[",i,"].Cardinality = ",ci.cardinality())
@@ -1200,8 +1402,11 @@ public:
             }
         }
 
-        dumpPresets(m_editController);
-        dumpParams(m_editController);
+        enumeratePrograms(m_programList, m_editController);
+        enumerateParams(m_paramList, m_editController);
+        DE_OK("ParameterCount = ",m_paramList.size())
+        DE_OK("ProgramCount = ",m_programList.size())
+
         m_uri = uri;
         m_bIsPluginOpen = true;
     }
@@ -1353,16 +1558,14 @@ public:
 
         dsp_init(frames,2,sampleRate);
 
+        float* __restrict__ inL = m_buffers.m_L.data();
+        float* __restrict__ inR = m_buffers.m_R.data();
         if ( m_inputSignal )
         {
-            float* __restrict__ inL = m_buffers.m_L.data();
-            float* __restrict__ inR = m_buffers.m_R.data();
             m_inputSignal->dsp_read( pts, frames, sampleRate, inL, inR );
         }
         else
         {
-            float* __restrict__ inL = m_buffers.m_L.data();
-            float* __restrict__ inR = m_buffers.m_R.data();
             std::fill(inL, inL + frames, 0.0f);
             std::fill(inR, inR + frames, 0.0f);
         }
@@ -1431,12 +1634,14 @@ public:
         data.numOutputs         = int(m_buffers.m_oBuses.size());
         data.inputs             = m_buffers.m_iBuses.data();
         data.outputs            = m_buffers.m_oBuses.data();
+        data.inputParameterChanges = nullptr;
         data.processContext     = &ctx;
 
         // ======================================================
         // Process MIDI messages:
         // ======================================================
-        processVstMidiEvents( data );
+        processMidiInputEvents( data );
+        processParameterChanges( data );
 
         // ======================================================
         // Process Audio samples:
@@ -1504,21 +1709,13 @@ public:
         m_pluginRuntime = timeEnd - timeStart;
     }
 
-    void processVstMidiEvents( Steinberg::Vst::ProcessData & data )
+    void processMidiInputEvents( Steinberg::Vst::ProcessData & data )
     {
         m_midiClock.restart();
-
-        m_midiEventListIn.clear();
-
-        // BUG! Swap fails for this non POD type with internal state.
-        // if ( auto l = m_midiEventQueueIn.lock() )
-        // {
-        //     std::swap( m_midiEventListIn, m_midiEventQueueIn.events );
-        // }
+        m_vstInputEventList.clear();
 
         if (auto l = m_midiEventQueueIn.lock())
         {
-            // Copy events, not the container
             for (int i = 0; i < m_midiEventQueueIn.events.getEventCount(); ++i)
             {
                 Steinberg::Vst::Event event;
@@ -1529,42 +1726,49 @@ public:
                 }
                 else
                 {
-                    m_midiEventListIn.addEvent(event);
+                    m_vstInputEventList.addEvent(event);
                 }
             }
 
             m_midiEventQueueIn.events.clear();
         }
 
-        data.inputEvents  = &m_midiEventListIn;
+        data.inputEvents  = &m_vstInputEventList;
         data.outputEvents = nullptr; // could capture plugin‑generated events
+    }
 
-/*
-        // --- Parameter changes (automation) ---
+    void processParameterChanges( Steinberg::Vst::ProcessData & data )
+    {
+        m_vstInputParamChanges.clearQueue();
 
-        m_paramChanges.clearQueue();
+        const int64_t globFramePos = m_framePos;
 
-        for (const auto& pc : m_paramChanges)
+        if (auto l = m_userInputParamChanges.lock())
         {
-            auto queue = m_paramChanges.addParameterData(pc.first, nullptr);
-            if (queue)
+            m_vstInputParamChanges.setMaxParameters(m_userInputParamChanges.curves.size());
+            for (const auto& curve : m_userInputParamChanges.curves)
             {
-                Steinberg::int32 index = 0;
-                queue->addPoint(0 // sampleOffset,
-                                static_cast<Steinberg::Vst::ParamValue>(pc.second),
-                                index);
+                int32_t index;
+                auto queue = m_vstInputParamChanges.addParameterData(curve.paramId, index);
+                if (queue)
+                {
+
+                    for (const auto& p : curve.points)
+                    {
+                        int64_t framePos = std::max(p.framePos - globFramePos, 0ll);
+                        queue->addPoint(framePos, p.value, index);
+                    }
+                }
             }
+
+            // TODO: Do more globally?
+            m_userInputParamChanges.curves.clear();
         }
 
-        data.inputParameterChanges  = &m_paramChanges;
-        data.outputParameterChanges = nullptr;
-
-        data.inputEvents  = nullptr;
-        data.outputEvents = nullptr;
-*/
-        data.inputParameterChanges  = nullptr;
+        data.inputParameterChanges  = &m_vstInputParamChanges;
         data.outputParameterChanges = nullptr;
     }
+
 
     void onShortMidiMessage(f64 pts, const midi::ShortMidiMessage& msg)
     {
@@ -1572,6 +1776,19 @@ public:
         {
             return;
         }
+
+        // NoteOnEvent
+        // NoteOffEvent
+        // PolyPressureEvent
+        // CtrlChangeEvent
+        // NoteExpressionValueEvent
+        // DataEvent (for SysEx)
+
+        // Steinberg::Vst::Event e{};
+        // e.type = Steinberg::Vst::Event::kCtrlChangeEvent;
+        // e.ctrlChange.controllerNumber = 74;
+        // e.ctrlChange.value = 0.5f;
+        // inputEvents->addEvent(e);
 
         // HOPEFULLY that fixes missing NoteOff events:
         // Pianos work ok without that, but monophonic synth are
@@ -1656,12 +1873,12 @@ VST3_Plugin::VST3_Plugin()
 // ============================================================================
     : _d( new VST3_Plugin_Impl )
 {
-    DE_TRACE("")
+    // DE_TRACE("")
 }
 
 VST3_Plugin::~VST3_Plugin()
 {
-    DE_TRACE("")
+    // DE_TRACE("")
     App::instance()->getMidiCentral().deregisterListener(this);
     delete _d;
 }
@@ -1836,6 +2053,7 @@ for (int32_t i = 0; i < numLists; ++i)
 }
 */
 
+#if 0
 u32 VST3_Plugin::getProgramCount() const
 {
     if (!_d->m_editController)
@@ -1872,17 +2090,8 @@ std::string VST3_Plugin::getProgramName( int i ) const
     return "Default";
 }
 
-int VST3_Plugin::getProgram() const
-{
-    return 0;
-}
-
-void VST3_Plugin::setProgram( int i )
-{
-
-}
-
 // ===================================================
+
 
 u32 VST3_Plugin::getParameterCount() const
 {
@@ -1892,6 +2101,7 @@ u32 VST3_Plugin::getParameterCount() const
 
 std::string VST3_Plugin::getParameterName(int i) const
 {
+
     u32 n = getParameterCount();
     if (i < 0 || i > int(n))
     {
@@ -1927,7 +2137,15 @@ f32 VST3_Plugin::getParameter(int i) const
 
     return _d->m_editController->getParamNormalized(info.id);
 }
-
+/*
+void setParam(Steinberg::Vst::IEditController* ec, Steinberg::Vst::ParamID pid, double norm)
+{
+    ec->beginEdit(pid);
+    ec->performEdit(pid, norm);
+    ec->setParamNormalized(pid, norm);   // updates internal state
+    ec->endEdit(pid);
+}
+*/
 void VST3_Plugin::setParameter(int i, f32 value)
 {
     u32 n = getParameterCount();
@@ -1939,16 +2157,90 @@ void VST3_Plugin::setParameter(int i, f32 value)
     Steinberg::Vst::ParameterInfo info;
     _d->m_editController->getParameterInfo(i, info);
 
-    // info.id
-    // info.title
-    // info.shortTitle
-    // info.units
-    // info.stepCount
-    // info.defaultNormalizedValue
-    // info.flags
 
-    _d->m_editController->setParamNormalized(info.id, value);
+
+    auto pid = info.id;
+
+    //DE_OK("Set param[",i,"].id[",pid,"].value = ",value)
+
+    if ( auto l = _d->m_userInputParamChanges.lock() )
+    {
+        _d->m_userInputParamChanges.addPoint( pid, _d->m_framePos, value );
+    }
 }
+
+#endif
+
+
+int VST3_Plugin::getProgram() const
+{
+    return 0;
+}
+
+void VST3_Plugin::setProgram( int i )
+{
+
+}
+
+
+const Programs& VST3_Plugin::getPrograms() const
+{
+    return _d->m_programList;
+}
+
+const Parameters& VST3_Plugin::getParameters() const
+{
+    return _d->m_paramList;
+}
+
+f64 VST3_Plugin::getParameterValue(uint32_t id) const
+{
+    if (id == UINT32_MAX)
+    {
+        DE_ERROR("Invalid id")
+        return 0.0;
+    }
+
+    if (!_d->m_editController)
+    {
+        DE_ERROR("No editController")
+        return 0.0;
+    }
+
+    return _d->m_editController->getParamNormalized(id);
+}
+
+void VST3_Plugin::setParameterValue(uint32_t id, f64 value, int64_t framePos)
+{
+    // u32 n = getParameterCount();
+    // if (i < 0 || i > int(n))
+    // {
+    //     DE_ERROR("Invalid index ",i)
+    // }
+
+    // Steinberg::Vst::ParameterInfo info;
+    // _d->m_editController->getParameterInfo(i, info);
+
+    if (id == UINT32_MAX)
+    {
+        DE_ERROR("Invalid id")
+        return;
+    }
+
+
+    // auto pid = info.id;
+
+    //DE_OK("Set param[",i,"].id[",pid,"].value = ",value)
+
+    if ( auto l = _d->m_userInputParamChanges.lock() )
+    {
+        _d->m_userInputParamChanges.addPoint( id, framePos, value );
+    }
+}
+
+
+
+
 
 float VST3_Plugin::getSpecialValue( eSpecialValue type ) const
 {
