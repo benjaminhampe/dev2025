@@ -17,7 +17,11 @@ inline void db2D(uint64_t id, uint32_t w, uint32_t& x, uint32_t& y)
 
 GL_Mesh16::GL_Mesh16()
     : PrimType(de::gpu::PrimitiveType::Points)
+#ifdef USE_MESH16_INDICES_32BIT
+    , IndexType(de::gpu::IndexType::U32)
+#else
     , IndexType(de::gpu::IndexType::U16)
+#endif
     , VAO(0)
     , VBO(0)
     , IBO(0)
@@ -26,11 +30,13 @@ GL_Mesh16::GL_Mesh16()
 
 void GL_Mesh16::addIndex(uint32_t index)
 {
+#ifndef USE_MESH16_INDICES_32BIT
     if (index > 65535)
     {
         DE_ERROR("Got index ",index," > 16-bit")
         return;
     }
+#endif
     Indices.push_back( index );
 }
 
@@ -74,7 +80,12 @@ void GL_Mesh16::draw() const
         const GLenum primType = de::gpu::PrimitiveType::toOpenGL( PrimType );
         if ( IBO )
         {
-            const GLenum indexType = de::gpu::IndexType::toOpenGL( IndexType );
+            // const GLenum indexType = de::gpu::IndexType::toOpenGL( IndexType );
+#ifdef USE_MESH16_INDICES_32BIT
+            const GLenum indexType = GL_UNSIGNED_INT;
+#else
+            const GLenum indexType = GL_UNSIGNED_SHORT;
+#endif
             glDrawElements( primType, GLsizei(Indices.size()), indexType, nullptr );
         }
         else
@@ -130,7 +141,7 @@ void GL_Mesh16::upload( bool bNeedVertexUpload, bool bNeedIndexUpload )
 
         if (IBO)
         {
-#if 0 // 32-bit
+#ifdef USE_MESH16_INDICES_32BIT
             auto n = Indices.size() * sizeof(uint32_t);
             auto p = reinterpret_cast< const uint8_t* >( Indices.data() );
             glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IBO);
@@ -159,7 +170,7 @@ void GL_Mesh16::upload( bool bNeedVertexUpload, bool bNeedIndexUpload )
 
     if ( IBO && bNeedIndexUpload )
     {
-#if 0 // 32-bit
+#ifdef USE_MESH16_INDICES_32BIT
         auto n = Indices.size() * sizeof(uint32_t);
         auto p = reinterpret_cast< const uint8_t* >( Indices.data() );
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IBO);

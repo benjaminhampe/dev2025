@@ -5,6 +5,8 @@
 #include <de/audio/file/SoundFactory.h>
 #include <de/audio/dsp/DspResampler-1.8.h>
 
+#include <de/audio/fft/approx_math.h>
+
 namespace de {
 namespace audio {
 
@@ -61,8 +63,6 @@ struct Player_Impl
     {
         DE_DEBUG("")
         dsp_init( 1024, 2, 48000 );
-
-
     }
 
     ~Player_Impl()
@@ -120,7 +120,39 @@ struct Player_Impl
         m_uri = de::FileSystem::makeAbsolute(uri);
         m_pluginRuntime = 0.0;
 
-        // dsp_init(256, 2, 48000);
+        Parameter p0;
+        p0.m_id = 0;
+        p0.m_name = "Volume";
+        p0.m_disp = "Vol.";
+        p0.m_flags = Parameter::kCanAutomate;
+        p0.m_nowValue = 0.5;
+        p0.m_defValue = 0.5;
+        p0.m_minValue = 0.0;
+        p0.m_maxValue = 1.0;
+
+        Parameter p1;
+        p1.m_id = 1;
+        p1.m_name = "Gain";
+        p1.m_disp = "Gain";
+        p1.m_flags = Parameter::kCanAutomate;
+        p1.m_nowValue = 1.0;
+        p1.m_defValue = 1.0;
+        p1.m_minValue = 0.0;
+        p1.m_maxValue = 1.0;
+
+        Parameter p2;
+        p2.m_id = 2;
+        p2.m_name = "Pan";
+        p2.m_disp = "Pan";
+        p2.m_flags = Parameter::kCanAutomate;
+        p2.m_nowValue = 0.0;
+        p2.m_defValue = 0.0;
+        p2.m_minValue = -1.0;
+        p2.m_maxValue = 1.0;
+
+        m_paramList.emplace_back(p0);
+        m_paramList.emplace_back(p1);
+        m_paramList.emplace_back(p2);
 
         // DE_DEBUG("VST2 plugin File = ", dbFileBase(m_uri))
         // DE_DEBUG("VST2 plugin Name = ", m_pluginName)
@@ -155,6 +187,13 @@ struct Player_Impl
         // m_sound.dsp_read(pts,frames,sampleRate,L,R);
         m_resampler.dsp_read(pts,frames,sampleRate,L,R);
 
+
+        float volume = m_paramList[0].m_nowValue;
+        for (size_t i = 0; i < frames; ++i)
+        {
+            L[i] *= volume;
+            R[i] *= volume;
+        }
         // For audio-level-meter
         // m_normalizedSumComputer.calc(outL, outR, frames);
 
@@ -316,12 +355,29 @@ const Parameters& Player::getParameters() const
 
 f64 Player::getParameterValue(uint32_t id) const
 {
-    return 0.0;
+    switch (id)
+    {
+        case 0: return _d->m_paramList[0].m_nowValue;
+        case 1: return _d->m_paramList[1].m_nowValue;
+        case 2: return _d->m_paramList[2].m_nowValue;
+        default: return 0.0;
+    }
 }
 
 void Player::setParameterValue(uint32_t id, f64 value, int64_t framePos)
 {
-
+    switch (id)
+    {
+        case 0:
+        {
+            double v_min = _d->m_paramList[0].m_minValue;
+            double v_max = _d->m_paramList[0].m_maxValue;
+            double v = de::audio::math::clampd(value,v_min,v_max);
+            _d->m_paramList[0].m_nowValue = v;
+            break;
+        }
+        default: break;
+    }
 }
 
 

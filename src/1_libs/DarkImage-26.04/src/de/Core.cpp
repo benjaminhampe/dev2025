@@ -108,6 +108,161 @@ void dbLogMessage( int logLevel, const std::string& msg,
     //if ( flush ) { fflush(stdout); }
 }
 
+#ifndef USE_BENNI_RUNTIME_CHECKS
+#define USE_BENNI_RUNTIME_CHECKS
+#endif
+
+#ifndef USE_BENNI_ASSUME_AVX2
+#define USE_BENNI_ASSUME_AVX2
+#endif
+
+#if defined(USE_BENNI_RUNTIME_CHECKS) && defined(USE_BENNI_ASSUME_AVX2)
+#ifndef USE_BENNI_RUNTIME_CHECKS_AVX2
+#define USE_BENNI_RUNTIME_CHECKS_AVX2
+#endif
+#endif
+
+void de_memcpy_no_overlap(void* __restrict__ dst,
+                          const void* __restrict__ src,
+                          uint64_t bytes)
+{
+#ifndef NDEBUG
+    const auto dst_beg = (uintptr_t)dst;
+    const auto dst_end = dst_beg + bytes;
+    const auto src_beg = (uintptr_t)src;
+    const auto src_end = src_beg + bytes;
+
+    assert(dst_end <= src_beg || src_end <= dst_beg);
+#else
+
+    #ifdef USE_BENNI_RUNTIME_CHECKS
+
+    if ((uintptr_t)dst + bytes <= (uintptr_t)src ||
+        (uintptr_t)src + bytes <= (uintptr_t)dst)
+    {
+    }
+    else
+    {
+        if ((uintptr_t)dst + bytes > (uintptr_t)src)
+        {
+            DE_ERROR("overlap detected: dst + bytes > src")
+        }
+        else
+        {
+            DE_ERROR("overlap detected: src + bytes > dst")
+        }
+        #if defined(_MSC_VER)
+            __debugbreak();
+        #else
+            __builtin_trap();
+        #endif
+        return;
+    }
+    #endif
+
+    DE_ASSUME(
+        (uintptr_t)dst + bytes <= (uintptr_t)src ||
+        (uintptr_t)src + bytes <= (uintptr_t)dst);
+
+#endif
+
+    std::memcpy(dst, src, bytes);
+}
+
+/*
+void de_runtime_check_pointer_avx2(const void* p)
+{
+    #ifdef USE_BENNI_RUNTIME_CHECKS_AVX2
+    if (((uintptr_t)p & 31) != 0)
+    {
+        DE_ERROR("unaligned AVX2 pointer: ", dbHex((uint64_t)p))
+        #if defined(_MSC_VER)
+            __debugbreak();
+        #else
+            __builtin_trap();
+        #endif
+        return;
+    }
+    #endif
+}
+*/
+
+void de_memcpy_no_overlap_avx2(void* __restrict__ dst,
+                          const void* __restrict__ src,
+                          uint64_t bytes)
+{
+    // static_assert(std::is_trivially_copyable_v<T>,
+    //               "T must be trivially copyable");
+
+    // static_assert(sizeof(T) > 0, "T must not be incomplete");
+
+#ifndef NDEBUG
+    const auto dst_beg = (uintptr_t)dst;
+    const auto dst_end = dst_beg + bytes;
+    const auto src_beg = (uintptr_t)src;
+    const auto src_end = src_beg + bytes;
+
+    assert(dst_end <= src_beg || src_end <= dst_beg);
+
+    assert(((uintptr_t)dst & 31) == 0);
+    assert(((uintptr_t)src & 31) == 0);
+#else
+
+    #ifdef USE_BENNI_RUNTIME_CHECKS
+
+    if ((uintptr_t)dst + bytes <= (uintptr_t)src ||
+        (uintptr_t)src + bytes <= (uintptr_t)dst)
+    {
+        // Not overlapping
+    }
+    else
+    {
+        if ((uintptr_t)dst + bytes > (uintptr_t)src)
+        {
+            DE_ERROR("overlap detected: dst + bytes > src")
+        }
+        else
+        {
+            DE_ERROR("overlap detected: src + bytes > dst")
+        }
+        #if defined(_MSC_VER)
+            __debugbreak();
+        #else
+            __builtin_trap();
+        #endif
+        return;
+    }
+    #endif
+
+    DE_ASSUME(
+        (uintptr_t)dst + bytes <= (uintptr_t)src ||
+        (uintptr_t)src + bytes <= (uintptr_t)dst);
+
+    #ifdef USE_BENNI_RUNTIME_CHECKS_AVX2
+
+    if (((uintptr_t)src & 31) != 0)
+    {
+        DE_ERROR("unaligned AVX2 pointer src: ", dbHex((uint64_t)src))
+        DE_ABORT
+        return;
+    }
+
+    if (((uintptr_t)dst & 31) != 0)
+    {
+        DE_ERROR("unaligned AVX2 pointer dst: ", dbHex((uint64_t)dst))
+        DE_ABORT
+        return;
+    }
+    #endif
+
+    #ifdef USE_BENNI_ASSUME_AVX2
+        DE_ASSUME_POINTER_AVX2(src);
+        DE_ASSUME_POINTER_AVX2(dst);
+    #endif
+#endif
+
+    std::memcpy(dst, src, bytes);
+}
 
 namespace de {
 

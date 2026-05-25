@@ -13,10 +13,11 @@ class DspSampleCollector : public IDspChainElement
 {
     IDspChainElement* m_inputSignal;
     u32 m_blockSize;
+    u32 m_blockCount; // Blocks we collect before a new fft calc. 1 = fft every block
+    u32 m_blockIndex;
     u32 m_fftSize;
     u32 m_cols;
     u32 m_rows;
-    bool m_bStopped;
     bool m_bBypassed;
     bool m_bCollectAccumMatrix;
 
@@ -34,7 +35,9 @@ class DspSampleCollector : public IDspChainElement
 
     // shiftVector FFT
     WindowFunction m_accum_win;
-    AlignedFloatShiftVector m_accum;
+    //AlignedFloatShiftVector m_accum;
+    AlignedFloatVector m_accum_ori;
+    AlignedFloatVector m_accum_tmp;
     AlignedFloatVector m_accum_vec_in;
     AlignedFloatVector m_accum_vec_out;
     AlignedFloatShiftMatrix m_accum_mat;
@@ -57,7 +60,7 @@ class DspSampleCollector : public IDspChainElement
     // float b7[8] { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f };
     // float b8[8] { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f };
 
-    std::shared_ptr<DE_FFT_pffft> m_accum_fft;
+    DE_FFT_pffft m_accum_fft;
 public:
     const AlignedFloatVector& getL() const { return m_L; }
     const AlignedFloatVector& getR() const { return m_R; }
@@ -74,14 +77,6 @@ public:
     uint32_t cols() const { return m_cols; }
     uint32_t rows() const { return m_rows; }
     WindowFunction::eFunc windowFunc() const { return m_accum_win.function(); }
-
-    void stop()
-    {
-        m_bStopped = true;
-        m_inputSignal = nullptr;
-        m_accum.setCallback_onFullVector(
-            [](const TAlignedVector<float>& ){});
-    }
 
     void setBypassed( bool bBypassed )
     {
@@ -101,13 +96,12 @@ public:
     void setFftSize( int fftSize )
     {
         m_fftSize = fftSize;
-        if (m_accum_fft)
-            m_accum_fft->setFftSize(fftSize);
+        m_accum_fft.setFftSize(fftSize);
     }
 
     void setColumnCount( u32 columns )
     {
-        m_cols = std::max(128u,columns);
+        m_cols = std::max(64u,columns);
     }
 
     void setRowCount( u32 rows )

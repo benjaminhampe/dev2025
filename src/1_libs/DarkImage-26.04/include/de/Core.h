@@ -210,6 +210,70 @@ dbLogMessage(  int logLevel, // 0=Trace, 1=Debug, 2=Ok, 3=Benni, 4=Info, 5=Warn,
 // #define DE_DST_F32 float* __restrict__
 // #endif
 
+#ifndef DE_ABORT
+    #if defined(_MSC_VER)
+        #define DE_ABORT __debugbreak();
+    #else
+        #define DE_ABORT __builtin_trap();
+    #endif
+#endif
+
+/*  DE_ASSUME
+
+    T* const* __restrict__ src = orig.data();
+    T** __restrict__ dst = temp.data() + 1;
+
+    DE_ASSUME_NO_OVERLAP_ELEMS(dst, src, n - 1);
+
+    std::memcpy(dst, src, sizeof(T*) * (n - 1));
+*/
+
+#ifndef DE_ASSUME
+    #if defined(__clang__)
+        #define DE_ASSUME(expr) __builtin_assume(expr)
+    #elif defined(_MSC_VER)
+        #define DE_ASSUME(expr) __assume(expr)
+    #elif defined(__GNUC__)
+        #define DE_ASSUME(expr) if (!(expr)) __builtin_unreachable()
+    #else
+        #define DE_ASSUME(expr) ((void)0)
+    #endif
+
+    #ifndef DE_ASSUME_NO_OVERLAP
+    #define DE_ASSUME_NO_OVERLAP(dst, src, bytes) \
+        DE_ASSUME( \
+            (uintptr_t)(dst) + (uintptr_t)(bytes) <= (uintptr_t)(src) ||  \
+            (uintptr_t)(src) + (uintptr_t)(bytes) <= (uintptr_t)(dst))
+    #endif
+
+    #ifndef DE_ASSUME_NO_OVERLAP_ELEMS
+    #define DE_ASSUME_NO_OVERLAP_ELEMS(dst, src, elems) \
+        DE_ASSUME( \
+            (uintptr_t)(dst) + (uintptr_t)(elems) * sizeof(*(dst)) <= (uintptr_t)(src) || \
+            (uintptr_t)(src) + (uintptr_t)(elems) * sizeof(*(src)) <= (uintptr_t)(dst))
+    #endif
+
+    #ifndef DE_ASSUME_POINTER_AVX
+    #define DE_ASSUME_POINTER_AVX(p) DE_ASSUME(((uintptr_t)(p) & 15) == 0);
+    #endif
+
+    #ifndef DE_ASSUME_POINTER_AVX2
+    #define DE_ASSUME_POINTER_AVX2(p) DE_ASSUME(((uintptr_t)(p) & 31) == 0);
+    #endif
+
+    #ifndef DE_ASSUME_POINTER_AVX512
+    #define DE_ASSUME_POINTER_AVX512(p) DE_ASSUME(((uintptr_t)(p) & 63) == 0);
+    #endif
+#endif
+
+void de_memcpy_no_overlap(void* __restrict__ dst,
+                          const void* __restrict__ src,
+                          uint64_t bytes);
+
+void de_memcpy_no_overlap_avx2(void* __restrict__ dst,
+                          const void* __restrict__ src,
+                          uint64_t bytes);
+
 namespace de
 {
 
@@ -224,6 +288,9 @@ typedef uint64_t u64;
 typedef float f32;
 typedef double f64;
 typedef long double f80;
+
+
+
 
 // ===========================================================================
 struct PerfMarker

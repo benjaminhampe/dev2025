@@ -88,6 +88,12 @@ Plugin::Plugin(de::audio::IPlugin* plugin, QWidget* parent)
     connect(m_body->getPad(), &Pad::onParamChanged,
             this, &Plugin::on_pad);
 
+    connect(m_body->getComboParam1(), &ComboBox::currentIndexChanged,
+            this, &Plugin::on_comboParam1);
+
+    connect(m_body->getComboParam2(), &ComboBox::currentIndexChanged,
+            this, &Plugin::on_comboParam2);
+
     setPlugin(plugin);
 }
 
@@ -188,6 +194,8 @@ void Plugin::setPlugin(de::audio::IPlugin* plugin)
         auto combo2 = m_body->getComboParam2();
         combo1->clear();
         combo2->clear();
+        combo1->addItem("Disabled", UINT32_MAX);
+        combo2->addItem("Disabled", UINT32_MAX);
 
         const de::audio::Parameters& params = m_plugin->getParameters();
         for (uint32_t i = 0; i < params.size(); ++i)
@@ -240,8 +248,8 @@ void Plugin::on_pad(float x, float y)
         return;
     }
 
-    const uint32_t paramIdX = m_body->getComboParam1()->currentData().toInt();
-    const uint32_t paramIdY = m_body->getComboParam2()->currentData().toInt();
+    const uint32_t paramIdX = m_body->getComboParam1()->currentData().toUInt();
+    const uint32_t paramIdY = m_body->getComboParam2()->currentData().toUInt();
 
     if (paramIdX != UINT32_MAX)
     {
@@ -254,6 +262,39 @@ void Plugin::on_pad(float x, float y)
     }
 }
 
+// On comboBox1 currentIndexChanged we set Pad.X to current value of selected Param1
+void Plugin::on_comboParam1(int index)
+{
+    if (!m_plugin)
+    {
+        DE_ERROR("No plugin")
+        return;
+    }
+
+    const uint32_t paramId = m_body->getComboParam1()->currentData().toUInt();
+    if (paramId != UINT32_MAX)
+    {
+        float normValue = m_plugin->getParameterValue(paramId);
+        m_body->getPad()->setValueX(normValue);
+    }
+}
+
+// On comboBox2 currentIndexChanged we set Pad.Y to current value of selected Param2
+void Plugin::on_comboParam2(int index)
+{
+    if (!m_plugin)
+    {
+        DE_ERROR("No plugin")
+        return;
+    }
+
+    const uint32_t paramId = m_body->getComboParam2()->currentData().toUInt();
+    if (paramId != UINT32_MAX)
+    {
+        float normValue = m_plugin->getParameterValue(paramId);
+        m_body->getPad()->setValueY(normValue);
+    }
+}
 
 void Plugin::on_editorWindowClosed()
 {

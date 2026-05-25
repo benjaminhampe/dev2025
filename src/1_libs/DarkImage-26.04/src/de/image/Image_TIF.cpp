@@ -8,49 +8,45 @@ namespace de {
 namespace image {
 namespace {
 
-    struct AutoTIFF
-   {
-      TIFF* m_tif;
+struct AutoTIFF
+{
+    TIFF* m_tif;
 
-      AutoTIFF()
-         : m_tif( nullptr )
-      {}
+    AutoTIFF() : m_tif( nullptr )
+    {}
 
-      AutoTIFF( std::string uri )
-         : m_tif( nullptr )
-      {
-         openToRead( uri );
-      }
+    AutoTIFF( std::string uri ) : m_tif( nullptr )
+    {
+        openToRead( uri );
+    }
 
-      void openToRead( std::string uri )
-      {
-         if ( m_tif )
-         {
+    void openToRead( std::string uri )
+    {
+        if ( m_tif )
+        {
+            DE_ERROR("Already open")
             return;
-         }
-         m_tif = TIFFOpen( uri.c_str(), "r");
-      }
+        }
+        m_tif = TIFFOpen( uri.c_str(), "r");
+    }
 
-      ~AutoTIFF()
-      {
-         closeFile();
-      }
+    ~AutoTIFF()
+    {
+        closeFile();
+    }
 
-      bool is_open() const
-      {
-         return( m_tif != nullptr );
-      }
+    bool is_open() const { return m_tif != nullptr; }
 
-      void closeFile()
-      {
-         if ( !m_tif )
-         {
+    void closeFile()
+    {
+        if ( !m_tif )
+        {
             return;
-         }
-         TIFFClose( m_tif );
-         m_tif = nullptr;
-      }
-   };
+        }
+        TIFFClose( m_tif );
+        m_tif = nullptr;
+    }
+};
 
 } // end namespace tif.
 } // end namespace image.
@@ -252,7 +248,7 @@ ImageReaderTIF::load( Image & img, const uint8_t* p, size_t n, const std::string
    // Tiled image loading
    // ---------------------------------------------------------------------------------
 
-    uint32 tileWidth, tileHeight;
+    uint32_t tileWidth, tileHeight;
 
    // create a new DIB
    //dib = CreateImageType( header_only, image_type, width, height, bitspersample, samplesperpixel);
@@ -310,7 +306,7 @@ ImageReaderTIF::load( Image & img, const uint8_t* p, size_t n, const std::string
             {
                 DE_DEBUG("PLANAR_CONFIG Monochrome 1bit 1sample per pixel")
 
-                for ( uint32 y = 0; y < h; ++y )
+                for ( uint32_t y = 0; y < h; ++y )
                 {
                     ::memset( scanline, 0, scanlineBytes );
 
@@ -325,7 +321,7 @@ ImageReaderTIF::load( Image & img, const uint8_t* p, size_t n, const std::string
                     //DE_DEBUG("Strip ",strip, ", y = ", y)
                     //uint32_t strips = (y + stripRows > h ? h - y : stripRows);
                     uint8_t const* src = reinterpret_cast< uint8_t const* >( scanline );
-                    uint32* dst = reinterpret_cast< uint32* >( img.getRow( int32_t( h ) - 1 - int32_t( y ) ) );
+                    uint32_t* dst = reinterpret_cast< uint32_t* >( img.getRow( int32_t( h ) - 1 - int32_t( y ) ) );
                     for ( uint32_t x = 0; x < w/8; ++x )
                     {
                         uint8_t z = *src++;
@@ -351,7 +347,7 @@ ImageReaderTIF::load( Image & img, const uint8_t* p, size_t n, const std::string
         {
             DE_DEBUG("PLANAR_CONFIG = SINGLE_PLANE")
 
-            for ( uint32 y = 0; y < h; ++y )
+            for ( uint32_t y = 0; y < h; ++y )
             {
                 ::memset( scanline, 0, scanlineBytes );
 
@@ -365,8 +361,8 @@ ImageReaderTIF::load( Image & img, const uint8_t* p, size_t n, const std::string
 
                 //DE_DEBUG("Strip ",strip, ", y = ", y)
                 //uint32_t strips = (y + stripRows > h ? h - y : stripRows);
-                uint8_t const* src = reinterpret_cast< uint8_t const* >( scanline );
-                uint32* dst = reinterpret_cast< uint32* >( img.getRow( int32_t( h ) - 1 - int32_t( y ) ) );
+                auto src = reinterpret_cast< uint8_t const* >( scanline );
+                auto dst = reinterpret_cast< uint32_t* >( img.getRow( int32_t( h ) - 1 - int32_t( y ) ) );
                 for ( uint32_t x = 0; x < w/2; ++x )
                 {
                     uint8_t cc = *src++;
@@ -389,7 +385,7 @@ ImageReaderTIF::load( Image & img, const uint8_t* p, size_t n, const std::string
             {
                 DE_DEBUG("PLANAR_CONFIG 8 bit RGB")
 
-                for ( uint32 y = 0; y < h; ++y )
+                for ( uint32_t y = 0; y < h; ++y )
                 {
                     ::memset( scanline, 0, scanlineBytes );
 
@@ -401,11 +397,11 @@ ImageReaderTIF::load( Image & img, const uint8_t* p, size_t n, const std::string
                         continue;
                     }
 
-                    uint8 const* src = reinterpret_cast< uint8 const* >( scanline );
-                    uint32* dst = reinterpret_cast< uint32* >( img.getRow( int32_t( h ) - 1 - int32_t( y ) ) );
+                    auto src = reinterpret_cast< uint8_t const* >( scanline );
+                    auto dst = reinterpret_cast< uint32_t* >( img.getRow( int32_t( h ) - 1 - int32_t( y ) ) );
                     for ( uint32_t x = 0; x < w; ++x )
                     {
-                        uint8 r = *src++;
+                        uint8_t r = *src++;
                         *dst = dbRGBA( r,r,r );
                     }
                 }
@@ -419,7 +415,7 @@ ImageReaderTIF::load( Image & img, const uint8_t* p, size_t n, const std::string
             {
                 DE_DEBUG("PLANAR_CONFIG 24 bit RGB")
 
-                for ( uint32 y = 0; y < h; ++y )
+                for ( uint32_t y = 0; y < h; ++y )
                 {
                     ::memset( scanline, 0, scanlineBytes );
 
@@ -431,13 +427,13 @@ ImageReaderTIF::load( Image & img, const uint8_t* p, size_t n, const std::string
                         continue;
                     }
 
-                    uint8 const* src = reinterpret_cast< uint8 const* >( scanline );
-                    uint32* dst = reinterpret_cast< uint32* >( img.getRow( int32_t( h ) - 1 - int32_t( y ) ) );
+                    auto src = reinterpret_cast< uint8_t const* >( scanline );
+                    auto dst = reinterpret_cast< uint32_t* >( img.getRow( int32_t( h ) - 1 - int32_t( y ) ) );
                     for ( uint32_t x = 0; x < w; ++x )
                     {
-                        uint8 r = *src++;
-                        uint8 g = *src++;
-                        uint8 b = *src++;
+                        uint8_t r = *src++;
+                        uint8_t g = *src++;
+                        uint8_t b = *src++;
                         *dst = dbRGBA( r,g,b );
                     }
                 }
@@ -451,7 +447,7 @@ ImageReaderTIF::load( Image & img, const uint8_t* p, size_t n, const std::string
             {
                 DE_DEBUG("PLANAR_CONFIG 32 bit RGBA")
 
-                for ( uint32 y = 0; y < h; ++y )
+                for ( uint32_t y = 0; y < h; ++y )
                 {
                     ::memset( scanline, 0, scanlineBytes );
 
@@ -463,14 +459,14 @@ ImageReaderTIF::load( Image & img, const uint8_t* p, size_t n, const std::string
                         continue;
                     }
 
-                    uint8 const* src = reinterpret_cast< uint8 const* >( scanline );
-                    uint32* dst = reinterpret_cast< uint32* >( img.getRow( int32_t( h ) - 1 - int32_t( y ) ) );
+                    auto src = reinterpret_cast< uint8_t const* >( scanline );
+                    auto dst = reinterpret_cast< uint32_t* >( img.getRow( int32_t( h ) - 1 - int32_t( y ) ) );
                     for ( uint32_t x = 0; x < w; ++x )
                     {
-                        uint8 r = *src++;
-                        uint8 g = *src++;
-                        uint8 b = *src++;
-                        uint8 a = *src++;
+                        uint8_t r = *src++;
+                        uint8_t g = *src++;
+                        uint8_t b = *src++;
+                        uint8_t a = *src++;
                         *dst = dbRGBA( r,g,b,a );
                     }
                 }
@@ -485,7 +481,7 @@ ImageReaderTIF::load( Image & img, const uint8_t* p, size_t n, const std::string
         {
             DE_DEBUG("PLANAR_CONFIG = SINGLE_PLANE")
 
-            for ( uint32 y = 0; y < h; ++y )
+            for ( uint32_t y = 0; y < h; ++y )
             {
                 ::memset( scanline, 0, scanlineBytes );
 
@@ -499,8 +495,8 @@ ImageReaderTIF::load( Image & img, const uint8_t* p, size_t n, const std::string
 
                 //DE_DEBUG("Strip ",strip, ", y = ", y)
                 //uint32_t strips = (y + stripRows > h ? h - y : stripRows);
-                float const* src = reinterpret_cast< float const* >( scanline );
-                float* dst = reinterpret_cast< float* >( img.getRow( int32_t( h ) - 1 - int32_t( y ) ) );
+                auto src = reinterpret_cast< float const* >( scanline );
+                auto dst = reinterpret_cast< float* >( img.getRow( int32_t( h ) - 1 - int32_t( y ) ) );
                 for ( uint32_t x = 0; x < w; ++x )
                 {
                     *dst = *src;

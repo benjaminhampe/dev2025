@@ -103,10 +103,31 @@ void AlignedFloatShiftMatrix::shiftVectorRight(TRowVector & orig, TRowVector & t
     //   ori |0|1|2|3|4|5|
     //   tmp |0|1|2|3|4|5|
     // = tmp |x|0|1|2|3|4|
-    std::memcpy(temp.data() + 1, orig.data(), sizeof(T*) * (n-1));
+    // std::memcpy(temp.data() + 1, orig.data(), sizeof(T*) * (n-1));
 
+    //de_runtime_check_pointer_avx2(orig.data());
+    //de_runtime_check_pointer_avx2(temp.data());
+
+    de_memcpy_no_overlap(temp.data() + 1, orig.data(), sizeof(T*) * (n-1));
     // = tmp |5|0|1|2|3|4|
     temp[0] = orig[n-1]; // last elem swaps around and becomes first elem.
+
+#if 0
+    T* const* __restrict__ src = orig.data();   // read-only
+    T** __restrict__ dst = temp.data();         // write-only
+
+    DE_ASSUME(src != dst);
+    DE_ASSUME(src != dst + 1);
+
+    // DE_ASSUME((uintptr_t)(dst + 1) + sizeof(T*) * (n - 1) <= (uintptr_t)src ||
+    //           (uintptr_t)src + sizeof(T*) * (n - 1) <= (uintptr_t)(dst + 1));
+
+    std::memcpy(dst + 1, src, sizeof(T*) * (n - 1));
+
+    // = tmp |5|0|1|2|3|4|
+    //temp[0] = orig[n-1]; // last elem swaps around and becomes first elem.
+    dst[0] = src[n-1]; // last elem swaps around and becomes first elem.
+#endif
 
     // Make 'temp' the new 'orig'...
     std::swap(orig,temp);
@@ -224,14 +245,8 @@ void AlignedFloatShiftMatrix::push( T const* __restrict__ src, u32 srcFrames )
 
     // New front: fill data from push()
     T* __restrict__ dst = m_rows.front();
-    if (dst)
-    {
-        memcpy( dst, src, srcFrames * sizeof( T ));
-    }
-    else
-    {
-        DE_ERROR("No dst")
-    }
+    DE_ASSUME(dst != src);
+    memcpy( dst, src, srcFrames * sizeof( T ));
 }
 
 } // end namespace de.

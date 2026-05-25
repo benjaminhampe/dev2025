@@ -37,6 +37,11 @@ namespace math {
         return fminf(fmaxf(x, lo), hi);
     }
 
+    inline double clampd(double x, double lo, double hi)
+    {
+        return fmin(fmax(x, lo), hi);
+    }
+
     inline float absf(float x)
     {
         uint32_t bits;

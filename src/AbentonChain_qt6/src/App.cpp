@@ -50,7 +50,7 @@ void App::cleanupAll()
 
     stopAudio();
 
-    getSampleCollector()->stop();
+    // getSampleCollector()->stop();
 
     if (!m_canvas)
     {

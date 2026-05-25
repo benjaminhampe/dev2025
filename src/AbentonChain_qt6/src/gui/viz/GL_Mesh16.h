@@ -119,6 +119,10 @@ struct GL_Mesh16_Vertex // 8 Bytes
 
 #pragma pack( pop )
 
+#ifndef USE_MESH16_INDICES_32BIT
+#define USE_MESH16_INDICES_32BIT
+#endif
+
 // ===========================================================================
 struct GL_Mesh16
 // ===========================================================================
@@ -131,8 +135,11 @@ struct GL_Mesh16
     uint32_t VBO;
     uint32_t IBO;
     de::TAlignedVector< TVertex > Vertices;
+#ifdef USE_MESH16_INDICES_32BIT
+    de::TAlignedVector< uint32_t > Indices;
+#else
     de::TAlignedVector< uint16_t > Indices;
-    //de::TAlignedVector< uint32_t > Indices;
+#endif
 
     GL_Mesh16();
     void addIndex(uint32_t i);

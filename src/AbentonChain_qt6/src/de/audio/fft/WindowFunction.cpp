@@ -433,6 +433,8 @@ void WindowFunction::apply(const AlignedFloatVector& v_in, AlignedFloatVector& v
 void WindowFunction::apply(const float* __restrict__ pIn, uint32_t nIn,
                                  float* __restrict__ pOut, uint32_t nOut)
 {
+    DE_ASSUME(pIn != pOut);
+
     if (nIn != nOut)
     {
         DE_WARN("Input.size(",nIn,") != Output.size(",nOut,")")
@@ -449,7 +451,13 @@ void WindowFunction::apply(const float* __restrict__ pIn, uint32_t nIn,
     resize( N );
 
     // Transform with WindowFunction
-    for (size_t i = 0; i < N; ++i) { pOut[i] = pIn[i] * m_lut[i]; }
+    const float* __restrict__ lut = m_lut.data();
+    DE_ASSUME(pIn != lut);
+    DE_ASSUME(pOut != lut);
+    for (size_t i = 0; i < N; ++i)
+    {
+        pOut[i] = pIn[i] * lut[i];
+    }
 
     // Fill output residue with zeroes
     for (size_t i = nOut; i < N; ++i) { pOut[i] = 0.0f; }

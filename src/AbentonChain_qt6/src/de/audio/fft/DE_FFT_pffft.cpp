@@ -6,7 +6,7 @@
 #include <cassert>
 extern "C"
 {
-	#include <pffft.h>
+    #include <pffft.h>
 }
 
 struct DE_FFT_pffft_Private
@@ -109,15 +109,8 @@ struct DE_FFT_pffft_Private
     void fft_real(const float* __restrict__ pSrc, uint32_t nSrc,
                         float* __restrict__ pDst, uint32_t nDst)
     {
-        if (!pSrc)
-        {
-            DE_ERROR("")
-        }
-
-        if (!pDst)
-        {
-            DE_ERROR("")
-        }
+        if (!pSrc) { DE_ERROR("No src"); return; }
+        if (!pDst) { DE_ERROR("No dst"); return; }
 
         resize(m_fftSizeRequest);
 
@@ -133,71 +126,51 @@ struct DE_FFT_pffft_Private
             nDst = m_fftSize/2; // clamp.
         }
 
-        if (nSrc < 1)
-        {
-            DE_ERROR("Nothing todo for nSrc ",nSrc)
-            return;
-        }
+        if (nSrc < 1) { DE_ERROR("Nothing todo, nSrc ",nSrc) return; }
+        if (nDst < 1) { DE_ERROR("Nothing todo, nDst ",nDst) return; }
 
-        if (nDst < 1)
-        {
-            DE_ERROR("Nothing todo for nDst ",nDst)
-            return;
-        }
-
-        if (!m_ctx)
-        {
-            DE_ERROR("No context")
-            return;
-        }
+        if (!m_ctx) { DE_ERROR("No context") return; }
 
         // Fill input data:
         auto nAct = std::min(nSrc,uint32_t(m_input.size()));
+
+        float* __restrict__ input = m_input.data();
+        DE_ASSUME(input != pSrc);
         for (size_t i = 0; i < nAct; ++i)
         {
-            m_input[i] = *pSrc++;
+            input[i] = *pSrc++;
         }
         for (size_t i = nAct; i < m_input.size(); ++i)
         {
-            m_input[i] = 0.0f;
+            input[i] = 0.0f;
         }
 
-        // memcpy(m_input.data(), pSrc, nSrc * sizeof(float));
-
-        // Fill input zeroes:
-        // const uint32_t mSrc = m_fftSize - nSrc;
-        // if (mSrc > 0)
-        // {
-        //     std::memset(m_input.data() + nSrc * sizeof(float),
-        //         0, mSrc * sizeof(float));
-        // }
-
         // Perform FFT
-        pffft_transform_ordered(
-            m_ctx,
+        pffft_transform_ordered( m_ctx,
             m_input.data(),
             m_output.data(),
             NULL,
             PFFFT_FORWARD);
 
         // Copy result to output
-        float* __restrict__ dst = pDst;
-
-        *dst++ = -240.0f; // minimum dB
-
         assert(nDst + m_fftSize/2 <= m_output.size());
+
+        const float* __restrict__ output = m_output.data();
+        DE_ASSUME(output != pDst);
+
+        pDst[0] = -240.0f; // minimum dB
 
         for (size_t i = 1; i < nDst - 1; ++i)
         {
             //      log10f( 1e-12 ) = -12
             // 20 * log10f( 1e-12 ) = -240dB
-            const float re = m_output[i];
-            const float im = m_output[i + m_fftSize/2];
+            const float re = output[i];
+            const float im = output[i + m_fftSize/2];
             const float ll = std::fmaxf(1.0e-12f, (re*re) + (im*im));
-            *dst++ = 20.0f*log10f( ll );
+            pDst[i] = 20.0f*log10f( ll );
         }
 
-        *dst++ = -240.0f; // minimum dB
+        pDst[nDst-1] = -240.0f; // minimum dB
     }
 };
 

@@ -40,8 +40,12 @@ signals:
 
 public slots:
 
-    void setParamX(uint32_t id) { m_paramX = id; }
-    void setParamY(uint32_t id) { m_paramY = id; }
+    void setValueXY(float fx, float fy);
+    void setValueX(float fx);
+    void setValueY(float fy);
+
+    // void setParamX(uint32_t id) { m_paramX = id; }
+    // void setParamY(uint32_t id) { m_paramY = id; }
 
 protected slots:
     void onToggled( bool checked );

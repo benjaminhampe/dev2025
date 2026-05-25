@@ -549,7 +549,7 @@ namespace de {
     {
         typedef float T;
         typedef TAlignedVector< T > TData;
-        typedef std::vector< T* > TRowVector;
+        typedef TAlignedVector< T* > TRowVector;
 
         u32 m_colCount;  // Count matrix cols = m_shiftBuffer.size()
         u32 m_rowCount;  // Count matrix rows

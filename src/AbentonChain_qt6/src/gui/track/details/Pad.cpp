@@ -1,6 +1,7 @@
 #include "gui/track/details/Pad.h"
 #include "App.h"
 #include "gui/Skin.h"
+#include "de/audio/fft/approx_math.h"
 
 Pad::Pad(QWidget* parent)
     : QWidget(parent)
@@ -121,6 +122,47 @@ void Pad::resizeEvent(QResizeEvent* event)
 {
     applySkin();
     QWidget::resizeEvent(event);
+}
+
+/*
+std::optional<QPoint>
+invertF( const QPointF& f, const QRect& rect )
+{
+    const int w = rect.width();
+    const int h = rect.height();
+    if (w < 2 || h < 2)
+        return std::nullopt;
+
+    const float fx = std::clamp(float(f.x()), 0.f, 1.f);
+    const float fy = std::clamp(float(f.y()), 0.f, 1.f);
+
+    const int x = rect.x();
+    const int y = rect.y();
+
+    const int mx = int(std::round(x + fx * float(w - 1)));
+    const int my = int(std::round(y + (1.f - fy) * float(h - 1)));
+
+    return QPoint(mx, my);
+}
+*/
+
+void Pad::setValueX(float fx)
+{
+    m_fx = de::audio::math::clampf(fx, 0.f, 1.f);
+    update();
+}
+
+void Pad::setValueY(float fy)
+{
+    m_fy = de::audio::math::clampf(fy, 0.f, 1.f);
+    update();
+}
+
+void Pad::setValueXY(float fx, float fy)
+{
+    m_fx = de::audio::math::clampf(fx, 0.f, 1.f);
+    m_fy = de::audio::math::clampf(fy, 0.f, 1.f);
+    update();
 }
 
 std::optional<QPointF>
