@@ -16,15 +16,12 @@ add_subdirectory(de-lzo2-2.10)
 add_subdirectory(de-lz4-1.10.0)
 add_subdirectory(de-b2-0.98.1)
 add_subdirectory(de-cpio-1.0.0)
-add_subdirectory(de-jsoncpp-1.9.6)
-add_subdirectory(de-iconv-1.18)
-add_subdirectory(de-xml2-2.9.10)
-add_subdirectory(de-expat-3.2.2)
-add_subdirectory(de-gmp-mini-6.3.0)
-# add_subdirectory(de-gmp-generic-6.3.0)
+
 add_subdirectory(de-zstd-1.5.7)
 add_subdirectory(de-xz-5.8.1-static)
 add_subdirectory(de-mbedtls-3.6.4-static)
 add_subdirectory(de-pcre2-10.46)
+
+add_subdirectory(de-xml2-2.9.10)
 
 add_subdirectory(de-archive-3.8.1)

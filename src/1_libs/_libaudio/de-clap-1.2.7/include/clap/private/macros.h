@@ -3,7 +3,9 @@
 // Define CLAP_EXPORT
 #if !defined(CLAP_EXPORT)
 #   if defined _WIN32 || defined __CYGWIN__
-#      ifdef __GNUC__
+#      if defined(__clang__)
+#         define CLAP_EXPORT __declspec(dllexport)
+#      elif __GNUC__
 #         define CLAP_EXPORT __attribute__((dllexport))
 #      else
 #         define CLAP_EXPORT __declspec(dllexport)

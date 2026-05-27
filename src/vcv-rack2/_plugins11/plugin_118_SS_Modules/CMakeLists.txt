@@ -39,9 +39,6 @@ else()
     # target_compile_definitions(${LIB_NAME} PRIVATE _RACK_VERSION="2.6.2")
 
     target_link_libraries(${LIB_NAME} PRIVATE de_rack2)
-    # target_link_libraries(${LIB_NAME} PRIVATE de_opensimplexnoise)
-    # target_link_libraries(${LIB_NAME} PRIVATE de_samplerate)
-    # target_link_libraries(${LIB_NAME} PRIVATE de_dr_wav)
 
     # set_target_properties(plugin PROPERTIES LINK_FLAGS "/DEF:${CMAKE_CURRENT_SOURCE_DIR}/plugin.def")
 

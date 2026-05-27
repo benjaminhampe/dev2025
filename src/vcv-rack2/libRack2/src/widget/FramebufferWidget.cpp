@@ -202,13 +202,15 @@ void FramebufferWidget::render(math::Vec scale, math::Vec offsetF, math::Rect cl
         localBox = getVisibleChildrenBoundingBox();
     }
 
+    // RK_DEBUG("localBox (%f, %f; %f, %f)
+
     // Intersect local box with viewport if viewportMargin is set
     internal->fbClipBox = clipBox.grow(viewportMargin);
     if (internal->fbClipBox.size.isFinite()) {
         localBox = localBox.intersect(internal->fbClipBox);
     }
 
-    // RK_DEBUG("rendering FramebufferWidget localBox (%f, %f; %f, %f) fbOffset (%f, %f) fbScale (%f, %f)", RECT_ARGS(localBox), VEC_ARGS(internal->fbOffsetF), VEC_ARGS(internal->fbScale));
+    //RK_DEBUG("rendering FramebufferWidget localBox (%f, %f; %f, %f) fbOffset (%f, %f) fbScale (%f, %f)", RECT_ARGS(localBox), VEC_ARGS(internal->fbOffsetF), VEC_ARGS(internal->fbScale));
     // Transform to world coordinates, then expand to nearest integer coordinates
     math::Vec min = localBox.getTopLeft().mult(internal->fbScale).plus(internal->fbOffsetF).floor();
     math::Vec max = localBox.getBottomRight().mult(internal->fbScale).plus(internal->fbOffsetF).ceil();
@@ -218,21 +220,47 @@ void FramebufferWidget::render(math::Vec scale, math::Vec offsetF, math::Rect cl
     float pixelRatio = std::fmax(1.f, std::floor(APP->window->pixelRatio));
     math::Vec newFbSize = internal->fbBox.size.mult(pixelRatio).ceil();
 
+    //RK_DEBUG("internal->fbSize(%f, %f)",internal->fbSize.x, internal->fbSize.y);
+
     // Create framebuffer if a new size is needed
-    if (!internal->fb || !newFbSize.equals(internal->fbSize)) {
+    if (!internal->fb || !newFbSize.equals(internal->fbSize))
+    {
+        //RK_DEBUG("newFbSize(%f, %f)",newFbSize.x, newFbSize.y);
+
         // Delete old framebuffer
         deleteFramebuffer();
 
+        if (!newFbSize.isFinite())
+        {
+            //RK_DEBUG("No finite newFbSize(%f, %f)",newFbSize.x, newFbSize.y);
+        }
+
+        if (newFbSize.isZero())
+        {
+            //RK_DEBUG("No isZero newFbSize(%f, %f)",newFbSize.x, newFbSize.y);
+        }
+
         // Create a framebuffer
-        if (newFbSize.isFinite() && !newFbSize.isZero()) {
-            // RK_DEBUG("Creating framebuffer of size (%f, %f)", VEC_ARGS(newFbSize));
+        if (newFbSize.isFinite() && !newFbSize.isZero())
+        {
+            //RK_DEBUG("Creating framebuffer of size (%f, %f)", VEC_ARGS(newFbSize));
             internal->fb = nvgluCreateFramebuffer(vg, newFbSize.x, newFbSize.y, 0);
+            if (!internal->fb)
+            {
+                //RK_DEBUG("No internal->fb");
+            }
             FramebufferWidget_totalPixels += newFbSize.area();
         }
+
 
         // RK_DEBUG("Framebuffer total pixels: %.1f Mpx", FramebufferWidget_totalPixels / 1e6);
         internal->fbSize = newFbSize;
     }
+    else
+    {
+
+    }
+
     if (!internal->fb) {
         RK_WARN("Framebuffer of size (%f, %f) could not be created for FramebufferWidget %p.", VEC_ARGS(internal->fbSize), this);
         return;

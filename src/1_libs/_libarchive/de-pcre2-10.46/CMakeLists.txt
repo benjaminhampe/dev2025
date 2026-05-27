@@ -1,4 +1,4 @@
-set(LIB_NAME de_pcre2)
+set(LIB_NAME de_pcre2) # Regular expressions (for libarchive)
 
 project(${LIB_NAME}-2.10)
 

@@ -55,9 +55,6 @@ else()
     target_link_libraries(${LIB_NAME} PRIVATE de_gmtl)
     target_link_libraries(${LIB_NAME} PRIVATE de_openssl_static)
     target_link_libraries(${LIB_NAME} PRIVATE de_curl_shared)
-    # target_link_libraries(${LIB_NAME} PRIVATE de_opensimplexnoise)
-    # target_link_libraries(${LIB_NAME} PRIVATE de_samplerate)
-    # target_link_libraries(${LIB_NAME} PRIVATE de_dr_wav)
 
     # set_target_properties(plugin PROPERTIES LINK_FLAGS "/DEF:${CMAKE_CURRENT_SOURCE_DIR}/plugin.def")
 

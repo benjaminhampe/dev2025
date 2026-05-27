@@ -128,8 +128,8 @@ typedef struct clap_plugin_entry {
    const void *(CLAP_ABI *get_factory)(const char *factory_id);
 } clap_plugin_entry_t;
 
-/* Entry point */
-CLAP_EXPORT extern const clap_plugin_entry_t clap_entry;
+// /* Entry point */
+// CLAP_EXPORT extern const clap_plugin_entry_t clap_entry;
 
 #ifdef __cplusplus
 }
