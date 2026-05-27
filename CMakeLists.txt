@@ -32,10 +32,16 @@ set(CMAKE_SYSTEM_NAME Windows)
 
 cmake_minimum_required(VERSION 3.14 FATAL_ERROR)
 
-set(BENNI_USE_QT 1)     # <optional> Build QtSDK Apps and copy runtime
-set(BENNI_USE_WX 0)     # <optional> Build wxWidgets Apps and copy runtime
-set(BENNI_USE_IRR 0)    # <optional> Builds Irrlicht libs and apps.
-set(BENNI_USE_JUCE 1)   # <optional> Big JUCE lib, Bespoke, Odin2, Surge Rack plugins, etc..
+set(BENNI_USE_QT 1)         # <optional> Build QtSDK Apps and copy runtime
+set(BENNI_USE_OPENCV 0)     # <optional> Build OpenCV and face detection demo app
+set(BENNI_USE_POLYPHONE 0)  # <optional> Big app
+set(BENNI_USE_WX 0)         # <optional> Build wxWidgets Apps and copy runtime
+set(BENNI_USE_IRR 0)        # <optional> Builds Irrlicht libs and apps.
+set(BENNI_USE_JUCE 1)       # <optional> Big JUCE lib, Bespoke, Odin2, Surge Rack plugins, etc..
+set(BENNI_USE_JUCE_EXTRA 0) # <optional> Big JUCE plugins, Odin2, Surge Rack plugins, etc..
+set(BENNI_USE_JUCE_BESPOKE 0) # <optional> Big JUCE plugin Bespoke
+set(BENNI_USE_WHISPER 0)    # <optional> Big speech2text
+set(BENNI_USE_RAYLIB 0)     # <optional> 
 set(BENNI_USE_VCV 0)    # <optional> Big VCV-Rack2 + Benni plugins + ca. 500 external plugins.
 set(BENNI_USE_OPENGL_TUTORIALS 0) # <optional> Builds LearnOpenGL, Norberts and
 
@@ -48,12 +54,14 @@ set(BENNI_USE_SPEED 1)    # Enable -O3 -fexpensive-optimizations -ftree-vectoriz
 set(BENNI_USE_LTO 1)      # Enable -flto
 # set(BENNI_USE_OPENMP 1)   # Enable -fopenmp
 
-set(BENNI_USE_NATIVE 1)   # Enable My CPU only Intel 165U Meteor Lake or similar.
-set(BENNI_USE_AVX512 0)   # Enable all AVX512 extensions.
-set(BENNI_USE_AVX512F 0)  # Float + Double extensions.
-set(BENNI_USE_AVX512DQ 0) # Double quad extensions
-set(BENNI_USE_AVX512BW 0) # Byte + Word extensions
-set(BENNI_USE_AVX512VL 0) # Vector length extension
+set(BENNI_USE_NATIVE 0)     # Intel 165U
+set(BENNI_USE_CPU_V3 1)     # -march=x86-64-v3 = -march=x86‑64‑v2 + AVX + AVX2 + BMI1 + BMI2 + FMA + LZCNT + MOVBE
+set(BENNI_USE_CPU_V2 0)     # -march=x86-64-v2 = -march=x86‑64 baseline + SSE3 + SSSE3 + SSE4.1 + SSE4.2 + POPCNT
+set(BENNI_USE_AVX512 0)     # Enable all AVX512 extensions.
+set(BENNI_USE_AVX512F 0)    # Float + Double extensions.
+set(BENNI_USE_AVX512DQ 0)   # Double quad extensions
+set(BENNI_USE_AVX512BW 0)   # Byte + Word extensions
+set(BENNI_USE_AVX512VL 0)   # Vector length extension
 set(BENNI_USE_AVX2 1)
 set(BENNI_USE_FMA3 1)
 set(BENNI_USE_SSE42 0)
@@ -154,7 +162,8 @@ if(CMAKE_BUILD_TYPE STREQUAL "MinSizeRel")
    add_compile_definitions(NDEBUG=1)
    add_compile_definitions(BUILD_RELEASE=1)
 endif()
-message("[benni] CMAKE_BUILD_TYPE = ${CMAKE_BUILD_TYPE}")
+
+message("${BoldYellow}[benni] CMAKE_BUILD_TYPE = ${CMAKE_BUILD_TYPE}${ColourReset}")
 
 set(MY_C_FLAGS "")
 set(MY_CXX_FLAGS "")
@@ -162,8 +171,29 @@ set(MY_LD_FLAGS "")
 
 if (MSVC)
 else()
-    set(MY_C_FLAGS "${MY_C_FLAGS} -target x86_64-w64-windows-gnu")
+
+    # ### For any BUILD_TYPE <Debug|Release|etc..> ###
+
+    set(MY_C_FLAGS     "${MY_C_FLAGS} -target x86_64-w64-windows-gnu")
     set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -target x86_64-w64-windows-gnu")
+
+    # ### For any BUILD_TYPE <Debug|Release|etc..> ###
+
+    if (BENNI_USE_NATIVE)
+        message("${BoldYellow}[benni] Building Native = Least Compatible${ColourReset}")
+        set(MY_C_FLAGS     "${MY_C_FLAGS} -march=native -mtune=native")
+        set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -march=native -mtune=native")
+    elseif(BENNI_USE_CPU_V3)
+        message("${BoldYellow}[benni] Building ISA v3 = Only Compatible newer CPUs with AVX2 and BMI${ColourReset}")
+        set(MY_C_FLAGS     "${MY_C_FLAGS} -march=x86-64-v3 -mtune=generic")
+        set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -march=x86-64-v3 -mtune=generic")
+    else() # BENNI_USE_CPU_V2
+        message("${BoldYellow}[benni] Building ISA v2 = Highly Compatible with CPUs but probably slow${ColourReset}")
+        set(MY_C_FLAGS     "${MY_C_FLAGS} -march=x86-64-v2 -mtune=generic")
+        set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -march=x86-64-v2 -mtune=generic")
+    endif()
+
+    # ### Separate by BUILD_TYPE <Debug|Release|etc..> ###
 
     if (CMAKE_BUILD_TYPE STREQUAL "Debug")
         message(STATUS ">>> Debug mode enabled")
@@ -219,8 +249,6 @@ else()
         set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -Ofast -ffast-math -fstrict-aliasing -fvisibility=hidden")
         # set(MY_C_FLAGS     "${MY_C_FLAGS} -O3")
         # set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -O3")
-        set(MY_C_FLAGS     "${MY_C_FLAGS} -march=native -mtune=native")
-        set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -march=native -mtune=native")
         # set(MY_C_FLAGS     "${MY_C_FLAGS} -fno-exceptions")
         # set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -fno-exceptions")
         # set(MY_C_FLAGS     "${MY_C_FLAGS} -fno-rtti")

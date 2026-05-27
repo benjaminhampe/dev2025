@@ -121,7 +121,7 @@ QSize ComboBox::minimumSizeHint() const
 void ComboBox::applySkin()
 {
     // DE_DEBUG("")
-    const auto& skin = App::instance()->currentSkin();
+    const auto& skin = App::instance()->getSkin();
     m_height = (m_baseHeight * skin.zoom) / 100;
 
     updateGeometry(); // tells Qt: “my sizeHint() changed”

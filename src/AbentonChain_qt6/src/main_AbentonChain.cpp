@@ -5,35 +5,36 @@
 #include <QDebug>
 
 #include <QAbstractNativeEventFilter>
+
 #ifdef _WIN32
-#ifndef WIN32_LEAN_AND_MEAN
-#define WIN32_LEAN_AND_MEAN
+    #ifndef WIN32_LEAN_AND_MEAN
+    #define WIN32_LEAN_AND_MEAN
+    #endif
+    #include <windows.h>
 #endif
-#include <windows.h>
 
 // ============================================================
 inline void enableConsoleOutput()
 // ============================================================
 {
+#ifdef _WIN32
     AllocConsole();
     freopen("CONOUT$", "w", stdout);
     freopen("CONOUT$", "w", stderr);
+#endif
 }
 
 // ============================================================
 inline void forceForeground(QWidget* w)
 // ============================================================
 {
+#ifdef _WIN32
     HWND hwnd = (HWND)w->winId();
     SetForegroundWindow(hwnd);
     ShowWindow(hwnd, SW_SHOW);
     ShowWindow(hwnd, SW_RESTORE);
-}
-#else
-inline void forceForeground(QWidget* w)
-{
-}
 #endif
+}
 
 // ============================================================
 inline void dbLoadFont(QString uri)
@@ -65,11 +66,13 @@ public:
                            void* message,
                            qintptr* result) override
     {
-#ifdef Q_OS_WIN
-        if (eventType == "windows_generic_MSG") {
+#ifdef _WIN32
+        if (eventType == "windows_generic_MSG")
+        {
             MSG* msg = static_cast<MSG*>(message);
 
-            if (msg->message == WM_ERASEBKGND) {
+            if (msg->message == WM_ERASEBKGND)
+            {
                 *result = 1;     // tell Windows we handled it
                 return true;     // block background erase
             }
@@ -90,7 +93,7 @@ int main(int argc, char **argv)
 // Fixes OpenGL issues with Qt6:
 // OpenGLWidget returns fully broken widget size with Qt's dpi scaling
 // Has (1/x) error or so. Bad math.
-#ifdef Q_OS_WINDOWS
+#ifdef _WIN32
     qputenv("QT_ENABLE_HIGHDPI_SCALING", "0");
 #endif
 
@@ -115,6 +118,7 @@ int main(int argc, char **argv)
 
     app.setWindowIcon(QIcon(":/winico"));
 
+    dbLoadFont(":/fonts/fontawesome463.ttf");
     dbLoadFont(":/fonts/NotoSans-Bold.ttf");
     dbLoadFont(":/fonts/NotoSans-BoldItalic.ttf");
     dbLoadFont(":/fonts/NotoSans-Italic.ttf");

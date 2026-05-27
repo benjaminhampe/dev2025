@@ -16,6 +16,7 @@
 #pragma once
 
 #include "JuceHeader.h"
+#include "JucePluginConfig.h"
 #include "GlobalIncludes.h"
 #include "OdinTreeListener.h"
 #include "audio/FX/Chorus.h"

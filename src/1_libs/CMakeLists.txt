@@ -15,14 +15,20 @@ add_subdirectory(DarkMidi-25.04)
 add_subdirectory(DarkSIMD-25.04)
 add_subdirectory(DarkAudio)
 
-add_subdirectory(DarkImage-26.04)
-add_subdirectory(DarkGPU-26.04)
+add_subdirectory(DarkImage-26.04)   # Abenton Live64 Instrument
+add_subdirectory(DarkGPU-26.04)     # Abenton Live64 Instrument
+add_subdirectory(DarkMP4)           # Abenton Live64 Instrument -> import YouTube AAC audio from MP4 files
 
-add_subdirectory(de-opencv-4.13.0)
+add_subdirectory(file2bin)
+
+if (BENNI_USE_OPENCV)
+    add_subdirectory(de-opencv-4.13.0)
+endif()
 
 if (BENNI_USE_QT)
 	add_subdirectory(de-QtAdvancedDockingSystem-4.4.1)
 endif()
+
 
 
 # add_subdirectory(DarkMesh)

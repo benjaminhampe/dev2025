@@ -66,7 +66,7 @@ void Body::applySkin()
     m_cbxParam1->applySkin();
     m_cbxParam2->applySkin();
 
-    const auto& skin = App::instance()->currentSkin();
+    const auto& skin = App::instance()->getSkin();
     m_width = (m_baseWidth * skin.zoom) / 100;
     m_height = (m_baseHeight * skin.zoom) / 100;
 

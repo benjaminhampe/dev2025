@@ -1,11 +1,12 @@
 <!DOCTYPE RCC><RCC version="1.0">
 <qresource>
-   <file alias="winico">./app.ico</file>
+   <file alias="winico">./keys.ico</file>
    <file alias="/svg/check_big.svg">./svg/check_big.svg</file>
    <file alias="/img/rainbow_1k.webp">./img/rainbow_1k.webp</file>
    <file alias="/fonts/NotoSans-Bold.ttf">./fonts/NotoSans-Bold.ttf</file>
    <file alias="/fonts/NotoSans-BoldItalic.ttf">./fonts/NotoSans-BoldItalic.ttf</file>
    <file alias="/fonts/NotoSans-Italic.ttf">./fonts/NotoSans-Italic.ttf</file>
    <file alias="/fonts/NotoSans-Regular.ttf">./fonts/NotoSans-Regular.ttf</file>
+   <file alias="/fonts/fontawesome463.ttf">./fonts/fontawesome463.ttf</file>
 </qresource>
 </RCC>

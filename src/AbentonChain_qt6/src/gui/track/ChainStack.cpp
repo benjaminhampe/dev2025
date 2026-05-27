@@ -51,7 +51,7 @@ void ChainStack::applySkin()
 {
     static_cast<ChainWrapper*>(m_stack->currentWidget())->applySkin();
 
-    const auto& skin = App::instance()->currentSkin();
+    const auto& skin = App::instance()->getSkin();
     m_windowColor = skin.windowColor;
     // int w = (m_baseWidth * skin.zoom) / 100;
     // int h = (m_baseHeight * skin.zoom) / 100;

@@ -148,7 +148,8 @@ else()
 
    # target_link_libraries(${LIB_NAME} PRIVATE de_asiosdk)
    target_link_libraries(${LIB_NAME} PUBLIC de_vst2sdk)
-   target_link_libraries(${LIB_NAME} PUBLIC de_vst3sdk)
+   # target_link_libraries(${LIB_NAME} PUBLIC de_vst3sdk)
+   target_link_libraries(${LIB_NAME} PUBLIC de_vst3sdk_380)
 
 endif()
 

@@ -83,7 +83,7 @@ public:
         }
     }
 
-    void setVisiblePerfOverlay( bool bVisible )
+    void showPerfOverlay( bool bVisible )
     {
         m_bVisiblePerfOverlay = bVisible;
         requestUpdate();
@@ -94,7 +94,7 @@ public:
     //     QOpenGLWidget::setVisible( bVisible );
     // }
 
-    void setVisibleFftMatrix( bool bVisible )
+    void showFftMatrix( bool bVisible )
     {
         m_renderer.setVisibleFftMatrix(bVisible);
         requestUpdate();

@@ -253,11 +253,13 @@ void Plugin::on_pad(float x, float y)
 
     if (paramIdX != UINT32_MAX)
     {
+        //DE_TRACE("paramId.X = ", paramIdX)
         m_plugin->setParameterValue(paramIdX, x);
     }
 
     if (paramIdY != UINT32_MAX)
     {
+        //DE_TRACE("paramId.Y = ", paramIdY)
         m_plugin->setParameterValue(paramIdY, y);
     }
 }
@@ -385,7 +387,7 @@ void Plugin::applySkin()
 
     DE_TRACE("b(",bw,",",bh,"), a(",aw,",",ah,")")
 
-    const auto& skin = App::instance()->currentSkin();
+    const auto& skin = App::instance()->getSkin();
     m_windowColor = skin.windowColor;
     m_panelColor = skin.panelColor;
     m_headerColor = skin.headerColor;

@@ -45,7 +45,7 @@ void Track::applySkin()
     }
 
     //qDebug() << "Track::applySkin()";
-    const auto& skin = App::instance()->currentSkin();
+    const auto& skin = App::instance()->getSkin();
     m_windowColor = skin.windowColor;
     m_panelColor = skin.panelColor;
     m_textColor = skin.textColor;

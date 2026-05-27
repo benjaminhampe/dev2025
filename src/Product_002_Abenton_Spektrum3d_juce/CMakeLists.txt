@@ -1,0 +1,6 @@
+# add_subdirectory(lib_Abenton_Spectrum3d_vst2)
+# add_subdirectory(lib_Abenton_Spectrum3d_vst3)
+# add_subdirectory(lib_Abenton_Spectrum3d_clap)
+add_subdirectory(build_vst2)
+add_subdirectory(build_vst3)
+add_subdirectory(build_clap)

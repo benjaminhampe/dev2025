@@ -25,7 +25,7 @@ QSize MidiMeter::minimumSizeHint() const
 
 void MidiMeter::applySkin()
 {
-    const auto& skin = App::instance()->currentSkin();
+    const auto& skin = App::instance()->getSkin();
     m_windowColor = skin.windowColor;
     m_circleSpacing = (m_baseCircleSpacing * skin.zoom) / 100;
     m_circleRadius = (m_baseCircleRadius * skin.zoom) / 100;

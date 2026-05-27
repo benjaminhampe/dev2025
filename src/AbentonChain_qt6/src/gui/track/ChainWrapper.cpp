@@ -100,7 +100,7 @@ void ChainWrapper::applySkin()
     //m_scrollArea->setSizeAdjustPolicy(0,m_track->height());
     m_scrollArea->setMinimumSize(0,m_track->height());
 
-    const auto& skin = App::instance()->currentSkin();
+    const auto& skin = App::instance()->getSkin();
     m_windowColor = skin.windowColor;
     m_margin = (m_baseMargin * skin.zoom) / 100;
     m_radius = ((m_baseRadius-2) * skin.zoom) / 100;

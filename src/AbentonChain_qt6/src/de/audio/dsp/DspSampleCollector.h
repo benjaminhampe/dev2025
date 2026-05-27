@@ -93,7 +93,7 @@ public:
         m_accum_win.setFunction((WindowFunction::eFunc)windowFunc);
     }
 
-    void setFftSize( int fftSize )
+    void setFftSize( uint32_t fftSize )
     {
         m_fftSize = fftSize;
         m_accum_fft.setFftSize(fftSize);

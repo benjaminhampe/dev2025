@@ -55,7 +55,7 @@ AudioMeter::AudioMeter( QWidget* parent )
 void AudioMeter::applySkin()
 {
     // DE_DEBUG("")
-    const auto& skin = App::instance()->currentSkin();
+    const auto& skin = App::instance()->getSkin();
     m_windowColor = skin.windowColor;
     m_width = (m_baseWidth * skin.zoom) / 100;
     m_height = (m_baseHeight * skin.zoom) / 100;

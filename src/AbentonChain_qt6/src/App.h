@@ -44,7 +44,7 @@ public:
     //=========================
     static std::shared_ptr<App> instance();
     const Skin& currentSkin() const;
-    Skin& currentSkin();
+    Skin& getSkin();
     int getZoom() const;
 
     //=========================

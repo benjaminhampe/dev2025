@@ -79,7 +79,7 @@ App::currentSkin() const
 }
 
 Skin&
-App::currentSkin()
+App::getSkin()
 {
     return m_skinManager.current();
 }

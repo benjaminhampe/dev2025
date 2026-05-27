@@ -256,6 +256,7 @@ void enumerateParams(Parameters& params, Steinberg::Vst::IEditController* contro
         }
 
         Parameter pi;
+        pi.m_id = info.id;
         pi.m_name = de_mbstr(info.title);
         pi.m_disp = de_mbstr(info.shortTitle);
         pi.m_unit = de_mbstr(info.units);
@@ -1584,6 +1585,9 @@ public:
                 {
                     const float* __restrict__ pSrc = m_buffers.m_L.data();
                     float* __restrict__ pDst = c.data();
+
+                    DE_ASSUME_NO_OVERLAP(pSrc,pDst,bytesPerChannel);
+
                     std::memcpy(pDst, pSrc, bytesPerChannel); // Copy (L) to first VST3 input buffer
                     n++;
                 }
@@ -1591,6 +1595,9 @@ public:
                 {
                     const float* __restrict__ pSrc = m_buffers.m_R.data();
                     float* __restrict__ pDst = c.data();
+
+                    DE_ASSUME_NO_OVERLAP(pSrc,pDst,bytesPerChannel);
+
                     std::memcpy(pDst, pSrc, bytesPerChannel); // Copy (R) to second VST3 input buffer
                     n++;
                 }
@@ -1743,8 +1750,11 @@ public:
 
         const int64_t globFramePos = m_framePos;
 
+        //DE_WARN("globFramePos = ",globFramePos)
+
         if (auto l = m_userInputParamChanges.lock())
         {
+            //DE_WARN("m_userInputParamChanges.curves.size() = ",m_userInputParamChanges.curves.size())
             m_vstInputParamChanges.setMaxParameters(m_userInputParamChanges.curves.size());
             for (const auto& curve : m_userInputParamChanges.curves)
             {
@@ -1752,11 +1762,11 @@ public:
                 auto queue = m_vstInputParamChanges.addParameterData(curve.paramId, index);
                 if (queue)
                 {
-
                     for (const auto& p : curve.points)
                     {
-                        int64_t framePos = std::max(p.framePos - globFramePos, 0ll);
-                        queue->addPoint(framePos, p.value, index);
+                        const int64_t localFramePos = std::max(p.framePos - globFramePos, 0ll);
+                        //DE_WARN("Param[",curve.paramId,"] localFramePos(",localFramePos,"), value(",p.value,")")
+                        queue->addPoint(localFramePos, p.value, index);
                     }
                 }
             }
@@ -2212,29 +2222,36 @@ f64 VST3_Plugin::getParameterValue(uint32_t id) const
 
 void VST3_Plugin::setParameterValue(uint32_t id, f64 value, int64_t framePos)
 {
-    // u32 n = getParameterCount();
-    // if (i < 0 || i > int(n))
-    // {
-    //     DE_ERROR("Invalid index ",i)
-    // }
-
-    // Steinberg::Vst::ParameterInfo info;
-    // _d->m_editController->getParameterInfo(i, info);
-
     if (id == UINT32_MAX)
     {
         DE_ERROR("Invalid id")
         return;
     }
 
+#ifdef BENNI_VST3_MISSING_PARAMID_ERROR_SEARCH
+    const auto& params = _d->m_paramList;
 
+    auto it = std::find_if(params.begin(),params.end(), [&](const auto& p ) { return p.m_id == id; });
+    if (it == params.end())
+    {
+        DE_ERROR("ParamId = ",id, " NOT FOUND" )
+    }
+    else
+    {
+        DE_BENNI("ParamId = ",id, ", name = ", it->m_name)
+    }
     // auto pid = info.id;
-
     //DE_OK("Set param[",i,"].id[",pid,"].value = ",value)
+#endif
+
+    const double dt = _d->m_midiClock.now(); // Clock is restarted every callback call.
+    const int deltaFrames = std::clamp( int(dt * _d->m_sampleRate),
+                                        int(0),
+                                        int(_d->m_blockSize) - 10);
 
     if ( auto l = _d->m_userInputParamChanges.lock() )
     {
-        _d->m_userInputParamChanges.addPoint( id, framePos, value );
+        _d->m_userInputParamChanges.addPoint( id, _d->m_framePos + deltaFrames, value );
     }
 }
 

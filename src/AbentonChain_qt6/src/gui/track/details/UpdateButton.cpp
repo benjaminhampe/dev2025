@@ -37,7 +37,7 @@ void UpdateButton::onToggled(bool checked)
 void UpdateButton::applySkin()
 {
     // DE_DEBUG("")
-    const auto& skin = App::instance()->currentSkin();
+    const auto& skin = App::instance()->getSkin();
 
     const int b = (m_baseButtonSize * skin.zoom) / 100;
     setFixedSize(b,b);
@@ -89,11 +89,11 @@ void UpdateButton::applySkin()
 
     if (isCheckable() && !isChecked())
     {
-        setButtonSvg( this, m_deactive);
+        setButtonPix( this, m_deactive);
     }
     else
     {
-        setButtonSvg( this, m_active);
+        setButtonPix( this, m_active);
     }
 
     // updateGeometry(); // tells Qt: “my sizeHint() changed”

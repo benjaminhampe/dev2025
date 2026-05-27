@@ -1,15 +1,11 @@
 #pragma once
 
-#ifndef HAVE_FONTAWESOME
-#define HAVE_FONTAWESOME
-#endif
-
 #ifndef HAVE_FREETYPE2
 #define HAVE_FREETYPE2
 #endif
 
 #ifdef HAVE_FONTAWESOME
-#include <de_fontawesome.hpp>
+#include <de_fontawesome.h>
 #endif
 
 // #ifdef HAVE_FREETYPE2

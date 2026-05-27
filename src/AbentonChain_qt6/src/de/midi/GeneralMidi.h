@@ -7,37 +7,62 @@
 
 bool writeMidi(const MidiEvent& midiEvent)
 {
-	if (midiEvent.size > 4)
-		return true;
+    if (midiEvent.size > 4)
+        return true;
 
-	VstEvents vstEvents;
-	std::memset(&vstEvents, 0, sizeof(VstEvents));
+    VstEvents vstEvents;
+    std::memset(&vstEvents, 0, sizeof(VstEvents));
 
-	VstMidiEvent vstMidiEvent;
-	std::memset(&vstMidiEvent, 0, sizeof(VstMidiEvent));
+    VstMidiEvent vstMidiEvent;
+    std::memset(&vstMidiEvent, 0, sizeof(VstMidiEvent));
 
-	vstEvents.numEvents = 1;
-	vstEvents.events[0] = (VstEvent*)&vstMidiEvent;
+    vstEvents.numEvents = 1;
+    vstEvents.events[0] = (VstEvent*)&vstMidiEvent;
 
-	vstMidiEvent.type = kVstMidiType;
-	vstMidiEvent.byteSize    = kVstMidiEventSize;
-	vstMidiEvent.deltaFrames = midiEvent.frame;
+    vstMidiEvent.type = kVstMidiType;
+    vstMidiEvent.byteSize    = kVstMidiEventSize;
+    vstMidiEvent.deltaFrames = midiEvent.frame;
 
-	for (uint8_t i=0; i<midiEvent.size; ++i)
-		vstMidiEvent.midiData[i] = midiEvent.data[i];
+    for (uint8_t i=0; i<midiEvent.size; ++i)
+        vstMidiEvent.midiData[i] = midiEvent.data[i];
 
-	return hostCallback(audioMasterProcessEvents, 0, 0, &vstEvents) == 1;
+    return hostCallback(audioMasterProcessEvents, 0, 0, &vstEvents) == 1;
 }
 
 static bool writeMidiCallback(void* ptr, const MidiEvent& midiEvent)
 {
-	return ((PluginVst*)ptr)->writeMidi(midiEvent);
+    return ((PluginVst*)ptr)->writeMidi(midiEvent);
 }
 */
 
 namespace de {
 
+
+// SMF Syntax - Standard Midi file syntax. ( Aufs Byte genau leider )
+// <descriptor:length> means 'length' bytes, MSB first
+// <descriptor:v> means variable length argument (special format)
+// SMF := <header_chunk> + <track_chunk> [ + <track_chunk> ... ]
+// header chunk := "MThd" + <header_length:4> + <format:2> + <num_tracks:2> + <time_division:2>
+// track_chunk := "MTrk" + <length:4> + <track_event> [ + <track_event> ... ]
+// track_event := <time:v> + [ <midi_event> | <meta_event> | <sysex_event> ]
+// midi_event := any MIDI channel message, including running status
+// meta_event := 0xFF + <meta_type:1> + <length:v> + <event_data_bytes>
+// sysex_event := 0xF0 + <len:1> + <data_bytes> + 0xF7
+// sysex_event := 0xF7 + <len:1> + <data_bytes> + 0xF7
+// Opens a Midifile and display partitur like, 1st milestone
+
+// MIDI section <-------------MIDI Header--------------->
+// Byte number  0  1  2  3  4  5  6  7  8  9  10 11 12 13
+// Byte data    4D 54 68 64 00 00 00 06 00 01 00 01 00 80
+
+// <-----Track Header----> <-Track data-> {Track out>
+// 14 15 16 17 18 19 20 21 [22 to x]      [x+1 to x+4]
+// 4D 54 72 6B 00 00 00 0A blah blah..... 00 FF 2F 00
+
+
 // MidiNotes: 12x SemiTones per Oktave [C to H], 8x Oktaven [0 to 7] = 96 Toene
+
+// Toene Oktave Frequenzen
 // ================================================================
 //     0       1       2       3       4       5       6       7
 // C   16,35   32,70   65,41   130,81  261,63  523,25  1046,50 2093,00  Hz
@@ -76,6 +101,104 @@ constexpr static int musicScales[MUSIC_NUM_SCALES][MUSIC_NUM_KEYS] =
    {0, 3, 5, 6, 7, 10, 12, 15, 17, 18, 19, 22, 24, 27, 29, 30, 31, 34}
 };
 
+
+// MIDI Channel Messages:
+// ================================================================
+// 8n Note Off                8n kk vv, kk = key number (0-127) vv = velocity (0-127)
+// 9n Note On                 9n kk vv, kk = key number (0-127) vv = velocity (1-127, 0 = note off)
+// An Polyphonic After Touch  An kk tt, kk = key number (0-127) tt = after touch (0-127)
+// Bn Control Change          Bn cc xx, cc = controller (0-121) xx = value (0-127)
+// Bn Channel Mode Local Ctl  Bn 7A xx xx = 0 (off), 127 (on)
+// Bn All Notes Off           Bn 7B 00
+// Bn Omni Mode Off           Bn 7C 00
+// Bn Omni Mode On            Bn 7D 00
+// Bn Mono Mode On            Bn 7E cc cc = number of channels
+// Bn Poly Mode On            Bn 7F 00
+// Cn Program Change          Cn pp pp = program (0-127)
+// Dn Channel After Touch     Dn tt tt = after touch (0-127)
+// En Pitch Wheel Change      En ll hh ll = low 7 bits (0-127) hh = high 7 bits (0-127)
+
+// microseconds per tick = microseconds per quarter note / ticks per quarter note
+
+// ticks = resolution * (1 / tempo) * 1000 * elapsed_time
+
+// - resolution in ticks/beat (or equivalently ticks/Quarter note). This fixes the smallest time interval to be generated.
+// - tempo in microseconds per beat, which determines how many ticks are generated in a set time interval.
+// - elapsed_time which provides the fixed timebase for playing the midi events.
+
+// ticks   ticks   beat   1000 us    ms
+// ----- = ----- * ---- * ------- * ----
+// time    beat     us       ms     time
+
+// - time is the elapsed time between calls to the tick generator. This must be calculated by the tick generator based on the history of the previous call to the tick generator.
+// - tempo is the tempo determined by the Set Tempo MIDI event. Note this event only deals in Quarter Notes.
+// - resolution is held as TicksPerQuarterNote.
+
+//>>> mido.parse([0x92, 0x10, 0x20])
+//Message('note_on', channel=2, note=16, velocity=32, time=0)
+//>>> mido.parse_all([0x92, 0x10, 0x20, 0x82, 0x10, 0x20])
+//[Message('note_on', channel=2, note=16, velocity=32, time=0),
+//Message('note_off', channel=2, note=16, velocity=32, time=0)]
+
+//////////////////////////////
+//
+// MidiFile::setMillisecondTicks -- set the ticks per quarter note
+//   value to milliseconds.  The format for this specification is
+//   highest 8-bits: SMPTE Frame rate (as a negative 2's compliment value).
+//   lowest 8-bits: divisions per frame (as a positive number).
+//   for millisecond resolution, the SMPTE value is -25, and the
+//   frame rate is 40 frame per division.  In hexadecimal, these
+//   values are: -25 = 1110,0111 = 0xE7 and 40 = 0010,1000 = 0x28
+//   So setting the ticks per quarter note value to 0xE728 will cause
+//   delta times in the MIDI file to represent milliseconds.  Calling
+//   this function will not change any exiting timestamps, it will
+//   only change the meaning of the timestamps.
+//
+
+// void MidiFile::setMillisecondTicks(void) {
+   // m_ticksPerQuarterNote = 0xE728;
+// }
+
+//////////////////////////////
+//
+// MidiFile::addTimeSignature -- Add a time signature meta message
+//      (meta #0x58).  The "bottom" parameter must be a power of two;
+//      otherwise, it will be set to the next highest power of two.
+//
+// Default values:
+//     clocksPerClick     == 24 (quarter note)
+//     num32ndsPerQuarter ==  8 (8 32nds per quarter note)
+//
+// Time signature of 4/4 would be:
+//    top    = 4
+//    bottom = 4 (converted to 2 in the MIDI file for 2nd power of 2).
+//    clocksPerClick = 24 (2 eighth notes based on num32ndsPerQuarter)
+//    num32ndsPerQuarter = 8
+//
+// Time signature of 6/8 would be:
+//    top    = 6
+//    bottom = 8 (converted to 3 in the MIDI file for 3rd power of 2).
+//    clocksPerClick = 36 (3 eighth notes based on num32ndsPerQuarter)
+//    num32ndsPerQuarter = 8
+//
+//////////////////////////////
+//
+// MidiFile::addCompoundTimeSignature -- Add a time signature meta message
+//      (meta #0x58), where the clocksPerClick parameter is set to three
+//      eighth notes for compount meters such as 6/8 which represents
+//      two beats per measure.
+//
+// Default values:
+//     clocksPerClick     == 36 (quarter note)
+//     num32ndsPerQuarter ==  8 (8 32nds per quarter note)
+//
+//////////////////////////////
+//
+// MidiFile::makeVLV --  This function is used to create
+//   size byte(s) for meta-messages.  If the size of the data
+//   in the meta-message is greater than 127, then the size
+//   should (?) be specified as a VLV.
+//
 
 
 /*
@@ -595,6 +718,141 @@ GM_toString( int instrument )
       default: return "GM_UnknownInstrument";
    }
 }
+
+
+// MIDI CC Defines
+/*
+   00000000 00 0 Bank Select 0-127 MSB
+   00000001 01 1 * Modulation wheel 0-127 MSB
+   00000010 02 2 Breath control 0-127 MSB
+   00000011 03 3 Undefined 0-127 MSB
+   00000100 04 4 Foot controller 0-127 MSB
+   00000101 05 5 Portamento time 0-127 MSB
+   00000110 06 6 Data Entry 0-127 MSB
+   00000111 07 7 * Channel Volume (formerly Main Volume) 0-127 MSB
+   00001000 08 8 Balance 0-127 MSB
+   Standard MIDI file format, updated http://www.music.mcgill.ca/~ich/classes/mumt306/StandardMIDIfilefor...
+   10 von 20 11.09.2021, 19:11
+   00001001 09 9 Undefined 0-127 MSB
+   00001010 0A 10 * Pan 0-127 MSB
+   00001011 0B 11 * Expression Controller 0-127 MSB
+   00001100 0C 12 Effect control 1 0-127 MSB
+   00001101 0D 13 Effect control 2 0-127 MSB
+   00001110 0E 14 Undefined 0-127 MSB
+   00001111 0F 15 Undefined 0-127 MSB
+   00010000 10 16 General Purpose Controller #1 0-127 MSB
+   00010001 11 17 General Purpose Controller #2 0-127 MSB
+   00010010 12 18 General Purpose Controller #3 0-127 MSB
+   00010011 13 19 General Purpose Controller #4 0-127 MSB
+   00010100 14 20 Undefined 0-127 MSB
+   00010101 15 21 Undefined 0-127 MSB
+   00010110 16 22 Undefined 0-127 MSB
+   00010111 17 23 Undefined 0-127 MSB
+   00011000 18 24 Undefined 0-127 MSB
+   00011001 19 25 Undefined 0-127 MSB
+   00011010 1A 26 Undefined 0-127 MSB
+   00011011 1B 27 Undefined 0-127 MSB
+   00011100 1C 28 Undefined 0-127 MSB
+   00011101 1D 29 Undefined 0-127 MSB
+   00011110 1E 30 Undefined 0-127 MSB
+   00011111 1F 31 Undefined 0-127 MSB
+   00100000 20 32 Bank Select 0-127 LSB
+   00100001 21 33 Modulation wheel 0-127 LSB
+   00100010 22 34 Breath control 0-127 LSB
+   00100011 23 35 Undefined 0-127 LSB
+   00100100 24 36 Foot controller 0-127 LSB
+   00100101 25 37 Portamento time 0-127 LSB
+   00100110 26 38 Data entry 0-127 LSB
+   00100111 27 39 Channel Volume (formerly Main Volume) 0-127 LSB
+   00101000 28 40 Balance 0-127 LSB
+   00101001 29 41 Undefined 0-127 LSB
+   00101010 2A 42 Pan 0-127 LSB
+   00101011 2B 43 Expression Controller 0-127 LSB
+   00101100 2C 44 Effect control 1 0-127 LSB
+   00101101 2D 45 Effect control 2 0-127 LSB
+   00101110 2E 46 Undefined 0-127 LSB
+   00101111 2F 47 Undefined 0-127 LSB
+   00110000 30 48 General Purpose Controller #1 0-127 LSB
+   00110001 31 49 General Purpose Controller #2 0-127 LSB
+   00110010 32 50 General Purpose Controller #3 0-127 LSB
+   00110011 33 51 General Purpose Controller #4 0-127 LSB
+   00110100 34 52 Undefined 0-127 LSB
+   00110101 35 53 Undefined 0-127 LSB
+   00110110 36 54 Undefined 0-127 LSB
+   00110111 37 55 Undefined 0-127 LSB
+   00111000 38 56 Undefined 0-127 LSB
+   00111001 39 57 Undefined 0-127 LSB
+   00111010 3A 58 Undefined 0-127 LSB
+   00111011 3B 59 Undefined 0-127 LSB
+   00111100 3C 60 Undefined 0-127 LSB
+   00111101 3D 61 Undefined 0-127 LSB
+   00111110 3E 62 Undefined 0-127 LSB
+   00111111 3F 63 Undefined 0-127 LSB
+   01000000 40 64 * Damper pedal on/off (Sustain) <63=off >64=on
+   01000001 41 65 Portamento on/off <63=off >64=on
+   01000010 42 66 Sustenuto on/off <63=off >64=on
+   01000011 43 67 Soft pedal on/off <63=off >64=on
+   01000100 44 68 Legato Footswitch <63=off >64=on
+   01000101 45 69 Hold 2 <63=off >64=on
+   01000110 46 70 Sound Controller 1 (Sound Variation) 0-127 LSB
+   01000111 47 71 Sound Controller 2 (Timbre) 0-127 LSB
+   01001000 48 72 Sound Controller 3 (Release Time) 0-127 LSB
+   01001001 49 73 Sound Controller 4 (Attack Time) 0-127 LSB
+   01001010 4A 74 Sound Controller 5 (Brightness) 0-127 LSB
+   01001011 4B 75 Sound Controller 6 0-127 LSB
+   01001100 4C 76 Sound Controller 7 0-127 LSB
+   01001101 4D 77 Sound Controller 8 0-127 LSB
+   01001110 4E 78 Sound Controller 9 0-127 LSB
+   01001111 4F 79 Sound Controller 10 0-127 LSB
+   01010000 50 80 General Purpose Controller #5 0-127 LSB
+   01010001 51 81 General Purpose Controller #6 0-127 LSB
+   01010010 52 82 General Purpose Controller #7 0-127 LSB
+   01010011 53 83 General Purpose Controller #8 0-127 LSB
+   01010100 54 84 Portamento Control 0-127 Source Note
+   01010101 55 85 Undefined 0-127 LSB
+   01010110 56 86 Undefined 0-127 LSB
+   01010111 57 87 Undefined 0-127 LSB
+   01011000 58 88 Undefined 0-127 LSB
+   01011001 59 89 Undefined 0-127 LSB
+   01011010 5A 90 Undefined 0-127 LSB
+   01011011 5B 91 Effects 1 Depth 0-127 LSB
+   01011100 5C 92 Effects 2 Depth 0-127 LSB
+   01011101 5D 93 Effects 3 Depth 0-127 LSB
+   01011110 5E 94 Effects 4 Depth 0-127 LSB
+   01011111 5F 95 Effects 5 Depth 0-127 LSB
+   01100000 60 96 Data entry +1 N/A
+   01100001 61 97 Data entry -1 N/A
+   01100010 62 98 Non-Registered Parameter Number LSB 0-127 LSB
+   01100011 63 99 Non-Registered Parameter Number MSB 0-127 MSB
+   01100100 64 100 * Registered Parameter Number LSB 0-127 LSB
+   01100101 65 101 * Registered Parameter Number MSB 0-127 MSB
+   01100110 66 102 Undefined ?
+   01100111 67 103 Undefined ?
+   01101000 68 104 Undefined ?
+   01101001 69 105 Undefined ?
+   01101010 6A 106 Undefined ?
+   01101011 6B 107 Undefined ?
+   01101100 6C 108 Undefined ?
+   01101101 6D 109 Undefined ?
+   01101110 6E 110 Undefined ?
+   01101111 6F 111 Undefined ?
+   01110000 70 112 Undefined ?
+   01110001 71 113 Undefined ?
+   01110010 72 114 Undefined ?
+   01110011 73 115 Undefined ?
+   01110100 74 116 Undefined ?
+   01110101 75 117 Undefined ?
+   01110110 76 118 Undefined ?
+   01110111 77 119 Undefined ?
+   01111000 78 120 All Sound Off 0
+   01111001 79 121 * Reset All Controllers 0
+   01111010 7A 122 Local control on/off 0=off 127=on
+   01111011 7B 123 * All notes off 0
+   01111100 7C 124 Omni mode off (+ all notes off) 0
+   01111101 7D 125 Omni mode on (+ all notes off) 0
+   01111110 7E 126 Poly mode on/off (+ all notes off) **
+   01111111 7F 127 Poly mode on (incl mono=off +all notes off) 0
+*/
 
 // MIDI Defines
 enum EMidiCC

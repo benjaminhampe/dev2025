@@ -1,4 +1,4 @@
-set(APP_NAME AbentonChain_qt6)
+set(APP_NAME Abenton_Live64_Instrument_qt6)
 project(${APP_NAME})
 
 if (TARGET ${APP_NAME})

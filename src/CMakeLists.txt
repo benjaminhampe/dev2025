@@ -1,21 +1,15 @@
 add_subdirectory(0_tools)
 add_subdirectory(1_libs)
-# add_subdirectory(2_demos)
+add_subdirectory(2_demos)
 
 if (BENNI_USE_JUCE)
     add_subdirectory(4_juce)
 endif()
 
-if (BENNI_USE_QT)
-	add_subdirectory(AbentonChain_qt6)
-	# sadd_subdirectory(AbentonLive_qt6)
-endif()
-
 add_subdirectory(H3_Siedler)
 #add_subdirectory(Kinescope)
 add_subdirectory(Minecraft_54k)
-add_subdirectory(minimal_vst2x_host)
-add_subdirectory(raylib)
+
 add_subdirectory(RoundRectShader)
 add_subdirectory(RoundRectShader2)
 add_subdirectory(RoundRectShader3)
@@ -26,14 +20,32 @@ if (BENNI_USE_VCV)
 	add_subdirectory(vcv-rack2)
 endif()
 
-if (BENNI_USE_QT)
-	add_subdirectory(VHS_qt6)
-endif()
-
 add_subdirectory(VST_benni)
 
-# add_subdirectory(whisper.cpp)
+add_subdirectory(minimal_vst2x_host)
 
+if (BENNI_USE_QT)
+	add_subdirectory(VHS_qt6)
+	add_subdirectory(AbentonChain_qt6)
+    add_subdirectory(AbentonTest1_qt6)
+    add_subdirectory(AbentonTest2_qt6)
+    add_subdirectory(AbentonTest3_qt6)
+    add_subdirectory(AbentonTest4_qt6_nanovg)
+endif()
+
+# add_subdirectory(Product_001_Abenton_Gain_juce)
+add_subdirectory(Product_002_Abenton_Spektrum3d_juce)
+
+
+
+if (BENNI_USE_RAYLIB)
+    add_subdirectory(raylib)
+endif()
+
+
+if (BENNI_USE_WHISPER)
+    add_subdirectory(whisper.cpp)
+endif()
 
 # add_subdirectory(DirectML_test)
 # 

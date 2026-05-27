@@ -9,7 +9,7 @@ else()
 
     set(LIB_HEADER_DIR ${CMAKE_CURRENT_LIST_DIR}/include)
     set(LIB_SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/src)
-    set(LIB_HEADERS ${LIB_HEADER_DIR}/de_fontawesome.hpp)
+    set(LIB_HEADERS ${LIB_HEADER_DIR}/de_fontawesome.h)
     set(LIB_SOURCES ${LIB_SOURCE_DIR}/de_fontawesome.cpp)
 
     add_library(${LIB_NAME} STATIC "")

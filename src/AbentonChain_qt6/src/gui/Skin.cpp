@@ -66,7 +66,15 @@ QString toSvg(const QColor& c)
         .arg(c.blue());
 }
 
-
+QIcon toQIcon(const QString& svg, int w, int h)
+{
+    QSvgRenderer renderer(svg.toUtf8());
+    QPixmap pix(w, h);
+    pix.fill(Qt::transparent);
+    QPainter p(&pix);
+    renderer.render(&p);
+    return QIcon(pix);
+}
 
 /*
 QString
@@ -85,7 +93,7 @@ mkSvg_Power( int d, int p, int r )
 */
 
 void
-setButtonSvg(QPushButton* btn, const QString &svg, int size )
+setButtonSvg(QPushButton* btn, const QString &svg, int size)
 {
     btn->setFlat(true);
     // btn->setStyleSheet("background: transparent; border: none;");
@@ -95,7 +103,7 @@ setButtonSvg(QPushButton* btn, const QString &svg, int size )
 }
 
 void
-setButtonSvg(QPushButton* btn, const QPixmap &pix )
+setButtonPix(QPushButton* btn, const QPixmap &pix)
 {
     btn->setFlat(true);
     // btn->setStyleSheet("background: transparent; border: none;");

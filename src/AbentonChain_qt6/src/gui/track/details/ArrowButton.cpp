@@ -38,7 +38,7 @@ void ArrowButton::onToggled(bool checked)
 
 void ArrowButton::applySkin()
 {
-    const auto& skin = App::instance()->currentSkin();
+    const auto& skin = App::instance()->getSkin();
     const int b = (m_baseButtonSize * skin.zoom) / 100;
     setFixedSize(b,b);
 
@@ -124,11 +124,11 @@ void ArrowButton::applySkin()
 
     if (isCheckable() && !isChecked())
     {
-        setButtonSvg( this, m_deactive);
+        setButtonPix( this, m_deactive);
     }
     else
     {
-        setButtonSvg( this, m_active);
+        setButtonPix( this, m_active);
     }
 
     //updateGeometry(); // tells Qt: “my sizeHint() changed”
