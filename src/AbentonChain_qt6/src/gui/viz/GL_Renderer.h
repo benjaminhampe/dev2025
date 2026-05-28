@@ -26,7 +26,7 @@ class GL_Renderer
     uint32_t m_matrix_fft_cols;
     uint32_t m_matrix_fft_rows;
     uint32_t m_matrix_fft_xmode;
-    std::vector< float > m_matrix_fft_xmap; // Log10
+    de::TAlignedVector< float > m_matrix_fft_xmap; // Log10
     GL_Mesh16 m_matrix_fft;
     GL_Mesh16 m_matrix_fft_front;
     GL_Mesh16 m_matrix_fft_axis_x;

@@ -91,10 +91,11 @@ private:
     int m_radius;
     int m_widgetSpacing = 1;
     int m_dropIndicatorWidth = 20;
+    int m_dropIndicatorPosX = -1; // Invisible
     int m_dropTargetWidth;
 
     QString m_msg1 = "Ziehen Sie Audio-Effekte hierhin";
-    QString m_msg2 = "Drag & Drop VST2|VST3|CLAP|LV2 Audio-Instrument or Audio-Effect files here";
+    QString m_msg2 = "Drop files here\nVST2|VST3|CLAP|LV2 Audio Instruments/Effects\nWAV|MP3|MP4 Youtube Video and Audio files here";
 
     QColor m_windowColor;
     QColor m_panelColor;
@@ -128,9 +129,9 @@ private:
     // Positionierung
     // ----------------------------------------
     // void repositionWidgets();
-    int computeWidgetIndex(const QPoint &pos);
+    int computeDragIndex(const QPoint &pos);
     int computeDropIndex(const QPoint &pos);
-    int computeDropX(int index);
+    int computeDropIndicatorPosX(int dragIndex, int dropIndex);
 
     // ----------------------------------------
     // Auto-Scroll

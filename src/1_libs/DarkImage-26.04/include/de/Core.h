@@ -18,7 +18,11 @@
 #endif
 
 #ifndef DE_FORCE_INLINE
-#define DE_FORCE_INLINE inline __attribute__((__always_inline__))
+    #if defined(_MSC_VER)
+    #define DE_FORCE_INLINE __forceinline
+    #else
+    #define DE_FORCE_INLINE __attribute__((always_inline)) inline
+    #endif
 #endif
 
 DE_FORCE_INLINE void* de_aligned_malloc( size_t n, size_t alignBytes )

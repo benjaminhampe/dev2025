@@ -155,26 +155,24 @@ void Track::paintEvent(QPaintEvent* e)
         m_isAudioOnly ? m_msg1 : m_msg2,
         font());
 
-    auto s = QString("m_dropIndex(%1), "
-                     "m_dropIndicatorRect(%2)")
-        .arg(m_dropIndex)
-        .arg(qstr(m_rcDropIndicator));
-
-    auto fm = QFontMetrics(font());
-    //int w = width();
-    int h = height();
-    int x = 10;
-    int y = h - 10 - 1 - fm.ascent();
-    dc.setPen(QPen(Qt::white));
-    dc.drawText( x, y, s);
-
-    if (m_dropIndex > -1)
+    int dragIndicatorPosX = computeDropIndicatorPosX(m_dragIndex, m_dropIndex);
+    if (dragIndicatorPosX > -1)
     {
-        int x = computeDropX(m_dropIndex);
-
-        m_rcDropIndicator = QRect(x, 0, m_dropIndicatorWidth, height());
+        m_rcDropIndicator = QRect(dragIndicatorPosX, 0, m_dropIndicatorWidth, height());
         dc.fillRect(m_rcDropIndicator, QColor(0, 0, 255, 120));
     }
+
+    auto s = QString("dragIndex(%1), dropIndex(%2)")
+        .arg(m_dragIndex)
+        .arg(m_dropIndex)
+        //.arg(qstr(m_rcDropIndicator))
+    ;
+
+    auto fm = QFontMetrics(font());
+    int x = width() - 11 - fm.boundingRect(s).width();
+    int y = height() - 11 - fm.ascent();
+    dc.setPen(QPen(Qt::white));
+    dc.drawText( x, y, s);
 
     // e->accept();
 }
@@ -290,15 +288,17 @@ int Track::computeDropIndex(const QPoint &pos)
 // Drag&Drop Reorder:
 // ------------------------------------------------------------
 
-int Track::computeWidgetIndex(const QPoint &pos)
+int Track::computeDragIndex(const QPoint &pos)
 {
     for (int i = 0; i < m_plugins.size(); ++i)
     {
         auto w = m_plugins[ i ];
 
-        auto r_childInParent = QRect( w->mapTo(this, QPoint(0,0)), w->size() );
+        QRect r_label = w->labelRect();
+        QRect r_parentRect = r_label.translated( w->pos() );
+        //auto r_childInParent = QRect( w->mapTo(this, QPoint(0,0)), w->size() );
 
-        if ( isMouseOver(pos, r_childInParent) )
+        if ( isMouseOver(pos, r_parentRect) )
         {
             return i;
         }
@@ -361,32 +361,99 @@ void Track::dropEvent(QDropEvent* e)
 // ------------------------------------------------------------
 // Positionierung
 // ------------------------------------------------------------
-int Track::computeDropX(int index)
+int Track::computeDropIndicatorPosX(int dragIndex, int dropIndex)
 {
-    const int n = static_cast<int>(m_plugins.size());
+    // if (dragIndex <= 0)
+    // {
+    //     return -1; // Invalid
+    // }
 
-    if (index <= 0 || n < 1)
+    if (dropIndex < 0)
     {
-        return contentsMargins().left();
+        return -1; // Invalid
     }
 
-    if (index >= n)
+    const int n = static_cast<int>(m_plugins.size());
+    if (n > 0)
     {
-        if (n > 0)
+        if (dropIndex >= n)
         {
             auto p = m_plugins.back();
             return p->x() + p->width() + m_widgetSpacing;
         }
         else
         {
-            return contentsMargins().left();
+            return m_plugins[dropIndex]->x() - m_widgetSpacing - m_dropIndicatorWidth;
         }
     }
-
-    return m_plugins[index]->x() - m_widgetSpacing - m_dropIndicatorWidth;
+    else
+    {
+        return 0; // Indicate begin as initial drop pos.
+    }
 }
 
+bool isValidDropIndex(int dragIndex, int dropIndex)
+{
+    if (dragIndex < 0)
+    {
+        return true;
+    }
 
+    if (dropIndex - dragIndex >= 2)
+    {
+        return true; // swap(dragIndex, dropIndex - 1);
+    }
+
+    if (dragIndex - dropIndex >= 1)
+    {
+        return true; // swap(dragIndex, dropIndex);
+    }
+
+    return false;
+}
+
+void Track::mouseMoveEvent(QMouseEvent* e)
+{
+    m_posMouse = e->position().toPoint();
+    if (m_isDragInit)
+    {
+        auto v = m_posDragInit - m_posMouse;
+        auto d = v.x() * v.x() + v.y() * v.y();
+        // Init drag only when mouse moved atleast 10px (=100 squared)
+        if (d >= 100)
+        {
+            if (!m_isDragging)
+            {
+                if (m_dropIndex != -1)
+                {
+                    m_dropIndex = -1;
+                    updateLayout();
+                }
+
+                // if (m_dragIndex > -1 && m_dragIndex < int(m_plugins.size()))
+                // {
+                //     m_plugins[ m_dragIndex ]->setIsDragging(true);
+                // }
+
+                m_isDragging = true;
+            }
+            else
+            {
+                int dropIndex = computeDropIndex(m_posMouse);
+                if (!isValidDropIndex(m_dragIndex,dropIndex))
+                {
+                    dropIndex = -1;
+                }
+
+                if (m_dropIndex != dropIndex)
+                {
+                    m_dropIndex = dropIndex;
+                    updateLayout();
+                }
+            }
+        }
+    }
+}
 
 void Track::mousePressEvent(QMouseEvent* e)
 {
@@ -404,16 +471,12 @@ void Track::mousePressEvent(QMouseEvent* e)
 
         // If mouse is over Plugin->m_rcLabel
         // then start a drag operation...
-        int index = computeWidgetIndex( pos );
+        int index = computeDragIndex( pos );
         if (index >= 0 && index < int(m_plugins.size()))
         {
-            auto w = m_plugins[index];
-            if (w && w->labelRect().contains(pos))
-            {
-                m_isDragInit = true;
-                m_posDragInit = pos;
-                m_dragIndex = index;
-            }
+            m_isDragInit = true;
+            m_posDragInit = pos;
+            m_dragIndex = index;
         }
 
         // for (auto p : m_plugins)
@@ -451,59 +514,36 @@ void Track::mouseReleaseEvent(QMouseEvent* e)
 }
 
 
-void Track::mouseMoveEvent(QMouseEvent* e)
+void Track::swapWidgets(int dragIndex, int dropIndex)
 {
-    m_posMouse = e->position().toPoint();
-    if (m_isDragInit)
-    {
-        auto v = m_posDragInit - m_posMouse;
-        auto d = v.x() * v.x() + v.y() * v.y();
-        // Init drag only when mouse moved atleast 10px (=100 squared)
-        if (d >= 100)
-        {
-            if (!m_isDragging)
-            {
-                m_dropIndex = -1;
-                //m_dragIndex = computeWidgetIndex(m_posDragInit);
-
-                // if (m_dragIndex > -1 && m_dragIndex < int(m_plugins.size()))
-                // {
-                //     m_plugins[ m_dragIndex ]->setIsDragging(true);
-                // }
-
-                m_isDragging = true;
-            }
-            else
-            {
-                m_dropIndex = computeDropIndex(m_posMouse);
-
-                updateLayout();
-            }
-        }
-    }
-}
-
-void Track::swapWidgets(int drag, int drop)
-{
-    if (drag == drop)
+    if (dragIndex == dropIndex)
     {
         return;
     }
 
     const int n = static_cast<int>(m_plugins.size());
-
     if (n < 2)
     {
         return;
     }
 
-    if (drag < 0 || drag >= n)
+    if (dropIndex - dragIndex >= 2)
+    {
+        dropIndex--; // swap(dragIndex, dropIndex - 1);
+    }
+
+    // if (dragIndex - dropIndex >= 1)
+    // {
+    //     return true; // swap(dragIndex, dropIndex);
+    // }
+
+    if (dragIndex < 0 || dragIndex >= n)
     {
         // qDebug() << "Invalid drag index " << drag << " of " << n;
         return;
     }
 
-    if (drop < 0 || drop >= n)
+    if (dropIndex < 0 || dropIndex >= n)
     {
         // qDebug() << "Invalid drop index " << drop << " of " << n;
         return;
@@ -511,7 +551,7 @@ void Track::swapWidgets(int drag, int drop)
 
     // qDebug() << "Swap index " << (drag+1) << " <-> "  << (drop+1) << " of " << n;
 
-    std::swap( m_plugins[ drag ], m_plugins[ drop ] );
+    std::swap( m_plugins[ dragIndex ], m_plugins[ dropIndex ] );
 
     emit reorderedWidgets();
 }
