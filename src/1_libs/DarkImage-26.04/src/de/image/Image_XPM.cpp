@@ -1,7 +1,7 @@
 #include <de/image/Image_XPM.h>
 #include <de/Core.h>
 #if defined(DE_IMAGE_READER_XPM_ENABLED) || defined(DE_IMAGE_WRITER_XPM_ENABLED)
-#include <fstream>
+//#include <fstream>
 #include <sstream>
 #endif
 
@@ -428,7 +428,7 @@ ImageWriterXPM::save( const Image& img, const std::string& uri, uint32_t param )
       o << line << "\n";
    }
 
-   return dbSaveTextA(o.str(), uri);
+   return dbSaveText(uri, o.str());
 }
 
 

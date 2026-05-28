@@ -1750,7 +1750,7 @@ FileSystem::saveStr( const std::string& uri, const std::string& txt )
     return true;
 }
 bool
-FileSystem::saveStrW( const std::wstring& uri, const std::wstring& txt )
+FileSystem::saveStr( const std::wstring& uri, const std::wstring& txt )
 {
     //DE_PERF_MARKER
     std::wofstream file( uri.c_str() );
@@ -2389,6 +2389,31 @@ FileSystem::createDirectory( const std::string& uri )
 
 // static
 void
+FileSystem::createDirectory( const std::wstring& uri )
+{
+   if ( uri.empty() ) return;
+
+   fs::path p( uri );
+
+   fs::file_status s = fs::status( p );
+
+   if ( fs::exists( s ) && fs::is_directory( s ) )
+   {
+      // std::cout << "[Warn] " << __func__ << "( uri:" << uri << ") :: Dir already exists." << std::endl;
+      return;
+   }
+
+   std::error_code e;
+   fs::create_directories( p, e );
+   if ( e )
+   {
+      DE_ERROR("( uri:",de_mbstr(uri),") :: Got error ",e.message())
+   }
+}
+
+
+// static
+void
 FileSystem::removeFile( const std::string& uri )
 {
    std::error_code e;
@@ -2547,6 +2572,38 @@ FileSystem::entries(std::string baseDir,
     return collection;
 }
 
+
+// static
+std::vector<std::wstring>
+FileSystem::entries(std::wstring baseDir,
+        bool recursive,
+        bool withFiles,
+        bool withDirs)
+{
+    std::vector<std::wstring> collection;
+
+    size_t i = 0;
+
+    entries( baseDir, recursive, withFiles, withDirs,
+            [&]( const std::wstring & )
+            {
+                i++;
+            });
+
+    if (i > 0)
+    {
+        collection.reserve( i );
+
+        entries( baseDir, recursive, withFiles, withDirs,
+                [&]( const std::wstring & fileName )
+                {
+                    collection.emplace_back( fileName );
+                });
+    }
+
+    return collection;
+}
+
 bool
 FileSystem::entries(std::string baseDir,
                     bool recursive,
@@ -2633,6 +2690,95 @@ FileSystem::entries(std::string baseDir,
     }
     return true;
 }
+
+
+bool
+FileSystem::entries(std::wstring baseDir,
+                    bool recursive,
+                    bool withFiles,
+                    bool withDirs,
+                    const std::function< void( const std::wstring & ) > & onFileName )
+{
+    DE_WARN("baseDir = ", de_mbstr(baseDir))
+
+    if (baseDir.empty())
+    {
+        baseDir = L".";
+        DE_WARN("baseDir2 = ", de_mbstr(baseDir))
+    }
+
+    if (!isAbsolute(baseDir))
+    {
+        DE_WARN("baseDir3(absolute) = ", de_mbstr(baseDir))
+        baseDir = FileSystem::makeAbsolute( baseDir );
+    }
+
+    if ( !FileSystem::existDirectory( baseDir ) )
+    {
+        DE_ERROR("No dir ", de_mbstr(baseDir))
+        return false;
+    }
+
+    if ( recursive )
+    {
+        DE_WARN("scan recursive!")
+        fs::recursive_directory_iterator it( baseDir );
+        while ( it != fs::recursive_directory_iterator() )
+        {
+            fs::path p = it->path();
+            std::wstring fileName = FileSystem::makeAbsolute( p.wstring() );
+            StringUtil::replace( fileName, L"\\", L"/" ); // make posix path
+
+            if ( withDirs && fs::is_directory( p ) )
+            {
+                onFileName( fileName );
+            }
+
+            if ( withFiles && fs::is_regular_file( p ) )
+            {
+                onFileName( fileName );
+            }
+
+            std::error_code ec;
+            it.increment( ec );
+            if ( ec )
+            {
+                // DE_ERROR("Recursive find : ",fileName," :: ",ec.message() )
+                break;
+            }
+        }
+    }
+    else
+    {
+        fs::directory_iterator it( baseDir );
+        while ( it != fs::directory_iterator() )
+        {
+            fs::path p = it->path();
+            std::wstring fileName = FileSystem::makeAbsolute( p.wstring() );
+            StringUtil::replace( fileName, L"\\", L"/" ); // make posix path
+
+            if ( withDirs && fs::is_directory( p ) )
+            {
+                onFileName( fileName );
+            }
+
+            if ( withFiles && fs::is_regular_file( p ) )
+            {
+                onFileName( fileName );
+            }
+
+            std::error_code ec;
+            it.increment( ec );
+            if ( ec )
+            {
+                // DE_ERROR("Iterative find : ",fileName," :: ",ec.message() )
+                break;
+            }
+        }
+    }
+    return true;
+}
+
 
 /*
 bool
@@ -4326,11 +4472,8 @@ de::Blob dbLoadBlob( const std::string& uri ) { return de::FileSystem::loadBlob(
 bool dbLoadBlob( de::Blob & blob, const std::string& uri ) { return de::FileSystem::loadBlob(blob,uri); }
 bool dbSaveBlob( const de::Blob& blob, const std::string& uri )  { return de::FileSystem::saveBlob(blob,uri); }
 
-std::string dbLoadTextA(const std::wstring& uri) { return de::FileSystem::loadStr( uri ); }
-std::string dbLoadTextA(const std::string& uri) { return de::FileSystem::loadStr( uri ); }
-
-std::wstring dbLoadTextW(const std::wstring& uri) { return de::FileSystem::loadStrW( uri ); }
-std::wstring dbLoadTextW(const std::string& uri) { return de::FileSystem::loadStrW( uri ); }
+std::string dbLoadText(const std::string& uri) { return de::FileSystem::loadStr( uri ); }
+std::wstring dbLoadText(const std::wstring& uri) { return de::FileSystem::loadStrW( uri ); }
 
 DE_StringsA
 dbStrSplit(const std::string& txt, char searchChar, bool bKeepEmptyLines )
@@ -4352,11 +4495,8 @@ dbLoadTextLn(const std::wstring& uri)
     return dbStrSplit( content, '\n', false);
 }
 
-bool dbSaveTextA(const std::wstring& uri, const std::string& txt) { return de::FileSystem::saveStr( uri, txt ); }
-bool dbSaveTextA(const std::string& uri, const std::string& txt) { return de::FileSystem::saveStr( uri, txt ); }
-
-bool dbSaveTextW(const std::wstring& uri, const std::wstring& txt) { return de::FileSystem::saveStrW( uri, txt ); }
-bool dbSaveTextW(const std::string& uri, const std::wstring& txt) { return de::FileSystem::saveStrW( uri, txt ); }
+bool dbSaveText(const std::string& uri, const std::string& txt) { return de::FileSystem::saveStr( uri, txt ); }
+bool dbSaveText(const std::wstring& uri, const std::wstring& txt) { return de::FileSystem::saveStr( uri, txt ); }
 
 bool dbExistFile(const std::string& uri) { return de::FileSystem::existFile( uri ); }
 bool dbExistDirectory(const std::string& uri) { return de::FileSystem::existDirectory( uri ); }

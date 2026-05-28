@@ -68,6 +68,19 @@ struct BrowseFolderParamsA
 };
 
 // ===========================================================================
+struct BrowseFolderParamsW
+// ===========================================================================
+{
+    std::wstring caption = L"Browse for Folder";
+    std::wstring initDir;
+    int w = -1;
+    int h = -1;
+    int x = -1;
+    int y = -1;
+    bool newui = true;
+};
+
+// ===========================================================================
 struct OpenFileParamsA
 // ===========================================================================
 {
@@ -140,8 +153,8 @@ struct SaveFileParamsW
 
 } // namespace de
 
-
 std::string dbOpenFolderDlg( de::BrowseFolderParamsA params );
+std::wstring dbOpenFolderDlg( de::BrowseFolderParamsW params );
 std::string dbOpenFileDlg( de::OpenFileParamsA params );
 std::wstring dbOpenFileDlg( de::OpenFileParamsW params );
 std::string dbSaveFileDlg( de::SaveFileParamsA param );

@@ -562,6 +562,9 @@ struct FileSystem
     createDirectory( const std::string& uri );
 
     static void
+    createDirectory( const std::wstring& uri );
+
+    static void
     removeFile( const std::string& uri );
 
     static bool

@@ -1889,6 +1889,30 @@ FileSystem::createDirectory( const std::string& uri )
 
 // static
 void
+FileSystem::createDirectory( const std::wstring& uri )
+{
+   if ( uri.empty() ) return;
+
+   fs::path p( uri );
+
+   fs::file_status s = fs::status( p );
+
+   if ( fs::exists( s ) && fs::is_directory( s ) )
+   {
+      // std::cout << "[Warn] " << __func__ << "( uri:" << uri << ") :: Dir already exists." << std::endl;
+      return;
+   }
+
+   std::error_code e;
+   fs::create_directories( p, e );
+   if ( e )
+   {
+      DE_ERROR("( uri:",de_mbstr(uri),") :: Got error ",e.message())
+   }
+}
+
+// static
+void
 FileSystem::removeFile( const std::string& uri )
 {
    std::error_code e;

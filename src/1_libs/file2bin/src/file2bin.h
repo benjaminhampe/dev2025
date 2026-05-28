@@ -11,8 +11,8 @@ struct Util
     // thanks to effing constexpr narrowing. (Totally unwarranted for me)
 
     // Declare size and array (Dont use constexpr because narrowing)
-    static std::string
-    bin2hpp( std::string dataName )
+    static std::wstring
+    bin2hpp( std::wstring dataName )
     {
         if (dataName.empty())
         {
@@ -20,15 +20,15 @@ struct Util
             return {};
         }
 
-        std::ostringstream o;
+        std::wostringstream o;
         o << "extern const size_t " << dataName << "Size;\n";
         o << "extern const uint8_t " << dataName << "[];\n";
         return o.str();
     }
 
     // Define size and array in .cpp (Dont use constexpr because narrowing)
-    static std::string
-    bin2cpp( const std::vector<uint8_t>& bytes, std::string dataName )
+    static std::wstring
+    bin2cpp( const std::vector<uint8_t>& bytes, std::wstring dataName )
     {
         if (bytes.empty())
         {
@@ -42,7 +42,7 @@ struct Util
             return {};
         }
 
-        std::ostringstream o;
+        std::wostringstream o;
         o << "const size_t " << dataName << "Size = " << bytes.size() << ";\n";
         o << "const uint8_t " << dataName << "[] = \n"  //  << "[" << bytes.size() << "]
         "{\n\t";
@@ -50,7 +50,7 @@ struct Util
         uint64_t k = 0;
         for ( size_t i = 0; i < bytes.size(); ++i )
         {
-            o << "0x" << de::StringUtil::hex( bytes[ i ] );
+            o << "0x" << de::StringUtil::hex( bytes[ i ] ).c_str();
             if ( bytes.size() > 1 && (i + 1 < bytes.size()) )
             {
                 o << ", ";
@@ -70,30 +70,30 @@ struct Util
     }
 
     static void convertFiles(
-        const std::string& outputFileNameH,
-        const std::string& inputDirectory, bool bRecursive = false)
+        const std::wstring& outputFileNameH,
+        const std::wstring& inputDirectory, bool bRecursive = false)
     {
 
-        std::string outputFileNameDir = de::FileSystem::fileDir(outputFileNameH);
-        std::string outputFileNameCPP = outputFileNameDir + "/" + de::FileSystem::fileBase(outputFileNameH) + ".cpp";
+        std::wstring outputFileNameDir = de::FileSystem::fileDir(outputFileNameH);
+        std::wstring outputFileNameCPP = outputFileNameDir + L"/" + de::FileSystem::fileBase(outputFileNameH) + L".cpp";
 
-        DE_DEBUG("outputFileNameH = ",outputFileNameH)
-        DE_DEBUG("outputFileNameCPP = ",outputFileNameCPP)
+        DE_DEBUG("outputFileNameH = ",de_mbstr(outputFileNameH))
+        DE_DEBUG("outputFileNameCPP = ",de_mbstr(outputFileNameCPP))
 
-        std::vector<std::string> inputFileNames = de::FileSystem::entries(
+        std::vector<std::wstring> inputFileNames = de::FileSystem::entries(
             inputDirectory, bRecursive, true, false);
 
         struct Bin
         {
-            std::string origUri;
-            std::string binName;
+            std::wstring origUri;
+            std::wstring binName;
             uint64_t binSize;
         };
 
         std::vector<Bin> bins;
 
         // <CREATE.cpp>
-        std::ostringstream o;
+        std::wostringstream o;
         o << "// (c) 2025 by Benjamin Hampe <benjaminhampe@gmx.de>\n";
         o << "// This file contains the binary data (images/fonts/etc..).\n";
         o << "#include <cstdint>\n";
@@ -111,22 +111,22 @@ struct Util
 
             // If starts with number [0-9] -> Prefix with '_'
             if (bin.binName[0] >= '0' && bin.binName[0] <= '9')
-                bin.binName = std::string("_") + bin.binName;
+                bin.binName = std::wstring(L"_") + bin.binName;
 
             // Replace:
-            bin.binName = de::StringUtil::replace(bin.binName, " ", "_");
-            bin.binName = de::StringUtil::replace(bin.binName, ".", "_");
-            bin.binName = de::StringUtil::replace(bin.binName, ",", "");
-            bin.binName = de::StringUtil::replace(bin.binName, "&", "");
-            bin.binName = de::StringUtil::replace(bin.binName, "-", "");
-            bin.binName = de::StringUtil::replace(bin.binName, "(", "");
-            bin.binName = de::StringUtil::replace(bin.binName, ")", "");
-            bin.binName = de::StringUtil::replace(bin.binName, "[", "");
-            bin.binName = de::StringUtil::replace(bin.binName, "]", "");
+            bin.binName = de::StringUtil::replace(bin.binName, L" ", L"_");
+            bin.binName = de::StringUtil::replace(bin.binName, L".", L"_");
+            bin.binName = de::StringUtil::replace(bin.binName, L",", L"");
+            bin.binName = de::StringUtil::replace(bin.binName, L"&", L"");
+            bin.binName = de::StringUtil::replace(bin.binName, L"-", L"");
+            bin.binName = de::StringUtil::replace(bin.binName, L"(", L"");
+            bin.binName = de::StringUtil::replace(bin.binName, L")", L"");
+            bin.binName = de::StringUtil::replace(bin.binName, L"[", L"");
+            bin.binName = de::StringUtil::replace(bin.binName, L"]", L"");
             // bin.binName = de::StringUtil::replace(bin.binName, "____", "_");
             // bin.binName = de::StringUtil::replace(bin.binName, "___", "_");
             // bin.binName = de::StringUtil::replace(bin.binName, "__", "_");
-            de::FileSystem::loadBin(inputFileName, blob);
+            de::FileSystem::loadBin(de_mbstr(inputFileName), blob);
             bin.binSize = blob.size();
 
             auto cppText = bin2cpp(blob, bin.binName);
@@ -160,7 +160,7 @@ struct Util
         de::FileSystem::saveStr(outputFileNameCPP, o.str());
 
         // <CREATE.h>
-        std::ostringstream h;
+        std::wostringstream h;
         h << "// (c) 2025 by Benjamin Hampe <benjaminhampe@gmx.de>\n";
         h << "// This file contains the binary data (images/fonts/etc..).\n";
         h << "#pragma once\n";

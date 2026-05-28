@@ -7,6 +7,8 @@
 #include <utility>
 #include <de/audio/fft/approx_math.h>
 
+#include <de/video/skybox/Miramar.h>
+
 // ===========================================================================
 struct Axis
 // ===========================================================================
@@ -125,7 +127,7 @@ void GL_Renderer::initializeGL(de::gpu::VideoDriver* driver)
 
     // auto d = glm::vec3(4000,500,2000);
     // m_matrix_fft.init(d, V3(-0.5f * d.x,0,0));
-
+/*
     de::Image sky;
     dbLoadImage(sky,"../../media/Abenton/skybox.png");
 
@@ -138,8 +140,41 @@ void GL_Renderer::initializeGL(de::gpu::VideoDriver* driver)
     de::Image py = sky.copy(de::Recti(1*a,0*b,a,b));
     de::Image ny = sky.copy(de::Recti(1*a,2*b,a,b));
     m_driver->getSkyboxRenderer()->load(&nx,&px,&ny,&py,&nz,&pz);
+*/
 
+    de::Image nx;
+    de::Image pz;
+    de::Image px;
+    de::Image nz;
+    de::Image py;
+    de::Image ny;
 
+    dbLoadImage(nx, de::video::skybox::Miramar::nx_webp,
+                    de::video::skybox::Miramar::nx_webpSize,
+                    "../../media/Abenton/Miramar_webp/nx.webp");
+    dbLoadImage(pz, de::video::skybox::Miramar::pz_webp,
+                    de::video::skybox::Miramar::pz_webpSize,
+                    "../../media/Abenton/Miramar_webp/pz.webp");
+    dbLoadImage(px, de::video::skybox::Miramar::px_webp,
+                    de::video::skybox::Miramar::px_webpSize,
+                    "../../media/Abenton/Miramar_webp/px.webp");
+    dbLoadImage(nz, de::video::skybox::Miramar::nz_webp,
+                    de::video::skybox::Miramar::nz_webpSize,
+                    "../../media/Abenton/Miramar_webp/nz.webp");
+    dbLoadImage(py, de::video::skybox::Miramar::py_webp,
+                    de::video::skybox::Miramar::py_webpSize,
+                    "../../media/Abenton/Miramar_webp/py.webp");
+    dbLoadImage(ny, de::video::skybox::Miramar::ny_webp,
+                    de::video::skybox::Miramar::ny_webpSize,
+                    "../../media/Abenton/Miramar_webp/ny.webp");
+
+    // dbLoadImage(nx,"../../media/Abenton/Miramar_webp/nx.webp");
+    // dbLoadImage(pz,"../../media/Abenton/Miramar_webp/pz.webp");
+    // dbLoadImage(px,"../../media/Abenton/Miramar_webp/px.webp");
+    // dbLoadImage(nz,"../../media/Abenton/Miramar_webp/nz.webp");
+    // dbLoadImage(py,"../../media/Abenton/Miramar_webp/py.webp");
+    // dbLoadImage(ny,"../../media/Abenton/Miramar_webp/ny.webp");
+    m_driver->getSkyboxRenderer()->load(&nx,&px,&ny,&py,&nz,&pz);
 }
 
 void GL_Renderer::paintGL()

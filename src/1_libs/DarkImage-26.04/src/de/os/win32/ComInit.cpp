@@ -1,7 +1,7 @@
 #include <de/os/win32/ComInit.h>
 #include <de/Core.h>
 
-#if defined(_WIN32) || defined(WIN32) 
+#if defined(_WIN32) || defined(WIN32)
 
     // #ifndef UNICODE
     // #define UNICODE
@@ -26,29 +26,103 @@
     #include <objbase.h>  // or <combaseapi.h>
     #include <ole2.h>
 
-ComInit::ComInit()  
-{ 
+    #include <string>
+
+std::wstring HResultToString(HRESULT hr)
+{
+    wchar_t* msg = nullptr;
+
+#if 0
+    DWORD flags = FORMAT_MESSAGE_ALLOCATE_BUFFER |
+                  FORMAT_MESSAGE_FROM_SYSTEM |
+                  FORMAT_MESSAGE_IGNORE_INSERTS;
+
+    DWORD len = FormatMessageW(
+        flags,
+        nullptr,        // system message table
+        hr,
+        MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+        (LPWSTR)&msg,
+        0,
+        nullptr
+    );
+#else
+    DWORD flags = FORMAT_MESSAGE_ALLOCATE_BUFFER |
+                  FORMAT_MESSAGE_FROM_SYSTEM |
+                  FORMAT_MESSAGE_FROM_HMODULE |
+                  FORMAT_MESSAGE_IGNORE_INSERTS;
+
+    HMODULE hMod = nullptr;
+
+    // Example: load COM error messages
+    hMod = LoadLibraryW(L"combase.dll");
+
+    DWORD len = FormatMessageW(
+        flags,
+        hMod,
+        hr,
+        MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+        (LPWSTR)&msg,
+        0,
+        nullptr
+    );
+
+    if (hMod)
+        FreeLibrary(hMod);
+
+#endif
+    if (len == 0) {
+        // No system message found → return hex code
+        wchar_t buf[64];
+        swprintf_s(buf, L"Unknown HRESULT 0x%08X", hr);
+        return buf;
+    }
+
+    // Remove trailing CR/LF
+    while (len > 0 && (msg[len - 1] == L'\r' || msg[len - 1] == L'\n'))
+        msg[--len] = 0;
+
+    std::wstring result(msg);
+    LocalFree(msg);
+    return result;
+}
+
+
+bool win32_CoInitialize()
+{
     bool bSuccess = false;
     // COINIT_APARTMENTTHREADED	Single-threaded apartment (STA)	UI apps, dialogs, OLE, ActiveX, clipboard
     // COINIT_MULTITHREADED	Multi-threaded apartment (MTA)	Background services, parallel processing, COM servers
     HRESULT hr = CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);  // COINIT_MULTITHREADED, COINIT_APARTMENTTHREADED);
     if (SUCCEEDED(hr))
     {
-        // COM is ready to use
-        DE_OK("")
-        bSuccess = true;
+        return true;
     }
     else
     {
-        DE_ERROR("")
+        return false;
     }
 }
 
-ComInit::~ComInit() 
-{ 
+void win32_CoUninitialize()
+{
+    CoUninitialize();
+}
+
+ComInit::ComInit()
+{
+    bSuccess = win32_CoInitialize();
+    if (!bSuccess)
+    {
+        DE_ERROR("Failed win32_CoInitializeEx()")
+    }
+}
+
+ComInit::~ComInit()
+{
     if (bSuccess)
     {
-        CoUninitialize();
+        win32_CoUninitialize();
     }
 }
 
@@ -104,15 +178,15 @@ CommCtlInit::~CommCtlInit()
 {
 }
 
-   
+
 #else
-	
-ComInit::ComInit()  
-{ 
+
+ComInit::ComInit()
+{
 }
 
-ComInit::~ComInit() 
-{ 
+ComInit::~ComInit()
+{
 }
 
 OleInit::OleInit()

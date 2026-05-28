@@ -273,8 +273,113 @@ bool GL_Canvas::event(QEvent* e)
     //     return gestureEvent(static_cast<QGestureEvent*>(e));
     // }
 
-    return QWindow::event(e);
+    return GL_Window_WGL::event(e);
 }
+
+
+
+void
+GL_Canvas::mouseMoveEvent( QMouseEvent* event )
+{
+    //printf("MouseMoveEvent(%s)\n", event.toString().c_str() );
+    const int mx = event->pos().x();
+    const int my = event->pos().y();
+
+    if (m_firstMouse)
+    {
+        DE_BENNI("firstMouse(",mx,",",my,")")
+        m_lastMouseX = mx;
+        m_lastMouseY = my;
+        m_firstMouse = false;
+    }
+    m_mouseMoveX = mx - m_lastMouseX;
+    m_mouseMoveY = my - m_lastMouseY;
+    m_lastMouseX = m_mouseX; // Store last value
+    m_lastMouseY = m_mouseY; // Store last value
+    m_mouseX = mx; // Store current value
+    m_mouseY = my; // Store current value
+
+    const bool lookAround = m_isCameraFreeLook; // m_isKeySpacePressed || m_isMouseLeftPressed;
+    if (lookAround)
+    {
+        if (!m_driver)
+        {
+            DE_ERROR("No driver")
+            return;
+        }
+
+        auto camera = m_driver->getCamera();
+        if (!camera)
+        {
+            DE_ERROR("No camera")
+            return;
+        }
+
+        //std::cout << "MousePos(" << mx << "," << my << ")" << std::endl;
+        //std::cout << "MouseMove(" << m_mouseMoveX << "," << m_mouseMoveY << ")" << std::endl;
+        camera->yaw( 0.0035f * m_mouseMoveX );
+        camera->pitch( 0.0035f * m_mouseMoveY );
+    }
+
+    m_mouseMoveX = 0; // Reset
+    m_mouseMoveY = 0; // Reset
+}
+
+void GL_Canvas::wheelEvent( QWheelEvent* event )
+{
+    if (!m_driver) { DE_ERROR("No driver") return; }
+
+    auto camera = m_driver->getCamera();
+    if (!camera) { DE_ERROR("No camera") return; }
+
+    //printf("MouseWheelEvent(%s)\n", event.str().c_str() );
+    const float wheel_y = event->angleDelta().y();
+    if ( wheel_y < 0.0f )
+    {
+        camera->move( -1.0f );
+    }
+    else if ( wheel_y > 0.0f )
+    {
+        camera->move( 1.0f );
+    }
+}
+
+void GL_Canvas::mousePressEvent( QMouseEvent* event )
+{
+    if ( event->button() == Qt::LeftButton )
+    {
+        m_isMouseLeftPressed = true;
+    }
+    else if ( event->button() == Qt::RightButton )
+    {
+        m_isMouseRightPressed = true;
+        m_isCameraFreeLook = true;
+    }
+    else if ( event->button() == Qt::MiddleButton )
+    {
+        m_isMouseMiddlePressed = true;
+    }
+}
+
+void GL_Canvas::mouseReleaseEvent( QMouseEvent* event )
+{
+    if ( event->button() == Qt::LeftButton )
+    {
+        m_isMouseLeftPressed = false;
+        m_firstMouse = true;
+    }
+    else if ( event->button() == Qt::RightButton )
+    {
+        m_isMouseRightPressed = false;
+        m_isCameraFreeLook = false;
+        m_firstMouse = true;
+    }
+    else if ( event->button() == Qt::MiddleButton )
+    {
+        m_isMouseMiddlePressed = false;
+    }
+}
+
 
 /*
 bool GL_Canvas::gestureEvent(QGestureEvent *event)

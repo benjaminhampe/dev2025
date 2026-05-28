@@ -623,15 +623,6 @@ struct FileSystem
         return loadStrW( StringUtil::to_wstr(uri));
     }
 
-    static bool
-    saveStrW( const std::wstring& uri, const std::wstring& txt );
-
-    static bool
-    saveStrW( const std::string& uri, const std::wstring& txt )
-    {
-        return saveStrW( StringUtil::to_wstr(uri), txt);
-    }
-
     static std::string
     loadStr( const std::string& uri );
 
@@ -642,9 +633,13 @@ struct FileSystem
     saveStr( const std::string& uri, const std::string& txt );
 
     static bool
-    saveStr( const std::wstring& uri, const std::string& txt ) {
+    saveStr( const std::wstring& uri, const std::string& txt )
+    {
         return saveStr( StringUtil::to_str(uri), txt);
     }
+
+    static bool
+    saveStr( const std::wstring& uri, const std::wstring& txt );
 
     // 1GB RAM limit (2^30) for a midi file, else regarded as error/malformed/broken.
     /*
@@ -737,6 +732,9 @@ struct FileSystem
     createDirectory( const std::string& uri );
 
     static void
+    createDirectory( const std::wstring& uri );
+
+    static void
     removeFile( const std::string& uri );
 
     static bool
@@ -758,8 +756,21 @@ struct FileSystem
             bool withDirs,
             const std::function< void( const std::string & ) > & onFileName );
 
+    static bool
+    entries(std::wstring baseDir,
+            bool recursive,
+            bool withFiles,
+            bool withDirs,
+            const std::function< void( const std::wstring & ) > & onFileName );
+
     static std::vector<std::string>
     entries(std::string baseDir,
+            bool recursive,
+            bool withFiles,
+            bool withDirs);
+
+    static std::vector<std::wstring>
+    entries(std::wstring baseDir,
             bool recursive,
             bool withFiles,
             bool withDirs);
@@ -1448,22 +1459,16 @@ de::Blob dbLoadBlob( const std::string& uri );
 bool dbLoadBlob( de::Blob & blob, const std::string& uri );
 bool dbSaveBlob( const de::Blob& blob, const std::string& uri );
 
-std::string dbLoadTextA(const std::wstring& uri);
-std::string dbLoadTextA(const std::string& uri);
+std::wstring dbLoadText(const std::wstring& uri);
+std::string dbLoadText(const std::string& uri);
 
-std::wstring dbLoadTextW(const std::wstring& uri);
-std::wstring dbLoadTextW(const std::string& uri);
-
-bool dbSaveTextA(const std::wstring& uri, const std::string& txt);
-bool dbSaveTextA(const std::string& uri, const std::string& txt);
-
-bool dbSaveTextW(const std::wstring& uri, const std::wstring& txt);
-bool dbSaveTextW(const std::string& uri, const std::wstring& txt);
+bool dbSaveText(const std::string& uri, const std::string& txt);
+bool dbSaveText(const std::wstring& uri, const std::wstring& txt);
 
 bool dbExistFile(const std::string& uri);
-bool dbExistDirectory(const std::string& uri);
-
 bool dbExistFile(const std::wstring& uri);
+
+bool dbExistDirectory(const std::string& uri);
 bool dbExistDirectory(const std::wstring& uri);
 
 void dbStrLowerCase(std::string& txt, const std::locale& loc = std::locale());

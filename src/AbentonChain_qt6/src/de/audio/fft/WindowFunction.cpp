@@ -159,7 +159,7 @@ void WindowFunction::testSvg()
 
         std::string uri = dbStr("WindowFunction_",getString(func),".svg");
         std::string svg = lineStripToSVG(v_out,w,h,lineWidth,"black");
-        dbSaveTextA(uri,svg);
+        dbSaveText(uri,svg);
     }
 }
 

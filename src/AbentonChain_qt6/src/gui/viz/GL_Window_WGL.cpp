@@ -24,6 +24,21 @@ public:
     HDC hDC = nullptr;
     HGLRC hGLRC = nullptr;
     bool initialized = false;
+
+
+    bool m_firstMouse;
+    bool m_isCameraFreeLook;
+    bool m_isMouseLeftPressed;
+    bool m_isMouseRightPressed;
+    bool m_isMouseMiddlePressed;
+
+
+    int m_mouseX;
+    int m_mouseY;
+    int m_lastMouseX;
+    int m_lastMouseY;
+    int m_mouseMoveX;
+    int m_mouseMoveY;
 };
 
 GL_Window_WGL::GL_Window_WGL()
@@ -170,7 +185,9 @@ void GL_Window_WGL::destroyGL()
 
 bool GL_Window_WGL::event(QEvent* e)
 {
-    switch (e->type()) {
+/*
+    switch (e->type())
+    {
     case QEvent::NativeGesture:
         return handleNativeGesture(static_cast<QNativeGestureEvent*>(e));
 
@@ -182,8 +199,11 @@ bool GL_Window_WGL::event(QEvent* e)
     default:
         return QWindow::event(e);
     }
+*/
+    return QWindow::event(e);
 }
 
+/*
 bool GL_Window_WGL::handleNativeGesture(QNativeGestureEvent* e)
 {
     switch (e->gestureType())
@@ -232,6 +252,8 @@ bool GL_Window_WGL::handleTouch(QTouchEvent* ev)
 
     return true;
 }
+*/
+
 
 #if 0
 // ===================================================================

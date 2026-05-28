@@ -1,5 +1,8 @@
 #pragma once
 
+bool win32_CoInitialize();
+void win32_CoUninitialize();
+
 struct ComInit // Initialized from MainApp or MainWindow
 {
    ComInit();

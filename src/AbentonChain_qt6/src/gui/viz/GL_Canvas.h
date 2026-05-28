@@ -113,15 +113,16 @@ protected:
     void paintGL() override;
 
     bool event(QEvent *event) override;
-
     // bool gestureEvent(QGestureEvent* event);
     // bool pinchTriggered(QPinchGesture* event);
     // bool swipeTriggered(QSwipeGesture* event);
     // bool panTriggered(QPanGesture* event);
-    // void mouseMoveEvent( QMouseEvent* event ) override;
-    // void wheelEvent( QWheelEvent* event ) override;
-    // void mousePressEvent( QMouseEvent* event ) override;
-    // void mouseReleaseEvent( QMouseEvent* event ) override;
+
+    void mousePressEvent( QMouseEvent* event ) override;
+    void mouseReleaseEvent( QMouseEvent* event ) override;
+    void mouseMoveEvent( QMouseEvent* event ) override;
+    void wheelEvent( QWheelEvent* event ) override;
+
 
 };
 

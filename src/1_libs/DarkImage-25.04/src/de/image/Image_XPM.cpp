@@ -428,7 +428,7 @@ ImageWriterXPM::save( const Image& img, const std::string& uri, uint32_t param )
       o << line << "\n";
    }
 
-   return dbSaveTextA(o.str(), uri);
+   return dbSaveTextA(uri, o.str());
 }
 
 

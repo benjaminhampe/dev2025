@@ -6,6 +6,7 @@
 #include <de/image/ImagePainter.h>
 #include <de/image/Bresenham.h>
 #include <de/os/CommonDialogs.h>
+#include <de/os/VideoModes.h>
 #include <de/Font5x8.h>
 
 #ifdef _WIN32

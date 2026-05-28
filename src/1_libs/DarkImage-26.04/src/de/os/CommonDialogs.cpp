@@ -1,4 +1,5 @@
 #include <de/os/CommonDialogs.h>
+#include <de/os/win32/ComInit.h>
 #include <de/Color.h>
 #include <de/os/VideoModes.h>
 //#include <de/Timer.hpp>
@@ -17,6 +18,8 @@
 #include <commctrl.h>
 #include <shlobj.h>
 #include <wchar.h>
+
+#include <shobjidl.h>   // IFileDialog Vista+
 
 #if 0
 #include <mmsystem.h> // For JOYCAPS
@@ -435,6 +438,190 @@ CB_W32_OpenDirProcB(HWND hwnd,UINT uMsg,LPARAM lParam,LPARAM lpData)
 }
 */
 
+/*
+#include <windows.h>
+#include <shobjidl.h>   // IFileDialog
+
+std::wstring PickFolder(HWND owner, const wchar_t* initialFolder) {
+    IFileDialog* pfd = nullptr;
+
+    // Create dialog
+    HRESULT hr = CoCreateInstance(CLSID_FileOpenDialog, nullptr,
+                                  CLSCTX_INPROC_SERVER,
+                                  IID_PPV_ARGS(&pfd));
+    if (FAILED(hr))
+        return L"";
+
+    // Set options
+    DWORD options;
+    pfd->GetOptions(&options);
+    pfd->SetOptions(options | FOS_PICKFOLDERS | FOS_FORCEFILESYSTEM);
+
+    // Set title
+    pfd->SetTitle(L"Select a folder");
+
+    // Set initial folder (optional)
+    if (initialFolder && *initialFolder) {
+        IShellItem* psi = nullptr;
+        if (SUCCEEDED(SHCreateItemFromParsingName(initialFolder, nullptr,
+                                                  IID_PPV_ARGS(&psi)))) {
+            pfd->SetFolder(psi);
+            psi->Release();
+        }
+    }
+
+    // Show dialog
+    hr = pfd->Show(owner);
+    if (FAILED(hr))
+        return L"";
+
+    // Get result
+    IShellItem* result = nullptr;
+    hr = pfd->GetResult(&result);
+    if (FAILED(hr))
+        return L"";
+
+    // Extract filesystem path
+    PWSTR path = nullptr;
+    hr = result->GetDisplayName(SIGDN_FILESYSPATH, &path);
+    result->Release();
+
+    if (FAILED(hr))
+        return L"";
+
+    std::wstring folder(path);
+    CoTaskMemFree(path);
+    return folder;
+}
+*/
+/*
+🧩 Step‑by‑step: Create a PIDL for the root folder
+
+PIDLIST_ABSOLUTE pidlRoot = nullptr;
+SFGAOF sfgao;
+SHParseDisplayName(L"C:\\Projects", nullptr, &pidlRoot, 0, &sfgao);
+
+WCHAR displayName[MAX_PATH] = {};
+
+BROWSEINFOW bi{};
+bi.hwndOwner = owner;
+bi.pidlRoot = pidlRoot;                 // Start here
+bi.pszDisplayName = displayName;
+bi.lpszTitle = L"Pick any folder (starts at C:\\Projects)";
+bi.ulFlags = BIF_NEWDIALOGSTYLE;        // Modern dialog, but NOT restrictive
+bi.lpfn = nullptr;                      // No callback → no restrictions
+bi.lParam = 0;
+
+PIDLIST_ABSOLUTE pidl = SHBrowseForFolderW(&bi);
+
+// ===========================================================================
+
+PIDLIST_ABSOLUTE
+CreatePidlFromPath(const wchar_t* path)
+{
+    PIDLIST_ABSOLUTE pidl = nullptr;
+    SFGAOF sfgao;
+    HRESULT hr = SHParseDisplayName(path, nullptr, &pidl, 0, &sfgao);
+    return SUCCEEDED(hr) ? pidl : nullptr;
+}
+
+This converts a filesystem path (e.g. L"C:\\Projects") into a PIDL.
+🧪 Full working example: Restrict browsing to C:\Projects
+
+This example:
+    Sets the root to C:\Projects
+    Prevents navigating above it
+    Sets an initial folder inside the root
+    Uses the modern dialog style
+
+#include <windows.h>
+#include <shlobj.h>
+#include <string>
+
+int CALLBACK BrowseCallbackProc(HWND hwnd, UINT msg, LPARAM lp, LPARAM data) {
+    if (msg == BFFM_INITIALIZED) {
+        const wchar_t* initial = reinterpret_cast<const wchar_t*>(data);
+        SendMessage(hwnd, BFFM_SETSELECTIONW, TRUE, (LPARAM)initial);
+    }
+    return 0;
+}
+
+std::wstring BrowseInsideRoot(HWND owner) {
+    // Root folder
+    PIDLIST_ABSOLUTE pidlRoot = nullptr;
+    SFGAOF sfgao;
+    SHParseDisplayName(L"C:\\Projects", nullptr, &pidlRoot, 0, &sfgao);
+
+    WCHAR displayName[MAX_PATH] = {};
+
+    BROWSEINFOW bi{};
+    bi.hwndOwner = owner;
+    bi.pidlRoot = pidlRoot;                 // restrict to this folder
+    bi.pszDisplayName = displayName;
+    bi.lpszTitle = L"Select a folder inside C:\\Projects";
+    bi.ulFlags = BIF_RETURNONLYFSDIRS |
+                 BIF_NEWDIALOGSTYLE |
+                 BIF_EDITBOX;
+    bi.lpfn = BrowseCallbackProc;
+    bi.lParam = (LPARAM)L"C:\\Projects\\MyApp"; // initial selection
+
+    PIDLIST_ABSOLUTE pidl = SHBrowseForFolderW(&bi);
+    if (!pidl)
+        return L"";
+
+    WCHAR path[MAX_PATH];
+    if (SHGetPathFromIDListW(pidl, path))
+        return path;
+
+    return L"";
+}
+
+// ===========================================================================
+
+#include <windows.h>
+#include <shlobj.h>
+#include <string>
+
+int CALLBACK BrowseCallbackProc(HWND hwnd, UINT msg, LPARAM lp, LPARAM data) {
+    switch (msg) {
+    case BFFM_INITIALIZED: {
+        // data = initial folder path
+        const wchar_t* initial = reinterpret_cast<const wchar_t*>(data);
+        // Set initial selection
+        SendMessage(hwnd, BFFM_SETSELECTIONW, TRUE, (LPARAM)initial);
+        break;
+    }
+    }
+    return 0;
+}
+
+std::wstring BrowseForFolder(HWND owner, const wchar_t* initialFolder) {
+    BROWSEINFOW bi{};
+    WCHAR displayName[MAX_PATH] = {};
+
+    bi.hwndOwner = owner;
+    bi.pidlRoot = nullptr; // Desktop
+    bi.pszDisplayName = displayName;
+    bi.lpszTitle = L"Select your project folder";
+    bi.ulFlags = BIF_RETURNONLYFSDIRS | BIF_NEWDIALOGSTYLE | BIF_EDITBOX;
+    bi.lpfn = BrowseCallbackProc;
+    bi.lParam = (LPARAM)initialFolder; // passed to callback
+
+    PIDLIST_ABSOLUTE pidl = SHBrowseForFolderW(&bi);
+    if (!pidl)
+        return L"";
+
+    WCHAR path[MAX_PATH];
+    if (SHGetPathFromIDListW(pidl, path))
+        return path;
+
+    return L"";
+}
+
+*/
+
+#if 0
+
 int CALLBACK BrowseFolderA_Proc(HWND hwnd, UINT uMsg, LPARAM lParam, LPARAM lpData)
 {
     if (uMsg == BFFM_INITIALIZED)
@@ -463,6 +650,240 @@ int CALLBACK BrowseFolderA_Proc(HWND hwnd, UINT uMsg, LPARAM lParam, LPARAM lpDa
     }
     return 0;
 }
+
+
+//===========================================================
+std::wstring dbOpenFolderDlg( de::BrowseFolderParamsW params )
+//===========================================================
+{
+    g_Rect = de::Recti( params.x, params.y, params.w, params.h );
+
+    params.initDir = de::FileSystem::makeWinPath(params.initDir);
+
+    wchar_t outputFolderName[MAX_PATH] = { 0 };
+
+    //////////////////////////////////////////////////////////////////
+    // STRUCT BEGIN
+    //////////////////////////////////////////////////////////////////
+    /*
+        hwndOwner	Handle to the parent window (owner of the dialog).
+        pidlRoot	Root folder to start browsing from (can be NULL for Desktop).
+        pszDisplayName	Pointer to a buffer that receives the display name of the selected folder.
+        lpszTitle	Text shown above the folder tree (instructions or prompt).
+        ulFlags	Flags to customize dialog behavior (e.g. show edit box, restrict to FS).
+        lpfn	Callback function for initialization and interaction.
+        lParam	Custom data passed to the callback.
+        iImage	Index of the image associated with the selected folder (optional).
+
+        TCHAR szDisplayName[MAX_PATH];
+        TCHAR szDefaultPath[] = TEXT("C:\\MyDefaultFolder");
+
+        BROWSEINFO bi = { 0 };
+        bi.hwndOwner = hWnd;  // your window handle
+        bi.pidlRoot = NULL;   // start from Desktop
+        bi.pszDisplayName = szDisplayName;
+        bi.lpszTitle = TEXT("Select a folder:");
+        bi.ulFlags = BIF_RETURNONLYFSDIRS | BIF_NEWDIALOGSTYLE;
+        bi.lpfn = BrowseCallbackProc;
+        bi.lParam = (LPARAM)szDefaultPath;
+    */
+
+    BROWSEINFOW bi = { 0 }; // memset( &bi, 0, sizeof( bi ) );
+    bi.hwndOwner = nullptr; //g_pGlob->hWnd;
+    //nullptr → Desktop root (default)
+    //CSIDL_DRIVES → “This PC”
+    bi.pidlRoot = (const ITEMIDLIST *)CSIDL_DRIVES;
+    bi.pszDisplayName = outputFolderName;
+    bi.lpszTitle = params.caption.c_str();
+    // BIF_RETURNONLYFSDIRS — only real filesystem dirs
+    // BIF_NEWDIALOGSTYLE — modern Vista‑style dialog
+    // BIF_EDITBOX — allow typing a path
+    // BIF_VALIDATE — callback receives validation events
+    // BIF_NONEWFOLDERBUTTON — hide “New Folder”
+    bi.ulFlags = BIF_RETURNONLYFSDIRS | BIF_NEWDIALOGSTYLE;
+    bi.lpfn = BrowseFolderA_Proc;
+    // initial folder path
+    // pointer to your class
+    // anything you want
+    bi.lParam = (LPARAM)params.initDir.c_str();
+
+    std::wstring retval;
+
+    LPITEMIDLIST pIDL = SHBrowseForFolderW( &bi );
+    if ( pIDL )
+    {
+        wchar_t fullPath[_MAX_PATH] = {'\0'}; // Create a buffer to store the result.
+        if ( ::SHGetPathFromIDListW( pIDL, fullPath ) != 0 )
+        {
+            retval = fullPath; // Set the string value.
+        }
+
+        CoTaskMemFree( pIDL ); // free the item
+    }
+
+
+/*
+      //bi.iImage = 0;
+
+   strcpy( c, g_InitDir.c_str() );
+   strcat( c, "/folder" );
+
+   bi.pszDisplayName = c;
+
+   // if (newui)
+   // {	bi.ulFlags=BIF_RETURNONLYFSDIRS | BIF_USENEWUI;
+   // }
+   // else
+   // {	bi.ulFlags=BIF_RETURNONLYFSDIRS;
+   // }
+
+
+   // initial directory check
+#if OLD_CDW
+   char old_cwd[MAX_PATH];
+   getcwd( old_cwd, MAX_PATH );
+#endif
+
+#if 0
+   bool path_exist = false;
+   if (initDir)
+   {
+      std::string test = initialDir;
+      path_exist = true; // IsPath(test.c_str());
+   }
+
+   // init directory AUSWERTUNG
+   if (path_exist)
+   {
+      g_InitDir = initialDir;
+      g_InitDir = AbsolutePath(g_InitDir.c_str());
+      strcpy( c, g_InitDir.c_str() );
+   }
+   else
+   {
+      c[0]='\0';
+      g_InitDir=curWorkingDir;
+   }
+   bi.pszDisplayName=(LPSTR)g_InitDir.c_str();
+#endif
+
+   char tmpDisplayName[MAX_PATH];
+   size_t n = std::min( size_t( MAX_PATH ), caption.size() );
+   strncpy( tmpDisplayName, caption.c_str(), n );
+   bi.pszDisplayName = tmpDisplayName;
+
+   // DIALOG
+   std::string retVal;
+   ::OleInitialize( nullptr );
+   LPITEMIDLIST pIDL = SHBrowseForFolder( &bi );
+
+   // DIALOG RESULT
+   if ( pIDL )
+   {
+      char buffer[_MAX_PATH] = {'\0'}; // Create a buffer to store the result.
+      if ( ::SHGetPathFromIDList( pIDL, buffer ) != 0 )
+      {
+         retVal = buffer; // Set the string value.
+      }
+
+      CoTaskMemFree( pIDL ); // free the item
+   }
+   ::OleUninitialize();
+
+#if OLD_CDW
+   SetCurrentDirectory( old_cwd );
+#endif
+
+   g_Caption.clear();
+*/
+
+   return retval;
+}
+
+#endif
+
+//===========================================================
+std::wstring dbOpenFolderDlg( de::BrowseFolderParamsW params )
+//===========================================================
+{
+    HWND owner = nullptr;
+    const wchar_t* initialFolder = nullptr;
+
+    IFileDialog* pfd = nullptr;
+
+    bool didCoInit = false;
+
+    // Create dialog
+    HRESULT hr = CoCreateInstance(CLSID_FileOpenDialog, nullptr, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&pfd));
+    if (FAILED(hr))
+    {
+        didCoInit = win32_CoInitialize();
+        if (!didCoInit)
+        {
+            DE_ERROR("No win32_CoInitialize")
+            return L"";
+        }
+
+        hr = CoCreateInstance(CLSID_FileOpenDialog, nullptr, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&pfd));
+        if (FAILED(hr))
+        {
+            DE_ERROR("No CoCreateInstance")
+            return L"";
+        }
+    }
+
+    // Set options
+    DWORD options;
+    pfd->GetOptions(&options);
+    pfd->SetOptions(options | FOS_PICKFOLDERS | FOS_FORCEFILESYSTEM);
+
+    // Set title
+    pfd->SetTitle(L"Select a folder");
+
+    // Set initial folder (optional)
+    if (initialFolder && *initialFolder) {
+        IShellItem* psi = nullptr;
+        if (SUCCEEDED(SHCreateItemFromParsingName(initialFolder, nullptr,
+                                                  IID_PPV_ARGS(&psi)))) {
+            pfd->SetFolder(psi);
+            psi->Release();
+        }
+    }
+
+    // Show dialog
+    hr = pfd->Show(owner);
+    if (FAILED(hr))
+        return L"";
+
+    // Get result
+    IShellItem* result = nullptr;
+    hr = pfd->GetResult(&result);
+    if (FAILED(hr))
+        return L"";
+
+    // Extract filesystem path
+    PWSTR path = nullptr;
+    hr = result->GetDisplayName(SIGDN_FILESYSPATH, &path);
+    result->Release();
+
+    if (FAILED(hr))
+    {
+        DE_ERROR("GetDisplayName")
+        return L"";
+    }
+
+
+    std::wstring folder(path);
+    CoTaskMemFree(path);
+
+    if (didCoInit)
+    {
+        win32_CoUninitialize();
+    }
+
+    return folder;
+}
+
 
 //===========================================================
 std::string dbOpenFolderDlg( de::BrowseFolderParamsA params )
@@ -506,7 +927,7 @@ std::string dbOpenFolderDlg( de::BrowseFolderParamsA params )
     bi.pszDisplayName = outputFolderName;
     bi.lpszTitle = params.caption.c_str();
     bi.ulFlags = BIF_RETURNONLYFSDIRS | BIF_NEWDIALOGSTYLE;
-    bi.lpfn = BrowseFolderA_Proc;
+    bi.lpfn = nullptr; // BrowseFolderA_Proc;
     bi.lParam = (LPARAM)params.initDir.c_str();
 
     std::string retval;

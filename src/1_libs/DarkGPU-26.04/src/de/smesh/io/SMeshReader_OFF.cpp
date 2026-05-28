@@ -271,7 +271,7 @@ SMeshBufferOFF::save( SMeshBuffer const & mesh, std::string uri )
       s << "# Unsupported face type\n";
    }
 
-   if ( dbSaveTextA( uri, s.str() ) )
+   if ( dbSaveText( uri, s.str() ) )
    {
       DE_DEBUG("Saved OFF mesh file to disk, uri = ", uri )
       DE_DEBUG("Saved OFF mesh name = ", mesh.name )

@@ -16,16 +16,15 @@ protected:
     virtual void resizeGL(int w, int h) = 0;
     virtual void paintGL() = 0;
 
+    bool event(QEvent* e) override;
     void resizeEvent(QResizeEvent*) override;
     void exposeEvent(QExposeEvent*) override;
     void timerEvent(QTimerEvent*) override;
+
+    // bool handleNativeGesture(QNativeGestureEvent* e);
+    // bool handleTouch(QTouchEvent* e);
+
     void renderNow();
-
-
-    bool event(QEvent* e) override;
-    bool handleNativeGesture(QNativeGestureEvent* e);
-    bool handleTouch(QTouchEvent* e);
-
 private:
     void initGL();
     void destroyGL();

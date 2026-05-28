@@ -1,20 +1,36 @@
 add_subdirectory(0_tools)
 add_subdirectory(1_libs)
-add_subdirectory(2_demos)
+
+if (BENNI_USE_DEMOS)
+    add_subdirectory(2_demos)
+    
+    if (BENNI_USE_QT)
+        add_subdirectory(VHS_qt6)
+        add_subdirectory(AbentonTest1_qt6)
+        add_subdirectory(AbentonTest2_qt6)
+        add_subdirectory(AbentonTest3_qt6)
+        add_subdirectory(AbentonTest4_qt6_nanovg)
+    endif()
+
+    add_subdirectory(RoundRectShader)
+    add_subdirectory(RoundRectShader2)
+    add_subdirectory(RoundRectShader3)
+    add_subdirectory(RoundRectShader4)
+    # add_subdirectory(stream_WASAPI)
+endif()
 
 if (BENNI_USE_JUCE)
     add_subdirectory(4_juce)
 endif()
 
+if (BENNI_USE_QT)
+    add_subdirectory(AbentonChain_qt6)
+endif()
+        
 add_subdirectory(H3_Siedler)
 #add_subdirectory(Kinescope)
 add_subdirectory(Minecraft_54k)
 
-add_subdirectory(RoundRectShader)
-add_subdirectory(RoundRectShader2)
-add_subdirectory(RoundRectShader3)
-add_subdirectory(RoundRectShader4)
-# add_subdirectory(stream_WASAPI)
 
 if (BENNI_USE_VCV)
 	add_subdirectory(vcv-rack2)
@@ -24,18 +40,12 @@ add_subdirectory(VST_benni)
 
 add_subdirectory(minimal_vst2x_host)
 
-if (BENNI_USE_QT)
-	add_subdirectory(VHS_qt6)
-	add_subdirectory(AbentonChain_qt6)
-    add_subdirectory(AbentonTest1_qt6)
-    add_subdirectory(AbentonTest2_qt6)
-    add_subdirectory(AbentonTest3_qt6)
-    add_subdirectory(AbentonTest4_qt6_nanovg)
+
+
+if (BENNI_USE_JUCE)
+    # add_subdirectory(Product_001_Abenton_Gain_juce)
+    add_subdirectory(Product_002_Abenton_Spektrum3d_juce)
 endif()
-
-# add_subdirectory(Product_001_Abenton_Gain_juce)
-add_subdirectory(Product_002_Abenton_Spektrum3d_juce)
-
 
 
 if (BENNI_USE_RAYLIB)
