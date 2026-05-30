@@ -43,9 +43,4 @@
 *.tif binary
 *.gif binary
 
-# Exclude folders and CMakeLists.txt.user
-bin/
-build/
-CMakeLists.txt.user
-
 # Ende
