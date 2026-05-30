@@ -597,37 +597,21 @@ public:
 
         dsp_init(frames,2,sampleRate);
 
-#if OLD
-        if ( m_inputSignal )
-        {
-            m_inputSignal->dsp_read( pts, frames, sampleRate,
-                m_buffers.m_iBuffers.at(0).data(),
-                m_buffers.m_iBuffers.at(1).data() );
-
-            for (int i = 2; i < int(m_numInputs); ++i)
-            {
-                m_buffers.zeroInput(i);
-            }
-        }
-        else
-        {
-            m_buffers.zeroInputs();
-        }
-#endif
-
         //========================================================
         // Get L+R sample data from previous signal, or zeroes.
         //========================================================
         if ( m_inputSignal )
         {
-            m_inputSignal->dsp_read( pts, frames, sampleRate,
-                m_buffers.m_L.data(),
-                m_buffers.m_R.data() );
+            float* __restrict__ l = m_buffers.m_L.data();
+            float* __restrict__ r = m_buffers.m_R.data();
+            m_inputSignal->dsp_read( pts, frames, sampleRate, l, r);
         }
         else
         {
-            std::fill(m_buffers.m_L.begin(), m_buffers.m_L.begin() + frames, 0.0f);
-            std::fill(m_buffers.m_R.begin(), m_buffers.m_R.begin() + frames, 0.0f);
+            float* __restrict__ l = m_buffers.m_L.data();
+            float* __restrict__ r = m_buffers.m_R.data();
+            std::fill(l, l + frames, 0.0f);
+            std::fill(r, r + frames, 0.0f);
         }
 
         //========================================================
@@ -637,14 +621,24 @@ public:
         const auto bytesPerChannel = u64(frames) * sizeof(float);
 
         // Fill input[0] with L data:
-        std::memcpy(m_buffers.m_iBuffers.at(0).data(),  // dst L
-                    m_buffers.m_L.data(),               // src L
-                    bytesPerChannel);
+        {
+            const float* __restrict__ src = m_buffers.m_L.data();
+                  float* __restrict__ dst = m_buffers.m_iBuffers.at(0).data();
+
+            DE_ASSUME_NO_OVERLAP(dst, src, bytesPerChannel);
+
+            std::memcpy(dst, src, bytesPerChannel);
+        }
 
         // Fill input[1] with R data:
-        std::memcpy(m_buffers.m_iBuffers.at(1).data(),  // dst R
-                    m_buffers.m_R.data(),               // src R
-                    bytesPerChannel);
+        {
+            const float* __restrict__ src = m_buffers.m_R.data();
+                  float* __restrict__ dst = m_buffers.m_iBuffers.at(1).data();
+
+            DE_ASSUME_NO_OVERLAP(dst, src, bytesPerChannel);
+
+            std::memcpy(dst, src, bytesPerChannel);
+        }
 
         // Fill input[2...N-1] with zeroes:
         for (int i = 2; i < int(m_numInputs); ++i)
@@ -661,9 +655,12 @@ public:
         // Copy available input to output channels:
         for (int i = 0; i < m_numInputs; ++i)
         {
-            std::memcpy(m_buffers.m_oBuffers.at(i).data(),
-                        m_buffers.m_iBuffers.at(i).data(),
-                        bytesPerChannel);
+            const float* __restrict__ src = m_buffers.m_iBuffers.at(i).data();
+                  float* __restrict__ dst = m_buffers.m_oBuffers.at(i).data();
+
+            DE_ASSUME_NO_OVERLAP(dst, src, bytesPerChannel);
+
+            std::memcpy(dst, src, bytesPerChannel);
         }
 
         // Fill remaining output channels with silence (0.0f).
@@ -715,16 +712,35 @@ public:
 
         if (m_bIsSynth)
         {
-            DSP_ADD(outL, frames, m_buffers.m_oBuffers.at(0).data(), m_buffers.m_L.data());
-            DSP_ADD(outR, frames, m_buffers.m_oBuffers.at(1).data(), m_buffers.m_R.data());
+            const float* __restrict__ a = m_buffers.m_oBuffers.at(0).data();
+            const float* __restrict__ b = m_buffers.m_L.data();
+            DSP_ADD(outL, frames, a, b);
+
+            const float* __restrict__ c = m_buffers.m_oBuffers.at(1).data();
+            const float* __restrict__ d = m_buffers.m_R.data();
+            DSP_ADD(outR, frames, c, d);
         }
         else
         {
             // Copy [L]eft channel:
-            std::memcpy(outL, m_buffers.m_oBuffers.at(0).data(), bytesPerChannel);
+            {
+                const float* __restrict__ src = m_buffers.m_oBuffers.at(0).data();
+                      float* __restrict__ dst = outL;
+
+                DE_ASSUME_NO_OVERLAP(dst, src, bytesPerChannel);
+
+                std::memcpy(dst, src, bytesPerChannel);
+            }
 
             // Copy [R]ight channel:
-            std::memcpy(outR, m_buffers.m_oBuffers.at(1).data(), bytesPerChannel);
+            {
+                const float* __restrict__ src = m_buffers.m_oBuffers.at(1).data();
+                      float* __restrict__ dst = outR;
+
+                DE_ASSUME_NO_OVERLAP(dst, src, bytesPerChannel);
+
+                std::memcpy(dst, src, bytesPerChannel);
+            }
         }
 
         // For audio-level-meter

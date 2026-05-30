@@ -569,9 +569,6 @@ struct CLAP_AudioBuffers
 
         DE_WARN("========= SETUP =========== blockSize = ", blockSize)
 
-        m_L.resize(blockSize + GUARD);
-        m_R.resize(blockSize + GUARD);
-
         const bool bOutput = false;
         const bool bInput = true;
         const u32 nPortOut = m_ports->count(m_plugin, bOutput);
@@ -1065,7 +1062,7 @@ public:
         DE_DEBUG("")
 
         m_host.clap_version     = CLAP_VERSION;
-        m_host.name             = "Abenton Instrument Qt6";
+        m_host.name             = "Abenton Live64 Instrument";
         m_host.vendor           = "<benjaminhampe@gmx.de>";
         m_host.url              = "https://github.com/benjaminhampe";
         m_host.version          = "1.0";
@@ -1404,19 +1401,20 @@ public:
 
     void dsp_init(u64 frames, u32 channels, u32 sampleRate)
     {
+        m_buffers.m_L.resize(frames + GUARD);
+        m_buffers.m_R.resize(frames + GUARD);
+
         bool bNeedRealloc = false;
         bool bNeedReconfig = false;
 
         if ( m_blockSize != frames )
         {
-
             bNeedRealloc = true;
             bNeedReconfig = true;
         }
 
         if ( m_sampleRate != sampleRate )
         {
-
             bNeedReconfig = true;
         }
 
@@ -1512,19 +1510,62 @@ public:
 
         if ( m_inputSignal )
         {
-            m_inputSignal->dsp_read( pts, frames, sampleRate,
-                m_buffers.m_L.data(),
-                m_buffers.m_R.data() );
+            float* __restrict__ l = m_buffers.m_L.data();
+            float* __restrict__ r = m_buffers.m_R.data();
+            m_inputSignal->dsp_read( pts, frames, sampleRate, l, r );
         }
         else
         {
-            std::fill(m_buffers.m_L.begin(),
-                      m_buffers.m_L.end(), 0.0f);
-            std::fill(m_buffers.m_R.begin(),
-                      m_buffers.m_R.end(), 0.0f);
+            float* __restrict__ l = m_buffers.m_L.data();
+            float* __restrict__ r = m_buffers.m_R.data();
+            std::fill(l, l + frames, 0.0f);
+            std::fill(r, r + frames, 0.0f);
         }
 
-        m_buffers.copy1( frames );
+        // Fill all with zeroes, just to make sure...
+        for (auto & b : m_buffers.m_iBuffers)
+        {
+            for (auto & c : b)
+            {
+                float* __restrict__ l = c.data();
+                std::fill(l, l + frames, 0.0f);
+            }
+        }
+
+        const auto bytesPerChannel = u64(frames) * sizeof(float);
+
+        // Copy L+R to vst3 buffers, if any...
+        u32 n = 0;
+        for (auto & b : m_buffers.m_iBuffers)
+        {
+            for (auto & c : b)
+            {
+                if (n == 0)
+                {
+                    const float* __restrict__ src = c.data();
+                          float* __restrict__ dst = m_buffers.m_L.data();
+
+                    DE_ASSUME_NO_OVERLAP(dst, src, bytesPerChannel);
+
+                    std::memcpy(dst, src, bytesPerChannel);
+                    n++;
+                }
+                else if (n == 1)
+                {
+                    const float* __restrict__ src = c.data();
+                          float* __restrict__ dst = m_buffers.m_R.data();
+
+                    DE_ASSUME_NO_OVERLAP(dst, src, bytesPerChannel);
+
+                    std::memcpy(dst, src, bytesPerChannel);
+                    n++;
+                }
+                else
+                {
+                    break;
+                }
+            }
+        }
 
         // ======================================================
         // Transport:
@@ -1601,9 +1642,100 @@ public:
         // Write (L+R) CLAP audio output back to DspChain.
         // ======================================================
 
-        const auto bytesPerChannel = u64(frames) * sizeof(float);
+        n = 0;
+        for (auto & b : m_buffers.m_oBuffers)
+        {
+            for (auto & c : b)
+            {
+                // Copy [L]eft channel:
+                if (n == 0)
+                {
+                    const float* __restrict__ src = c.data();
+                          float* __restrict__ dst = outL;
 
-        u32 n = 0;
+                    DE_ASSUME_NO_OVERLAP(dst, src, bytesPerChannel);
+
+                    std::memcpy(dst, src, bytesPerChannel);
+                    n++;
+                }
+                // Copy [R]ight channel:
+                else if (n == 1)
+                {
+                    const float* __restrict__ src = c.data();
+                          float* __restrict__ dst = outR;
+
+                    DE_ASSUME_NO_OVERLAP(dst, src, bytesPerChannel);
+
+                    std::memcpy(dst, src, bytesPerChannel);
+                    n++;
+                }
+                else
+                {
+                    break;
+                }
+            }
+        }
+
+        // If synth (no pcm inputs) -> relay m_L + m_R from inputSignal -> Chain multiple synths together :-)
+        if (m_buffers.m_iBuffers.empty())
+        {
+            // Add inputSignal[L] to output[L]
+            {
+                const float* __restrict__ src = m_buffers.m_L.data();
+                      float* __restrict__ dst = outL;
+
+                DE_ASSUME_NO_OVERLAP(dst, src, bytesPerChannel);
+
+                for (size_t i = 0; i < frames; ++i) { dst[i] += src[i]; }
+            }
+
+            // Add inputSignal[R] to output[R]
+            {
+                const float* __restrict__ src = m_buffers.m_R.data();
+                      float* __restrict__ dst = outR;
+
+                DE_ASSUME_NO_OVERLAP(dst, src, bytesPerChannel);
+
+                for (size_t i = 0; i < frames; ++i) { dst[i] += src[i]; }
+            }
+        }
+
+/*
+        if (m_bIsSynth)
+        {
+            const float* __restrict__ a = m_buffers.m_oBuffers.at(0).data();
+            const float* __restrict__ b = m_buffers.m_L.data();
+            DSP_ADD(outL, frames, a, b);
+
+            const float* __restrict__ c = m_buffers.m_oBuffers.at(1).data();
+            const float* __restrict__ d = m_buffers.m_R.data();
+            DSP_ADD(outR, frames, c, d);
+        }
+        else
+        {
+            // Copy [L]eft channel:
+            {
+                const float* __restrict__ src = m_buffers.m_oBuffers.at(0).data();
+                      float* __restrict__ dst = outL;
+
+                DE_ASSUME_NO_OVERLAP(dst, src, bytesPerChannel);
+
+                std::memcpy(dst, src, bytesPerChannel);
+            }
+
+            // Copy [R]ight channel:
+            {
+                const float* __restrict__ src = m_buffers.m_oBuffers.at(1).data();
+                      float* __restrict__ dst = outR;
+
+                DE_ASSUME_NO_OVERLAP(dst, src, bytesPerChannel);
+
+                std::memcpy(dst, src, bytesPerChannel);
+            }
+        }
+
+
+        n = 0;
         for (auto & b : m_buffers.m_oBuffers)
         {
             for (auto & c : b)
@@ -1626,7 +1758,7 @@ public:
                 }
             }
         }
-
+*/
         // For audio-level-meter
         m_normalizedSumComputer.calc(outL, outR, frames);
 

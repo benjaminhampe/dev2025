@@ -16,6 +16,7 @@ inline void DSP_GET_CHANNEL(
 {
     src += srcChannel; // Advance to first sample of desired channel.
     auto n = std::min( srcFrames, dstFrames );
+
     for ( u64 i = 0; i < n; i++ )
     {
         *dst = (*src);
@@ -122,21 +123,31 @@ inline void DSP_MONO(
 
 inline void DSP_ADD(float* __restrict dst, u64 n, const float* __restrict src_a, const float* __restrict src_b )
 {
+    DE_ASSUME_NO_OVERLAP(dst, src_a, n * sizeof(float));
+    DE_ASSUME_NO_OVERLAP(dst, src_b, n * sizeof(float));
+    DE_ASSUME_NO_OVERLAP(src_a, src_b, n * sizeof(float));
+
     for (u64 i = 0; i < n; ++i) { dst[i] = src_a[i] + src_b[i]; }
 }
 
 inline void DSP_ADD(float* __restrict__ dst, u64 n, const float* __restrict__ src)
 {
+    DE_ASSUME_NO_OVERLAP(dst, src, n * sizeof(float));
+
     for (u64 i = 0; i < n; ++i) { dst[i] += src[i]; }
 }
 
 inline void DSP_COPY(float* __restrict__ dst, u64 n, const float* __restrict__ src)
 {
+    DE_ASSUME_NO_OVERLAP(dst, src, n * sizeof(float));
+
     for (u64 i = 0; i < n; ++i) { dst[i] = src[i]; }
 }
 
 inline void DSP_COPY(float* __restrict__ dst, u64 n, const float* __restrict__ src, u64 src_stride, u64 dst_stride)
 {
+    DE_ASSUME( dst != src );
+
     for (u64 i = 0; i < n; i++)
     {
         *dst = *src;
@@ -145,49 +156,43 @@ inline void DSP_COPY(float* __restrict__ dst, u64 n, const float* __restrict__ s
     }
 }
 
-inline void DSP_MUL(
-    f32* __restrict__ dst_values,
-    u64 n,
-    const f32* __restrict__ src_values,
-    f32 src_factor)
+inline void DSP_MUL(float* __restrict__ dst, u64 n, const float* __restrict__ src, float factor)
 {
     if (n<1) return;
+
+    DE_ASSUME_NO_OVERLAP(dst, src, n * sizeof(float));
+
     for (u64 i = 0; i < n; i++)
     {
-        (*dst_values) = (*src_values) * src_factor;
-        src_values++;
-        dst_values++;
+        dst[i] = src[i] * factor;
     }
 }
 
-inline void DSP_MUL(
-    f32* __restrict__ dst_values,
-    u64 n,
-    const f32* __restrict__ src_values,
-    const f32* __restrict__ src_factors)
+inline void DSP_MUL(float* __restrict__ dst, u64 n,
+    const float* __restrict__ src_values,
+    const float* __restrict__ src_factors)
 {
     if (n<1) return;
+
+    DE_ASSUME_NO_OVERLAP(dst, src_values, n * sizeof(float));
+    DE_ASSUME_NO_OVERLAP(dst, src_factors, n * sizeof(float));
+    DE_ASSUME_NO_OVERLAP(src_values, src_factors, n * sizeof(float));
+
     for (u64 i = 0; i < n; i++)
     {
-        (*dst_values) = (*src_values) * (*src_factors);
-        src_values++;
-        dst_values++;
-        src_factors++;
+        dst[i] = src_values[i] * src_factors[i];
     }
 }
 
-inline void DSP_MUL(
-    const f32* __restrict__ src,
-    f32* __restrict__ dst,
-    u64 n,
-    f32 factor)
+inline void DSP_MUL(const float* __restrict__ src, float* __restrict__ dst, u64 n, float factor)
 {
     if (n<1) return;
+
+    DE_ASSUME_NO_OVERLAP(dst, src, n * sizeof(float));
+
     for (u64 i = 0; i < n; i++)
     {
-        (*dst) = (*src) * factor;
-        src++;
-        dst++;
+        dst[i] = src[i] * factor;
     }
 }
 

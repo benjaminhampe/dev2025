@@ -477,8 +477,8 @@ struct VST3_SampleBuffers
     std::vector<std::vector<TAlignedVector<float>>> m_oBuffers;
 
     // Bus[].Channels*
-    std::vector<std::vector<float*>> m_iHeads;
-    std::vector<std::vector<float*>> m_oHeads;
+    std::vector<TAlignedVector<float*>> m_iHeads;
+    std::vector<TAlignedVector<float*>> m_oHeads;
 
     void setup(Steinberg::IPtr<Steinberg::Vst::IComponent>& comp, u32 blockSize)
     {
@@ -579,6 +579,11 @@ struct VST3_MidiEventQueue
     Steinberg::Vst::EventList events;
     //std::vector<Steinberg::Vst::Event> events;
 
+    explicit VST3_MidiEventQueue( size_t n = 1024 )
+        : events(n)
+    {
+    }
+
     std::unique_lock< std::mutex >
     lock() const
     {
@@ -669,6 +674,8 @@ public:
 
     bool m_bIsPluginOpen;
     bool m_bIsBypassed;
+    bool m_bWasBypassed;
+    bool m_bBroadcastNoteOff; // 16 channels * 128 NoteOff = 1024 events! bypassed is enabled.
     bool m_bIsSynth;
     bool m_bIsSingleComponent; // Says only
     bool m_bCanFloat32;
@@ -742,6 +749,8 @@ public:
     VST3_Plugin_Impl() // const std::wstring& path
         : m_bIsPluginOpen{ false }
         , m_bIsBypassed{ false }
+        , m_bWasBypassed{ false }
+        , m_bBroadcastNoteOff{ false }
         , m_bIsSynth{ false }
         , m_bIsSingleComponent{ false }
         , m_bCanFloat32{ false }
@@ -756,6 +765,9 @@ public:
         , m_editor{ nullptr }
         , m_inputSignal{ nullptr }
         , m_framePos{ 0 }
+        , m_vstInputEventList( 1024 )
+        , m_vstInputParamChanges( 256 )
+        , m_midiEventQueueIn( 1024 )
     {
         DE_DEBUG("")
     }
@@ -1561,6 +1573,9 @@ public:
 
         float* __restrict__ inL = m_buffers.m_L.data();
         float* __restrict__ inR = m_buffers.m_R.data();
+
+        DE_ASSUME_NO_OVERLAP(inL,inR,frames*sizeof(float));
+
         if ( m_inputSignal )
         {
             m_inputSignal->dsp_read( pts, frames, sampleRate, inL, inR );
@@ -1583,22 +1598,22 @@ public:
             {
                 if (n == 0)
                 {
-                    const float* __restrict__ pSrc = m_buffers.m_L.data();
-                    float* __restrict__ pDst = c.data();
+                    const float* __restrict__ src = m_buffers.m_L.data();
+                          float* __restrict__ dst = c.data();
 
-                    DE_ASSUME_NO_OVERLAP(pSrc,pDst,bytesPerChannel);
+                    DE_ASSUME_NO_OVERLAP(dst, src, bytesPerChannel);
 
-                    std::memcpy(pDst, pSrc, bytesPerChannel); // Copy (L) to first VST3 input buffer
+                    std::memcpy(dst, src, bytesPerChannel); // Copy (L) to first VST3 input buffer
                     n++;
                 }
                 else if (n == 1)
                 {
-                    const float* __restrict__ pSrc = m_buffers.m_R.data();
-                    float* __restrict__ pDst = c.data();
+                    const float* __restrict__ src = m_buffers.m_R.data();
+                          float* __restrict__ dst = c.data();
 
-                    DE_ASSUME_NO_OVERLAP(pSrc,pDst,bytesPerChannel);
+                    DE_ASSUME_NO_OVERLAP(dst, src, bytesPerChannel);
 
-                    std::memcpy(pDst, pSrc, bytesPerChannel); // Copy (R) to second VST3 input buffer
+                    std::memcpy(dst, src, bytesPerChannel); // Copy (R) to second VST3 input buffer
                     n++;
                 }
                 else
@@ -1634,15 +1649,15 @@ public:
 
         // --- Audio buses ---
         Steinberg::Vst::ProcessData data {};
-        data.numSamples         = frames;
-        data.processMode        = Steinberg::Vst::kRealtime;
-        data.symbolicSampleSize = Steinberg::Vst::kSample32;
-        data.numInputs          = int(m_buffers.m_iBuses.size());
-        data.numOutputs         = int(m_buffers.m_oBuses.size());
-        data.inputs             = m_buffers.m_iBuses.data();
-        data.outputs            = m_buffers.m_oBuses.data();
-        data.inputParameterChanges = nullptr;
-        data.processContext     = &ctx;
+        data.numSamples             = frames;
+        data.processMode            = Steinberg::Vst::kRealtime;
+        data.symbolicSampleSize     = Steinberg::Vst::kSample32;
+        data.numInputs              = int(m_buffers.m_iBuses.size());
+        data.numOutputs             = int(m_buffers.m_oBuses.size());
+        data.inputs                 = m_buffers.m_iBuses.data();
+        data.outputs                = m_buffers.m_oBuses.data();
+        data.inputParameterChanges  = nullptr;
+        data.processContext         = &ctx;
 
         // ======================================================
         // Process MIDI messages:
@@ -1673,15 +1688,23 @@ public:
                 // Copy [L]eft channel:
                 if (n == 0)
                 {
-                    const float* __restrict__ pSrc = c.data();
-                    std::memcpy(outL, pSrc, bytesPerChannel);
+                    const float* __restrict__ src = c.data();
+                          float* __restrict__ dst = outL;
+
+                    DE_ASSUME_NO_OVERLAP(dst, src, bytesPerChannel);
+
+                    std::memcpy(dst, src, bytesPerChannel);
                     n++;
                 }
                 // Copy [R]ight channel:
                 else if (n == 1)
                 {
-                    const float* __restrict__ pSrc = c.data();
-                    std::memcpy(outR, pSrc, bytesPerChannel);
+                    const float* __restrict__ src = c.data();
+                          float* __restrict__ dst = outR;
+
+                    DE_ASSUME_NO_OVERLAP(dst, src, bytesPerChannel);
+
+                    std::memcpy(dst, src, bytesPerChannel);
                     n++;
                 }
                 else
@@ -1695,15 +1718,23 @@ public:
         if (m_buffers.m_iBuffers.empty())
         {
             // Add inputSignal[L] to output[L]
-            for (size_t i = 0; i < frames; ++i)
             {
-                outL[i] += m_buffers.m_L[i];
+                const float* __restrict__ src = m_buffers.m_L.data();
+                      float* __restrict__ dst = outL;
+
+                DE_ASSUME_NO_OVERLAP(dst, src, bytesPerChannel);
+
+                for (size_t i = 0; i < frames; ++i) { dst[i] += src[i]; }
             }
 
             // Add inputSignal[R] to output[R]
-            for (size_t i = 0; i < frames; ++i)
             {
-                outR[i] += m_buffers.m_R[i];
+                const float* __restrict__ src = m_buffers.m_R.data();
+                      float* __restrict__ dst = outR;
+
+                DE_ASSUME_NO_OVERLAP(dst, src, bytesPerChannel);
+
+                for (size_t i = 0; i < frames; ++i) { dst[i] += src[i]; }
             }
         }
 
@@ -1723,7 +1754,11 @@ public:
 
         if (auto l = m_midiEventQueueIn.lock())
         {
-            for (int i = 0; i < m_midiEventQueueIn.events.getEventCount(); ++i)
+            int n = m_midiEventQueueIn.events.getEventCount();
+
+            //m_midiEventQueueIn.events.setMaxSize(n);
+
+            for (int i = 0; i < n; ++i)
             {
                 Steinberg::Vst::Event event;
                 auto e = m_midiEventQueueIn.events.getEvent(i, event);
@@ -1738,6 +1773,29 @@ public:
             }
 
             m_midiEventQueueIn.events.clear();
+            /*
+            for (uint8_t ch = 0x00; ch <= 0x0F; ++ch)
+            {
+                for (uint8_t note = 0x00; note <= 0x7F; ++note)
+                {
+                    Steinberg::Vst::Event e{};
+                    e.busIndex     = 0x00;
+                    e.sampleOffset = 0x0000;
+                    e.flags        = 0x0000;
+                    e.type         = Steinberg::Vst::Event::kNoteOffEvent;
+
+                    e.noteOff.channel   = ch;
+                    e.noteOff.pitch     = note;
+                    e.noteOff.velocity  = 0.0f;
+                    e.noteOff.noteId    = -1;      // 0xFFFF_FFFF
+                    e.noteOff.tuning    = 0.0f;
+                    //e.noteOff.length    = 0x0000;
+                    //e.noteOff.noteOffId = -1;      // 0xFFFF_FFFF
+
+                    inputEvents->addEvent(e);
+                }
+            }
+            */
         }
 
         data.inputEvents  = &m_vstInputEventList;
@@ -1876,6 +1934,76 @@ public:
     {
         DE_WARN("Not implemented, ", msg.size())
     }
+
+    /*
+    🎯 Full 16‑channel panic (CC 0x78, 0x79, 0x7B)
+
+    Each item begins with a Guided Link so you can explore deeper.
+
+        All_Sound_Off — CC 0x78
+
+        Reset_All_Controllers — CC 0x79
+
+        All_Notes_Off — CC 0x7B
+
+    🧩 Code: send all 3 panic CCs on all 16 channels
+
+    static void sendFullPanic(Steinberg::Vst::IEventList* inputEvents)
+    {
+        const uint8_t panicCCs[3] = { 0x78, 0x79, 0x7B };
+
+        for (uint8_t ch = 0x00; ch <= 0x0F; ++ch)
+        {
+            for (uint8_t cc : panicCCs)
+            {
+                Steinberg::Vst::Event e{};
+                e.busIndex = 0x00;
+                e.sampleOffset = 0x0000;
+                e.type = Steinberg::Vst::Event::kCtrlChangeEvent;
+
+                e.ctrlChange.channel = ch;
+                e.ctrlChange.controllerNumber = cc;
+                e.ctrlChange.value = 0.0f;
+
+                inputEvents->addEvent(e);
+            }
+        }
+    }
+
+    #include "pluginterfaces/vst/ivstevents.h"
+    #include "pluginterfaces/base/funknown.h"
+
+    using namespace Steinberg;
+    using namespace Steinberg::Vst;
+
+    static void sendAllNotesOff(Steinberg::Vst::IEventList* inputEvents)
+    {
+        if (!inputEvents)
+            return;
+
+        for (uint8_t ch = 0x00; ch <= 0x0F; ++ch)
+        {
+            for (uint8_t note = 0x00; note <= 0x7F; ++note)
+            {
+                Steinberg::Vst::Event e{};
+                e.busIndex     = 0x00;
+                e.sampleOffset = 0x0000;
+                e.flags        = 0x0000;
+                e.type         = Steinberg::Vst::Event::kNoteOffEvent;
+
+                e.noteOff.channel   = ch;
+                e.noteOff.pitch     = note;
+                e.noteOff.velocity  = 0.0f;
+                e.noteOff.noteId    = -1;      // 0xFFFF_FFFF
+                e.noteOff.tuning    = 0.0f;
+                //e.noteOff.length    = 0x0000;
+                //e.noteOff.noteOffId = -1;      // 0xFFFF_FFFF
+
+                inputEvents->addEvent(e);
+            }
+        }
+    }
+    */
 };
 
 // ============================================================================
