@@ -1,8 +1,8 @@
 #pragma once
-#include <QPushButton>
+#include <gui/track/details/SvgButton.h>
 
 // ============================================
-class EnableButton : public QPushButton
+class EnableButton : public SvgButton
 // ============================================
 {
     Q_OBJECT
@@ -13,23 +13,6 @@ public:
 
     void applySkin();
 
-    void setEnabledKeyAssign( bool enabled );
-
-protected slots:
-    void onToggled( bool checked );
-
-protected:
-    void paintEvent(QPaintEvent* event) override;
-
-private:
-    int m_baseButtonSize = 30; // -6 = symbolSize
-    int m_baseOutlineWidth = 2;
-
-    // int m_w;
-    // int m_h;
-
-    bool m_bEnabledKeyAssign = false;
-
-    QPixmap m_active;
-    QPixmap m_deactive;
+// protected slots:
+//     void onToggled( bool checked );
 };

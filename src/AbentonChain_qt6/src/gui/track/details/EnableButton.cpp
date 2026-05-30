@@ -3,7 +3,7 @@
 #include "gui/Skin.h"
 
 EnableButton::EnableButton(QWidget* parent)
-    : QPushButton(parent)
+    : SvgButton(parent)
 {
     // setSizePolicy(QSizePolicy::Fixed,QSizePolicy::Fixed);
     // setContextMenuPolicy(Qt::CustomContextMenu);
@@ -15,21 +15,14 @@ EnableButton::EnableButton(QWidget* parent)
     // connect(this, &QWidget::customContextMenuRequested,
             // this, &EnableButton::showContextMenu);
 
-    connect(this, &QPushButton::toggled,
-            this, &EnableButton::onToggled);
-
+    // connect(this, &QPushButton::toggled,
+    //         this, &EnableButton::onToggled);
 }
 
-void EnableButton::setEnabledKeyAssign( bool enabled )
-{
-    m_bEnabledKeyAssign = enabled;
-    update();
-}
-
-void EnableButton::onToggled(bool checked)
-{
-    applySkin();
-}
+// void EnableButton::onToggled(bool checked)
+// {
+//     applySkin();
+// }
 
 //QSize EnableButton::sizeHint() const { return QSize(m_width, m_height); }
 //QSize EnableButton::minimumSizeHint() const { return sizeHint(); }
@@ -50,30 +43,23 @@ void EnableButton::applySkin()
 
     if (m_active.width() != b)
     {
-        auto mkSvg_Power = [](
-            int buttonWidth,
+        auto mkSvg_Power = [](int w, int h,
             const QColor& fillColor,
             const QColor& lineColor) -> QPixmap
         {
-            const int symbolSize = buttonWidth - 6;  // 24
-            const int symbolRadius = symbolSize / 2; // 12
-            const int cx = buttonWidth/2;
-            const int cy = cx;
             auto s = QString(R"(
-<svg width="30" height="30" viewBox="0 0 30 30"
-    xmlns="http://www.w3.org/2000/svg" >
-<circle cx="15" cy="15" r="12"
-    fill="%1" stroke="%2" stroke-width="2" />
+<svg width="30" height="30" viewBox="0 0 30 30" xmlns="http://www.w3.org/2000/svg" >
+<circle cx="15" cy="15" r="12" fill="%1" stroke="%2" stroke-width="2" />
 </svg>
 )")
             .arg(toSvg(fillColor))  // %1
             .arg(toSvg(lineColor))  // %2
             ;
-            return mkSvg( s, buttonWidth );
+            return mkSvg(s,w,h);
         };
 
-        m_active = mkSvg_Power(b, onColor, lineColor );
-        m_deactive = mkSvg_Power(b, offColor, lineColor );
+        m_active = mkSvg_Power(b,b, onColor, lineColor );
+        m_deactive = mkSvg_Power(b,b, offColor, lineColor );
 
         //m_active.save("EnableButton.Active.png");
         //m_deactive.save("EnableButton.Deactive.png");
@@ -91,38 +77,6 @@ void EnableButton::applySkin()
     // updateGeometry(); // tells Qt: “my sizeHint() changed”
     update();
 }
-
-void EnableButton::paintEvent(QPaintEvent* event)
-{
-    QPainter dc(this);
-    if (m_bEnabledKeyAssign)
-    {
-        dc.fillRect( rect(), QColor(209, 160, 129) );
-    }
-
-    if (isCheckable() && !isChecked())
-    {
-        int w1 = width();
-        int w2 = m_deactive.width();
-        int h1 = height();
-        int h2 = m_deactive.height();
-        int x = (w1 - w2)/2;
-        int y = (h1 - h2)/2;
-        dc.drawPixmap(x,y,m_deactive);
-    }
-    else
-    {
-        int w1 = width();
-        int w2 = m_active.width();
-        int h1 = height();
-        int h2 = m_active.height();
-        int x = (w1 - w2)/2;
-        int y = (h1 - h2)/2;
-        dc.drawPixmap(x,y,m_active);
-    }
-
-}
-
 
 /*
 void EnableButton::showContextMenu(const QPoint &pos)

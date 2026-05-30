@@ -1,36 +1,48 @@
-#include "gui/track/details/ArrowButton.h"
+#include "gui/track/details/SvgButton.h"
 #include "App.h"
 #include "gui/Skin.h"
 
 // =================================================================
-ArrowButton::ArrowButton(QWidget* parent)
+SvgButton::SvgButton(QWidget* parent)
 // =================================================================
-    : SvgButton(parent)
+    : QPushButton(parent)
 {
     // setSizePolicy(QSizePolicy::Fixed,QSizePolicy::Fixed);
     // setContextMenuPolicy(Qt::CustomContextMenu);
     // setStyleSheet("background:transparent; border:none;");
-    setCheckable( true );
-    setChecked( false );
-    applySkin();
+    // setCheckable( true );
+    // setChecked( false );
+    // applySkin();
 
     // connect(this, &QWidget::customContextMenuRequested,
-            // this, &ArrowButton::showContextMenu);
+            // this, &SvgButton::showContextMenu);
 
     // connect(this, &QPushButton::toggled,
-    //         this, &ArrowButton::onToggled);
+    //         this, &SvgButton::onToggled);
 
 }
 
-// void ArrowButton::onToggled(bool checked)
+void SvgButton::setKeyAssign( bool enabled )
+{
+    m_bEnabledKeyAssign = enabled;
+    update();
+}
+
+void SvgButton::setMidiAssign( bool enabled )
+{
+    m_bEnabledMidiAssign = enabled;
+    update();
+}
+
+// void SvgButton::onToggled(bool checked)
 // {
-//     applySkin();
+//     // applySkin();
 // }
 
-//QSize ArrowButton::sizeHint() const { return QSize(m_width, m_height); }
-//QSize ArrowButton::minimumSizeHint() const { return sizeHint(); }
-
-void ArrowButton::applySkin()
+//QSize SvgButton::sizeHint() const { return QSize(m_width, m_height); }
+//QSize SvgButton::minimumSizeHint() const { return sizeHint(); }
+/*
+void SvgButton::applySkin()
 {
     const auto& skin = App::instance()->getSkin();
     const int b = (m_baseButtonSize * skin.zoom) / 100;
@@ -93,19 +105,68 @@ void ArrowButton::applySkin()
         m_active = mkSvg_ArrowDown(b,b, offColor, lineColor, textColor );
         m_deactive = mkSvg_ArrowRight(b,b, offColor, lineColor, textColor );
 
-        //m_active.save("ArrowButton.Active.png");
-        //m_deactive.save("ArrowButton.Deactive.png");
+        //m_active.save("SvgButton.Active.png");
+        //m_deactive.save("SvgButton.Deactive.png");
     }
 
     if (isCheckable() && !isChecked())
     {
-        setButtonPix( this, m_deactive);
+        setButtonPix(this, m_deactive);
     }
     else
     {
-        setButtonPix( this, m_active);
+        setButtonPix(this, m_active);
     }
 
-    //updateGeometry(); // tells Qt: “my sizeHint() changed”
     update();
 }
+*/
+void SvgButton::paintEvent(QPaintEvent* event)
+{
+    const int w = width();
+    const int h = height();
+    if (w<2) return;
+    if (h<2) return;
+
+    QPainter dc(this);
+
+    if (m_bEnabledKeyAssign)
+    {
+        dc.fillRect( rect(), QColor(209, 160, 129) );
+    }
+    else if (m_bEnabledMidiAssign)
+    {
+        dc.fillRect( rect(), QColor(129, 129, 209) );
+    }
+
+    if (isCheckable() && !isChecked())
+    {
+        const int w2 = m_deactive.width();
+        const int h2 = m_deactive.height();
+        const int x = (w - w2)/2;
+        const int y = (h - h2)/2;
+        dc.drawPixmap(x,y,m_deactive);
+    }
+    else
+    {
+        const int w2 = m_active.width();
+        const int h2 = m_active.height();
+        const int x = (w - w2)/2;
+        const int y = (h - h2)/2;
+        dc.drawPixmap(x,y,m_active);
+    }
+
+}
+
+
+/*
+void SvgButton::showContextMenu(const QPoint &pos)
+{
+    QMenu menu;
+    QAction *removeAct = menu.addAction("Entfernen");
+    QAction *chosen = menu.exec(mapToGlobal(pos));
+
+    if (chosen == removeAct)
+        emit requestRemoval(this);
+}
+*/

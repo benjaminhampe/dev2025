@@ -1,0 +1,5 @@
+# Exclude folders and CMakeLists.txt.user
+bin/
+build/
+.qtcreator/
+CMakeLists.txt.user
