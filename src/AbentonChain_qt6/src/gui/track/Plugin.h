@@ -47,6 +47,7 @@ public slots:
 
 private slots:
     void on_pad(float x, float y);
+    void on_comboPreset(int index);
     void on_comboParam1(int index);
     void on_comboParam2(int index);
 

@@ -19,7 +19,8 @@ public:
         eT_Runtime, //  of dsp_read()
         eT_Name,
         eT_Vendor,
-        eT_Version
+        //eT_Version
+        eT_Max
     };
 
     void setText(eText i, QString msg)
@@ -30,7 +31,7 @@ public:
             case eT_Runtime:m_str1 = msg; break;
             case eT_Name:   m_str2 = msg; break;
             case eT_Vendor: m_str3 = msg; break;
-            case eT_Version:m_str4 = msg; break;
+            //case eT_Version:m_str4 = msg; break;
             default: break;
         }
     }
@@ -82,7 +83,7 @@ private:
     QString m_str1 = "Runtime"; // Runtime of dsp_read
     QString m_str2 = "Name"; // Name
     QString m_str3 = "Vendor"; // Vendor
-    QString m_str4 = "1.0"; // Version
+    QString m_str4 = ""; // Version
 
     std::optional<uint32_t> m_paramX;
     std::optional<uint32_t> m_paramY;

@@ -88,6 +88,9 @@ Plugin::Plugin(de::audio::IPlugin* plugin, QWidget* parent)
     connect(m_body->getPad(), &Pad::onParamChanged,
             this, &Plugin::on_pad);
 
+    connect(m_body->getComboPreset(), &ComboBox::currentIndexChanged,
+            this, &Plugin::on_comboParam1);
+
     connect(m_body->getComboParam1(), &ComboBox::currentIndexChanged,
             this, &Plugin::on_comboParam1);
 
@@ -167,13 +170,14 @@ void Plugin::setPlugin(de::audio::IPlugin* plugin)
         }
 
         auto pad = m_body->getPad();
-        pad->setText(Pad::eT_Type, QString("%1 %2")
+        pad->setText(Pad::eT_Type, QString("%1 %2 %3")
                 .arg(QString::fromStdString(m_plugin->getTypeStr()))
-                .arg(m_plugin->isSynth() ? "Synth" : "Effect"));
+                .arg(m_plugin->isSynth() ? "Synth" : "Effect")
+                .arg(QString::fromStdString(m_plugin->getVersion())));
         pad->setText(Pad::eT_Runtime, QString::fromStdString(createPerfStr(m_plugin->getRuntime())));
         pad->setText(Pad::eT_Name, QString::fromStdString(m_plugin->getName()));
         pad->setText(Pad::eT_Vendor, QString::fromStdString(m_plugin->getVendor()));
-        pad->setText(Pad::eT_Version, QString::fromStdString(m_plugin->getVersion()));
+        //pad->setText(Pad::eT_Version, QString::fromStdString(m_plugin->getVersion()));
 
 
         // Fill ProgramCombo:
@@ -224,16 +228,14 @@ void Plugin::setPlugin(de::audio::IPlugin* plugin)
         pad->setText(Pad::eT_Runtime, "");
         pad->setText(Pad::eT_Name, "");
         pad->setText(Pad::eT_Vendor, "");
-        pad->setText(Pad::eT_Version, "");
+        //pad->setText(Pad::eT_Version, "");
     }
 }
-
-
 
 void Plugin::on_showContextMenu(const QPoint &pos)
 {
     QMenu menu;
-    QAction *removeAct = menu.addAction("Entfernen");
+    QAction *removeAct = menu.addAction("Delete/Entfernen");
     QAction *chosen = menu.exec(mapToGlobal(pos));
 
     if (chosen == removeAct)
@@ -262,6 +264,26 @@ void Plugin::on_pad(float x, float y)
         //DE_TRACE("paramId.Y = ", paramIdY)
         m_plugin->setParameterValue(paramIdY, y);
     }
+}
+
+// On comboBox1 currentIndexChanged we set Pad.X to current value of selected Param1
+void Plugin::on_comboPreset(int index)
+{
+    if (!m_plugin)
+    {
+        DE_ERROR("No plugin")
+        return;
+    }
+
+    // const auto & progs = m_plugin->getPrograms();
+
+    // if (index < 0 || index >= int(progs.size()))
+    // {
+    //     DE_ERROR("Invalid index ",index)
+    //     return;
+    // }
+
+    m_plugin->setProgram(index);
 }
 
 // On comboBox1 currentIndexChanged we set Pad.X to current value of selected Param1

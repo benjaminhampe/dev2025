@@ -53,7 +53,7 @@ void Pad::paintEvent(QPaintEvent* event)
 
     {
         const int w = m_rcBody.width();
-        const int h = m_rcBody.height() / 5;
+        const int h = m_rcBody.height() / int(eT_Max);
         const int x = m_rcBody.x();
         const int y = m_rcBody.y();
         dc.setPen(QPen(Qt::white));
@@ -170,10 +170,7 @@ calcF( const QPoint& pos, const QRect& rect )
 {
     const int w = rect.width();
     const int h = rect.height();
-    if (w < 1 || h < 1)
-    {
-        return std::nullopt;
-    }
+    if (w < 1 || h < 1) { return std::nullopt; }
     const int x = rect.x();
     const int y = rect.y();
     const int mx = pos.x();

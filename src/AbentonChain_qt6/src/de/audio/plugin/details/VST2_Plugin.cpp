@@ -11,6 +11,47 @@ namespace {
 
 constexpr u64 GUARD = 256; // 64 extra bytes for "out-of-bounds" bugs.
 
+/*
+inline char VST2_hexNibble( uint8_t byte )
+{
+    uint_fast8_t const lowbyteNibble = byte & 0x0F;
+    if ( lowbyteNibble < 10 )
+    {
+        return char('0' + lowbyteNibble);
+    }
+    else
+    {
+        return char('A' + (lowbyteNibble-10));
+    }
+}
+
+inline std::string VST2_hex( uint8_t byte )
+{
+    std::ostringstream o;
+    uint_fast8_t const higNibble = byte >> 4;
+    uint_fast8_t const lowNibble = byte & 0x0F;
+    if (higNibble > 0) o << VST2_hexNibble( higNibble );
+    o << VST2_hexNibble( lowNibble );
+    return o.str();
+}
+
+inline std::string VST2_hex( uint16_t const val )
+{
+    uint8_t const higByte = ( val >> 8 ) & 0xFF;
+    uint8_t const higByte_higNibble = higByte >> 4;
+    uint8_t const higByte_lowNibble = higByte & 0x0F;
+    uint8_t const lowByte = val & 0xFF;
+    uint8_t const lowByte_higNibble = higByte >> 4;
+    uint8_t const lowByte_lowNibble = higByte & 0x0F;
+    std::ostringstream o;
+    if (higByte_higNibble > 0) o << VST2_hexNibble( higByte_higNibble );
+    if (higByte_lowNibble > 0) o << VST2_hexNibble( higByte_lowNibble );
+    if (lowByte_higNibble > 0) o << VST2_hexNibble( lowByte_higNibble );
+    o << VST2_hexNibble( lowByte_lowNibble );
+    return o.str();
+}
+*/
+
 std::string decodeVST2Version(int32_t v)
 {
     if (v <= 0)

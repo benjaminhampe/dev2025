@@ -2315,9 +2315,39 @@ int VST3_Plugin::getProgram() const
     return 0;
 }
 
-void VST3_Plugin::setProgram( int i )
+void VST3_Plugin::setProgram( int index )
 {
+    const auto & progs = _d->m_programList;
 
+    if (index < 0 || index >= int(progs.size()))
+    {
+        DE_ERROR("Invalid index ",index)
+        return;
+    }
+
+    const auto& prog = progs[index];
+
+    Steinberg::FUnknownPtr<Steinberg::Vst::IProgramListData> progData(_d->m_editController);
+    if (!progData)
+    {
+        DE_ERROR("No IProgramListData")
+        return;
+    }
+
+    Steinberg::MemoryStream stream;
+    progData->getProgramData(prog.m_listId, prog.m_progIndex, &stream);
+
+    Steinberg::tresult hr = _d->m_component->setState(&stream);
+    if (hr != Steinberg::kResultOk)
+    {
+        DE_ERROR("No _d->m_component->setState")
+    }
+
+    hr = _d->m_editController->setComponentState(&stream);
+    if (hr != Steinberg::kResultOk)
+    {
+        DE_ERROR("No _d->m_editController->setComponentState")
+    }
 }
 
 
