@@ -99,7 +99,7 @@ juce_add_plugin(Odin2
 #define JucePlugin_Version                2.4.1
 #endif
 #ifndef JucePlugin_VersionCode
-#define JucePlugin_VersionCode            0x20401
+#define JucePlugin_VersionCode            2401
 #endif
 #ifndef JucePlugin_VersionString
 #define JucePlugin_VersionString          "2.4.1"

@@ -5,12 +5,12 @@ namespace audio
 {
     static constexpr float Tau = 6.28318530718f;
     static constexpr float Pi = 3.14159265359f;
-	static constexpr float PiInv = 1.f / Pi;
+    static constexpr float PiInv = 1.f / Pi;
     static constexpr float PiHalf = Pi * .5f;
     static constexpr float PiHalfInv = 1.f / PiHalf;
     using Char = juce::juce_wchar;
     using String = juce::String;
-	
+
     template<typename Float>
     inline Float secsInSamples(Float secs, Float Fs) noexcept
     {
@@ -40,12 +40,12 @@ namespace audio
     }
 
     template<typename Float>
-    inline Float noteInFreqHz(Float note, Float rootNote = static_cast<Float>(69), Float xen = static_cast<Float>(12), Float masterTune = static_cast<Float>(440)) noexcept
+    inline Float noteInFreqHz(Float note, Float rootNote /*  = static_cast<Float>(69) */, Float xen = static_cast<Float>(12), Float masterTune = static_cast<Float>(440)) noexcept
     {
         return std::exp2((note - rootNote) / xen) * masterTune;
     }
 
-	template<typename Float>
+    template<typename Float>
     inline Float noteInFreqHz2(Float note, Float rootNote = static_cast<Float>(69), Float masterTune = static_cast<Float>(440)) noexcept
     {
         return std::exp2((note - rootNote) * static_cast<Float>(.08333333333)) * masterTune;
@@ -66,26 +66,26 @@ namespace audio
     template<typename Float>
     inline Float freqHzInFc(Float freq, Float Fs) noexcept
     {
-		return freq / Fs;
+        return freq / Fs;
     }
 
-	template<typename Float>
-	inline Float fcInFreqHz(Float fc, Float Fs) noexcept
-	{
-		return fc * Fs;
-	}
+    template<typename Float>
+    inline Float fcInFreqHz(Float fc, Float Fs) noexcept
+    {
+        return fc * Fs;
+    }
 
-	template<typename Float>
+    template<typename Float>
     inline Float gainToDecibel(Float gain) noexcept
     {
         return std::log10(gain) * static_cast<Float>(20);
     }
 
-	template<typename Float>
-	inline Float decibelToGain(Float db) noexcept
-	{
-		return std::pow(static_cast<Float>(10), db * static_cast<Float>(.05));
-	}
+    template<typename Float>
+    inline Float decibelToGain(Float db) noexcept
+    {
+        return std::pow(static_cast<Float>(10), db * static_cast<Float>(.05));
+    }
 
     template<typename Float>
     inline Float decibelToGain(Float db, Float threshold) noexcept
@@ -102,7 +102,7 @@ namespace audio
         return static_cast<Float>(12) * std::round(oct) + std::round(semi) + fine;
     }
 
-	/* x, a [0, 1[ */
+    /* x, a [0, 1[ */
     template<typename Float>
     inline Float softclip(Float x, Float a) noexcept
     {
@@ -139,9 +139,9 @@ namespace audio
 
         return decibelToGain(gain_sc - x_db);
     }
-	
-	/* db[...,0]db, threshold[...,0]db, ratio [-1, 1], knee [0, 64]*/
-	template<typename Float>
+
+    /* db[...,0]db, threshold[...,0]db, ratio [-1, 1], knee [0, 64]*/
+    template<typename Float>
     inline Float softclip3(Float xDb, Float threshold, Float ratio, Float knee) noexcept
     {
         const auto half = static_cast<Float>(.5);
@@ -149,86 +149,86 @@ namespace audio
         const auto thresh2 = threshold - kneeHalf;
         if (xDb < thresh2)
             return xDb;
-        
+
         if (xDb < threshold + kneeHalf)
         {
             const auto one = static_cast<Float>(1);
             const auto two = static_cast<Float>(2);
             const auto c = xDb - threshold + kneeHalf;
-			
+
             return thresh2 + c * (one - (((one - ratio) * c) / (two * knee)));
         }
-		
+
         return threshold + ratio * (xDb - threshold);
 
     }
-	
+
     inline bool isDigit(Char chr) noexcept
     {
-		return chr >= '0' && chr <= '9';
+        return chr >= '0' && chr <= '9';
     }
 
-	inline bool isLetter(Char chr) noexcept
-	{
-		return (chr >= 'a' && chr <= 'z') || (chr >= 'A' && chr <= 'Z');
-	}
+    inline bool isLetter(Char chr) noexcept
+    {
+        return (chr >= 'a' && chr <= 'z') || (chr >= 'A' && chr <= 'Z');
+    }
 
-	inline bool isLetterOrDigit(Char chr) noexcept
-	{
-		return isLetter(chr) || isDigit(chr);
-	}
+    inline bool isLetterOrDigit(Char chr) noexcept
+    {
+        return isLetter(chr) || isDigit(chr);
+    }
 
-	inline int getDigit(Char chr) noexcept
-	{
-		return chr - '0';
-	}
-	
-	inline String pitchclassToString(int pitchclass) noexcept
-	{
-		switch (pitchclass)
-		{
-		case 0: return "C";
-		case 1: return "C#";
-		case 2: return "D";
-		case 3: return "D#";
-		case 4: return "E";
-		case 5: return "F";
-		case 6: return "F#";
-		case 7: return "G";
-		case 8: return "G#";
-		case 9: return "A";
-		case 10: return "A#";
-		case 11: return "B";
-		default: return "C";
-		}
-	}
+    inline int getDigit(Char chr) noexcept
+    {
+        return chr - '0';
+    }
+
+    inline String pitchclassToString(int pitchclass) noexcept
+    {
+        switch (pitchclass)
+        {
+        case 0: return "C";
+        case 1: return "C#";
+        case 2: return "D";
+        case 3: return "D#";
+        case 4: return "E";
+        case 5: return "F";
+        case 6: return "F#";
+        case 7: return "G";
+        case 8: return "G#";
+        case 9: return "A";
+        case 10: return "A#";
+        case 11: return "B";
+        default: return "C";
+        }
+    }
 
     inline bool isWhiteKey(int pitchclass) noexcept
     {
-		switch (pitchclass)
-		{
-		case 0: return true;
-		case 1: return false;
-		case 2: return true;
-		case 3: return false;
-		case 4: return true;
-		case 5: return true;
-		case 6: return false;
-		case 7: return true;
-		case 8: return false;
-		case 9: return true;
-		case 10: return false;
-		case 11: return true;
-		default: return true;
-		}
+        switch (pitchclass)
+        {
+        case 0: return true;
+        case 1: return false;
+        case 2: return true;
+        case 3: return false;
+        case 4: return true;
+        case 5: return true;
+        case 6: return false;
+        case 7: return true;
+        case 8: return false;
+        case 9: return true;
+        case 10: return false;
+        case 11: return true;
+        default: return true;
+        }
     }
 
     inline bool isBlackKey(int pitchclass) noexcept
     {
-		return !isWhiteKey(pitchclass);
+        return !isWhiteKey(pitchclass);
     }
 
-	template<typename Float>
+    template<typename Float>
     void applySomeWindowingFunction(Float* buffer, int size) noexcept
     {
         https://www.desmos.com/calculator/qzrswwvqfo

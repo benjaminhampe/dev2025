@@ -1,4 +1,4 @@
-add_subdirectory(de_OPL_app)
-add_subdirectory(de_OPL_vst2)
-add_subdirectory(build_app)
+add_subdirectory(build_standalone)
 add_subdirectory(build_vst2)
+add_subdirectory(build_vst3)
+add_subdirectory(build_clap)

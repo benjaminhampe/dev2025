@@ -22,10 +22,10 @@
    ==============================================================================
  */
 #pragma once
-#include "PluginProcessor.h"
-#include "ObxdVoice.h"
+//#include "PluginProcessor.h"
+//#include "ObxdVoice.h"
 #include "Motherboard.h"
-#include "Params.h"
+//#include "Params.h"
 #include "ParamSmoother.h"
 
 class SynthEngine

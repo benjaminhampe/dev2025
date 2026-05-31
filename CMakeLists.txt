@@ -38,8 +38,8 @@ set(BENNI_USE_OPENCV 0)     # <optional> Build OpenCV and face detection demo ap
 set(BENNI_USE_POLYPHONE 0)  # <optional> Big app
 set(BENNI_USE_WX 0)         # <optional> Build wxWidgets Apps and copy runtime
 set(BENNI_USE_IRR 0)        # <optional> Builds Irrlicht libs and apps.
-set(BENNI_USE_JUCE 0)       # <optional> Big JUCE lib, Bespoke, Odin2, Surge Rack plugins, etc..
-set(BENNI_USE_JUCE_EXTRA 0) # <optional> Big JUCE plugins, Odin2, Surge Rack plugins, etc..
+set(BENNI_USE_JUCE 1)       # <optional> Big JUCE lib, Bespoke, Odin2, Surge Rack plugins, etc..
+set(BENNI_USE_JUCE_EXTRA 1) # <optional> Big JUCE plugins, Odin2, Surge Rack plugins, etc..
 set(BENNI_USE_JUCE_BESPOKE 0) # <optional> Big JUCE plugin Bespoke
 set(BENNI_USE_WHISPER 0)    # <optional> Big speech2text
 set(BENNI_USE_RAYLIB 0)     # <optional> 

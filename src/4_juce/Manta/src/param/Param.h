@@ -2,8 +2,8 @@
 
 #include <functional>
 
-#include "juce_core/juce_core.h"
-#include "juce_audio_processors/juce_audio_processors.h"
+#include <juce_core/juce_core.h>
+#include <juce_audio_processors/juce_audio_processors.h>
 
 #include "../arch/State.h"
 #include "../arch/Range.h"
@@ -11,357 +11,357 @@
 
 namespace param
 {
-	using String = juce::String;
+    using String = juce::String;
 
-	String toID(const String&);
+    String toID(const String&);
 
-	enum class PID
-	{
-		// high level params
-		Macro,
-		Clipper,
+    enum class PID
+    {
+        // high level params
+        Macro,
+        Clipper,
 #if PPDHasGainIn
-		GainIn,
+        GainIn,
 #endif
-		Mix,
+        Mix,
 #if PPD_MixOrGainDry
-		MuteDry,
+        MuteDry,
 #endif
-		Gain,
+        Gain,
 #if PPDHasPolarity
-		Polarity,
+        Polarity,
 #endif
 #if PPDHasUnityGain && PPDHasGainIn
-		UnityGain,
+        UnityGain,
 #endif
 #if PPDHasHQ
-		HQ,
+        HQ,
 #endif
 #if PPDHasStereoConfig
-		StereoConfig,
+        StereoConfig,
 #endif
 #if PPDHasLookahead
-		Lookahead,
+        Lookahead,
 #endif
 #if PPDHasDelta
-		Delta,
+        Delta,
 #endif
 
-		// tuning parameters
-		Xen,
-		MasterTune,
-		BaseNote,
-		PitchbendRange,
-
-		Power,
-
-		// low level parameters
-		Lane1Enabled,
-		Lane1PitchSnap,
-		Lane1Pitch,
-		Lane1Resonance,
-		Lane1Slope,
-		Lane1Feedback,
-		Lane1DelayOct,
-		Lane1DelaySemi,
-		Lane1Heat,
-		Lane1RMOct,
-		Lane1RMSemi,
-		Lane1RMDepth,
-		Lane1Gain,
-
-		Lane2Enabled,
-		Lane2PitchSnap,
-		Lane2Pitch,
-		Lane2Resonance,
-		Lane2Slope,
-		Lane2Feedback,
-		Lane2DelayOct,
-		Lane2DelaySemi,
-		Lane2Heat,
-		Lane2RMOct,
-		Lane2RMSemi,
-		Lane2RMDepth,
-		Lane2Gain,
-
-		Lane3Enabled,
-		Lane3PitchSnap,
-		Lane3Pitch,
-		Lane3Resonance,
-		Lane3Slope,
-		Lane3Feedback,
-		Lane3DelayOct,
-		Lane3DelaySemi,
-		Lane3Heat,
-		Lane3RMOct,
-		Lane3RMSemi,
-		Lane3RMDepth,
-		Lane3Gain,
-
-		NumParams
-	};
-
-	static constexpr int NumParams = static_cast<int>(PID::NumParams);
-	static constexpr int MinLowLevelIdx = static_cast<int>(PID::Power) + 1;
-	static constexpr int NumLowLevelParams = NumParams - MinLowLevelIdx;
-
-	/* pID, offset */
-	PID ll(PID, int) noexcept;
-
-	/* pID, offset */
-	PID offset(PID, int) noexcept;
-
-	String toString(PID);
-
-	PID toPID(const String&);
-
-	/* pIDs, text, seperatorChr */
-	void toPIDs(std::vector<PID>&, const String&, const String&);
-
-	String toTooltip(PID);
-
-	enum class Unit
-	{
-		Power,
-		Solo,
-		Mute,
-		Percent,
-		Hz,
-		Beats,
-		Degree,
-		Octaves,
-		Semi,
-		Fine,
-		Ms,
-		Decibel,
-		Ratio,
-		Polarity,
-		StereoConfig,
-		Voices,
-		Pan,
-		Xen,
-		Note,
-		Pitch,
-		Q,
-		Slope,
-		NumUnits
-	};
-
-	using CharPtr = juce::CharPointer_UTF8;
+        // tuning parameters
+        Xen,
+        MasterTune,
+        BaseNote,
+        PitchbendRange,
+
+        Power,
+
+        // low level parameters
+        Lane1Enabled,
+        Lane1PitchSnap,
+        Lane1Pitch,
+        Lane1Resonance,
+        Lane1Slope,
+        Lane1Feedback,
+        Lane1DelayOct,
+        Lane1DelaySemi,
+        Lane1Heat,
+        Lane1RMOct,
+        Lane1RMSemi,
+        Lane1RMDepth,
+        Lane1Gain,
+
+        Lane2Enabled,
+        Lane2PitchSnap,
+        Lane2Pitch,
+        Lane2Resonance,
+        Lane2Slope,
+        Lane2Feedback,
+        Lane2DelayOct,
+        Lane2DelaySemi,
+        Lane2Heat,
+        Lane2RMOct,
+        Lane2RMSemi,
+        Lane2RMDepth,
+        Lane2Gain,
+
+        Lane3Enabled,
+        Lane3PitchSnap,
+        Lane3Pitch,
+        Lane3Resonance,
+        Lane3Slope,
+        Lane3Feedback,
+        Lane3DelayOct,
+        Lane3DelaySemi,
+        Lane3Heat,
+        Lane3RMOct,
+        Lane3RMSemi,
+        Lane3RMDepth,
+        Lane3Gain,
+
+        NumParams
+    };
+
+    static constexpr int NumParams = static_cast<int>(PID::NumParams);
+    static constexpr int MinLowLevelIdx = static_cast<int>(PID::Power) + 1;
+    static constexpr int NumLowLevelParams = NumParams - MinLowLevelIdx;
+
+    /* pID, offset */
+    PID ll(PID, int) noexcept;
+
+    /* pID, offset */
+    PID offset(PID, int) noexcept;
+
+    String toString(PID);
+
+    PID toPID(const String&);
+
+    /* pIDs, text, seperatorChr */
+    void toPIDs(std::vector<PID>&, const String&, const String&);
+
+    String toTooltip(PID);
+
+    enum class Unit
+    {
+        Power,
+        Solo,
+        Mute,
+        Percent,
+        Hz,
+        Beats,
+        Degree,
+        Octaves,
+        Semi,
+        Fine,
+        Ms,
+        Decibel,
+        Ratio,
+        Polarity,
+        StereoConfig,
+        Voices,
+        Pan,
+        Xen,
+        Note,
+        Pitch,
+        Q,
+        Slope,
+        NumUnits
+    };
 
-	String toString(Unit);
+    using CharPtr = juce::CharPointer_UTF8;
 
-	using ValToStrFunc = std::function<String(float)>;
-	using StrToValFunc = std::function<float(const String&)>;
+    String toString(Unit);
 
-	using Range = juce::NormalisableRange<float>;
+    using ValToStrFunc = std::function<String(float)>;
+    using StrToValFunc = std::function<float(const String&)>;
 
-	using ParameterBase = juce::AudioProcessorParameter;
-	using State = sta::State;
-	using Xen = audio::XenManager&;
+    using Range = juce::NormalisableRange<float>;
 
-	class Param :
-		public ParameterBase
-	{
-		static constexpr float BiasEps = .000001f;
-	public:
-		Param(const PID, const Range&, const float/*_valDenormDefault*/,
-			const ValToStrFunc&, const StrToValFunc&,
-			State&, const Unit = Unit::NumUnits);
+    using ParameterBase = juce::AudioProcessorParameter;
+    using State = sta::State;
+    using Xen = audio::XenManager;
 
-		void savePatch(juce::ApplicationProperties&) const;
+    class Param :
+        public ParameterBase
+    {
+        static constexpr float BiasEps = .000001f;
+    public:
+        Param(const PID, const Range&, const float/*_valDenormDefault*/,
+            const ValToStrFunc&, const StrToValFunc&,
+            State&, const Unit = Unit::NumUnits);
 
-		void loadPatch(juce::ApplicationProperties&);
+        void savePatch(juce::ApplicationProperties&) const;
 
-		//called by host, normalized, thread-safe
-		float getValue() const override;
+        void loadPatch(juce::ApplicationProperties&);
 
-		float getValueDenorm() const noexcept;
+        //called by host, normalized, thread-safe
+        float getValue() const override;
 
-		// called by host, normalized, avoid locks, not used by editor
-		void setValue(float/*normalized*/) override;
-		
-		// called by editor
-		bool isInGesture() const noexcept;
+        float getValueDenorm() const noexcept;
 
-		void setValueWithGesture(float/*norm*/);
+        // called by host, normalized, avoid locks, not used by editor
+        void setValue(float/*normalized*/) override;
 
-		void beginGesture();
+        // called by editor
+        bool isInGesture() const noexcept;
 
-		void endGesture();
+        void setValueWithGesture(float/*norm*/);
 
-		float getMaxModDepth() const noexcept;
+        void beginGesture();
 
-		void setMaxModDepth(float) noexcept;
+        void endGesture();
 
-		/*macro*/
-		float calcValModOf(float) const noexcept;
+        float getMaxModDepth() const noexcept;
 
-		float getValMod() const noexcept;
+        void setMaxModDepth(float) noexcept;
 
-		float getValModDenorm() const noexcept;
+        /*macro*/
+        float calcValModOf(float) const noexcept;
 
-		void setModBias(float) noexcept;
+        float getValMod() const noexcept;
 
-		float getModBias() const noexcept;
+        float getValModDenorm() const noexcept;
 
-		void setDefaultValue(float/*norm*/) noexcept;
+        void setModBias(float) noexcept;
 
-		// called by processor to update modulation value(s)
-		void modulate(float/*macro*/) noexcept;
+        float getModBias() const noexcept;
 
-		float getDefaultValue() const override;
+        void setDefaultValue(float/*norm*/) noexcept;
 
-		String getName(int) const override;
+        // called by processor to update modulation value(s)
+        void modulate(float/*macro*/) noexcept;
 
-		// units of param (hz, % etc.)
-		String getLabel() const override;
+        float getDefaultValue() const override;
 
-		// string of norm val
-		String getText(float /*norm*/, int) const override;
+        String getName(int) const override;
 
-		// string to norm val
-		float getValueForText(const String&) const override;
+        // units of param (hz, % etc.)
+        String getLabel() const override;
 
-		// string to denorm val
-		float getValForTextDenorm(const String&) const;
+        // string of norm val
+        String getText(float /*norm*/, int) const override;
 
-		String _toString();
+        // string to norm val
+        float getValueForText(const String&) const override;
 
-		int getNumSteps() const override;
+        // string to denorm val
+        float getValForTextDenorm(const String&) const;
 
-		bool isLocked() const noexcept;
-		void setLocked(bool) noexcept;
-		void switchLock() noexcept;
+        String _toString();
 
-		void setModDepthLocked(bool) noexcept;
+        int getNumSteps() const override;
 
-		float biased(float /*start*/, float /*end*/, float /*bias [0,1]*/, float /*x*/) const noexcept;
+        bool isLocked() const noexcept;
+        void setLocked(bool) noexcept;
+        void switchLock() noexcept;
 
-		static String getIDString(PID);
+        void setModDepthLocked(bool) noexcept;
 
-		const PID id;
-		const Range range;
-	protected:
-		State& state;
-		float valDenormDefault;
-		std::atomic<float> valNorm, maxModDepth, valMod, modBias;
-		ValToStrFunc valToStr;
-		StrToValFunc strToVal;
-		Unit unit;
+        float biased(float /*start*/, float /*end*/, float /*bias [0,1]*/, float /*x*/) const noexcept;
 
-		std::atomic<bool> locked, inGesture;
+        static String getIDString(PID);
 
-		bool modDepthLocked;
-	};
+        const PID id;
+        const Range range;
+    protected:
+        State& state;
+        float valDenormDefault;
+        std::atomic<float> valNorm, maxModDepth, valMod, modBias;
+        ValToStrFunc valToStr;
+        StrToValFunc strToVal;
+        Unit unit;
 
-	struct Params
-	{
-		using AudioProcessor = juce::AudioProcessor;
-		using Parameters = std::vector<Param*>;
+        std::atomic<bool> locked, inGesture;
 
-		Params(AudioProcessor&, State&, const Xen&);
+        bool modDepthLocked;
+    };
 
-		void loadPatch(juce::ApplicationProperties&);
+    struct Params
+    {
+        using AudioProcessor = juce::AudioProcessor;
+        using Parameters = std::vector<Param*>;
 
-		void savePatch(juce::ApplicationProperties&) const;
+        Params(AudioProcessor&, State&, const Xen&);
 
-		static String getIDString();
+        void loadPatch(juce::ApplicationProperties&);
 
-		int getParamIdx(const String& /*nameOrID*/) const;
+        void savePatch(juce::ApplicationProperties&) const;
 
-		size_t numParams() const noexcept;
+        static String getIDString();
 
-		bool isModDepthLocked() const noexcept;
-		void setModDepthLocked(bool) noexcept;
-		void switchModDepthLocked() noexcept;
+        int getParamIdx(const String& /*nameOrID*/) const;
 
-		Param* operator[](int) noexcept;
-		const Param* operator[](int) const noexcept;
-		Param* operator[](PID) noexcept;
-		const Param* operator[](PID) const noexcept;
+        size_t numParams() const noexcept;
 
-		Parameters& data() noexcept;
-		const Parameters& data() const noexcept;
-	protected:
-		Parameters params;
+        bool isModDepthLocked() const noexcept;
+        void setModDepthLocked(bool) noexcept;
+        void switchModDepthLocked() noexcept;
 
-		State& state;
-		std::atomic<float> modDepthLocked;
-	};
+        Param* operator[](int) noexcept;
+        const Param* operator[](int) const noexcept;
+        Param* operator[](PID) noexcept;
+        const Param* operator[](PID) const noexcept;
 
-	namespace strToVal
-	{
-		std::function<float(String, const float/*altVal*/)> parse();
+        Parameters& data() noexcept;
+        const Parameters& data() const noexcept;
+    protected:
+        Parameters params;
 
-		StrToValFunc power();
-		StrToValFunc solo();
-		StrToValFunc mute();
-		StrToValFunc percent();
-		StrToValFunc hz();
-		StrToValFunc phase();
-		StrToValFunc oct();
-		StrToValFunc semi();
-		StrToValFunc fine();
-		StrToValFunc ratio();
-		StrToValFunc lrms();
-		StrToValFunc freeSync();
-		StrToValFunc polarity();
-		StrToValFunc ms();
-		StrToValFunc db();
-		StrToValFunc voices();
-		StrToValFunc pan(const Params&);
-		StrToValFunc note();
-		StrToValFunc pitch(const Xen&);
-		StrToValFunc q();
-		StrToValFunc slope();
-	}
+        State& state;
+        std::atomic<float> modDepthLocked;
+    };
 
-	namespace valToStr
-	{
-		ValToStrFunc mute();
-		ValToStrFunc solo();
-		ValToStrFunc power();
-		ValToStrFunc percent();
-		ValToStrFunc hz();
-		ValToStrFunc phase();
-		ValToStrFunc phase360();
-		ValToStrFunc oct();
-		ValToStrFunc semi();
-		ValToStrFunc fine();
-		ValToStrFunc ratio();
-		ValToStrFunc lrms();
-		ValToStrFunc freeSync();
-		ValToStrFunc polarity();
-		ValToStrFunc ms();
-		ValToStrFunc db();
-		ValToStrFunc empty();
-		ValToStrFunc voices();
-		ValToStrFunc pan(const Params&);
-		ValToStrFunc note();
-		ValToStrFunc pitch(const Xen&);
-		ValToStrFunc q();
-		ValToStrFunc slope();
-	}
+    namespace strToVal
+    {
+        std::function<float(String, const float/*altVal*/)> parse();
 
-	/* pID, state, valDenormDefault, range, Unit */
-	Param* makeParam(PID, State&,
-		float = 1.f, const Range& = Range(0.f, 1.f),
-		Unit = Unit::Percent);
+        StrToValFunc power();
+        StrToValFunc solo();
+        StrToValFunc mute();
+        StrToValFunc percent();
+        StrToValFunc hz();
+        StrToValFunc phase();
+        StrToValFunc oct();
+        StrToValFunc semi();
+        StrToValFunc fine();
+        StrToValFunc ratio();
+        StrToValFunc lrms();
+        StrToValFunc freeSync();
+        StrToValFunc polarity();
+        StrToValFunc ms();
+        StrToValFunc db();
+        StrToValFunc voices();
+        StrToValFunc pan(const Params&);
+        StrToValFunc note();
+        StrToValFunc pitch(const Xen&);
+        StrToValFunc q();
+        StrToValFunc slope();
+    }
 
-	/* pID, state, params */
-	Param* makeParamPan(PID, State&, const Params&);
+    namespace valToStr
+    {
+        ValToStrFunc mute();
+        ValToStrFunc solo();
+        ValToStrFunc power();
+        ValToStrFunc percent();
+        ValToStrFunc hz();
+        ValToStrFunc phase();
+        ValToStrFunc phase360();
+        ValToStrFunc oct();
+        ValToStrFunc semi();
+        ValToStrFunc fine();
+        ValToStrFunc ratio();
+        ValToStrFunc lrms();
+        ValToStrFunc freeSync();
+        ValToStrFunc polarity();
+        ValToStrFunc ms();
+        ValToStrFunc db();
+        ValToStrFunc empty();
+        ValToStrFunc voices();
+        ValToStrFunc pan(const Params&);
+        ValToStrFunc note();
+        ValToStrFunc pitch(const Xen&);
+        ValToStrFunc q();
+        ValToStrFunc slope();
+    }
 
-	/* pID, state, valDenormDefault, range, Xen */
-	Param* makeParamPitch(PID, State&, float, const Range&, const Xen&);
+    /* pID, state, valDenormDefault, range, Unit */
+    Param* makeParam(PID, State&,
+        float = 1.f, const Range& = Range(0.f, 1.f),
+        Unit = Unit::Percent);
 
-	struct MacroProcessor
-	{
-		MacroProcessor(Params&);
+    /* pID, state, params */
+    Param* makeParamPan(PID, State&, const Params&);
 
-		void operator()() noexcept;
+    /* pID, state, valDenormDefault, range, Xen */
+    Param* makeParamPitch(PID, State&, float, const Range&, const Xen&);
 
-		Params& params;
-	};
-	
+    struct MacroProcessor
+    {
+        MacroProcessor(Params&);
+
+        void operator()() noexcept;
+
+        Params& params;
+    };
+
 }

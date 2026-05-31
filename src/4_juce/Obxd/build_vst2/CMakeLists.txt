@@ -1,98 +1,109 @@
-set(LIB_NAME Obxd_vst2)
-project(${LIB_NAME}-dev)
+set(LIB_NAME Obxd_1.1.0_x64_vst2)
+project(${LIB_NAME})
 
 if (TARGET ${LIB_NAME})
     message("${BoldYellow}[benni] HEADER_GUARD: ${LIB_NAME}${ColourReset}")
 else()
-    set(APP_SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/../src)
-    file(GLOB_RECURSE APP_SOURCES_H "${APP_SOURCE_DIR}/*.h")
-    file(GLOB_RECURSE APP_SOURCES_HPP "${APP_SOURCE_DIR}/*.hpp")
-    file(GLOB_RECURSE APP_SOURCES_C "${APP_SOURCE_DIR}/*.c")
-    file(GLOB_RECURSE APP_SOURCES_CPP "${APP_SOURCE_DIR}/*.cpp")
-    set(APP_SOURCES ${APP_SOURCES_H} ${APP_SOURCES_C} ${APP_SOURCES_CPP} ${APP_SOURCES_HPP})
+
+    set(LIB_HEADER_DIR ${CMAKE_CURRENT_LIST_DIR}/include)
+    set(LIB_HEADERS
+        ${LIB_HEADER_DIR}/juce_audio_plugin_client/juce_audio_plugin_client.h
+        ${LIB_HEADER_DIR}/juce_audio_plugin_client/juce_audio_plugin_client_config.h
+        ${LIB_HEADER_DIR}/juce_audio_plugin_client/utility/juce_CheckSettingMacros.h
+        ${LIB_HEADER_DIR}/juce_audio_plugin_client/utility/juce_CreatePluginFilter.h
+        ${LIB_HEADER_DIR}/juce_audio_plugin_client/utility/juce_IncludeModuleHeaders.h
+        ${LIB_HEADER_DIR}/juce_audio_plugin_client/utility/juce_IncludeSystemHeaders.h
+        ${LIB_HEADER_DIR}/juce_audio_plugin_client/utility/juce_LinuxMessageThread.h
+        ${LIB_HEADER_DIR}/juce_audio_plugin_client/utility/juce_WindowsHooks.h
+    )
+
+    set(LIB_SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/src)
+    set(LIB_SOURCES
+        ${LIB_SOURCE_DIR}/juce_audio_plugin_client/utility/juce_PluginUtilities.cpp
+        ${LIB_SOURCE_DIR}/juce_audio_plugin_client/VST/juce_VST_Wrapper.cpp
+    )
+
+    include(../Obxd_sources.cmake) # PLG_SOURCES | PLG_SOURCE_DIR -> PLG = PLUGIN
+    list(APPEND LIB_SOURCES ${PLG_SOURCES})
 
     if (WIN32)
         enable_language(RC)
-        list(APPEND APP_SOURCES ${CMAKE_CURRENT_LIST_DIR}/res/resource.h)
-        list(APPEND APP_SOURCES ${CMAKE_CURRENT_LIST_DIR}/res/resource.rc)
+        list(APPEND LIB_SOURCES ${CMAKE_CURRENT_LIST_DIR}/res/resource.h)
+        list(APPEND LIB_SOURCES ${CMAKE_CURRENT_LIST_DIR}/res/resource.rc)
     endif()
+    # message("${BoldBlue}[benni] ${LIB_SOURCES}${ColourReset}")
+    # message("${BoldBlue}[benni] ${PLG_SOURCE_DIR}${ColourReset}")
 
-    #set(CMAKE_AUTOMOC ON)
-    #set(CMAKE_AUTORCC ON)
-    #set(CMAKE_AUTOUIC ON)
-    #find_package(Qt6Core)
-    #find_package(Qt6Widgets)
-    #set(RESOURCE_FILES "res/resource.qrc")
-    #qt5_add_resources(APP_SOURCES ${RESOURCE_FILES})
-
-    #set(CMAKE_AUTOUIC ON)
-    # add_definitions(${Qt6Widgets_DEFINITIONS})
-    # set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${Qt6Widgets_EXECUTABLE_COMPILE_FLAGS}")
-    #QT5_WRAP_CPP( APP_MOC_FILES_CPP "mainwindow.hpp" )
-    #QT5_WRAP_UI( APP_UI_FILES "ui/mainwindow.ui" )
-
-    #message("${BoldGreen}[benni] APP: ${LIB_NAME}${ColourReset}")
-    #add_executable(${LIB_NAME} "")
-
-    # if (BUILD_SHARED)
     add_library(${LIB_NAME} SHARED "")
     message("${BoldBlue}[benni] DLL: ${LIB_NAME}${ColourReset}")
-    # target_compile_definitions(${LIB_NAME} PUBLIC -DJUCE_DLL=1)
-    # target_compile_definitions(${LIB_NAME} PUBLIC -DJUCE_DLL_BUILD=1)
-    # else()
-    # add_library(${LIB_NAME} STATIC "")
-    # message("${BoldCyan}[benni] LIB: ${LIB_NAME}${ColourReset}")
-    # target_compile_definitions(${LIB_NAME} PUBLIC -DJUCE_DLL=0)
-    # target_compile_definitions(${LIB_NAME} PUBLIC -DJUCE_DLL_BUILD=0)
+
+    target_sources(${LIB_NAME} PRIVATE ${LIB_SOURCES})
+
+    target_include_directories(${LIB_NAME} PUBLIC ${PLG_SOURCE_DIR})
+    target_include_directories(${LIB_NAME} PUBLIC ${LIB_HEADER_DIR})
+    target_include_directories(${LIB_NAME} PRIVATE ${LIB_SOURCE_DIR})
+    target_include_directories(${LIB_NAME} PRIVATE ${PLG_SOURCE_DIR}/Engine)
+    target_include_directories(${LIB_NAME} PRIVATE ${PLG_SOURCE_DIR}/Gui)
+
+    # target_compile_definitions(${LIB_NAME} PUBLIC -D_UNICODE=1)
+    # target_compile_definitions(${LIB_NAME} PUBLIC -DUNICODE=1)
+
+    target_link_libraries(${LIB_NAME} PRIVATE de_juce_core)
+    target_link_libraries(${LIB_NAME} PRIVATE de_juce_dsp)
+    target_link_libraries(${LIB_NAME} PRIVATE de_juce_gui_basics)
+    target_link_libraries(${LIB_NAME} PRIVATE de_juce_gui_extra)
+    target_link_libraries(${LIB_NAME} PRIVATE de_juce_audio_basics)
+    # target_link_libraries(${LIB_NAME} PRIVATE de_juce_audio_devices)
+    target_link_libraries(${LIB_NAME} PRIVATE de_juce_audio_processors)
+    target_link_libraries(${LIB_NAME} PRIVATE de_juce_audio_utils)
+    # target_link_libraries(${LIB_NAME} PRIVATE de_juce_cryptography)
+    # target_link_libraries(${LIB_NAME} PRIVATE de_juce_opengl)
+    # target_link_libraries(${LIB_NAME} PRIVATE de_glm)
+    # target_link_libraries(${LIB_NAME} PRIVATE de_glew)
+    # target_link_libraries(${LIB_NAME} PRIVATE de_tuning_library)
+    # target_link_libraries(${LIB_NAME} PRIVATE de_nlohmann_json)
+
+    # # OpenMP
+    # target_compile_options(${LIB_NAME} PRIVATE -fopenmp)
+    # target_link_options(${LIB_NAME} PRIVATE -fopenmp)
+
+    # if(APPLE)
+        # target_compile_definitions(${LIB_NAME} PRIVATE ODIN_MAC=1)
+    # elseif(UNIX AND NOT APPLE)
+        # target_compile_definitions(${LIB_NAME} PRIVATE ODIN_LINUX=1)
+    # elseif(WIN32)
+        # target_compile_definitions(${LIB_NAME} PRIVATE ODIN_WIN=1)
     # endif()
-
-    # target_compile_definitions(${LIB_NAME} PUBLIC -DJUCE_DLL=0)
-    # target_compile_definitions(${LIB_NAME} PUBLIC -DJUCE_DLL_BUILD=0)
-
-    # target_compile_definitions(${LIB_NAME} PUBLIC -DJUCE_GLOBAL_MODULE_SETTINGS_INCLUDED=1)
-
-    target_sources(${LIB_NAME} PRIVATE ${APP_SOURCES})
-
-    # target_include_directories(${LIB_NAME} PRIVATE ${JUCE_HEADER_DIR})
-
-    target_include_directories(${LIB_NAME} PUBLIC ${APP_SOURCE_DIR})
-    target_include_directories(${LIB_NAME} PUBLIC ${APP_SOURCE_DIR}/Engine)
-    target_include_directories(${LIB_NAME} PUBLIC ${APP_SOURCE_DIR}/Gui)
-
-    # target_include_directories(${LIB_NAME} PRIVATE ${APP_SOURCE_DIR}/drivers)
-    # target_include_directories(${LIB_NAME} PRIVATE ${APP_SOURCE_DIR}/vendor)
-
-    # target_compile_definitions(${LIB_NAME} PUBLIC -DJucePlugin_Name="juce_vst2_plugin_001")
-
-    # target_compile_options(${LIB_NAME} PRIVATE -Wno-unused-but-set-variable)
-
-    # target_compile_definitions(${LIB_NAME} PRIVATE -DHAVE_CONFIG_H=1)
 
     if (MSVC)
     else()
-        # target_link_options(${LIB_NAME} PRIVATE -mwindows) # disable console, also helps with win icon
-        target_compile_options(${LIB_NAME} PUBLIC -Wno-multichar)
+        target_link_options(${LIB_NAME} PRIVATE -mwindows) # disable console, also helps with win icon
+        # target_compile_options(${LIB_NAME} PUBLIC -Wno-multichar)
+        # target_compile_options(${LIB_NAME} PRIVATE -fconstexpr-depth=1024)
+        # target_compile_options(${LIB_NAME} PRIVATE -fbracket-depth=1024)
     endif()
 
-    target_link_libraries(${LIB_NAME} PRIVATE de_juce_audio_processors)
-    target_link_libraries(${LIB_NAME} PRIVATE de_juce_gui_extra)
-    target_link_libraries(${LIB_NAME} PRIVATE de_juce_cryptography)
-    target_link_libraries(${LIB_NAME} PRIVATE de_juce_opengl)
-    target_link_libraries(${LIB_NAME} PRIVATE de_juce_video)
-    target_link_libraries(${LIB_NAME} PRIVATE de_Obxd_vst2)
+    set(APP_NAME ${LIB_NAME})
+    include(${CMAKE_SOURCE_DIR}/src/embed_static_runtime.cmake)
 
+    set_target_properties(${LIB_NAME} PROPERTIES
+        PREFIX ""
+        SUFFIX ".dll"
+        OUTPUT_NAME "Obxd_1.1.0_x64_vst2"
+        # ARCHIVE_OUTPUT_NAME "Obxd_1.1.0_x64_vst2"
+    )
 
-   # COPY MEDIA FILES relative to exe
-   # file( COPY        ${CMAKE_CURRENT_LIST_DIR}/media/tux.png
-         # DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/media/QIrrlichtWidget2019 )
+    # COPY MEDIA FILES relative to exe
+    # file( COPY        ${CMAKE_CURRENT_LIST_DIR}/media/tux.png
+    # DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/media/QIrrlichtWidget2019 )
 
-   # file(COPY ${CMAKE_CURRENT_LIST_DIR}/tux.png DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
-   # # file(COPY ${CMAKE_CURRENT_LIST_DIR}/pcc_logo.png DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
+    # file(COPY ${CMAKE_CURRENT_LIST_DIR}/tux.png DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
+    # # file(COPY ${CMAKE_CURRENT_LIST_DIR}/pcc_logo.png DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
 
-   # copy theme resource files
-   #ADD_CUSTOM_COMMAND( TARGET "${LIB_NAME}"
-   #   POST_BUILD
-   #   COMMAND "echo" "Copying theme.."
-   #      COMMAND "${CMAKE_COMMAND}" -E copy_directory "${CMAKE_CURRENT_SOURCE_DIR}/themes" "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/themes"
-   #   )
+    # copy theme resource files
+    #ADD_CUSTOM_COMMAND( TARGET "${LIB_NAME}"
+    #   POST_BUILD
+    #   COMMAND "echo" "Copying theme.."
+    #      COMMAND "${CMAKE_COMMAND}" -E copy_directory "${CMAKE_CURRENT_SOURCE_DIR}/themes" "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/themes"
+    #   )
 endif()

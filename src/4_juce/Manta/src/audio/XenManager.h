@@ -56,7 +56,7 @@ namespace audio
       }
 
       template<typename Float>
-      Float freqHzToNote(Float hz) noexcept
+      Float freqHzToNote(Float hz) const noexcept
       {
          return freqHzInNote(hz, baseNote, xen, masterTune);
       }
