@@ -18,7 +18,7 @@
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
-    , m_appTitle("Abenton Live64 Instrument | (c) 2026 by <benjaminhampe.gmx.de>")
+    , m_appTitle("Abenton Live64 Instrument |") // (c) 2026 by <benjaminhampe.gmx.de>
 {
     setFocusPolicy(Qt::StrongFocus);
 

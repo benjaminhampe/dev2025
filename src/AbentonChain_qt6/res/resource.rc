@@ -1,28 +1,28 @@
 #include <windows.h>
 #include "resource.h"
 
-// aaaa ICON DISCARDABLE "../../benni.ico"
+// aaaa ICON DISCARDABLE "../../abenton.ico"
 aaaa ICON "keys.ico"
 
 // Application manifest.
 // CREATEPROCESS_MANIFEST_RESOURCE_ID RT_MANIFEST "app.manifest"
 
 1 VERSIONINFO
-FILEVERSION     1,0,0,0
-PRODUCTVERSION  1,0,0,0
+FILEVERSION     1,0,2,1
+PRODUCTVERSION  1,0,2,1
 BEGIN
   BLOCK "StringFileInfo"
   BEGIN
     BLOCK "080904E4"
     BEGIN
-      VALUE "CompanyName", "<benjaminhampe@gmx>"
-      VALUE "FileDescription", "Abenton Live64 Instrument"
-      VALUE "FileVersion", "26.04"
-      VALUE "InternalName", "Abenton Live64 Instrument"
-      VALUE "LegalCopyright", "Demo"
-      VALUE "OriginalFilename", "Abenton Live64 Instrument"
+      VALUE "CompanyName", "Abenton"
+      VALUE "FileDescription", "Live64 Instrument"
+      VALUE "FileVersion", "1.0.2.1"
+      VALUE "InternalName", "Live64 Instrument"
+      VALUE "LegalCopyright", "Donationware"
+      VALUE "OriginalFilename", "Live64 Instrument"
       VALUE "ProductName", "Abenton Live64 Instrument"
-      VALUE "ProductVersion", "26.04"
+      VALUE "ProductVersion", "1.0.2.1"
     END
   END
 
