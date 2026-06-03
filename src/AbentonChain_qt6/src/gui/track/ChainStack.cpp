@@ -10,14 +10,14 @@ ChainStack::ChainStack(QWidget* parent)
     setMinimumWidth(100);
     setContentsMargins(0,0,0,0);
 
-	// QStackedWidget holds multiple pages; only one is visible at a time
+    // QStackedWidget holds multiple pages; only one is visible at a time
     m_stack = new QStackedWidget;
     m_stack->setStyleSheet("background: transparent;");
 
     // // External scrollbar that will control the visible child widget
     m_scrollBar = new QScrollBar(Qt::Horizontal);
 
-	// Layout: stacked widget on the left, scrollbar on the right
+    // Layout: stacked widget on the left, scrollbar on the right
     auto v = new QVBoxLayout;
     v->setContentsMargins(0,0,0,0);
     v->setSpacing(1);
@@ -27,11 +27,11 @@ ChainStack::ChainStack(QWidget* parent)
 
     setLayout(v);
 
-	// When the scrollbar moves, reposition the visible child widget
+    // When the scrollbar moves, reposition the visible child widget
     connect(m_scrollBar, &QScrollBar::valueChanged,
             this, &ChainStack::onUpdateScrollPosition);
 
-	// When the visible page changes, recalculate scroll range
+    // When the visible page changes, recalculate scroll range
     connect(m_stack, &QStackedWidget::currentChanged,
             this, &ChainStack::onUpdateScrollRange);
 
@@ -49,7 +49,10 @@ ChainStack::~ChainStack()
 
 void ChainStack::applySkin()
 {
-    static_cast<ChainWrapper*>(m_stack->currentWidget())->applySkin();
+    if (m_stack->currentWidget())
+    {
+        static_cast<ChainWrapper*>(m_stack->currentWidget())->applySkin();
+    }
 
     const auto& skin = App::instance()->getSkin();
     m_windowColor = skin.windowColor;
@@ -60,24 +63,38 @@ void ChainStack::applySkin()
     update();
 }
 
-void ChainStack::addPage(QWidget *page)
+void ChainStack::addPage(ChainWrapper* wrapper)
 {
-	// Add page to the stack
-    m_stack->addWidget(page);
+    if (!wrapper)
+    {
+        DE_ERROR("No wrapper")
+        return;
+    }
+
+    // Add page to the stack
+    m_stack->addWidget(wrapper);
 
     // Install event filter so we detect when
     // the child resizes
-	// (needed because sizeHint changes dynamically)
-	page->installEventFilter(this);
+    // (needed because sizeHint changes dynamically)
+    wrapper->installEventFilter(this);
+
+    connect(wrapper->trackWidget(), &Track::newOverview,
+        this, [=] (QPixmap pix)
+        {
+            DE_BENNI("newTrackOverview")
+            emit newTrackOverview(pix); // for Footer overview/scrollbar
+        });
+
 }
 
 bool ChainStack::eventFilter(QObject *obj, QEvent *event)
 {
-	// If the child widget changes size, update scroll range
-	if (event->type() == QEvent::Resize)
+    // If the child widget changes size, update scroll range
+    if (event->type() == QEvent::Resize)
         onUpdateScrollRange();
 
-	return QWidget::eventFilter(obj, event);
+    return QWidget::eventFilter(obj, event);
 }
 
 void ChainStack::paintEvent(QPaintEvent* event)
@@ -95,9 +112,9 @@ void ChainStack::paintEvent(QPaintEvent* event)
     // dc.drawRect(rect().adjusted(1,1,-1,-1));
 }
 
-void ChainStack::onUpdateScrollRange() 
+void ChainStack::onUpdateScrollRange()
 {
-	// Get currently visible page
+    // Get currently visible page
     QWidget *page = m_stack->currentWidget();
     if (!page)
     {
@@ -105,32 +122,32 @@ void ChainStack::onUpdateScrollRange()
         return;
     }
 
-	// Height of the child widget (content)
+    // Height of the child widget (content)
     int childWidth = page->width();
 
-	// Height of the visible area (the stacked widget)
+    // Height of the visible area (the stacked widget)
     int viewportWidth = m_stack->width();
 
-	// Scroll range = how much content exceeds the visible area
+    // Scroll range = how much content exceeds the visible area
     int range = qMax(0, childWidth - viewportWidth);
 
     // DE_WARN("childWidth = ",childWidth)
     // DE_WARN("viewportWidth = ",viewportWidth)
     // DE_WARN("range = ",range)
 
-	// Set scrollbar range dynamically
+    // Set scrollbar range dynamically
     m_scrollBar->setRange(0, range);
 
-	// Page step = how much scrolling happens per wheel/page action
+    // Page step = how much scrolling happens per wheel/page action
     m_scrollBar->setPageStep(viewportWidth);
 }
 
-void ChainStack::onUpdateScrollPosition(int value) 
+void ChainStack::onUpdateScrollPosition(int value)
 {
-	// Move the child widget upward by the scrollbar value
-	// Negative Y moves content up, revealing lower parts
+    // Move the child widget upward by the scrollbar value
+    // Negative Y moves content up, revealing lower parts
     QWidget* page = m_stack->currentWidget();
-	if (!page) return;
+    if (!page) return;
 
     page->move(-value, 0);
 }

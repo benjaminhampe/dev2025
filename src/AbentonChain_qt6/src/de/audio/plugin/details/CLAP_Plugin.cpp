@@ -16,6 +16,129 @@ namespace {
 
 constexpr u64 GUARD = 256;
 
+// ---- WRITE SIDE ----
+
+static int64_t
+CLAP_Host_Write(const clap_ostream* stream, const void* data, uint64_t size)
+{
+    if (!stream || !stream->ctx || !data || size == 0)
+        return 0;
+
+    auto buf = static_cast<std::vector<uint8_t>*>(stream->ctx);
+    const auto bytes = static_cast<const uint8_t*>(data);
+
+    buf->insert(buf->end(), bytes, bytes + size);
+    return (int64_t)size; // must return bytes written
+}
+
+std::vector<uint8_t>
+CLAP_saveState(const clap_plugin_t *plugin)
+{
+    std::vector<uint8_t> buffer;
+
+    if (!plugin)
+        return buffer;
+
+    const auto state = static_cast<const clap_plugin_state_t*>(
+            plugin->get_extension(plugin, CLAP_EXT_STATE));
+
+    if (!state || !state->save)
+        return buffer;
+
+    clap_ostream stream{};
+    stream.ctx   = &buffer;
+    stream.write = CLAP_Host_Write;
+
+    if (!state->save(plugin, &stream))
+    {
+        buffer.clear(); // plugin reported failure
+    }
+
+    return buffer;
+}
+
+// ---- READ SIDE ----
+
+struct CLAP_Host_Reader {
+    const uint8_t *ptr;
+    const uint8_t *end;
+};
+
+static int64_t
+CLAP_Host_Read(const clap_istream* stream, void* dst, uint64_t size)
+{
+    if (!stream || !stream->ctx || !dst || size == 0)
+        return 0;
+
+    auto r = static_cast<CLAP_Host_Reader*>(stream->ctx);
+
+    uint64_t remaining = (uint64_t)(r->end - r->ptr);
+    if (remaining == 0)
+        return 0;
+
+    if (size > remaining)
+        size = remaining;
+
+    std::memcpy(dst, r->ptr, (size_t)size);
+    r->ptr += size;
+
+    return (int64_t)size; // must return bytes read
+}
+
+void
+CLAP_loadState(const clap_plugin_t* plugin,
+               const std::vector<uint8_t> &data)
+{
+    if (!plugin || data.empty())
+        return;
+
+    const auto *state =
+        static_cast<const clap_plugin_state_t*>(
+            plugin->get_extension(plugin, CLAP_EXT_STATE));
+
+    if (!state || !state->load)
+        return;
+
+    CLAP_Host_Reader reader{
+        data.data(),
+        data.data() + data.size()
+    };
+
+    clap_istream stream{};
+    stream.ctx  = &reader;
+    stream.read = CLAP_Host_Read;
+
+    (void)state->load(plugin, &stream);
+}
+
+/*
+🧩 Full example: integrating into your plugin wrapper
+
+Let’s say you have a class:
+
+class ClapPluginInstance {
+public:
+    const clap_plugin_t* plugin;
+    std::vector<uint8_t> savedState;
+};
+
+Saving:
+
+void ClapPluginInstance::saveState()
+{
+    savedState = saveCLAPState(plugin);
+}
+
+Loading:
+
+void ClapPluginInstance::loadState()
+{
+    if (!savedState.empty())
+        loadCLAPState(plugin, savedState);
+}
+
+*/
+
 /*
 clap_process_status st = plugin->process(plugin, &p);
 

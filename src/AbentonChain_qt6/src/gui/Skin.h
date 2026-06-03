@@ -81,6 +81,12 @@ public:
     //QColor m_primary;
     //QColor m_background;
     //QFont m_font;
+
+    bool bIsHeaderVisible = false;
+    bool bIsClipEditorVisible = false;
+    bool bIsDetailsVisible = false;
+    bool bIsQuickHelpVisible = true;
+    bool bIsFooterVisible = false;
 };
 
 

@@ -7,6 +7,10 @@
 
 ChainWrapper::ChainWrapper(QWidget* parent)
     : QWidget(parent)
+    , m_midiMeter(nullptr)
+    , m_audioMeter(nullptr)
+    , m_scrollArea(nullptr)
+    , m_track(nullptr)
 {
     DE_TRACE("")
     setContentsMargins(0,8,8,8);
@@ -107,6 +111,15 @@ void ChainWrapper::applySkin()
 
     updateGeometry(); // tells Qt: “my sizeHint() changed”
     update();
+}
+
+void ChainWrapper::resizeEvent(QResizeEvent* event)
+{
+    QWidget::resizeEvent(event);
+    if (m_track)
+    {
+        m_track->updateLayout();
+    }
 }
 
 void ChainWrapper::paintEvent(QPaintEvent* event)

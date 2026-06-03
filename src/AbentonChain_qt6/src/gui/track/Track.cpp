@@ -51,6 +51,7 @@ void Track::applySkin()
     m_textColor = skin.textColor;
     m_height = (m_baseHeight * skin.zoom) / 100;
     m_radius = (m_baseRadius * skin.zoom) / 100;
+    m_overviewHeight = (48 * skin.zoom) / 100;
 
     m_widgetSpacing = (m_baseWidgetSpacing * skin.zoom) / 100;
     m_dropIndicatorWidth = (m_baseDropIndicatorWidth * skin.zoom) / 100;
@@ -61,12 +62,13 @@ void Track::applySkin()
 
 void Track::updateLayout()
 {
+    DE_TRACE()
     const int n = static_cast<int>(m_plugins.size());
 
     int x = 0;
     int y = 0;
 
-    for (int i = 0; i < n; i++)
+    for (int i = 0; i < n; ++i)
     {
         auto pWidget = m_plugins[ i ];
 
@@ -85,24 +87,26 @@ void Track::updateLayout()
         x += m_dropIndicatorWidth + m_widgetSpacing;
     }
 
-    int remain = parentWidget()->width() - x;
-    if (remain < m_dropTargetWidth)
+    int dropTargetWidth = parentWidget()->width() - x;
+    if (dropTargetWidth < m_dropTargetWidth)
     {
-        remain = m_dropTargetWidth;
+        dropTargetWidth = m_dropTargetWidth;
     }
 
-    x += remain;
+    x += dropTargetWidth;
 
     m_width = x;
 
-    m_rcDropTarget = QRect(m_width - remain, 0,
-                           remain, m_height);
+    m_rcDropTarget = QRect(m_width - dropTargetWidth, 0,
+                           dropTargetWidth, m_height);
 
     // DE_DEBUG("m_rcDropTarget = ",qstr(m_rcDropTarget).toStdString())
 
-    setFixedSize(m_width, m_height);
+    //setFixedSize(m_width, m_height);
+    setMinimumSize(m_width, m_height);
+    setMaximumSize(m_width, m_height);
+    updateGeometry();
 
-    // updateGeometry();
     update();
 }
 
@@ -213,15 +217,21 @@ void Track::insertPlugin(int index, const QString &uri)
     m_plugins.insert(m_plugins.begin() + index, w);
 
     updateLayout();
+
+    createTrackOverview();
 }
 
 void Track::removePlugin(Plugin* w)
 {
+    setUpdatesEnabled(false);
+
     if (!w)
     {
         DE_ERROR("Got nullptr")
         return;
     }
+
+    w->setPlugin(nullptr);
 
     auto it = std::find(m_plugins.begin(), m_plugins.end(), w);
     if (it != m_plugins.end())
@@ -251,8 +261,16 @@ void Track::removePlugin(Plugin* w)
     // }
 
     //m_plugins.removeOne(w);
+
+    //delete w;
+
     w->deleteLater();
+
+    setUpdatesEnabled(true);
+
     updateLayout();
+
+    createTrackOverview();
 }
 
 // ------------------------------------------------------------
@@ -494,9 +512,11 @@ void Track::mouseReleaseEvent(QMouseEvent* e)
     {
         m_isLeftPressed = false;
 
+        bool didSwap = false;
+
         if (m_isDragging)
         {
-            swapWidgets( m_dragIndex, m_dropIndex );
+            didSwap = swapWidgets( m_dragIndex, m_dropIndex );
 
             // for (auto p : m_plugins)
             // {
@@ -509,22 +529,32 @@ void Track::mouseReleaseEvent(QMouseEvent* e)
         m_dropIndex = -1;
         m_dragIndex = -1;
         updateLayout();
-    }
 
+        if (didSwap)
+        {
+            createTrackOverview();
+
+#ifdef STILL_ALPHA
+            if (m_track)
+            {
+                m_track->updateDspChain();
+            }
+#endif
+        }
+    }
 }
 
-
-void Track::swapWidgets(int dragIndex, int dropIndex)
+bool Track::swapWidgets(int dragIndex, int dropIndex)
 {
     if (dragIndex == dropIndex)
     {
-        return;
+        return false;
     }
 
     const int n = static_cast<int>(m_plugins.size());
     if (n < 2)
     {
-        return;
+        return false;
     }
 
     if (dropIndex - dragIndex >= 2)
@@ -540,20 +570,22 @@ void Track::swapWidgets(int dragIndex, int dropIndex)
     if (dragIndex < 0 || dragIndex >= n)
     {
         // qDebug() << "Invalid drag index " << drag << " of " << n;
-        return;
+        return false;
     }
 
     if (dropIndex < 0 || dropIndex >= n)
     {
         // qDebug() << "Invalid drop index " << drop << " of " << n;
-        return;
+        return false;
     }
 
     // qDebug() << "Swap index " << (drag+1) << " <-> "  << (drop+1) << " of " << n;
 
     std::swap( m_plugins[ dragIndex ], m_plugins[ dropIndex ] );
 
-    emit reorderedWidgets();
+    // emit reorderedWidgets();
+
+    return true;
 }
 
 
@@ -645,6 +677,69 @@ void Track::autoScroll()
     m_dropIndex = computeDropIndex(m_lastDragPos);
     updateLayout();
 */
+}
+
+void Track::on_collapseChanged(bool bCollapsed)
+{
+    updateLayout();
+
+    createTrackOverview();
+}
+
+void Track::createTrackOverview()
+{
+    // QPixmap pm(size());
+    // pm.fill(Qt::transparent);
+
+    // QPainter p(&pm);
+    // render(&p, QPoint(), QRegion(), QWidget::DrawChildren);
+
+    // src_w            dst_w                       src_w
+    // ----- = aspect = -----  ==>  dst_w = dst_h * -----
+    // src_h            dst_h                       src_h
+
+    int src_w = width();
+    int src_h = height();
+
+    if (src_w < 1 || src_h < 1)
+    {
+        DE_ERROR("No size")
+        return;
+    }
+
+    DE_BENNI("src(",src_w,",",src_h,")")
+
+    int dst_h = m_overviewHeight > 0 ? m_overviewHeight : 48;
+    int dst_w = std::lround((float(src_w) / float(src_h)) * float(dst_h));
+
+    DE_BENNI("dst(",dst_w,",",dst_h,")")
+
+    m_overviewPixmap = QPixmap(dst_w, dst_h);
+    m_overviewPixmap.fill(Qt::transparent);
+
+    {
+        QPainter dc(&m_overviewPixmap);
+        if (dc.isActive())
+        {
+            float scale_x = float(dst_w) / float(src_w);
+            float scale_y = float(dst_h) / float(src_h);
+
+            DE_BENNI("scale(",scale_x,",",scale_y,")")
+            dc.scale(scale_x,scale_y);
+            dc.setRenderHint(QPainter::Antialiasing, true);
+            dc.setRenderHint(QPainter::TextAntialiasing, true);
+            render(&dc);
+        }
+        else
+        {
+            DE_ERROR("dc inactive")
+        }
+    }
+
+    // final downscale
+    //QPixmap final = pm.scaled(targetW, targetH, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
+
+    emit newOverview(m_overviewPixmap);
 }
 
 /*

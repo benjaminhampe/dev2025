@@ -8,6 +8,7 @@
 #include <gui/viz/GL_Canvas.h>
 #include <gui/clip/ClipEditor.h>
 #include <gui/track/ChainStack.h>
+#include <gui/footer/Footer.h>
 
 class MainWindow : public QMainWindow
 {
@@ -38,4 +39,5 @@ private:
     GL_Canvas* m_canvas;
     ClipEditor* m_clipEditor; // PianoRoll
     ChainStack* m_chainStack;
+    Footer* m_footer;
 };

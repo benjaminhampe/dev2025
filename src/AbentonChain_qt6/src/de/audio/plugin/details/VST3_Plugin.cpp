@@ -66,6 +66,72 @@ std::string getErrorDesc(Steinberg::tresult e)
         default: return "Unknown";
     }
 }
+
+// Save VST3 plugin state (component + controller)
+
+std::vector<uint8_t>
+VST3_saveState(Steinberg::Vst::IComponent* component,
+               Steinberg::Vst::IEditController* controller)
+{
+    // Memory stream for component state
+    Steinberg::MemoryStream compStream;
+    component->getState(&compStream);
+
+    // Memory stream for controller state
+    Steinberg::MemoryStream ctrlStream;
+    controller->getState(&ctrlStream);
+
+    // Extract raw bytes
+    std::vector<uint8_t> compData(compStream.getData(), compStream.getData() + compStream.getSize());
+    std::vector<uint8_t> ctrlData(ctrlStream.getData(), ctrlStream.getData() + ctrlStream.getSize());
+
+    // Combine them (your host decides the format)
+    std::vector<uint8_t> combined;
+    combined.reserve(8 + compData.size() + ctrlData.size());
+
+    // Write lengths + data
+    auto writeU32 = [&](uint32_t v) {
+        combined.push_back((v >> 24) & 0xFF);
+        combined.push_back((v >> 16) & 0xFF);
+        combined.push_back((v >> 8) & 0xFF);
+        combined.push_back(v & 0xFF);
+    };
+
+    writeU32((uint32_t)compData.size());
+    combined.insert(combined.end(), compData.begin(), compData.end());
+
+    writeU32((uint32_t)ctrlData.size());
+    combined.insert(combined.end(), ctrlData.begin(), ctrlData.end());
+
+    return combined;
+}
+
+void
+VST3_loadState(Steinberg::Vst::IComponent* component,
+               Steinberg::Vst::IEditController* controller,
+               const uint8_t* data, size_t size)
+{
+    const uint8_t* p = data;
+
+    auto readU32 = [&](uint32_t& out) {
+        out = (p[0] << 24) | (p[1] << 16) | (p[2] << 8) | p[3];
+        p += 4;
+    };
+
+    uint32_t compSize = 0;
+    readU32(compSize);
+
+    Steinberg::MemoryStream compStream((void*)p, compSize);
+    component->setState(&compStream);
+    p += compSize;
+
+    uint32_t ctrlSize = 0;
+    readU32(ctrlSize);
+
+    Steinberg::MemoryStream ctrlStream((void*)p, ctrlSize);
+    controller->setComponentState(&ctrlStream);
+}
+
 /*
 bool isMidiCCParam(const Steinberg::Vst::ParameterInfo& info)
 {
@@ -334,7 +400,7 @@ void enumeratePrograms(Programs& programs, Steinberg::Vst::IEditController* cont
             Steinberg::Vst::CString attrId{};
             if (unitInfo->getProgramInfo(listInfo.id, progIndex, attrId, attrName) != Steinberg::kResultOk)
             {
-                DE_ERROR("No programInfo[",progIndex,"] in list[",listIndex,"].");
+                // DE_ERROR("No programInfo[",progIndex,"] in list[",listIndex,"].");
             }
 
             Program pro;
@@ -2319,6 +2385,8 @@ void VST3_Plugin::setProgram( int index )
 {
     const auto & progs = _d->m_programList;
 
+    DE_BENNI("SetPreset(",index,") of (",progs.size(),")")
+
     if (index < 0 || index >= int(progs.size()))
     {
         DE_ERROR("Invalid index ",index)
@@ -2334,19 +2402,24 @@ void VST3_Plugin::setProgram( int index )
         return;
     }
 
+    Steinberg::tresult hr;
     Steinberg::MemoryStream stream;
-    progData->getProgramData(prog.m_listId, prog.m_progIndex, &stream);
-
-    Steinberg::tresult hr = _d->m_component->setState(&stream);
+    hr = progData->getProgramData(prog.m_listId, prog.m_progIndex, &stream);
     if (hr != Steinberg::kResultOk)
     {
-        DE_ERROR("No _d->m_component->setState")
+        DE_ERROR("No m_progData->getProgramData")
+    }
+
+    hr = _d->m_component->setState(&stream);
+    if (hr != Steinberg::kResultOk)
+    {
+        DE_ERROR("No m_component->setState")
     }
 
     hr = _d->m_editController->setComponentState(&stream);
     if (hr != Steinberg::kResultOk)
     {
-        DE_ERROR("No _d->m_editController->setComponentState")
+        DE_ERROR("No m_editController->setComponentState")
     }
 }
 

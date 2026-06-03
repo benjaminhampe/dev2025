@@ -36,9 +36,12 @@ public:
     void loadState(const QString &path);
 
 signals:
-    void reorderedWidgets();
+    //void reorderedWidgets();
+
+    void newOverview(QPixmap overview);
+
 public slots:
-    // void on_skinChanged();
+    void on_collapseChanged(bool bCollapsed);
 
 protected:
     // ----------------------------------------
@@ -63,7 +66,9 @@ protected:
     void mouseReleaseEvent(QMouseEvent* e) override;
 
 
-    void swapWidgets(int drag, int drop);
+    bool swapWidgets(int drag, int drop);
+
+    void createTrackOverview();
 
 private:
     // void updatePluginIds()
@@ -118,6 +123,8 @@ private:
     bool m_isDragging = false;
     bool m_isAudioOnly = false;
 
+    int m_overviewHeight;
+    QPixmap m_overviewPixmap;
     // ----------------------------------------
     // Plugin hinzufügen
     // ----------------------------------------

@@ -11,6 +11,33 @@ namespace {
 
 constexpr u64 GUARD = 256; // 64 extra bytes for "out-of-bounds" bugs.
 
+std::vector<uint8_t>
+VST2_saveState(AEffect* effect)
+{
+    void* chunk = nullptr;
+
+    // Ask plugin for its state
+    intptr_t size = effect->dispatcher(effect, effGetChunk, 0, 0, &chunk, 0.f);
+
+    if (size <= 0 || chunk == nullptr)
+        return {};
+
+    // Copy into our own buffer
+    uint8_t* bytes = static_cast<uint8_t*>(chunk);
+    return std::vector<uint8_t>(bytes, bytes + size);
+}
+
+void
+VST2_loadState(AEffect* effect, const std::vector<uint8_t>& data)
+{
+    if (data.empty())
+        return;
+
+    // Pass the chunk back to the plugin
+    effect->dispatcher(effect, effSetChunk, 0, data.size(),
+                       const_cast<uint8_t*>(data.data()), 0.f);
+}
+
 /*
 inline char VST2_hexNibble( uint8_t byte )
 {

@@ -35,6 +35,9 @@ public:
     u32 getTrackId() const;
     void setTrackId(u32 trackId);
     std::string getTrackName() const;
+
+    void setPlugins( std::vector<IPlugin*> plugins );
+
     void removePlugin( IPlugin* plugin );
 
     IPlugin* createPlugin( std::string uri, int index = -1);
@@ -42,8 +45,6 @@ public:
     // void deregisterMidiListeners();
 
     void dumpChain();
-
-    void updateDspChain();
 
     void dsp_read(f64 pts, u32 frames, u32 sampleRate,
                 f32* __restrict__ L,
@@ -58,6 +59,9 @@ public:
     void dsp_setInputSignal(IDspChainElement* input, int i = 0) override;
 
     void dsp_clearInputSignals() override;
+
+private:
+    void updateDspChain();
 
     // void onMidiMessage(f64 pts, const midi::MidiMessage& msg) override
     // {

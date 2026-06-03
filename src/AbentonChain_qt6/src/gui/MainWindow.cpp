@@ -38,6 +38,21 @@ MainWindow::MainWindow(QWidget *parent)
     m_chainStack = new ChainStack(this);
     m_chainStack->setVisible(true);
 
+    m_footer = new Footer(this);
+    m_footer->setVisible(true);
+
+    connect(m_chainStack, &ChainStack::newTrackOverview,
+            this, [=] (QPixmap pix)
+            {
+                int visibWidth = pix.width();
+                int totalWidth = pix.width();
+                int xPos = 0;
+
+                m_footer->setTrackOverview(pix,visibWidth,totalWidth,xPos);
+            });
+
+    // m_chainStack->applySkin();
+
     auto v = new QVBoxLayout;
     v->setContentsMargins(0,0,0,0);
     v->setSpacing(0);
@@ -45,6 +60,7 @@ MainWindow::MainWindow(QWidget *parent)
     v->addWidget(m_canvasContainer,1);
     v->addWidget(m_clipEditor);
     v->addWidget(m_chainStack);
+    v->addWidget(m_footer);
 
     auto content = new QWidget(this);
     content->setLayout(v);
@@ -110,7 +126,7 @@ void MainWindow::createMenuEdit()
 
 void MainWindow::createMenuView()
 {
-    QAction* actShowHeader = new QAction("Show Transport", this);
+    QAction* actShowHeader = new QAction("Show Header/Transport", this);
     actShowHeader->setCheckable(true);
     actShowHeader->setChecked(m_header->isVisible());
 
@@ -119,13 +135,12 @@ void MainWindow::createMenuView()
         m_header->setVisible(checked);
     });
 
-    QAction* actShowCanvas = new QAction("Show 3D Canvas", this);
+    QAction* actShowCanvas = new QAction("Show 3D Canvas Vizualization", this);
     actShowCanvas->setCheckable(true);
     actShowCanvas->setChecked(m_canvasContainer->isVisible());
 
     connect(actShowCanvas, &QAction::triggered, this, [=](bool checked)
     {
-        qDebug() << "Show 3D Canvas =" << checked;
         if (checked)
         {
             m_canvasContainer->setVisible(true);
@@ -141,7 +156,7 @@ void MainWindow::createMenuView()
         }
     });
 
-    QAction* actShowPianoRoll = new QAction("Show ClipEditor", this);
+    QAction* actShowPianoRoll = new QAction("Show ClipEditor/PianoRoll", this);
     actShowPianoRoll->setCheckable(true);
     actShowPianoRoll->setChecked(m_clipEditor->isVisible());
 
@@ -150,13 +165,22 @@ void MainWindow::createMenuView()
         m_clipEditor->setVisible(checked);
     });
 
-    QAction* actShowChain = new QAction("Show ChainStack", this);
+    QAction* actShowChain = new QAction("Show AudioDspChainStack", this);
     actShowChain->setCheckable(true);
     actShowChain->setChecked(m_chainStack->isVisible());
 
     connect(actShowChain, &QAction::triggered, this, [=](bool checked)
     {
         m_chainStack->setVisible(checked);
+    });
+
+    QAction* actShowFooter = new QAction("Show Footer/Scrollbar/QuickHelp", this);
+    actShowFooter->setCheckable(true);
+    actShowFooter->setChecked(m_footer->isVisible());
+
+    connect(actShowFooter, &QAction::triggered, this, [=](bool checked)
+    {
+        m_footer->setVisible(checked);
     });
 
     QMenu* menuView = menuBar()->addMenu("View");
@@ -166,6 +190,7 @@ void MainWindow::createMenuView()
     menuView->addSeparator();
     menuView->addAction(actShowPianoRoll);
     menuView->addAction(actShowChain);
+    menuView->addAction(actShowFooter);
 }
 
 void MainWindow::createMenuCanvas()

@@ -30,6 +30,8 @@ public:
     QRect labelRect() const;
 
     void applySkin();
+signals:
+    void collapseChanged(bool bCollapsed);
 
 protected:
     void resizeEvent(QResizeEvent *) override;
@@ -59,13 +61,16 @@ private slots:
     void on_pressedBtnWrench(bool checked);
     void on_pressedBtnUpdate(bool checked);
     void on_pressedBtnEditor(bool checked);
-    void on_doubleClickedLabel();
-    void on_dragStarted(QPoint dragStart);
+    // void on_doubleClickedLabel();
+    // void on_dragStarted(QPoint dragStart);
 
 signals:
     void requestRemoval(Plugin *self);
 
 private:
+    void unloadPlugin();
+    void loadPlugin(de::audio::IPlugin* );
+
     //uint32_t m_trackId = 0; // AudioCentral
     //uint32_t m_pluginId = 0; // AudioCentral
     de::audio::IPlugin* m_plugin = nullptr; // AudioCentral

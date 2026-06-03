@@ -1,0 +1,97 @@
+#pragma once
+#include <QWidget>
+#include <QImage>
+#include <QTimer>
+#include <QPainter>
+#include <QPaintEvent>
+#include <QResizeEvent>
+#include <QMouseEvent>
+#include <QKeyEvent>
+#include <QDebug>
+#include <QThread>
+
+#include "gui/track/details/SvgButton.h"
+#include "gui/footer/TrackOverview.h"
+#include "gui/footer/ClipOverview.h"
+#include "gui/footer/LongText.h"
+
+// ============================================================================
+class FooterPanel : public QWidget
+// ============================================================================
+{
+    Q_OBJECT
+    bool m_hasFocus;
+    //bool m_isQuickHelpPanelVisible;
+    //bool m_isMidiKeyboardVisible;
+    //bool m_isDetailPanelVisible;
+
+    // Footer Contents, Computed
+    QRect m_rcFooterContent;
+
+    QRect m_rcBtnShowQuickHelpPanel;
+
+    QRect m_rcLongPanel;
+    QRect m_rcLongView;
+
+    QRect m_rcBtnShowMidiKeyboardPanel;
+
+    QRect m_rcClipOverviewPanel;
+    QRect m_rcClipOverview;
+
+    QRect m_rcTrackOverviewPanel;
+    QRect m_rcTrackOverview;
+
+    QRect m_rcBtnShowDetailPanel; // Computed
+
+    // Footer
+    FooterPanel* m_footerPanel;
+    SvgButton* m_btnShowQuickHelpPanel;
+    LongText* m_longText;
+    SvgButton* m_btnShowMidiKeyboard;
+    ClipOverview* m_btnClipOverview;
+    TrackOverview* m_btnTrackOverview;
+    SvgButton* m_btnShowDetailPanel;
+
+    int m_radius = 8;
+    int m_padding = 8;
+    int m_circleButtonSize = 30;
+public:
+    FooterPanel(QWidget* parent = 0);
+    ~FooterPanel() override;
+
+    bool hasFocus() const { return m_hasFocus; }
+
+signals:
+public slots:
+    //void setTextSpurOverview( QString txt ) { m_spurText = txt; updateLayout(); }
+protected slots:
+    void on_btnShowMidiKeyboard( bool checked );
+    void on_btnShowQuickHelpPanel( bool checked );
+    void on_btnShowDetailPanel( bool checked );
+    //void on_currentTrackIdChanged( int index );
+    void on_btnShowClipOverview( bool checked );
+    void on_btnShowTrackOverview( bool checked );
+
+protected:
+    void updateLayout();
+    void resizeEvent( QResizeEvent* event ) override;
+    void paintEvent( QPaintEvent* event ) override;
+    void focusInEvent( QFocusEvent* event ) override;
+    void focusOutEvent( QFocusEvent* event ) override;
+/*
+    void enterEvent( QEnterEvent* event ) override;
+    void leaveEvent( QEvent* event ) override;
+    void mousePressEvent( QMouseEvent* event ) override;
+    void mouseReleaseEvent( QMouseEvent* event ) override;
+    void mouseMoveEvent( QMouseEvent* event ) override;
+    void wheelEvent( QWheelEvent* event ) override;
+    void keyPressEvent( QKeyEvent* event ) override;
+    void keyReleaseEvent( QKeyEvent* event ) override;
+*/
+private:
+/*
+    ImageButton* createShowQuickHelpPanelButton();
+    ImageButton* createShowMidiKeyboardButton();
+    ImageButton* createShowDetailPanelButton();
+*/
+};

@@ -177,5 +177,5 @@ void PluginFactory::removePlugin( u32 pluginId )
 //    return s_manager;
 // }
 
-} // end namespace audio.    
+} // end namespace audio.
 } // end namespace de.

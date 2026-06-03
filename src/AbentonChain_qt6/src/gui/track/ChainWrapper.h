@@ -17,18 +17,28 @@ public:
     void applySkin();
     void setAudioOnly(bool bAudioOnly);
 
+    const Track* trackWidget() const { return m_track; }
+    Track* trackWidget() { return m_track; }
+
 protected:
     bool eventFilter(QObject* obj, QEvent* event) override;
+    void resizeEvent(QResizeEvent* event) override;
     void paintEvent(QPaintEvent* event) override;
     void focusInEvent(QFocusEvent* event) override;
     void focusOutEvent(QFocusEvent* event) override;
     void enterEvent( QEnterEvent* event ) override;
     void leaveEvent( QEvent* event ) override;
 
+signals:
 protected slots:
 private slots:
 
 private:
+    MidiMeter* m_midiMeter;
+    AudioMeter* m_audioMeter;
+    QScrollArea* m_scrollArea;
+    Track* m_track;
+
     int m_baseWidth = 284;
     int m_baseHeight = 326;
 
@@ -42,8 +52,4 @@ private:
     QColor m_windowColor;
     int m_margin;
     int m_radius;
-    MidiMeter* m_midiMeter;
-    AudioMeter* m_audioMeter;
-    QScrollArea* m_scrollArea;
-    Track* m_track;
 };

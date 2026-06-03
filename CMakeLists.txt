@@ -38,11 +38,11 @@ set(BENNI_USE_OPENCV 0)     # <optional> Build OpenCV and face detection demo ap
 set(BENNI_USE_POLYPHONE 0)  # <optional> Big app
 set(BENNI_USE_WX 0)         # <optional> Build wxWidgets Apps and copy runtime
 set(BENNI_USE_IRR 0)        # <optional> Builds Irrlicht libs and apps.
-set(BENNI_USE_JUCE 1)       # <optional> Big JUCE lib, Bespoke, Odin2, Surge Rack plugins, etc..
-set(BENNI_USE_JUCE_EXTRA 1) # <optional> Big JUCE plugins, Odin2, Surge Rack plugins, etc..
+set(BENNI_USE_JUCE 0)       # <optional> Big JUCE lib, Bespoke, Odin2, Surge Rack plugins, etc..
+set(BENNI_USE_JUCE_EXTRA 0) # <optional> Big JUCE plugins, Odin2, Surge Rack plugins, etc..
 set(BENNI_USE_JUCE_BESPOKE 0) # <optional> Big JUCE plugin Bespoke
 set(BENNI_USE_WHISPER 0)    # <optional> Big speech2text
-set(BENNI_USE_RAYLIB 0)     # <optional> 
+set(BENNI_USE_RAYLIB 0)     # <optional>
 set(BENNI_USE_VCV 0)        # <optional> Big VCV-Rack2 + Benni plugins
 set(BENNI_USE_VCV_EXTRA 0)  # <optional> Big VCV-Rack2 + ca. 500 external plugins.
 set(BENNI_USE_OPENGL_TUTORIALS 0) # <optional> Builds LearnOpenGL, Norberts and
@@ -386,132 +386,132 @@ else()
         # -fopenmp	    Enables OpenMP parallelization if supported.	For multi-threaded workloads.
         # -flto	        Enables link-time optimization.	Improves whole-program optimization.
         #
-        # Flag	        Meaning	What It Enables
-        # -mavx512f	    AVX-512 Foundation	The base set of AVX-512 instructions. Provides 512-bit registers (ZMM0–ZMM31), mask registers, and core vector operations (add, multiply, logical ops, etc.). Required before using other AVX-512 subsets.
-        # -mavx512dq	Doubleword and Quadword Instructions	Adds support for operations on 32-bit (doubleword) and 64-bit (quadword) integers. Enables more flexible integer arithmetic, comparisons, and conversions.
-        # -mavx512bw	Byte and Word Instructions	Extends AVX-512 to handle 8-bit (byte) and 16-bit (word) integers. Useful for text processing, image/video codecs, and other workloads needing smaller integer types.
-        # -mavx512vl	Vector Length Extensions	Allows AVX-512 instructions to operate on 128-bit (XMM) and 256-bit (YMM) registers, not just 512-bit ZMM. This improves efficiency when full 512-bit vectors aren’t needed, reducing power and register pressure.
-        #
-        # SIMD Level	Compiler Flag	Defined Macro(s)	Intrinsics Header(s)
-        # AMX (Tile)	-mamx-tile	    __AMX__, __AMXTILE__	<amxintrin.h>
-        # AVX-VNNI	    -mavxvnni	    __AVXVNNI__             <immintrin.h>
-        # AVX-512VNNI	-mavx512vnni	__AVX512VNNI__          <immintrin.h>
-        # AVX-512VBMI	-mavx512vbmi	__AVX512VBMI__          <immintrin.h>
-        # AVX-512CD	    -mavx512cd	    __AVX512CD__            <immintrin.h>
-        # AVX-512VL	    -mavx512vl	    __AVX512VL__            <immintrin.h>
-        # AVX-512BW	    -mavx512bw	    __AVX512BW__            <immintrin.h>
-        # AVX-512DQ	    -mavx512dq	    __AVX512DQ__            <immintrin.h>
-        # AVX-512F	    -mavx512f	    __AVX512F__             <immintrin.h>
-        # BMI2          -mbmi2          __BMI2__                <immintrin.h>
-        # BMI1          -mbmi           __BMI__                 <immintrin.h>
-        # FMA3          -mfma           __FMA__                 <immintrin.h>
-        # AVX2          -mavx2          __AVX2__                <immintrin.h>
-        # AVX           -mavx           __AVX__                 <immintrin.h>
-        # PCLMULQDQ	    -mpclmul	    __PCLMUL__              <wmmintrin.h>
-        # AES-NI        -maes           __AES__                 <wmmintrin.h>
-        # POPCNT        -mpopcnt	    __POPCNT__              <popcntintrin.h>
-        # SSE4.2        -msse4.2	    __SSE4_2__              <nmmintrin.h>
-        # SSE4.1        -msse4.1	    __SSE4_1__              <smmintrin.h>
-        # SSSE3         -mssse3         __SSSE3__               <tmmintrin.h>
-        # SSE3          -msse3          __SSE3__                <pmmintrin.h>
-        # SSE2          -msse2          __SSE2__                <emmintrin.h>
-        # SSE           -msse           __SSE__                 <xmmintrin.h>
-        # MMX           -mmmx           __MMX__                 <mmintrin.h>
 
-        # <SIMD> Don't use add_compile_options(), it would pollute ASM commandLines.
-
-        if (BENNI_USE_AVX512)
-            message("[benni] HAVE_AVX512 -mavx512f -mavx512dq -mavx512bw -mavx512vl")
-            message("[benni] HAVE_AVX512F -mavx512f")
-            message("[benni] HAVE_AVX512DQ -mavx512dq") # Doubleword and Quadword Instructions
-            message("[benni] HAVE_AVX512BW -mavx512bw")
-            message("[benni] HAVE_AVX512LV -mavx512vl")
-            set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -mavx512f -mavx512dq -mavx512bw -mavx512vl")
-            set(MY_C_FLAGS "${MY_C_FLAGS} -mavx512f -mavx512dq -mavx512bw -mavx512vl")
-            add_compile_definitions(HAVE_AVX512)
-            add_compile_definitions(HAVE_AVX512F)
-            set(BENNI_USE_FMA3 1)
-        else()
-            add_compile_definitions(USE_AVX512=0)
-            add_compile_definitions(USE_VNNI=0)
-            add_compile_definitions(HAVE_AVX512=0)
-            add_compile_definitions(HAVE_AVX512F=0)
-            add_compile_definitions(HAVE_AVX512BW=0)
-            add_compile_definitions(HAVE_AVX512VL=0)
-            add_compile_definitions(HAVE_AVX512VNNI=0)
-            set(MY_C_FLAGS "${MY_C_FLAGS} -mno-avx512f -mno-avx512vl -mno-avx512bw -mno-avx512dq -mno-vpclmulqdq")
-            set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -mno-avx512f -mno-avx512vl -mno-avx512bw -mno-avx512dq -mno-vpclmulqdq")
-        endif()
-
-        if (BENNI_USE_FMA3)
-            message("[benni] HAVE_FMA3")
-            set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -mfma")
-            set(MY_C_FLAGS "${MY_C_FLAGS} -mfma")
-            add_compile_definitions(HAVE_FMA3)
-            set(BENNI_USE_AVX2 1)
-        endif()
-
-        if (BENNI_USE_AVX2)
-            message("[benni] HAVE_AVX2")
-            set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -mavx2")
-            set(MY_C_FLAGS "${MY_C_FLAGS} -mavx2")
-            add_compile_definitions(HAVE_AVX2)
-            set(BENNI_USE_AVX 1)
-        endif()
-
-        if (BENNI_USE_AVX)
-            message("[benni] HAVE_AVX")
-            set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -mavx")
-            set(MY_C_FLAGS "${MY_C_FLAGS} -mavx")
-            add_compile_definitions(HAVE_AVX)
-            set(BENNI_USE_SSE42 1)
-        endif()
-
-        if (BENNI_USE_SSE42)
-            message("[benni] HAVE_SSE42")
-            set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -msse4.2")
-            set(MY_C_FLAGS "${MY_C_FLAGS} -msse4.2")
-            add_compile_definitions(HAVE_SSE4_2)
-            set(BENNI_USE_SSE41 1)
-        endif()
-
-        if (BENNI_USE_SSE41)
-            message("[benni] HAVE_SSE41")
-            set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -msse4.1")
-            set(MY_C_FLAGS "${MY_C_FLAGS} -msse4.1")
-            add_compile_definitions(HAVE_SSE4_1)
-            set(BENNI_USE_SSSE3 1)
-        endif()
-
-        if (BENNI_USE_SSSE3)
-            message("[benni] HAVE_SSSE3")
-            set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -mssse3")
-            set(MY_C_FLAGS "${MY_C_FLAGS} -mssse3")
-            add_compile_definitions(HAVE_SSSE3)
-            set(BENNI_USE_SSE3 1)
-        endif()
-
-        if (BENNI_USE_SSE3)
-            message("[benni] HAVE_SSE3")
-            set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -msse3")
-            set(MY_C_FLAGS "${MY_C_FLAGS} -msse3")
-            add_compile_definitions(HAVE_SSE3)
-            set(BENNI_USE_SSE2 1)
-        endif()
-
-        if (BENNI_USE_SSE2)
-            message("[benni] HAVE_SSE2")
-            set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -msse2")
-            set(MY_C_FLAGS "${MY_C_FLAGS} -msse2")
-            add_compile_definitions(HAVE_SSE2)
-            add_compile_definitions(HAVE_SSE)
-            add_compile_definitions(HAVE_MMX)
-        endif()
     endif()
 
 endif()
 
+# Flag	        Meaning	What It Enables
+# -mavx512f	    AVX-512 Foundation	The base set of AVX-512 instructions. Provides 512-bit registers (ZMM0–ZMM31), mask registers, and core vector operations (add, multiply, logical ops, etc.). Required before using other AVX-512 subsets.
+# -mavx512dq	Doubleword and Quadword Instructions	Adds support for operations on 32-bit (doubleword) and 64-bit (quadword) integers. Enables more flexible integer arithmetic, comparisons, and conversions.
+# -mavx512bw	Byte and Word Instructions	Extends AVX-512 to handle 8-bit (byte) and 16-bit (word) integers. Useful for text processing, image/video codecs, and other workloads needing smaller integer types.
+# -mavx512vl	Vector Length Extensions	Allows AVX-512 instructions to operate on 128-bit (XMM) and 256-bit (YMM) registers, not just 512-bit ZMM. This improves efficiency when full 512-bit vectors aren’t needed, reducing power and register pressure.
+#
+# SIMD Level	Compiler Flag	Defined Macro(s)	Intrinsics Header(s)
+# AMX (Tile)	-mamx-tile	    __AMX__, __AMXTILE__	<amxintrin.h>
+# AVX-VNNI	    -mavxvnni	    __AVXVNNI__             <immintrin.h>
+# AVX-512VNNI	-mavx512vnni	__AVX512VNNI__          <immintrin.h>
+# AVX-512VBMI	-mavx512vbmi	__AVX512VBMI__          <immintrin.h>
+# AVX-512CD	    -mavx512cd	    __AVX512CD__            <immintrin.h>
+# AVX-512VL	    -mavx512vl	    __AVX512VL__            <immintrin.h>
+# AVX-512BW	    -mavx512bw	    __AVX512BW__            <immintrin.h>
+# AVX-512DQ	    -mavx512dq	    __AVX512DQ__            <immintrin.h>
+# AVX-512F	    -mavx512f	    __AVX512F__             <immintrin.h>
+# BMI2          -mbmi2          __BMI2__                <immintrin.h>
+# BMI1          -mbmi           __BMI__                 <immintrin.h>
+# FMA3          -mfma           __FMA__                 <immintrin.h>
+# AVX2          -mavx2          __AVX2__                <immintrin.h>
+# AVX           -mavx           __AVX__                 <immintrin.h>
+# PCLMULQDQ	    -mpclmul	    __PCLMUL__              <wmmintrin.h>
+# AES-NI        -maes           __AES__                 <wmmintrin.h>
+# POPCNT        -mpopcnt	    __POPCNT__              <popcntintrin.h>
+# SSE4.2        -msse4.2	    __SSE4_2__              <nmmintrin.h>
+# SSE4.1        -msse4.1	    __SSE4_1__              <smmintrin.h>
+# SSSE3         -mssse3         __SSSE3__               <tmmintrin.h>
+# SSE3          -msse3          __SSE3__                <pmmintrin.h>
+# SSE2          -msse2          __SSE2__                <emmintrin.h>
+# SSE           -msse           __SSE__                 <xmmintrin.h>
+# MMX           -mmmx           __MMX__                 <mmintrin.h>
 
+# <SIMD> Don't use add_compile_options(), it would pollute ASM commandLines.
+
+if (BENNI_USE_AVX512)
+    message("[benni] HAVE_AVX512 -mavx512f -mavx512dq -mavx512bw -mavx512vl")
+    message("[benni] HAVE_AVX512F -mavx512f")
+    message("[benni] HAVE_AVX512DQ -mavx512dq") # Doubleword and Quadword Instructions
+    message("[benni] HAVE_AVX512BW -mavx512bw")
+    message("[benni] HAVE_AVX512LV -mavx512vl")
+    set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -mavx512f -mavx512dq -mavx512bw -mavx512vl")
+    set(MY_C_FLAGS "${MY_C_FLAGS} -mavx512f -mavx512dq -mavx512bw -mavx512vl")
+    add_compile_definitions(HAVE_AVX512)
+    add_compile_definitions(HAVE_AVX512F)
+    set(BENNI_USE_FMA3 1)
+else()
+    add_compile_definitions(USE_AVX512=0)
+    add_compile_definitions(USE_VNNI=0)
+    add_compile_definitions(HAVE_AVX512=0)
+    add_compile_definitions(HAVE_AVX512F=0)
+    add_compile_definitions(HAVE_AVX512BW=0)
+    add_compile_definitions(HAVE_AVX512VL=0)
+    add_compile_definitions(HAVE_AVX512VNNI=0)
+    set(MY_C_FLAGS "${MY_C_FLAGS} -mno-avx512f -mno-avx512vl -mno-avx512bw -mno-avx512dq -mno-vpclmulqdq")
+    set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -mno-avx512f -mno-avx512vl -mno-avx512bw -mno-avx512dq -mno-vpclmulqdq")
+endif()
+
+if (BENNI_USE_FMA3)
+    message("[benni] HAVE_FMA3")
+    set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -mfma")
+    set(MY_C_FLAGS "${MY_C_FLAGS} -mfma")
+    add_compile_definitions(HAVE_FMA3)
+    set(BENNI_USE_AVX2 1)
+endif()
+
+if (BENNI_USE_AVX2)
+    message("[benni] HAVE_AVX2")
+    set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -mavx2")
+    set(MY_C_FLAGS "${MY_C_FLAGS} -mavx2")
+    add_compile_definitions(HAVE_AVX2)
+    set(BENNI_USE_AVX 1)
+endif()
+
+if (BENNI_USE_AVX)
+    message("[benni] HAVE_AVX")
+    set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -mavx")
+    set(MY_C_FLAGS "${MY_C_FLAGS} -mavx")
+    add_compile_definitions(HAVE_AVX)
+    set(BENNI_USE_SSE42 1)
+endif()
+
+if (BENNI_USE_SSE42)
+    message("[benni] HAVE_SSE42")
+    set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -msse4.2")
+    set(MY_C_FLAGS "${MY_C_FLAGS} -msse4.2")
+    add_compile_definitions(HAVE_SSE4_2)
+    set(BENNI_USE_SSE41 1)
+endif()
+
+if (BENNI_USE_SSE41)
+    message("[benni] HAVE_SSE41")
+    set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -msse4.1")
+    set(MY_C_FLAGS "${MY_C_FLAGS} -msse4.1")
+    add_compile_definitions(HAVE_SSE4_1)
+    set(BENNI_USE_SSSE3 1)
+endif()
+
+if (BENNI_USE_SSSE3)
+    message("[benni] HAVE_SSSE3")
+    set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -mssse3")
+    set(MY_C_FLAGS "${MY_C_FLAGS} -mssse3")
+    add_compile_definitions(HAVE_SSSE3)
+    set(BENNI_USE_SSE3 1)
+endif()
+
+if (BENNI_USE_SSE3)
+    message("[benni] HAVE_SSE3")
+    set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -msse3")
+    set(MY_C_FLAGS "${MY_C_FLAGS} -msse3")
+    add_compile_definitions(HAVE_SSE3)
+    set(BENNI_USE_SSE2 1)
+endif()
+
+if (BENNI_USE_SSE2)
+    message("[benni] HAVE_SSE2")
+    set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -msse2")
+    set(MY_C_FLAGS "${MY_C_FLAGS} -msse2")
+    add_compile_definitions(HAVE_SSE2)
+    add_compile_definitions(HAVE_SSE)
+    add_compile_definitions(HAVE_MMX)
+endif()
 # <INIT>
 
 project(AbentonChain_Qt6_mingw64_1706_llvm)

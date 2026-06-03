@@ -15,11 +15,14 @@ public:
 
     void applySkin();
 
-    void addPage(QWidget *page);
+    void addPage(ChainWrapper* page);
 
 protected:
     bool eventFilter(QObject *obj, QEvent *event) override;
     void paintEvent(QPaintEvent* event) override;
+
+signals:
+    void newTrackOverview(QPixmap pix); // for Footer
 
 protected slots:
 private slots:

@@ -20,6 +20,160 @@
 namespace de {
 namespace audio {
 
+/*
+🧩 Step 1 — Get the LV2 State extension
+
+When you instantiate the plugin:
+
+    const LV2_State_Interface* state =
+        (const LV2_State_Interface*)lv2_instance->extension_data(LV2_STATE__interface);
+
+    If state == nullptr, the plugin does not support saving state (rare).
+
+🧩 Step 2 — Implement the host’s LV2 state callbacks
+
+LV2 requires you to implement:
+    store() → plugin calls this to write state entries
+    retrieve() → plugin calls this to read them back during restore
+
+🧱 SAVE IMPLEMENTATION
+
+struct SavedEntry {
+    std::string key;
+    std::vector<uint8_t> value;
+    uint32_t type;
+    uint32_t flags;
+};
+
+struct LV2SavedState {
+    std::vector<SavedEntry> entries;
+};
+
+Host store callback
+
+static LV2_State_Status
+host_store(
+    void* handle,
+    uint32_t key,
+    const void* value,
+    size_t size,
+    uint32_t type,
+    uint32_t flags)
+{
+    auto* saved = (LV2SavedState*)handle;
+
+    SavedEntry entry;
+    entry.key   = std::to_string(key);
+    entry.value.assign((const uint8_t*)value, (const uint8_t*)value + size);
+    entry.type  = type;
+    entry.flags = flags;
+
+    saved->entries.push_back(std::move(entry));
+    return LV2_STATE_SUCCESS;
+}
+
+Saving state
+
+LV2SavedState
+LV2_saveState(LV2_Handle instance, const LV2_State_Interface* state)
+{
+    LV2SavedState saved;
+
+    LV2_State_Store_Function store = host_store;
+
+    state->save(instance,
+                &saved,          // handle passed to store()
+                store,
+                nullptr,         // retrieve (unused during save)
+                0,               // flags
+                nullptr);        // features
+
+    return saved;
+}
+
+This gives you a vector of key/value entries representing the plugin state.
+
+You can serialize this however you want (JSON, binary, your project file, etc.).
+🧱 LOAD IMPLEMENTATION
+
+Host retrieve callback
+
+static const void* host_retrieve(
+    void* handle,
+    uint32_t key,
+    size_t* size,
+    uint32_t* type,
+    uint32_t* flags)
+{
+    auto* saved = (LV2SavedState*)handle;
+
+    for (auto& e : saved->entries) {
+        if (std::to_string(key) == e.key) {
+            *size  = e.value.size();
+            *type  = e.type;
+            *flags = e.flags;
+            return e.value.data();
+        }
+    }
+
+    return nullptr;
+}
+
+Restoring state
+
+void LV2_loadState(LV2_Handle instance,
+                  const LV2_State_Interface* state,
+                  LV2SavedState& saved)
+{
+    LV2_State_Retrieve_Function retrieve = host_retrieve;
+
+    state->restore(instance,
+                   &saved,      // handle passed to retrieve()
+                   retrieve,
+                   0,           // flags
+                   nullptr);    // features
+}
+
+🎯 How you actually use this in your host
+
+✔️ Save state
+    LV2SavedState saved = saveLV2State(instance, state_iface);
+    Store saved.entries in your project file.
+
+✔️ Load state
+    loadLV2State(instance, state_iface, saved);
+    This restores the plugin to the exact state it was in.
+
+🧠 Important LV2 state facts
+
+✔️ 1. LV2 state is key/value entries, not a single blob
+
+Each entry has:
+
+    key (URI mapped to integer)
+    value (binary)
+    type (URI mapped to integer)
+    flags
+
+✔️ 2. LV2 state includes:
+
+    parameters
+    internal plugin data
+    file references
+    custom plugin metadata
+
+✔️ 3. LV2 state is not the same as LV2 presets
+    Presets are .ttl RDF files.
+    State is binary key/value entries.
+
+✔️ 4. LV2 state is thread‑safe
+    Save/restore never happens on the audio thread.
+
+✔️ Final answer
+    Saving LV2 state = call state->save() with your host’s store callback.
+    Loading LV2 state = call state->restore() with your host’s retrieve callback.
+*/
+
 // ============================================================================
 class LV2_Plugin_Impl
 // ============================================================================
