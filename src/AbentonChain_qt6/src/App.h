@@ -39,6 +39,9 @@ public:
     ~App();
     void cleanupAll();
 
+
+
+
     //=========================
     // SkinApi
     //=========================
@@ -87,6 +90,7 @@ public:
     //=========================
     // PluginApi
     //=========================
+    // de::audio::SharedPlugin createPlugin( std::string uri );
     de::audio::PluginFactory& getPluginFactory();
     const de::audio::PluginFactory& getPluginFactory() const;
 

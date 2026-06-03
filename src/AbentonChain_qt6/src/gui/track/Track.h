@@ -71,6 +71,28 @@ protected:
     void createTrackOverview();
 
 private:
+
+    std::vector<de::audio::SharedPlugin>
+    collectPlugins() const
+    {
+        std::vector<de::audio::SharedPlugin> plugins;
+        plugins.reserve( m_plugins.size() );
+        for (auto pluginWidget : m_plugins)
+        {
+            if (pluginWidget)
+            {
+                de::audio::SharedPlugin audioPlugin = pluginWidget->getPlugin();
+                if (audioPlugin)
+                {
+                    plugins.push_back( audioPlugin );
+                }
+            }
+        }
+
+        return plugins;
+    }
+
+
     // void updatePluginIds()
     // {
     //     m_pluginIds.clear();

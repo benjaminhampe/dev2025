@@ -10,7 +10,7 @@
 #include <QHBoxLayout>
 #include <QVBoxLayout>
 
-#include <de/audio/plugin/IPlugin.h>
+#include <de/audio/plugin/PluginFactory.h>
 
 // ============================================
 class Plugin : public QWidget
@@ -18,14 +18,14 @@ class Plugin : public QWidget
 {
     Q_OBJECT
 public:
-    Plugin(de::audio::IPlugin* plugin, QWidget* parent = nullptr);
+    Plugin(de::audio::SharedPlugin plugin, QWidget* parent = nullptr);
     ~Plugin() override;
     //QSize sizeHint() const override;
     //QSize minimumSizeHint() const override;
 
-    de::audio::IPlugin* getPlugin();
+    de::audio::SharedPlugin getPlugin();
 
-    void setPlugin(de::audio::IPlugin* plugin);
+    void setPlugin(de::audio::SharedPlugin plugin);
 
     QRect labelRect() const;
 
@@ -69,11 +69,11 @@ signals:
 
 private:
     void unloadPlugin();
-    void loadPlugin(de::audio::IPlugin* );
+    void loadPlugin(de::audio::SharedPlugin);
 
     //uint32_t m_trackId = 0; // AudioCentral
     //uint32_t m_pluginId = 0; // AudioCentral
-    de::audio::IPlugin* m_plugin = nullptr; // AudioCentral
+    de::audio::SharedPlugin m_plugin; // AudioCentral
 
     QString m_title;
 

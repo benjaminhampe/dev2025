@@ -164,6 +164,55 @@ App::getPluginFactory() { return m_pluginFactory; }
 const de::audio::PluginFactory&
 App::getPluginFactory() const { return m_pluginFactory; }
 
+#if 0
+de::audio::SharedPlugin
+App::createPlugin( std::string uri )
+{
+    de::audio::SharedPlugin plugin = m_pluginFactory.createPlugin(uri);
+    if (!plugin)
+    {
+        DE_ERROR("No plugin ")
+        return nullptr;
+    }
+
+    plugin->setTrack(this);
+
+#if 0
+    if (plugin->isSynth())
+    {
+        App::instance()->getMidiCentral().registerListener(plugin);
+    }
+
+#else
+    App::instance()->stopAudio();
+
+    if (plugin->isSynth())
+    {
+        App::instance()->getMidiCentral().registerListener(plugin);
+    }
+
+    if (index < 0 || index >= int(m_plugins.size()))
+    {
+        DE_TRACE("PushBack")
+        m_plugins.push_back(plugin);
+    }
+    else
+    {
+        DE_TRACE("Insert ",index)
+        DE_BENNI("Before: ", debugStr())
+        m_plugins.insert(m_plugins.begin()+index, plugin);
+        DE_BENNI("After: ", debugStr())
+    }
+
+    updateDspChain();
+
+    App::instance()->playAudio();
+#endif
+
+    return plugin;
+}
+#endif
+
 //=========================
 // MidiApi
 //=========================

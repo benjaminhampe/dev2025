@@ -216,8 +216,13 @@ void Track::insertPlugin(int index, const QString &uri)
     // Manage GUI Shell
     m_plugins.insert(m_plugins.begin() + index, w);
 
+    // Update DSP Chain...
+    m_track->setPlugins(collectPlugins());
+
+    // Update GUI Layout...
     updateLayout();
 
+    // Update Track Overview Image in Footer...
     createTrackOverview();
 }
 
@@ -247,7 +252,7 @@ void Track::removePlugin(Plugin* w)
 
     if (m_track)
     {
-        m_track->removePlugin( w->getPlugin() );
+        m_track->setPlugins(collectPlugins());
     }
     else
     {
@@ -534,12 +539,10 @@ void Track::mouseReleaseEvent(QMouseEvent* e)
         {
             createTrackOverview();
 
-#ifdef STILL_ALPHA
             if (m_track)
             {
-                m_track->updateDspChain();
+                m_track->setPlugins(collectPlugins());
             }
-#endif
         }
     }
 }

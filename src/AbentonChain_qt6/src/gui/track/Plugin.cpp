@@ -48,7 +48,7 @@ namespace {
     }
 }
 
-Plugin::Plugin(de::audio::IPlugin* plugin, QWidget* parent)
+Plugin::Plugin(de::audio::SharedPlugin plugin, QWidget* parent)
     : QWidget(parent)
     , m_plugin(nullptr)
 {
@@ -76,7 +76,7 @@ Plugin::~Plugin()
 
 QRect Plugin::labelRect() const { return m_rcLabel; }
 
-de::audio::IPlugin* Plugin::getPlugin() { return m_plugin; }
+de::audio::SharedPlugin Plugin::getPlugin() { return m_plugin; }
 
 void Plugin::unloadPlugin()
 {
@@ -154,7 +154,7 @@ void Plugin::unloadPlugin()
     setUpdatesEnabled(true); // Enable paintEvent()
 }
 
-void Plugin::loadPlugin(de::audio::IPlugin* plugin)
+void Plugin::loadPlugin(de::audio::SharedPlugin plugin)
 {
     if (!plugin)
     {
@@ -167,7 +167,7 @@ void Plugin::loadPlugin(de::audio::IPlugin* plugin)
     // Transition:
     m_plugin = plugin;
 
-    m_audioMeter->setPlugin(m_plugin);
+    m_audioMeter->setPlugin(m_plugin.get());
     m_audioMeter->playUpdateTimer();
 
     m_title = QString::fromStdString(m_plugin->getName());
@@ -277,7 +277,7 @@ void Plugin::loadPlugin(de::audio::IPlugin* plugin)
     setUpdatesEnabled(true); // Enable paintEvent()
 }
 
-void Plugin::setPlugin(de::audio::IPlugin* plugin)
+void Plugin::setPlugin(de::audio::SharedPlugin plugin)
 {
     unloadPlugin();
 

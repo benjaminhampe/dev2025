@@ -54,7 +54,6 @@ void Track::cleanupAll()
         {
             DE_DEBUG("Delete Plugin[",i,"]")
             p->closePlugin();
-            delete p;
         }
     }
     m_plugins.clear();
@@ -76,22 +75,30 @@ std::string
 Track::getTrackName() const { return m_trackName; }
 
 void
-Track::setPlugins( std::vector<IPlugin*> plugins )
+Track::setPlugins( std::vector<SharedPlugin> plugins )
 {
     App::instance()->stopAudio();
 
-    for (auto & cached : m_plugins)
+    for (auto & plugin : m_plugins)
     {
-        cached->dsp_clearInputSignals();
+        plugin->dsp_clearInputSignals();
+
+        plugin->setTrack(nullptr);
     }
 
-    m_plugins = plugins;
+    m_plugins.swap(plugins);
+
+    for (auto & plugin : m_plugins)
+    {
+        plugin->setTrack(this);
+    }
 
     updateDspChain();
 
     App::instance()->playAudio();
 }
 
+/*
 void
 Track::removePlugin( IPlugin* plugin )
 {
@@ -121,11 +128,12 @@ Track::removePlugin( IPlugin* plugin )
 
     App::instance()->playAudio();
 }
+*/
 
-IPlugin*
+SharedPlugin
 Track::createPlugin( std::string uri, int index )
 {
-    IPlugin* plugin = App::instance()->getPluginFactory().createPlugin(uri);
+    SharedPlugin plugin = App::instance()->getPluginFactory().createPlugin(uri);
     if (!plugin)
     {
         DE_ERROR("No plugin ")
@@ -134,10 +142,10 @@ Track::createPlugin( std::string uri, int index )
 
     plugin->setTrack(this);
 
-#if 0
+#if 1
     if (plugin->isSynth())
     {
-        App::instance()->getMidiCentral().registerListener(plugin);
+        App::instance()->getMidiCentral().registerListener(plugin.get());
     }
 
 #else
@@ -145,7 +153,7 @@ Track::createPlugin( std::string uri, int index )
 
     if (plugin->isSynth())
     {
-        App::instance()->getMidiCentral().registerListener(plugin);
+        App::instance()->getMidiCentral().registerListener(plugin.get());
     }
 
     if (index < 0 || index >= int(m_plugins.size()))
@@ -228,34 +236,34 @@ void Track::updateDspChain()
     {
         auto p0 = m_plugins.at(0);
         p0->dsp_setInputSignal(nullptr);
-        m_chainStart = p0;
-        m_chainEnd = p0;
+        m_chainStart = p0.get();
+        m_chainEnd = p0.get();
     }
     else if (n == 2)
     {
         auto p0 = m_plugins.at(0);
         auto p1 = m_plugins.at(1);
         p0->dsp_setInputSignal(nullptr);
-        p1->dsp_setInputSignal(p0);
-        m_chainStart = p0;
-        m_chainEnd = p1;
+        p1->dsp_setInputSignal(p0.get());
+        m_chainStart = p0.get();
+        m_chainEnd = p1.get();
     }
     else
     {
         auto p0 = m_plugins.front();
         auto pL = m_plugins.back();
         p0->dsp_setInputSignal(nullptr);
-        m_chainStart = p0;
-        m_chainEnd = pL;
+        m_chainStart = p0.get();
+        m_chainEnd = pL.get();
 
         for (int i = 1; i < n-1; ++i)
         {
             auto p1 = m_plugins.at(i);
-            p1->dsp_setInputSignal(p0);
+            p1->dsp_setInputSignal(p0.get());
             p0 = p1;
         }
 
-        pL->dsp_setInputSignal(p0);
+        pL->dsp_setInputSignal(p0.get());
     }
 
     if (m_chainStart)

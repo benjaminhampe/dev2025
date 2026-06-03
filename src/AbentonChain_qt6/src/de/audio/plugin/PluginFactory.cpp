@@ -58,17 +58,18 @@ PluginFactory::~PluginFactory()
 // PluginApi
 //=========================
 
-IPlugin* PluginFactory::createPlugin( std::string uri )
+SharedPlugin PluginFactory::createPlugin( std::string uri )
 {
     PerformanceTimer timer;
     timer.start();
 
     uri = FileSystem::makeAbsolute( uri );
 
-    std::string suffix = FileSystem::fileSuffix( uri );
-
     IPlugin* plugin = nullptr;
 
+
+
+    std::string suffix = FileSystem::fileSuffix( uri );
     if (suffix.empty())
     {
         DE_ERROR("Got empty extension, not able to determine plugin type.")
@@ -114,7 +115,7 @@ IPlugin* PluginFactory::createPlugin( std::string uri )
 
     timer.stop();
     DE_OK("[",suffix,"] ", timer.ms(), "ms|", uri)
-    return plugin;
+    return SharedPlugin(plugin);
 }
 
 /*

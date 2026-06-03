@@ -2,7 +2,7 @@
 #include <DarkImage.h>
 #include <de/midi/IMidiMessageListener.h>
 #include <de/audio/dsp/IDspChainElement.h>
-#include <de/audio/plugin/IPlugin.h>
+#include <de/audio/plugin/PluginFactory.h>
 
 namespace de {
 namespace audio {
@@ -21,7 +21,7 @@ class Track : public IDspChainElement
     IPlugin* m_chainStart;
     IPlugin* m_chainEnd;
 
-    std::vector<IPlugin*> m_plugins;
+    std::vector<SharedPlugin> m_plugins;
 
     std::string m_trackName;
 
@@ -36,11 +36,11 @@ public:
     void setTrackId(u32 trackId);
     std::string getTrackName() const;
 
-    void setPlugins( std::vector<IPlugin*> plugins );
+    void setPlugins( std::vector<SharedPlugin> plugins );
 
-    void removePlugin( IPlugin* plugin );
+    // void removePlugin( SharedPlugin plugin );
 
-    IPlugin* createPlugin( std::string uri, int index = -1);
+    SharedPlugin createPlugin( std::string uri, int index = -1);
 
     // void deregisterMidiListeners();
 

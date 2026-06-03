@@ -4,6 +4,8 @@
 namespace de {
 namespace audio {
 
+typedef std::shared_ptr<IPlugin> SharedPlugin;
+
 // ===========================================================================
 class IPluginFactory
 // ===========================================================================
@@ -15,7 +17,7 @@ public:
     // PluginApi: VST2|VST3|CLAP|LV2
     //===================================
 
-    virtual IPlugin* createPlugin( std::string uri ) = 0;
+    virtual SharedPlugin createPlugin( std::string uri ) = 0;
 
 };
 
@@ -31,7 +33,7 @@ public:
     // PluginApi: VST2|VST3|CLAP|LV2
     //===================================
 
-    IPlugin* createPlugin( std::string uri ) override;
+    SharedPlugin createPlugin( std::string uri ) override;
 
 /*
     // ThreadPoolWithTasks &
@@ -44,10 +46,10 @@ public:
     }
 
     static void
-    joinAsync() 
-	{ 
-		// get()->getThreadPool().wait_for_tasks(); 
-	}
+    joinAsync()
+    {
+        // get()->getThreadPool().wait_for_tasks();
+    }
 
     static void
     loadAsync( std::string uri,
@@ -84,11 +86,11 @@ private:
     }
 
     // std::vector< IPlugin* > m_plugins;
-	
+
     bool m_bDebug = true;
-	bool m_bThrowOnFail = false;
-	
-	// ThreadPoolWithTasks m_threadPoolWithTasks;	
+    bool m_bThrowOnFail = false;
+
+    // ThreadPoolWithTasks m_threadPoolWithTasks;
 };
 
 } // end namespace audio.
