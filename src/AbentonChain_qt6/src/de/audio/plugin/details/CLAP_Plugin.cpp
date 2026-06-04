@@ -829,78 +829,94 @@ struct CLAP_AudioBuffers
 };
 
 //===============================
-struct CLAP_NoteProcessor
+struct CLAP_InputEventQueue
 //===============================
 {
     std::vector<clap_event_note_t> m_notes;
+    std::vector<clap_event_midi_t> m_midiEvents;
 
-    CLAP_NoteProcessor()
+    CLAP_InputEventQueue()
     {
         m_notes.reserve(1024);
+        m_midiEvents.reserve(1024);
     }
 
     void clear()
     {
         m_notes.clear();
+        m_midiEvents.clear();
     }
 
     static uint32_t
     size(const clap_input_events_t* self)
     {
-        auto q = (CLAP_NoteProcessor*)self->ctx;
-        return q->m_notes.size();
+        const auto q = (const CLAP_InputEventQueue*)self->ctx;
+        const auto a = q->m_notes.size();
+        const auto b = q->m_midiEvents.size();
+        return a + b;
     }
 
     static const clap_event_header_t*
     get(const clap_input_events_t* self, uint32_t index)
     {
-        auto q = (CLAP_NoteProcessor*)self->ctx;
-        return &q->m_notes[index].header;
+        const auto q = (const CLAP_InputEventQueue*)self->ctx;
+
+        const uint32_t a = q->m_notes.size();
+        //const uint32_t b = q->m_midiEvents.size();
+
+        if (index < a)
+        {
+            return &q->m_notes[index].header;
+        }
+        else
+        {
+            return &q->m_midiEvents[index - a].header;
+        }
     }
 };
 
 //===============================
-struct CLAP_NoteIncoming // We push notes here.
+struct CLAP_IncomingEvent // We push notes here.
 //===============================
 {
     std::vector<clap_event_note_t> m_notes;
+    std::vector<clap_event_midi_t> m_midiEvents;
     std::mutex mutable m_mutex;
 
     //std::unique_lock< std::mutex >
     //lock() const { return std::unique_lock<std::mutex>(m_mutex); }
 
-    CLAP_NoteIncoming()
+    CLAP_IncomingEvent()
     {
         std::unique_lock<std::mutex> l(m_mutex);
         m_notes.reserve(1024);
+        m_midiEvents.reserve(1024);
     }
 
     void clear()
     {
         std::unique_lock<std::mutex> l(m_mutex);
         m_notes.clear();
+        m_midiEvents.clear();
     }
 
     void push( clap_event_note_t note )
     {
         std::unique_lock<std::mutex> l(m_mutex);
         m_notes.emplace_back( std::move( note ) );
-        // if (m_notes.size())
-        // {
-        //     DE_DEBUG("Got ", m_notes.size(), " notes")
-        // }
     }
 
-    void swap(CLAP_NoteProcessor & processor)
+    void push( clap_event_midi_t midiEvent )
     {
         std::unique_lock<std::mutex> l(m_mutex);
+        m_midiEvents.emplace_back( std::move( midiEvent ) );
+    }
 
-        // if (m_notes.size())
-        // {
-        //     DE_DEBUG("Had ", m_notes.size(), " notes")
-        // }
-
+    void swap(CLAP_InputEventQueue & processor)
+    {
+        std::unique_lock<std::mutex> l(m_mutex);
         std::swap(m_notes, processor.m_notes);
+        std::swap(m_midiEvents, processor.m_midiEvents);
     }
 };
 
@@ -1148,8 +1164,8 @@ public:
         // );
     }
 
-    CLAP_NoteProcessor m_noteProcessor;
-    CLAP_NoteIncoming m_noteIncoming;
+    CLAP_IncomingEvent m_incomingEvents;
+    CLAP_InputEventQueue m_inputEventQueue;
     CLAP_OutputEventQueue m_outputEventQueue;
     clap_input_events_t m_inEvents;
     clap_output_events_t m_outEvents;
@@ -1896,12 +1912,12 @@ public:
     {
         m_midiClock.restart();
 
-        m_noteProcessor.clear();
-        m_noteIncoming.swap( m_noteProcessor );
+        m_inputEventQueue.clear();
+        m_incomingEvents.swap( m_inputEventQueue );
 
-        m_inEvents.ctx  = &m_noteProcessor;
-        m_inEvents.size = CLAP_NoteProcessor::size;
-        m_inEvents.get  = CLAP_NoteProcessor::get;
+        m_inEvents.ctx  = &m_inputEventQueue;
+        m_inEvents.size = CLAP_InputEventQueue::size;
+        m_inEvents.get  = CLAP_InputEventQueue::get;
 
         m_outEvents.ctx = &m_outputEventQueue;
         m_outEvents.try_push = CLAP_OutputEventQueue::try_push;
@@ -1922,6 +1938,11 @@ public:
             return;
         }
 
+        // clap_event_header_t hdr;
+        // clap_event_midi_t   midi;
+        // clap_event_note_t   note;
+        // clap_event_param_value_t param;
+
         double dt = m_midiClock.now(); // Clock is restarted every callback call.
         int deltaFrames = std::clamp(
                             int(dt * m_sampleRate),
@@ -1935,68 +1956,193 @@ public:
         uint8_t channel = msg.status & 0x0F;
         uint8_t velocity = msg.data2;
 
-        // if (command == 0x90 && msg.data2 != 0) // Note On
-        // {
-        //     e.type = Steinberg::Vst::Event::kNoteOnEvent;
-        //     e.noteOn.channel = int16_t(channel);
-        //     e.noteOn.pitch = int16_t(msg.data1);
-        //     e.noteOn.velocity = float(msg.data2) / 127.0f;
-        //     e.sampleOffset = deltaFrames; // at start of block
-        // }
-        // else if (command == 0x80 || (command == 0x90 && msg.data2 == 0)) // Note Off
-        // {
-
         // --- NOTE ON ---
         if (command == 0x90 && velocity > 0)
         {
-            clap_event_note_t note;
-            note.header.size     = sizeof(clap_event_note_t);
-            note.header.time     = deltaFrames;
-            note.header.space_id = CLAP_CORE_EVENT_SPACE_ID;
-            note.header.type     = CLAP_EVENT_NOTE_ON;
-            note.header.flags    = CLAP_EVENT_IS_LIVE;
+            clap_event_note_t ev;
+            ev.header.size     = sizeof(clap_event_note_t);
+            ev.header.time     = deltaFrames;
+            ev.header.space_id = CLAP_CORE_EVENT_SPACE_ID;
+            ev.header.type     = CLAP_EVENT_NOTE_ON;
+            ev.header.flags    = CLAP_EVENT_IS_LIVE;
 
-            note.note_id    = -1; // let plugin assign voice
-            note.port_index = -1;
-            note.channel    = static_cast<s16>(channel);
-            note.key        = static_cast<s16>(msg.data1);
-            note.velocity   = double(velocity) / 127.0;
+            ev.note_id    = -1; // let plugin assign voice
+            ev.port_index = -1;
+            ev.channel    = static_cast<s16>(channel);
+            ev.key        = static_cast<s16>(msg.data1);
+            ev.velocity   = double(velocity) / 127.0;
 
             //std::lock_guard<std::mutex> lock(mutex);
             //pendingEvents.push_back(&ev->header);
-            m_noteIncoming.push( note );
+            m_incomingEvents.push( ev );
         }
         // --- NOTE OFF ---
         else if (command == 0x80 || (command == 0x90 && velocity == 0))
         {
-            clap_event_note_t note;
-            note.header.size     = sizeof(clap_event_note_t);
-            note.header.time     = deltaFrames;
-            note.header.space_id = CLAP_CORE_EVENT_SPACE_ID;
-            note.header.type     = CLAP_EVENT_NOTE_OFF;
-            note.header.flags    = CLAP_EVENT_IS_LIVE;
+            clap_event_note_t ev;
+            ev.header.size     = sizeof(clap_event_note_t);
+            ev.header.time     = deltaFrames;
+            ev.header.space_id = CLAP_CORE_EVENT_SPACE_ID;
+            ev.header.type     = CLAP_EVENT_NOTE_OFF;
+            ev.header.flags    = CLAP_EVENT_IS_LIVE;
 
-            note.note_id    = -1;
-            note.port_index = -1;
-            note.channel    = static_cast<s16>(channel);
-            note.key        = static_cast<s16>(msg.data1);
-            note.velocity   = double(velocity) / 127.0;
+            ev.note_id    = -1;
+            ev.port_index = -1;
+            ev.channel    = static_cast<s16>(channel);
+            ev.key        = static_cast<s16>(msg.data1);
+            ev.velocity   = double(velocity) / 127.0;
 
             //std::lock_guard<std::mutex> lock(mutex);
             //pendingEvents.push_back(&ev->header);
-            m_noteIncoming.push( note );
+            m_incomingEvents.push( ev );
         }
-        // // Special event: All Notes Off (Bn 7B 00):
-        // else if (((msg.status & 0xF0) == 0xB0) &&
-        //      (msg.data1 == 0x7B) &&
-        //      (msg.data2 == 0x00) )
-        // {
-        //     if ( auto l = m_vstMidi.lock() )
-        //     {
-        //         m_vstMidi.events.clear();
-        //     }
-        //     return;
-        // }
+
+        // Stat	Command                 Data bytes      Bit‑depth   Meaning
+        // A0	Polyphonic Aftertouch	note (7‑bit),
+        //                              pressure (7‑bit)    7‑bit	Per‑note pressure
+        // B0	Control Change (CC)     controller (7‑bit),
+        //                              value (7‑bit)       7/14    CC messages
+        // C0	Program Change          program (7‑bit)     7‑bit	Select preset/patch
+        // D0	Channel Aftertouch      pressure (7‑bit)    7‑bit	Channel‑wide pressure
+        // E0	Pitch Bend              LSB (7‑bit),
+        //                              MSB (7‑bit)         14‑bit	True 14‑bit pitchbend
+        // F0	System Messages	varies	varies	SysEx, timing, realtime
+
+        else if (command == 0xA0) // ✔ Polyphonic Aftertouch (Always 7‑bit, per note)
+        {
+            /*
+            clap_event_note_expression_t ev{};
+            ev.header.size      = sizeof(ev);
+            ev.header.time      = frameOffset;
+            ev.header.space_id  = CLAP_CORE_EVENT_SPACE_ID;
+            ev.header.type      = CLAP_EVENT_NOTE_EXPRESSION;
+            ev.header.flags     = 0;
+
+            ev.note_id          = -1; // unless you track note IDs
+            ev.port_index       = 0;
+            ev.channel          = chan;
+            ev.key              = m.data1;
+            ev.expression_id    = CLAP_NOTE_EXPRESSION_PRESSURE;
+            ev.value            = m.data2 / 127.0f;
+            */
+            clap_event_midi_t ev{};
+            ev.header.size      = sizeof(ev);
+            ev.header.time      = deltaFrames;
+            ev.header.space_id  = CLAP_CORE_EVENT_SPACE_ID;
+            ev.header.type      = CLAP_EVENT_MIDI;
+            ev.header.flags     = CLAP_EVENT_IS_LIVE;
+            ev.port_index       = 0;
+            ev.data[0]          = msg.status;// 0xA0 | channel
+            ev.data[1]          = msg.data1; // note number
+            ev.data[2]          = msg.data2; // pressure
+            m_incomingEvents.push( ev );
+        }
+        else if (command == 0xB0) // ✔ CC Control Change (7-bit, 14‑bit for two combined MSB+LSB 7-bit events)
+        {
+            clap_event_midi_t ev{};
+            ev.header.size      = sizeof(ev);
+            ev.header.time      = deltaFrames;
+            ev.header.space_id  = CLAP_CORE_EVENT_SPACE_ID;
+            ev.header.type      = CLAP_EVENT_MIDI;
+            ev.header.flags     = CLAP_EVENT_IS_LIVE;
+            ev.port_index       = 0;
+            ev.data[0]          = msg.status;
+            ev.data[1]          = msg.data1;
+            ev.data[2]          = msg.data2;
+            m_incomingEvents.push( ev );
+        }
+        else if (command == 0xC0) // ✔ Program Change (Always 7‑bit)
+        {
+            clap_event_midi_t ev{};
+            ev.header.size      = sizeof(ev);
+            ev.header.time      = deltaFrames;
+            ev.header.space_id  = CLAP_CORE_EVENT_SPACE_ID;
+            ev.header.type      = CLAP_EVENT_MIDI;
+            ev.header.flags     = CLAP_EVENT_IS_LIVE;
+            ev.port_index       = 0;
+            ev.data[0]          = msg.status;
+            ev.data[1]          = msg.data1;
+            ev.data[2]          = 0;
+            m_incomingEvents.push( ev );
+        }
+        else if (command == 0xD0) // ✔ Channel AfterTouch (Always 7‑bit)
+        {
+            clap_event_midi_t ev{};
+            ev.header.size      = sizeof(ev);
+            ev.header.time      = deltaFrames;
+            ev.header.space_id  = CLAP_CORE_EVENT_SPACE_ID;
+            ev.header.type      = CLAP_EVENT_MIDI;
+            ev.header.flags     = CLAP_EVENT_IS_LIVE;
+            ev.port_index       = 0;
+            ev.data[0]          = msg.status;
+            ev.data[1]          = msg.data1; // pressure (0–127)
+            ev.data[2]          = 0;
+            m_incomingEvents.push( ev );
+        }
+        else if (command == 0xE0) // ✔ Pitch Bend (Always 14-bit)
+        {
+            // Range = 0...16383
+            // Center = 8192
+            clap_event_midi_t ev{};
+            ev.header.size      = sizeof(ev);
+            ev.header.time      = deltaFrames;
+            ev.header.space_id  = CLAP_CORE_EVENT_SPACE_ID;
+            ev.header.type      = CLAP_EVENT_MIDI;
+            ev.header.flags     = CLAP_EVENT_IS_LIVE;
+            ev.port_index       = 0;
+            ev.data[0]          = msg.status;
+            ev.data[1]          = msg.data1;
+            ev.data[2]          = msg.data2;
+            ev.data[3]          = msg.data3;
+            m_incomingEvents.push( ev );
+
+            /*
+            uint16_t pb = (msg.data2 << 7) | msg.data3;
+            clap_event_pitch_bend_t ev{};
+            ev.header.size      = sizeof(ev);
+            ev.header.time      = frameOffset;
+            ev.header.space_id  = CLAP_CORE_EVENT_SPACE_ID;
+            ev.header.type      = CLAP_EVENT_PITCH_BEND;
+            ev.header.flags     = 0;
+
+            ev.channel          = chan;
+            ev.value            = (pb - 8192) / 8192.0f; // -1…+1
+            */
+        }
+        else if (command == 0xF0) // ❌ System Messages
+        {
+            /*
+            clap_event_midi_sysex_t ev{};
+            ev.header.type = CLAP_EVENT_MIDI_SYSEX;
+            ev.buffer      = pointerToSysEx;
+            ev.size        = sysExLength;
+            */
+            // SysEx should NOT be done with ShortMidiMessage here!
+            return;
+
+            // Status Meaning           How?        Sent continuously?
+            // F0     SysEx Start       kDataEvent  No
+            // F1     MTC QuarterFrame	No          No
+            // F2     Song Pos Pointer  No          No
+            // F3     Song Select       No          No
+            // F4     Undefined         No          No
+            // F5     Undefined         No          No
+            // F6     Tune Request      No          No
+            // F7     SysEx End         kDataEvent  No
+            // F8     Timing Clock      No          Yes (24 ticks per quarter note)
+            // F9     Undefined         No          No
+            // FA     Start             No          Once
+            // FB     Continue          No          Once
+            // FC     Stop              No          Once
+            // FD     Undefined         No          No
+            // FE     Active Sensing    No          Some devices send it every ~300ms
+            // FF     System Reset      No          Rare
+        }
+        else
+        {
+            DE_ERROR("Unsupported midi message ", msg.str())
+            return;
+        }
 
         // DE_DEBUG("events(",n,"), byte1(",dbHex(byte1),"), data1(",dbHex(data1),"), data2(",dbHex(data2),")")
     }

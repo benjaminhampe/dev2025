@@ -3,10 +3,8 @@
 namespace de {
 namespace midi {
 
-// static
-std::string
 // =======================================================================
-MidiTools::noteStr( int key )
+std::string MidiTools::noteStr( int key )
 // =======================================================================
 {
     std::ostringstream o;
@@ -33,12 +31,28 @@ MidiTools::noteStr( int key )
     return o.str();
 }
 
+// =======================================================================
+bool MidiTools::isBlackPianoKey( int semi )
+// =======================================================================
+{
+    if ( semi == 1 // C = 0, C# = 1,
+      || semi == 3 // D = 2, D# = 3, E = 4,
+      || semi == 6 // F = 5, F# = 6,
+      || semi == 8 // G = 7, G# = 8,
+      || semi == 10)//A = 9, A# = 10, H = 11
+    {
+        return true; // black piano key
+    }
+    return false; // white piano key
+}
+
 //
 // VLQ - Variable-Length Quantity
 //
 
-uint32_t
-MidiTools::parseVLQ( uint8_t const* beg, uint8_t const* end, uint32_t & value )
+// =======================================================================
+uint32_t MidiTools::parseVLQ( uint8_t const* beg, uint8_t const* end, uint32_t & value )
+// =======================================================================
 {
    if ( beg == end ) return 0;
    auto it = beg;     // Store original pointer to compute delta.

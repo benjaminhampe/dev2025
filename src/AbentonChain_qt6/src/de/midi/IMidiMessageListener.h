@@ -8,6 +8,8 @@
  */
 #pragma once
 #include <DarkImage.h>
+#include <de/midi/GeneralMidi.h>
+#include <de/audio/fft/approx_math.h>
 
 namespace de {
 namespace midi {
@@ -35,6 +37,109 @@ struct ShortMidiMessage // 🎹
                (uint32_t(data1) << 8)  | uint32_t(status);
     }
 
+    static ShortMidiMessage CC64_sustainPedal(int channel, bool pedalDown)
+    {
+        ShortMidiMessage m;
+        m.status = 0xB0 | (channel & 0x0F);  // Control Change Event
+        m.data1  = CC_64_SustainPedal;       // Sustain Pedal (always 7-bit)
+        m.data2  = pedalDown ? 127 : 0;      // ON or OFF
+        m.data3  = 0;
+        return m;
+    }
+
+    static ShortMidiMessage CC1_modWheel(int channel, int value_0_127)
+    {
+        const int value = std::clamp(value_0_127,0,127);
+
+        ShortMidiMessage m;
+        m.status = 0xB0 | (channel & 0x0F);  // CC
+        m.data1  = CC_1_ModulationWheel; // Mod Wheel
+        m.data2  = static_cast<uint8_t>(value); // MSB
+        m.data3  = 0; // LSB
+        return m;
+    }
+
+    static ShortMidiMessage CC1_modWheel14bit(int channel, int value_0_16383)
+    {
+        const int value = std::clamp(value_0_16383,0,16383); // 14-bit
+
+        ShortMidiMessage m;
+        m.status = 0xB0 | (channel & 0x0F);  // CC
+        m.data1  = CC_1_ModulationWheel; // CC1 Mod Wheel
+        m.data2  = static_cast<uint8_t>((value >> 7) & 0x7F); // MSB
+        m.data3  = static_cast<uint8_t>(value & 0x7F); // LSB
+        return m;
+    }
+
+    static ShortMidiMessage CC16_pitchBend(int channel, float semitones)
+    {
+        // implied standard pitchbend range
+        const float minSemis = -12.0f;
+        const float maxSemis = +12.0f;
+
+        // clamp input
+        semitones = de::audio::math::clampf(semitones, minSemis, maxSemis);
+
+        // normalize to 0…1
+        const float norm = (semitones - minSemis) / (maxSemis - minSemis);
+
+        // convert to 14-bit
+        const int v14 = std::clamp( int(norm * 16383.0f + 0.5f), 0, 16383);
+        const uint8_t msb = (v14 >> 7) & 0x7F;
+        const uint8_t lsb = (v14 & 0x7F);
+
+        ShortMidiMessage msg;
+        msg.status = uint8_t(0xB0 | (channel & 0x0F));
+        msg.data1  = CC_16_GeneralPurposeController1;
+        msg.data2  = msb;
+        msg.data3  = lsb;
+        return msg;
+    }
+
+/*
+    static ShortMidiMessage CC16_pitchBend(int channel, int value_0_16383)
+    {
+        const int value = std::clamp(value_0_16383,0,16383); // 14-bit
+
+        // normalize to -1.0 … +1.0
+        const double norm = (value - 8192) / 8192.0;
+
+        // scale to ±1 octave (still -1…+1, but explicit)
+        const double oct = norm; // one octave range
+
+        // convert to 0…16383 again for CC encoding
+        int v14 = int((oct * 0.5 + 0.5) * 16383.0);
+        if (v14 < 0)      v14 = 0;
+        if (v14 > 16383)  v14 = 16383;
+
+        const uint8_t msb = (v14 >> 7) & 0x7F;
+        const uint8_t lsb = (v14 & 0x7F);
+
+        ShortMidiMessage msg;
+        msg.status = uint8_t(0xB0 | (channel & 0x0F)); // CC
+        msg.data1  = 16;   // CC16 surrogate
+        msg.data2  = msb;  // MSB
+        msg.data3  = lsb;  // LSB (your struct supports it)
+
+        return msg;
+    }
+*/
+
+    static ShortMidiMessage pitchBend(int channel, int value14bit)
+    {
+        // clamp to valid 14-bit range
+        if (value14bit < 0) value14bit = 0;
+        if (value14bit > 16383) value14bit = 16383;
+
+        ShortMidiMessage m{};
+        m.status = 0xE0 | (channel & 0x0F);
+        m.data1  = value14bit & 0x7F;          // LSB
+        m.data2  = (value14bit >> 7) & 0x7F;   // MSB
+        m.data3  = 0;
+
+        return m;
+    }
+
     std::string str() const
     {
         std::ostringstream o;
@@ -48,7 +153,7 @@ using MidiMessage = std::vector< uint8_t >;
 
 // using ShortMidiMessageListener =
 //     std::function<void(const ShortMidiMessage&)>;
-	
+
 // using MidiMessageListener =
 //     std::function<void(const MidiMessage&)>;
 

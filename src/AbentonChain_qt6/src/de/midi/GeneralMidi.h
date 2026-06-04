@@ -36,7 +36,7 @@ static bool writeMidiCallback(void* ptr, const MidiEvent& midiEvent)
 */
 
 namespace de {
-
+namespace midi {
 
 // SMF Syntax - Standard Midi file syntax. ( Aufs Byte genau leider )
 // <descriptor:length> means 'length' bytes, MSB first
@@ -436,16 +436,7 @@ enum EMidiDrum
    GM_Drum_Unknown
 };
 
-// MIDI Defines
-inline std::string
-GM_Drum_toString( int drum )
-{
-   switch ( drum )
-   {
-      case GM_Drum_84_C5_Belltree: return "GM_Drum_84_C5_Belltree";
-      default: return "GM_Drum_Unknown";
-   }
-}
+std::string GM_Drum_toString( int drum );
 
 // MIDI Defines General Midi Instruments
 enum EMidiGM
@@ -581,144 +572,7 @@ enum EMidiGM
    GM_UnknownInstrument
 };
 
-// MIDI Defines
-inline std::string
-GM_toString( int instrument )
-{
-   switch ( instrument )
-   {
-      case GM_0_AcousticGrandPiano: return "GM_0_AcousticGrandPiano";
-      case GM_1_BrightAcousticPiano: return "GM_1_BrightAcousticPiano";
-      case GM_2_ElectricGrandPiano: return "GM_2_ElectricGrandPiano";
-      case GM_3_HonkyTonkPiano: return "GM_3_HonkyTonkPiano";
-      case GM_4_RhodesPiano: return "GM_4_RhodesPiano";
-      case GM_5_ChorusedPiano: return "GM_5_ChorusedPiano";
-      case GM_6_Harpsichord: return "GM_6_Harpsichord";
-      case GM_7_Clavinet: return "GM_7_Clavinet";
-      case GM_8_Celesta: return "GM_8_Celesta";
-      case GM_9_Glockenspiel: return "GM_9_Glockenspiel";
-      case GM_10_MusicBox: return "GM_10_MusicBox";
-      case GM_11_Vibraphone: return "GM_11_Vibraphone";
-      case GM_12_Marimba: return "GM_12_Marimba";
-      case GM_13_Xylophone: return "GM_13_Xylophone";
-      case GM_14_TubularBells: return "GM_14_TubularBells";
-      case GM_15_Dulcimer: return "GM_15_Dulcimer";
-      case GM_16_HammondOrgan: return "GM_16_HammondOrgan";
-      case GM_17_PercussiveOrgan: return "GM_17_PercussiveOrgan";
-      case GM_18_RockOrgan: return "GM_18_RockOrgan";
-      case GM_19_ChurchOrgan: return "GM_19_ChurchOrgan";
-      case GM_20_ReedOrgan: return "GM_20_ReedOrgan";
-      case GM_21_Accordian: return "GM_21_Accordian";
-      case GM_22_Harmonica: return "GM_22_Harmonica";
-      case GM_23_TangoAccordian: return "GM_23_TangoAccordian";
-      case GM_24_AcousticGuitarNylon: return "GM_24_AcousticGuitarNylon";
-      case GM_25_AcousticGuitarSteel: return "GM_25_AcousticGuitarSteel";
-      case GM_26_ElectricGuitarJazz: return "GM_26_ElectricGuitarJazz";
-      case GM_27_ElectricGuitarClean: return "GM_27_ElectricGuitarClean";
-      case GM_28_ElectricGuitarMuted: return "GM_28_ElectricGuitarMuted";
-      case GM_29_OverdrivenGuitar: return "GM_29_OverdrivenGuitar";
-      case GM_30_DistortionGuitar: return "GM_30_DistortionGuitar";
-      case GM_31_GuitarHarmonics: return "GM_31_GuitarHarmonics";
-      case GM_32_AcousticBass: return "GM_32_AcousticBass";
-      case GM_33_ElectricBassFinger: return "GM_33_ElectricBassFinger";
-      case GM_34_ElectricBassPick: return "GM_34_ElectricBassPick";
-      case GM_35_FretlessBass: return "GM_35_FretlessBass";
-      case GM_36_SlapBass1: return "GM_36_SlapBass1";
-      case GM_37_SlapBass2: return "GM_37_SlapBass2";
-      case GM_38_SynthBass1: return "GM_38_SynthBass1";
-      case GM_39_SynthBass2: return "GM_39_SynthBass2";
-      case GM_40_Violin: return "GM_40_Violin";
-      case GM_41_Viola: return "GM_41_Viola";
-      case GM_42_Cello: return "GM_42_Cello";
-      case GM_43_Contrabass: return "GM_43_Contrabass";
-      case GM_44_TremoloStrings: return "GM_44_TremoloStrings";
-      case GM_45_PizzicatoStrings: return "GM_45_PizzicatoStrings";
-      case GM_46_OrchestralHarp: return "GM_46_OrchestralHarp";
-      case GM_47_Timpani: return "GM_47_Timpani";
-      case GM_48_StringEnsemble1: return "GM_48_StringEnsemble1";
-      case GM_49_StringEnsemble2: return "GM_49_StringEnsemble2";
-      case GM_50_SynthStrings1: return "GM_50_SynthStrings1";
-      case GM_51_SynthStrings2: return "GM_51_SynthStrings2";
-      case GM_52_ChoirAahs: return "GM_52_ChoirAahs";
-      case GM_53_VoiceOohs: return "GM_53_VoiceOohs";
-      case GM_54_SynthVoice: return "GM_54_SynthVoice";
-      case GM_55_OrchestraHit: return "GM_55_OrchestraHit";
-      case GM_56_Trumpet: return "GM_56_Trumpet";
-      case GM_57_Trombone: return "GM_57_Trombone";
-      case GM_58_Tuba: return "GM_58_Tuba";
-      case GM_59_MutedTrumpet: return "GM_59_MutedTrumpet";
-      case GM_60_FrenchHorn: return "GM_60_FrenchHorn";
-      case GM_61_BrassSection: return "GM_61_BrassSection";
-      case GM_62_SynthBrass1: return "GM_62_SynthBrass1";
-      case GM_63_SynthBrass2: return "GM_63_SynthBrass2";
-      case GM_64_SopranoSax: return "GM_64_SopranoSax";
-      case GM_65_AltoSax: return "GM_65_AltoSax";
-      case GM_66_TenorSax: return "GM_66_TenorSax";
-      case GM_67_BaritoneSax: return "GM_67_BaritoneSax";
-      case GM_68_Oboe: return "GM_68_Oboe";
-      case GM_69_EnglishHorn: return "GM_69_EnglishHorn";
-      case GM_70_Bassoon: return "GM_70_Bassoon";
-      case GM_71_Clarinet: return "GM_71_Clarinet";
-      case GM_72_Piccolo: return "GM_72_Piccolo";
-      case GM_73_Flute: return "GM_73_Flute";
-      case GM_74_Recorder: return "GM_74_Recorder";
-      case GM_75_PanFlute: return "GM_75_PanFlute";
-      case GM_76_BottleBlow: return "GM_76_BottleBlow";
-      case GM_77_Shakuhachi: return "GM_77_Shakuhachi";
-      case GM_78_Whistle: return "GM_78_Whistle";
-      case GM_79_Ocarina: return "GM_79_Ocarina";
-      case GM_80_Lead1Square: return "GM_80_Lead1Square";
-      case GM_81_Lead2Sawtooth: return "GM_81_Lead2Sawtooth";
-      case GM_82_Lead3CaliopeLead: return "GM_82_Lead3CaliopeLead";
-      case GM_83_Lead4ChiffLead: return "GM_83_Lead4ChiffLead";
-      case GM_84_Lead5Charang: return "GM_84_Lead5Charang";
-      case GM_85_Lead6Voice: return "GM_85_Lead6Voice";
-      case GM_86_Lead7Fifths: return "GM_86_Lead7Fifths";
-      case GM_87_Lead8BrassAndLead: return "GM_87_Lead8BrassAndLead";
-      case GM_88_Pad1NewAge: return "GM_88_Pad1NewAge";
-      case GM_89_Pad2Warm: return "GM_89_Pad2Warm";
-      case GM_90_Pad3Polysynth: return "GM_90_Pad3Polysynth";
-      case GM_91_Pad4Choir: return "GM_91_Pad4Choir";
-      case GM_92_Pad5Bowed: return "GM_92_Pad5Bowed";
-      case GM_93_Pad6Metallic: return "GM_93_Pad6Metallic";
-      case GM_94_Pad7Halo: return "GM_94_Pad7Halo";
-      case GM_95_Pad8Sweep: return "GM_95_Pad8Sweep";
-      case GM_96_FX1Rain: return "GM_96_FX1Rain";
-      case GM_97_FX2Soundtrack: return "GM_97_FX2Soundtrack";
-      case GM_98_FX3Crystal: return "GM_98_FX3Crystal";
-      case GM_99_FX4Atmosphere: return "GM_99_FX4Atmosphere";
-      case GM_100_FX5Brightness: return "GM_100_FX5Brightness";
-      case GM_101_FX6Goblins: return "GM_101_FX6Goblins";
-      case GM_102_FX7Echoes: return "GM_102_FX7Echoes";
-      case GM_103_FX8SciFi: return "GM_103_FX8SciFi";
-      case GM_104_Sitar: return "GM_104_Sitar";
-      case GM_105_Banjo: return "GM_105_Banjo";
-      case GM_106_Shamisen: return "GM_106_Shamisen";
-      case GM_107_Koto: return "GM_107_Koto";
-      case GM_108_Kalimba: return "GM_108_Kalimba";
-      case GM_109_Bagpipe: return "GM_109_Bagpipe";
-      case GM_110_Fiddle: return "GM_110_Fiddle";
-      case GM_111_Shanai: return "GM_111_Shanai";
-      case GM_112_TinkleBell: return "GM_112_TinkleBell";
-      case GM_113_Agogo: return "GM_113_Agogo";
-      case GM_114_SteelDrums: return "GM_114_SteelDrums";
-      case GM_115_Woodblock: return "GM_115_Woodblock";
-      case GM_116_TaikoDrum: return "GM_116_TaikoDrum";
-      case GM_117_MelodicTom: return "GM_117_MelodicTom";
-      case GM_118_SynthDrum: return "GM_118_SynthDrum";
-      case GM_119_ReverseCymbal: return "GM_119_ReverseCymbal";
-      case GM_120_GuitarFretNoise: return "GM_120_GuitarFretNoise";
-      case GM_121_BreathNoise: return "GM_121_BreathNoise";
-      case GM_122_Seashore: return "GM_122_Seashore";
-      case GM_123_BirdTweet: return "GM_123_BirdTweet";
-      case GM_124_TelephoneRing: return "GM_124_TelephoneRing";
-      case GM_125_Helicopter: return "GM_125_Helicopter";
-      case GM_126_Applause: return "GM_126_Applause";
-      case GM_127_Gunshot: return "GM_127_Gunshot";
-      default: return "GM_UnknownInstrument";
-   }
-}
-
+std::string GM_Instrument_toString( int instrument );
 
 // MIDI CC Defines
 /*
@@ -855,275 +709,153 @@ GM_toString( int instrument )
 */
 
 // MIDI Defines
+
+//  0-31 are 32 MSB controllers 7-bit controllers
+// 32-63 are 32 LSB controllers 7-bit controllers
+
+// Both form 32 MSB+LSB 14-bit controllers:
+// So when we get 2 consecutive CC messages 1 and 33 (delta exactly 32)
+// We get two 7-bit messages to form one 14-bit message
+
+// 64-127 are always 7-bit controllers.
+
 enum EMidiCC
 {
-   CC_0_BankSelect = 0, // 0-127 MSB
-   CC_1_ModulationWheel,// 0-127 MSB
-   CC_2_BreathControl,  // 0-127 MSB
-   CC_3_Undefined,      // 0-127 MSB
-   CC_4_FootController, // 0-127 MSB
-   CC_5_PortamentoTime, // 0-127 MSB
-   CC_6_DataEntry,      // 0-127 MSB
-   CC_7_Volume,         // 0-127 MSB (ChannelVolume, formerly MainVolume)
-   CC_8_Balance,        // 0-127 MSB
-   CC_9_Undefined,      // 0-127 MSB
-   CC_10_Pan,           // 0-127 MSB
-   CC_11_ExpressionController, // 0-127 MSB
-   CC_12_EffectControl1, // 0-127 MSB
-   CC_13_EffectControl2, // 0-127 MSB
-   CC_14_Undefined, // 0-127 MSB
-   CC_15_Undefined, // 0-127 MSB
-   CC_16_GeneralPurposeController1, // 0-127 MSB
-   CC_17_GeneralPurposeController2, // 0-127 MSB
-   CC_18_GeneralPurposeController3, // 0-127 MSB
-   CC_19_GeneralPurposeController4, // 0-127 MSB
-   CC_20_Undefined, // 0-127 MSB
-   CC_21_Undefined, // 0-127 MSB
-   CC_22_Undefined, // 0-127 MSB
-   CC_23_Undefined, // 0-127 MSB
-   CC_24_Undefined, // 0-127 MSB
-   CC_25_Undefined, // 0-127 MSB
-   CC_26_Undefined, // 0-127 MSB
-   CC_27_Undefined, // 0-127 MSB
-   CC_28_Undefined, // 0-127 MSB
-   CC_29_Undefined, // 0-127 MSB
-   CC_30_Undefined, // 0-127 MSB
-   CC_31_Undefined, // 0-127 MSB
-   CC_32_BankSelect, // 0-127 LSB
-   CC_33_ModulationWheel, // 0-127 LSB
-   CC_34_BreathControl, // 0-127 LSB
-   CC_35_Undefined, // 0-127 LSB
-   CC_36_FootController, // 0-127 LSB
-   CC_37_PortamentoTime, // 0-127 LSB
-   CC_38_DataEntry, // 0-127 LSB
-   CC_39_Volume, // (Channel Volume, formerly Main Volume) 0-127 LSB
-   CC_40_Balance, // 0-127 LSB
-   CC_41_Undefined, // 0-127 LSB
-   CC_42_Pan, // 0-127 LSB
-   CC_43_ExpressionController, // 0-127 LSB
-   CC_44_EffectControl1, // 0-127 LSB
-   CC_45_EffectControl2, // 0-127 LSB
-   CC_46_Undefined, // 0-127 LSB
-   CC_47_Undefined, // 0-127 LSB
-   CC_48_GeneralPurposeController1, // 0-127 LSB
-   CC_49_GeneralPurposeController2, // 0-127 LSB
-   CC_50_GeneralPurposeController3, // 0-127 LSB
-   CC_51_GeneralPurposeController4, // 0-127 LSB
-   CC_52_Undefined, // 0-127 LSB
-   CC_53_Undefined, // 0-127 LSB
-   CC_54_Undefined, // 0-127 LSB
-   CC_55_Undefined, // 0-127 LSB
-   CC_56_Undefined, // 0-127 LSB
-   CC_57_Undefined, // 0-127 LSB
-   CC_58_Undefined, // 0-127 LSB
-   CC_59_Undefined, // 0-127 LSB
-   CC_60_Undefined, // 0-127 LSB
-   CC_61_Undefined, // 0-127 LSB
-   CC_62_Undefined, // 0-127 LSB
-   CC_63_Undefined, // 0-127 LSB
-   CC_64_SustainPedal, // on/off (damper pedal) sustain off <= 63, sustain on >=64 ( right pedal on piano )
-   CC_65_Portamento, // on/off <63=off >64=on
-   CC_66_Sustenuto, // on/off <63=off >64=on
-   CC_67_SoftPedal, // on/off <63=off >64=on ( left pedal on piano )
-   CC_68_LegatoFootswitch, // <63=off >64=on
-   CC_69_Hold2, // <63=off >64=on
-   CC_70_SoundController1, // (Sound Variation) 0-127 LSB
-   CC_71_SoundController2, // (Timbre) 0-127 LSB
-   CC_72_SoundController3, // (Release Time) 0-127 LSB
-   CC_73_SoundController4, // (Attack Time) 0-127 LSB
-   CC_74_SoundController5, // (Brightness) 0-127 LSB
-   CC_75_SoundController6, // 0-127 LSB
-   CC_76_SoundController7, // 0-127 LSB
-   CC_77_SoundController8, // 0-127 LSB
-   CC_78_SoundController9, // 0-127 LSB
-   CC_79_SoundController10, // 0-127 LSB
-   CC_80_GeneralPurposeController5, // 0-127 LSB
-   CC_81_GeneralPurposeController6, // 0-127 LSB
-   CC_82_GeneralPurposeController7, // 0-127 LSB
-   CC_83_GeneralPurposeController8, // 0-127 LSB
-   CC_84_PortamentoControl, // 0-127 Source Note
-   CC_85_Undefined, // 0-127 LSB
-   CC_86_Undefined, // 0-127 LSB
-   CC_87_Undefined, // 0-127 LSB
-   CC_88_Undefined, // 0-127 LSB
-   CC_89_Undefined, // 0-127 LSB
-   CC_90_Undefined, // 0-127 LSB
-   CC_91_Effects1Depth, // 0-127 LSB
-   CC_92_Effects2Depth, // 0-127 LSB
-   CC_93_Effects3Depth, // 0-127 LSB
-   CC_94_Effects4Depth, // 0-127 LSB
-   CC_95_Effects5Depth, // 0-127 LSB
-   CC_96_DataEntry, // +1 N/A
-   CC_97_DataEntry, // -1 N/A
-   CC_98_NonRegisteredParameterNumber, // LSB 0-127 LSB
-   CC_99_NonRegisteredParameterNumber, // MSB 0-127 MSB
-   CC_100_RegisteredParameterNumber, // LSB 0-127 LSB
-   CC_101_RegisteredParameterNumber, // MSB 0-127 MSB
-   CC_102_Undefined, // ?
-   CC_103_Undefined, // ?
-   CC_104_Undefined, // ?
-   CC_105_Undefined, // ?
-   CC_106_Undefined, // ?
-   CC_107_Undefined, // ?
-   CC_108_Undefined, // ?
-   CC_109_Undefined, // ?
-   CC_110_Undefined, // ?
-   CC_111_Undefined, // ?
-   CC_112_Undefined, // ?
-   CC_113_Undefined, // ?
-   CC_114_Undefined, // ?
-   CC_115_Undefined, // ?
-   CC_116_Undefined, // ?
-   CC_117_Undefined, // ?
-   CC_118_Undefined, // ?
-   CC_119_Undefined, // ?
-   CC_120_AllSoundOff, // 0
-   CC_121_ResetAllControllers, // 0
-   CC_122_LocalControl, // on/off 0=off 127=on
-   CC_123_AllNotesOff, // 0
-   CC_124_Omni_mode_off, // (+ all notes off) 0
-   CC_125_Omni_mode_on, // (+ all notes off) 0
-   CC_126_Poly_mode_on_off, // (+ all notes off)
-   CC_127_Poly_mode_on, // (+ mono off + all notes off)
-   CC_Unknown
+    // 32 MSB controllers (1st 7-bit part of 14-bit controllers)
+    CC_0_BankSelect = 0, // 0-127 MSB
+    CC_1_ModulationWheel,// 0-127 MSB
+    CC_2_BreathControl,  // 0-127 MSB
+    CC_3_Undefined,      // 0-127 MSB
+    CC_4_FootController, // 0-127 MSB
+    CC_5_PortamentoTime, // 0-127 MSB
+    CC_6_DataEntry,      // 0-127 MSB
+    CC_7_Volume,         // 0-127 MSB (ChannelVolume, formerly MainVolume)
+    CC_8_Balance,        // 0-127 MSB
+    CC_9_Undefined,      // 0-127 MSB
+    CC_10_Pan,           // 0-127 MSB
+    CC_11_ExpressionController, // 0-127 MSB
+    CC_12_EffectControl1, // 0-127 MSB
+    CC_13_EffectControl2, // 0-127 MSB
+    CC_14_Undefined, // 0-127 MSB
+    CC_15_Undefined, // 0-127 MSB
+    CC_16_GeneralPurposeController1, // 0-127 MSB
+    CC_17_GeneralPurposeController2, // 0-127 MSB
+    CC_18_GeneralPurposeController3, // 0-127 MSB
+    CC_19_GeneralPurposeController4, // 0-127 MSB
+    CC_20_Undefined, // 0-127 MSB
+    CC_21_Undefined, // 0-127 MSB
+    CC_22_Undefined, // 0-127 MSB
+    CC_23_Undefined, // 0-127 MSB
+    CC_24_Undefined, // 0-127 MSB
+    CC_25_Undefined, // 0-127 MSB
+    CC_26_Undefined, // 0-127 MSB
+    CC_27_Undefined, // 0-127 MSB
+    CC_28_Undefined, // 0-127 MSB
+    CC_29_Undefined, // 0-127 MSB
+    CC_30_Undefined, // 0-127 MSB
+    CC_31_Undefined, // 0-127 MSB
+    // LSB controllers (2nd 7-bit part of 14-bit controllers, disregarded for fast implementation)
+    CC_32_BankSelect, // 0-127 LSB
+    CC_33_ModulationWheel, // 0-127 LSB
+    CC_34_BreathControl, // 0-127 LSB
+    CC_35_Undefined, // 0-127 LSB
+    CC_36_FootController, // 0-127 LSB
+    CC_37_PortamentoTime, // 0-127 LSB
+    CC_38_DataEntry, // 0-127 LSB
+    CC_39_Volume, // (Channel Volume, formerly Main Volume) 0-127 LSB
+    CC_40_Balance, // 0-127 LSB
+    CC_41_Undefined, // 0-127 LSB
+    CC_42_Pan, // 0-127 LSB
+    CC_43_ExpressionController, // 0-127 LSB
+    CC_44_EffectControl1, // 0-127 LSB
+    CC_45_EffectControl2, // 0-127 LSB
+    CC_46_Undefined, // 0-127 LSB
+    CC_47_Undefined, // 0-127 LSB
+    CC_48_GeneralPurposeController1, // 0-127 LSB
+    CC_49_GeneralPurposeController2, // 0-127 LSB
+    CC_50_GeneralPurposeController3, // 0-127 LSB
+    CC_51_GeneralPurposeController4, // 0-127 LSB
+    CC_52_Undefined, // 0-127 LSB
+    CC_53_Undefined, // 0-127 LSB
+    CC_54_Undefined, // 0-127 LSB
+    CC_55_Undefined, // 0-127 LSB
+    CC_56_Undefined, // 0-127 LSB
+    CC_57_Undefined, // 0-127 LSB
+    CC_58_Undefined, // 0-127 LSB
+    CC_59_Undefined, // 0-127 LSB
+    CC_60_Undefined, // 0-127 LSB
+    CC_61_Undefined, // 0-127 LSB
+    CC_62_Undefined, // 0-127 LSB
+    CC_63_Undefined, // 0-127 LSB
+    // Always 7-bit controllers
+    CC_64_SustainPedal, // on/off (damper pedal) sustain off <= 63, sustain on >=64 ( right pedal on piano )
+    CC_65_Portamento, // on/off <63=off >64=on
+    CC_66_Sustenuto, // on/off <63=off >64=on
+    CC_67_SoftPedal, // on/off <63=off >64=on ( left pedal on piano )
+    CC_68_LegatoFootswitch, // <63=off >64=on
+    CC_69_Hold2, // <63=off >64=on
+    CC_70_SoundController1, // (Sound Variation) 0-127 LSB
+    CC_71_SoundController2, // (Timbre) 0-127 LSB
+    CC_72_SoundController3, // (Release Time) 0-127 LSB
+    CC_73_SoundController4, // (Attack Time) 0-127 LSB
+    CC_74_SoundController5, // (Brightness) 0-127 LSB
+    CC_75_SoundController6, // 0-127 LSB
+    CC_76_SoundController7, // 0-127 LSB
+    CC_77_SoundController8, // 0-127 LSB
+    CC_78_SoundController9, // 0-127 LSB
+    CC_79_SoundController10, // 0-127 LSB
+    CC_80_GeneralPurposeController5, // 0-127 LSB
+    CC_81_GeneralPurposeController6, // 0-127 LSB
+    CC_82_GeneralPurposeController7, // 0-127 LSB
+    CC_83_GeneralPurposeController8, // 0-127 LSB
+    CC_84_PortamentoControl, // 0-127 Source Note
+    CC_85_Undefined, // 0-127 LSB
+    CC_86_Undefined, // 0-127 LSB
+    CC_87_Undefined, // 0-127 LSB
+    CC_88_Undefined, // 0-127 LSB
+    CC_89_Undefined, // 0-127 LSB
+    CC_90_Undefined, // 0-127 LSB
+    CC_91_Effects1Depth, // 0-127 LSB
+    CC_92_Effects2Depth, // 0-127 LSB
+    CC_93_Effects3Depth, // 0-127 LSB
+    CC_94_Effects4Depth, // 0-127 LSB
+    CC_95_Effects5Depth, // 0-127 LSB
+    CC_96_DataEntry, // +1 N/A
+    CC_97_DataEntry, // -1 N/A
+    CC_98_NonRegisteredParameterNumber, // LSB 0-127 LSB
+    CC_99_NonRegisteredParameterNumber, // MSB 0-127 MSB
+    CC_100_RegisteredParameterNumber, // LSB 0-127 LSB
+    CC_101_RegisteredParameterNumber, // MSB 0-127 MSB
+    CC_102_Undefined, // ?
+    CC_103_Undefined, // ?
+    CC_104_Undefined, // ?
+    CC_105_Undefined, // ?
+    CC_106_Undefined, // ?
+    CC_107_Undefined, // ?
+    CC_108_Undefined, // ?
+    CC_109_Undefined, // ?
+    CC_110_Undefined, // ?
+    CC_111_Undefined, // ?
+    CC_112_Undefined, // ?
+    CC_113_Undefined, // ?
+    CC_114_Undefined, // ?
+    CC_115_Undefined, // ?
+    CC_116_Undefined, // ?
+    CC_117_Undefined, // ?
+    CC_118_Undefined, // ?
+    CC_119_Undefined, // ?
+    CC_120_AllSoundOff, // 0
+    CC_121_ResetAllControllers, // 0
+    CC_122_LocalControl, // on/off 0=off 127=on
+    CC_123_AllNotesOff, // 0
+    CC_124_Omni_mode_off, // (+ all notes off) 0
+    CC_125_Omni_mode_on, // (+ all notes off) 0
+    CC_126_Poly_mode_on_off, // (+ all notes off)
+    CC_127_Poly_mode_on, // (+ mono off + all notes off)
+    CC_Unknown
 };
 
-// MIDI Defines
-inline std::string
-CC_toString( int cc )
-{
-   switch ( cc )
-   {
-      case CC_0_BankSelect: return "CC_0_BankSelect";
-      case CC_1_ModulationWheel: return "CC_1_ModulationWheel";
-      case CC_2_BreathControl: return "CC_2_BreathControl";
-      case CC_3_Undefined: return "CC_3_Undefined";
-      case CC_4_FootController: return "CC_4_FootController";
-      case CC_5_PortamentoTime: return "CC_5_PortamentoTime";
-      case CC_6_DataEntry: return "CC_6_DataEntry";
-      case CC_7_Volume: return "CC_7_Volume";
-      case CC_8_Balance: return "CC_8_Balance";
-      case CC_9_Undefined: return "CC_9_Undefined";
-      case CC_10_Pan: return "CC_10_Pan";
-      case CC_11_ExpressionController: return "CC_11_ExpressionController";
-      case CC_12_EffectControl1: return "CC_12_EffectControl1";
-      case CC_13_EffectControl2: return "CC_13_EffectControl2";
-      case CC_14_Undefined: return "CC_14_Undefined";
-      case CC_15_Undefined: return "CC_15_Undefined";
-      case CC_16_GeneralPurposeController1: return "CC_16_GeneralPurposeController1";
-      case CC_17_GeneralPurposeController2: return "CC_16_GeneralPurposeController2";
-      case CC_18_GeneralPurposeController3: return "CC_16_GeneralPurposeController3";
-      case CC_19_GeneralPurposeController4: return "CC_16_GeneralPurposeController4";
-      case CC_20_Undefined: return "CC_20_Undefined";
-      case CC_21_Undefined: return "CC_21_Undefined";
-      case CC_22_Undefined: return "CC_22_Undefined";
-      case CC_23_Undefined: return "CC_23_Undefined";
-      case CC_24_Undefined: return "CC_24_Undefined";
-      case CC_25_Undefined: return "CC_25_Undefined";
-      case CC_26_Undefined: return "CC_26_Undefined";
-      case CC_27_Undefined: return "CC_27_Undefined";
-      case CC_28_Undefined: return "CC_28_Undefined";
-      case CC_29_Undefined: return "CC_29_Undefined";
-      case CC_30_Undefined: return "CC_30_Undefined";
-      case CC_31_Undefined: return "CC_31_Undefined";
-      case CC_32_BankSelect: return "CC_32_BankSelect";
-      case CC_33_ModulationWheel: return "CC_33_ModulationWheel";
-      case CC_34_BreathControl: return "CC_34_BreathControl";
-      case CC_35_Undefined: return "CC_35_Undefined";
-      case CC_36_FootController: return "CC_36_FootController";
-      case CC_37_PortamentoTime: return "CC_37_PortamentoTime";
-      case CC_38_DataEntry: return "CC_38_DataEntry";
-      case CC_39_Volume: return "CC_39_Volume";
-      case CC_40_Balance: return "CC_40_Balance";
-      case CC_41_Undefined: return "CC_41_Undefined";
-      case CC_42_Pan: return "CC_42_Pan";
-      case CC_43_ExpressionController: return "CC_43_ExpressionController";
-      case CC_44_EffectControl1: return "CC_44_EffectControl1";
-      case CC_45_EffectControl2: return "CC_45_EffectControl2";
-      case CC_46_Undefined: return "CC_46_Undefined";
-      case CC_47_Undefined: return "CC_47_Undefined";
-      case CC_48_GeneralPurposeController1: return "CC_48_GeneralPurposeController1";
-      case CC_49_GeneralPurposeController2: return "CC_49_GeneralPurposeController2";
-      case CC_50_GeneralPurposeController3: return "CC_50_GeneralPurposeController3";
-      case CC_51_GeneralPurposeController4: return "CC_51_GeneralPurposeController4";
-      case CC_52_Undefined: return "CC_52_Undefined";
-      case CC_53_Undefined: return "CC_53_Undefined";
-      case CC_54_Undefined: return "CC_54_Undefined";
-      case CC_55_Undefined: return "CC_55_Undefined";
-      case CC_56_Undefined: return "CC_56_Undefined";
-      case CC_57_Undefined: return "CC_57_Undefined";
-      case CC_58_Undefined: return "CC_58_Undefined";
-      case CC_59_Undefined: return "CC_59_Undefined";
-      case CC_60_Undefined: return "CC_60_Undefined";
-      case CC_61_Undefined: return "CC_61_Undefined";
-      case CC_62_Undefined: return "CC_62_Undefined";
-      case CC_63_Undefined: return "CC_63_Undefined";
-      case CC_64_SustainPedal: return "CC_64_SustainPedal";
-      case CC_65_Portamento: return "CC_65_Portamento";
-      case CC_66_Sustenuto: return "CC_66_Sustenuto";
-      case CC_67_SoftPedal: return "CC_67_SoftPedal";
-      case CC_68_LegatoFootswitch: return "CC_68_LegatoFootswitch";
-      case CC_69_Hold2: return "CC_69_Hold2";
-      case CC_70_SoundController1: return "CC_70_SoundController1";
-      case CC_71_SoundController2: return "CC_71_SoundController2";
-      case CC_72_SoundController3: return "CC_72_SoundController3";
-      case CC_73_SoundController4: return "CC_73_SoundController4";
-      case CC_74_SoundController5: return "CC_74_SoundController5";
-      case CC_75_SoundController6: return "CC_75_SoundController6";
-      case CC_76_SoundController7: return "CC_76_SoundController7";
-      case CC_77_SoundController8: return "CC_77_SoundController8";
-      case CC_78_SoundController9: return "CC_78_SoundController9";
-      case CC_79_SoundController10: return "CC_79_SoundController10";
-      case CC_80_GeneralPurposeController5: return "CC_80_GeneralPurposeController5";
-      case CC_81_GeneralPurposeController6: return "CC_81_GeneralPurposeController6";
-      case CC_82_GeneralPurposeController7: return "CC_82_GeneralPurposeController7";
-      case CC_83_GeneralPurposeController8: return "CC_83_GeneralPurposeController8";
-      case CC_84_PortamentoControl: return "CC_84_PortamentoControl";
-      case CC_85_Undefined: return "CC_85_Undefined";
-      case CC_86_Undefined: return "CC_86_Undefined";
-      case CC_87_Undefined: return "CC_87_Undefined";
-      case CC_88_Undefined: return "CC_88_Undefined";
-      case CC_89_Undefined: return "CC_89_Undefined";
-      case CC_90_Undefined: return "CC_90_Undefined";
-      case CC_91_Effects1Depth: return "CC_91_Effects1Depth";
-      case CC_92_Effects2Depth: return "CC_92_Effects2Depth";
-      case CC_93_Effects3Depth: return "CC_93_Effects3Depth";
-      case CC_94_Effects4Depth: return "CC_94_Effects4Depth";
-      case CC_95_Effects5Depth: return "CC_95_Effects5Depth";
-      case CC_96_DataEntry: return "CC_96_DataEntry";
-      case CC_97_DataEntry: return "CC_97_DataEntry";
-      case CC_98_NonRegisteredParameterNumber: return "CC_98_NonRegisteredParameterNumber";
-      case CC_99_NonRegisteredParameterNumber: return "CC_99_NonRegisteredParameterNumber";
-      case CC_100_RegisteredParameterNumber: return "CC_100_RegisteredParameterNumber";
-      case CC_101_RegisteredParameterNumber: return "CC_101_RegisteredParameterNumber";
-      case CC_102_Undefined: return "CC_102_Undefined";
-      case CC_103_Undefined: return "CC_103_Undefined";
-      case CC_104_Undefined: return "CC_104_Undefined";
-      case CC_105_Undefined: return "CC_105_Undefined";
-      case CC_106_Undefined: return "CC_106_Undefined";
-      case CC_107_Undefined: return "CC_107_Undefined";
-      case CC_108_Undefined: return "CC_108_Undefined";
-      case CC_109_Undefined: return "CC_109_Undefined";
-      case CC_110_Undefined: return "CC_110_Undefined";
-      case CC_111_Undefined: return "CC_111_Undefined";
-      case CC_112_Undefined: return "CC_112_Undefined";
-      case CC_113_Undefined: return "CC_113_Undefined";
-      case CC_114_Undefined: return "CC_114_Undefined";
-      case CC_115_Undefined: return "CC_115_Undefined";
-      case CC_116_Undefined: return "CC_116_Undefined";
-      case CC_117_Undefined: return "CC_117_Undefined";
-      case CC_118_Undefined: return "CC_118_Undefined";
-      case CC_119_Undefined: return "CC_119_Undefined";
-      case CC_120_AllSoundOff: return "CC_120_AllSoundOff";
-      case CC_121_ResetAllControllers: return "CC_121_ResetAllControllers";
-      case CC_122_LocalControl: return "CC_122_LocalControl";
-      case CC_123_AllNotesOff: return "CC_123_AllNotesOff";
-      case CC_124_Omni_mode_off: return "CC_124_Omni_mode_off";
-      case CC_125_Omni_mode_on: return "CC_125_Omni_mode_on";
-      case CC_126_Poly_mode_on_off: return "CC_126_Poly_mode_on_off";
-      case CC_127_Poly_mode_on: return "CC_127_Poly_mode_on";
-      default: return "CC_Unknown";
-   }
-}
+std::string CC_toString( int cc );
 
-} // end namespace de
+} // end namespace midi.
+} // end namespace de.

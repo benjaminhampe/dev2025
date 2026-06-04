@@ -950,14 +950,6 @@ public:
             return;
         }
 
-        VstMidiEvent e;
-        e.type        = kVstMidiType;
-        e.byteSize    = sizeof( VstMidiEvent );
-        e.flags       = kVstMidiEventIsRealtime;
-        e.midiData[0] = static_cast<char>( msg.status);
-        e.midiData[1] = static_cast<char>( msg.data1 );
-        e.midiData[2] = static_cast<char>( msg.data2 );
-
         // HOPEFULLY that fixes missing NoteOff events:
         // Pianos work ok without that, but monophonic synth are
         // beasts on a higher level...
@@ -967,19 +959,18 @@ public:
                             int(0),
                             int(m_blockSize) - 10);
 
-        // if (deltaFrames < 0)
-        // {
-        //     //DE_WARN("deltaFrames(",deltaFrames,") < 0")
-        //     deltaFrames = 0;
-        // }
-        // if (deltaFrames > m_blockSize - 10)
-        // {
-        //     //DE_WARN("deltaFrames(",deltaFrames,") >= blockSize(",m_blockSize,")")
-        //     deltaFrames = m_blockSize - 10;
-        // }
-        e.deltaFrames = deltaFrames; // <- Yay relative to start of audio callback
+        VstMidiEvent e{};
+        e.byteSize    = sizeof( VstMidiEvent );
+        e.deltaFrames = deltaFrames;
+        e.type        = kVstMidiType;
+        e.flags       = kVstMidiEventIsRealtime;
+        e.midiData[0] = static_cast<char>( msg.status);
+        e.midiData[1] = static_cast<char>( msg.data1 );
+        e.midiData[2] = static_cast<char>( msg.data2 );
+        // e.midiData[3] = static_cast<char>( msg.data3 );
 
         // Special event: All Notes Off (Bn 7B 00):
+        /*
         if (((msg.status & 0xF0) == 0xB0) &&
              (msg.data1 == 0x7B) &&
              (msg.data2 == 0x00) )
@@ -990,6 +981,7 @@ public:
             }
             return;
         }
+        */
 
         //size_t n = 0;
         if ( auto l = m_vstMidi.lock() )

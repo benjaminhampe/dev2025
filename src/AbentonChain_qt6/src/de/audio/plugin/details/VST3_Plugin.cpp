@@ -2,6 +2,7 @@
 //#include "base/source/fstring.h"
 #include "pluginterfaces/vst/ivstunits.h"
 
+#include <cstdint>
 #include <string>
 #include <codecvt>
 #include <locale>
@@ -20,6 +21,7 @@
 #include "pluginterfaces/vst/vsttypes.h"
 #include "pluginterfaces/vst/ivsteditcontroller.h"
 #include "pluginterfaces/vst/ivsthostapplication.h"
+#include "pluginterfaces/vst/ivstmidicontrollers.h"
 #include "pluginterfaces/gui/iplugview.h"
 #include "public.sdk/source/vst/hosting/eventlist.h"
 #include "public.sdk/source/vst/hosting/module.h"
@@ -67,7 +69,7 @@ std::string getErrorDesc(Steinberg::tresult e)
     }
 }
 
-// Save VST3 plugin state (component + controller)
+// 🟧 Save VST3 plugin state (component + controller)
 
 std::vector<uint8_t>
 VST3_saveState(Steinberg::Vst::IComponent* component,
@@ -105,6 +107,8 @@ VST3_saveState(Steinberg::Vst::IComponent* component,
 
     return combined;
 }
+
+// 🟧 Load VST3 plugin state (component + controller)
 
 void
 VST3_loadState(Steinberg::Vst::IComponent* component,
@@ -1935,42 +1939,84 @@ public:
         const u8 channel = msg.status & 0x0F;
 
         Steinberg::Vst::Event e = {};
+        e.busIndex = 0;
+        e.sampleOffset = deltaFrames; // relative to start of current blockSize.
+        e.ppqPosition = 0.0;
+        e.flags = Steinberg::Vst::Event::kIsLive;
+
         // int16 channel;	///< channel index in event bus
         // int16 pitch;		///< range [0, 127] = [C-2, G8] with A3=440Hz (12-TET: twelve-tone equal temperament)
-        // float tuning;    ///< 1.f = +1 cent, -1.f = -1 cent
+        // float tuning;    ///<
         // float velocity;	///< range [0.0, 1.0]
         // int32 length;	///< in sample frames (optional, Note Off has to follow in any case!)
         // int32 noteId;	///< note identifier (if not available then -1)
 
-        if (command == 0x90 && msg.data2 != 0) // Note On
+        if (command == 0x90 && msg.data2 != 0) // ✔ Note On
         {
             e.type = Steinberg::Vst::Event::kNoteOnEvent;
-            e.noteOn.channel = int16_t(channel);
-            e.noteOn.pitch = int16_t(msg.data1);
-            e.noteOn.velocity = float(msg.data2) / 127.0f;
-            e.sampleOffset = deltaFrames; // at start of block
-
+            e.noteOn.channel    = static_cast<int16_t>(channel);
+            e.noteOn.pitch      = static_cast<int16_t>(msg.data1 & 0x7F);
+            e.noteOn.velocity   = static_cast<float>(msg.data2 & 0x7F) / 127.0f;
+            e.noteOn.tuning     = 0.0f; // 1.f = +1 cent, -1.f = -1 cent
         }
-        else if (command == 0x80 || (command == 0x90 && msg.data2 == 0)) // Note Off
+        else if (command == 0x80 ||
+                (command == 0x90 && msg.data2 == 0)) // ✔ Note Off
         {
             e.type = Steinberg::Vst::Event::kNoteOffEvent;
-            e.noteOff.channel = int16_t(channel);
-            e.noteOff.pitch = int16_t(msg.data1);
-            e.noteOff.velocity = float(msg.data2) / 127.0f;
-            e.sampleOffset = deltaFrames;
+            e.noteOff.channel   = static_cast<int16_t>(channel);
+            e.noteOff.pitch     = static_cast<int16_t>(msg.data1 & 0x7F);
+            e.noteOff.velocity  = static_cast<float>(msg.data2 & 0x7F) / 127.0f;
         }
-        else if (command == 0xF0)
+        else if (command == 0xA0) // ✔ Polyphonic Aftertouch: kPolyPressureEvent
         {
-            // Status	Meaning         Sent continuously?
-            // F8       Timing Clock    (24 ticks per quarter note)	Yes
-            // F9       Undefined       No
-            // FA       Start           Once
-            // FB       Continue        Once
-            // FC       Stop            Once
-            // FD       Undefined       No
-            // FE       Active Sensing	Some devices send it every ~300ms
-            // FF       System Reset	Rare
+            e.type = Steinberg::Vst::Event::kPolyPressureEvent;
+            e.polyPressure.channel  = channel;
+            e.polyPressure.pitch    = static_cast<int16_t>(msg.data1 & 0x7F);
+            e.polyPressure.pressure = static_cast<float>(msg.data2 & 0x7F) / 127.0f;   // normalize
+            e.polyPressure.noteId   = -1; // unless you track note IDs
+        }
+        else if (command == 0xB0) // ✔ CC Control Change
+        {
+            e.type = Steinberg::Vst::Event::kLegacyMIDICCOutEvent;
+            e.midiCCOut.channel     = channel;
+            e.midiCCOut.controlNumber = msg.data1; // 64 = sustain on/off
+            e.midiCCOut.value       = static_cast<int8_t>(msg.data2 & 0x7F); // [0-127]
+            e.midiCCOut.value2      = static_cast<int8_t>(msg.data3 & 0x7F); // [0-127]
+        }
+        else if (command == 0xC0) // ❌ 0xC0–0xCF — Program Change :: Legacy
+        {
             return;
+        }
+        else if (command == 0xD0) // ❌ 0xD0–0xDF — Channel Pressure
+        {
+            return;
+        }
+        else if (command == 0xE0) // ❌ 0xE0–0xEF — Pitch Bend
+        {
+            return;
+        }
+        else if (command == 0xF0) // ❌ 0xF0–0xFF — System Messages
+        {
+            // SysEx should NOT be done with ShortMidiMessage here!
+            return;
+
+            // Status Meaning           How?        Sent continuously?
+            // F0     SysEx Start       kDataEvent  No
+            // F1     MTC QuarterFrame	No          No
+            // F2     Song Pos Pointer  No          No
+            // F3     Song Select       No          No
+            // F4     Undefined         No          No
+            // F5     Undefined         No          No
+            // F6     Tune Request      No          No
+            // F7     SysEx End         kDataEvent  No
+            // F8     Timing Clock      No          Yes (24 ticks per quarter note)
+            // F9     Undefined         No          No
+            // FA     Start             No          Once
+            // FB     Continue          No          Once
+            // FC     Stop              No          Once
+            // FD     Undefined         No          No
+            // FE     Active Sensing    No          Some devices send it every ~300ms
+            // FF     System Reset      No          Rare
         }
         else
         {
@@ -1979,14 +2025,20 @@ public:
         }
 
         // Special event: All Notes Off (Bn 7B 00):
+        /*
         if ((command == 0xB0) && (msg.data1 == 0x7B) && (msg.data2 == 0x00))
         {
             if ( auto l = m_midiEventQueueIn.lock() )
             {
+                // Delete all other commands
                 m_midiEventQueueIn.events.clear();
+
+                // Add only the AllNotesOff event
+                m_midiEventQueueIn.events.addEvent( e );
             }
             return;
         }
+        */
 
         if ( auto l = m_midiEventQueueIn.lock() )
         {

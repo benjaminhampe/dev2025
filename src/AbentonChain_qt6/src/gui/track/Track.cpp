@@ -62,7 +62,7 @@ void Track::applySkin()
 
 void Track::updateLayout()
 {
-    DE_TRACE()
+    // DE_TRACE()
     const int n = static_cast<int>(m_plugins.size());
 
     int x = 0;

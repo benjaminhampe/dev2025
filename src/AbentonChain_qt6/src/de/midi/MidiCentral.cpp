@@ -51,109 +51,109 @@ struct MidiUtil
 
         return p;
     }
-	static RtMidiOut* openMidiOut( int portIndex )
-	{
-		RtMidiOut* p = nullptr;
-		int portCount = 0;
-		try
-		{
-			p = new RtMidiOut( RtMidi::WINDOWS_MM, "RtMidiOutputEnum" );
-			portCount = p->getPortCount();	
-			if (portCount < 1 || portIndex >= portCount)
-			{
-                DE_OK("Invalid midi output port ",portIndex," of ",portCount)
-				delete p;
-				return nullptr;
-			}
-			p->openPort( portIndex );
-            DE_OK("Opened midi output port ",portIndex," of ",portCount)
-		}
-		catch ( RtMidiError & e )
-		{
-			DE_ERROR("RtMidiException: ", e.getMessage().c_str() )
-			if ( p )
-			{
-				delete p;
-				p = nullptr;				
-			}
-		}
-		
-		return p;		
-	}
-
-	static std::vector< std::string >
-	enumerateMidiOut()
-	{
-		std::vector< std::string > names;
+    static RtMidiOut* openMidiOut( int portIndex )
+    {
         RtMidiOut* p = nullptr;
-		try
-		{
+        int portCount = 0;
+        try
+        {
             p = new RtMidiOut( RtMidi::WINDOWS_MM, "RtMidiOutputEnum" );
-			const uint32_t nPorts = p->getPortCount();
-			if ( nPorts )
-			{
-				names.reserve( nPorts );
-				for ( uint32_t i = 0; i < nPorts; i++ )
-				{
-					names.emplace_back( p->getPortName( i ) );
-				}
-			}
-			if ( p ) { delete p; }
-		}
-		catch ( RtMidiError & e )
-		{
-			DE_ERROR("RtMidiException: ", e.getMessage() )
-			if ( p ) { delete p; }
-		}
-		return names;
-	}
+            portCount = p->getPortCount();
+            if (portCount < 1 || portIndex >= portCount)
+            {
+                DE_OK("Invalid midi output port ",portIndex," of ",portCount)
+                delete p;
+                return nullptr;
+            }
+            p->openPort( portIndex );
+            DE_OK("Opened midi output port ",portIndex," of ",portCount)
+        }
+        catch ( RtMidiError & e )
+        {
+            DE_ERROR("RtMidiException: ", e.getMessage().c_str() )
+            if ( p )
+            {
+                delete p;
+                p = nullptr;
+            }
+        }
 
-	static std::vector< std::string >
-	enumerateMidiIn()
-	{
-		std::vector< std::string > names;
+        return p;
+    }
+
+    static std::vector< std::string >
+    enumerateMidiOut()
+    {
+        std::vector< std::string > names;
+        RtMidiOut* p = nullptr;
+        try
+        {
+            p = new RtMidiOut( RtMidi::WINDOWS_MM, "RtMidiOutputEnum" );
+            const uint32_t nPorts = p->getPortCount();
+            if ( nPorts )
+            {
+                names.reserve( nPorts );
+                for ( uint32_t i = 0; i < nPorts; i++ )
+                {
+                    names.emplace_back( p->getPortName( i ) );
+                }
+            }
+            if ( p ) { delete p; }
+        }
+        catch ( RtMidiError & e )
+        {
+            DE_ERROR("RtMidiException: ", e.getMessage() )
+            if ( p ) { delete p; }
+        }
+        return names;
+    }
+
+    static std::vector< std::string >
+    enumerateMidiIn()
+    {
+        std::vector< std::string > names;
         RtMidiIn* p = nullptr;
-		try
-		{
+        try
+        {
             p = new RtMidiIn( RtMidi::WINDOWS_MM, "RtMidiInputEnum" );
-			const uint32_t nPorts = p->getPortCount();
-			if ( nPorts )
-			{
-				names.reserve( nPorts );
-				for ( uint32_t i = 0; i < nPorts; i++ )
-				{
-					names.emplace_back( p->getPortName( i ) );
-				}
-			}
-			if ( p ) { delete p; }
-		}
-		catch ( RtMidiError & e )
-		{
-			DE_ERROR("RtMidiException: ", e.getMessage() )
-			if ( p ) { delete p; }
-		}
-		return names;
-	}
-	
-	static void printMidiOut()
-	{
-		const std::vector< std::string > v = enumerateMidiOut();
-		DE_TRACE("PortCount = ", int(v.size()) )
-		for ( size_t i = 0; i < v.size(); ++i )
-		{
-			DE_DEBUG("Port[",int(i),"] ", v[i])
-		}
-	}
-	
-	static void printMidiIn()
-	{
-		const std::vector< std::string > v = enumerateMidiIn();
-		DE_TRACE("PortCount = ", int(v.size()) )
+            const uint32_t nPorts = p->getPortCount();
+            if ( nPorts )
+            {
+                names.reserve( nPorts );
+                for ( uint32_t i = 0; i < nPorts; i++ )
+                {
+                    names.emplace_back( p->getPortName( i ) );
+                }
+            }
+            if ( p ) { delete p; }
+        }
+        catch ( RtMidiError & e )
+        {
+            DE_ERROR("RtMidiException: ", e.getMessage() )
+            if ( p ) { delete p; }
+        }
+        return names;
+    }
+
+    static void printMidiOut()
+    {
+        const std::vector< std::string > v = enumerateMidiOut();
+        DE_TRACE("PortCount = ", int(v.size()) )
         for ( size_t i = 0; i < v.size(); ++i )
-		{
-			DE_DEBUG("Port[",int(i),"] ", v[i])
-		}
-	}
+        {
+            DE_DEBUG("Port[",int(i),"] ", v[i])
+        }
+    }
+
+    static void printMidiIn()
+    {
+        const std::vector< std::string > v = enumerateMidiIn();
+        DE_TRACE("PortCount = ", int(v.size()) )
+        for ( size_t i = 0; i < v.size(); ++i )
+        {
+            DE_DEBUG("Port[",int(i),"] ", v[i])
+        }
+    }
 };
 
 // =======================================================
@@ -163,32 +163,32 @@ struct MidiCentral_Private
     RtMidiIn*   m_midiIn;
     RtMidiOut*  m_midiOut;
     uint32_t 	m_portIn;
-	uint32_t 	m_portOut;
+    uint32_t 	m_portOut;
 
     std::vector< uint8_t > m_midiInBuffer;
-	std::vector< uint8_t > m_midiOutBuffer;
+    std::vector< uint8_t > m_midiOutBuffer;
 
     std::vector<IMidiMessageListener*> m_listeners;
     //std::vector<ShortMidiMessageListener> m_shortListeners;
     //std::vector<MidiMessageListener> m_longListeners;
     std::mutex m_mutex;
 
-	MidiCentral_Private()
+    MidiCentral_Private()
         : m_midiIn(nullptr)
         , m_midiOut(nullptr)
         , m_portIn(0)
         , m_portOut(0)
-	{
+    {
         m_midiInBuffer.reserve( 128 );
         m_midiOutBuffer.reserve( 128 );
         m_listeners.reserve( 128 );
         setup();
-	}
+    }
 
-	~MidiCentral_Private()
-	{
+    ~MidiCentral_Private()
+    {
         close();
-	}
+    }
 
     void setup()
     {
@@ -321,7 +321,18 @@ struct MidiCentral_Private
             if (n > 2) e.data2 = message->at(2);
             if (n > 3) e.data3 = message->at(3);
 
-            central->postMessage( deltaTime, e );
+            // Filter CC LSB controller events
+            uint8_t command = e.status & 0xF0;
+            //uint8_t channel = e.status & 0x0F;
+
+            if (command == 0xB0 && e.data1 > 31 && e.data1 < 64)
+            {
+                DE_WARN("Filtered CC LSB controller event ", e.str())
+            }
+            else
+            {
+                central->postMessage( deltaTime, e );
+            }
         }
         else
         {
@@ -351,8 +362,8 @@ struct MidiCentral_Private
         }
     }
 
-	void openOutput( int portIndex )
-	{
+    void openOutput( int portIndex )
+    {
         closeOutput();
         m_midiOut = MidiUtil::openMidiOut( portIndex );
         if (m_midiOut)
@@ -364,17 +375,17 @@ struct MidiCentral_Private
         {
             DE_ERROR("")
         }
-	}
+    }
 
-	void closeOutput()
-	{
-		if ( m_midiOut )
-		{ 
+    void closeOutput()
+    {
+        if ( m_midiOut )
+        {
             DE_TRACE("")
-			delete m_midiOut;
-			m_midiOut = nullptr;
-		}
-	}
+            delete m_midiOut;
+            m_midiOut = nullptr;
+        }
+    }
 };
 
 // =======================================================

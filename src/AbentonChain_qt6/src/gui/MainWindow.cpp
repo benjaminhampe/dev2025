@@ -394,11 +394,19 @@ void MainWindow::keyPressEvent( QKeyEvent* event )
     {
         auto key = event->key();
 
-        auto midiNote = m_keyboard2MidiNoteMapping.get(key);
-        if (midiNote > -1)
+        if (key == Qt::Key_Space)
         {
-            int velocity = 90;
-            App::instance()->m_midiCentral.sendNoteOn( 0, midiNote, velocity );
+            auto sustainOn = de::midi::ShortMidiMessage::CC64_sustainPedal(0,true);
+            App::instance()->m_midiCentral.postMessage( 0, sustainOn );
+        }
+        else
+        {
+            auto midiNote = m_keyboard2MidiNoteMapping.get(key);
+            if (midiNote > -1)
+            {
+                int velocity = 90;
+                App::instance()->m_midiCentral.sendNoteOn( 0, midiNote, velocity );
+            }
         }
     }
     event->accept();
@@ -409,14 +417,20 @@ void MainWindow::keyReleaseEvent( QKeyEvent* event )
     if ( !event->isAutoRepeat() )
     {
         auto key = event->key();
-
-        auto midiNote = m_keyboard2MidiNoteMapping.get(key);
-        if (midiNote > -1)
+        if (key == Qt::Key_Space)
         {
-            int velocity = 90;
-            App::instance()->m_midiCentral.sendNoteOff( 0, midiNote, velocity );
+            auto sustainOff = de::midi::ShortMidiMessage::CC64_sustainPedal(0,false);
+            App::instance()->m_midiCentral.postMessage( 0, sustainOff );
         }
-
+        else
+        {
+            auto midiNote = m_keyboard2MidiNoteMapping.get(key);
+            if (midiNote > -1)
+            {
+                int velocity = 90;
+                App::instance()->m_midiCentral.sendNoteOff( 0, midiNote, velocity );
+            }
+        }
     }
     event->accept();
 }
