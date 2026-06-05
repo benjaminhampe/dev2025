@@ -2008,12 +2008,12 @@ ImageWriterICO::save( Image const & img, std::string const & uri, uint32_t quali
       return false;
    }
 
-   FILE * file = ::fopen( uri.c_str(), "wb" );
-   if ( !file )
-   {
-      DE_ERROR( "Failed openToWriteBinary(", uri, ")." )
-      return false;
-   }
+   // FILE * file = ::fopen( uri.c_str(), "wb" );
+   // if ( !file )
+   // {
+   //    DE_ERROR( "Failed openToWriteBinary(", uri, ")." )
+   //    return false;
+   // }
 
 /*
    uint32_t w = img.getWidth();
@@ -2065,7 +2065,7 @@ ImageWriterICO::save( Image const & img, std::string const & uri, uint32_t quali
 
    ::fclose( file );
 */
-   return true;
+   return false;
 }
 
 #endif // DE_IMAGE_WRITER_ICO_ENABLED

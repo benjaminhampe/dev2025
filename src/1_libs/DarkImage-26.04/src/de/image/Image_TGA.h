@@ -217,11 +217,20 @@ class ImageReaderTGA : public IImageReader
 // ============================================================================
 {
 public:
-    std::vector< std::string > getSupportedReadExtensions() const override { return { "tga" }; }
+    std::vector< std::string >
+    getSupportedReadExtensions() const override
+    {
+        return { "tga" };
+    }
 
-    bool isSupportedReadExtension( std::string const & ext ) const override { return ext == "tga"; }
+    bool
+    isSupportedReadExtension( std::string const & ext ) const override
+    {
+        return ext == "tga";
+    }
 
-    bool load( Image & img, const uint8_t* p, size_t n, const std::string& uri = "" ) override;
+    bool
+    load( Image & img, const uint8_t* p, size_t n, const std::string& uri = "" ) override;
 
     static size_t
     parseColorTable( std::vector< uint32_t > & palette, tga::TGAHeader const & header, de::Binary & file );
@@ -236,11 +245,20 @@ class ImageWriterTGA : public IImageWriter
 // ============================================================================
 {
 public:
-    std::vector< std::string > getSupportedWriteExtensions() const override { return { "tga" }; }
+    std::vector< std::string >
+    getSupportedWriteExtensions() const override
+    {
+        return { "tga" };
+    }
 
-    bool isSupportedWriteExtension( std::string const & ext ) const override { return ext == "tga"; }
+    bool
+    isSupportedWriteExtension( std::string const & ext ) const override
+    {
+        return ext == "tga";
+    }
 
-    bool save( Image const & img, std::string const & uri, uint32_t quality = 0 ) override;
+    bool
+    save( Image const & img, std::string const & uri, uint32_t quality = 0 ) override;
 };
 
 #endif // DE_IMAGE_WRITER_TGA_ENABLED

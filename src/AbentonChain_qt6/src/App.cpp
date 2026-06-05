@@ -6,7 +6,7 @@ std::shared_ptr<App> App::m_pInstance = nullptr;
 
 App::App(QObject* parent)
     : QObject(parent)
-    , m_canvas{ nullptr }
+    //, m_canvas{ nullptr }
     , m_inputDeviceId(0)
     , m_outputDeviceId(0)
     , m_blockSize(0)
@@ -26,7 +26,7 @@ App::App(QObject* parent)
 
 App::~App()
 {
-    assert(m_canvas == nullptr && "cleanupAll() was not called");
+    //assert(m_canvas == nullptr && "cleanupAll() was not called");
 }
 
 std::shared_ptr<App> App::instance()
@@ -37,11 +37,11 @@ std::shared_ptr<App> App::instance()
     return m_pInstance;
 }
 
-void App::setCanvas( GL_Canvas* canvas )
-{
-    DE_TRACE("")
-    m_canvas = canvas;
-}
+// void App::setCanvas( GL_Canvas* canvas )
+// {
+//     DE_TRACE("")
+//     m_canvas = canvas;
+// }
 
 void App::cleanupAll()
 {
@@ -51,7 +51,7 @@ void App::cleanupAll()
     stopAudio();
 
     // getSampleCollector()->stop();
-
+/*
     if (!m_canvas)
     {
     //     DE_ERROR("No canvas")
@@ -65,7 +65,7 @@ void App::cleanupAll()
     //     DE_OK("Stop canvas rendering audio data")
         m_canvas = nullptr;
     }
-
+*/
     std::this_thread::sleep_for(
         std::chrono::nanoseconds(100000));
 

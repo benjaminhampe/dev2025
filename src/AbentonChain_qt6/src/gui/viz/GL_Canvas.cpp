@@ -8,21 +8,25 @@ GL_Canvas::GL_Canvas(QWidget *parent)
     #ifdef Q_OS_WIN
     : GL_Window_WGL()
     #endif
-    , m_fpsTimerId{ 0 }
-    , m_bRenderingEnabled{ false }
-    , m_bVisiblePerfOverlay{ true }
     , m_driver{ nullptr }
-    , m_firstMouse{ true }
-    , m_isCameraFreeLook{ false }
-    , m_isMouseLeftPressed{ false }
-    , m_isMouseRightPressed{ false }
-    , m_isMouseMiddlePressed{ false }
+    , m_renderTarget{ nullptr }
+    // bools
+    , m_bFirstMouse{ true }
+    , m_bCameraFreeLook{ false }
+    , m_bMouseLeftPressed{ false }
+    , m_bMouseRightPressed{ false }
+    , m_bMouseMiddlePressed{ false }
+    , m_bReserved1{ false }
+    , m_bRenderingEnabled{ false }
+    , m_bShowPerfOverlay{ false }
+    // integers
     , m_mouseX{ 0 }
     , m_mouseY{ 0 }
     , m_lastMouseX{ 0 }
     , m_lastMouseY{ 0 }
     , m_mouseMoveX{ 0 }
     , m_mouseMoveY{ 0 }
+    , m_fpsTimerId{ 0 }
 {
     // m_time_start = dbTimeInSeconds();
     // m_time_now = 0.0;
@@ -35,7 +39,7 @@ GL_Canvas::GL_Canvas(QWidget *parent)
     // grabGesture(Qt::SwipeGesture);
     // grabGesture(Qt::PanGesture);
 
-    for ( bool & bValue : m_keyStates ) { bValue = false; }
+    // for ( bool & bValue : m_bKeyStates ) { bValue = false; }
 }
 
 GL_Canvas::~GL_Canvas()
@@ -48,6 +52,42 @@ GL_Canvas::~GL_Canvas()
         m_driver = nullptr;
     }
     //DE_TRACE("End")
+}
+
+void GL_Canvas::cleanupAll()
+{
+    stopFpsTimer();
+    m_bRenderingEnabled = false;
+    if (m_driver)
+    {
+        delete m_driver;
+        m_driver = nullptr;
+    }
+}
+
+void GL_Canvas::setRenderingEnabled( bool bEnabled )
+{
+    m_bRenderingEnabled = bEnabled;
+    if (bEnabled)
+    {
+        startFpsTimer();
+    }
+    else
+    {
+        stopFpsTimer();
+    }
+}
+
+void GL_Canvas::showPerfOverlay( bool bVisible )
+{
+    m_bShowPerfOverlay = bVisible;
+    requestUpdate();
+}
+
+void GL_Canvas::showFftMatrix( bool bVisible )
+{
+    m_renderer.setVisibleFftMatrix(bVisible);
+    requestUpdate();
 }
 
 void GL_Canvas::startFpsTimer()
@@ -99,8 +139,8 @@ GL_Canvas::paintGL()
     //=======================
     // No RenderTarget
     //=======================
-    const int w = width();
-    const int h = height();
+    // const int w = width();
+    // const int h = height();
     // glDisable(GL_SCISSOR_TEST);
     // glScissor(0,0,w,h);
     // glViewport(0,0,w,h);
@@ -157,7 +197,7 @@ GL_Canvas::paintGL()
     // int h = m_driver->getRenderHeight();
     // rend->draw2D(de::Rectf(0,0,w,h),tex,true);
 
-    if (m_bVisiblePerfOverlay)
+    if (m_bShowPerfOverlay)
     {
         m_driver->draw2DPerfOverlay();
         draw2DFftOverlay();
@@ -248,7 +288,7 @@ void GL_Canvas::draw2DFftOverlay()
     m_driver->draw2DText( x,y, s6, dbRGBA( 55,100,100), a, font4, bgColor, 1 ); y += ln;
     m_driver->draw2DText( x,y, s7, dbRGBA( 55,155,100), a, font4, bgColor, 1 ); y += ln;
     m_driver->draw2DText( x,y, s8, dbRGBA( 55,200,100), a, font4, bgColor, 1 ); y += ln;
-    m_driver->draw2DText( x,y, s9, dbRGBA( 55,100,200), a, font4, bgColor, 1 ); y += ln;
+    m_driver->draw2DText( x,y, s9, dbRGBA( 55,100,200), a, font4, bgColor, 1 ); // y += ln;
 }
 
 // void GL_Canvas::timerEvent(QTimerEvent* event)
@@ -285,12 +325,12 @@ GL_Canvas::mouseMoveEvent( QMouseEvent* event )
     const int mx = event->pos().x();
     const int my = event->pos().y();
 
-    if (m_firstMouse)
+    if (m_bFirstMouse)
     {
         DE_BENNI("firstMouse(",mx,",",my,")")
         m_lastMouseX = mx;
         m_lastMouseY = my;
-        m_firstMouse = false;
+        m_bFirstMouse = false;
     }
     m_mouseMoveX = mx - m_lastMouseX;
     m_mouseMoveY = my - m_lastMouseY;
@@ -299,7 +339,7 @@ GL_Canvas::mouseMoveEvent( QMouseEvent* event )
     m_mouseX = mx; // Store current value
     m_mouseY = my; // Store current value
 
-    const bool lookAround = m_isCameraFreeLook; // m_isKeySpacePressed || m_isMouseLeftPressed;
+    const bool lookAround = m_bCameraFreeLook; // m_isKeySpacePressed || m_isMouseLeftPressed;
     if (lookAround)
     {
         if (!m_driver)
@@ -348,16 +388,16 @@ void GL_Canvas::mousePressEvent( QMouseEvent* event )
 {
     if ( event->button() == Qt::LeftButton )
     {
-        m_isMouseLeftPressed = true;
+        m_bMouseLeftPressed = true;
     }
     else if ( event->button() == Qt::RightButton )
     {
-        m_isMouseRightPressed = true;
-        m_isCameraFreeLook = true;
+        m_bMouseRightPressed = true;
+        m_bCameraFreeLook = true;
     }
     else if ( event->button() == Qt::MiddleButton )
     {
-        m_isMouseMiddlePressed = true;
+        m_bMouseMiddlePressed = true;
     }
 }
 
@@ -365,18 +405,18 @@ void GL_Canvas::mouseReleaseEvent( QMouseEvent* event )
 {
     if ( event->button() == Qt::LeftButton )
     {
-        m_isMouseLeftPressed = false;
-        m_firstMouse = true;
+        m_bMouseLeftPressed = false;
+        m_bFirstMouse = true;
     }
     else if ( event->button() == Qt::RightButton )
     {
-        m_isMouseRightPressed = false;
-        m_isCameraFreeLook = false;
-        m_firstMouse = true;
+        m_bMouseRightPressed = false;
+        m_bCameraFreeLook = false;
+        m_bFirstMouse = true;
     }
     else if ( event->button() == Qt::MiddleButton )
     {
-        m_isMouseMiddlePressed = false;
+        m_bMouseMiddlePressed = false;
     }
 }
 

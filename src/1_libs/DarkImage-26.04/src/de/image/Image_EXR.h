@@ -20,13 +20,23 @@ class ImageReaderEXR : public IImageReader
 // =================================== Reader ===================================
 {
 public:
-    std::vector< std::string > getSupportedReadExtensions() const override { return { "exr" }; }
+    std::vector< std::string >
+    getSupportedReadExtensions() const override
+    {
+        return { "exr" };
+    }
 
-    bool isSupportedReadExtension( std::string const & ext ) const override { return ext == "exr"; }
+    bool
+    isSupportedReadExtension( std::string const & ext ) const override
+    {
+        return ext == "exr";
+    }
 
-    bool load( Image & img, const std::string & uri ) override; // Legacy
+    bool
+    load( Image & img, const std::string & uri ) override; // Legacy
 
-    bool load( Image & img, const uint8_t* p, size_t n, const std::string& uri = "" ) override; // The Future
+    bool
+    load( Image & img, const uint8_t* p, size_t n, const std::string& uri = "" ) override; // The Future
 /*
     ImageReaderEXR()
     {
@@ -50,11 +60,20 @@ class ImageWriterEXR : public IImageWriter
 // =================================== Writer ===================================
 {
 public:
-    std::vector< std::string > getSupportedWriteExtensions() const override { return { "exr" }; }
+    std::vector< std::string >
+    getSupportedWriteExtensions() const override
+    {
+        return { "exr" };
+    }
 
-    bool isSupportedWriteExtension( std::string const & ext ) const override { return ext == "exr"; }
+    bool
+    isSupportedWriteExtension( std::string const & ext ) const override
+    {
+        return ext == "exr";
+    }
 
-    bool save( Image const & img, std::string const & uri, uint32_t quality = 0 ) override;
+    bool
+    save( Image const & img, std::string const & uri, uint32_t quality = 0 ) override;
 };
 
 #endif // DE_IMAGE_WRITER_EXR_ENABLED

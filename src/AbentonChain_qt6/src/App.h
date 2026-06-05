@@ -19,7 +19,7 @@ class App : public QObject
 
 public:
     SkinManager m_skinManager;
-    GL_Canvas* m_canvas;
+    //GL_Canvas* m_canvas;
     // AudioCentral
     int m_inputDeviceId;
     int m_outputDeviceId;
@@ -35,12 +35,10 @@ public:
     //de::audio::EndPoint_RtAudio m_endPoint;
     de::audio::Track* m_track;
 public:
-    App(QObject* parent = nullptr);
-    ~App();
+    explicit App(QObject* parent = nullptr);
+    ~App() override;
+
     void cleanupAll();
-
-
-
 
     //=========================
     // SkinApi
@@ -53,8 +51,7 @@ public:
     //=========================
     // CanvasApi
     //=========================
-
-    void setCanvas( GL_Canvas* canvas );
+    // void setCanvas( GL_Canvas* canvas );
 
     //=========================
     // DriverApi

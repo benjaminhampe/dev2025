@@ -1999,21 +1999,184 @@ static MagickBooleanType WriteICONImage(const ImageInfo *image_info,
 
 #ifdef DE_IMAGE_WRITER_ICO_ENABLED
 
+/*
+🎯 ICO file structure (minimal BGRA variant)
+
+    ICONDIR
+    ICONDIRENTRY[0]
+    BITMAPINFOHEADER
+    pixel data (BGRA, bottom‑up)
+    AND mask (1 bit per pixel, padded to 32‑bit rows)
+
+ICONDIR (6 bytes)
+
+    uint16_t idReserved = 0
+    uint16_t idType     = 1   // ICO
+    uint16_t idCount    = number of images
+
+ICONDIRENTRY (16 bytes per image)
+
+    uint8_t  width
+    uint8_t  height
+    uint8_t  colorCount = 0
+    uint8_t  reserved   = 0
+    uint16_t planes     = 1
+    uint16_t bitCount   = 32
+    uint32_t bytesInRes
+    uint32_t imageOffset
+
+BITMAPINFOHEADER (40 bytes)
+
+    Standard DIB header, but height = 2×imageHeight because it includes the AND mask.
+
+✅ Minimal C/C++ function to write a single‑image 32‑bit ICO
+
+This writes a single icon (e.g., 256×256 or 64×64) from a BGRA buffer.
+
+#include <stdint.h>
+#include <fcntl.h>
+#include <io.h>
+#include <sys/stat.h>
+
+#pragma pack(push, 1)
+struct ICONDIR {
+    uint16_t idReserved;
+    uint16_t idType;
+    uint16_t idCount;
+};
+
+struct ICONDIRENTRY {
+    uint8_t  width;
+    uint8_t  height;
+    uint8_t  colorCount;
+    uint8_t  reserved;
+    uint16_t planes;
+    uint16_t bitCount;
+    uint32_t bytesInRes;
+    uint32_t imageOffset;
+};
+
+struct BITMAPINFOHEADER {
+    uint32_t biSize;
+    int32_t  biWidth;
+    int32_t  biHeight;
+    uint16_t biPlanes;
+    uint16_t biBitCount;
+    uint32_t biCompression;
+    uint32_t biSizeImage;
+    int32_t  biXPelsPerMeter;
+    int32_t  biYPelsPerMeter;
+    uint32_t biClrUsed;
+    uint32_t biClrImportant;
+};
+#pragma pack(pop)
+
+bool save_ico_bgra32(const wchar_t* path,
+                     const uint8_t* bgra,
+                     int width,
+                     int height)
+{
+    if (!path || !bgra || width <= 0 || height <= 0)
+        return false;
+
+    const int rowBytes = width * 4;
+    const int pixelBytes = rowBytes * height;
+
+    // AND mask: 1 bit per pixel, rows padded to 32 bits
+    const int maskStride = ((width + 31) / 32) * 4;
+    const int maskBytes = maskStride * height;
+
+    const uint32_t imageBytes = sizeof(BITMAPINFOHEADER) + pixelBytes + maskBytes;
+
+    int fd = _wopen(path,
+                    _O_WRONLY | _O_CREAT | _O_TRUNC | _O_BINARY,
+                    0666);
+    if (fd < 0)
+        return false;
+
+    ICONDIR dir = {0, 1, 1};
+    ICONDIRENTRY entry = {};
+    entry.width     = (width  >= 256) ? 0 : (uint8_t)width;
+    entry.height    = (height >= 256) ? 0 : (uint8_t)height;
+    entry.colorCount = 0;
+    entry.reserved   = 0;
+    entry.planes     = 1;
+    entry.bitCount   = 32;
+    entry.bytesInRes = imageBytes;
+    entry.imageOffset = sizeof(ICONDIR) + sizeof(ICONDIRENTRY);
+
+    BITMAPINFOHEADER bih = {};
+    bih.biSize          = 40;
+    bih.biWidth         = width;
+    bih.biHeight        = height * 2; // includes AND mask
+    bih.biPlanes        = 1;
+    bih.biBitCount      = 32;
+    bih.biCompression   = 0; // BI_RGB
+    bih.biSizeImage     = pixelBytes;
+
+    // Write headers
+    _write(fd, &dir,   sizeof(dir));
+    _write(fd, &entry, sizeof(entry));
+    _write(fd, &bih,   sizeof(bih));
+
+    // Write pixel data (bottom-up)
+    for (int y = height - 1; y >= 0; --y)
+        _write(fd, bgra + y * rowBytes, rowBytes);
+
+    // Write AND mask (all opaque = 0)
+    std::vector<uint8_t> mask(maskBytes, 0);
+    _write(fd, mask.data(), maskBytes);
+
+    _close(fd);
+    return true;
+}
+
+🧠 Notes you must know
+1. ICO uses BGRA, not RGBA
+
+Windows DIBs are always B G R A order.
+2. Height in BITMAPINFOHEADER is doubled
+
+Because it includes:
+
+    XOR bitmap (color)
+
+    AND bitmap (mask)
+
+3. AND mask = 1 bit per pixel
+
+For fully opaque icons, write all zeros.
+4. Width/height of 256 must be encoded as 0
+
+ICO stores 256 as 0 in the 1‑byte fields.
+🧩 If you want multi‑resolution ICO
+
+I can give you a version that writes:
+
+    16×16
+
+    32×32
+
+    48×48
+
+    64×64
+
+    128×128
+
+    256×256
+
+…all in one .ico file, with correct offsets and directory entries.
+*/
+
+
 bool
 ImageWriterICO::save( Image const & img, std::string const & uri, uint32_t quality )
 {
-   if ( img.empty() )
-   {
-      DE_ERROR( "Empty image(", img.str(), ")" )
-      return false;
-   }
-
-   FILE * file = ::fopen( uri.c_str(), "wb" );
-   if ( !file )
-   {
-      DE_ERROR( "Failed openToWriteBinary(", uri, ")." )
-      return false;
-   }
+    if ( img.empty() )
+    {
+        DE_ERROR( "Empty image(", img.str(), ")" )
+        return false;
+    }
 
 /*
    uint32_t w = img.getWidth();
@@ -2065,8 +2228,222 @@ ImageWriterICO::save( Image const & img, std::string const & uri, uint32_t quali
 
    ::fclose( file );
 */
-   return true;
+    return false;
 }
+
+
+/*
+ *
+Here you go, Benjamin — the multi‑icon ICO writer you asked for, plus a clear breakdown of how it differs from the single‑icon version.
+This is the real ICO format: multiple images, multiple directory entries, correct offsets, correct BGRA32 DIBs, correct AND masks, correct 256‑as‑0 encoding.
+
+No fluff. No abstractions. Just correct low‑level C/C++.
+🎯 What changes in a multi‑icon ICO?
+
+Compared to the single‑icon version, a multi‑icon ICO differs in exactly three structural ways:
+1. ICONDIR.idCount > 1
+
+Instead of idCount = 1, you set it to the number of images.
+2. Multiple ICONDIRENTRY structures
+
+One per image, each with its own:
+
+    width/height
+
+    bytesInRes
+
+    imageOffset
+
+3. Images are stored sequentially
+
+Each image block is:
+Code
+
+BITMAPINFOHEADER
+pixel data (BGRA, bottom‑up)
+AND mask
+
+Offsets must point to the start of each block.
+
+Everything else is identical to the single‑icon version.
+✅ Multi‑icon ICO writer (C/C++)
+
+This version writes N icons, all 32‑bit BGRA, all uncompressed.
+cpp
+
+#include <stdint.h>
+#include <vector>
+#include <fcntl.h>
+#include <io.h>
+#include <sys/stat.h>
+
+#pragma pack(push, 1)
+struct ICONDIR {
+    uint16_t idReserved;
+    uint16_t idType;
+    uint16_t idCount;
+};
+
+struct ICONDIRENTRY {
+    uint8_t  width;
+    uint8_t  height;
+    uint8_t  colorCount;
+    uint8_t  reserved;
+    uint16_t planes;
+    uint16_t bitCount;
+    uint32_t bytesInRes;
+    uint32_t imageOffset;
+};
+
+struct BITMAPINFOHEADER {
+    uint32_t biSize;
+    int32_t  biWidth;
+    int32_t  biHeight;
+    uint16_t biPlanes;
+    uint16_t biBitCount;
+    uint32_t biCompression;
+    uint32_t biSizeImage;
+    int32_t  biXPelsPerMeter;
+    int32_t  biYPelsPerMeter;
+    uint32_t biClrUsed;
+    uint32_t biClrImportant;
+};
+#pragma pack(pop)
+
+struct IconImage {
+    const uint8_t* bgra;
+    int width;
+    int height;
+};
+
+bool save_ico_multi(const wchar_t* path,
+                    const IconImage* images,
+                    int count)
+{
+    if (!path || !images || count <= 0)
+        return false;
+
+    int fd = _wopen(path,
+                    _O_WRONLY | _O_CREAT | _O_TRUNC | _O_BINARY,
+                    0666);
+    if (fd < 0)
+        return false;
+
+    // Write ICONDIR
+    ICONDIR dir = {0, 1, (uint16_t)count};
+    _write(fd, &dir, sizeof(dir));
+
+    // Reserve space for all directory entries
+    std::vector<ICONDIRENTRY> entries(count);
+    _write(fd, entries.data(), sizeof(ICONDIRENTRY) * count);
+
+    // Compute offsets
+    uint32_t offset = sizeof(ICONDIR) + sizeof(ICONDIRENTRY) * count;
+
+    for (int i = 0; i < count; i++)
+    {
+        const IconImage& img = images[i];
+        int w = img.width;
+        int h = img.height;
+
+        int rowBytes = w * 4;
+        int pixelBytes = rowBytes * h;
+
+        int maskStride = ((w + 31) / 32) * 4;
+        int maskBytes = maskStride * h;
+
+        uint32_t imageBytes = sizeof(BITMAPINFOHEADER) + pixelBytes + maskBytes;
+
+        ICONDIRENTRY& e = entries[i];
+        e.width  = (w >= 256) ? 0 : (uint8_t)w;
+        e.height = (h >= 256) ? 0 : (uint8_t)h;
+        e.colorCount = 0;
+        e.reserved = 0;
+        e.planes = 1;
+        e.bitCount = 32;
+        e.bytesInRes = imageBytes;
+        e.imageOffset = offset;
+
+        offset += imageBytes;
+    }
+
+    // Rewrite directory entries with correct offsets
+    _lseek(fd, sizeof(ICONDIR), SEEK_SET);
+    _write(fd, entries.data(), sizeof(ICONDIRENTRY) * count);
+
+    // Write each image block
+    _lseek(fd, 0, SEEK_END);
+
+    for (int i = 0; i < count; i++)
+    {
+        const IconImage& img = images[i];
+        int w = img.width;
+        int h = img.height;
+
+        int rowBytes = w * 4;
+        int pixelBytes = rowBytes * h;
+
+        int maskStride = ((w + 31) / 32) * 4;
+        int maskBytes = maskStride * h;
+
+        BITMAPINFOHEADER bih = {};
+        bih.biSize = 40;
+        bih.biWidth = w;
+        bih.biHeight = h * 2; // XOR + AND
+        bih.biPlanes = 1;
+        bih.biBitCount = 32;
+        bih.biCompression = 0;
+        bih.biSizeImage = pixelBytes;
+
+        _write(fd, &bih, sizeof(bih));
+
+        // Pixel data (bottom-up)
+        for (int y = h - 1; y >= 0; --y)
+            _write(fd, img.bgra + y * rowBytes, rowBytes);
+
+        // AND mask (all opaque)
+        std::vector<uint8_t> mask(maskBytes, 0);
+        _write(fd, mask.data(), maskBytes);
+    }
+
+    _close(fd);
+    return true;
+}
+
+🧠 How to call it
+cpp
+
+IconImage icons[] = {
+    {rgba_16, 16, 16},
+    {rgba_32, 32, 32},
+    {rgba_48, 48, 48},
+    {rgba_64, 64, 64},
+    {rgba_128, 128, 128},
+    {rgba_256, 256, 256},
+};
+
+save_ico_multi(L"app.ico", icons, 6);
+
+🔍 Differences vs. single‑icon version
+Feature	Single‑icon	Multi‑icon
+ICONDIR.idCount	1	N
+ICONDIRENTRY	1 entry	N entries
+imageOffset	fixed	computed per image
+bytesInRes	one size	different per image
+Image blocks	1	N sequential blocks
+Use case	simplest	real Windows app icons
+🎯 Final takeaway
+
+You now have a fully correct, multi‑resolution ICO writer that produces the same structure Windows expects from Visual Studio, Photoshop, or ImageMagick.
+
+If you want, I can also generate:
+
+    RGBA → BGRA converter
+
+    Automatic mip‑downscaling to 256/128/64/48/32/16
+
+    PNG‑in‑ICO support (Windows 7+ supports PNG entries)
+*/
 
 #endif // DE_IMAGE_WRITER_ICO_ENABLED
 

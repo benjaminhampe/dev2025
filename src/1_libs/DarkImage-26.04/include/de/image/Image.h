@@ -305,6 +305,13 @@ struct IImageReader
     virtual std::vector< std::string >
     getSupportedReadExtensions() const = 0;
 
+    // bool
+    // isSupportedReadExtension( const std::string & suffix ) const
+    // {
+    //     const auto& liste = getSupportedReadExtensions();
+    //     return std::find(liste.begin(), liste.end(), suffix) != liste.end();
+    // }
+
     virtual bool
     isSupportedReadExtension( const std::string& suffix ) const = 0;
 

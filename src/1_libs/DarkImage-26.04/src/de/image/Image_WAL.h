@@ -12,11 +12,20 @@ class ImageReaderWAL : public IImageReader
 // ===========================================================================
 {
 public:
-    std::vector< std::string > getSupportedReadExtensions() const override { return { "wal" }; }
+    std::vector< std::string >
+    getSupportedReadExtensions() const override
+    {
+        return { "wal" };
+    }
 
-    bool isSupportedReadExtension( std::string const & ext ) const override { return ext == "wal"; }
+    bool
+    isSupportedReadExtension( std::string const & ext ) const override
+    {
+        return ext == "wal";
+    }
 
-    bool load( Image & img, const uint8_t* p, size_t n, const std::string& uri = "" ) override;
+    bool
+    load( Image & img, const uint8_t* p, size_t n, const std::string& uri = "" ) override;
 };
 
 #endif // DE_IMAGE_READER_WAL_ENABLED
@@ -33,10 +42,16 @@ class ImageWriterWAL : public IImageWriter
 {
 public:
     std::vector< std::string >
-    getSupportedWriteExtensions() const override { return std::vector< std::string >{ "wal" }; }
+    getSupportedWriteExtensions() const override
+    {
+        return std::vector< std::string >{ "wal" };
+    }
 
     bool
-    isSupportedWriteExtension( std::string const & ext ) const override { return ext == "wal"; }
+    isSupportedWriteExtension( std::string const & ext ) const override
+    {
+        return ext == "wal";
+    }
 
     bool
     save( Image const & img, std::string const & uri, uint32_t quality = 0 ) override;

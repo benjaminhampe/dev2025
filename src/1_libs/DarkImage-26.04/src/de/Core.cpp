@@ -8,6 +8,7 @@
 // #include <algorithm>
 // #include <locale>
 // #include <string>
+// #include <cerrno>
 
 #ifdef _WIN32
     #ifndef WIN32_LEAN_AND_MEAN
@@ -1217,37 +1218,92 @@ namespace {
 //     _O_SHORT_LIVED
 //     _O_TEMPORARY
 
-int32_t to_native_openmode(const eFileMode fm)
+static std::string errno_to_string(int e)
 {
-#ifdef _WIN32
-    int f = _O_BINARY;
-#else
-    int f = 0;
-#endif
-    const uint32_t m = static_cast<uint32_t>(fm);
-    const bool isRead = m & static_cast<uint32_t>(eFileMode::Read);
-    const bool isWrite = m & static_cast<uint32_t>(eFileMode::Write);
-    const bool isCreate = m & static_cast<uint32_t>(eFileMode::Create);
-    const bool isTrunc = m & static_cast<uint32_t>(eFileMode::Truncate);
-    const bool isAppend = m & static_cast<uint32_t>(eFileMode::Append);
+    switch (e)
+    {
+        case EACCES:      return "EACCES: Permission denied";
+        case EEXIST:      return "EEXIST: File exists (O_CREAT|O_EXCL used)";
+        case EINVAL:      return "EINVAL: Invalid parameter";
+        case EMFILE:      return "EMFILE: Process file descriptor limit reached";
+        case ENFILE:      return "ENFILE: System-wide file table full";
+        case ENOENT:      return "ENOENT: File or path not found";
+        case ENOSPC:      return "ENOSPC: No space left on device";
+        case ENOTDIR:     return "ENOTDIR: Component of path is not a directory";
+        case EROFS:       return "EROFS: Read-only filesystem";
+        case EBADF:       return "EBADF: Invalid file descriptor";
+        case EFAULT:      return "EFAULT: Bad address";
+        case ENAMETOOLONG:return "ENAMETOOLONG: Path too long";
+        default:          return "Unknown error";
+    }
+}
+
+static std::string native_openmode_str(const int openMode)
+{
+    std::ostringstream o;
+    int n = 0;
+    // #define O_BINARY _O_BINARY
+    // #define O_RDONLY _O_RDONLY
+    // #define O_WRONLY _O_WRONLY
+    // #define O_RDWR _O_RDWR
+    // #define O_APPEND _O_APPEND
+    // #define O_CREAT _O_CREAT
+    // #define O_TRUNC _O_TRUNC
+    if (openMode & O_BINARY) { o << "O_BINARY"; n++; }
+    if (openMode & O_RDWR)   { if (n) { o<<'|'; } o << "O_RDWR"; n++; }
+    if (openMode & O_WRONLY) { if (n) { o<<'|'; } o << "O_WRONLY"; n++; }
+    if (openMode & O_RDONLY) { if (n) { o<<'|'; } o << "O_RDONLY"; n++; }
+    if (openMode & O_CREAT)  { if (n) { o<<'|'; } o << "O_CREAT"; n++; }
+    if (openMode & O_APPEND) { if (n) { o<<'|'; } o << "O_APPEND"; n++; }
+    if (openMode & O_TRUNC)  { if (n) { o<<'|'; } o << "O_TRUNC"; n++; }
+    // #define O_EXCL _O_EXCL
+    // #define O_TEXT _O_TEXT
+    // #define O_RAW _O_BINARY
+    // #define O_TEMPORARY _O_TEMPORARY
+    // #define O_NOINHERIT _O_NOINHERIT
+    // #define O_SEQUENTIAL _O_SEQUENTIAL
+    // #define O_RANDOM _O_RANDOM
+    // #define O_ACCMODE _O_ACCMODE
+    if (openMode & O_EXCL)   { if (n) { o<<'|'; } o << "O_EXCL"; n++; }
+    if (openMode & O_TEXT)   { if (n) { o<<'|'; } o << "O_TEXT"; n++; }
+    if (openMode & O_RAW)    { if (n) { o<<'|'; } o << "O_RAW"; n++; }
+    if (openMode & O_TEMPORARY)  { if (n) { o<<'|'; } o << "O_TEMPORARY"; n++; }
+    if (openMode & O_NOINHERIT) { if (n) { o<<'|'; } o << "O_NOINHERIT"; n++; }
+    if (openMode & O_SEQUENTIAL)  { if (n) { o<<'|'; } o << "O_SEQUENTIAL"; n++; }
+    if (openMode & O_RANDOM)   { if (n) { o<<'|'; } o << "O_RANDOM"; n++; }
+    if (openMode & O_ACCMODE) { if (n) { o<<'|'; } o << "O_ACCMODE"; n++; }
+    return o.str();
+}
+
+int32_t to_native_openmode(const eFileMode fileMode)
+{
+    const uint32_t fm = static_cast<uint32_t>(fileMode);
+    const bool isRead = fm & static_cast<uint32_t>(eFileMode::Read);
+    const bool isWrite = fm & static_cast<uint32_t>(eFileMode::Write);
+    const bool isAppend = fm & static_cast<uint32_t>(eFileMode::Append);
 
 #ifdef _WIN32
-    if (isRead && isWrite)  { f |= _O_RDWR; }
-    else if (isWrite)       { f |= _O_WRONLY; }
+    int f = _O_BINARY; // Best practice on Windows
+
+    if (isRead && isWrite)  { f |= _O_RDWR | _O_CREAT; }
+    else if (isWrite)       { f |= _O_WRONLY | _O_CREAT; }
     else                    { f |= _O_RDONLY; }
-    if (isCreate)           { f |= _O_CREAT; }
-    if (isTrunc)            { f |= _O_TRUNC; }
+
     if (isAppend)           { f |= _O_APPEND; }
+    else                    { f |= _O_TRUNC;  } // Always overwrite if exists
 #else
-    if (isRead && isWrite)  { f |= O_RDWR; }
-    else if (isWrite)       { f |= O_WRONLY; }
+    int f = 0;
+
+    if (isRead && isWrite)  { f |= O_RDWR | O_CREAT; }
+    else if (isWrite)       { f |= O_WRONLY | O_CREAT; }
     else                    { f |= O_RDONLY; }
-    if (isCreate)           { f |= O_CREAT; }
-    if (isTrunc)            { f |= O_TRUNC; }
+
     if (isAppend)           { f |= O_APPEND; }
+    else                    { f |= O_TRUNC; } // Always overwrite if exists
 #endif
     return f;
 }
+
 
 } // end namespace.
 
@@ -1257,10 +1313,31 @@ int32_t to_native_openmode(const eFileMode fm)
 // -------------------------------
 int32_t file64_open(const char* path, eFileMode fileMode, int32_t permission)
 {
+    const std::string uri = path;
+
     const int nativeMode = to_native_openmode(fileMode);
 #ifdef _WIN32
-    const std::wstring w = de_wstr(path);
-    return _wopen(w.c_str(), nativeMode, permission);
+    //const std::wstring w = de::FileSystem::makeAbsolute(de_wstr(uri));
+    const std::wstring w = de_wstr(uri);
+
+    // if (FileSystem::existFile(uri))
+    // {
+    //     DE_WARN("File exists ", uri)
+    // }
+
+    if (permission == 0)
+    {
+        permission = 0666; // _S_IWRITE, octal 0666 = rw-rw-rw- (no executable bits)
+    }
+    int fd = _wopen(w.c_str(), nativeMode, permission);
+
+    if (fd < 0)
+    {
+        DE_ERROR("Failed with errno(",errno,"), msg(",errno_to_string(errno),")")
+        DE_ERROR("_wopen(",native_openmode_str(nativeMode),",",permission,")")
+    }
+
+    return fd;
 #else
     return open(path, nativeMode, permission);
 #endif
@@ -2229,7 +2306,7 @@ FileSystem::makeAbsolute( std::string uri, std::string baseDir )
     }
     catch ( std::exception & e )
     {
-        DE_DEBUG("exception what(",e.what(),"), uri = ",uri )
+        // DE_DEBUG("exception what(",e.what(),"), uri = ",uri )
     }
 
     return retVal;

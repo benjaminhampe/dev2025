@@ -540,8 +540,6 @@ enum class eFileMode // Always binary, there is no text mode.
     Read      = 1,
     Write     = 2,
     Append    = 4,
-    Create    = 8,
-    Truncate  = 16,
     ReadWrite = Read | Write
 };
 

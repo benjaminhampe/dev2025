@@ -372,7 +372,7 @@ ImageWriterXPM::save( const Image& img, const std::string& uri, uint32_t param )
 //                     RGBA_B( color ) );
 //      std::string tmp = buf;
 //      dbStrUpperCase( tmp );
-      o << "\"" << names[ i ] << " c " << xpm::Utils::toRGBA( color ) << "\",\n";
+      o << "\"" << names[ i ] << " c " << xpm::Utils::toRGB( color ) << "\",\n";
    }
 
    // ====================================

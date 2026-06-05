@@ -25,20 +25,17 @@ class GL_Canvas : public GL_Window_WGL
 {
     Q_OBJECT
 private:
-    // FpsCounter m_fpsCounter;
-    int m_fpsTimerId;
-    bool m_bRenderingEnabled;
-    bool m_bVisiblePerfOverlay;
     de::gpu::VideoDriver* m_driver;
     de::gpu::IRenderTarget* m_renderTarget;
-    std::array<bool, 1024> m_keyStates;
 
-    bool m_firstMouse;
-    bool m_isCameraFreeLook;
-    bool m_isMouseLeftPressed;
-    bool m_isMouseRightPressed;
-    bool m_isMouseMiddlePressed;
-
+    bool m_bFirstMouse;
+    bool m_bCameraFreeLook;
+    bool m_bMouseLeftPressed;
+    bool m_bMouseRightPressed;
+    bool m_bMouseMiddlePressed;
+    bool m_bReserved1;
+    bool m_bRenderingEnabled;
+    bool m_bShowPerfOverlay;
 
     int m_mouseX;
     int m_mouseY;
@@ -46,6 +43,7 @@ private:
     int m_lastMouseY;
     int m_mouseMoveX;
     int m_mouseMoveY;
+    int m_fpsTimerId;
 
     // double m_time_now;
     // double m_time_start;
@@ -55,75 +53,33 @@ private:
 
     GL_Renderer m_renderer;
 
+    // std::array<bool, 1024> m_bKeyStates;
+
 public:
     explicit GL_Canvas(QWidget *parent = nullptr);
     ~GL_Canvas() override;
-
-    void cleanupAll()
-    {
-        stopFpsTimer();
-        m_bRenderingEnabled = false;
-        if (m_driver)
-        {
-            delete m_driver;
-            m_driver = nullptr;
-        }
-    }
-
-    void setRenderingEnabled( bool bEnabled )
-    {
-        m_bRenderingEnabled = bEnabled;
-        if (bEnabled)
-        {
-            startFpsTimer();
-        }
-        else
-        {
-            stopFpsTimer();
-        }
-    }
-
-    void showPerfOverlay( bool bVisible )
-    {
-        m_bVisiblePerfOverlay = bVisible;
-        requestUpdate();
-    }
-
-    // void setVisible( bool bVisible ) override
-    // {
-    //     QOpenGLWidget::setVisible( bVisible );
-    // }
-
-    void showFftMatrix( bool bVisible )
-    {
-        m_renderer.setVisibleFftMatrix(bVisible);
-        requestUpdate();
-    }
-
+    void cleanupAll();
+    void setRenderingEnabled( bool bEnabled );
+    void showPerfOverlay( bool bVisible );
+    void showFftMatrix( bool bVisible );
     void startFpsTimer();
     void stopFpsTimer();
-
     void draw2DFftOverlay();
     GL_Renderer* getRenderer() { return &m_renderer; }
 
 protected:
-    // void timerEvent(QTimerEvent* event) override;
     void initializeGL() override;
     void resizeGL(int w, int h) override;
     void paintGL() override;
-
-    bool event(QEvent *event) override;
+    bool event(QEvent* event) override;
+    void mousePressEvent(QMouseEvent* event) override;
+    void mouseReleaseEvent(QMouseEvent* event) override;
+    void mouseMoveEvent(QMouseEvent* event) override;
+    void wheelEvent(QWheelEvent* event) override;
     // bool gestureEvent(QGestureEvent* event);
     // bool pinchTriggered(QPinchGesture* event);
     // bool swipeTriggered(QSwipeGesture* event);
     // bool panTriggered(QPanGesture* event);
-
-    void mousePressEvent( QMouseEvent* event ) override;
-    void mouseReleaseEvent( QMouseEvent* event ) override;
-    void mouseMoveEvent( QMouseEvent* event ) override;
-    void wheelEvent( QWheelEvent* event ) override;
-
-
 };
 
 /*

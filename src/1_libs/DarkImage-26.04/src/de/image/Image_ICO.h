@@ -12,9 +12,20 @@ class ImageReaderICO : public IImageReader
 // ============================================================================
 {
 public:
-    std::vector< std::string > getSupportedReadExtensions() const override { return { "ico", "cur" }; }
-    bool isSupportedReadExtension( std::string const & ext ) const override { return (ext == "ico") || (ext == "cur"); }
-    bool load( Image & img, const uint8_t* p, size_t n, const std::string& uri = "" ) override;
+    std::vector< std::string >
+    getSupportedReadExtensions() const override
+    {
+        return { "ico", "cur" };
+    }
+
+    bool
+    isSupportedReadExtension( std::string const & ext ) const override
+    {
+        return (ext == "ico") || (ext == "cur");
+    }
+
+    bool
+    load( Image & img, const uint8_t* p, size_t n, const std::string& uri = "" ) override;
 };
 
 #endif
@@ -27,7 +38,10 @@ class ImageWriterICO : public IImageWriter
 {
 public:
     std::vector< std::string >
-    getSupportedWriteExtensions() const override { return std::vector< std::string >{ "ico", "cur" }; }
+    getSupportedWriteExtensions() const override
+    {
+        return std::vector< std::string >{ "ico", "cur" };
+    }
 
     bool
     isSupportedWriteExtension( std::string const & ext ) const override

@@ -1,6 +1,15 @@
 #pragma once
 #include <de/image/Image.h>
 
+// *.ppm
+#ifndef DE_IMAGE_READER_PPM_ENABLED
+#define DE_IMAGE_READER_PPM_ENABLED
+#endif
+
+#ifndef DE_IMAGE_WRITER_PPM_ENABLED
+#define DE_IMAGE_WRITER_PPM_ENABLED
+#endif
+
 // Needs 3rdparty lib de_webp-1.1.0
 // *.webp
 #ifndef DE_IMAGE_READER_WEBP_ENABLED
@@ -110,11 +119,20 @@
 #define DE_IMAGE_WRITER_ICO_ENABLED
 #endif
 
-// *.rgb
+// *.raw
+#ifndef DE_IMAGE_READER_RAW_ENABLED
+#define DE_IMAGE_READER_RAW_ENABLED
+#endif
+// *.raw + (Also creates .raw.meta)
+#ifndef DE_IMAGE_WRITER_RAW_ENABLED
+#define DE_IMAGE_WRITER_RAW_ENABLED
+#endif
+
+// *.rgb/*.rgba/*.sgi Silicon Graphics Irix
 #ifndef DE_IMAGE_READER_RGB_ENABLED
 #define DE_IMAGE_READER_RGB_ENABLED
 #endif
-// *.rgb
+// *.rgb/*.rgba/*.sgi
 #ifndef DE_IMAGE_WRITER_RGB_ENABLED
 #define DE_IMAGE_WRITER_RGB_ENABLED
 #endif

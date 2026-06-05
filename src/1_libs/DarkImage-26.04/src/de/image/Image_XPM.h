@@ -55,16 +55,13 @@ struct Utils
         }
         else
         {
-            uint8_t r = color & 0xFF;
-            uint8_t g = ( color >> 8 ) & 0xFF;
-            uint8_t b = ( color >> 16 ) & 0xFF;
+            uint8_t r = dbRGBA_R(color);
+            uint8_t g = dbRGBA_G(color);
+            uint8_t b = dbRGBA_B(color);
             s += '#';
-            s += StringUtil::hexHighNibble( r );
-            s += StringUtil::hexLowNibble( r );
-            s += StringUtil::hexHighNibble( g );
-            s += StringUtil::hexLowNibble( g );
-            s += StringUtil::hexHighNibble( b );
-            s += StringUtil::hexLowNibble( b );
+            s += StringUtil::hex( r );
+            s += StringUtil::hex( g );
+            s += StringUtil::hex( b );
         }
         return s;
     }

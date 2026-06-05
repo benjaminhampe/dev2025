@@ -519,10 +519,100 @@ ImageReaderTIF::load( Image & img, const uint8_t* p, size_t n, const std::string
 
 #if defined(DE_IMAGE_WRITER_TIF_ENABLED)
 
+// #include <stdint.h>
+// #include <fcntl.h>
+// #include <io.h>
+// #include <sys/stat.h>
+
+#pragma pack(push, 1)
+struct TIF_Header
+{
+    uint16_t endian;      // 'II' = 0x4949
+    uint16_t magic;       // 42
+    uint32_t ifdOffset;   // offset to first IFD
+};
+struct TIF_Tag
+{
+    uint16_t tag;
+    uint16_t type;
+    uint32_t count;
+    uint32_t value;
+};
+#pragma pack(pop)
+
 bool
 ImageWriterTIF::save( Image const & img, std::string const & uri, uint32_t quality )
 {
-    return false;
+    if ((img.pixelFormat() != PixelFormat::R8G8B8) &&
+        (img.pixelFormat() != PixelFormat::R8G8B8A8))
+    {
+        DE_ERROR("Only supports RGB24 and RGBA32 format, not ", img.pixelFormatStr())
+        return false;
+    }
+
+    File file(uri, eFileMode::Write);
+    if (!file.is_open())
+    {
+        DE_ERROR("Cannot open ",uri)
+        return false;
+    }
+
+    const uint32_t channels = img.channelCount();
+    const uint32_t bitsPerSampleOffset = 8 + 2 + 12 * 10 + 4; // after IFD
+    const uint32_t pixelDataOffset     = bitsPerSampleOffset + (channels * 2);
+
+    // --- Write TIFF header ---
+    TIF_Header hdr;
+    hdr.endian    = 0x4949; // 'II'
+    hdr.magic     = 42;
+    hdr.ifdOffset = 8;
+    file.write(&hdr, sizeof(hdr));
+
+    // --- IFD entries ---
+    const uint16_t numTags = 10;
+    file.write(&numTags, sizeof(uint16_t));
+
+    TIF_Tag tags[numTags] = {};
+
+    const uint32_t width = img.w();
+    const uint32_t height = img.h();
+    uint32_t stripByteCount = width * height * channels;
+
+    int t = 0;
+
+    tags[t++] = {256, 4, 1, (uint32_t)width};   // ImageWidth
+    tags[t++] = {257, 4, 1, (uint32_t)height};  // ImageLength
+    tags[t++] = {258, 3, (uint32_t)channels, bitsPerSampleOffset}; // BitsPerSample
+    tags[t++] = {259, 3, 1, 1};                 // Compression = None
+    tags[t++] = {262, 3, 1, (channels == 3u ? 2u : 6u)}; // Photometric: RGB=2, RGBA=6
+    tags[t++] = {273, 4, 1, pixelDataOffset};   // StripOffsets
+    tags[t++] = {277, 3, 1, (uint32_t)channels}; // SamplesPerPixel
+    tags[t++] = {278, 4, 1, (uint32_t)height};  // RowsPerStrip
+    tags[t++] = {279, 4, 1, stripByteCount};    // StripByteCounts
+    tags[t++] = {284, 3, 1, 1};                 // PlanarConfiguration = 1 (chunky)
+
+    // Write tags
+    for (int i = 0; i < numTags; i++)
+    {
+        file.write(&tags[i], sizeof(TIF_Tag));
+    }
+
+    // Next IFD = none
+    const uint32_t nextIFD = 0;
+    file.write(&nextIFD,sizeof(uint32_t));
+
+    // --- BitsPerSample array ---
+    for (int c = 0; c < channels; c++)
+    {
+        const uint16_t bitsPerChannel = 8;
+        file.write(&bitsPerChannel,sizeof(uint16_t));
+    }
+
+    // --- Pixel data ---
+    const uint8_t* __restrict__ pixels = img.data();
+    file.write(pixels, stripByteCount);
+
+    return true;
 }
 
 #endif // DE_IMAGE_WRITER_TIF_ENABLED

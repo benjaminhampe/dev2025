@@ -11,11 +11,20 @@ class ImageReaderDDS : public IImageReader
 // ===========================================================================
 {
 public:
-    std::vector< std::string > getSupportedReadExtensions() const override { return { "dds" }; }
+    std::vector< std::string >
+    getSupportedReadExtensions() const override
+    {
+        return { "dds" };
+    }
 
-    bool isSupportedReadExtension( std::string const & ext ) const override { return ext == "dds"; }
+    bool
+    isSupportedReadExtension( std::string const & ext ) const override
+    {
+        return ext == "dds";
+    }
 
-    bool load( Image & img, const uint8_t* p, size_t n, const std::string& uri = "" ) override;
+    bool
+    load( Image & img, const uint8_t* p, size_t n, const std::string& uri = "" ) override;
 };
 
 #endif // DE_IMAGE_READER_DDS_ENABLED
@@ -31,11 +40,20 @@ class ImageWriterDDS : public IImageWriter
 // ===========================================================================
 {
 public:
-    std::vector< std::string > getSupportedWriteExtensions() const override { return { "dds" }; }
+    std::vector< std::string >
+    getSupportedWriteExtensions() const override
+    {
+        return { "dds" };
+    }
 
-    bool isSupportedWriteExtension( std::string const & ext ) const override { return ext == "dds"; }
+    bool
+    isSupportedWriteExtension( std::string const & ext ) const override
+    {
+        return ext == "dds";
+    }
 
-    bool save( Image const & img, std::string const & uri, uint32_t quality = 0 ) override;
+    bool
+    save( Image const & img, std::string const & uri, uint32_t quality = 0 ) override;
 };
 
 #endif // DE_IMAGE_WRITER_DDS_ENABLED

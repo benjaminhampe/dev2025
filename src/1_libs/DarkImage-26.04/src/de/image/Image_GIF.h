@@ -12,13 +12,23 @@ class ImageReaderGIF : public IImageReader
 // ===========================================================================
 {
 public:
-    std::vector< std::string > getSupportedReadExtensions() const override { return { "gif" }; }
+    std::vector< std::string >
+    getSupportedReadExtensions() const override
+    {
+        return { "gif" };
+    }
 
-    bool isSupportedReadExtension( std::string const & ext ) const override { return ext == "gif"; }
+    bool
+    isSupportedReadExtension( std::string const & ext ) const override
+    {
+        return ext == "gif";
+    }
 
-    bool load( Image & img, const uint8_t* p, size_t n, const std::string& uri = "" ) override;
+    bool
+    load( Image & img, const uint8_t* p, size_t n, const std::string& uri = "" ) override;
 
-    bool load( Image & img, std::string const & uri ) override;
+    bool
+    load( Image & img, std::string const & uri ) override;
 };
 
 #endif // DE_IMAGE_READER_GIF_ENABLED
@@ -35,10 +45,16 @@ class ImageWriterGIF : public IImageWriter
 {
 public:
     std::vector< std::string >
-    getSupportedWriteExtensions() const override { return std::vector< std::string >{ "gif" }; }
+    getSupportedWriteExtensions() const override
+    {
+        return std::vector< std::string >{ "gif" };
+    }
 
     bool
-    isSupportedWriteExtension( std::string const & ext ) const override { return ext == "gif"; }
+    isSupportedWriteExtension( std::string const & ext ) const override
+    {
+        return ext == "gif";
+    }
 
     bool
     save( Image const & img, std::string const & uri, uint32_t quality = 0 ) override;

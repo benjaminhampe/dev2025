@@ -15,7 +15,7 @@ class MainWindow : public QMainWindow
     Q_OBJECT
 public:
     explicit MainWindow(QWidget *parent = nullptr);
-    ~MainWindow();
+    ~MainWindow() override;
 
 protected:
     void closeEvent(QCloseEvent* event) override;
@@ -33,11 +33,11 @@ private:
     void createMenuCanvas();
 
     Keyboard2MidiNote_Mapping m_keyboard2MidiNoteMapping;
-    QString m_appTitle;
-    Header* m_header;
-    QWidget* m_canvasContainer;
-    GL_Canvas* m_canvas;
+    QString     m_appTitle;
+    Header*     m_header;
+    QWidget*    m_canvasContainer;
+    GL_Canvas*  m_canvas;
     ClipEditor* m_clipEditor; // PianoRoll
     ChainStack* m_chainStack;
-    Footer* m_footer;
+    Footer*     m_footer;
 };

@@ -2,6 +2,11 @@
 #include <de/image/ImagePainter.h>
 #include <de/image/ImageConfig.h>
 
+// *.ppm
+#if defined(DE_IMAGE_READER_PPM_ENABLED) || defined(DE_IMAGE_WRITER_PPM_ENABLED)
+   #include <de/image/Image_PPM.h>
+#endif
+
 // *.jpg, *.jpeg
 #if defined(DE_IMAGE_READER_JPG_ENABLED) || defined(DE_IMAGE_WRITER_JPG_ENABLED)
    #include <de/image/Image_JPG.h>
@@ -60,7 +65,12 @@
     #include <de/image/Image_TIF.h>
 #endif
 
-// *.rgb
+// *.raw/*.raw.meta
+#if defined(DE_IMAGE_READER_RAW_ENABLED) || defined(DE_IMAGE_WRITER_RAW_ENABLED)
+   #include <de/image/Image_RAW.h>
+#endif
+
+// *.rgb/*.rgba/*.sgi
 #if defined(DE_IMAGE_READER_RGB_ENABLED) || defined(DE_IMAGE_WRITER_RGB_ENABLED)
    #include <de/image/Image_RGB.h>
 #endif
@@ -301,7 +311,7 @@ PixelFormatConverter::getConverter( PixelFormat const & src, PixelFormat const &
              if ( dst == PixelFormat::R8G8B8A8 ){ return convert_R32F_to_RGBA_8888; }
         else if ( dst == PixelFormat::R8G8B8 )  { return convert_R32F_to_RGB_888; }
         else if ( dst == PixelFormat::R8 )      { return convert_R32F_to_R8; }
-        else if ( dst == PixelFormat::R32F )    { return convert_R32F_to_R32F; }             
+        else if ( dst == PixelFormat::R32F )    { return convert_R32F_to_R32F; }
         else                                    { throw std::runtime_error( "No convert_R32F" ); return nullptr; }
     }
     else if ( src == PixelFormat::RGB32F )
@@ -1023,90 +1033,73 @@ Image::setPixelFormat( PixelFormat colorFormat )
 void
 Image::setPixel( int32_t x, int32_t y, uint32_t color, bool blend )
 {
-   if ( m_width < 1 || m_height < 1 )
-   {
-      DE_ERROR("Empty image")
-      return;
-   }
+    if ( m_width < 1 || m_height < 1 )
+    {
+        DE_ERROR("Empty image")
+        return;
+    }
 
-   if ( x < 0 || x >= m_width )
-   {
-      //DE_ERROR("Invalid x = ", x)
-      return;
-   }
+    if ( x < 0 || x >= m_width )
+    {
+        //DE_ERROR("Invalid x = ", x)
+        return;
+    }
 
-   if ( y < 0 || y >= m_height )
-   {
-      //DE_ERROR("Invalid y = ", y)
-      return;
-   }
+    if ( y < 0 || y >= m_height )
+    {
+        //DE_ERROR("Invalid y = ", y)
+        return;
+    }
 
-   /*
-   uint32_t ux = uint32_t( x );
-   uint32_t uy = uint32_t( y );
-   uint32_t uw = uint32_t( m_Width );
-   uint32_t uh = uint32_t( m_Height );
-   if ( ux >= uw )
-   {
-      //DE_ERROR("Invalid x(",x,") >= w(",m_Width,")")
-      return;
-   }
-   if ( uy >= uh )
-   {
-      //DE_ERROR("Invalid y(",y,") >= h(",m_Height,")")
-      return;
-   }
-   */
+    uint64_t byteOffset = uint64_t( m_width ) * uint32_t(y) + uint32_t(x);
+    byteOffset *= m_bytesPerPixel;
+    if ( byteOffset + m_bytesPerPixel > m_data.size() )
+    {
+        DE_ERROR("byteOffset > m_Data.size()")
+        return;
+    }
 
-   uint64_t byteOffset = uint64_t( m_width ) * uint32_t(y) + uint32_t(x);
-   byteOffset *= m_bytesPerPixel;
-   if ( byteOffset + m_bytesPerPixel > m_data.size() )
-   {
-      DE_ERROR("byteOffset > m_Data.size()")
-      return;
-   }
+    if ( blend )
+    {
+        color = blendColor( getPixel( x,y), color );
+    }
 
-   if ( blend )
-   {
-      color = blendColor( getPixel( x,y), color );
-   }
-
-   if ( m_bytesPerPixel >= 4 )
-   {
-      uint32_t* p = reinterpret_cast< uint32_t* >( m_data.data() + byteOffset );
-      *p = color;
-   }
-   else if ( m_bytesPerPixel == 3 )
-   {
-      *(m_data.data() + byteOffset+0) = dbRGBA_R( color );
-      *(m_data.data() + byteOffset+1) = dbRGBA_G( color );
-      *(m_data.data() + byteOffset+2) = dbRGBA_B( color );
-   }
-   else if ( m_bytesPerPixel == 2 )
-   {
-      *(m_data.data() + byteOffset+0) = dbRGBA_R( color );
-      *(m_data.data() + byteOffset+1) = dbRGBA_G( color );
-   }
-   else if ( m_bytesPerPixel == 1 )
-   {
-      *(m_data.data() + byteOffset+0) = dbRGBA_R( color );
-   }
-   else // if ( m_BytesPerPixel == 1 )
-   {
-      DE_ERROR("No bps")
-   }
+    if ( m_bytesPerPixel >= 4 )
+    {
+        uint32_t* p = reinterpret_cast< uint32_t* >( m_data.data() + byteOffset );
+        *p = color;
+    }
+    else if ( m_bytesPerPixel == 3 )
+    {
+        *(m_data.data() + byteOffset+0) = dbRGBA_R( color );
+        *(m_data.data() + byteOffset+1) = dbRGBA_G( color );
+        *(m_data.data() + byteOffset+2) = dbRGBA_B( color );
+    }
+    else if ( m_bytesPerPixel == 2 )
+    {
+        *(m_data.data() + byteOffset+0) = dbRGBA_R( color );
+        *(m_data.data() + byteOffset+1) = dbRGBA_G( color );
+    }
+    else if ( m_bytesPerPixel == 1 )
+    {
+        *(m_data.data() + byteOffset+0) = dbRGBA_R( color );
+    }
+    else // if ( m_BytesPerPixel == 1 )
+    {
+        DE_ERROR("No bps")
+    }
 }
 
 uint8_t*
 Image::getPixels( int32_t x, int32_t y )
 {
-   if ( m_width < 1 || m_height < 1 ) return nullptr;
-   if ( x < 1 || y < 1 ) return nullptr;
-   if ( x >= m_width || y >= m_height ) return nullptr;
+    if ( m_width < 1 || m_height < 1 ) return nullptr;
+    if ( x < 1 || y < 1 ) return nullptr;
+    if ( x >= m_width || y >= m_height ) return nullptr;
 
-   uint64_t byteOffset = (uint64_t( m_width ) * uint32_t(y) + uint32_t(x)) * m_bytesPerPixel;
-   if ( byteOffset + m_bytesPerPixel > m_data.size() ) return nullptr;
-   return m_data.data() + byteOffset;
+    uint64_t byteOffset = (uint64_t( m_width ) * uint32_t(y) + uint32_t(x)) * m_bytesPerPixel;
+    if ( byteOffset + m_bytesPerPixel > m_data.size() ) return nullptr;
+    return m_data.data() + byteOffset;
 }
 
 void
@@ -1936,6 +1929,13 @@ ImageCodecManager::ImageCodecManager()
     m_Writer.push_back( new image::ImageWriterWEBP );
 #endif
 
+#ifdef DE_IMAGE_READER_PPM_ENABLED
+   m_Reader.push_back( new image::ImageReaderPPM );
+#endif
+#ifdef DE_IMAGE_WRITER_PPM_ENABLED
+   m_Writer.push_back( new image::ImageWriterPPM );
+#endif
+
 #ifdef DE_IMAGE_READER_XPM_ENABLED
     m_Reader.push_back( new image::ImageReaderXPM );
 #endif
@@ -1993,6 +1993,13 @@ ImageCodecManager::ImageCodecManager()
 #endif
 #ifdef DE_IMAGE_WRITER_TIF_ENABLED
    m_Writer.push_back( new image::ImageWriterTIF );
+#endif
+
+#ifdef DE_IMAGE_READER_RAW_ENABLED
+   m_Reader.push_back( new image::ImageReaderRAW );
+#endif
+#ifdef DE_IMAGE_WRITER_RAW_ENABLED
+   m_Writer.push_back( new image::ImageWriterRAW );
 #endif
 
 #ifdef DE_IMAGE_READER_RGB_ENABLED
@@ -2209,7 +2216,7 @@ ImageCodecManager::loadImage( Image & img, std::string uri, ImageLoadOptions con
             std::ostringstream o;
             o << "ImageFile does not exist, " << uri;
             throw std::runtime_error(o.str());
-        }        
+        }
         return false;
     }
 
@@ -2440,7 +2447,7 @@ ImageCodecManager::isSupportedWriteExtension( std::string const & suffix ) const
    return false;
 }
 */
-    
+
 } // end namespace de.
 
 
