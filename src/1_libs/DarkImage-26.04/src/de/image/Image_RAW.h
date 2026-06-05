@@ -11,16 +11,11 @@ class ImageReaderRAW : public IImageReader
 // ===========================================================================
 {
 public:
-    std::vector< std::string >
+    const std::vector< std::string >&
     getSupportedReadExtensions() const override
     {
-        return { "raw" };
-    }
-
-    bool
-    isSupportedReadExtension( std::string const & ext ) const override
-    {
-        return ext == "raw";
+        static const std::vector< std::string > s_exts{ "raw" };
+        return s_exts;
     }
 
     bool
@@ -36,16 +31,11 @@ class ImageWriterRAW : public IImageWriter
 // ===========================================================================
 {
 public:
-    std::vector< std::string >
+    const std::vector< std::string >&
     getSupportedWriteExtensions() const override
     {
-        return { "raw" };
-    }
-
-    bool
-    isSupportedWriteExtension( std::string const & ext ) const override
-    {
-        return ext == "raw";
+        static const std::vector< std::string > s_exts{ "raw" };
+        return s_exts;
     }
 
     bool

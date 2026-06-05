@@ -217,16 +217,11 @@ class ImageReaderTGA : public IImageReader
 // ============================================================================
 {
 public:
-    std::vector< std::string >
+    const std::vector< std::string >&
     getSupportedReadExtensions() const override
     {
-        return { "tga" };
-    }
-
-    bool
-    isSupportedReadExtension( std::string const & ext ) const override
-    {
-        return ext == "tga";
+        static const std::vector< std::string > s_exts{ "tga" };
+        return s_exts;
     }
 
     bool
@@ -245,16 +240,11 @@ class ImageWriterTGA : public IImageWriter
 // ============================================================================
 {
 public:
-    std::vector< std::string >
+    const std::vector< std::string >&
     getSupportedWriteExtensions() const override
     {
-        return { "tga" };
-    }
-
-    bool
-    isSupportedWriteExtension( std::string const & ext ) const override
-    {
-        return ext == "tga";
+        static const std::vector< std::string > s_exts{ "tga" };
+        return s_exts;
     }
 
     bool

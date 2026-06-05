@@ -11,16 +11,11 @@ class ImageReaderTIF : public IImageReader
 // ===========================================================================
 {
 public:
-    std::vector< std::string >
+    const std::vector< std::string >&
     getSupportedReadExtensions() const override
     {
-        return { "tif", "tiff" };
-    }
-
-    bool
-    isSupportedReadExtension( std::string const & ext ) const override
-    {
-        return ext == "tif" | ext == "tiff";
+        static const std::vector< std::string > s_exts{ "tif", "tiff" };
+        return s_exts;
     }
 
     bool load( Image & img, const uint8_t* p, size_t n, const std::string& uri = "" ) override;
@@ -39,16 +34,11 @@ class ImageWriterTIF : public IImageWriter
 // ===========================================================================
 {
 public:
-    std::vector< std::string >
+    const std::vector< std::string >&
     getSupportedWriteExtensions() const override
     {
-        return { "tif", "tiff" };
-    }
-
-    bool
-    isSupportedWriteExtension( std::string const & ext ) const override
-    {
-        return ext == "tif" | ext == "tiff";
+        static const std::vector< std::string > s_exts{ "tif", "tiff" };
+        return s_exts;
     }
 
     bool

@@ -12,16 +12,11 @@ class ImageReaderWAL : public IImageReader
 // ===========================================================================
 {
 public:
-    std::vector< std::string >
+    const std::vector< std::string >&
     getSupportedReadExtensions() const override
     {
-        return { "wal" };
-    }
-
-    bool
-    isSupportedReadExtension( std::string const & ext ) const override
-    {
-        return ext == "wal";
+        static const std::vector< std::string > s_exts{ "wal" };
+        return s_exts;
     }
 
     bool
@@ -41,16 +36,11 @@ class ImageWriterWAL : public IImageWriter
 // ===========================================================================
 {
 public:
-    std::vector< std::string >
+    const std::vector< std::string >&
     getSupportedWriteExtensions() const override
     {
-        return std::vector< std::string >{ "wal" };
-    }
-
-    bool
-    isSupportedWriteExtension( std::string const & ext ) const override
-    {
-        return ext == "wal";
+        static const std::vector< std::string > s_exts{ "wal" };
+        return s_exts;
     }
 
     bool

@@ -19,6 +19,44 @@ ImageReaderRGB::load( Image & img, const uint8_t* p, size_t n, const std::string
 
 #if defined(DE_IMAGE_WRITER_RGB_ENABLED)
 
+#pragma pack(push, 1)
+struct SGIHeader
+{
+    uint16_t magic;      // 0x01DA
+    uint8_t  storage;    // 0 = uncompressed, 1 = RLE
+    uint8_t  bpc;        // bytes per channel (1)
+    uint16_t dimension;  // 3 = width/height/channels
+    uint16_t xsize;      // width
+    uint16_t ysize;      // height
+    uint16_t zsize;      // channels (3=RGB, 4=RGBA)
+    uint32_t min;        // min pixel value (0)
+    uint32_t max;        // max pixel value (255)
+    uint32_t dummy;      // unused
+    char     name[80];   // image name (optional)
+    uint32_t colormap;   // 0 = normal
+    uint8_t  pad[404];   // pad to 512 bytes
+};
+#pragma pack(pop)
+
+
+static void write_be16(File & file, uint16_t v)
+{
+    uint8_t b[2];
+    b[0] = (uint8_t)(v >> 8);
+    b[1] = (uint8_t)(v & 0xFF);
+    file.write(b, 2);
+}
+
+static void write_be32(File & file, uint32_t v)
+{
+    uint8_t b[4];
+    b[0] = (uint8_t)(v >> 24);
+    b[1] = (uint8_t)(v >> 16);
+    b[2] = (uint8_t)(v >> 8);
+    b[3] = (uint8_t)(v & 0xFF);
+    file.write(b, 4);
+}
+
 bool
 ImageWriterRGB::save( Image const & img, std::string const & uri, uint32_t quality )
 {
@@ -29,41 +67,62 @@ ImageWriterRGB::save( Image const & img, std::string const & uri, uint32_t quali
         return false;
     }
 
-    // --- Dump pixel data ---
+    File file(uri, eFileMode::Write);
+    if (!file.is_open())
     {
-        File file(uri, eFileMode::Write);
-        if (!file.is_open())
-        {
-            DE_ERROR("Cannot open ",uri)
-            return false;
-        }
-
-        const uint8_t* __restrict__ pixels = img.data();
-        file.write(pixels, img.size());
-        file.close();
+        DE_ERROR("Cannot open ",uri)
+        return false;
     }
 
-    // --- Dump meta data for reconstruction ---
+    const uint32_t width = img.w();
+    const uint32_t height = img.h();
+    const uint32_t channels = img.channelCount();
+
+    SGIHeader hdr;
+    memset(&hdr, 0, sizeof(hdr));
+    hdr.magic     = 0x01DA;
+    hdr.storage   = 0;          // uncompressed
+    hdr.bpc       = 1;          // 1 byte per sample
+    hdr.dimension = 3;          // width/height/channels
+    hdr.xsize     = (uint16_t)width;
+    hdr.ysize     = (uint16_t)height;
+    hdr.zsize     = (uint16_t)channels;
+    hdr.min       = 0;
+    hdr.max       = 255;
+    hdr.colormap  = 0;          // normal
+
+    // Write header in big-endian where required
+    write_be16(file, hdr.magic);
+    file.write(&hdr.storage, 1);
+    file.write(&hdr.bpc, 1);
+    write_be16(file, hdr.dimension);
+    write_be16(file, hdr.xsize);
+    write_be16(file, hdr.ysize);
+    write_be16(file, hdr.zsize);
+    write_be32(file, hdr.min);
+    write_be32(file, hdr.max);
+    write_be32(file, hdr.dummy);
+    file.write(hdr.name, sizeof(hdr.name));
+    write_be32(file, hdr.colormap);
+    file.write(hdr.pad, sizeof(hdr.pad)); // pad to 512 bytes
+
+    //const int pixelsPerImage = width * height;
+    const int stride = width * channels;
+
+    const uint8_t* __restrict__ pixels = img.data();
+
+    // Planar R, G, B, [A]
+    for (int c = 0; c < channels; ++c)
     {
-        File file(uri + ".meta", eFileMode::Write);
-        if (!file.is_open())
+        for (int y = 0; y < height; ++y)
         {
-            DE_ERROR("Cannot open ",uri,".meta")
-            return false;
+            const uint8_t* __restrict__ row = pixels + y * stride;
+            for (int x = 0; x < width; ++x)
+            {
+                uint8_t v = row[x * channels + c];
+                file.write(&v, 1);
+            }
         }
-
-        std::ostringstream o; o <<
-        "image = " << uri << "\n"
-        "width = " << img.w() << "\n"
-        "height = " << img.h() << "\n"
-        "channels = " << img.channelCount() << "\n"
-        "maxval = 255\n"
-        "# Created by libDarkImage-26.04 (c) 2026 by <benjaminhampe@gmx.de>\n";
-
-        std::string s = o.str();
-        const char* __restrict__ p = s.data();
-        file.write(p, s.size());
-        file.close();
     }
 
     return true;
@@ -114,23 +173,6 @@ struct SGIHeader {
 };
 #pragma pack(pop)
 
-static void write_be16(int fd, uint16_t v)
-{
-    uint8_t b[2];
-    b[0] = (uint8_t)(v >> 8);
-    b[1] = (uint8_t)(v & 0xFF);
-    _write(fd, b, 2);
-}
-
-static void write_be32(int fd, uint32_t v)
-{
-    uint8_t b[4];
-    b[0] = (uint8_t)(v >> 24);
-    b[1] = (uint8_t)(v >> 16);
-    b[2] = (uint8_t)(v >> 8);
-    b[3] = (uint8_t)(v & 0xFF);
-    _write(fd, b, 4);
-}
 
 bool save_sgi_rgb(const wchar_t* path,
                   const uint8_t* pixels, // interleaved RGB or RGBA

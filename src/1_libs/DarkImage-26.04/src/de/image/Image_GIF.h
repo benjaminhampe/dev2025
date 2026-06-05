@@ -12,16 +12,11 @@ class ImageReaderGIF : public IImageReader
 // ===========================================================================
 {
 public:
-    std::vector< std::string >
+    const std::vector< std::string >&
     getSupportedReadExtensions() const override
     {
-        return { "gif" };
-    }
-
-    bool
-    isSupportedReadExtension( std::string const & ext ) const override
-    {
-        return ext == "gif";
+        static const std::vector< std::string > s_exts{ "gif" };
+        return s_exts;
     }
 
     bool
@@ -44,16 +39,11 @@ class ImageWriterGIF : public IImageWriter
 // ===========================================================================
 {
 public:
-    std::vector< std::string >
+    const std::vector< std::string >&
     getSupportedWriteExtensions() const override
     {
-        return std::vector< std::string >{ "gif" };
-    }
-
-    bool
-    isSupportedWriteExtension( std::string const & ext ) const override
-    {
-        return ext == "gif";
+        static const std::vector< std::string > s_exts{ "gif" };
+        return s_exts;
     }
 
     bool

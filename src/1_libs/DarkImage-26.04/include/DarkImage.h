@@ -19,3 +19,5 @@ dbImageFromLinearColorGradient( const de::LinearColorGradient & cg,
 
 bool dbImageToLinearColorGradient( de::LinearColorGradient & cg,
                               const de::Image &img, bool bVertical);
+
+

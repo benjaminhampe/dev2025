@@ -113,11 +113,15 @@ struct Utils
 class ImageReaderXPM : public IImageReader
 {
 public:
-    std::vector< std::string > getSupportedReadExtensions() const override { return { "xpm" }; }
+    const std::vector< std::string >&
+    getSupportedReadExtensions() const override
+    {
+        static const std::vector< std::string > s_exts{ "xpm" };
+        return s_exts;
+    }
 
-    bool isSupportedReadExtension( std::string const & ext ) const override { return ext == "xpm"; }
-
-    bool load( Image & img, const uint8_t* p, size_t n, const std::string& uri = "" ) override;
+    bool
+    load( Image & img, const uint8_t* p, size_t n, const std::string& uri = "" ) override;
 };
 
 #endif // DE_IMAGE_READER_XPM_ENABLED
@@ -127,11 +131,15 @@ public:
 class ImageWriterXPM : public IImageWriter
 {
 public:
-    std::vector< std::string > getSupportedWriteExtensions() const override { return { "xpm", "h", "hpp" }; }
+    const std::vector< std::string >&
+    getSupportedWriteExtensions() const override
+    {
+        static const std::vector< std::string > s_exts{ "xpm" };
+        return s_exts;
+    }
 
-    bool isSupportedWriteExtension( std::string const & ext ) const override { return ext == "xpm" || ext == "h" || ext == "hpp"; }
-
-    bool save( Image const & img, std::string const & uri, uint32_t quality = 0 ) override;
+    bool
+    save( Image const & img, std::string const & uri, uint32_t quality = 0 ) override;
 };
 
 #endif // DE_IMAGE_WRITER_XPM_ENABLED

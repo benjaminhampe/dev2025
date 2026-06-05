@@ -5,7 +5,6 @@
 //#include <array>
 #include <memory> // SharedPtr
 //#include <map>    // GlyphCache
-
 #include <de/Color.h>
 
 // We like to load/save images async with 100% CPU usage, then try -march=native and such.
@@ -130,45 +129,6 @@ public:
     static uint8_t getAlphaBits( int const fmt );
     static uint8_t getDepthBits( int const fmt );
     static uint8_t getStencilBits( int const fmt );
-};
-
-// =======================================================================
-struct ImageLoadOptions
-// =======================================================================
-{
-    PixelFormat outputFormat;
-    uint32_t searchColor;
-    uint32_t replaceColor;
-
-    bool throwOnFail;
-    bool debugLog;
-    bool rotate90;
-    // bool convertToGrey121;
-    // bool convertToGrey111;
-    // bool autoSaturate;
-    // bool repairBadAlpha;
-    // float brighten;
-    // float gamma;
-    // float contrast;
-
-    // std::string m_DefaultExportExt;
-
-    ImageLoadOptions()
-        : outputFormat( PixelFormat::Unknown )
-        , searchColor( 0 )
-        , replaceColor( 0 )
-        , throwOnFail( false )
-        , debugLog( false )
-        , rotate90( false )
-        // , m_ConvertToGrey121( false )
-        // , m_ConvertToGrey111( false )
-        // , m_AutoSaturate( false )
-        // , m_RepairBadAlpha( false )
-        // , m_Brighten( 1.0f )
-        // , m_Gamma( 1.0f )
-        // , m_Contrast( 1.0f )
-        // , m_DefaultExportExt( "raw" )
-    {}
 };
 
 // ===========================================================================
@@ -296,24 +256,182 @@ private:
     std::string m_uri;
 };
 
+// ===================================================================
+struct PixelFormatConverter
+// ===================================================================
+{
+    /// @brief Convert color 16 to 24, used in ImageWriterBMP, ImageWriterJPG
+    /// @param[i] s Source color array
+    /// @param[i] n Number of elements to convert, not a byte count.
+    /// @param[o] d Destination color array
+    typedef void (*Converter_t)( void const * /* src */, void * /* dst */, size_t /* n-color-reads */ );
+    /// @brief Get color converter
+    static Converter_t getConverter( PixelFormat const & src, PixelFormat const & dst );
+    /// @brief Convert color 24 to 24, used in ImageWriterJPG
+    //static void convert_R8G8B8_to_R8G8B8( void const * src, void* dst, size_t n );
+    static void convert_RGB24_to_RGB24( void const * src, void* dst, size_t n );
+    /// @brief Convert color 32 to 24, used in ImageWriterJPG
+    static void convert_R8G8B8A8_to_R8G8B8( void const * src, void* dst, size_t n );
+    /// @brief Convert color 16 to 24, used in ImageWriterBMP, ImageWriterJPG
+    static void convert_R5G6B5_to_R8G8B8( void const * src, void* dst, size_t n );
+    /// @brief Convert color 16 to 32, used in ImageWriterPNG
+    static void convert_R5G6B5_to_R8G8B8A8( void const * src, void* dst, size_t n );
+    /// @brief Convert color 16 to 24, used in ImageWriterBMP
+    static void convert_R5G5B5A1_to_R8G8B8( void const * src, void* dst, size_t n );
+    /// @brief Convert color 32 to 32, used in ImageWriterBMP.
+    static void convert_R8G8B8A8_to_R8G8B8A8( void const * src, void* dst, size_t n );
+    /// @brief Convert color 16 to 32, used in ImageWriterBMP.
+    static uint32_t R5G5B5A1_to_R8G8B8A8( uint16_t color );
+    /// @brief Convert color 16 to 32
+    static void convert_R5G5B5A1_to_R8G8B8A8( void const * src, void* dst, size_t n );
+    /// @brief Convert color 16 to 16, used in ImageWriterBMP.
+    static void convert_R5G5B5A1_to_R5G5B5A1( void const * src, void* dst, size_t n );
+    /// @brief Convert color 24 to 32, used in ImageLoaderJPG.
+    //static void convert_R8G8B8_to_R8G8B8A8( void const * src, void* dst, size_t n );
+    static void convert_RGB_24_to_RGBA_32( void const * src, void* dst, size_t n );
+    /// @brief Convert color A1R5G5B5 Color from R5G6B5 color
+    static uint16_t R5G6B5_to_R5G5B5A1( uint16_t color );
+    // Used in: ImageWriterTGA
+    static void convert_R5G6B5_to_R5G5B5A1( void const * src, void* dst, size_t n );
+    // Used in: ImageWriterBMP
+    /// copies R8G8B8 24bit data to 24bit data
+    static void convert24Bit_to_24Bit( uint8_t const * in, uint8_t* out, int32_t width, int32_t height, int32_t linepad, bool flip, bool bgr );
+    // Used in: ImageWriterBMP
+    static void convert_R8G8B8A8_to_B8G8R8( void const * src, void* dst, size_t n );
+    static void convert_R8G8B8_to_B8G8R8( void const * src, void* dst, size_t n );
+    static void convert_B8G8R8_to_R8G8B8( void const * src, void* dst, size_t n );
+    static void convert_R5G5B5A1_to_B8G8R8( void const * src, void* dst, size_t n );
+    static void convert_R5G6B5_to_B8G8R8( void const * src, void* dst, size_t n );
+    static void convert_R8G8B8A8_to_B8G8R8A8( void const * src, void* dst, size_t n );
+    static void convert_B8G8R8A8_to_R8G8B8A8( void const * src, void* dst, size_t n );
+    static void convert_R8G8B8_to_B8G8R8A8( void const * src, void* dst, size_t n );
+    // used in ImageReaderBMP
+    static void convert_B8G8R8_to_R8G8B8A8( void const * src, void* dst, size_t n );
+    // used in ImageReaderEXR
+    static void convert_R32F_to_R32F( void const * src, void* dst, size_t n );
+    static void convert_R32F_to_RGB_888( void const * src, void* dst, size_t n );
+    static void convert_R32F_to_RGBA_8888( void const * src, void* dst, size_t n );
+    static void convert_RGB32F_to_RGB_888( void const * src, void* dst, size_t n );
+    static void convert_RGB32F_to_RGBA_8888( void const * src, void* dst, size_t n );
+
+    static void convert_RGB32F_to_R32F( void const * src, void* dst, size_t n );
+    static void convert_RGBA32F_to_R32F( void const * src, void* dst, size_t n );
+
+
+    static void convert_R8G8B8A8_to_R8( void const * src, void* dst, size_t n );
+    static void convert_R8G8B8_to_R8( void const * src, void* dst, size_t n );
+    static void convert_B8G8R8_to_R8( void const * src, void* dst, size_t n );
+    static void convert_B8G8R8A8_to_R8( void const * src, void* dst, size_t n );
+
+    static void convert_R5G5B5A1_to_R8( void const * src, void* dst, size_t n );
+    static void convert_R5G6B5_to_R8( void const * src, void* dst, size_t n );
+
+    static void convert_R32F_to_R8( void const * src, void* dst, size_t n );
+    static void convert_RGB32F_to_R8( void const * src, void* dst, size_t n );
+    static void convert_RGBA32F_to_R8( void const * src, void* dst, size_t n );
+
+    /*
+    static void ConvertRGB_to_YUV(const uint8_t* rgb_data, size_t pixel_count)
+    {
+        for (size_t i = 0; i < pixel_count; ++i)
+        {
+            uint8_t r = rgb_data[i * 3 + 0];
+            uint8_t g = rgb_data[i * 3 + 1];
+            uint8_t b = rgb_data[i * 3 + 2];
+
+            float y = 0.299f * r + 0.587f * g + 0.114f * b;
+            float u = -0.147f * r - 0.289f * g + 0.436f * b;
+            float v = 0.615f * r - 0.515f * g - 0.100f * b;
+
+            //std::cout << "Pixel " << i << ": Y=" << y << ", U=" << u << ", V=" << v << "\n";
+
+            // return { y,u,v };
+        }
+    }
+    */
+};
+
+
+// =======================================================================
+struct Brush
+// =======================================================================
+{
+   Brush()
+      : color( 0xFFFFFFFF )
+      , pattern( nullptr )
+   {}
+   Brush( uint32_t color_,
+          Image* pattern_ = nullptr )
+      : color( color_ )
+      , pattern( pattern_ )
+   {}
+
+   uint32_t color;
+   Image* pattern;
+};
+
+
+
+
+// Benni's image lib for BMP,DDS,EXR,GIF,ICO,JPG,PNG,RGB,TGA,TIF,WAL,WEBP,XPM,SVG
+
+// =======================================================================
+struct ImageLoadOptions
+// =======================================================================
+{
+    PixelFormat outputFormat;
+    uint32_t searchColor;
+    uint32_t replaceColor;
+
+    bool throwOnFail;
+    bool debugLog;
+    bool rotate90;
+    // bool convertToGrey121;
+    // bool convertToGrey111;
+    // bool autoSaturate;
+    // bool repairBadAlpha;
+    // float brighten;
+    // float gamma;
+    // float contrast;
+
+    // std::string m_DefaultExportExt;
+
+    ImageLoadOptions()
+        : outputFormat( PixelFormat::Unknown )
+        , searchColor( 0 )
+        , replaceColor( 0 )
+        , throwOnFail( false )
+        , debugLog( false )
+        , rotate90( false )
+        // , m_ConvertToGrey121( false )
+        // , m_ConvertToGrey111( false )
+        // , m_AutoSaturate( false )
+        // , m_RepairBadAlpha( false )
+        // , m_Brighten( 1.0f )
+        // , m_Gamma( 1.0f )
+        // , m_Contrast( 1.0f )
+        // , m_DefaultExportExt( "raw" )
+    {}
+};
+
+
+// Benni's image lib for BMP,DDS,EXR,GIF,ICO,JPG,PNG,RGB,TGA,TIF,WAL,WEBP,XPM,SVG
+
 // ===========================================================================
 struct IImageReader
 // ===========================================================================
 {
     virtual ~IImageReader() {}
 
-    virtual std::vector< std::string >
+    virtual const std::vector< std::string >&
     getSupportedReadExtensions() const = 0;
 
-    // bool
-    // isSupportedReadExtension( const std::string & suffix ) const
-    // {
-    //     const auto& liste = getSupportedReadExtensions();
-    //     return std::find(liste.begin(), liste.end(), suffix) != liste.end();
-    // }
-
-    virtual bool
-    isSupportedReadExtension( const std::string& suffix ) const = 0;
+    bool
+    isSupportedReadExtension( const std::string & suffix ) const
+    {
+        const auto& liste = getSupportedReadExtensions();
+        return std::find(liste.begin(), liste.end(), suffix) != liste.end();
+    }
 
     // New: loadMemory resource.
     virtual bool
@@ -354,16 +472,20 @@ struct IImageReader
 struct IImageWriter
 // ===========================================================================
 {
-   virtual ~IImageWriter() {}
+    virtual ~IImageWriter() {}
 
-   virtual bool
-   save( Image const & img, std::string const & fileName, uint32_t quality = 0 ) = 0;
+    virtual const std::vector< std::string >&
+    getSupportedWriteExtensions() const = 0;
 
-   virtual std::vector< std::string >
-   getSupportedWriteExtensions() const = 0;
+    bool
+    isSupportedWriteExtension( const std::string & suffix ) const
+    {
+        const auto& liste = getSupportedWriteExtensions();
+        return std::find(liste.begin(), liste.end(), suffix) != liste.end();
+    }
 
-   virtual bool
-   isSupportedWriteExtension( std::string const & suffix ) const = 0;
+    virtual bool
+    save( Image const & img, std::string const & fileName, uint32_t quality = 0 ) = 0;
 };
 
 
@@ -538,121 +660,16 @@ public:
 };
 
 
-// ===================================================================
-struct PixelFormatConverter
-// ===================================================================
-{
-    /// @brief Convert color 16 to 24, used in ImageWriterBMP, ImageWriterJPG
-    /// @param[i] s Source color array
-    /// @param[i] n Number of elements to convert, not a byte count.
-    /// @param[o] d Destination color array
-    typedef void (*Converter_t)( void const * /* src */, void * /* dst */, size_t /* n-color-reads */ );
-    /// @brief Get color converter
-    static Converter_t getConverter( PixelFormat const & src, PixelFormat const & dst );
-    /// @brief Convert color 24 to 24, used in ImageWriterJPG
-    //static void convert_R8G8B8_to_R8G8B8( void const * src, void* dst, size_t n );
-    static void convert_RGB24_to_RGB24( void const * src, void* dst, size_t n );
-    /// @brief Convert color 32 to 24, used in ImageWriterJPG
-    static void convert_R8G8B8A8_to_R8G8B8( void const * src, void* dst, size_t n );
-    /// @brief Convert color 16 to 24, used in ImageWriterBMP, ImageWriterJPG
-    static void convert_R5G6B5_to_R8G8B8( void const * src, void* dst, size_t n );
-    /// @brief Convert color 16 to 32, used in ImageWriterPNG
-    static void convert_R5G6B5_to_R8G8B8A8( void const * src, void* dst, size_t n );
-    /// @brief Convert color 16 to 24, used in ImageWriterBMP
-    static void convert_R5G5B5A1_to_R8G8B8( void const * src, void* dst, size_t n );
-    /// @brief Convert color 32 to 32, used in ImageWriterBMP.
-    static void convert_R8G8B8A8_to_R8G8B8A8( void const * src, void* dst, size_t n );
-    /// @brief Convert color 16 to 32, used in ImageWriterBMP.
-    static uint32_t R5G5B5A1_to_R8G8B8A8( uint16_t color );
-    /// @brief Convert color 16 to 32
-    static void convert_R5G5B5A1_to_R8G8B8A8( void const * src, void* dst, size_t n );
-    /// @brief Convert color 16 to 16, used in ImageWriterBMP.
-    static void convert_R5G5B5A1_to_R5G5B5A1( void const * src, void* dst, size_t n );
-    /// @brief Convert color 24 to 32, used in ImageLoaderJPG.
-    //static void convert_R8G8B8_to_R8G8B8A8( void const * src, void* dst, size_t n );
-    static void convert_RGB_24_to_RGBA_32( void const * src, void* dst, size_t n );
-    /// @brief Convert color A1R5G5B5 Color from R5G6B5 color
-    static uint16_t R5G6B5_to_R5G5B5A1( uint16_t color );
-    // Used in: ImageWriterTGA
-    static void convert_R5G6B5_to_R5G5B5A1( void const * src, void* dst, size_t n );
-    // Used in: ImageWriterBMP
-    /// copies R8G8B8 24bit data to 24bit data
-    static void convert24Bit_to_24Bit( uint8_t const * in, uint8_t* out, int32_t width, int32_t height, int32_t linepad, bool flip, bool bgr );
-    // Used in: ImageWriterBMP
-    static void convert_R8G8B8A8_to_B8G8R8( void const * src, void* dst, size_t n );
-    static void convert_R8G8B8_to_B8G8R8( void const * src, void* dst, size_t n );
-    static void convert_B8G8R8_to_R8G8B8( void const * src, void* dst, size_t n );
-    static void convert_R5G5B5A1_to_B8G8R8( void const * src, void* dst, size_t n );
-    static void convert_R5G6B5_to_B8G8R8( void const * src, void* dst, size_t n );
-    static void convert_R8G8B8A8_to_B8G8R8A8( void const * src, void* dst, size_t n );
-    static void convert_B8G8R8A8_to_R8G8B8A8( void const * src, void* dst, size_t n );
-    static void convert_R8G8B8_to_B8G8R8A8( void const * src, void* dst, size_t n );
-    // used in ImageReaderBMP
-    static void convert_B8G8R8_to_R8G8B8A8( void const * src, void* dst, size_t n );
-    // used in ImageReaderEXR
-    static void convert_R32F_to_R32F( void const * src, void* dst, size_t n );
-    static void convert_R32F_to_RGB_888( void const * src, void* dst, size_t n );
-    static void convert_R32F_to_RGBA_8888( void const * src, void* dst, size_t n );
-    static void convert_RGB32F_to_RGB_888( void const * src, void* dst, size_t n );
-    static void convert_RGB32F_to_RGBA_8888( void const * src, void* dst, size_t n );
-
-    static void convert_RGB32F_to_R32F( void const * src, void* dst, size_t n );
-    static void convert_RGBA32F_to_R32F( void const * src, void* dst, size_t n );
 
 
-    static void convert_R8G8B8A8_to_R8( void const * src, void* dst, size_t n );
-    static void convert_R8G8B8_to_R8( void const * src, void* dst, size_t n );
-    static void convert_B8G8R8_to_R8( void const * src, void* dst, size_t n );
-    static void convert_B8G8R8A8_to_R8( void const * src, void* dst, size_t n );
-
-    static void convert_R5G5B5A1_to_R8( void const * src, void* dst, size_t n );
-    static void convert_R5G6B5_to_R8( void const * src, void* dst, size_t n );
-
-    static void convert_R32F_to_R8( void const * src, void* dst, size_t n );
-    static void convert_RGB32F_to_R8( void const * src, void* dst, size_t n );
-    static void convert_RGBA32F_to_R8( void const * src, void* dst, size_t n );
-
-    /*
-    static void ConvertRGB_to_YUV(const uint8_t* rgb_data, size_t pixel_count)
-    {
-        for (size_t i = 0; i < pixel_count; ++i)
-        {
-            uint8_t r = rgb_data[i * 3 + 0];
-            uint8_t g = rgb_data[i * 3 + 1];
-            uint8_t b = rgb_data[i * 3 + 2];
-
-            float y = 0.299f * r + 0.587f * g + 0.114f * b;
-            float u = -0.147f * r - 0.289f * g + 0.436f * b;
-            float v = 0.615f * r - 0.515f * g - 0.100f * b;
-
-            //std::cout << "Pixel " << i << ": Y=" << y << ", U=" << u << ", V=" << v << "\n";
-
-            // return { y,u,v };
-        }
-    }
-    */
-};
 
 
-// =======================================================================
-struct Brush
-// =======================================================================
-{
-   Brush()
-      : color( 0xFFFFFFFF )
-      , pattern( nullptr )
-   {}
-   Brush( uint32_t color_,
-          Image* pattern_ = nullptr )
-      : color( color_ )
-      , pattern( pattern_ )
-   {}
 
-   uint32_t color;
-   Image* pattern;
-};
 
 } // end namespace de.
+
+
+
 
 // From file:
 bool

@@ -9,16 +9,11 @@ namespace image {
 class ImageReaderPNG : public IImageReader
 {
 public:
-    std::vector< std::string >
+    const std::vector< std::string >&
     getSupportedReadExtensions() const override
     {
-        return { "png" };
-    }
-
-    bool
-    isSupportedReadExtension( std::string const & ext ) const override
-    {
-        return ext == "png";
+        static const std::vector< std::string > s_exts{ "png" };
+        return s_exts;
     }
 
     bool
@@ -32,16 +27,11 @@ public:
 class ImageWriterPNG : public IImageWriter
 {
 public:
-    std::vector< std::string >
+    const std::vector< std::string >&
     getSupportedWriteExtensions() const override
     {
-        return { "png" };
-    }
-
-    bool
-    isSupportedWriteExtension( std::string const & ext ) const override
-    {
-        return ext == "png";
+        static const std::vector< std::string > s_exts{ "png" };
+        return s_exts;
     }
 
     bool

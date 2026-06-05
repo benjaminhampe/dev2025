@@ -12,16 +12,11 @@ class ImageReaderICO : public IImageReader
 // ============================================================================
 {
 public:
-    std::vector< std::string >
+    const std::vector< std::string >&
     getSupportedReadExtensions() const override
     {
-        return { "ico", "cur" };
-    }
-
-    bool
-    isSupportedReadExtension( std::string const & ext ) const override
-    {
-        return (ext == "ico") || (ext == "cur");
+        static const std::vector< std::string > s_exts{ "ico", "cur" };
+        return s_exts;
     }
 
     bool
@@ -37,16 +32,11 @@ class ImageWriterICO : public IImageWriter
 // ============================================================================
 {
 public:
-    std::vector< std::string >
+    const std::vector< std::string >&
     getSupportedWriteExtensions() const override
     {
-        return std::vector< std::string >{ "ico", "cur" };
-    }
-
-    bool
-    isSupportedWriteExtension( std::string const & ext ) const override
-    {
-        return (ext == "ico") || (ext == "cur");
+        static const std::vector< std::string > s_exts{ "ico", "cur" };
+        return s_exts;
     }
 
     bool

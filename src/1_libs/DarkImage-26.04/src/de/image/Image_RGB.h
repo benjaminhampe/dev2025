@@ -12,16 +12,11 @@ class ImageReaderRGB : public IImageReader
 // ===========================================================================
 {
 public:
-    std::vector< std::string >
+    const std::vector< std::string >&
     getSupportedReadExtensions() const override
     {
-        return { "rgb", "rgba", "sgi" };
-    }
-
-    bool
-    isSupportedReadExtension( std::string const & ext ) const override
-    {
-        return (ext == "rgb") || (ext == "rgba") || (ext == "sgi");
+        static const std::vector< std::string > s_exts{ "rgb", "rgba", "sgi" };
+        return s_exts;
     }
 
     bool
@@ -37,16 +32,11 @@ class ImageWriterRGB : public IImageWriter
 // ===========================================================================
 {
 public:
-    std::vector< std::string >
+    const std::vector< std::string >&
     getSupportedWriteExtensions() const override
     {
-        return { "rgb", "rgba", "sgi" };
-    }
-
-    bool
-    isSupportedWriteExtension( std::string const & ext ) const override
-    {
-        return (ext == "rgb") || (ext == "rgba") || (ext == "sgi");
+        static const std::vector< std::string > s_exts{ "rgb", "rgba", "sgi" };
+        return s_exts;
     }
 
     bool

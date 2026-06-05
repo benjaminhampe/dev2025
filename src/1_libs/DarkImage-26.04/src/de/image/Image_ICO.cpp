@@ -1,4 +1,127 @@
 #include <de/image/Image_ICO.h>
+/*
+📊 Side‑by‑side comparison
+Format	Type	Variant	Container	Special Features	Typical Use
+ICO     Icon	Static	Multi‑image     BMP/PNG	Multiple sizes & bit depths	App icons, file icons
+CUR     Cursor	Static	Same as ICO     Hotspot coordinates     Mouse pointers
+ANI     Cursor	Animated	RIFF        Frame sequence, timing	Busy/working cursors
+ICL     Iconlib	Static	Res library     Stores many ICOs	Icon packs, themes
+
+🎯 Key differences in one sentence
+    ICO = static icons.
+    CUR = static icons with hotspot.
+    ANI = animated cursor (RIFF with multiple CUR frames).
+    ICL = container library holding many ICOs (like a DLL).
+
+🟥 ICO — Icon File Header (ICONDIR + ICONDIRENTRY + image data)
+
+ICO and CUR share the same base header (ICONDIR).
+Only the type field differs.
+
+    ICONDIR (6 bytes)
+
+    Offset  Size  Field
+    0       2     Reserved = 0
+    2       2     Type = 1   (1 = ICO)
+    4       2     Count = number of images
+
+    ICONDIRENTRY (16 bytes per image)
+
+    Offset  Size  Field
+    0       1     Width (0 = 256)
+    1       1     Height (0 = 256)
+    2       1     ColorCount (0 = no palette)
+    3       1     Reserved = 0
+    4       2     Planes (for BMP) or 0
+    6       2     BitCount (for BMP) or 0
+    8       4     BytesInRes (size of image data)
+    12      4     ImageOffset (file offset to image)
+
+Image data
+
+    BMP (DIB header + pixel data + AND mask) or PNG (raw PNG stream)
+
+🟦 CUR — Cursor File Header (ICONDIR + CURSORENTRY + image data)
+
+CUR is identical to ICO except:
+    - Type = 2
+    - ICONDIRENTRY fields at offsets 4 and 6 are replaced with hotspot coordinates
+
+ICONDIR (same as ICO)
+
+    Offset  Size  Field
+    0       2     Reserved = 0
+    2       2     Type = 2   (2 = CUR)
+    4       2     Count
+
+CURSORENTRY (16 bytes)
+
+    Offset  Size  Field
+    0       1     Width
+    1       1     Height
+    2       1     ColorCount
+    3       1     Reserved = 0
+    4       2     HotspotX
+    6       2     HotspotY
+    8       4     BytesInRes
+    12      4     ImageOffset
+
+Image data
+    Always BMP/DIB, never PNG
+    Same structure as ICO BMP images
+    AND mask defines transparency
+
+🟧 ANI — Animated Cursor (RIFF container)
+
+ANI is not ICO‑like.
+It is a RIFF file (like WAV/AVI) containing metadata + embedded CUR frames.
+
+RIFF Header (12 bytes)
+
+    Offset  Size  Field
+    0       4     'RIFF'
+    4       4     FileSize - 8
+    8       4     'ACON'   (animated cursor)
+
+Common chunks inside ANI
+
+ANI files contain multiple RIFF chunks:
+anih — Animation header (36 bytes)
+
+    Offset  Size  Field
+    0       4     'anih'
+    4       4     ChunkSize (36)
+    8       4     cbSize (36)
+    12      4     nFrames
+    16      4     nSteps
+    20      4     iWidth
+    24      4     iHeight
+    28      4     iBitCount
+    32      4     nPlanes
+    36      4     iDispRate (default frame rate)
+    40      4     bfAttributes (flags)
+
+rate — Frame durations
+
+    'RATE' chunk: array of DWORDs (ms per frame)
+
+seq — Frame order
+
+    'SEQ ' chunk: array of DWORDs (frame indices)
+
+LIST — Embedded CUR frames
+
+LIST
+  |-- 'fram'
+        |-- ICON/CUR data blocks
+
+Each frame is literally a CUR file embedded inside the RIFF.
+📊 Side‑by‑side header comparison
+Format	Container	Magic	Header	Special Fields
+ICO	raw	Reserved=0, Type=1	ICONDIR + ICONDIRENTRY	BMP/PNG images
+CUR	raw	Reserved=0, Type=2	ICONDIR + CURSORENTRY	HotspotX/Y
+ANI	RIFF	'RIFF' + 'ACON'	anih + LIST chunks	Multiple CUR frames, timing
+*/
 
 #if defined(DE_IMAGE_READER_ICO_ENABLED) || defined(DE_IMAGE_WRITER_ICO_ENABLED)
 

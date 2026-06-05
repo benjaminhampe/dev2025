@@ -11,16 +11,11 @@ class ImageReaderDDS : public IImageReader
 // ===========================================================================
 {
 public:
-    std::vector< std::string >
+    const std::vector< std::string >&
     getSupportedReadExtensions() const override
     {
-        return { "dds" };
-    }
-
-    bool
-    isSupportedReadExtension( std::string const & ext ) const override
-    {
-        return ext == "dds";
+        static const std::vector< std::string > s_exts{ "dds" };
+        return s_exts;
     }
 
     bool
@@ -30,8 +25,6 @@ public:
 #endif // DE_IMAGE_READER_DDS_ENABLED
 
 // ===========================================================================
-// ===========================================================================
-// ===========================================================================
 
 #if defined(DE_IMAGE_WRITER_DDS_ENABLED)
 
@@ -40,16 +33,11 @@ class ImageWriterDDS : public IImageWriter
 // ===========================================================================
 {
 public:
-    std::vector< std::string >
+    const std::vector< std::string >&
     getSupportedWriteExtensions() const override
     {
-        return { "dds" };
-    }
-
-    bool
-    isSupportedWriteExtension( std::string const & ext ) const override
-    {
-        return ext == "dds";
+        static const std::vector< std::string > s_exts{ "dds" };
+        return s_exts;
     }
 
     bool

@@ -11,16 +11,11 @@ class ImageReaderPPM : public IImageReader
 // ===========================================================================
 {
 public:
-    std::vector< std::string >
+    const std::vector< std::string >&
     getSupportedReadExtensions() const override
     {
-        return { "ppm", "pam" };
-    }
-
-    bool
-    isSupportedReadExtension( const std::string& ext ) const override
-    {
-        return (ext == "ppm") || (ext == "pam");
+        static const std::vector< std::string > s_exts{ "ppm", "pam" };
+        return s_exts;
     }
 
     bool
@@ -36,16 +31,11 @@ class ImageWriterPPM : public IImageWriter
 // ===========================================================================
 {
 public:
-    std::vector< std::string >
+    const std::vector< std::string >&
     getSupportedWriteExtensions() const override
     {
-        return { "ppm", "pam" };
-    }
-
-    bool
-    isSupportedWriteExtension( const std::string& ext ) const override
-    {
-        return (ext == "ppm") || (ext == "pam");
+        static const std::vector< std::string > s_exts{ "ppm", "pam" };
+        return s_exts;
     }
 
     bool

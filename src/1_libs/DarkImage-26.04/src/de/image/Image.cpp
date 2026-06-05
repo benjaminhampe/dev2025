@@ -1733,6 +1733,16 @@ Image::convert( PixelFormat outputFormat ) const
     return outputImage;
 }
 
+
+
+
+
+
+
+
+
+
+
 // ===========================================================================
 // ===   ImageLoadOptions
 // ===========================================================================
@@ -2448,7 +2458,17 @@ ImageCodecManager::isSupportedWriteExtension( std::string const & suffix ) const
 }
 */
 
+
+
+
+
+
+
+
+
+
 } // end namespace de.
+
 
 
 // ===========================================================================
