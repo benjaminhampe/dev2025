@@ -22,22 +22,22 @@ AudioMeter::AudioMeter( QWidget* parent )
     , m_markColor{ 165,165,165 }
 
 {
-	setObjectName( "AudioMeter" );
-	setContentsMargins(0,0,0,0);
+    setObjectName( "AudioMeter" );
+    setContentsMargins(0,0,0,0);
     setStyleSheet("background: transparent;");
-	// m_ColorGradient.addStop( 0.0f, 0xFFFFFFFF );
-	// m_ColorGradient.addStop( 0.1f, 0xFF000000 );
-	// m_ColorGradient.addStop( 0.5f, 0xFF00FF00 );
-	// m_ColorGradient.addStop( 0.6f, 0xFF002000 );
-	// m_ColorGradient.addStop( 0.8f, 0xFF00FFFF );
-	// m_ColorGradient.addStop( 1.0f, 0xFF0000FF );
-	// m_ColorGradient.addStop( 1.1f, 0xFFFF00FF );
+    // m_ColorGradient.addStop( 0.0f, 0xFFFFFFFF );
+    // m_ColorGradient.addStop( 0.1f, 0xFF000000 );
+    // m_ColorGradient.addStop( 0.5f, 0xFF00FF00 );
+    // m_ColorGradient.addStop( 0.6f, 0xFF002000 );
+    // m_ColorGradient.addStop( 0.8f, 0xFF00FFFF );
+    // m_ColorGradient.addStop( 1.0f, 0xFF0000FF );
+    // m_ColorGradient.addStop( 1.1f, 0xFFFF00FF );
 
-	// Feed LevelMeter
-	// m_Lmin = m_Lmax = m_Rmin = m_Rmax = 0.0f;
+    // Feed LevelMeter
+    // m_Lmin = m_Lmax = m_Rmin = m_Rmax = 0.0f;
 
-	//       connect( this, SIGNAL(newSamples(float*,uint32_t,uint32_t)),
-	//                this, SLOT(pushSamples(float*,uint32_t,uint32_t)), Qt::QueuedConnection );
+    //       connect( this, SIGNAL(newSamples(float*,uint32_t,uint32_t)),
+    //                this, SLOT(pushSamples(float*,uint32_t,uint32_t)), Qt::QueuedConnection );
 
     applySkin();
 }
@@ -79,7 +79,7 @@ void AudioMeter::applySkin()
     // updateGeometry(); // tells Qt: “my sizeHint() changed”
     update();
 }
-	
+
 void AudioMeter::paintEvent( QPaintEvent* event )
 {
     if (!isVisible())
@@ -194,14 +194,14 @@ void AudioMeter::playUpdateTimer()
 {
     if (m_updateTimerId) return; // Already running
     m_updateTimerId = startTimer(50);
-    DE_TRACE("")
+    //DE_TRACE("")
 }
 void AudioMeter::stopUpdateTimer()
 {
     if (!m_updateTimerId) return; // Already stopped
     killTimer(m_updateTimerId);
     m_updateTimerId = 0;
-    DE_TRACE("")
+    //DE_TRACE("")
 }
 void AudioMeter::timerEvent( QTimerEvent* event )
 {

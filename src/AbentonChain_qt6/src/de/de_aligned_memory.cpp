@@ -143,7 +143,7 @@ AlignedFloatShiftMatrix::AlignedFloatShiftMatrix()
 {
     // test();
 
-    DE_TRACE("")
+    //DE_TRACE("")
 
     // m_data.resize( m_rowCount * m_colCount );
     // m_rows.resize( m_rowCount );

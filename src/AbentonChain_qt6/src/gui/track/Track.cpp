@@ -191,7 +191,13 @@ void Track::addPlugin(const QString &uri)
 
 void Track::insertPlugin(int index, const QString &uri)
 {
-    qDebug() << "Dropped file:" << uri;
+    DE_DEBUG("Dropped index(",index,"), file(",dbFileName(uri.toStdString()),")")
+
+    if (index < 0)
+    {
+        DE_ERROR("Invalid index ", index)
+        return;
+    }
 
     if (!m_track)
     {
@@ -220,6 +226,8 @@ void Track::insertPlugin(int index, const QString &uri)
     m_track->setPlugins(collectPlugins());
 
     // Update GUI Layout...
+    m_dragIndex = -1;
+    m_dropIndex = -1;
     updateLayout();
 
     // Update Track Overview Image in Footer...
@@ -375,10 +383,6 @@ void Track::dropEvent(QDropEvent* e)
             DE_ERROR("File not exist: ", url.toStdString())
         }
     }
-
-    m_dragIndex = -1;
-    m_dropIndex = -1;
-    updateLayout();
 }
 
 // ------------------------------------------------------------

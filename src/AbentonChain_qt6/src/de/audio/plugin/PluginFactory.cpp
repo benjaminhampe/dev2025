@@ -114,7 +114,7 @@ SharedPlugin PluginFactory::createPlugin( std::string uri )
     }
 
     timer.stop();
-    DE_OK("[",suffix,"] ", timer.ms(), "ms|", uri)
+    DE_OK("[",suffix,"] ", timer.ms(), "ms|", dbFileName(uri))
     return SharedPlugin(plugin);
 }
 

@@ -839,7 +839,7 @@ public:
         , m_vstInputParamChanges( 256 )
         , m_midiEventQueueIn( 1024 )
     {
-        DE_DEBUG("")
+        //DE_DEBUG("")
     }
 
     ~VST3_Plugin_Impl()
@@ -1008,11 +1008,12 @@ public:
                 continue;
             }
 
-            DE_TRACE("Bus.AudioIn[",i,"].Name = ", de_mbstr(bi.name))
-            DE_TRACE("Bus.AudioIn[",i,"].Channels = ", bi.channelCount)
-            DE_TRACE("Bus.AudioIn[",i,"].BusType = ", bi.busType)
-            DE_TRACE("Bus.AudioIn[",i,"].DefaultActive = ", (bi.flags & BusInfo::kDefaultActive))
-            DE_TRACE("Bus.AudioIn[",i,"].isCV = ", (bi.flags & BusInfo::kIsControlVoltage))
+            DE_TRACE("Bus.AudioIn[",i,"] "
+                "Name(", de_mbstr(bi.name),"),"
+                "Ch(", bi.channelCount,"),"
+                "Typ(", bi.busType,")"
+                "DefActive(", (bi.flags & BusInfo::kDefaultActive),"), "
+                "CV(", (bi.flags & BusInfo::kIsControlVoltage), ")")
         }
 
         // AudioOutputs:
@@ -1043,11 +1044,12 @@ public:
                 continue;
             }
 
-            DE_TRACE("Bus.AudioOut[",i,"].Name = ", de_mbstr(bi.name))
-            DE_TRACE("Bus.AudioOut[",i,"].Channels = ", bi.channelCount)
-            DE_TRACE("Bus.AudioOut[",i,"].BusType = ", bi.busType)
-            DE_TRACE("Bus.AudioOut[",i,"].DefaultActive = ", (bi.flags & BusInfo::kDefaultActive))
-            DE_TRACE("Bus.AudioOut[",i,"].isCV = ", (bi.flags & BusInfo::kIsControlVoltage))
+            DE_TRACE("Bus.AudioOut[",i,"] "
+                "Name(", de_mbstr(bi.name),"), "
+                "Ch(", bi.channelCount,"), "
+                "Typ(", bi.busType,"), "
+                "DefActive(", (bi.flags & BusInfo::kDefaultActive),"),"
+                "CV(", (bi.flags & BusInfo::kIsControlVoltage), ")")
         }
     }
 
@@ -1346,7 +1348,7 @@ public:
                 DE_ERROR("No m_editController->initialize(m_hostApp). ", getErrorDesc(e))
             }
 
-            DE_OK("m_editController->initialize()")
+            //DE_OK("m_editController->initialize()")
 
             // II.D. Set componentHandler (automation)
             e = m_editController->setComponentHandler(m_hostHandler);
@@ -1355,7 +1357,7 @@ public:
                 DE_ERROR("No m_editController->setComponentHandler(m_hostHandler). ", getErrorDesc(e))
             }
 
-            DE_OK("m_editController->initialize()")
+            //DE_OK("m_editController->initialize()")
 
             // II.E. Connect component <-> editController
             if (!m_bIsSingleComponent)
@@ -1367,7 +1369,7 @@ public:
                 {
                     procCP->connect(ctrlCP);
                     ctrlCP->connect(procCP);
-                    DE_OK("Connected component <-> editController")
+                    //DE_OK("Connected component <-> editController")
                 }
                 else
                 {
@@ -1395,9 +1397,9 @@ public:
         m_bCanFloat32 = (m_audioProcessor->canProcessSampleSize(Steinberg::Vst::kSample32) == Steinberg::kResultOk);
         m_bCanFloat32 = (m_audioProcessor->canProcessSampleSize(Steinberg::Vst::kSample64) == Steinberg::kResultOk);
         m_latency = m_audioProcessor->getLatencySamples();
-        DE_OK("CanFloat32 = ",m_bCanFloat32)
-        DE_OK("CanFloat64 = ",m_bCanFloat64)
-        DE_OK("PlugLatency = ",m_latency)
+        //DE_OK("CanFloat32 = ",m_bCanFloat32)
+        //DE_OK("CanFloat64 = ",m_bCanFloat64)
+        //DE_OK("PlugLatency = ",m_latency)
 
         // ACTIVATION PHASE:
         // component->setActive(true)
@@ -1408,11 +1410,11 @@ public:
         // 4. Activate MIDI event processing:
         m_bIsSynth = determineIsSynth();
         m_bIsSynth |= m_bIsInstrument;
-        DE_TRACE("m_bIsSynth = ", m_bIsSynth)
+        //DE_TRACE("m_bIsSynth = ", m_bIsSynth)
         m_sampleRate = 48000;
         m_blockSize = 256;
-        DE_WARN("Busses Before:")
-        dumpBusses();
+        //DE_WARN("Busses Before:")
+        //dumpBusses();
         m_buffers.setup(m_component, m_blockSize);
         setAudioIn( true );
         setAudioOut( true );
@@ -1434,7 +1436,7 @@ public:
             DE_ERROR("No m_audioProcessor->setBusArrangements(Stereo). ", getErrorDesc(e))
         }
 
-        DE_WARN("Busses After:")
+        //DE_WARN("Busses After:")
         dumpBusses();
         setAudioIn( true );
         setAudioOut( true );
@@ -1476,7 +1478,7 @@ public:
             auto plugView = m_editController->createView(Steinberg::Vst::ViewType::kEditor);
             if (plugView)
             {
-                DE_OK("Got IPlugView")
+                //DE_OK("Got IPlugView")
                 m_editor = new VST3_Editor(plugView);
             }
             else

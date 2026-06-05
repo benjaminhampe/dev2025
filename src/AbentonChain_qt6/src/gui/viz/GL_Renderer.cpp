@@ -63,28 +63,28 @@ GL_Renderer::GL_Renderer()
     , m_matrix_fft_rows{ 0 }
     , m_matrix_fft_xmode{ 1 } // 0 = linear, 1 = log10
 {
-    de::Image img;
-    dbLoadImage(img,rainbow_1k_webp,710,"rainbow_1k.webp");
-
-    dbSaveImage(img,"rainbow_1k.pam");
-    dbSaveImage(img,"rainbow_1k.ppm");
-    dbSaveImage(img,"rainbow_1k.png");
-    dbSaveImage(img,"rainbow_1k.webp");
-    dbSaveImage(img,"rainbow_1k.dds");
-    dbSaveImage(img,"rainbow_1k.tga");
-    dbSaveImage(img,"rainbow_1k.exr");
-    dbSaveImage(img,"rainbow_1k.xpm");
-    dbSaveImage(img,"rainbow_1k.gif");
-    dbSaveImage(img,"rainbow_1k.jpg");
-    dbSaveImage(img,"rainbow_1k.jpeg");
-    dbSaveImage(img,"rainbow_1k.ico");
-    dbSaveImage(img,"rainbow_1k.bmp");
-    dbSaveImage(img,"rainbow_1k.raw");
-    dbSaveImage(img,"rainbow_1k.rgb");
-    dbSaveImage(img,"rainbow_1k.rgba");
-    dbSaveImage(img,"rainbow_1k.sgi");
-    dbSaveImage(img,"rainbow_1k.tif");
-    dbSaveImage(img,"rainbow_1k.wal");
+    // Test ImageWriters 2026:
+    // de::Image img;
+    // dbLoadImage(img,rainbow_1k_webp,710,"rainbow_1k.webp");
+    // dbSaveImage(img,"rainbow_1k.pam");
+    // dbSaveImage(img,"rainbow_1k.ppm");
+    // dbSaveImage(img,"rainbow_1k.png");
+    // dbSaveImage(img,"rainbow_1k.webp");
+    // dbSaveImage(img,"rainbow_1k.dds");
+    // dbSaveImage(img,"rainbow_1k.tga");
+    // dbSaveImage(img,"rainbow_1k.exr");
+    // dbSaveImage(img,"rainbow_1k.xpm");
+    // dbSaveImage(img,"rainbow_1k.gif");
+    // dbSaveImage(img,"rainbow_1k.jpg");
+    // dbSaveImage(img,"rainbow_1k.jpeg");
+    // dbSaveImage(img,"rainbow_1k.ico");
+    // dbSaveImage(img,"rainbow_1k.bmp");
+    // dbSaveImage(img,"rainbow_1k.raw");
+    // dbSaveImage(img,"rainbow_1k.rgb");
+    // dbSaveImage(img,"rainbow_1k.rgba");
+    // dbSaveImage(img,"rainbow_1k.sgi");
+    // dbSaveImage(img,"rainbow_1k.tif");
+    // dbSaveImage(img,"rainbow_1k.wal");
 
 #if 0
     m_wav_colorGradient.addStop( 0, dbRGBA(0,0,0) );
