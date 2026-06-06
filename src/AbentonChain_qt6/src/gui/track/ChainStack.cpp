@@ -82,7 +82,7 @@ void ChainStack::addPage(ChainWrapper* wrapper)
     connect(wrapper->trackWidget(), &Track::newOverview,
         this, [=] (QPixmap pix)
         {
-            DE_BENNI("newTrackOverview")
+            // DE_BENNI("newTrackOverview")
             emit newTrackOverview(pix); // for Footer overview/scrollbar
         });
 

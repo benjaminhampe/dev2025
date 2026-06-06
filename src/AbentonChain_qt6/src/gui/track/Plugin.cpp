@@ -503,7 +503,7 @@ void Plugin::applySkin()
 
         m_width = (m_baseHeaderWidth * skin.zoom) / 100;
         m_height = (m_baseHeight * skin.zoom) / 100;
-        setFixedSize( m_width + aw, m_height );
+
         m_rcHeader = QRect(0,0,m_width,m_headerHeight);
 
         int x = (m_rcHeader.width() - bw)/2;
@@ -529,6 +529,10 @@ void Plugin::applySkin()
 
         int ay = (m_height - m_audioMeter->height())/2;
         m_audioMeter->move(m_width,ay);
+
+        //setFixedSize( m_width + aw, m_height );
+        setMinimumSize( m_width + aw, m_height );
+        setMaximumSize( m_width + aw, m_height );
     }
     else // Normal
     {
@@ -537,7 +541,7 @@ void Plugin::applySkin()
 
         m_width = (m_baseWidth * skin.zoom) / 100;
         m_height = (m_baseHeight * skin.zoom) / 100;
-        setFixedSize( m_width + aw, m_height );
+
         m_rcHeader = QRect(0,0,m_width,m_headerHeight);
 
         int x = m_spacing4;
@@ -569,9 +573,13 @@ void Plugin::applySkin()
 
         int ay = (m_height - m_audioMeter->height())/2;
         m_audioMeter->move(m_width,ay);
+
+        //setFixedSize( m_width + aw, m_height );
+        setMinimumSize( m_width + aw, m_height );
+        setMaximumSize( m_width + aw, m_height );
     }
 
-    //updateGeometry(); // tells Qt: “my sizeHint() changed”
+    updateGeometry(); // tells Qt: “my sizeHint() changed”
     update();
 }
 

@@ -62,7 +62,8 @@ void Track::applySkin()
 
 void Track::updateLayout()
 {
-    // DE_TRACE()
+    DE_TRACE("updateLayout()")
+
     const int n = static_cast<int>(m_plugins.size());
 
     int x = 0;
@@ -139,6 +140,7 @@ void drawDropTarget(QPainter & dc, QRect pos, int radius,
 // ------------------------------------------------------------
 void Track::resizeEvent(QResizeEvent* e)
 {
+    DE_TRACE("resizeEvent(",e->size().width(),",",e->size().height(),")")
     updateLayout();
 
     QWidget::resizeEvent(e);
@@ -344,9 +346,13 @@ void Track::dragMoveEvent(QDragMoveEvent* e)
     // qDebug() << "dragMoveEvent()";
     QPoint pos = e->position().toPoint();
     m_posDragInit = pos;
-    m_dropIndex = computeDropIndex(pos);
-    startAutoScrollIfNeeded(pos);
-    updateLayout();
+    int dropIndex = computeDropIndex(pos);
+    if (dropIndex != m_dropIndex)
+    {
+        m_dropIndex = dropIndex;
+        //startAutoScrollIfNeeded(pos);
+        updateLayout();
+    }
 }
 
 void Track::dragLeaveEvent(QDragLeaveEvent*)
@@ -355,7 +361,7 @@ void Track::dragLeaveEvent(QDragLeaveEvent*)
     m_dragIndex = -1;
     m_dropIndex = -1;
     // m_scrollTimer->stop();
-    updateLayout();
+    //updateLayout();
 }
 
 void Track::dropEvent(QDropEvent* e)
@@ -454,7 +460,7 @@ void Track::mouseMoveEvent(QMouseEvent* e)
                 if (m_dropIndex != -1)
                 {
                     m_dropIndex = -1;
-                    updateLayout();
+                    //updateLayout();
                 }
 
                 // if (m_dragIndex > -1 && m_dragIndex < int(m_plugins.size()))
@@ -511,7 +517,7 @@ void Track::mousePressEvent(QMouseEvent* e)
         //     p->setIsDragging(false);
         // }
 
-        updateLayout();
+        //updateLayout();
     }
 }
 
@@ -537,10 +543,11 @@ void Track::mouseReleaseEvent(QMouseEvent* e)
         m_isDragging = false;
         m_dropIndex = -1;
         m_dragIndex = -1;
-        updateLayout();
 
         if (didSwap)
         {
+            updateLayout();
+
             createTrackOverview();
 
             if (m_track)
@@ -714,12 +721,12 @@ void Track::createTrackOverview()
         return;
     }
 
-    DE_BENNI("src(",src_w,",",src_h,")")
+    // DE_BENNI("src(",src_w,",",src_h,")")
 
     int dst_h = m_overviewHeight > 0 ? m_overviewHeight : 48;
     int dst_w = std::lround((float(src_w) / float(src_h)) * float(dst_h));
 
-    DE_BENNI("dst(",dst_w,",",dst_h,")")
+    // DE_BENNI("dst(",dst_w,",",dst_h,")")
 
     m_overviewPixmap = QPixmap(dst_w, dst_h);
     m_overviewPixmap.fill(Qt::transparent);
@@ -731,7 +738,7 @@ void Track::createTrackOverview()
             float scale_x = float(dst_w) / float(src_w);
             float scale_y = float(dst_h) / float(src_h);
 
-            DE_BENNI("scale(",scale_x,",",scale_y,")")
+            // DE_BENNI("scale(",scale_x,",",scale_y,")")
             dc.scale(scale_x,scale_y);
             dc.setRenderHint(QPainter::Antialiasing, true);
             dc.setRenderHint(QPainter::TextAntialiasing, true);
