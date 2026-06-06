@@ -9,11 +9,11 @@ add_subdirectory(_libcad)
 add_subdirectory(_libnetwork)
 add_subdirectory(_libdatabase)
 
-add_subdirectory(DarkImage-25.04)
-add_subdirectory(DarkCoverArt-25.04)
-add_subdirectory(DarkMidi-25.04)
-add_subdirectory(DarkSIMD-25.04)
-add_subdirectory(DarkAudio)
+# add_subdirectory(DarkImage-25.04)
+# add_subdirectory(DarkCoverArt-25.04)
+# add_subdirectory(DarkMidi-25.04)
+# add_subdirectory(DarkSIMD-25.04)
+# add_subdirectory(DarkAudio)
 
 add_subdirectory(DarkImage-26.04)   # Abenton Live64 Instrument
 add_subdirectory(DarkGPU-26.04)     # Abenton Live64 Instrument
