@@ -9,7 +9,6 @@
 #pragma once
 #include <DarkImage.h>
 #include <de/midi/GeneralMidi.h>
-#include <de/audio/fft/approx_math.h>
 
 namespace de {
 namespace midi {
@@ -78,7 +77,7 @@ struct ShortMidiMessage // 🎹
         const float maxSemis = +12.0f;
 
         // clamp input
-        semitones = de::audio::math::clampf(semitones, minSemis, maxSemis);
+        semitones = ::de::clampf(semitones, minSemis, maxSemis);
 
         // normalize to 0…1
         const float norm = (semitones - minSemis) / (maxSemis - minSemis);

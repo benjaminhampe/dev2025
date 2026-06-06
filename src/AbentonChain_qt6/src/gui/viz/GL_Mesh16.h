@@ -1,6 +1,5 @@
 #pragma once
 #include <de/gpu/VideoDriver.h>
-#include <de/de_aligned_memory.h>
 
 // inline std::string asciiToBars(unsigned char c)
 // {

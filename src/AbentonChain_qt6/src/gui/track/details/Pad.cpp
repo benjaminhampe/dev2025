@@ -1,7 +1,6 @@
 #include "gui/track/details/Pad.h"
 #include "App.h"
 #include "gui/Skin.h"
-#include "de/audio/fft/approx_math.h"
 
 Pad::Pad(QWidget* parent)
     : QWidget(parent)
@@ -148,20 +147,20 @@ invertF( const QPointF& f, const QRect& rect )
 
 void Pad::setValueX(float fx)
 {
-    m_fx = de::audio::math::clampf(fx, 0.f, 1.f);
+    m_fx = de::clampf(fx, 0.f, 1.f);
     update();
 }
 
 void Pad::setValueY(float fy)
 {
-    m_fy = de::audio::math::clampf(fy, 0.f, 1.f);
+    m_fy = de::clampf(fy, 0.f, 1.f);
     update();
 }
 
 void Pad::setValueXY(float fx, float fy)
 {
-    m_fx = de::audio::math::clampf(fx, 0.f, 1.f);
-    m_fy = de::audio::math::clampf(fy, 0.f, 1.f);
+    m_fx = de::clampf(fx, 0.f, 1.f);
+    m_fy = de::clampf(fy, 0.f, 1.f);
     update();
 }
 

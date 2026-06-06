@@ -1,11 +1,8 @@
 #include <de/audio/player/Player.h>
 #include <de/audio/plugin/details/BasePluginUtils.h>
 #include <App.h>
-#include <de/audio/file/Sound.h>
 #include <de/audio/file/SoundFactory.h>
 #include <de/audio/dsp/DspResampler-1.8.h>
-
-#include <de/audio/fft/approx_math.h>
 
 namespace de {
 namespace audio {
@@ -372,7 +369,7 @@ void Player::setParameterValue(uint32_t id, f64 value, int64_t framePos)
         {
             double v_min = _d->m_paramList[0].m_minValue;
             double v_max = _d->m_paramList[0].m_maxValue;
-            double v = de::audio::math::clampd(value,v_min,v_max);
+            double v = ::de::clampd(value,v_min,v_max);
             _d->m_paramList[0].m_nowValue = v;
             break;
         }

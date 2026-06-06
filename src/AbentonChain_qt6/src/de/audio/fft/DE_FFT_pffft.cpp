@@ -1,5 +1,4 @@
 #include <de/audio/fft/DE_FFT_pffft.h>
-#include <de/audio/fft/approx_math.h>
 
 #if 1
 
@@ -69,10 +68,10 @@ struct DE_FFT_pffft_Private
             return;
         }
 
-        if (!de::audio::math::isPowerOfTwo(n))
+        if (!de::isPowerOfTwo(n))
         {
             DE_ERROR("fftSize ", n, " not a power of 2.")
-            n = de::audio::math::nextPowerOf2(n);
+            n = de::nextPowerOf2(n);
             DE_ERROR("Computed fftSize ", n)
         }
 

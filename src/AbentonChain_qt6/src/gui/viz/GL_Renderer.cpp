@@ -5,7 +5,6 @@
 #include "rainbow_1k_webp.h"
 #include <vector>
 #include <utility>
-#include <de/audio/fft/approx_math.h>
 
 #include <de/video/skybox/Miramar.h>
 
@@ -34,9 +33,9 @@ struct Axis
     double x( double freq )
     {
         if ( m_scaleMode == 1 )
-            return de::audio::math::freq2log(freq, m_fMin, m_fMax, m_sampleRate );
+            return de::freq2log(freq, m_fMin, m_fMax, m_sampleRate );
         else
-            return de::audio::math::freq2lin(freq, m_fMin, m_fMax, m_sampleRate );
+            return de::freq2lin(freq, m_fMin, m_fMax, m_sampleRate );
     }
 /*
     // / (sampleRate_over_fftSize * colCount);
@@ -332,8 +331,8 @@ void GL_Renderer::draw3DAccumFftMatrix()
             const float fMax = fNyquist / factor;
             for ( size_t col = 0; col < cols; col++ )
             {
-                float f = de::audio::math::bin2freq(col,sampleRate,fftSize);
-                float x = siz3d.x * de::audio::math::freq2log(f,fMin,fMax,sampleRate);
+                float f = de::bin2freq(col,sampleRate,fftSize);
+                float x = siz3d.x * de::freq2log(f,fMin,fMax,sampleRate);
                 m_matrix_fft_xmap[ col ] = x;
             }
         }
@@ -366,7 +365,7 @@ void GL_Renderer::draw3DAccumFftMatrix()
             for ( size_t col = 0; col < cols; ++col )
             {
                 float dB = *pRow++; // d.getPixel( col, row );  // The row data
-                float t = de::audio::math::clampf((dB - dBmin) * dBrangeInv,0.f,1.f);
+                float t = de::clampf((dB - dBmin) * dBrangeInv,0.f,1.f);
                 float x = dx * m_matrix_fft_xmap[ col ];
                 float y = dy * t;
                 float z = dz * row;
@@ -383,7 +382,7 @@ void GL_Renderer::draw3DAccumFftMatrix()
             for ( size_t col = 0; col < cols; ++col )
             {
                 float dB = *pRow++; // d.getPixel( col, row );  // The row data
-                float t = de::audio::math::clampf((dB - dBmin) * dBrangeInv,0.f,1.f);
+                float t = de::clampf((dB - dBmin) * dBrangeInv,0.f,1.f);
                 float x = dx * col;
                 float y = dy * t;
                 float z = dz * row;

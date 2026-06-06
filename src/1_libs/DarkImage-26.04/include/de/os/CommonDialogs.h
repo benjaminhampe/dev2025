@@ -4,6 +4,9 @@
 #pragma once
 #include <string>
 
+int dbDesktopWidth();
+int dbDesktopHeight();
+
 // ===========================================================================
 
 // New

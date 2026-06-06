@@ -1,7 +1,5 @@
 #pragma once
-#include <cstdint>
-#include <sstream>
-
+#include <DarkImage.h>
 // We use openMP -fopenmp -O3 -march=native
 #if 0
 #include <vector>

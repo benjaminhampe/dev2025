@@ -24,6 +24,8 @@ if (BENNI_USE_JUCE)
     add_subdirectory(4_juce)
 endif()
 
+add_subdirectory(5_plugins)
+
 if (BENNI_USE_QT)
     add_subdirectory(AbentonChain_qt6)
 endif()
@@ -37,16 +39,9 @@ if (BENNI_USE_VCV)
     add_subdirectory(vcv-rack2)
 endif()
 
-add_subdirectory(VST_benni)
+# add_subdirectory(VST_benni) # Only for reference now
 
 add_subdirectory(minimal_vst2x_host)
-
-
-
-if (BENNI_USE_JUCE)
-    # add_subdirectory(Product_001_Abenton_Gain_juce)
-    add_subdirectory(Product_002_Abenton_Spektrum3d_juce)
-endif()
 
 
 if (BENNI_USE_RAYLIB)

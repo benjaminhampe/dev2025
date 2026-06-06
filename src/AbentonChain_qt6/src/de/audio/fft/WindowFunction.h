@@ -1,10 +1,9 @@
 #pragma once
 #include <DarkImage.h>
-#include <de/de_aligned_memory.h>
 
 namespace de {
 namespace audio {
-	
+
 // Kaiser window β (beta)
 
 // Rule of thumb: pick β from desired sidelobe attenuation A (in dB):
@@ -82,9 +81,9 @@ struct WindowFunction
     eFunc function() const { return m_func; }
 
     void resize(uint32_t n);
-	
+
     void apply(const AlignedFloatVector& v_in, AlignedFloatVector& v_out);
-	
+
     void apply(const float* __restrict__ pIn, uint32_t nIn,
                      float* __restrict__ pOut, uint32_t nOut);
 

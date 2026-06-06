@@ -1,6 +1,5 @@
 #pragma once
 #include <DarkImage.h>
-#include <de/de_aligned_memory.h>
 
 namespace de {
 namespace audio {

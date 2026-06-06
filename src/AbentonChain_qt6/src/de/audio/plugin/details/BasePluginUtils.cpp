@@ -1,5 +1,4 @@
 #include <de/audio/plugin/details/BasePluginUtils.h>
-#include <de/audio/fft/approx_math.h>
 
 namespace de {
 namespace audio {
@@ -31,7 +30,7 @@ void NormalizedSumComputer::calc(
     // #pragma omp parallel for reduction(+:sumL)
     for (size_t i = 0; i < blockSize; ++i)
     {
-        sumL += math::absf(L[i]);
+        sumL += ::de::absf(L[i]);
     }
 
     m_sumL = sumL * m_blockSizeInv; // Normalized
@@ -41,7 +40,7 @@ void NormalizedSumComputer::calc(
     // #pragma omp parallel for reduction(+:sumR)
     for (size_t i = 0; i < blockSize; ++i)
     {
-        sumR += math::absf(R[i]);
+        sumR += ::de::absf(R[i]);
     }
 
     m_sumR = sumR * m_blockSizeInv; // Normalized

@@ -1,5 +1,7 @@
 #pragma once
-#include <de/de_aligned_memory.h>
+//#include <DarkImage.h>
+#include <de/AlignedMemory.h>
+#include <de/MathMusic.h>
 
 /*
 ┌────────────────────────────────────────────────────────────────────────────┐

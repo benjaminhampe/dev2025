@@ -1,7 +1,7 @@
 #include <de/os/CommonDialogs.h>
 #include <de/os/win32/ComInit.h>
 #include <de/Color.h>
-#include <de/os/VideoModes.h>
+//#include <de/os/VideoModes.h>
 //#include <de/Timer.hpp>
 //#include <de/window/IWindow.hpp>
 
@@ -60,6 +60,16 @@ int main() {
     return 0;
 }
 */
+
+int dbDesktopWidth()
+{
+    return GetSystemMetrics( SM_CXSCREEN );
+}
+
+int dbDesktopHeight()
+{
+    return GetSystemMetrics( SM_CYSCREEN );
+}
 
 void dbMessageBoxA(const std::string& msg, const std::string& title)
 {

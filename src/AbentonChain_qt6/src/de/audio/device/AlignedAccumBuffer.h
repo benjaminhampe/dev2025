@@ -1,9 +1,5 @@
 #pragma once
-#include <de/de_aligned_memory.h>
-//#include <cstdint>
-#include <cstring> // for memcpy
-//#include <vector>
-//#include <atomic>
+#include <de/AlignedMemory.h>
 
 namespace de {
 namespace audio {
@@ -15,9 +11,9 @@ private:
     u32 m_frames;
     u32 m_channels;
     u32 m_framesAvail;
-	float* m_buffer;
+    float* m_buffer;
     TAlignedVector<float> m_front; // AVX2 aligned 32 bytes.
-	TAlignedVector<float> m_back; // AVX2 aligned 32 bytes.
+    TAlignedVector<float> m_back; // AVX2 aligned 32 bytes.
 
 public:
     AlignedAccumBuffer()
@@ -25,7 +21,7 @@ public:
         , m_frames{ 0 }
         , m_channels{ 0 }
         , m_framesAvail{ 0 }
-		, m_buffer{ nullptr }
+        , m_buffer{ nullptr }
     {}
 
     // ~AlignedAccumBuffer() {}
@@ -42,12 +38,12 @@ public:
         m_channels = channels;
         m_framesAvail = 0;
         m_front.resize(m_samples);
-		m_back.resize(m_samples);
-		m_buffer = m_front.data();
+        m_back.resize(m_samples);
+        m_buffer = m_front.data();
         DE_OK("frames(",m_frames,"), channels(",m_channels,")")
     }
-    
-	// How many frames can be written without overwriting unread data
+
+    // How many frames can be written without overwriting unread data
     u32 getAvailFrames() const
     {
         return m_framesAvail;
@@ -62,18 +58,18 @@ public:
             return;
         }
 
-		if (frames + m_framesAvail > m_frames)
-		{
-			DE_ERROR("")
-			return;
-		}
+        if (frames + m_framesAvail > m_frames)
+        {
+            DE_ERROR("")
+            return;
+        }
 
-		std::memcpy(
+        std::memcpy(
             m_buffer + (size_t)m_framesAvail * m_channels,
             input,
             (size_t)frames * m_channels * sizeof(float));
 
-		m_framesAvail += frames;
+        m_framesAvail += frames;
 
         // DE_TRACE("frames(",frames,"), framesAvail(",m_framesAvail,")")
     }
@@ -84,41 +80,41 @@ public:
         if (frames < 1)
             return;
 
-		if (frames > m_frames)
-		{
-			DE_ERROR("")
-			return;
-		}
+        if (frames > m_frames)
+        {
+            DE_ERROR("")
+            return;
+        }
 
         if (frames > m_framesAvail)
-		{
+        {
             DE_ERROR("frames(",frames,") >= framesAvail(",m_framesAvail,")")
-			return;
-		}
-		
-		size_t firstPart = frames * m_channels;
-		size_t secondPart = (m_frames - frames) * m_channels;
-		
+            return;
+        }
+
+        size_t firstPart = frames * m_channels;
+        size_t secondPart = (m_frames - frames) * m_channels;
+
         std::memcpy(output, m_buffer, firstPart * sizeof(float));
-			
-		if (m_buffer == m_front.data())
-		{
-			std::memcpy(m_back.data(), 
-				m_front.data() + firstPart, 
-				(size_t)secondPart * sizeof(float));
-			
-			m_buffer = m_back.data();
-		}
-		else
-		{
-			std::memcpy(m_front.data(), 
-				m_back.data() + firstPart, 
-				(size_t)secondPart * sizeof(float));
-			
-			m_buffer = m_front.data();
-		}
-		
-		m_framesAvail -= frames;
+
+        if (m_buffer == m_front.data())
+        {
+            std::memcpy(m_back.data(),
+                m_front.data() + firstPart,
+                (size_t)secondPart * sizeof(float));
+
+            m_buffer = m_back.data();
+        }
+        else
+        {
+            std::memcpy(m_front.data(),
+                m_back.data() + firstPart,
+                (size_t)secondPart * sizeof(float));
+
+            m_buffer = m_front.data();
+        }
+
+        m_framesAvail -= frames;
     }
 };
 

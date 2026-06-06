@@ -1,7 +1,5 @@
 #pragma once
 #include <de/audio/file/FileInfo.h>
-#include <de/de_aligned_memory.h>
-#include <de/audio/dsp/IDspChainElement.h>
 
 namespace de {
 namespace audio {

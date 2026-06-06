@@ -1,0 +1,1 @@
+add_subdirectory(use_spectrum3d_clap)

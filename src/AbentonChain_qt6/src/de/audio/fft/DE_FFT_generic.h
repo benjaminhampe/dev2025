@@ -1,12 +1,11 @@
 #pragma once
-#include <de/de_aligned_memory.h>
-#include <vector>
-//#include <cmath>
+#include <de/AlignedMemory.h>
+#include <de/MathMusic.h>
 
 namespace de {
 namespace audio {
 namespace fft {
-	
+
 struct DE_FFT_generic
 {
     DE_AlignedFloatVector m_imag;

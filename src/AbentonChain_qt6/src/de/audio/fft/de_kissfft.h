@@ -1,5 +1,5 @@
 #pragma once
-#include <de/de_aligned_memory.h>
+#include <de/AlignedMemory.h>
 #include <complex>
 #include <kissfft/kiss_fft.hpp>
 
