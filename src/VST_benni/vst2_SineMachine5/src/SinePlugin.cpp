@@ -1,5 +1,4 @@
-#include "Plugin.h"
-#include "Editor.h"
+#include "SinePlugin.h"
 
 // ------------------ Plugin Instantiation ------------------
 
@@ -154,13 +153,13 @@ Plugin::dispatcher(VstInt32 opCode, VstInt32 index, VstIntPtr value, void* ptr, 
 {
     switch (opCode)
     {
-        case effOpen:
-            DE_BENNI("effOpen")
-            return 0;
-        case effClose:
-            DE_BENNI("effClose")
-            delete this; // End lifecycle. We must delete ourselfs to prevent leaks.
-            return 0;
+        // case effOpen:
+        //     DE_BENNI("effOpen")
+        //     return 0;
+        // case effClose:
+        //     DE_BENNI("effClose")
+        //     //delete this; // End lifecycle. We must delete ourselfs to prevent leaks.
+        //     return 0;
         case effEditOpen:
             DE_BENNI("effEditOpen")
             m_editor.create(ptr);
@@ -293,28 +292,55 @@ Plugin::~Plugin()
 {}
 
 VstInt32
-Plugin::canDo(char *text) { return ( m_canDo.find(text) == m_canDo.end()) ? -1: 1; } // 1 = yes, -1 = no, 0 = don't know
+Plugin::canDo(char *text)
+{
+    return ( m_canDo.find(text) == m_canDo.end()) ? -1: 1;
+} // 1 = yes, -1 = no, 0 = don't know
 
 void
-Plugin::setProgramName(char *name) { vst_strncpy (m_programName, name, kVstMaxProgNameLen);}
+Plugin::setProgramName(char *name)
+{
+    //vst_strncpy (m_programName, name, kVstMaxProgNameLen);
+}
 
 void
-Plugin::getProgramName(char *name) { vst_strncpy (name, m_programName, kVstMaxProgNameLen);}
+Plugin::getProgramName(char *name)
+{
+    vst_strncpy (name, "DefaultProg", kVstMaxProgNameLen);
+}
 
 bool
-Plugin::getEffectName(char* name)  { vst_strncpy(name, "SineMachine4", kVstMaxProductStrLen); return true; }
+Plugin::getEffectName(char* name)
+{
+    vst_strncpy(name, "SineMachine4", kVstMaxEffectNameLen);
+    return true;
+}
 
 bool
-Plugin::getProductString(char* text) { vst_strncpy (text, "hambe SineMachine4", kVstMaxProductStrLen); return true; }
+Plugin::getProductString(char* text)
+{
+    vst_strncpy (text, "Abenton SineMachine4", kVstMaxProductStrLen);
+    return true;
+}
 
 bool
-Plugin::getVendorString(char* text) { vst_strncpy (text, "hambe", kVstMaxVendorStrLen); return true; }
+Plugin::getVendorString(char* text)
+{
+    vst_strncpy (text, "Abenton", kVstMaxVendorStrLen);
+    return true;
+}
 
 void
-Plugin::open() { DE_DEBUG("") }
+Plugin::open()
+{
+    DE_DEBUG("")
+}
 
 void
-Plugin::close() { DE_DEBUG("") }
+Plugin::close()
+{
+    DE_DEBUG("close()")
+}
 
 
 
@@ -382,18 +408,21 @@ Plugin::getParameter(VstInt32 index)
 
 void Plugin::getParameterName(VstInt32 index, char *text)
 {
+    vst_strncpy(text, "BenniPar", kVstMaxParamStrLen);
+#if 0
     vst_strncpy(text, "?", kVstMaxParamStrLen);
 
     switch (index) {
         //case kParamA: vst_strncpy (text, "Q", kVstMaxParamStrLen); break;
         default: break; // unknown parameter, shouldn't happen!
     } //this is our labels for displaying in the VST host
+#endif
 }
 
 void Plugin::getParameterDisplay(VstInt32 index, char *text)
 {
-    vst_strncpy(text, "?", kVstMaxParamStrLen);
-
+    vst_strncpy(text, "BenPDisp", kVstMaxParamStrLen);
+#if 0
     switch (index)
     {
     // case kParamA:
@@ -409,15 +438,17 @@ void Plugin::getParameterDisplay(VstInt32 index, char *text)
     default:
         break; // unknown parameter, shouldn't happen!
     } //this displays the values and handles 'popups' where it's discrete choices
+#endif
 }
 
 void Plugin::getParameterLabel(VstInt32 index, char *text)
 {
-    vst_strncpy(text, "?", kVstMaxParamStrLen);
-
+    vst_strncpy(text, "BenLabel", kVstMaxParamStrLen);
+#if 0
     switch (index)
     {
         //case kParamA: vst_strncpy (text, "", kVstMaxParamStrLen); break;
         default: break; // unknown parameter, shouldn't happen!
     }
+#endif
 }

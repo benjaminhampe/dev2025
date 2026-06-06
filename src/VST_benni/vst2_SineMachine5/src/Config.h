@@ -16,8 +16,9 @@
 // #include <GLFW/glfw3.h> // Bad: GLFW uses TopLevelWindows, not well managable by Hosts.
 
 #include <DarkImage.h>
-#include <de_AlignedVector.h>
-#include <de_Approx_Math.h>
+// #include <de_Approx_Math.h>
+#include <de/approx_math.h>
+#include <de/de_aligned_memory.h>
 
 #ifdef _MSC_VER
     #ifndef DE_RESTRICT

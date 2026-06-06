@@ -36,6 +36,7 @@ public:
     // Its not clear if glFlush() should be used at all.
     // Seems to reduce vsync to 30 fps, because we swapped one time too often.
     // I recommend disabling vsync, enabling double buffering and have fun.
+    void makeCurrent() override;
     void swapBuffers() override;
 
     bool create( WindowOptions params ) override;

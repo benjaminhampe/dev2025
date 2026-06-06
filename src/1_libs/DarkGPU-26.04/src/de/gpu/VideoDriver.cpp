@@ -552,9 +552,13 @@ void VideoDriver::resize( int w, int h )
     }
 }
 
-void VideoDriver::beginRender()
+void VideoDriver::beginRender(const glm::vec4& clearColor)
 {
+    // wglMakeCurrent(ps.hdc, self->_d->glrc);
+
     m_timeNow = dbTimeInSeconds() - m_timeEpoch;
+
+    // DE_BENNI("m_time = ",m_timeNow)
 
     if (m_rt)
     {
@@ -567,7 +571,7 @@ void VideoDriver::beginRender()
     // glDisable(GL_SCISSOR_TEST);
     // glScissor(0,0,w,h);
     glViewport(0,0,w,h);
-    glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+    glClearColor(clearColor.r, clearColor.g, clearColor.b, clearColor.a);
     glClearDepthf(1.0f);
     glClearStencil(0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);

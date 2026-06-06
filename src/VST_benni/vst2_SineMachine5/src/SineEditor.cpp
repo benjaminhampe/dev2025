@@ -1,5 +1,5 @@
-#include "Editor.h"
-#include "Plugin.h"
+#include "SineEditor.h"
+#include "SinePlugin.h"
 
 #include <de/os/win32/TranslateKey.h>
 #include <vector> // for iAttributes in CreateContext

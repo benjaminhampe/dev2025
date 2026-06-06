@@ -23,6 +23,10 @@ LRESULT CALLBACK Window_WGL_Proc( HWND hwnd, UINT message, WPARAM wParam, LPARAM
 struct Window_WGL_Internals
 // ===================================================================
 {
+    int m_screenWidth = 600;
+    int m_screenHeight = 480;
+    bool focused = false;
+
     IEventReceiver* m_receiver;
 
     std::array<bool, 1024> m_keyStates;
@@ -49,6 +53,8 @@ struct Window_WGL_Internals
     DWORD m_fullscreenStyle;
 
     DEVMODE m_desktopMode;
+
+
 
     HWND m_dummyWnd;
     HDC m_dummyDC;
@@ -304,8 +310,16 @@ void Window_WGL::requestClose()
     }
 }
 
+void Window_WGL::makeCurrent()
+{
+    // wglMakeCurrent(ps.hdc, self->_d->glrc);
+    wglMakeCurrent(_d->m_hDC, _d->m_hRC);
+
+}
 void Window_WGL::swapBuffers()
 {
+    glFlush();
+#if 0
     // TODO: rework this. Seems like enabled vsync = 1 leads to 30 fps, not 60
     //       which should mean we swapped one time too often.
     //       Do we need SwapBuffers at all in combi with DwmFlush ?
@@ -334,7 +348,7 @@ void Window_WGL::swapBuffers()
         }
     }
     //}
-
+#endif
     bool ok = (SwapBuffers( _d->m_hDC ) == TRUE);
 }
 
@@ -388,8 +402,464 @@ static HGLRC InitGL (HWND Wnd)
     return ourOpenGLRC; // Return the render context
 }
 
+LRESULT CALLBACK
+WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
+{
+    auto self = reinterpret_cast<Window_WGL*>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
+    if (msg == WM_CREATE)
+    {
+        CREATESTRUCT* cs = (CREATESTRUCT*)lParam;
+        SetWindowLongPtr(hwnd, GWLP_USERDATA, (LONG_PTR)cs->lpCreateParams);
+
+        DE_OK("WM_CREATE")
+        SetTimer(hwnd, 123, 1000 / 60, NULL); // 1/10th-second timer
+        return 0;
+    }
+
+    if (!self) return DefWindowProc(hwnd, msg, wParam, lParam);
+
+    auto createMouseDblClickEvent = [](UINT msg, WPARAM wParam, LPARAM lParam)
+    {
+        const int mx = GET_X_LPARAM(lParam);
+        const int my = GET_Y_LPARAM(lParam);
+        const bool bCtrl = (wParam & MK_CONTROL) != 0;
+        const bool bShift = (wParam & MK_SHIFT) != 0;
+        const bool bAlt = (wParam & MK_ALT) != 0;
+
+        de::MouseDblClickEvent e;
+        e.x = mx;
+        e.y = my;
+
+        e.flags = de::MouseFlag::DoubleClick;
+        if (bCtrl) { e.flags |= de::MouseFlag::WithCtrl; }
+        if (bShift) { e.flags |= de::MouseFlag::WithShift; }
+        if (bAlt) { e.flags |= de::MouseFlag::WithAlt; }
+
+        switch (msg)
+        {
+        case WM_LBUTTONDBLCLK: e.buttons = de::MouseButton::Left; break;
+        case WM_RBUTTONDBLCLK: e.buttons = de::MouseButton::Right; break;
+        case WM_MBUTTONDBLCLK: e.buttons = de::MouseButton::Middle; break;
+        default: DE_ERROR("Unsupported mouse button double click.") break;
+        }
+
+        return e;
+    };
+
+    auto createMousePressEvent = [](UINT msg, WPARAM wParam, LPARAM lParam)
+    {
+        de::MousePressEvent e;
+        e.x = LOWORD(lParam);
+        e.y = HIWORD(lParam);
+        e.flags = de::MouseFlag::Pressed;
+        //e.flags.Shift = ((LOWORD(wParam) & MK_SHIFT) != 0);
+        //e.flags.Control = ((LOWORD(wParam) & MK_CONTROL) != 0);
+
+        switch (msg)
+        {
+        case WM_LBUTTONDOWN: e.buttons = de::MouseButton::Left; break;
+        case WM_RBUTTONDOWN: e.buttons = de::MouseButton::Right; break;
+        case WM_MBUTTONDOWN: e.buttons = de::MouseButton::Middle; break;
+        default: DE_ERROR("Unsupported mouse press event.") break;
+        }
+        return e;
+    };
+
+    auto createMouseReleaseEvent = [](UINT msg, WPARAM wParam, LPARAM lParam)
+    {
+        de::MouseReleaseEvent e;
+        e.x = LOWORD(lParam);
+        e.y = HIWORD(lParam);
+        e.flags = de::MouseFlag::Released;
+        //e.flags.Shift = ((LOWORD(wParam) & MK_SHIFT) != 0);
+        //e.flags.Control = ((LOWORD(wParam) & MK_CONTROL) != 0);
+
+        switch (msg)
+        {
+        case WM_LBUTTONUP: e.buttons = de::MouseButton::Left; break;
+        case WM_RBUTTONUP: e.buttons = de::MouseButton::Right; break;
+        case WM_MBUTTONUP: e.buttons = de::MouseButton::Middle; break;
+        default: DE_ERROR("Unsupported mouse release event.") break;
+        }
+        return e;
+    };
+
+    auto createKeyPressEvent = [](Window_WGL* self, UINT msg, WPARAM wParam, LPARAM lParam)
+    {
+        BYTE allKeys[ 256 ];
+        GetKeyboardState( allKeys );
+        bool const isShift = ( ( allKeys[ VK_SHIFT ] & 0x80 ) != 0 );
+        bool const isCtrl = ( ( allKeys[ VK_CONTROL ] & 0x80 ) != 0 );
+
+        // Handle unicode and deadkeys in a way that works since Windows 95 and nt4.0
+        // Using ToUnicode instead would be shorter, but would to my knowledge not run on 95 and 98.
+        UINT32 unicode = 0;
+        wchar_t singleChar = 0;
+        WORD keyChars[ 2 ];
+        UINT scanCode = HIWORD( lParam );
+        int conversionResult = ::ToAsciiEx( UINT(wParam),
+                                           scanCode,
+                                           allKeys,
+                                           keyChars,
+                                           0,
+                                           self->_d->m_KEYBOARD_INPUT_HKL );
+        if (conversionResult == 1)
+        {
+            WORD unicodeChar;
+            ::MultiByteToWideChar( self->_d->m_KEYBOARD_INPUT_CODEPAGE,
+                                  MB_PRECOMPOSED, // default
+                                  reinterpret_cast<LPCSTR>(keyChars),
+                                  sizeof( keyChars ),
+                                  reinterpret_cast<WCHAR*>(&unicodeChar),
+                                  1 );
+            singleChar = unicodeChar;
+            unicode = unicodeChar;
+        }
+        else
+        {
+            // DE_ERROR("Conversion Error in keyPressEvent")
+        }
+
+        de::KeyPressEvent e;
+        e.key = de::translateWinKey( UINT(wParam) );
+        e.unicode = unicode;
+        e.scancode = UINT(wParam);
+        e.modifiers = 0;
+        if ( isShift ) e.modifiers |= de::KeyModifier::Shift;
+        if ( isCtrl ) e.modifiers |= de::KeyModifier::Ctrl;
+        return e;
+    };
+
+    auto createKeyReleaseEvent = [](Window_WGL* self, UINT msg, WPARAM wParam, LPARAM lParam)
+    {
+        BYTE allKeys[ 256 ];
+        GetKeyboardState( allKeys );
+        bool const isShift = ( ( allKeys[ VK_SHIFT ] & 0x80 ) != 0 );
+        bool const isCtrl = ( ( allKeys[ VK_CONTROL ] & 0x80 ) != 0 );
+
+        // Handle unicode and deadkeys in a way that works since Windows 95 and nt4.0
+        // Using ToUnicode instead would be shorter, but would to my knowledge not run on 95 and 98.
+        UINT32 unicode = 0;
+        wchar_t singleChar = 0;
+        WORD keyChars[ 2 ];
+        UINT scanCode = HIWORD( lParam );
+        int conversionResult = ::ToAsciiEx( UINT(wParam),
+                                           scanCode,
+                                           allKeys,
+                                           keyChars,
+                                           0,
+                                           self->_d->m_KEYBOARD_INPUT_HKL );
+        if (conversionResult == 1)
+        {
+            WORD unicodeChar;
+            ::MultiByteToWideChar( self->_d->m_KEYBOARD_INPUT_CODEPAGE,
+                                  MB_PRECOMPOSED, // default
+                                  reinterpret_cast<LPCSTR>(keyChars),
+                                  sizeof( keyChars ),
+                                  reinterpret_cast<WCHAR*>(&unicodeChar),
+                                  1 );
+            singleChar = unicodeChar;
+            unicode = unicodeChar;
+        }
+        else
+        {
+            // DE_ERROR("Conversion Error in keyReleaseEvent")
+        }
+
+        de::KeyReleaseEvent e;
+        e.key = de::translateWinKey( UINT(wParam) );
+        e.unicode = unicode;
+        e.scancode = UINT(wParam);
+        e.modifiers = 0;
+        if ( isShift ) e.modifiers |= de::KeyModifier::Shift;
+        if ( isCtrl ) e.modifiers |= de::KeyModifier::Ctrl;
+        return e;
+    };
+
+    switch (msg)
+    {
+        // case WM_CREATE:
+        // {
+        //     return 0;
+        // }
+        case WM_SETFOCUS:
+        {
+            DE_OK("WM_SETFOCUS")
+            self->_d->focused = true;
+            break;
+        }
+        case WM_KILLFOCUS:
+        {
+            DE_OK("WM_KILLFOCUS")
+            self->_d->focused = false;
+            break;
+        }
+        case WM_DESTROY:
+        {
+            DE_OK("WM_DESTROY")
+            KillTimer(hwnd, 123);
+            //PostQuitMessage(0);
+            return 0;
+        }
+        case WM_TIMER:
+        {
+            if (wParam == 123)
+            {
+                InvalidateRect(hwnd, NULL, TRUE); // force redraw
+            }
+            return 0;
+        }
+        case WM_ERASEBKGND:
+        {
+            return 0;
+        }
+        case WM_PAINT:
+        {
+            PAINTSTRUCT ps;
+            BeginPaint(hwnd, &ps);
+
+            if ( self )
+            {
+                wglMakeCurrent(ps.hdc, self->_d->m_hRC);
+
+                RECT r;
+                GetClientRect(hwnd, &r);
+
+                de::PaintEvent event;
+                event.w = r.right - r.left;
+                event.h = r.bottom - r.top;
+                self->_d->m_receiver->paintEvent(event);
+
+                SwapBuffers( ps.hdc );
+            }
+
+            EndPaint(hwnd, &ps);
+            return 0;
+        }
+
+        case WM_SIZE:
+        {
+            //int w = LOWORD(lParam);
+            //int h = HIWORD(lParam);
+            int w = GET_X_LPARAM( lParam );
+            int h = GET_Y_LPARAM( lParam );
+            DE_OK("WM_SIZE(",w,",",h,")");
+            de::ResizeEvent event;
+            event.w = w;
+            event.h = h;
+            self->_d->m_receiver->resizeEvent(event);
+            return 0;
+        }
+        case WM_LBUTTONDBLCLK:
+        {
+            if (!self->_d->focused)
+            {
+                SetFocus(hwnd);
+            }
+            self->_d->m_receiver->mouseDblClickEvent( createMouseDblClickEvent(msg, wParam, lParam) );
+            return 0;
+        }
+        case WM_RBUTTONDBLCLK:
+        {
+            if (!self->_d->focused)
+            {
+                SetFocus(hwnd);
+            }
+            self->_d->m_receiver->mouseDblClickEvent( createMouseDblClickEvent(msg, wParam, lParam) );
+            return 0;
+        }
+        case WM_MBUTTONDBLCLK:
+        {
+            if (!self->_d->focused)
+            {
+                SetFocus(hwnd);
+            }
+            self->_d->m_receiver->mouseDblClickEvent( createMouseDblClickEvent(msg, wParam, lParam) );
+            return 0;
+        }
+        case WM_MOUSEMOVE:
+        {
+            // if (!self->_d->focused)
+            // {
+            //     SetFocus(hwnd);
+            // }
+            de::MouseMoveEvent event;
+            event.x = int( LOWORD( lParam ) );
+            event.y = int( HIWORD( lParam ) );
+            self->_d->m_receiver->mouseMoveEvent( event );
+            return 0;
+        }
+        case WM_MOUSEWHEEL:
+        {
+            if (!self->_d->focused)
+            {
+                SetFocus(hwnd);
+            }
+            de::MouseWheelEvent event;
+            event.x = 0.0f;
+            event.y = float( int16_t( HIWORD( wParam ) ) ) / float( WHEEL_DELTA );
+            self->_d->m_receiver->mouseWheelEvent( event );
+            return 0;
+        }
+        case WM_LBUTTONDOWN:
+        {
+            if (!self->_d->focused)
+            {
+                SetFocus(hwnd);
+            }
+            self->_d->m_receiver->mousePressEvent( createMousePressEvent(msg, wParam, lParam) );
+            return 0;
+        }
+        case WM_RBUTTONDOWN:
+        {
+            if (!self->_d->focused)
+            {
+                SetFocus(hwnd);
+            }
+            self->_d->m_receiver->mousePressEvent( createMousePressEvent(msg, wParam, lParam) );
+            return 0;
+        }
+        case WM_MBUTTONDOWN:
+        {
+            if (!self->_d->focused)
+            {
+                SetFocus(hwnd);
+            }
+            self->_d->m_receiver->mousePressEvent( createMousePressEvent(msg, wParam, lParam) );
+            return 0;
+        }
+        case WM_LBUTTONUP:
+        {
+            if (!self->_d->focused)
+            {
+                SetFocus(hwnd);
+            }
+            self->_d->m_receiver->mouseReleaseEvent( createMouseReleaseEvent(msg, wParam, lParam) );
+            return 0;
+        }
+        case WM_RBUTTONUP:
+        {
+            if (!self->_d->focused)
+            {
+                SetFocus(hwnd);
+            }
+            self->_d->m_receiver->mouseReleaseEvent( createMouseReleaseEvent(msg, wParam, lParam) );
+            return 0;
+        }
+        case WM_MBUTTONUP:
+        {
+            if (!self->_d->focused)
+            {
+                SetFocus(hwnd);
+            }
+            self->_d->m_receiver->mouseReleaseEvent( createMouseReleaseEvent(msg, wParam, lParam) );
+            return 0;
+        }
+
+        //case WM_XBUTTONDOWN:
+        //case WM_XBUTTONUP:
+
+        // === KeyboardEvents: ===
+
+        case WM_INPUTLANGCHANGE:
+        {
+            auto hkl = GetKeyboardLayout( 0 ); // get the new codepage used for keyboard input
+            self->_d->m_KEYBOARD_INPUT_HKL = hkl; // get the new codepage used for keyboard input
+            self->_d->m_KEYBOARD_INPUT_CODEPAGE = de::convertLocaleIdToCodepage( LOWORD( hkl ) );
+            return 0;
+        }
+        case WM_KEYDOWN:
+        {
+            //DE_OK("WM_KEYDOWN")
+            self->_d->m_receiver->keyPressEvent( createKeyPressEvent(self, msg, wParam, lParam) );
+            return 0;
+        }
+        case WM_KEYUP:
+        {
+            //DE_OK("WM_KEYUP")
+            self->_d->m_receiver->keyReleaseEvent( createKeyReleaseEvent(self, msg, wParam, lParam) );
+            return 0;
+        }
+        case WM_SYSKEYDOWN:
+        {
+            //DE_OK("WM_SYSKEYDOWN")
+            self->_d->m_receiver->keyPressEvent( createKeyPressEvent(self, msg, wParam, lParam) );
+            return 0;
+        }
+        case WM_SYSKEYUP:
+        {
+            //DE_OK("WM_SYSKEYUP")
+            self->_d->m_receiver->keyReleaseEvent( createKeyReleaseEvent(self, msg, wParam, lParam) );
+            return 0;
+        }
+/*
+        case WM_SYSCOMMAND:
+        {
+            // if ( ( wParam & 0xFFF0 ) == SC_SCREENSAVE ||
+            //      ( wParam & 0xFFF0 ) == SC_MONITORPOWER ||
+            //      ( wParam & 0xFFF0 ) == SC_KEYMENU )
+            // {
+            //    return 0; // prevent screensaver or monitor powersave mode from starting
+            // }
+            break;
+        }
+*/
+        default:
+        {
+            break;
+        }
+    }
+    return DefWindowProc(hwnd, msg, wParam, lParam);
+}
+
 bool Window_WGL::create( WindowOptions params )
 {
+    int desktopW = GetSystemMetrics( SM_CXSCREEN );
+    int desktopH = GetSystemMetrics( SM_CYSCREEN );
+
+    _d->m_screenWidth = desktopW / 2 - 100;
+    _d->m_screenHeight = desktopH - 300;
+
+    int w = _d->m_screenWidth;
+    int h = _d->m_screenHeight;
+
+    HWND parentHwnd = nullptr; //(HWND)parent;
+
+    WNDCLASS wc = {0};
+    wc.lpfnWndProc = WndProc;
+    wc.hInstance = GetModuleHandle(nullptr);
+    wc.lpszClassName = _T("DarkWGL_EditorClass");
+    RegisterClass(&wc);
+
+    _d->m_hWnd = CreateWindowEx(
+        WS_EX_CONTROLPARENT,
+        wc.lpszClassName,
+        _T("SineMachine5"),
+        WS_CHILD | WS_VISIBLE | WS_TABSTOP, //  | WS_CLIPCHILDREN
+        0, 0, w, h,
+        parentHwnd,
+        nullptr,
+        wc.hInstance,
+        this);
+
+    SetFocus( _d->m_hWnd );
+
+    _d->m_hDC = GetDC(_d->m_hWnd);
+    PIXELFORMATDESCRIPTOR pfd = {sizeof(PIXELFORMATDESCRIPTOR),
+                                 1,
+                                 PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL | PFD_DOUBLEBUFFER,
+                                 PFD_TYPE_RGBA,
+                                 32 };
+    int pf = ChoosePixelFormat(_d->m_hDC, &pfd);
+    SetPixelFormat(_d->m_hDC, pf, &pfd);
+    _d->m_hRC = wglCreateContext(_d->m_hDC);
+    wglMakeCurrent(_d->m_hDC, _d->m_hRC);
+
+    // glewExperimental = GL_TRUE;
+    // glewInit();
+
+    //GetWindowRect(_d->m_hWnd,_d-
+#if 0
     // =============================================================
     // DEVMODE
     // =============================================================
@@ -517,6 +987,7 @@ bool Window_WGL::create( WindowOptions params )
     MoveWindow( _d->m_hWnd, x, y, w, h, TRUE );
 
     _d->m_hRC = InitGL( _d->m_hWnd );
+#endif
 
 #ifdef BENNI_USE_BLOAT
    #ifdef BENNI_USE_COUT

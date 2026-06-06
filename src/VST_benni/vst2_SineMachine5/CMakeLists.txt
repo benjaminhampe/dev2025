@@ -15,13 +15,17 @@ else()
     # set(LIB_SOURCES ${LIB_HEADERS_H} ${LIB_SOURCES_CPP})
 
     set(LIB_SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/src)
-    set(LIB_SOURCES 
+    set(LIB_SOURCES
+        ${LIB_SOURCE_DIR}/de/de_aligned_memory.h
+        ${LIB_SOURCE_DIR}/de/de_aligned_memory.cpp
+        ${LIB_SOURCE_DIR}/de/approx_math.h
+        ${LIB_SOURCE_DIR}/de/midi/ShortMidiMessage.h
         ${LIB_SOURCE_DIR}/Config.cpp
         ${LIB_SOURCE_DIR}/Config.h
-        ${LIB_SOURCE_DIR}/Editor.cpp
-        ${LIB_SOURCE_DIR}/Editor.h
-        ${LIB_SOURCE_DIR}/Plugin.cpp
-        ${LIB_SOURCE_DIR}/Plugin.h
+        ${LIB_SOURCE_DIR}/SineEditor.cpp
+        ${LIB_SOURCE_DIR}/SineEditor.h
+        ${LIB_SOURCE_DIR}/SinePlugin.cpp
+        ${LIB_SOURCE_DIR}/SinePlugin.h
         ${LIB_SOURCE_DIR}/main_SineMachine5_vst2.cpp
         ${LIB_SOURCE_DIR}/fonts/fonts_ShareTechMonoRegular_ttf.cpp
         ${LIB_SOURCE_DIR}/fonts/fonts_ShareTechMonoRegular_ttf.h
@@ -35,7 +39,7 @@ else()
         enable_language(RC)
         list(APPEND APP_SOURCES ${CMAKE_CURRENT_LIST_DIR}/res/resource.h)
         list(APPEND APP_SOURCES ${CMAKE_CURRENT_LIST_DIR}/res/resource.rc)
-	  # list(APPEND APP_SOURCES "${APP_RC_DIR}/resource.qrc")
+      # list(APPEND APP_SOURCES "${APP_RC_DIR}/resource.qrc")
     endif()
 
     # if (BUILD_SHARED)
@@ -63,8 +67,9 @@ else()
     target_link_libraries(${LIB_NAME} PRIVATE de_glfw)
     target_link_libraries(${LIB_NAME} PRIVATE de_glew)
     target_link_libraries(${LIB_NAME} PRIVATE de_nanovg_tint)
-    target_link_libraries(${LIB_NAME} PRIVATE DarkImage_2504)
-    target_link_libraries(${LIB_NAME} PRIVATE DarkSIMD)
+    # target_link_libraries(${LIB_NAME} PRIVATE DarkImage_2504)
+    target_link_libraries(${LIB_NAME} PRIVATE DarkImage_2604)
+    # target_link_libraries(${LIB_NAME} PRIVATE DarkSIMD)
 
     # target_link_libraries(${LIB_NAME} PRIVATE de_samplerate)
     # target_link_libraries(${LIB_NAME} PRIVATE de_dr_wav)

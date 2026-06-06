@@ -1,6 +1,5 @@
 #pragma once
-#include "Config.h"
-#include "Editor.h"
+#include "SineEditor.h"
 
 #include <set>
 #include <string>
@@ -166,12 +165,14 @@ public:
 
     void noteOn(int channel, int note, int velocity)
     {
+        DE_OK("NoteOn: ", note)
         int slot = findIdleNoteSlot();
         if (slot < 0)
         {
             return; // Discard, Information loss!
         }
 
+        DE_OK("Slot = ",slot)
         m_notes[slot].init(*m_cfg, channel, note, velocity);
         /*
         m_baseFrequency = 440.0 * pow(2.0, (note - 69) / 12.0);  // MIDI to Hz
@@ -182,6 +183,7 @@ public:
 
     void noteOff(int channel, int note, int velocity)
     {
+        DE_OK("NoteOff: ",note)
         if (m_cfg->m_singleShot)
         {
             return;
@@ -311,6 +313,8 @@ public:
             return 0;
         }
 
+        DE_OK("numEvents = ",events->numEvents)
+
         for (VstInt32 i = 0; i < events->numEvents; ++i)
         {
             if (events->events[i]->type == kVstMidiType)
@@ -325,10 +329,12 @@ public:
 
     void handleShortMidi(char bytes[4])
     {
-        int status = bytes[0] & 0xF0;
-        int channel = bytes[0] & 0x0F;
-        int data1 = bytes[1] & 0x7F;
-        int data2 = bytes[2] & 0x7F;
+        uint8_t status = bytes[0] & 0xF0;
+        uint8_t channel = bytes[0] & 0x0F;
+        uint8_t data1 = bytes[1] & 0x7F;
+        uint8_t data2 = bytes[2] & 0x7F;
+
+        DE_OK("")
 
         switch (status)
         {

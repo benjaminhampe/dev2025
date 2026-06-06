@@ -6,7 +6,7 @@ if (TARGET ${APP_NAME})
 else()
 
     set(APP_SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/src)
-    file( GLOB_RECURSE APP_SOURCES "${APP_SOURCE_DIR}/*.[h,c]pp")
+    file(GLOB_RECURSE APP_SOURCES "${APP_SOURCE_DIR}/*.[h,c]pp")
 
     if (WIN32)
         enable_language(RC)
@@ -28,10 +28,11 @@ else()
     #target_link_libraries(${LIB_NAME} PUBLIC de_glm)         # Math
     #target_link_libraries(${LIB_NAME} PUBLIC de_fontawesome) # Font
     #target_link_libraries(${LIB_NAME} PUBLIC de_tinyxml2)    # XML
-    # target_link_libraries(${APP_NAME} PRIVATE AS_DarkImage)     # Logger
-    target_link_libraries(${APP_NAME} PRIVATE DarkImage_2504)
-    # target_link_libraries(${APP_NAME} PRIVATE DarkAudio)     # Logger
-    target_link_libraries(${APP_NAME} PRIVATE de_ffmpeg)     # AudioDecoder + VideoDecoder
-    target_link_libraries(${APP_NAME} PRIVATE de_lame)       # AudioEncoder MP3
+    #target_link_libraries(${APP_NAME} PRIVATE AS_DarkImage)  # Logger
+    #target_link_libraries(${APP_NAME} PRIVATE DarkImage_2504)
+    target_link_libraries(${APP_NAME} PRIVATE DarkImage_2604)
+    # target_link_libraries(${APP_NAME} PRIVATE DarkAudio)    # Logger
+    target_link_libraries(${APP_NAME} PRIVATE de_ffmpeg)      # AudioDecoder + VideoDecoder
+    target_link_libraries(${APP_NAME} PRIVATE de_lame)        # AudioEncoder MP3
 
 endif()

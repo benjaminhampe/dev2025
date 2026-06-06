@@ -442,6 +442,7 @@ public:
         }
 
         dispatcher(effClose);               // Stop plugin
+        m_vst = nullptr;
 
         m_symLoader.close();
         // if ( m_dllHandle )                  // Close plugin

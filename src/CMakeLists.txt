@@ -1,9 +1,10 @@
 add_subdirectory(0_tools)
 add_subdirectory(1_libs)
+add_subdirectory(AVX_Mandelbrot_de_glew)
 
 if (BENNI_USE_DEMOS)
     add_subdirectory(2_demos)
-    
+
     if (BENNI_USE_QT)
         add_subdirectory(VHS_qt6)
         add_subdirectory(AbentonTest1_qt6)
@@ -26,14 +27,14 @@ endif()
 if (BENNI_USE_QT)
     add_subdirectory(AbentonChain_qt6)
 endif()
-        
-add_subdirectory(H3_Siedler)
+
+# add_subdirectory(H3_Siedler)
 #add_subdirectory(Kinescope)
 add_subdirectory(Minecraft_54k)
 
 
 if (BENNI_USE_VCV)
-	add_subdirectory(vcv-rack2)
+    add_subdirectory(vcv-rack2)
 endif()
 
 add_subdirectory(VST_benni)
@@ -58,7 +59,7 @@ if (BENNI_USE_WHISPER)
 endif()
 
 # add_subdirectory(DirectML_test)
-# 
+#
 # add_subdirectory(minimal_vst3_host)
 # add_subdirectory(AbletonLive64-qt6) # uses old RtAudio_5
 # add_subdirectory(AudioPluginHost-qt6)
