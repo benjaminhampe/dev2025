@@ -10,6 +10,30 @@
 namespace de {
 namespace audio {
 
+inline void fadeIn(float* __restrict__ buf, int blockSize)
+{
+    // if (!buf || blockSize <= 0) return;
+
+    const float inv = 1.0f / float(blockSize - 1);
+    for (int i = 0; i < blockSize; ++i)
+    {
+        const float g = i * inv; // 0 → 1
+        buf[i] *= g;
+    }
+}
+
+inline void fadeOut(float* __restrict__ buf, int blockSize)
+{
+    // if (!buf || blockSize <= 0) return;
+
+    const float inv = 1.0f / float(blockSize - 1);
+    for (int i = 0; i < blockSize; ++i)
+    {
+        const float g = 1.0f - (i * inv); // 1 → 0
+        buf[i] *= g;
+    }
+}
+
 //===============================
 class NormalizedSumComputer
 //===============================

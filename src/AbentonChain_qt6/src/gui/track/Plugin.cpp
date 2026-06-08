@@ -386,6 +386,22 @@ void Plugin::on_pressedBtnEnable( bool checked )
     {
         DE_ERROR("No plugin")
     }
+
+    if (!checked)
+    {
+        // Panic
+        for (int i = 0; i < 16; ++i) // For all channels
+        {
+            auto a = de::midi::ShortMidiMessage::CC64_sustainPedal(i,false);
+            auto b = de::midi::ShortMidiMessage::allNotesOff(i);
+            auto c = de::midi::ShortMidiMessage::resetAllControllers(i);
+            //auto d = de::midi::ShortMidiMessage::allSoundsOff(i);
+            m_plugin->onShortMidiMessage(0,a);
+            m_plugin->onShortMidiMessage(0,b);
+            m_plugin->onShortMidiMessage(0,c);
+        }
+    }
+
     m_plugin->setBypassed(!checked);
 }
 

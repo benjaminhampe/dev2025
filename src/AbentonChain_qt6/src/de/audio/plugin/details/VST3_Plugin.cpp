@@ -1246,6 +1246,7 @@ public:
             {
                 DE_TRACE("ClassInfo[",i,"] Found kVstAudioEffectClass")
                 m_pluginVersion = ci.version();
+                m_pluginName = ci.name();
                 Steinberg::copyTUID(processorCID, ci.ID().data());
                 foundProcessor = true;
             }
@@ -1910,56 +1911,28 @@ public:
     }
 
 
-    void onShortMidiMessage(f64 pts, const midi::ShortMidiMessage& msg)
+    std::optional<Steinberg::Vst::Event>
+    createEvent(const midi::ShortMidiMessage& msg, uint16_t isLive = 1 )
     {
-        if ( !m_bIsSynth )
-        {
-            return;
-        }
+        const uint8_t command = msg.status & 0xF0;
+        const uint8_t channel = msg.status & 0x0F;
 
-        // NoteOnEvent
-        // NoteOffEvent
-        // PolyPressureEvent
-        // CtrlChangeEvent
-        // NoteExpressionValueEvent
-        // DataEvent (for SysEx)
-
-        // Steinberg::Vst::Event e{};
-        // e.type = Steinberg::Vst::Event::kCtrlChangeEvent;
-        // e.ctrlChange.controllerNumber = 74;
-        // e.ctrlChange.value = 0.5f;
-        // inputEvents->addEvent(e);
-
-        // HOPEFULLY that fixes missing NoteOff events:
-        // Pianos work ok without that, but monophonic synth are
-        // beasts on a higher level...
-        const double dt = m_midiClock.now(); // Clock is restarted every callback call.
-        const int deltaFrames = std::clamp( int(dt * m_sampleRate),
-                                            int(0),
-                                            int(m_blockSize) - 10);
-        const u8 command = msg.status & 0xF0;
-        const u8 channel = msg.status & 0x0F;
-
-        Steinberg::Vst::Event e = {};
+        Steinberg::Vst::Event e;
         e.busIndex = 0;
-        e.sampleOffset = deltaFrames; // relative to start of current blockSize.
+        //e.sampleOffset = deltaFrames; // relative to start of current blockSize.
         e.ppqPosition = 0.0;
-        e.flags = Steinberg::Vst::Event::kIsLive;
-
-        // int16 channel;	///< channel index in event bus
-        // int16 pitch;		///< range [0, 127] = [C-2, G8] with A3=440Hz (12-TET: twelve-tone equal temperament)
-        // float tuning;    ///<
-        // float velocity;	///< range [0.0, 1.0]
-        // int32 length;	///< in sample frames (optional, Note Off has to follow in any case!)
-        // int32 noteId;	///< note identifier (if not available then -1)
+        e.flags = isLive; // Steinberg::Vst::Event::kIsLive;
 
         if (command == 0x90 && msg.data2 != 0) // ✔ Note On
         {
             e.type = Steinberg::Vst::Event::kNoteOnEvent;
             e.noteOn.channel    = static_cast<int16_t>(channel);
             e.noteOn.pitch      = static_cast<int16_t>(msg.data1 & 0x7F);
-            e.noteOn.velocity   = static_cast<float>(msg.data2 & 0x7F) / 127.0f;
             e.noteOn.tuning     = 0.0f; // 1.f = +1 cent, -1.f = -1 cent
+            e.noteOn.velocity   = static_cast<float>(msg.data2 & 0x7F) / 127.0f;
+            e.noteOn.length     = 0;
+            e.noteOn.noteId     = -1;
+            return e;
         }
         else if (command == 0x80 ||
                 (command == 0x90 && msg.data2 == 0)) // ✔ Note Off
@@ -1967,7 +1940,11 @@ public:
             e.type = Steinberg::Vst::Event::kNoteOffEvent;
             e.noteOff.channel   = static_cast<int16_t>(channel);
             e.noteOff.pitch     = static_cast<int16_t>(msg.data1 & 0x7F);
+            e.noteOff.tuning    = 0.0f; // 1.f = +1 cent, -1.f = -1 cent
             e.noteOff.velocity  = static_cast<float>(msg.data2 & 0x7F) / 127.0f;
+            e.noteOn.length     = 0;
+            e.noteOn.noteId     = -1;
+            return e;
         }
         else if (command == 0xA0) // ✔ Polyphonic Aftertouch: kPolyPressureEvent
         {
@@ -1976,6 +1953,7 @@ public:
             e.polyPressure.pitch    = static_cast<int16_t>(msg.data1 & 0x7F);
             e.polyPressure.pressure = static_cast<float>(msg.data2 & 0x7F) / 127.0f;   // normalize
             e.polyPressure.noteId   = -1; // unless you track note IDs
+            return e;
         }
         else if (command == 0xB0) // ✔ CC Control Change
         {
@@ -1984,23 +1962,25 @@ public:
             e.midiCCOut.controlNumber = msg.data1; // 64 = sustain on/off
             e.midiCCOut.value       = static_cast<int8_t>(msg.data2 & 0x7F); // [0-127]
             e.midiCCOut.value2      = static_cast<int8_t>(msg.data3 & 0x7F); // [0-127]
+            return e;
         }
+#if 0
         else if (command == 0xC0) // ❌ 0xC0–0xCF — Program Change :: Legacy
         {
-            return;
+            return std::nullopt;
         }
         else if (command == 0xD0) // ❌ 0xD0–0xDF — Channel Pressure
         {
-            return;
+            return std::nullopt;
         }
         else if (command == 0xE0) // ❌ 0xE0–0xEF — Pitch Bend
         {
-            return;
+            return std::nullopt;
         }
         else if (command == 0xF0) // ❌ 0xF0–0xFF — System Messages
         {
             // SysEx should NOT be done with ShortMidiMessage here!
-            return;
+            return std::nullopt;
 
             // Status Meaning           How?        Sent continuously?
             // F0     SysEx Start       kDataEvent  No
@@ -2023,28 +2003,81 @@ public:
         else
         {
             DE_ERROR("Unsupported midi message ", msg.str())
-            return;
+            return std::nullopt;
         }
-
-        // Special event: All Notes Off (Bn 7B 00):
-        /*
-        if ((command == 0xB0) && (msg.data1 == 0x7B) && (msg.data2 == 0x00))
+#endif
+        return std::nullopt;
+    }
+/*
+    void sendBypassPanic()
+    {
+        if ( !m_bIsSynth )
         {
-            if ( auto l = m_midiEventQueueIn.lock() )
-            {
-                // Delete all other commands
-                m_midiEventQueueIn.events.clear();
-
-                // Add only the AllNotesOff event
-                m_midiEventQueueIn.events.addEvent( e );
-            }
             return;
         }
-        */
+
+        const double dt = m_midiClock.now(); // Clock is restarted every callback call.
+
+        auto e = createEvent(msg,1);
+        if (!e)
+        {
+            return; // Nothing todo;
+        }
+
+        // HOPEFULLY that fixes missing NoteOff events:
+        // Pianos work ok without that, but monophonic synth are
+        // beasts on a higher level...
+        const int deltaFrames = std::clamp( int(dt * m_sampleRate),
+                                            int(0),
+                                            int(m_blockSize) - 10);
+        const u8 command = msg.status & 0xF0;
+        const u8 channel = msg.status & 0x0F;
+
+        //e.busIndex = 0;
+        e->sampleOffset = deltaFrames; // relative to start of current blockSize.
+        //e.ppqPosition = 0.0;
+        //e.flags = Steinberg::Vst::Event::kIsLive;
 
         if ( auto l = m_midiEventQueueIn.lock() )
         {
-            m_midiEventQueueIn.events.addEvent( e );
+            m_midiEventQueueIn.events.addEvent( *e );
+        }
+
+        // DE_DEBUG("events(",n,"), byte1(",dbHex(byte1),"), data1(",dbHex(data1),"), data2(",dbHex(data2),")")
+    }
+*/
+    void onShortMidiMessage(f64 pts, const midi::ShortMidiMessage& msg)
+    {
+        if ( !m_bIsSynth )
+        {
+            return;
+        }
+
+        const double dt = m_midiClock.now(); // Clock is restarted every callback call.
+
+        auto e = createEvent(msg,1);
+        if (!e)
+        {
+            return; // Nothing todo;
+        }
+
+        // HOPEFULLY that fixes missing NoteOff events:
+        // Pianos work ok without that, but monophonic synth are
+        // beasts on a higher level...
+        const int deltaFrames = std::clamp( int(dt * m_sampleRate),
+                                            int(0),
+                                            int(m_blockSize) - 10);
+        const u8 command = msg.status & 0xF0;
+        const u8 channel = msg.status & 0x0F;
+
+        //e.busIndex = 0;
+        e->sampleOffset = deltaFrames; // relative to start of current blockSize.
+        //e.ppqPosition = 0.0;
+        //e.flags = Steinberg::Vst::Event::kIsLive;
+
+        if ( auto l = m_midiEventQueueIn.lock() )
+        {
+            m_midiEventQueueIn.events.addEvent( *e );
         }
 
         // DE_DEBUG("events(",n,"), byte1(",dbHex(byte1),"), data1(",dbHex(data1),"), data2(",dbHex(data2),")")

@@ -36,11 +36,47 @@ struct ShortMidiMessage // 🎹
                (uint32_t(data1) << 8)  | uint32_t(status);
     }
 
+    // All_Sound_Off — CC 0x78
+
+    // Reset_All_Controllers — CC 0x79
+
+    // All_Notes_Off — CC 0x7B
+
+    static ShortMidiMessage allSoundsOff(int channel)
+    {
+        ShortMidiMessage m;
+        m.status = 0xB0 | (channel & 0x0F);  // Control Change Event
+        m.data1  = 0x78;                     // CC_120_AllSoundOff
+        m.data2  = 0;                        // ON or OFF
+        m.data3  = 0;
+        return m;
+    }
+
+    static ShortMidiMessage resetAllControllers(int channel)
+    {
+        ShortMidiMessage m;
+        m.status = 0xB0 | (channel & 0x0F);  // Control Change Event
+        m.data1  = 0x79;                     // CC_121_ResetAllControllers
+        m.data2  = 0;                        // ON or OFF
+        m.data3  = 0;
+        return m;
+    }
+
+    static ShortMidiMessage allNotesOff(int channel)
+    {
+        ShortMidiMessage m;
+        m.status = 0xB0 | (channel & 0x0F);  // Control Change Event
+        m.data1  = 0x7B;                     // CC_123_AllNotesOff
+        m.data2  = 0;                        // ON or OFF
+        m.data3  = 0;
+        return m;
+    }
+
     static ShortMidiMessage CC64_sustainPedal(int channel, bool pedalDown)
     {
         ShortMidiMessage m;
         m.status = 0xB0 | (channel & 0x0F);  // Control Change Event
-        m.data1  = CC_64_SustainPedal;       // Sustain Pedal (always 7-bit)
+        m.data1  = 0x40;                     // CC_64_SustainPedal (always 7-bit)
         m.data2  = pedalDown ? 127 : 0;      // ON or OFF
         m.data3  = 0;
         return m;
