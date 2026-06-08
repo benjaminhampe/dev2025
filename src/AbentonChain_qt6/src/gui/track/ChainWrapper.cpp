@@ -116,10 +116,10 @@ void ChainWrapper::applySkin()
 void ChainWrapper::resizeEvent(QResizeEvent* event)
 {
     QWidget::resizeEvent(event);
-    if (m_track)
-    {
-        m_track->updateLayout();
-    }
+    // if (m_track)
+    // {
+    //     m_track->updateLayout();
+    // }
 }
 
 void ChainWrapper::paintEvent(QPaintEvent* event)

@@ -16,16 +16,12 @@ public:
     const de::audio::Track* getTrack() const { return m_track; }
     de::audio::Track* getTrack() { return m_track; }
 
-    // const std::vector<uint32_t>& getPluginIds() const
-    // {
-    //     return m_pluginIds;
-    // }
-
-    // QSize sizeHint() const override;
-    // QSize minimumSizeHint() const override;
+    QSize sizeHint() const override;
+    QSize minimumSizeHint() const override;
 
     void applySkin();
     void updateLayout();
+    void updateLayoutOfDropTarget();
 
     // QSize sizeHint() const override;
 
@@ -41,7 +37,7 @@ signals:
     void newOverview(QPixmap overview);
 
 public slots:
-    void on_collapseChanged(bool bCollapsed);
+    void emitTrackOverview();
 
 protected:
     // ----------------------------------------
@@ -67,8 +63,6 @@ protected:
 
 
     bool swapWidgets(int drag, int drop);
-
-    void createTrackOverview();
 
 private:
 
@@ -145,8 +139,10 @@ private:
     bool m_isDragging = false;
     bool m_isAudioOnly = false;
 
+    bool m_bEmitOverview = true;
+    bool m_bInPaintEvent = false;
     int m_overviewHeight;
-    QPixmap m_overviewPixmap;
+
     // ----------------------------------------
     // Plugin hinzufügen
     // ----------------------------------------

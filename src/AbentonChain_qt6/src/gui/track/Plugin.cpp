@@ -744,7 +744,7 @@ void Plugin::mouseDoubleClickEvent(QMouseEvent* event)
     {
         m_bCollapsed = !m_bCollapsed;
         applySkin();
-        emit collapseChanged(m_bCollapsed);
+        emit collapseChanged();
     }
     QWidget::mouseDoubleClickEvent(event);
 }

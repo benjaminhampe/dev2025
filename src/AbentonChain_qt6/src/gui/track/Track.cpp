@@ -34,8 +34,8 @@ Track::~Track()
     m_plugins.clear();
 }
 
-// QSize Track::sizeHint() const { return QSize(0, m_height); }
-// QSize Track::minimumSizeHint() const { return sizeHint(); }
+QSize Track::sizeHint() const { return QSize(0, m_height); }
+QSize Track::minimumSizeHint() const { return sizeHint(); }
 
 void Track::applySkin()
 {
@@ -62,7 +62,7 @@ void Track::applySkin()
 
 void Track::updateLayout()
 {
-    DE_TRACE("updateLayout()")
+    //DE_TRACE("updateLayout()")
 
     const int n = static_cast<int>(m_plugins.size());
 
@@ -88,28 +88,31 @@ void Track::updateLayout()
         x += m_dropIndicatorWidth + m_widgetSpacing;
     }
 
-    int dropTargetWidth = parentWidget()->width() - x;
-    if (dropTargetWidth < m_dropTargetWidth)
-    {
-        dropTargetWidth = m_dropTargetWidth;
-    }
-
-    x += dropTargetWidth;
-
     m_width = x;
+    m_bEmitOverview = true;
+    updateLayoutOfDropTarget();
+}
 
-    m_rcDropTarget = QRect(m_width - dropTargetWidth, 0,
-                           dropTargetWidth, m_height);
-
-    // DE_DEBUG("m_rcDropTarget = ",qstr(m_rcDropTarget).toStdString())
-
-    //setFixedSize(m_width, m_height);
-    setMinimumSize(m_width, m_height);
-    setMaximumSize(m_width, m_height);
-    updateGeometry();
-
+void Track::updateLayoutOfDropTarget()
+{
+    //DE_TRACE("updateLayoutOfDropTarget()")
+    int dropTargetWidth = std::max(width() - m_width, m_dropTargetWidth);
+    m_rcDropTarget = QRect(m_width, 0, dropTargetWidth, m_height);
     update();
 }
+
+
+// ------------------------------------------------------------
+// Zeichnen
+// ------------------------------------------------------------
+void Track::resizeEvent(QResizeEvent* e)
+{
+    //DE_TRACE("resizeEvent(",e->size().width(),",",e->size().height(),")")
+    updateLayoutOfDropTarget();
+
+    QWidget::resizeEvent(e);
+}
+
 
 void drawDropTarget(QPainter & dc, QRect pos, int radius,
     QColor panelColor, QColor textColor,
@@ -135,52 +138,111 @@ void drawDropTarget(QPainter & dc, QRect pos, int radius,
 
 }
 
-// ------------------------------------------------------------
-// Zeichnen
-// ------------------------------------------------------------
-void Track::resizeEvent(QResizeEvent* e)
-{
-    DE_TRACE("resizeEvent(",e->size().width(),",",e->size().height(),")")
-    updateLayout();
-
-    QWidget::resizeEvent(e);
-}
-
 void Track::paintEvent(QPaintEvent* e)
 {
+    if (m_bInPaintEvent)
+    {
+        DE_ERROR("m_bInPaintEvent")
+        return;
+    }
+
+    m_bInPaintEvent = true;
+
     if (!isVisible())
     {
         return;
     }
 
-    QPainter dc(this);
-
-    drawDropTarget(dc,
-        m_rcDropTarget, m_radius,
-        m_panelColor, m_textColor,
-        m_isAudioOnly ? m_msg1 : m_msg2,
-        font());
-
-    int dragIndicatorPosX = computeDropIndicatorPosX(m_dragIndex, m_dropIndex);
-    if (dragIndicatorPosX > -1)
     {
-        m_rcDropIndicator = QRect(dragIndicatorPosX, 0, m_dropIndicatorWidth, height());
-        dc.fillRect(m_rcDropIndicator, QColor(0, 0, 255, 120));
+        QPainter dc(this);
+
+        drawDropTarget(dc,
+            m_rcDropTarget, m_radius,
+            m_panelColor, m_textColor,
+            m_isAudioOnly ? m_msg1 : m_msg2,
+            font());
+
+        int dragIndicatorPosX = computeDropIndicatorPosX(m_dragIndex, m_dropIndex);
+        if (dragIndicatorPosX > -1)
+        {
+            m_rcDropIndicator = QRect(dragIndicatorPosX, 0, m_dropIndicatorWidth, height());
+            dc.fillRect(m_rcDropIndicator, QColor(0, 0, 255, 120));
+        }
+
+        auto s = QString("dragIndex(%1), dropIndex(%2)")
+            .arg(m_dragIndex)
+            .arg(m_dropIndex)
+            //.arg(qstr(m_rcDropIndicator))
+        ;
+
+        auto fm = QFontMetrics(font());
+        int x = width() - 11 - fm.boundingRect(s).width();
+        int y = height() - 11 - fm.ascent();
+        dc.setPen(QPen(Qt::white));
+        dc.drawText( x, y, s);
+
+        dc.end();
     }
 
-    auto s = QString("dragIndex(%1), dropIndex(%2)")
-        .arg(m_dragIndex)
-        .arg(m_dropIndex)
-        //.arg(qstr(m_rcDropIndicator))
-    ;
+    if (m_bEmitOverview)
+    {
+        m_bEmitOverview = false;
+        QMetaObject::invokeMethod(this, "emitTrackOverview", Qt::QueuedConnection);
+        // emitTrackOverview();
+    }
 
-    auto fm = QFontMetrics(font());
-    int x = width() - 11 - fm.boundingRect(s).width();
-    int y = height() - 11 - fm.ascent();
-    dc.setPen(QPen(Qt::white));
-    dc.drawText( x, y, s);
+    m_bInPaintEvent = false;
+}
 
-    // e->accept();
+
+void Track::emitTrackOverview()
+{
+    if (m_width < 1)
+    {
+        emit newOverview(QPixmap());
+        return;
+    }
+
+    // QPainter p(&pm);
+    // render(&p, QPoint(), QRegion(), QWidget::DrawChildren);
+
+    // src_w            dst_w                       src_w
+    // ----- = aspect = -----  ==>  dst_w = dst_h * -----
+    // src_h            dst_h                       src_h
+
+    int src_w = m_width;
+    int src_h = height();
+    int dst_h = m_overviewHeight > 0 ? m_overviewHeight : 48;
+    int dst_w = std::lround((float(src_w) / float(src_h)) * float(dst_h));
+
+    // DE_BENNI("dst(",dst_w,",",dst_h,")")
+
+    QPixmap pixmap(dst_w, dst_h);
+    pixmap.fill(Qt::transparent);
+    QPainter dc;
+    if (dc.begin(&pixmap))
+    {
+        float scale_x = float(dst_w) / float(src_w);
+        float scale_y = float(dst_h) / float(src_h);
+
+        // DE_BENNI("scale(",scale_x,",",scale_y,")")
+        dc.scale(scale_x,scale_y);
+        dc.setRenderHint(QPainter::Antialiasing, true);
+        dc.setRenderHint(QPainter::TextAntialiasing, true);
+        render(&dc);
+        dc.end();
+
+        emit newOverview(pixmap);
+    }
+    else
+    {
+        DE_ERROR("dc inactive")
+    }
+
+    // final downscale
+    //QPixmap final = pm.scaled(targetW, targetH, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
+
+
 }
 
 // ------------------------------------------------------------
@@ -221,6 +283,8 @@ void Track::insertPlugin(int index, const QString &uri)
     // Connect GUI Shell
     connect(w, &Plugin::requestRemoval, this, &Track::removePlugin);
 
+    connect(w, &Plugin::collapseChanged, this, &Track::updateLayout);
+
     // Manage GUI Shell
     m_plugins.insert(m_plugins.begin() + index, w);
 
@@ -231,9 +295,6 @@ void Track::insertPlugin(int index, const QString &uri)
     m_dragIndex = -1;
     m_dropIndex = -1;
     updateLayout();
-
-    // Update Track Overview Image in Footer...
-    createTrackOverview();
 }
 
 void Track::removePlugin(Plugin* w)
@@ -284,8 +345,6 @@ void Track::removePlugin(Plugin* w)
     setUpdatesEnabled(true);
 
     updateLayout();
-
-    createTrackOverview();
 }
 
 // ------------------------------------------------------------
@@ -548,8 +607,6 @@ void Track::mouseReleaseEvent(QMouseEvent* e)
         {
             updateLayout();
 
-            createTrackOverview();
-
             if (m_track)
             {
                 m_track->setPlugins(collectPlugins());
@@ -691,69 +748,6 @@ void Track::autoScroll()
     m_dropIndex = computeDropIndex(m_lastDragPos);
     updateLayout();
 */
-}
-
-void Track::on_collapseChanged(bool bCollapsed)
-{
-    updateLayout();
-
-    createTrackOverview();
-}
-
-void Track::createTrackOverview()
-{
-    // QPixmap pm(size());
-    // pm.fill(Qt::transparent);
-
-    // QPainter p(&pm);
-    // render(&p, QPoint(), QRegion(), QWidget::DrawChildren);
-
-    // src_w            dst_w                       src_w
-    // ----- = aspect = -----  ==>  dst_w = dst_h * -----
-    // src_h            dst_h                       src_h
-
-    int src_w = width();
-    int src_h = height();
-
-    if (src_w < 1 || src_h < 1)
-    {
-        DE_ERROR("No size")
-        return;
-    }
-
-    // DE_BENNI("src(",src_w,",",src_h,")")
-
-    int dst_h = m_overviewHeight > 0 ? m_overviewHeight : 48;
-    int dst_w = std::lround((float(src_w) / float(src_h)) * float(dst_h));
-
-    // DE_BENNI("dst(",dst_w,",",dst_h,")")
-
-    m_overviewPixmap = QPixmap(dst_w, dst_h);
-    m_overviewPixmap.fill(Qt::transparent);
-
-    {
-        QPainter dc(&m_overviewPixmap);
-        if (dc.isActive())
-        {
-            float scale_x = float(dst_w) / float(src_w);
-            float scale_y = float(dst_h) / float(src_h);
-
-            // DE_BENNI("scale(",scale_x,",",scale_y,")")
-            dc.scale(scale_x,scale_y);
-            dc.setRenderHint(QPainter::Antialiasing, true);
-            dc.setRenderHint(QPainter::TextAntialiasing, true);
-            render(&dc);
-        }
-        else
-        {
-            DE_ERROR("dc inactive")
-        }
-    }
-
-    // final downscale
-    //QPixmap final = pm.scaled(targetW, targetH, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
-
-    emit newOverview(m_overviewPixmap);
 }
 
 /*

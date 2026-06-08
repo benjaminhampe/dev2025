@@ -37,7 +37,7 @@ private:
     int m_height;
 
     EnableButton* m_btnLoadPlugin;
-    WrenchButton* m_btnSavePreset;
+    EnableButton* m_btnSavePreset;
     ComboBox* m_cbxPreset;
     ComboBox* m_cbxParam1;
     ComboBox* m_cbxParam2;

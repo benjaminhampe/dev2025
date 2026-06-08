@@ -31,7 +31,8 @@ public:
 
     void applySkin();
 signals:
-    void collapseChanged(bool bCollapsed);
+    void requestRemoval(Plugin *self);
+    void collapseChanged(); // Trigger relayout of Track
 
 protected:
     void resizeEvent(QResizeEvent *) override;
@@ -64,8 +65,7 @@ private slots:
     // void on_doubleClickedLabel();
     // void on_dragStarted(QPoint dragStart);
 
-signals:
-    void requestRemoval(Plugin *self);
+
 
 private:
     void unloadPlugin();

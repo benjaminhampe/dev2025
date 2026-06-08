@@ -16,7 +16,9 @@ Body::Body(QWidget* parent)
     // setStyleSheet("background:transparent; border:none;");
 
     m_btnLoadPlugin = new EnableButton(this);
-    m_btnSavePreset = new WrenchButton(this);
+    m_btnLoadPlugin->setChecked(false);
+    m_btnSavePreset = new EnableButton(this);
+    m_btnSavePreset->setChecked(false);
     m_cbxPreset = new ComboBox(this);
     m_pad = new Pad(this);
     m_cbxParam1 = new ComboBox(this);
