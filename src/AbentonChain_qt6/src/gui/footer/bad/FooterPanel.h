@@ -11,9 +11,9 @@
 #include <QThread>
 
 #include "gui/track/details/SvgButton.h"
-#include "gui/footer/TrackOverview.h"
-#include "gui/footer/ClipOverview.h"
-#include "gui/footer/LongText.h"
+#include "TrackOverview.h"
+#include "ClipOverview.h"
+#include "LongText.h"
 
 // ============================================================================
 class FooterPanel : public QWidget

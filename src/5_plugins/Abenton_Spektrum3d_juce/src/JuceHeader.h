@@ -14,8 +14,10 @@
 #include <juce_gui_basics/juce_gui_basics.h>
 #include <juce_gui_extra/juce_gui_extra.h>
 #include <juce_opengl/juce_opengl.h>
-
 //#include <juce_video/juce_video.h>
+
+#include <DarkImage.h>
+#include <de/audio/SampleCollector.h>
 
 #if ! DONT_SET_USING_JUCE_NAMESPACE
  // If your code uses a lot of JUCE classes, then this will obviously save you
@@ -25,7 +27,7 @@
 
 namespace ProjectInfo
 {
-    const char* const  projectName    = "Spectrum3d";
+    const char* const  projectName    = "Spektrum3D";
     const char* const  versionString  = "1.0.0";
     const int          versionNumber  = 0x10000;
 }

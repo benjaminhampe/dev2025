@@ -3,14 +3,17 @@
 #include <de_opengl.h>
 #include <de/gpu/GL_debug_layer.h>
 #include <de/gpu/GPU.h>
+
 #ifdef _WIN32
-    #ifndef WIN32_LEAN_AND_MEAN
-    #define WIN32_LEAN_AND_MEAN
-    #endif
-    #include <windows.h>
+    // #ifndef WIN32_LEAN_AND_MEAN
+    // #define WIN32_LEAN_AND_MEAN
+    // #endif
+    // #include <windows.h>
+    #define APIENTRY __stdcall
 #else
     #define APIENTRY
 #endif
+
 
 namespace de {
 namespace gpu {
@@ -27,7 +30,7 @@ VideoDriver* createVideoDriver( int w, int h, uint64_t windowId)
     return pDriver;
 }
 
-
+#ifdef USE_GL_DEBUG_CALLBACK
 static void APIENTRY VD_DebugMessageCallback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar* message, const void* userParam)
 {
     std::ostringstream o;
@@ -37,7 +40,7 @@ static void APIENTRY VD_DebugMessageCallback(GLenum source, GLenum type, GLuint 
         ", message = " << message << std::endl;
     DE_ERROR(o.str())
 }
-
+#endif
 
 std::string glGetStdString( u32 value )
 {
@@ -417,7 +420,7 @@ bool VideoDriver::open(int w, int h)
     m_useCoreProfile = false;
 
     ensureDesktopOpenGL(); // initGlew()
-
+GL_VALIDATE
     // std::string s_GL_EXTENSIONS;
     // std::string s_GL_VERSION;
     // std::string s_GL_VENDOR;
@@ -432,7 +435,7 @@ bool VideoDriver::open(int w, int h)
 
     auto extensionList = glGetStdString(GL_EXTENSIONS);
     // DE_INFO("GL_EXTENSIONS = ", extensionList)
-
+GL_VALIDATE
     auto extensions = StringUtil::split(extensionList,' ');
     DE_INFO("GL_EXTENSIONS = ", extensions.size())
     // for (size_t i = 0; i < extensions.size(); ++i)
@@ -440,21 +443,28 @@ bool VideoDriver::open(int w, int h)
     //     DE_INFO("GL_EXTENSION[",i,"] ", extensions[i])
     // }
     DE_INFO("GL_VERSION = ", glGetStdString(GL_VERSION))
+GL_VALIDATE
     DE_INFO("GL_VENDOR = ", glGetStdString(GL_VENDOR))
+GL_VALIDATE
     DE_INFO("GL_RENDERER = ", glGetStdString(GL_RENDERER))
+GL_VALIDATE
     DE_INFO("GL_SHADING_LANGUAGE_VERSION = ", glGetStdString(GL_SHADING_LANGUAGE_VERSION))
-
+GL_VALIDATE
     //dumpVideoModes();
 
+// Effing spam on JUCE + IntelDriver -> deactivate, i know how to program gfx.
+#ifdef USE_GL_DEBUG_CALLBACK
     // DebugOutput
     glEnable(GL_DEBUG_OUTPUT); GL_VALIDATE;
     glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS); GL_VALIDATE;
-    glDebugMessageCallback(VD_DebugMessageCallback, 0); GL_VALIDATE;
+    glDebugMessageCallback(VD_DebugMessageCallback, 0);
+#endif
 
+GL_VALIDATE
     // ShaderManager
-    glGetIntegerv( GL_MAJOR_VERSION, &m_shaderVersionMajor ); GL_VALIDATE;
-    glGetIntegerv( GL_MINOR_VERSION, &m_shaderVersionMinor ); GL_VALIDATE;
-
+    glGetIntegerv( GL_MAJOR_VERSION, &m_shaderVersionMajor );
+    glGetIntegerv( GL_MINOR_VERSION, &m_shaderVersionMinor );
+GL_VALIDATE
     // TexManager
     m_texMgr.init();
 
@@ -462,15 +472,21 @@ bool VideoDriver::open(int w, int h)
 
     // RenderStates
     m_culling = Culling::query();
+GL_VALIDATE
     m_depth = Depth::query();
+GL_VALIDATE
     m_stencil = Stencil::query();
+GL_VALIDATE
     m_blend = Blend::query();
-
+GL_VALIDATE
     setCulling( Culling() );
+GL_VALIDATE
     setDepth( Depth() );
+GL_VALIDATE
     setStencil( Stencil() );
+GL_VALIDATE
     setBlend( Blend::disabled() );
-
+GL_VALIDATE
     // // Enable depth testing
     // glEnable(GL_DEPTH_TEST);
     // glDepthFunc(GL_LESS);
@@ -488,22 +504,30 @@ bool VideoDriver::open(int w, int h)
     //glShadeModel(GL_SMOOTH);
 
     setClearColor( glm::vec4{0.1f,0.1f,0.1f,1.0f} );
+GL_VALIDATE
     setClearDepth( 1.0f );
+GL_VALIDATE
     setClearStencil( 0 );
-
+GL_VALIDATE
     m_skyboxRenderer.init( this );
+GL_VALIDATE
     m_smaterialRenderer.init( this );
+GL_VALIDATE
     //m_pmaterialRenderer.init( this );
     m_screenRenderer.init( this );
+GL_VALIDATE
     m_fontRenderer5x8.init( this );
+GL_VALIDATE
     m_fontRenderer.init( this );
-
+GL_VALIDATE
     m_line3dRenderer.init( this );
+GL_VALIDATE
     m_postFxRenderer.init( this );
+GL_VALIDATE
     m_screenQuadRenderer.init( this );
-
+GL_VALIDATE
     m_sceneManager.init( this );
-
+GL_VALIDATE
     //m_guienv.init( this );
 
     // FPSComputer
@@ -554,6 +578,7 @@ void VideoDriver::resize( int w, int h )
 
 void VideoDriver::beginRender(const glm::vec4& clearColor)
 {
+    // DE_BENNI("beginRender()")
     // wglMakeCurrent(ps.hdc, self->_d->glrc);
 
     m_timeNow = dbTimeInSeconds() - m_timeEpoch;
@@ -571,11 +596,15 @@ void VideoDriver::beginRender(const glm::vec4& clearColor)
     // glDisable(GL_SCISSOR_TEST);
     // glScissor(0,0,w,h);
     glViewport(0,0,w,h);
+GL_VALIDATE
     glClearColor(clearColor.r, clearColor.g, clearColor.b, clearColor.a);
+GL_VALIDATE
     glClearDepthf(1.0f);
+GL_VALIDATE
     glClearStencil(0);
+GL_VALIDATE
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-    //GL_VALIDATE
+GL_VALIDATE
 
     // auto camera = getCamera();
     // if (camera)
@@ -610,6 +639,8 @@ void VideoDriver::endRender()
 
     //m_drawCallsPerFrame = m_drawCalls - m_drawCallsLastFrame;
     //m_drawCallsLastFrame = m_drawCalls;
+
+    // DE_BENNI("endRender()")
 }
 
 void VideoDriver::beginRender( IRenderTarget* rt, const glm::vec4& clearColor )

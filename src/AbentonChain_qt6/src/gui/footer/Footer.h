@@ -11,9 +11,62 @@
 #include <QThread>
 
 #include "gui/footer/PixButton.h"
-// #include "gui/footer/TrackOverview.h"
+// #include "gui/footer/TrackOverviewButton.h"
 // #include "gui/footer/ClipOverview.h"
 // #include "gui/footer/LongText.h"
+
+struct FooterOverview
+{
+    QRect rcAll;
+    QRect rcBtn;
+    QRect rcName;
+    QRect rcPixmap; // overview
+
+    PixButton* btnShow;
+    PixButton* btnName;
+
+    QPixmap pix; // overview acts like a scrollbar
+    //QString text;
+    //bool isOpen = false;
+
+    int data = -1; // trackIndex or clipIndex when pressing on rcName
+
+    int viewWidth; // Scrollbar
+    int totalWidth;// Scrollbar
+    int viewPos;   // Scrollbar
+
+    int width() const { return btnShow->width() + 1 + btnName->width() + pix.width(); }
+
+    void move(const int x, const int y)
+    {
+        int w = 0;
+        int h = 0;
+
+        btnShow->move(x+w,y);
+        rcBtn = QRect(x+w,y,btnShow->width(),btnShow->height());
+        w += btnShow->width() + 1;
+        h = std::max(h,btnShow->height());
+
+        btnName->move(x+w,y);
+        rcName = QRect(x+w,y,btnName->width(),btnName->height());
+        w += btnName->width();
+        h = std::max(h,btnName->height());
+
+        rcPixmap = QRect(x+w,y,pix.width(),pix.height());
+        w += pix.width();
+        h = std::max(h,pix.height());
+
+        rcAll = QRect(x,y,w,h);
+    }
+
+    void draw(QPainter& dc)
+    {
+        if (pix.width() > 0 && pix.height() > 0)
+        {
+            dc.drawPixmap(rcPixmap.x(),rcPixmap.y(),pix);
+        }
+    }
+};
 
 // ============================================================================
 class Footer : public QWidget
@@ -28,8 +81,9 @@ class Footer : public QWidget
     PixButton* m_btnQuickHelp;
     //LongText* m_longText;
     PixButton* m_btnMidiKeyboard;
-    PixButton* m_btnClipOverview;
-    PixButton* m_btnTrackOverview;
+    //PixButton* m_btnClipOverview;
+    //PixButton* m_btnTrackOverview;
+
     PixButton* m_btnDetails;
 
     QString m_longText;
@@ -41,6 +95,7 @@ class Footer : public QWidget
     QColor m_windowColor;
     QColor m_panelColor;
     QColor m_textColor;
+    QColor m_activeColor;
 
     int m_radius;
     int m_padding;
@@ -48,10 +103,16 @@ class Footer : public QWidget
 
     QRect m_rcLongText;
 
-    QPixmap m_trackOverviewPixmap;
-    int m_trackOverviewVisibleWidth;
-    int m_trackOverviewTotalWidth;
-    int m_trackOverviewPos;
+    FooterOverview m_clipOverview;
+    FooterOverview m_trackOverview;
+
+    // QRect m_rcClipName;
+    // QRect m_rcTrackName;
+
+    // QPixmap m_trackOverviewPixmap;
+    // int m_trackOverviewVisibleWidth; // Scrollbar
+    // int m_trackOverviewTotalWidth;   // Scrollbar
+    // int m_trackOverviewPos;          // Scrollbar
     // Footer Contents, Computed
     // QRect m_rcFooterContent;
     // QRect m_rcBtnShowQuickHelpPanel;
@@ -85,6 +146,7 @@ protected slots:
     void on_btnShowTrackOverview( bool checked );
 
 protected:
+    bool event(QEvent* event) override;
     void resizeEvent( QResizeEvent* event ) override;
     void paintEvent( QPaintEvent* event ) override;
     void focusInEvent( QFocusEvent* event ) override;
@@ -105,4 +167,9 @@ private:
     ImageButton* createShowMidiKeyboardButton();
     ImageButton* createShowDetailPanelButton();
 */
+    QPixmap createArrowRight(int w, int h,
+        QColor windowColor, QColor panelColor, QColor symbolColor);
+
+    QPixmap createFromText(int w, int h, QString text,
+        QColor textColor, QColor fillColor = Qt::transparent);
 };

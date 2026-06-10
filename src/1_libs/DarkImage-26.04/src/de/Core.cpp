@@ -1282,25 +1282,15 @@ int32_t to_native_openmode(const eFileMode fileMode)
     const bool isWrite = fm & static_cast<uint32_t>(eFileMode::Write);
     const bool isAppend = fm & static_cast<uint32_t>(eFileMode::Append);
 
-#ifdef _WIN32
-    int f = _O_BINARY; // Best practice on Windows
-
-    if (isRead && isWrite)  { f |= _O_RDWR | _O_CREAT; }
-    else if (isWrite)       { f |= _O_WRONLY | _O_CREAT; }
-    else                    { f |= _O_RDONLY; }
-
-    if (isAppend)           { f |= _O_APPEND; }
-    else                    { f |= _O_TRUNC;  } // Always overwrite if exists
-#else
-    int f = 0;
+    int f = O_BINARY; // Best practice on Windows
 
     if (isRead && isWrite)  { f |= O_RDWR | O_CREAT; }
     else if (isWrite)       { f |= O_WRONLY | O_CREAT; }
     else                    { f |= O_RDONLY; }
 
     if (isAppend)           { f |= O_APPEND; }
-    else                    { f |= O_TRUNC; } // Always overwrite if exists
-#endif
+    else if (isWrite)       { f |= O_TRUNC;  } // Always overwrite if exists
+
     return f;
 }
 

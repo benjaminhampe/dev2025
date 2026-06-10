@@ -36,16 +36,16 @@ juce_add_plugin(Odin2
     CLAP_PLUGIN_FEATURE_STEREO, \
     0
 
-#define CLAP_MANUAL_URL                 "https://www.abenton.de/Spectrum3d/manual"
-#define CLAP_SUPPORT_URL                "https://www.abenton.de/Spectrum3d/support"
+#define CLAP_MANUAL_URL                 "https://www.abenton.de/Spektrum3D/manual"
+#define CLAP_SUPPORT_URL                "https://www.abenton.de/Spektrum3D/support"
 
-#define CLAP_ID                         "de.abenton.Spectrum3d"
+#define CLAP_ID                         "de.abenton.Spektrum3D"
 
 #ifndef JucePlugin_Name
-#define JucePlugin_Name                 "Spectrum3d"
+#define JucePlugin_Name                 "3D Spektrum Viz"
 #endif
 #ifndef JucePlugin_Desc
-#define JucePlugin_Desc                 "Spectrum3d Animator and interactive FourierTransform"
+#define JucePlugin_Desc                 "3D Spektrum interactive Vizualization"
 #endif
 #ifndef JucePlugin_Manufacturer
 #define JucePlugin_Manufacturer         "Abenton"
@@ -57,10 +57,10 @@ juce_add_plugin(Odin2
 #define JucePlugin_ManufacturerEmail    "abenton@googlemail.com"
 #endif
 #ifndef JucePlugin_ManufacturerCode
-#define JucePlugin_ManufacturerCode     'Abs3'
+#define JucePlugin_ManufacturerCode     'Aben'
 #endif
 #ifndef JucePlugin_PluginCode
-#define JucePlugin_PluginCode           'Abs3'
+#define JucePlugin_PluginCode           '3Viz'
 #endif
 #ifndef JucePlugin_CompanyName
 #define JucePlugin_CompanyName          "Abenton"
@@ -76,9 +76,10 @@ juce_add_plugin(Odin2
 #endif
 // {0, 1}, {1, 1},
 //struct PluginInOuts   { short numIns, numOuts; };
-#ifndef JucePlugin_PreferredChannelConfigurations
-#define JucePlugin_PreferredChannelConfigurations {0, 1}, {0, 2}
-#endif
+// #ifndef JucePlugin_PreferredChannelConfigurations
+// #define JucePlugin_PreferredChannelConfigurations {0, 1}, {0, 2}
+// #endif
+
 #ifndef JucePlugin_IsSynth
 #define JucePlugin_IsSynth                0
 #endif
@@ -101,7 +102,7 @@ juce_add_plugin(Odin2
 #define JucePlugin_Version                1.0.0
 #endif
 #ifndef JucePlugin_VersionCode
-#define JucePlugin_VersionCode            0x10000
+#define JucePlugin_VersionCode            0x1000
 #endif
 #ifndef JucePlugin_VersionString
 #define JucePlugin_VersionString          "1.0.0"
@@ -129,7 +130,7 @@ juce_add_plugin(Odin2
 #define JucePlugin_AUManufacturerCode     JucePlugin_ManufacturerCode
 #endif
 #ifndef JucePlugin_CFBundleIdentifier
-#define JucePlugin_CFBundleIdentifier     de.abenton.Spectrum3d
+#define JucePlugin_CFBundleIdentifier     de.abenton.Spektrum3D
 #endif
 #ifndef JucePlugin_RTASCategory
 #define JucePlugin_RTASCategory           ePlugInCategory_None
@@ -147,7 +148,7 @@ juce_add_plugin(Odin2
 #define JucePlugin_RTASDisableMultiMono   0
 #endif
 #ifndef JucePlugin_AAXIdentifier
-#define JucePlugin_AAXIdentifier          de.Abenton.Spectrum3d
+#define JucePlugin_AAXIdentifier          de.abenton.Spektrum3D
 #endif
 #ifndef JucePlugin_AAXManufacturerCode
 #define JucePlugin_AAXManufacturerCode    JucePlugin_ManufacturerCode

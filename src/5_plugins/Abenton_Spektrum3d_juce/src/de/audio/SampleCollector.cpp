@@ -1,0 +1,177 @@
+#include "SampleCollector.h"
+
+namespace de {
+namespace audio {
+
+namespace {
+
+void shiftRight(TAlignedVector<float> & ori,
+                TAlignedVector<float> & tmp,
+                const float* __restrict__ pIn, u32 nIn)
+{
+    typedef float T;
+
+    if (ori.size() != tmp.size())
+    {
+        DE_ERROR("ori.size() != tmp.size()")
+        return;
+    }
+
+    const u32 nOut = ori.size();
+    if (nIn >= nOut)
+    {
+        T* __restrict__ pOut = ori.data();
+        std::memcpy(pOut, pIn, nOut * sizeof(T));
+        return;
+    }
+
+    // nIn < nOut
+
+    //   ori = |0|1|2|3|4|5|
+    //    in = |A|B|C|D|E|
+
+    //   tmp = |x|x|x|x|x|0| after shift right
+    //   tmp = |A|B|C|D|E|0| after inserting new data to left begin
+
+    // -> Finally swap(ori,tmp) -> ori = |A|B|C|D|E|0| now
+
+    // Shift kept data to the right
+    {
+        size_t bytesOld = sizeof(T) * (nOut - nIn); // 6-5 = keep 1
+        const T* __restrict__ pSrc = ori.data();
+              T* __restrict__ pDst = tmp.data() + nIn;
+
+        std::memcpy(pDst, pSrc, bytesOld);
+    }
+
+    // Add new data to the left begin
+    {
+        size_t bytesNew = sizeof(T) * nIn;
+        const T* __restrict__ pSrc = pIn;
+              T* __restrict__ pDst = tmp.data();
+        std::memcpy(pDst, pSrc, bytesNew);
+    }
+
+    // Make 'temp' the new 'orig'...
+    // std::swap(orig,temp);
+}
+
+}
+
+// ===================================================================
+SampleCollector::SampleCollector()
+    : m_blockSize{ 0 }
+    , m_blockCount{ 16 } // fftSize / blockSize = 2048 / 128 = 16
+    , m_blockIndex{ 0 }
+    , m_fftSize{ 2048 }
+    , m_cols{ 1024 }
+    , m_rows{ 64 }
+    , m_bBypassed{ true }
+    , m_bCollectAccumMatrix{ true }
+    //, m_L("samcoll_L")
+    //, m_R("samcoll_R")
+    //, m_sum("samcoll_sum")
+    //, m_accum_vec_in("samcoll_accum_vec_in")
+    //, m_accum_vec_out("samcoll_accum_vec_out")
+{
+    DE_TRACE("")
+
+    m_accum_win.setFunction(WindowFunction::Blackman);
+}
+
+// ===================================================================
+SampleCollector::~SampleCollector()
+{
+    // DE_TRACE("")
+}
+
+void
+SampleCollector::dsp_init( u64 frames, u32 channels, u32 sampleRate )
+{
+    if (frames < 1)
+    {
+        DE_ERROR("")
+        return;
+    }
+    m_sampleRate = sampleRate;
+    m_blockSize = frames;
+    m_L.resize(frames);
+    m_R.resize(frames);
+    m_sum.resize(frames);
+    m_accum_ori.resize(m_fftSize);
+    m_accum_tmp.resize(m_fftSize);
+    m_accum_fft.resize(m_fftSize);
+    m_accum_vec_in.resize(m_fftSize);
+    m_accum_vec_out.resize(m_cols);
+    m_accum_mat.resize(m_cols, m_rows);
+
+    DE_WARN("blockSize = ", m_blockSize)
+    DE_WARN("fftSize = ", m_fftSize)
+    DE_WARN("cols = ", m_cols)
+    DE_WARN("rows = ", m_rows)
+}
+
+void
+SampleCollector::dsp_push(const de::TAlignedVector<float>& sum)
+{
+    m_blockSize = sum.size();
+    m_sum.resize(m_blockSize);
+
+    // Sum L+R
+    {
+        const float* __restrict__ src = sum.data();
+        float* __restrict__ dst = m_sum.data();
+        size_t nBytes = m_blockSize*sizeof(float);
+        DE_ASSUME_NO_OVERLAP(src,dst,nBytes);
+
+        std::memcpy(dst,src,nBytes);
+    }
+
+    m_accum_ori.resize(m_fftSize);
+    m_accum_tmp.resize(m_fftSize);
+    m_accum_fft.resize(m_fftSize);
+    m_accum_vec_in.resize(m_fftSize);
+    m_accum_vec_out.resize(m_cols);
+    m_accum_mat.resize(m_cols, m_rows);
+
+    shiftRight( m_accum_ori,
+                m_accum_tmp,
+                m_sum.data(),
+                m_sum.size());
+
+    std::swap( m_accum_ori, m_accum_tmp );
+
+    // Collect m_blockCount before doing an fft
+    if (m_blockIndex < m_blockCount)
+    {
+        m_blockIndex++;
+        return;
+    }
+    else
+    {
+        m_blockIndex = 0;
+    }
+
+    // Apply window function
+    m_accum_win.apply( m_accum_ori.data(),
+                       m_accum_ori.size(),
+                       m_accum_vec_in.data(),
+                       m_accum_vec_in.size());
+
+    // Apply fft
+    m_accum_fft.fft(
+            m_accum_vec_in.data(), m_accum_vec_in.size(),
+            m_accum_vec_out.data(), m_accum_vec_out.size());
+
+    // Push fft row to AccumShiftMatrix.
+    if (m_bCollectAccumMatrix)
+    {
+        m_accum_mat.push(
+            m_accum_vec_out.data(),
+            m_accum_vec_out.size());
+    }
+
+}
+
+} // end namespace audio.
+} // end namespace de.

@@ -1,16 +1,19 @@
+#include "de/gpu/VideoDriver.h"
 #include <MyComponent.h>
+#include <MyProcessor.h>
 #include <de_opengl.h>
 
-MyComponent::MyComponent (juce::AudioProcessor& proc,
-                           juce::AbstractFifo& fifo,
-                           juce::AudioBuffer<float>& fifoBuffer)
-    : processor (proc), audioFifo (fifo), audioBuffer (fifoBuffer)
+
+MyComponent::MyComponent (juce::AudioProcessor& proc)
+    : processor (proc)
 {
+    static_cast<MyProcessor*>(&processor)->setCanvas(this);
+
     openGLContext.setRenderer (this);
     openGLContext.attachTo (*this);
     openGLContext.setContinuousRepainting (false);
 
-    tempBuffer.setSize (2, 512);
+
     startTimerHz (60); // 60 FPS
 }
 
@@ -22,19 +25,25 @@ MyComponent::~MyComponent()
 
 void MyComponent::newOpenGLContextCreated()
 {
-    ensureDesktopOpenGL();
-    glClearColor (0.05f, 0.05f, 0.08f, 1.0f);
+    m_renderer.initializeGL();
 }
 
-void MyComponent::openGLContextClosing() {}
+void MyComponent::openGLContextClosing()
+{
+    m_renderer.uninitGL();
+}
 
 void MyComponent::renderOpenGL()
 {
+    const auto area = getLocalBounds();
+    const int w = area.getWidth();
+    const int h = area.getHeight();
+    m_renderer.resizeGL(w,h);
+    m_renderer.paintGL();
+/*
     juce::OpenGLHelpers::clear (juce::Colours::black);
 
-    auto area = getLocalBounds();
-    auto w = (float) area.getWidth();
-    auto h = (float) area.getHeight();
+
 
     // einfache Amplituden‑Visualisierung
     float ampL = lastRmsL;
@@ -61,14 +70,20 @@ void MyComponent::renderOpenGL()
 
     drawBar (w * 0.33f, ampL, juce::Colours::deepskyblue);
     drawBar (w * 0.66f, ampR, juce::Colours::hotpink);
+*/
 }
 
 void MyComponent::timerCallback()
 {
-    pullAudio();
     openGLContext.triggerRepaint();
 }
 
+void MyComponent::pushSamples(const de::TAlignedVector<float>& samples)
+{
+    m_renderer.dsp_push(samples);
+}
+
+/*
 void MyComponent::pullAudio()
 {
     const int blockSize = tempBuffer.getNumSamples();
@@ -96,3 +111,4 @@ void MyComponent::pullAudio()
     lastRmsL = juce::jlimit (0.0f, 1.0f, tempBuffer.getRMSLevel (0, 0, size1 + size2));
     lastRmsR = juce::jlimit (0.0f, 1.0f, tempBuffer.getRMSLevel (tempBuffer.getNumChannels() > 1 ? 1 : 0, 0, size1 + size2));
 }
+*/

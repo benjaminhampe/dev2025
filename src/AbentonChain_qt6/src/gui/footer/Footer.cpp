@@ -14,8 +14,11 @@ Footer::Footer(QWidget* parent )
     m_btnMidiKeyboard = new PixButton(this);
     m_btnDetails = new PixButton(this);
     m_longText = QString("LongText");
-    m_btnClipOverview = new PixButton(this);
-    m_btnTrackOverview = new PixButton(this);
+
+    m_clipOverview.btnShow = new PixButton(this);
+    m_clipOverview.btnName = new PixButton(this);
+    m_trackOverview.btnShow = new PixButton(this);
+    m_trackOverview.btnName = new PixButton(this);
 
     connect( m_btnQuickHelp, SIGNAL(toggled(bool)),
             this, SLOT(on_btnShowQuickHelpPanel(bool)) );
@@ -23,10 +26,10 @@ Footer::Footer(QWidget* parent )
     connect( m_btnMidiKeyboard, SIGNAL(toggled(bool)),
             this, SLOT(on_btnShowMidiKeyboard(bool)) );
 
-    connect( m_btnClipOverview, SIGNAL(clicked(bool)),
+    connect( m_clipOverview.btnShow, SIGNAL(clicked(bool)),
             this, SLOT(on_btnShowClipOverview(bool)) );
 
-    connect( m_btnTrackOverview, SIGNAL(clicked(bool)),
+    connect( m_trackOverview.btnShow, SIGNAL(clicked(bool)),
             this, SLOT(on_btnShowTrackOverview(bool)) );
 
     connect( m_btnDetails, SIGNAL(toggled(bool)),
@@ -53,6 +56,18 @@ Footer::Footer(QWidget* parent )
 
 Footer::~Footer()
 {}
+
+bool Footer::event(QEvent* e)
+{
+    if (e->type() == QEvent::LayoutRequest)
+    {
+        DE_BENNI("Got QEvent::LayoutRequest")
+        //updateLayout();
+        return true;
+    }
+
+    return QWidget::event(e);
+}
 
 void SVG_createQuickHelp(PixButton* btn, int w, int h)
 {
@@ -267,14 +282,30 @@ void Footer::applySkin()
     m_windowColor = skin.windowColor;
     m_panelColor = skin.panelColor;
     m_textColor = skin.textColor;
+    m_activeColor = skin.symbolColorActive;
     m_radius = (m_baseRadius * skin.zoom) / 100;
     m_padding = (m_basePadding * skin.zoom) / 100;
     m_buttonHeight = (m_baseButtonHeight * skin.zoom) / 100;
 
     SVG_createQuickHelp(m_btnQuickHelp, m_buttonHeight,m_buttonHeight);
     PIX_createMidiKeyboard(m_btnMidiKeyboard, 2*m_buttonHeight,m_buttonHeight);
-    PIX_createClipOverview(m_btnClipOverview, 4*m_buttonHeight,m_buttonHeight);
-    PIX_createTrackOverview(m_btnTrackOverview, 4*m_buttonHeight,m_buttonHeight);
+
+    auto pixOff = createArrowRight(48,48,m_windowColor,m_panelColor,m_textColor);
+    auto pixOn = createArrowRight(48,48,m_windowColor,m_activeColor,m_textColor);
+    m_clipOverview.btnShow->setPixmaps(pixOn,pixOff);
+
+    pixOff = createFromText(0,48,"1-ClipEditor", m_textColor,m_panelColor);
+    pixOn = createFromText(0,48,"1-ClipEditor", m_textColor,m_panelColor);
+    m_clipOverview.btnName->setPixmaps(pixOn,pixOff);
+
+    pixOff = createArrowRight(48,48,m_windowColor,m_panelColor,m_textColor);
+    pixOn = createArrowRight(48,48,m_windowColor,m_activeColor,m_textColor);
+    m_trackOverview.btnShow->setPixmaps(pixOn,pixOff);
+
+    pixOff = createFromText(0,48,"1-AudioTrack", m_textColor,m_panelColor);
+    pixOn = createFromText(0,48,"1-AudioTrack", m_textColor,m_panelColor);
+    m_trackOverview.btnName->setPixmaps(pixOn,pixOff);
+
     PIX_createDetails(m_btnDetails, 2*m_buttonHeight,m_buttonHeight);
 
     // QColor m_panelColor(128,128,128);
@@ -297,15 +328,15 @@ Footer::updateLayout()
 
     int xLast = w - 1 - p;
     int xDeta = xLast - m_btnDetails->width();
-    int xTrack = xDeta - p - m_btnTrackOverview->width();
-    int xClip = xTrack - p - m_btnClipOverview->width();
+    int xTrack = xDeta - p - m_trackOverview.width();
+    int xClip = xTrack - p - m_clipOverview.width();
     int wLong = xClip - xLong - p;
 
     m_btnQuickHelp->move(xHelp,p);
     m_btnMidiKeyboard->move(xMidi,p);
     m_rcLongText = QRect(xLong, p, wLong, h-2*p);
-    m_btnClipOverview->move(xClip,p);
-    m_btnTrackOverview->move(xTrack,p);
+    m_clipOverview.move(xClip,p);
+    m_trackOverview.move(xTrack,p);
     m_btnDetails->move(xDeta,p);
 
     update();
@@ -343,12 +374,17 @@ void Footer::paintEvent( QPaintEvent* event )
     m_font.setStyleStrategy( QFont::PreferAntialias );
 
     dc.setFont( m_font );
-    // auto fm = dc.fontMetrics();
     dc.setPen( QPen( m_textColor ) );
     dc.setBrush( Qt::NoBrush );
 
     QRect r_longText = m_rcLongText.adjusted(10,2,-10,-2);
-    dc.drawText( r_longText, Qt::AlignVCenter | Qt::AlignLeft, m_longText, &r_longText );
+    dc.drawText( r_longText,
+                 Qt::AlignVCenter | Qt::AlignLeft,
+                 m_longText,
+                 &r_longText );
+
+    m_clipOverview.draw(dc);
+    m_trackOverview.draw(dc);
 }
 
 void
@@ -359,14 +395,103 @@ Footer::setTrackOverview(QPixmap pix, int visibleWidth, int totalWidth, int xPos
         return;
     }
 
-    m_trackOverviewPixmap = pix;
-    m_trackOverviewVisibleWidth = visibleWidth;
-    m_trackOverviewTotalWidth = totalWidth;
-    m_trackOverviewPos = xPos;
+    m_trackOverview.pix = pix;
+    m_trackOverview.viewWidth = visibleWidth;
+    m_trackOverview.totalWidth = totalWidth;
+    m_trackOverview.viewPos = xPos;
 
-    m_btnTrackOverview->setPixmaps(m_trackOverviewPixmap,m_trackOverviewPixmap);
+    //m_trackOverview->setPixmaps(m_trackOverviewPixmap,m_trackOverviewPixmap);
 
     updateLayout();
+}
+
+QPixmap SVG_createSymbolArrowRight(int w, int h, QColor symbolColor)
+{
+    auto s = QString(R"(
+<svg width="%1" height="%2" viewBox="0 0 %1 %2" xmlns="http://www.w3.org/2000/svg" >
+    <path d="M0,0 L%1,%3 L0,%2z" fill="%4" />
+</svg>
+)")
+    .arg(w)  // %1
+    .arg(h)  // %2
+    .arg(h/2)  // %3
+    .arg(toSvg(symbolColor)) // %4
+    ;
+    return mkSvg(s,w,h);
+}
+
+QPixmap Footer::createArrowRight(int w, int h,
+    QColor windowColor, QColor panelColor, QColor symbolColor)
+{
+    // const auto lineColor = QColor(79,79,79);
+    // const auto onColor = QColor(255,181,1);
+    // const auto offColor = QColor(207,207,207);
+    // const auto textColor = skin.textColor;
+
+    auto svgArrow = SVG_createSymbolArrowRight(9,9,symbolColor);
+
+    QPixmap pm(w, h);
+    pm.fill(windowColor);
+
+    QPainter dc;
+    if (dc.begin(&pm))
+    {
+        dc.setRenderHint(QPainter::Antialiasing);
+        dc.setPen( Qt::NoPen );
+        dc.setBrush( QBrush( panelColor ) );
+        dc.drawRoundedRect(0,0,w,h, m_radius,m_radius );
+        dc.drawRect(w/2,0,w,h);
+
+        int W = svgArrow.width();
+        int H = svgArrow.height();
+        dc.drawPixmap((w-W)/2,(h-H)/2,svgArrow);
+
+        dc.end();
+    }
+
+    return pm;
+}
+
+QPixmap Footer::createFromText(int w, int h, QString text, QColor textColor, QColor fillColor)
+{
+    QFontMetrics fm(font());
+    QRect r = fm.tightBoundingRect(text);
+
+    int tw = r.width() + 10;
+    int th = r.height() + 2;
+
+    if (w > 0)
+    {
+        w = std::max(w,tw);
+    }
+    else
+    {
+        w = tw;
+    }
+
+    if (h > 0)
+    {
+        h = std::max(h,th);
+    }
+    else
+    {
+        h = th;
+    }
+
+    QPixmap pm(w, h);
+    pm.fill(fillColor);
+
+    QPainter dc;
+    if (dc.begin(&pm))
+    {
+        dc.setRenderHint(QPainter::Antialiasing);
+        dc.setPen(QPen(textColor));
+        dc.setBrush(Qt::NoBrush);
+        dc.drawText(10,(h-th)/2,text);
+        dc.end();
+    }
+
+    return pm;
 }
 
 /*

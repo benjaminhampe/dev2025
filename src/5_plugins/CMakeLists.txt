@@ -5,5 +5,7 @@ if (BENNI_USE_JUCE)
     # add_subdirectory(Product_002_Abenton_Spektrum3d_juce)
     add_subdirectory(Abenton_Spektrum3d_juce)
     # add_subdirectory(Abenton_Gain_juce)
+    add_subdirectory(Abenton_DarthVaderVoice_juce)
+    add_subdirectory(Abenton_TimeStretch_juce)
 
 endif()

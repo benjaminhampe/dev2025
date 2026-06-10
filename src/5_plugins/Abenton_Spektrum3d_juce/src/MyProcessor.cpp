@@ -3,13 +3,12 @@
 #include "MyEditor.h"
 
 MyProcessor::MyProcessor()
-    : AudioProcessor (BusesProperties()
+    : AudioProcessor(BusesProperties()
                       .withInput  ("Input",  juce::AudioChannelSet::stereo(), true)
-                      .withOutput ("Output", juce::AudioChannelSet::stereo(), true)),
-      apvts (*this, nullptr, "PARAMS", createParameterLayout()),
-      fifoBuffer (2, fifoSize)
+                      .withOutput ("Output", juce::AudioChannelSet::stereo(), true))
+    , apvts (*this, nullptr, "PARAMS", createParameterLayout())
 {
-    smoothedGain.reset (44100.0, 0.05); // 50ms smoothing
+    smoothedGain.reset (48000.0, 0.05); // 50ms smoothing
     smoothedGain.setCurrentAndTargetValue (1.0f);
 }
 
@@ -48,41 +47,80 @@ void MyProcessor::processBlock (juce::AudioBuffer<float>& buffer,
 {
     juce::ScopedNoDenormals noDenormals;
 
-    auto totalNumInputChannels  = getTotalNumInputChannels();
-    auto totalNumOutputChannels = getTotalNumOutputChannels();
+    const int nInputs  = getTotalNumInputChannels();
+    const int nOutputs = getTotalNumOutputChannels();
+    const uint64_t nFrames  = buffer.getNumSamples();
 
-    for (int ch = totalNumInputChannels; ch < totalNumOutputChannels; ++ch)
-        buffer.clear (ch, 0, buffer.getNumSamples());
-
-    auto* gainParam = apvts.getRawParameterValue ("gain");
-    auto* bypassParam = apvts.getRawParameterValue ("bypass");
-
-    bypass = (*bypassParam > 0.5f);
-
-    if (bypass)
+    // For every output channel…
+    for (int ch = 0; ch < nOutputs; ++ch)
     {
-        // Nur Visualisierung füttern
-        pushAudioForVisualization (buffer);
-        return;
-    }
+        float* __restrict__ dst = buffer.getWritePointer(ch);
 
-    float gainDb = gainParam->load();
-    float targetGainLinear = juce::Decibels::decibelsToGain(gainDb);
-    smoothedGain.setTargetValue (targetGainLinear);
-
-    for (int sample = 0; sample < buffer.getNumSamples(); ++sample)
-    {
-        auto g = smoothedGain.getNextValue();
-        for (int ch = 0; ch < totalNumInputChannels; ++ch)
+        if (ch < nInputs)
         {
-            auto* data = buffer.getWritePointer (ch);
-            data[sample] *= g;
+            // Relay input → output
+            const float* __restrict__ src = buffer.getReadPointer(ch);
+
+            DE_ASSUME_NO_OVERLAP(dst,src,nFrames * sizeof(float));
+
+            memcpy(dst, src, nFrames * sizeof(float));
+        }
+        else
+        {
+            // No input for this output channel → silence
+            memset(dst, 0, nFrames * sizeof(float));
         }
     }
 
-    pushAudioForVisualization (buffer);
+    m_sumVector.resize( nFrames );
+
+    for (int ch = 0; ch < nInputs; ++ch)
+    {
+        const float* __restrict__ src = buffer.getReadPointer(ch);
+        float* __restrict__ dst = m_sumVector.data();
+        for (uint64_t i = 0; i < nFrames; ++i)
+        {
+            dst[i] += src[i];
+        }
+    }
+
+    const float nInputsInv = 1.0f / float(nInputs);
+
+    float* __restrict__ dst = m_sumVector.data();
+
+    for (uint64_t i = 0; i < nFrames; ++i)
+    {
+        dst[i] *= nInputsInv;
+    }
+
+    if (m_canvas)
+        m_canvas->pushSamples(m_sumVector);
+
+    // if (bypass)
+    // {
+    //     // Nur Visualisierung füttern
+    //     pushAudioForVisualization (buffer);
+    //     return;
+    // }
+
+    // float gainDb = gainParam->load();
+    // float targetGainLinear = juce::Decibels::decibelsToGain(gainDb);
+    // smoothedGain.setTargetValue (targetGainLinear);
+
+    // for (int sample = 0; sample < buffer.getNumSamples(); ++sample)
+    // {
+    //     auto g = smoothedGain.getNextValue();
+    //     for (int ch = 0; ch < totalNumInputChannels; ++ch)
+    //     {
+    //         auto* data = buffer.getWritePointer (ch);
+    //         data[sample] *= g;
+    //     }
+    // }
+
+    // pushAudioForVisualization (buffer);
 }
 
+/*
 void MyProcessor::pushAudioForVisualization (const juce::AudioBuffer<float>& buffer)
 {
     const int numSamples = buffer.getNumSamples();
@@ -99,6 +137,7 @@ void MyProcessor::pushAudioForVisualization (const juce::AudioBuffer<float>& buf
 
     fifo.finishedWrite (size1 + size2);
 }
+*/
 
 void MyProcessor::getStateInformation (juce::MemoryBlock& destData)
 {

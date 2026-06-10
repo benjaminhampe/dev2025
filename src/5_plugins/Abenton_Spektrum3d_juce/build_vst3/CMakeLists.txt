@@ -5,17 +5,21 @@ if (TARGET ${LIB_NAME})
     message("${BoldYellow}[benni] HEADER_GUARD: ${LIB_NAME}${ColourReset}")
 else()
     set(PLG_SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/../src)
-	set(PLG_SOURCES 
-        ${PLG_SOURCE_DIR}/JucePluginConfig.h
-		${PLG_SOURCE_DIR}/JuceHeader.h
-		${PLG_SOURCE_DIR}/MyComponent.h
-        ${PLG_SOURCE_DIR}/MyComponent.cpp
-		${PLG_SOURCE_DIR}/MyEditor.h
-		${PLG_SOURCE_DIR}/MyEditor.cpp
-		${PLG_SOURCE_DIR}/MyProcessor.h
-		${PLG_SOURCE_DIR}/MyProcessor.cpp
-	)
-    
+    # set(PLG_SOURCES
+    #   ${PLG_SOURCE_DIR}/JucePluginConfig.h
+    # 	${PLG_SOURCE_DIR}/JuceHeader.h
+    # 	${PLG_SOURCE_DIR}/MyComponent.h
+    #   ${PLG_SOURCE_DIR}/MyComponent.cpp
+    # 	${PLG_SOURCE_DIR}/MyEditor.h
+    # 	${PLG_SOURCE_DIR}/MyEditor.cpp
+    # 	${PLG_SOURCE_DIR}/MyProcessor.h
+    # 	${PLG_SOURCE_DIR}/MyProcessor.cpp
+    # )
+
+    file(GLOB_RECURSE PLG_SOURCES_H "${PLG_SOURCE_DIR}/*.h")
+    file(GLOB_RECURSE PLG_SOURCES_CPP "${PLG_SOURCE_DIR}/*.cpp")
+    set(PLG_SOURCES ${PLG_SOURCES_H} ${PLG_SOURCES_CPP})
+
     set(LIB_HEADER_DIR ${CMAKE_CURRENT_LIST_DIR}/include)
     set(LIB_HEADERS
         ${LIB_HEADER_DIR}/juce_audio_plugin_client/juce_audio_plugin_client.h
@@ -33,7 +37,7 @@ else()
         ${LIB_SOURCE_DIR}/juce_audio_plugin_client/utility/juce_PluginUtilities.cpp
         ${LIB_SOURCE_DIR}/juce_audio_plugin_client/VST3/juce_VST3_Wrapper.cpp
     )
-    
+
     # if (WIN32)
         # enable_language(RC)
         # list(APPEND LIB_SOURCES ${CMAKE_CURRENT_LIST_DIR}/res/resource.h)
@@ -62,7 +66,7 @@ else()
     # elseif(WIN32)
         # target_compile_definitions(${LIB_NAME} PRIVATE ODIN_WIN=1)
     # endif()
-    
+
     target_link_libraries(${LIB_NAME} PRIVATE de_juce_core)
     # target_link_libraries(${LIB_NAME} PRIVATE de_juce_dsp)
     target_link_libraries(${LIB_NAME} PRIVATE de_juce_gui_basics)
@@ -72,6 +76,11 @@ else()
     target_link_libraries(${LIB_NAME} PRIVATE de_juce_audio_processors)
     target_link_libraries(${LIB_NAME} PRIVATE de_juce_audio_utils)
     target_link_libraries(${LIB_NAME} PRIVATE de_juce_opengl)
+
+    target_link_libraries(${LIB_NAME} PRIVATE DarkImage_2604)
+    target_link_libraries(${LIB_NAME} PRIVATE DarkGPU_2604)
+    target_link_libraries(${LIB_NAME} PRIVATE de_kissfft_cpp)
+    target_link_libraries(${LIB_NAME} PRIVATE de_pffft)
     target_link_libraries(${LIB_NAME} PRIVATE de_glm)
     target_link_libraries(${LIB_NAME} PRIVATE de_glew)
 
@@ -97,7 +106,7 @@ else()
    # # file(COPY ${CMAKE_CURRENT_LIST_DIR}/pcc_logo.png DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
 
    # file(COPY ../media/Odin2 DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/media)
-    
+
    # copy theme resource files
    #ADD_CUSTOM_COMMAND( TARGET "${LIB_NAME}"
    #   POST_BUILD

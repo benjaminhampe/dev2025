@@ -2,8 +2,12 @@
 #include <cstdint>
 #include <string>
 
+// #ifndef GL_VALIDATE
+// #define GL_VALIDATE { ::de_glValidate( __FILE__, __LINE__, __FUNCTION__ ); }
+// #endif
+
 #ifndef GL_VALIDATE
-#define GL_VALIDATE { ::de_glValidate( __FILE__, __LINE__, __FUNCTION__ ); }
+#define GL_VALIDATE
 #endif
 
 bool de_glValidate( char const * file, int line, char const * func);

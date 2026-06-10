@@ -107,18 +107,21 @@ GT_compileShader( const std::string& shaderName,
                   const std::string& srcText)
 {
     uint32_t shaderId = glCreateShader(shaderType);
+GL_VALIDATE
     const char* pSrc = srcText.c_str();
     const GLint nSrc = srcText.size();
     glShaderSource(shaderId, 1, &pSrc, &nSrc);
+GL_VALIDATE
     glCompileShader(shaderId);
-
+GL_VALIDATE
     int ok = 0;
     char infoLog[512];
     glGetShaderiv(shaderId, GL_COMPILE_STATUS, &ok);
+GL_VALIDATE
     if (!ok)
     {
         glGetShaderInfoLog(shaderId, 512, NULL, infoLog);
-
+GL_VALIDATE
         const auto shaderTypeStr = GT_getShaderTypeStr(shaderType);
         DE_ERROR(shaderTypeStr,"-SHADER[",shaderName,"]::COMPILATION_FAILED:\n", infoLog)
 
@@ -136,22 +139,28 @@ GT_createShader( const std::string& name, const std::string& vsText, const std::
     uint32_t fsShaderId = GT_compileShader(name, GL_FRAGMENT_SHADER, fsText);
 
     uint32_t programId = glCreateProgram();
+GL_VALIDATE
     glAttachShader(programId, vsShaderId);
+GL_VALIDATE
     glAttachShader(programId, fsShaderId);
+GL_VALIDATE
     glLinkProgram(programId);
-
+GL_VALIDATE
     int ok = 0;
     char infoLog[512];
     glGetProgramiv(programId, GL_LINK_STATUS, &ok);
+GL_VALIDATE
     if (!ok)
     {
         glGetProgramInfoLog(programId, 512, NULL, infoLog);
+GL_VALIDATE
         DE_ERROR("SHADER[",name,"]::LINKING_FAILED:\n", infoLog)
     }
 
     glDeleteShader(vsShaderId);
+GL_VALIDATE
     glDeleteShader(fsShaderId);
-
+GL_VALIDATE
     return programId;
 }
 
@@ -799,14 +808,18 @@ void TexManager::init()
     //glGetIntegerv( GL_MAJOR_VERSION, &m_shaderVersionMajor );
     //glGetIntegerv( GL_MINOR_VERSION, &m_shaderVersionMinor );
     glPixelStorei( GL_UNPACK_ALIGNMENT, 1 );
+GL_VALIDATE
     glPixelStorei( GL_PACK_ALIGNMENT, 1 );
+GL_VALIDATE
     m_numTexUnits = uint32_t( glGetInteger( GL_MAX_TEXTURE_IMAGE_UNITS ) );
+GL_VALIDATE
     m_maxTex2DSize = uint32_t( glGetInteger( GL_MAX_TEXTURE_SIZE ) );
-
+GL_VALIDATE
     GLfloat maxAF = 0.0f;
-    de_glGetFloatv( GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &maxAF );
+    glGetFloatv( GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &maxAF );
+GL_VALIDATE
     m_maxAnisotropy = maxAF;
-    GL_VALIDATE
+GL_VALIDATE
     // DE_DEBUG( "NumHardwareTexUnits = ", m_numTexUnits )
     // DE_DEBUG( "Max.Texture2D.Size = ", m_maxTex2DSize )
     // DE_DEBUG( "Max.Anisotropy = ", m_maxAnisotropy )
@@ -1008,10 +1021,14 @@ void TexManager::applySamplerOptions(SamplerOptions &so)
         default: break;
     }
 
-    de_glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, minMode);
-    de_glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, magMode);
-    de_glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, wrapS);
-    de_glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, wrapT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, minMode);
+GL_VALIDATE
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, magMode);
+GL_VALIDATE
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, wrapS);
+GL_VALIDATE
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, wrapT);
+GL_VALIDATE
 
     // anisotropicFilter
     if ( so.af > 0 )
@@ -1019,10 +1036,12 @@ void TexManager::applySamplerOptions(SamplerOptions &so)
         if (so.af == 1)
         {
             GLfloat maxAF = 0.0f;
-            de_glGetFloatv( GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &maxAF );
+            glGetFloatv( GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &maxAF );
+GL_VALIDATE
             so.af = static_cast<uint8_t>(maxAF);
         }
-        de_glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, so.af );
+        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, so.af );
+GL_VALIDATE
     }
 }
 
@@ -1071,7 +1090,8 @@ bool TexManager::uploadTexture2D( Texture* &tex, int w, int h, void const* const
     if (!tex->m_id)
     {
         uint32_t texId = 0;
-        de_glGenTextures(1, &texId);
+        glGenTextures(1, &texId);
+GL_VALIDATE
         if ( !texId )
         {
             DE_ERROR("No tex created ", tex->str())
@@ -1110,12 +1130,14 @@ bool TexManager::uploadTexture2D( Texture* &tex, int w, int h, void const* const
     else                                    { DE_ERROR( "Unsupported tex format ", fmt.str()) return false; }
 
     tex->m_unit = 0;
-    de_glActiveTexture( GL_TEXTURE0 + tex->m_unit );
-    de_glBindTexture( tex->m_target, tex->m_id );
+    glActiveTexture( GL_TEXTURE0 + tex->m_unit );
+GL_VALIDATE
+    glBindTexture( tex->m_target, tex->m_id );
+GL_VALIDATE
 
     applySamplerOptions( tex->m_so );
 
-    de_glTexImage2D(tex->m_target,       // GLenum target
+    glTexImage2D(tex->m_target,       // GLenum target
                  tex->m_layer,      // GLint level
                  tex->m_preset,    // GLenum internalFormat
                  w,                 // GLsizei width
@@ -1124,10 +1146,12 @@ bool TexManager::uploadTexture2D( Texture* &tex, int w, int h, void const* const
                  tex->m_format,    // GLenum internalDataFormat
                  tex->m_dataType,  // GLenum internalDataType
                  pixels );          // void* pixel_data, if any, can be nullptr.
+GL_VALIDATE
 
     if (tex->m_so.hasMipmaps())
     {
-        de_glGenerateMipmap( tex->m_target );
+        glGenerateMipmap( tex->m_target );
+GL_VALIDATE
     }
 
     GL_VALIDATE

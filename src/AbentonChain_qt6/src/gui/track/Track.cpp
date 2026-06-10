@@ -7,7 +7,6 @@ Track::Track(de::audio::Track* track, QWidget* parent)
     : QWidget(parent)
     , m_track(track)
 {
-    DE_TRACE("")
     //setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding);
     setContentsMargins(0,0,0,0);
     setMouseTracking(true);
@@ -26,11 +25,7 @@ Track::Track(de::audio::Track* track, QWidget* parent)
 
 Track::~Track()
 {
-    DE_TRACE("")
-    for (auto p : m_plugins)
-    {
-        delete p;
-    }
+    for (auto p : m_plugins) { delete p; }
     m_plugins.clear();
 }
 
@@ -101,6 +96,25 @@ void Track::updateLayoutOfDropTarget()
     update();
 }
 
+std::vector<de::audio::SharedPlugin>
+Track::collectPlugins() const
+{
+    std::vector<de::audio::SharedPlugin> plugins;
+    plugins.reserve( m_plugins.size() );
+    for (auto pluginWidget : m_plugins)
+    {
+        if (pluginWidget)
+        {
+            de::audio::SharedPlugin audioPlugin = pluginWidget->getPlugin();
+            if (audioPlugin)
+            {
+                plugins.push_back( audioPlugin );
+            }
+        }
+    }
+
+    return plugins;
+}
 
 // ------------------------------------------------------------
 // Zeichnen
@@ -109,33 +123,7 @@ void Track::resizeEvent(QResizeEvent* e)
 {
     //DE_TRACE("resizeEvent(",e->size().width(),",",e->size().height(),")")
     updateLayoutOfDropTarget();
-
     QWidget::resizeEvent(e);
-}
-
-
-void drawDropTarget(QPainter & dc, QRect pos, int radius,
-    QColor panelColor, QColor textColor,
-    QString msg, QFont font)
-{
-    // [Draw] panel
-    dc.setRenderHint( QPainter::Antialiasing );
-    dc.setPen( Qt::NoPen );
-    dc.setBrush( QBrush( panelColor ) );
-    dc.drawRoundedRect( pos, radius, radius );
-
-    // [Draw] text
-    dc.setPen(QPen(textColor));
-    dc.setBrush(Qt::NoBrush);
-    QRect r_text = QRect( pos.x() + radius,
-                          pos.y() + radius,
-                          pos.width()-2*radius,
-                          pos.height()-2*radius );
-    dc.drawText(r_text,
-                Qt::TextWordWrap | Qt::AlignCenter,
-                msg,
-                &r_text );
-
 }
 
 void Track::paintEvent(QPaintEvent* e)
@@ -148,47 +136,64 @@ void Track::paintEvent(QPaintEvent* e)
 
     m_bInPaintEvent = true;
 
-    if (!isVisible())
+    if (isVisible())
     {
-        return;
-    }
-
-    {
-        QPainter dc(this);
-
-        drawDropTarget(dc,
-            m_rcDropTarget, m_radius,
-            m_panelColor, m_textColor,
-            m_isAudioOnly ? m_msg1 : m_msg2,
-            font());
-
-        int dragIndicatorPosX = computeDropIndicatorPosX(m_dragIndex, m_dropIndex);
-        if (dragIndicatorPosX > -1)
+        QPainter dc;
+        if (dc.begin(this))
         {
-            m_rcDropIndicator = QRect(dragIndicatorPosX, 0, m_dropIndicatorWidth, height());
-            dc.fillRect(m_rcDropIndicator, QColor(0, 0, 255, 120));
+            dc.setRenderHint( QPainter::Antialiasing );
+
+            // [Draw] drawDropTarget.Panel:
+            dc.setPen( Qt::NoPen );
+            dc.setBrush( QBrush( m_panelColor ) );
+            dc.drawRoundedRect( m_rcDropTarget, m_radius, m_radius );
+
+            // [Draw] drawDropTarget.Text:
+            dc.setPen( QPen(m_textColor) );
+            dc.setBrush(Qt::NoBrush);
+            QRect r_text = QRect( m_rcDropTarget.x() + m_radius,
+                                  m_rcDropTarget.y() + m_radius,
+                                  m_rcDropTarget.width()-2*m_radius,
+                                  m_rcDropTarget.height()-2*m_radius );
+
+            dc.drawText(r_text, Qt::TextWordWrap | Qt::AlignCenter,
+                        m_msg, &r_text );
+
+
+            // [Draw] Blue drawDropIndicator stripe:
+            int dragIndicatorPosX = computeDropIndicatorPosX(m_dragIndex, m_dropIndex);
+            if (dragIndicatorPosX > -1)
+            {
+                m_rcDropIndicator = QRect(dragIndicatorPosX, 0, m_dropIndicatorWidth, height());
+                dc.fillRect(m_rcDropIndicator, QColor(0, 0, 255, 120));
+            }
+
+            //<debug>
+#if 1
+            // [Draw] Drag/Drop indices as white text
+            auto s = QString("dragIndex(%1), dropIndex(%2)")
+                .arg(m_dragIndex)
+                .arg(m_dropIndex)
+                //.arg(qstr(m_rcDropIndicator))
+            ;
+
+            auto fm = QFontMetrics(font());
+            int x = width() - 11 - fm.boundingRect(s).width();
+            int y = height() - 11 - fm.ascent();
+            dc.setPen(QPen(Qt::white));
+            dc.drawText( x, y, s);
+#endif
+            //</debug>
+
+            dc.end();
         }
 
-        auto s = QString("dragIndex(%1), dropIndex(%2)")
-            .arg(m_dragIndex)
-            .arg(m_dropIndex)
-            //.arg(qstr(m_rcDropIndicator))
-        ;
+        if (m_bEmitOverview)
+        {
+            m_bEmitOverview = false;
+            QMetaObject::invokeMethod(this, "emitTrackOverview", Qt::QueuedConnection);
+        }
 
-        auto fm = QFontMetrics(font());
-        int x = width() - 11 - fm.boundingRect(s).width();
-        int y = height() - 11 - fm.ascent();
-        dc.setPen(QPen(Qt::white));
-        dc.drawText( x, y, s);
-
-        dc.end();
-    }
-
-    if (m_bEmitOverview)
-    {
-        m_bEmitOverview = false;
-        QMetaObject::invokeMethod(this, "emitTrackOverview", Qt::QueuedConnection);
-        // emitTrackOverview();
     }
 
     m_bInPaintEvent = false;

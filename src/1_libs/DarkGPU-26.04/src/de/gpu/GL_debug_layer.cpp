@@ -607,7 +607,7 @@ void de_impl_glDisableVertexAttribArray( char const* file, int line, char const*
 
 void de_impl_glVertexAttribPointer( char const* file, int line, char const* func,
                                   uint32_t index, int32_t size, uint32_t type, uint8_t normalized, int32_t stride, void const* data )
-{   
+{
     glVertexAttribPointer( index,size,type,normalized,stride,data);
     uint32_t e = glGetError();
     while (e != 0)
@@ -776,6 +776,7 @@ void de_impl_glTexParameteri( char const* file, int line, char const* func, uint
         std::cout << "[Error] "<<file<<"."<<func<<":"<<line<< " :: "
         "glTexParameteri("<< target<<","<<key<<","<<value<<")"
         " got invalid tex param."<< std::endl;
+        return;
     }
 
     glTexParameteri( target, key, value );
