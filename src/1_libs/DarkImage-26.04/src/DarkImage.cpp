@@ -1,4 +1,5 @@
 #include <DarkImage.h>
+#include <de/image/font/FontManager.h>
 // #include <de/Math.h>
 // #include <de/ColorGradient.h>
 // #include <de/image/Image.h>
@@ -10,6 +11,43 @@
 // #ifdef _WIN32
     // #include <de/os/win32/ComInit.h>
 // #endif
+
+de::Font5x8::TextSize dbTextSize(const std::string& text, const de::Font5x8& font )
+{
+    return font.getTextSize(text);
+}
+
+de::TextSize dbTextSize(const std::wstring& text, const de::Font& font )
+{
+    auto face = de::FontManager::getInstance()->getFont(font);
+    if (!face)
+    {
+        DE_ERROR("No face for font ",font.toString());
+        return de::TextSize();
+    }
+
+    return face->getTextSize( text );
+}
+
+void dbPrepareFont( const de::Font& font, const std::string& uri )
+{
+    de::FontManager::getInstance()->addFamily(uri, font);
+}
+
+void dbPrepareFont( const de::Font& font, const uint8_t* dataPtr, const uint64_t dataSize )
+{
+    de::FontManager::getInstance()->addFamily(font, dataPtr, dataSize);
+}
+
+void dbAddFontFamily( const std::string& familyName, const uint8_t* pData, const uint64_t nBytes )
+{
+    dbPrepareFont( de::Font(familyName,32), pData, nBytes);
+}
+
+void dbAddFontFamily( const std::string& familyName, const std::string& uri )
+{
+    dbPrepareFont( de::Font(familyName,32), uri);
+}
 
 de::Image
 dbImageFromLinearColorGradient(const de::LinearColorGradient & cg,

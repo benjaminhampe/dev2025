@@ -3,9 +3,6 @@
 
 // #ifdef HAVE_FREETYPE2
 
-void dbPrepareFont(de::Font font, std::string uri );
-void dbPrepareFont(de::Font font, const uint8_t* pBytes, uint64_t nBytes );
-
 namespace de {
 
 // ===========================================================================
@@ -20,22 +17,22 @@ public:
    getInstance();
 
    bool
-   addFamily( std::string uri, Font font );
+   addFamily( const std::string& uri, const Font& font );
 
    bool
-   addFamily( Font font, const uint8_t* pBytes, uint64_t nBytes );
+   addFamily( const Font& font, const uint8_t* pBytes, const uint64_t nBytes );
 
    std::shared_ptr< IFontAtlas >
-   getFont( Font font );
+   getFont( const Font& font );
 
    int32_t
-   findFont( Font const & font ) const;
+   findFont( const Font& font ) const;
 
    int32_t
-   findFamily( std::string family ) const;
+   findFamily( const std::string& family ) const;
 
    FontFamily
-   getFamily( std::string family ) const;
+   getFamily( const std::string& family ) const;
 
 
    void

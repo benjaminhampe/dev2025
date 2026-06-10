@@ -114,7 +114,7 @@ else()
     target_link_libraries(${LIB_NAME} PRIVATE de_jpeg)  # Best lossy RGB friend.
     target_link_libraries(${LIB_NAME} PRIVATE de_tiff)   # Best old friend.
     target_link_libraries(${LIB_NAME} PRIVATE de_gif5)    # Best old animation friend. (depends on png)
-    target_link_libraries(${LIB_NAME} PRIVATE de_openexr) # !!! Heavy lib.  # Best .exr friend.
+    # target_link_libraries(${LIB_NAME} PRIVATE de_openexr) # !!! Heavy lib.  # Best .exr friend.
 
     target_link_libraries(${LIB_NAME} PUBLIC de_fontawesome)    # TTF
     target_link_libraries(${LIB_NAME} PRIVATE de_freetype2)     # TTF

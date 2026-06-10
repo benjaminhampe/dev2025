@@ -14,6 +14,9 @@
     #define APIENTRY
 #endif
 
+#ifndef USE_GL_DEBUG_CALLBACK
+#define USE_GL_DEBUG_CALLBACK
+#endif
 
 namespace de {
 namespace gpu {
@@ -580,6 +583,7 @@ void VideoDriver::beginRender(const glm::vec4& clearColor)
 {
     // DE_BENNI("beginRender()")
     // wglMakeCurrent(ps.hdc, self->_d->glrc);
+GL_VALIDATE
 
     m_timeNow = dbTimeInSeconds() - m_timeEpoch;
 
@@ -593,13 +597,15 @@ void VideoDriver::beginRender(const glm::vec4& clearColor)
 
     const int w = getScreenWidth();
     const int h = getScreenHeight();
-    // glDisable(GL_SCISSOR_TEST);
+    glDisable(GL_SCISSOR_TEST);
+GL_VALIDATE
     // glScissor(0,0,w,h);
+//GL_VALIDATE
     glViewport(0,0,w,h);
 GL_VALIDATE
     glClearColor(clearColor.r, clearColor.g, clearColor.b, clearColor.a);
 GL_VALIDATE
-    glClearDepthf(1.0f);
+    glClearDepth(1.0f); // glClearDepthf ist OpenGL ES
 GL_VALIDATE
     glClearStencil(0);
 GL_VALIDATE
@@ -960,9 +966,9 @@ void VideoDriver::setScissor( int x, int y, int w, int h )
 }
 */
 
-void VideoDriver::setClearColor( glm::vec4 const & c ) { de_glClearColor( c.r, c.g, c.b, c.a ); }
-void VideoDriver::setClearDepth( float d ) { de_glClearDepth( d ); }
-void VideoDriver::setClearStencil( uint8_t s ) { de_glClearStencil( s ); }
+void VideoDriver::setClearColor( glm::vec4 const & c ) { glClearColor( c.r, c.g, c.b, c.a ); GL_VALIDATE }
+void VideoDriver::setClearDepth( float d ) { glClearDepth( d ); GL_VALIDATE }
+void VideoDriver::setClearStencil( uint8_t s ) { glClearStencil( s ); GL_VALIDATE }
 
 
 // ###########################

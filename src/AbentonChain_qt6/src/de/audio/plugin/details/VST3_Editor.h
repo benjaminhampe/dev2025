@@ -13,7 +13,19 @@ class VST3_PlugFrame : public Steinberg::IPlugFrame
 public:
     QWidget* m_parentWidget;
 
-    std::atomic<Steinberg::uint32> m_refCount {1};
+    std::atomic<Steinberg::uint32> m_refCount;
+
+    explicit VST3_PlugFrame(QWidget* widget)
+        : m_parentWidget(widget)
+        , m_refCount {1}
+    {
+        DE_BENNI("VST3_PlugFrame()")
+    }
+
+    ~VST3_PlugFrame()
+    {
+        DE_BENNI("~VST3_PlugFrame()")
+    }
 
     Steinberg::uint32 PLUGIN_API addRef() override { return ++m_refCount; }
     Steinberg::uint32 PLUGIN_API release() override
@@ -35,10 +47,6 @@ public:
         *obj = nullptr;
         return Steinberg::kNoInterface;
     }
-
-    VST3_PlugFrame(QWidget* widget)
-        : m_parentWidget(widget)
-    {}
 
     // VST3 view requests resize
     Steinberg::tresult PLUGIN_API
@@ -91,6 +99,7 @@ public:
         , m_plugView(plugView)
         , m_plugFrame(nullptr)
     {
+        DE_BENNI("VST3_Editor()")
         //setAttribute(Qt::WA_NativeWindow);   // REQUIRED
         setAttribute(Qt::WA_NativeWindow);   // REQUIRED
         setAttribute(Qt::WA_PaintOnScreen);  // REQUIRED
@@ -108,11 +117,22 @@ public:
 
     ~VST3_Editor() override
     {
+        DE_BENNI("~VST3_Editor()")
         // if (m_plugView)
         //     m_plugView->removed();
         m_plugView = nullptr;
-        delete m_plugFrame;
+        if (m_plugFrame)
+        {
+            delete m_plugFrame;
+            m_plugFrame = nullptr;
+        }
     }
+
+    // void closeEvent(QCloseEvent* e) override
+    // {
+    //     DE_BENNI("VST3_Editor.closeEvent")
+    //     PluginEditorWindow::closeEvent(e);
+    // }
 
     void resizeEvent(QResizeEvent* e) override
     {
@@ -120,7 +140,6 @@ public:
 
         if (m_plugView)
         {
-
             int w = width();
             int h = height();
             if (w < 1)

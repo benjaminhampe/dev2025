@@ -37,7 +37,11 @@ Track::Track()
 
 Track::~Track()
 {
-    assert(m_plugins.empty() == true && "cleanupAll() was not called");
+    if (!m_plugins.empty())
+    {
+        DE_ERROR("cleanupAll() was not called")
+        cleanupAll();
+    }
 }
 
 void Track::cleanupAll()
@@ -57,6 +61,27 @@ void Track::cleanupAll()
         }
     }
     m_plugins.clear();
+
+    cleanupTrash();
+}
+
+void Track::cleanupTrash()
+{
+    DE_DEBUG("TrashBin: Delete (",m_trashBin.size(),") Plugins...")
+    for (size_t i = 0; i < m_trashBin.size(); ++i)
+    {
+        auto p = m_trashBin[i];
+        if (!p)
+        {
+            DE_ERROR("TrashBin: Got nullptr at ",i)
+        }
+        else
+        {
+            DE_DEBUG("TrashBin: Delete Plugin[",i,"]")
+            p->closePlugin();
+        }
+    }
+    m_trashBin.clear();
 }
 
 void
@@ -74,19 +99,40 @@ Track::setTrackId(u32 trackId) { m_trackId = trackId; }
 std::string
 Track::getTrackName() const { return m_trackName; }
 
+bool containsPlugin( const std::vector<SharedPlugin>& plugins,
+                     const SharedPlugin& searchPlugin)
+{
+    auto ptr = searchPlugin.get();
+
+    if (!ptr) return false;
+
+    return plugins.end() != std::find_if(plugins.begin(), plugins.end(),
+        [ptr]( const auto& cached ) { return cached.get() == ptr; });
+}
+
 void
-Track::setPlugins( std::vector<SharedPlugin> plugins )
+Track::setPlugins( std::vector<SharedPlugin> newPlugins )
 {
     App::instance()->stopAudio();
 
-    for (auto & plugin : m_plugins)
-    {
-        plugin->dsp_clearInputSignals();
+    DE_BENNI("setPlugins(",newPlugins.size(),")")
 
-        plugin->setTrack(nullptr);
+    for (auto & oldPlugin : m_plugins)
+    {
+        oldPlugin->dsp_clearInputSignals();
+
+        oldPlugin->setTrack(nullptr);
+
+        if (!containsPlugin(newPlugins,oldPlugin))
+        {
+            m_trashBin.emplace_back(oldPlugin);
+        }
     }
 
-    m_plugins.swap(plugins);
+    // clear trash
+    cleanupTrash();
+
+    m_plugins.swap(newPlugins);
 
     for (auto & plugin : m_plugins)
     {

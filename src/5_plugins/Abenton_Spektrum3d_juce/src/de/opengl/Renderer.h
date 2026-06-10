@@ -7,38 +7,41 @@
 class Renderer
 // ==========================================================
 {
+public:
     typedef float T;
     typedef glm::vec3 V3;
     typedef glm::mat4 M4;
 
-    //de::gpu::TexManager* m_texManager;
-    de::gpu::VideoDriver* m_driver{ nullptr };
+    de::gpu::VideoDriver* m_driver;
+    de::gpu::Texture* m_texBenniIcon;
+    de::gpu::Texture* m_texJuceIcon;
 
-    bool m_bFirstMouse{ false };
-    bool m_bCameraFreeLook{ false };
-    bool m_bMouseLeftPressed{ false };
-    bool m_bMouseRightPressed{ false };
-    bool m_bMouseMiddlePressed{ false };
-    bool m_bReserved1{ false };
-    bool m_bRenderingEnabled{ true };
-    bool m_bShowPerfOverlay{ true };
-    bool m_bRenderFftMatrix3D{ true };
+    bool m_bFirstMouse;
+    bool m_bCameraFreeLook;
+    bool m_bMouseLeftPressed;
+    bool m_bMouseRightPressed;
+    bool m_bMouseMiddlePressed;
+    bool m_bReserved1;
+    bool m_bRenderingEnabled;
+    bool m_bShowPerfOverlay;
+    bool m_bRenderFftMatrix3D;
 
-    int m_mouseX{ 0 };
-    int m_mouseY{ 0 };
-    int m_lastMouseX{ 0 };
-    int m_lastMouseY{ 0 };
-    int m_mouseMoveX{ 0 };
-    int m_mouseMoveY{ 0 };
-    int m_fpsTimerId{ 0 };
-    uint32_t m_matrix_fft_cols{ 0 };
-    uint32_t m_matrix_fft_rows{ 0 };
-    uint32_t m_matrix_fft_xmode{ 1 }; // 0 = linear, 1 = log10
+    int m_mouseX;
+    int m_mouseY;
+    int m_lastMouseX;
+    int m_lastMouseY;
+    int m_mouseMoveX;
+    int m_mouseMoveY;
+    int m_fpsTimerId;
+    uint32_t m_matrix_fft_cols;
+    uint32_t m_matrix_fft_rows;
+    uint32_t m_matrix_fft_xmode; // 0 = linear, 1 = log10
     de::TAlignedVector< float > m_matrix_fft_xmap; // Log10
 
     de::audio::SampleCollector m_collector;
 
     TestRenderer m_test;
+
 
     Mesh16_Shader2D m_mesh16Shader2D;
     Mesh16_Shader3D m_mesh16Shader3D;

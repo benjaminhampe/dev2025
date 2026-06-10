@@ -112,46 +112,6 @@ Font::operator!=( const Font & other ) const
    return !( *this == other );
 }
 
-
-// =======================================================================
-TextSize::TextSize()
-// =======================================================================
-   : width( 0 )
-   , height( 0 )
-   , baseline( 0 )
-   , lineHeight(0)
-   , lineCount(0)
-{}
-
-TextSize::TextSize( int32_t w, int32_t h, int32_t baselineMax, int32_t _lineHeight, int32_t _lineCount )
-   : width( w )
-   , height( h )
-   , baseline( baselineMax )
-   , lineHeight( _lineHeight )
-   , lineCount( _lineCount )
-{}
-
-std::string
-TextSize::toString() const
-{
-   std::stringstream s;
-   s << width << "," << height << "," << baseline << "," << lineHeight << "," << lineCount;
-   return s.str();
-}
-
-
-// =======================================================================
-Text::Text( int x, int y, std::wstring msg, Align align,
-            uint32_t fillColor, uint32_t penColor )
-// =======================================================================
-   : x( x )
-   , y( y )
-   , align( align )
-   , msg( msg )
-   , pen( penColor)
-   , brush( fillColor )
-{}
-
 // =======================================================================
 Glyph::Glyph()
 // =======================================================================
@@ -229,7 +189,7 @@ Glyph::copyImage() const { return ref.copyImage(); }
 
 
 std::string
-Glyph::toString() const { return getGlyphString(); }
+Glyph::str() const { return getGlyphString(); }
 
 // ==============================================
 PreparedGlyphText::PreparedGlyphText()

@@ -5,20 +5,10 @@
 #include <de/image/font/FontTTF.h>
 //#include <DarkImage.h>
 
-void dbPrepareFont(de::Font font, std::string uri )
-{
-    de::FontManager::getInstance()->addFamily(uri, font);
-}
-
-void dbPrepareFont(de::Font font, const uint8_t* dataPtr, uint64_t dataSize )
-{
-    de::FontManager::getInstance()->addFamily(font, dataPtr, dataSize);
-}
-
 namespace de {
 
 bool
-FontManager::addFamily( Font font, const uint8_t* dataPtr, uint64_t dataSize )
+FontManager::addFamily( const Font& font, const uint8_t* dataPtr, const uint64_t dataSize )
 {
     int32_t found = findFont( font );
     if ( found > -1 )
@@ -61,7 +51,7 @@ saveFonts()
 }
 
 std::shared_ptr< IFontAtlas >
-getFontFace( Font font )
+getFontFace( const Font& font )
 {
    return FontManager::getInstance()->getFont( font );
 }
@@ -130,31 +120,31 @@ FontManager::getInstance()
 }
 
 int32_t
-FontManager::findFamily( std::string family ) const
+FontManager::findFamily( const std::string& family ) const
 {
-   StringUtil::lowerCase( family );
-
-   for ( size_t i = 0; i < m_Families.size(); ++i )
-   {
-      if ( m_Families[ i ].family == family )
-      {
-         return int32_t( i );
-      }
-   }
-   return -1;
-}
-
-FontFamily
-FontManager::getFamily( std::string family ) const
-{
-    StringUtil::lowerCase( family );
+    const auto fam = StringUtil::makeLower( family );
 
     for ( size_t i = 0; i < m_Families.size(); ++i )
     {
-       if ( m_Families[ i ].family == family )
-       {
-          return m_Families[ i ];
-       }
+        if ( m_Families[ i ].family == fam )
+        {
+            return int32_t( i );
+        }
+    }
+    return -1;
+}
+
+FontFamily
+FontManager::getFamily( const std::string& family ) const
+{
+    const auto fam = StringUtil::makeLower( family );
+
+    for ( size_t i = 0; i < m_Families.size(); ++i )
+    {
+        if ( m_Families[ i ].family == fam )
+        {
+            return m_Families[ i ];
+        }
     }
 
     std::ostringstream o;
@@ -165,22 +155,20 @@ FontManager::getFamily( std::string family ) const
 }
 
 int32_t
-FontManager::findFont( Font const & font ) const
+FontManager::findFont( const Font & font ) const
 {
-   for ( size_t i = 0; i < m_Fonts.size(); ++i )
-   {
-      if ( m_Fonts[ i ] && m_Fonts[ i ]->getFont() == font )
-      {
-         return int32_t( i );
-      }
-   }
-   return -1;
+    for ( size_t i = 0; i < m_Fonts.size(); ++i )
+    {
+        if ( m_Fonts[ i ] && m_Fonts[ i ]->getFont() == font )
+        {
+            return int32_t( i );
+        }
+    }
+    return -1;
 }
 
-
-
 bool
-FontManager::addFamily( std::string uri, Font font )
+FontManager::addFamily( const std::string& uri, const Font& font )
 {
    int32_t found = findFont( font );
    if ( found > -1 )
@@ -213,7 +201,7 @@ FontManager::addFamily( std::string uri, Font font )
 
 
 std::shared_ptr< IFontAtlas >
-FontManager::getFont( Font font )
+FontManager::getFont( const Font& font )
 {
     int32_t found = findFont( font );
     if ( found > -1 )
@@ -265,31 +253,31 @@ FontManager::getFont( Font font )
 void
 FontManager::saveFonts()
 {
-   //DE_DEBUG("Save Fonts..." )
-   //DE_DEBUG(dumpStrFamilies())
+    //DE_DEBUG("Save Fonts..." )
+    //DE_DEBUG(dumpStrFamilies())
 
-   // Find in Cache
-   for ( size_t i = 0; i < m_Fonts.size(); ++i )
-   {
-      std::shared_ptr< IFontAtlas > cached = m_Fonts[ i ];
-      if ( cached )
-      {
-         //DE_DEBUG("CachedFont[",i,"] ", cached->getFont().toFontString() )
-         cached->saveAtlas();
-      }
-   }
+    // Find in Cache
+    for ( size_t i = 0; i < m_Fonts.size(); ++i )
+    {
+        std::shared_ptr< IFontAtlas > cached = m_Fonts[ i ];
+        if ( cached )
+        {
+            //DE_DEBUG("CachedFont[",i,"] ", cached->getFont().toFontString() )
+            cached->saveAtlas();
+        }
+    }
 }
 
 std::string
 FontManager::dumpStrFamilies() const
 {
-   std::ostringstream s;
-   s << "FamilyCount = " << m_Families.size() << "\n";
-   for ( size_t i =0 ; i < m_Families.size(); ++i )
-   {
-      s << "Family[" << i << "] " << m_Families[ i ].toString() << "\n";
-   }
-   return s.str();
+    std::ostringstream s;
+    s << "FamilyCount = " << m_Families.size() << "\n";
+    for ( size_t i =0 ; i < m_Families.size(); ++i )
+    {
+        s << "Family[" << i << "] " << m_Families[ i ].toString() << "\n";
+    }
+    return s.str();
 }
 
 } // end namespace de.

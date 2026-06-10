@@ -901,12 +901,6 @@ public:
             m_component->setActive(false);
         }
 
-        if (m_plugView)
-        {
-            m_plugView->removed();
-            m_plugView = nullptr;
-        }
-
         if (m_editor)
         {
             DE_TRACE("Close editor")
@@ -919,6 +913,15 @@ public:
             // If YOU own the editor manually, use this instead:
             //delete m_editor;
             m_editor = nullptr;
+        }
+
+        if (m_plugView)
+        {
+            DE_TRACE("Delete plugView")
+            m_plugView->removed();
+            DE_TRACE("Release plugView")
+            m_plugView->release();
+            m_plugView = nullptr;
         }
 
         // ------------------------------------------------------------

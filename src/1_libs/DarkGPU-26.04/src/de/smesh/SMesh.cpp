@@ -559,7 +559,8 @@ SMeshBuffer::upload( bool bForceUpload )
         return;
     }
 
-    glBindVertexArray(vao); GL_VALIDATE
+    glBindVertexArray(vao);
+    GL_VALIDATE
 
     if ( vbo )
     {
@@ -568,8 +569,10 @@ SMeshBuffer::upload( bool bForceUpload )
         const size_t vertexBytes = vertexCount * vertexSize;
         const uint8_t* pVertices = reinterpret_cast< const uint8_t* >( vertices.data() );
 
-        glBindBuffer(GL_ARRAY_BUFFER, vbo); GL_VALIDATE
-        glBufferData(GL_ARRAY_BUFFER, GLsizeiptr(vertexBytes), pVertices, GL_STATIC_DRAW); GL_VALIDATE
+        glBindBuffer(GL_ARRAY_BUFFER, vbo);
+        GL_VALIDATE
+        glBufferData(GL_ARRAY_BUFFER, GLsizeiptr(vertexBytes), pVertices, GL_STATIC_DRAW);
+        GL_VALIDATE
 
         // VertexAttribute[0] = Position3D (vec3f)
         glVertexAttribPointer( 0, 3, GL_FLOAT, GL_FALSE, vertexSize, reinterpret_cast<void*>(0) );
@@ -589,7 +592,9 @@ SMeshBuffer::upload( bool bForceUpload )
         //std::cout << "Upload " << vertexCount << " vertices" << std::endl;
         //std::cout << "Upload " << vertexBytes << " bytes" << std::endl;
         //std::cout << "Upload " << vertexSize << " stride" << std::endl;
-         GL_VALIDATE
+
+        //DE_BENNI("Uploaded ",vertexCount," vertices with size ",vertexBytes,")")
+        GL_VALIDATE
     }
 
     if ( ibo )
@@ -602,13 +607,15 @@ SMeshBuffer::upload( bool bForceUpload )
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, GLsizeiptr(indexBytes), pIndices, GL_STATIC_DRAW);
 
-         GL_VALIDATE
+        GL_VALIDATE
         //std::cout << "Upload " << vertexCount << " vertices" << std::endl;
         //std::cout << "Upload " << vertexBytes << " bytes" << std::endl;
         //std::cout << "Upload " << vertexSize << " stride" << std::endl;
+        //DE_BENNI("Uploaded ",indexCount," indices with size ",indexBytes,")")
     }
 
-    glBindVertexArray(0); GL_VALIDATE
+    glBindVertexArray(0);
+    GL_VALIDATE
 
     bShouldUpload = false;
 }
@@ -616,23 +623,24 @@ SMeshBuffer::upload( bool bForceUpload )
 void
 SMeshBuffer::draw() const
 {
-   // upload();
-
    // Draw call
 
-   glBindVertexArray(vao); GL_VALIDATE
+   glBindVertexArray(vao);
+GL_VALIDATE
 
    GLenum const primType = gpu::PrimitiveType::toOpenGL( primitiveType );
    if ( ibo )
    {
-      glDrawElements( primType, GLint(indices.size()), GL_UNSIGNED_INT, nullptr ); GL_VALIDATE
+      glDrawElements( primType, GLint(indices.size()), GL_UNSIGNED_INT, nullptr );
    }
    else
    {
-      glDrawArrays( primType, 0, GLint(vertices.size()) ); GL_VALIDATE
+      glDrawArrays( primType, 0, GLint(vertices.size()) );
    }
+GL_VALIDATE
 
-   glBindVertexArray(0); GL_VALIDATE
+   glBindVertexArray(0);
+GL_VALIDATE
 }
 
 

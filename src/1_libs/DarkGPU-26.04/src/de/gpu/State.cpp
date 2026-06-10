@@ -263,12 +263,10 @@ Blend::apply( Blend const & alt, Blend const & neu )
     //   {
     if ( neu.enabled )
     {
-        de_glEnable( GL_BLEND );
+        glEnable( GL_BLEND ); GL_VALIDATE
 
-        ::glBlendEquation( fromBlendEquation( neu.equation ) );
-        GL_VALIDATE
-        ::glBlendFunc( fromBlendFunction( neu.src_a ), fromBlendFunction( neu.dst_a ) );
-        GL_VALIDATE
+        glBlendEquation( fromBlendEquation( neu.equation ) ); GL_VALIDATE
+        glBlendFunc( fromBlendFunction( neu.src_a ), fromBlendFunction( neu.dst_a ) ); GL_VALIDATE
 
     //         ::glBlendEquationSeparate(
     //               fromBlendEquation( neu.equation ),
@@ -279,11 +277,10 @@ Blend::apply( Blend const & alt, Blend const & neu )
     //               fromBlendFunction( neu.src_a ),
     //               fromBlendFunction( neu.dst_a ) ); GL_VALIDATE
     //DE_DEBUG("Blending ON")
-                GL_VALIDATE;
     }
     else
     {
-        de_glDisable( GL_BLEND );
+        glDisable( GL_BLEND ); GL_VALIDATE
     }
 
     return neu;
@@ -482,7 +479,7 @@ Culling::apply( Culling const & alt, Culling const & neu )
     if ( neu.isEnabled() )
     {
         //::glEnable( GL_CULL_FACE );
-        de_glDisable( GL_CULL_FACE );
+        glDisable( GL_CULL_FACE ); GL_VALIDATE
 
         // [mode] GL_BACK, GL_FRONT
         GLenum mode = GL_BACK;
@@ -494,16 +491,16 @@ Culling::apply( Culling const & alt, Culling const & neu )
         {
             mode = GL_FRONT;
         }
-        ::glCullFace( mode ); GL_VALIDATE;
+        glCullFace( mode ); GL_VALIDATE
 
         // [windingOrder] CW,CCW
-        ::glFrontFace( neu.isCCW() ? GL_CCW : GL_CW ); GL_VALIDATE;
+        glFrontFace( neu.isCCW() ? GL_CCW : GL_CW ); GL_VALIDATE
 
-        de_glEnable( GL_CULL_FACE );
+        glEnable( GL_CULL_FACE ); GL_VALIDATE
     }
     else
     {
-        de_glDisable( GL_CULL_FACE );
+        glDisable( GL_CULL_FACE ); GL_VALIDATE
     }
 
     return neu;

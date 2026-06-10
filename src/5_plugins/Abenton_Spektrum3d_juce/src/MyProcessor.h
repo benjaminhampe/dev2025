@@ -7,7 +7,7 @@ class MyProcessor : public juce::AudioProcessor
 {
 public:
     MyProcessor();
-    ~MyProcessor() override = default;
+    ~MyProcessor() override;
 
     void prepareToPlay (double sampleRate, int samplesPerBlock) override;
     void releaseResources() override {}

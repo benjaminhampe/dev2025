@@ -3,86 +3,54 @@
 #include <vector>
 #include <utility>
 
+#include <de/video/fonts.h>
 #include <de/video/skybox_Miramar.h>
 #include <de/video/rainbow_1k_webp.h>
+#include <de/video/juce_icon_webp.h>
+#include <de/video/benni_webp.h>
 
-#include <juce_opengl/juce_opengl.h>
+//#include <juce_opengl/juce_opengl.h>
 
-#define ASSERT_GL_CONTEXT() \
-    jassert (juce::OpenGLHelpers::isContextActive())
+#define ASSERT_GL_CONTEXT()
 
-
+// #define ASSERT_GL_CONTEXT() \
+//     jassert (juce::OpenGLHelpers::isContextActive())
 
 // ===========================================================================
 Renderer::Renderer()
 // ===========================================================================
+    : m_driver{ nullptr }
+    , m_texBenniIcon{ nullptr }
+    , m_texJuceIcon{ nullptr }
+    , m_bFirstMouse{ false }
+    , m_bCameraFreeLook{ false }
+    , m_bMouseLeftPressed{ false }
+    , m_bMouseRightPressed{ false }
+    , m_bMouseMiddlePressed{ false }
+    , m_bReserved1{ false }
+    , m_bRenderingEnabled{ true }
+    , m_bShowPerfOverlay{ true }
+    , m_bRenderFftMatrix3D{ true }
+    , m_mouseX{ 0 }
+    , m_mouseY{ 0 }
+    , m_lastMouseX{ 0 }
+    , m_lastMouseY{ 0 }
+    , m_mouseMoveX{ 0 }
+    , m_mouseMoveY{ 0 }
+    , m_fpsTimerId{ 0 }
+    , m_matrix_fft_cols{ 0 }
+    , m_matrix_fft_rows{ 0 }
+    , m_matrix_fft_xmode{ 1 } // 0 = linear, 1 = log10
 {
-    // Test ImageWriters 2026:
-    // de::Image img;
-    // dbLoadImage(img,rainbow_1k_webp,710,"rainbow_1k.webp");
-    // dbSaveImage(img,"rainbow_1k.pam");
-    // dbSaveImage(img,"rainbow_1k.ppm");
-    // dbSaveImage(img,"rainbow_1k.png");
-    // dbSaveImage(img,"rainbow_1k.webp");
-    // dbSaveImage(img,"rainbow_1k.dds");
-    // dbSaveImage(img,"rainbow_1k.tga");
-    // dbSaveImage(img,"rainbow_1k.exr");
-    // dbSaveImage(img,"rainbow_1k.xpm");
-    // dbSaveImage(img,"rainbow_1k.gif");
-    // dbSaveImage(img,"rainbow_1k.jpg");
-    // dbSaveImage(img,"rainbow_1k.jpeg");
-    // dbSaveImage(img,"rainbow_1k.ico");
-    // dbSaveImage(img,"rainbow_1k.bmp");
-    // dbSaveImage(img,"rainbow_1k.raw");
-    // dbSaveImage(img,"rainbow_1k.rgb");
-    // dbSaveImage(img,"rainbow_1k.rgba");
-    // dbSaveImage(img,"rainbow_1k.sgi");
-    // dbSaveImage(img,"rainbow_1k.tif");
-    // dbSaveImage(img,"rainbow_1k.wal");
-
-#if 0
-    m_wav_colorGradient.addStop( 0, dbRGBA(0,0,0) );
-    m_wav_colorGradient.addStop( 0.1f, dbRGBA(255,255,255) );
-    m_wav_colorGradient.addStop( 0.3f, dbRGBA(90,90,100) );
-    m_wav_colorGradient.addStop( 0.2f, dbRGBA(0,0,255) );
-    m_wav_colorGradient.addStop( 0.6f, dbRGBA(0,200,0) );
-    m_wav_colorGradient.addStop( 0.8f, dbRGBA(255,155,0) );
-    m_wav_colorGradient.addStop( 0.9f, dbRGBA(255,255,0) );
-    m_wav_colorGradient.addStop( 1.0f, dbRGBA(255,0,0) );
-    m_wav_colorGradient.addStop( 1.1f, dbRGBA(255,255,255) );
-    m_wav_colorGradient.addStop( 1.2f, dbRGBA(255,0,255) );
-    m_wav_colorGradient.addStop( 1.3f, dbRGBA(0,0,255) );
-    m_wav_colorGradient.addStop( 1.5f, dbRGBA(0,0,155) );
-    m_wav_colorGradient.addStop( 2.5f, dbRGBA(205,105,5) );
-
-    m_fft_colorGradient.addStop( 0, dbRGBA(0,0,0) );
-    m_fft_colorGradient.addStop( 0.45, dbRGBA(125,125,125) );
-    m_fft_colorGradient.addStop( 0.5, dbRGBA(0,0,255) );
-    m_fft_colorGradient.addStop( 0.6, dbRGBA(0,200,0) );
-    m_fft_colorGradient.addStop( 0.8, dbRGBA(255,255,0) );
-    m_fft_colorGradient.addStop( 1.0, dbRGBA(255,0,0) );
-    m_fft_colorGradient.addStop( 1.1, dbRGBA(255,0,255) );
-
-    dbSaveLinearColorGradient(m_wav_colorGradient,"VHS_wav_colorGradient.lcg");
-    dbSaveLinearColorGradient(m_wav_colorGradient,"VHS_fft_colorGradient.lcg");
-
-    de::Image
-    tmp = dbImageFromLinearColorGradient(m_wav_colorGradient,256,256,false);
-    dbSaveImage(tmp,"VHS_wav_colorGradient_h.png");
-
-    tmp = dbImageFromLinearColorGradient(m_wav_colorGradient,256,256,true);
-    dbSaveImage(tmp,"VHS_wav_colorGradient_v.png");
-
-    tmp = dbImageFromLinearColorGradient(m_fft_colorGradient,256,256,false);
-    dbSaveImage(tmp,"VHS_fft_colorGradient_h.png");
-
-    tmp = dbImageFromLinearColorGradient(m_fft_colorGradient,256,256,true);
-    dbSaveImage(tmp,"VHS_fft_colorGradient_v.png");
-#endif
+    dbAddFontFamily("Awesome",de::video::fontawesome463_ttf,de::video::fontawesome463_ttfSize);
+    dbAddFontFamily("NotoSans",de::video::NotoSansRegular_ttf,de::video::NotoSansRegular_ttfSize);
+    dbAddFontFamily("Postamt",de::video::Postamt_ttf,de::video::Postamt_ttfSize);
 }
 
 Renderer::~Renderer()
-{}
+{
+    uninitGL();
+}
 
 void Renderer::dsp_push(const de::TAlignedVector<float>& sum)
 {
@@ -98,8 +66,13 @@ void Renderer::initializeGL()
 #if 0
     m_test.initializeGL();
 #else
-    DE_BENNI("initializeGL()")
-    m_driver = de::gpu::createVideoDriver(1024,768,0);
+
+    if (!m_driver)
+    {
+        DE_BENNI("Create driver:")
+        m_driver = de::gpu::createVideoDriver(1024,768,0);
+    }
+
     if (!m_driver)
     {
         DE_ERROR("No driver")
@@ -109,9 +82,17 @@ void Renderer::initializeGL()
     m_mesh16Shader2D.setDriver( m_driver );
     m_mesh16Shader3D.setDriver( m_driver );
 
+
+
     de::Image img;
     dbLoadImage(img,rainbow_1k_webp,710,"rainbow_1k.webp");
     m_mesh16Material.tex0 = m_driver->createTexture2D("rainbow.webp",img);
+
+    dbLoadImage(img,de::video::benni_webp,de::video::benni_webpSize,"benni_webp");
+    m_texBenniIcon = m_driver->createTexture2D("benni_webp",img);
+
+    dbLoadImage(img,de::video::juce_icon_webp,de::video::juce_icon_webpSize,"juce_icon_webp");
+    m_texJuceIcon = m_driver->createTexture2D("juce_icon_webp",img);
 
     dbRandomize();
 
@@ -151,9 +132,9 @@ void Renderer::uninitGL()
 #if 0
     m_test.uninitGL();
 #else
-    DE_BENNI("uninitGL()")
     if (m_driver)
     {
+        DE_BENNI("Delete driver.")
         delete m_driver;
         m_driver = nullptr;
     }
@@ -168,7 +149,7 @@ void Renderer::resizeGL(int w, int h)
 #else
     if (m_driver)
     {
-        DE_BENNI("resizeGL(",w,",",h,")")
+        //DE_BENNI("resizeGL(",w,",",h,")")
         m_driver->resize(w,h);
     }
 #endif
@@ -192,11 +173,12 @@ void Renderer::paintGL()
 
     m_driver->beginRender(glm::vec4(0.01,0.01,0.01,1.0));
 
+    const int w = m_driver->getRenderWidth();
+    const int h = m_driver->getRenderHeight();
+
     auto camera = m_driver->getCamera();
     if (camera)
     {
-        int w = m_driver->getRenderWidth();
-        int h = m_driver->getRenderHeight();
         camera->setScreenSize(w,h);
         camera->update();
     }
@@ -233,6 +215,36 @@ void Renderer::paintGL()
     {
         m_driver->draw2DPerfOverlay();
         draw2DFftOverlay();
+
+        int tw = 128; // m_texJuceIcon->w();
+        int th = 128; // m_texJuceIcon->h();
+
+        m_driver->getScreenRenderer()->
+            draw2DCircle(de::Recti(10,h-11-th,tw,th), 0xFFFFFFFF, m_texBenniIcon, 64);
+
+        m_driver->getScreenRenderer()->
+            draw2DRect(de::Recti(w-11-tw,h-11-th,tw,th), 0xFFFFFFFF, m_texJuceIcon);
+
+        de::Font font("Postamt",32);
+
+        std::wstring s1 = L"Spektrum 3D (c) 2026 by Abenton";
+        std::wstring s2 = L"Made with JUCE 7.0.5";
+
+        m_driver->draw2DText(
+            20 + tw,
+            h - 11 - th/2,
+            s1,
+            0xFFFFFFFF,
+            de::Align::LeftMiddle,
+            font);
+
+        m_driver->draw2DText(
+            w - 21 - tw,
+            h - 11 - th/2,
+            s2,
+            0xFFFFFFFF,
+            de::Align::RightMiddle,
+            font);
     }
 
 
@@ -696,3 +708,66 @@ void Renderer::draw3DLineStripR()
 }
 
 */
+
+    // Test ImageWriters 2026:
+    // de::Image img;
+    // dbLoadImage(img,rainbow_1k_webp,710,"rainbow_1k.webp");
+    // dbSaveImage(img,"rainbow_1k.pam");
+    // dbSaveImage(img,"rainbow_1k.ppm");
+    // dbSaveImage(img,"rainbow_1k.png");
+    // dbSaveImage(img,"rainbow_1k.webp");
+    // dbSaveImage(img,"rainbow_1k.dds");
+    // dbSaveImage(img,"rainbow_1k.tga");
+    // dbSaveImage(img,"rainbow_1k.exr");
+    // dbSaveImage(img,"rainbow_1k.xpm");
+    // dbSaveImage(img,"rainbow_1k.gif");
+    // dbSaveImage(img,"rainbow_1k.jpg");
+    // dbSaveImage(img,"rainbow_1k.jpeg");
+    // dbSaveImage(img,"rainbow_1k.ico");
+    // dbSaveImage(img,"rainbow_1k.bmp");
+    // dbSaveImage(img,"rainbow_1k.raw");
+    // dbSaveImage(img,"rainbow_1k.rgb");
+    // dbSaveImage(img,"rainbow_1k.rgba");
+    // dbSaveImage(img,"rainbow_1k.sgi");
+    // dbSaveImage(img,"rainbow_1k.tif");
+    // dbSaveImage(img,"rainbow_1k.wal");
+
+#if 0
+    m_wav_colorGradient.addStop( 0, dbRGBA(0,0,0) );
+    m_wav_colorGradient.addStop( 0.1f, dbRGBA(255,255,255) );
+    m_wav_colorGradient.addStop( 0.3f, dbRGBA(90,90,100) );
+    m_wav_colorGradient.addStop( 0.2f, dbRGBA(0,0,255) );
+    m_wav_colorGradient.addStop( 0.6f, dbRGBA(0,200,0) );
+    m_wav_colorGradient.addStop( 0.8f, dbRGBA(255,155,0) );
+    m_wav_colorGradient.addStop( 0.9f, dbRGBA(255,255,0) );
+    m_wav_colorGradient.addStop( 1.0f, dbRGBA(255,0,0) );
+    m_wav_colorGradient.addStop( 1.1f, dbRGBA(255,255,255) );
+    m_wav_colorGradient.addStop( 1.2f, dbRGBA(255,0,255) );
+    m_wav_colorGradient.addStop( 1.3f, dbRGBA(0,0,255) );
+    m_wav_colorGradient.addStop( 1.5f, dbRGBA(0,0,155) );
+    m_wav_colorGradient.addStop( 2.5f, dbRGBA(205,105,5) );
+
+    m_fft_colorGradient.addStop( 0, dbRGBA(0,0,0) );
+    m_fft_colorGradient.addStop( 0.45, dbRGBA(125,125,125) );
+    m_fft_colorGradient.addStop( 0.5, dbRGBA(0,0,255) );
+    m_fft_colorGradient.addStop( 0.6, dbRGBA(0,200,0) );
+    m_fft_colorGradient.addStop( 0.8, dbRGBA(255,255,0) );
+    m_fft_colorGradient.addStop( 1.0, dbRGBA(255,0,0) );
+    m_fft_colorGradient.addStop( 1.1, dbRGBA(255,0,255) );
+
+    dbSaveLinearColorGradient(m_wav_colorGradient,"VHS_wav_colorGradient.lcg");
+    dbSaveLinearColorGradient(m_wav_colorGradient,"VHS_fft_colorGradient.lcg");
+
+    de::Image
+    tmp = dbImageFromLinearColorGradient(m_wav_colorGradient,256,256,false);
+    dbSaveImage(tmp,"VHS_wav_colorGradient_h.png");
+
+    tmp = dbImageFromLinearColorGradient(m_wav_colorGradient,256,256,true);
+    dbSaveImage(tmp,"VHS_wav_colorGradient_v.png");
+
+    tmp = dbImageFromLinearColorGradient(m_fft_colorGradient,256,256,false);
+    dbSaveImage(tmp,"VHS_fft_colorGradient_h.png");
+
+    tmp = dbImageFromLinearColorGradient(m_fft_colorGradient,256,256,true);
+    dbSaveImage(tmp,"VHS_fft_colorGradient_v.png");
+#endif

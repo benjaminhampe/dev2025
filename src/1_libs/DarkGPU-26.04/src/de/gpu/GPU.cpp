@@ -35,27 +35,26 @@ GT_init()
     ensureDesktopOpenGL(); // initGlew()
 
     // Enable OpenGL debug output
-    de_glEnable(GL_DEBUG_OUTPUT);
-    de_glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
-    glDebugMessageCallback(GT_DebugMessageCallback, 0);
+    glEnable(GL_DEBUG_OUTPUT); GL_VALIDATE
+    glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS); GL_VALIDATE
+    glDebugMessageCallback(GT_DebugMessageCallback, 0);  GL_VALIDATE
 
     // Enable depth testing
-    de_glEnable(GL_DEPTH_TEST);
-    glDepthFunc(GL_LESS);
+    glEnable(GL_DEPTH_TEST);  GL_VALIDATE
+    glDepthFunc(GL_LESS); GL_VALIDATE
 
     // Enable face culling
-    de_glEnable(GL_CULL_FACE);
-    glCullFace(GL_BACK);
-    glFrontFace(GL_CCW);
+    glEnable(GL_CULL_FACE); GL_VALIDATE
+    glCullFace(GL_BACK); GL_VALIDATE
+    glFrontFace(GL_CCW); GL_VALIDATE
 
     // Enable blending for transparency
-    de_glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glEnable(GL_BLEND); GL_VALIDATE
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA); GL_VALIDATE
 
     // Smooth shading (optional for older OpenGL versions)
-    //glShadeModel(GL_SMOOTH);
+    //glShadeModel(GL_SMOOTH); GL_VALIDATE
 
-    GL_VALIDATE
 }
 
 /*
@@ -863,7 +862,7 @@ void TexManager::updateTextures()
     for ( size_t i = 0; i < m_texTrash.size(); ++i )
     {
         Texture* markedAsTrash = m_texTrash[ i ];
-        de_glDeleteTextures( 1, &markedAsTrash->m_id );
+        glDeleteTextures( 1, &markedAsTrash->m_id ); GL_VALIDATE
     }
     m_texTrash.clear();
 }
@@ -1216,8 +1215,8 @@ bool VideoDriverGL::bindTextureId( int stage, uint32_t texId )
     }
 
     m_TexUnits[ stage ] = texId; // Update unit
-    de_glActiveTexture( GL_TEXTURE0 + stage );
-    de_glBindTexture( GL_TEXTURE_2D, texId );
+    glActiveTexture( GL_TEXTURE0 + stage ); GL_VALIDATE
+    glBindTexture( GL_TEXTURE_2D, texId ); GL_VALIDATE
     //   bool ok = GL_VALIDATE;
     //   if ( !ok )
     //   {
@@ -1239,8 +1238,8 @@ bool VideoDriverGL::unbindTextureId( uint32_t texId )
     }
 
     m_TexUnits[ found ] = 0;
-    de_glActiveTexture( GL_TEXTURE0 + found );
-    de_glBindTexture( GL_TEXTURE_2D, 0 );
+    glActiveTexture( GL_TEXTURE0 + found ); GL_VALIDATE
+    glBindTexture( GL_TEXTURE_2D, 0 ); GL_VALIDATE
     // DE_DEBUG( "Unbound texture ", texId, " from stage ", found, " and target=", target )
     return true;
 }

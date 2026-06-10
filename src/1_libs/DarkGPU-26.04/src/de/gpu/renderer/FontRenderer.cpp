@@ -84,6 +84,7 @@ FontRenderer::draw2DText(int x, int y, std::wstring const & msg,
     auto tex = m_driver->getTexture( uri );
     if (!tex)
     {
+        //dbSaveImage(*atlasImage,uri + ".png");
         tex = m_driver->createTexture2D( uri, *atlasImage, so );
         if (!tex)
         {
@@ -107,8 +108,8 @@ FontRenderer::draw2DText(int x, int y, std::wstring const & msg,
     const int tex_h = tex->h();
 
     // Align the text_size(w,h) to the text_pos(x,y) only.
-    const int32_t tw = ts.width;
-    const int32_t th = ts.height;
+    const int32_t tw = ts.m_width;
+    const int32_t th = ts.m_height;
     //   if ( font.lcdFit )
     //   {
     //      tw /= 3;
@@ -146,7 +147,7 @@ FontRenderer::draw2DText(int x, int y, std::wstring const & msg,
         if ( unicode == '\n' || unicode == '\r' )
         {
             px = aligned_pos.x;
-            py += ts.lineHeight;
+            py += ts.m_lineHeight;
             continue;
         }
 
@@ -165,7 +166,7 @@ FontRenderer::draw2DText(int x, int y, std::wstring const & msg,
         if ( glyph.ref.w() > 0 && glyph.ref.h() > 0 )
         {
             int x1 = px + glyph.bmp.x + kerning.x;
-            int y1 = py + ts.baseline - glyph.bmp.y; // ts.lineHeight + ts.baseline; // + glyph.ref.getY();
+            int y1 = py + ts.m_baseline - glyph.bmp.y; // ts.lineHeight + ts.baseline; // + glyph.ref.getY();
 
             int gw = glyph.ref.w();
             int gh = glyph.ref.h();
@@ -219,13 +220,14 @@ FontRenderer::draw2DText(int x, int y, std::wstring const & msg,
 
     quads.upload();
 
-    quads.setDepth( Depth::disabled() );
+    quads.setDepth( Depth::alwaysPass() );
     quads.setBlend( Blend::alphaBlend() );
     quads.setCulling( Culling::disabled() );
     quads.setTexture( 0, tex );
-    //quads.getMaterial().CloudTransparent = true;
+    quads.getMaterial().CloudTransparent = true;
 
     // Draw background rect
+/*
     if (dbRGBA_A(bgColor) > 0)
     {
         bbox_x1 -= padding;
@@ -235,9 +237,14 @@ FontRenderer::draw2DText(int x, int y, std::wstring const & msg,
         auto bbox_r = Recti(bbox_x1, bbox_y1, bbox_x2 - bbox_x1, bbox_y2 - bbox_y1);
         m_screenRenderer->draw2DRect( bbox_r, bgColor );
     }
+*/
 
+    m_screenRenderer->draw2D( quads );
+/*
     m_screenRenderer->setMaterial( quads.material );
     quads.draw();
+
+*/
     quads.destroy();
 
     //m_Driver->draw2D( quads );
@@ -333,8 +340,8 @@ FontRenderer::draw2DTextDebug( int x, int y, std::wstring const & msg, uint32_t 
 
    // Align the text_size(w,h) to the text_pos(x,y) only.
    TextSize ts = face->getTextSize( msg );
-   int32_t tw = ts.width;
-   int32_t th = ts.height;
+   int32_t tw = ts.m_width;
+   int32_t th = ts.m_height;
    if ( font.lcdFit )
    {
       tw /= 3;
@@ -353,7 +360,7 @@ FontRenderer::draw2DTextDebug( int x, int y, std::wstring const & msg, uint32_t 
    else { DE_ERROR("Invalid vertical text align") return; }
 
    float px = aligned_pos.x;
-   float py = aligned_pos.y + ts.baseline;
+   float py = aligned_pos.y + ts.m_baseline;
    float pz = -1.0f; // At -1.0 it disappears, not inside frustum.
 
    smesh::SMeshBuffer lines( PrimitiveType::Lines );
@@ -368,7 +375,7 @@ FontRenderer::draw2DTextDebug( int x, int y, std::wstring const & msg, uint32_t 
       if ( unicode == '\n' || unicode == '\r' )
       {
          px = aligned_pos.x;
-         py += ts.lineHeight;
+         py += ts.m_lineHeight;
          continue;
       }
 

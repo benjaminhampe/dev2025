@@ -24,7 +24,8 @@ SMeshBuffer::destroy()
 {
    if ( m_vao )
    {
-      de_glDeleteVertexArrays(1, &m_vao);
+      glDeleteVertexArrays(1, &m_vao);
+        GL_VALIDATE
       m_vao = 0;
    }
 

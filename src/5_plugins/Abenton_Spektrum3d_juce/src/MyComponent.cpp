@@ -1,18 +1,23 @@
-#include "de/gpu/VideoDriver.h"
-#include <MyComponent.h>
-#include <MyProcessor.h>
-#include <de_opengl.h>
+#include "MyComponent.h"
+#include "MyProcessor.h"
 
+#include <de/opengl/context/Backend_WGL.h>
+#include <de/opengl/context/Backend_GLX.h>
+
+#if 0
 
 MyComponent::MyComponent (juce::AudioProcessor& proc)
     : processor (proc)
 {
     static_cast<MyProcessor*>(&processor)->setCanvas(this);
 
-    openGLContext.setRenderer (this);
-    openGLContext.attachTo (*this);
-    openGLContext.setContinuousRepainting (false);
-
+    //openGLContext.setRenderer (this);
+    openGLContext.setRenderer(nullptr);
+    //openGLContext.setOpenGLVersionRequired(juce::OpenGLContext::defaultGLVersion);
+    //openGLContext.setPixelFormat(juce::OpenGLPixelFormat(8,8,24,8));
+    //openGLContext.setMultisamplingEnabled(false);
+    openGLContext.attachTo(*this);
+    openGLContext.setContinuousRepainting(false);
 
     startTimerHz (60); // 60 FPS
 }
@@ -83,32 +88,140 @@ void MyComponent::pushSamples(const de::TAlignedVector<float>& samples)
     m_renderer.dsp_push(samples);
 }
 
-/*
-void MyComponent::pullAudio()
-{
-    const int blockSize = tempBuffer.getNumSamples();
-    int start1, size1, start2, size2;
-    audioFifo.prepareToRead (blockSize, start1, size1, start2, size2);
+#else
 
-    if (size1 + size2 == 0)
+MyComponent::MyComponent(juce::AudioProcessor& proc)
+    : processor(proc)
+{
+    DE_DEBUG("MyComponent()")
+    setOpaque(true);
+    static_cast<MyProcessor*>(&processor)->setCanvas(this);
+}
+
+MyComponent::~MyComponent()
+{
+    DE_DEBUG("~MyComponent()")
+    shutdownBackend();
+}
+
+void MyComponent::newOpenGLContextCreated()
+{
+    DE_BENNI("openGLContextClosing()")
+    m_renderer.initializeGL();
+}
+
+void MyComponent::openGLContextClosing()
+{
+    DE_BENNI("openGLContextClosing()")
+    m_renderer.uninitGL();
+}
+
+void MyComponent::renderOpenGL()
+{
+    auto r = getLocalBounds();
+    m_renderer.resizeGL(r.getWidth(), r.getHeight());
+    m_renderer.paintGL();
+}
+
+void MyComponent::pushSamples(const de::TAlignedVector<float>& samples)
+{
+    m_renderer.dsp_push(samples);
+}
+
+void MyComponent::parentHierarchyChanged()
+{
+    tryCreateBackend();
+}
+
+void MyComponent::visibilityChanged()
+{
+    if (isShowing())
+        tryCreateBackend();
+    else
+        shutdownBackend();
+}
+
+void MyComponent::resized()
+{
+    if (openGLContext)
+    {
+        auto r = getLocalBounds();
+        openGLContext->resize(r.getX(), r.getY(), r.getWidth(), r.getHeight());
+    }
+}
+
+// ---------------------------------------------------------
+// Backend Setup
+// ---------------------------------------------------------
+void MyComponent::tryCreateBackend()
+{
+    DE_DEBUG("tryCreateBackend()")
+    if (openGLContext)
         return;
 
-    tempBuffer.clear();
+    auto* peer = getPeer();
+    if (!peer)
+        return;
 
-    if (size1 > 0)
-        for (int ch = 0; ch < tempBuffer.getNumChannels(); ++ch)
-            tempBuffer.copyFrom (ch, 0, audioBuffer, ch, start1, size1);
+    void* parent = peer->getNativeHandle();
+    auto r = getLocalBounds();
 
-    if (size2 > 0)
-        for (int ch = 0; ch < tempBuffer.getNumChannels(); ++ch)
-            tempBuffer.copyFrom (ch, size1, audioBuffer, ch, start2, size2);
+#ifdef _WIN32
+    openGLContext = std::make_unique<Backend_WGL>();
+#else
+    openGLContext = std::make_unique<Backend_GLX>();
+#endif
 
-    audioFifo.finishedRead (size1 + size2);
+    if (!openGLContext->createWindow(parent, r.getX(), r.getY(), r.getWidth(), r.getHeight()))
+    {
+        openGLContext.reset();
+        return;
+    }
 
-    auto* l = tempBuffer.getReadPointer (0);
-    auto* r = tempBuffer.getNumChannels() > 1 ? tempBuffer.getReadPointer (1) : l;
+    openGLContext->makeCurrent();
+    newOpenGLContextCreated();   // <‑‑ your real init
+    openGLContext->doneCurrent();
 
-    lastRmsL = juce::jlimit (0.0f, 1.0f, tempBuffer.getRMSLevel (0, 0, size1 + size2));
-    lastRmsR = juce::jlimit (0.0f, 1.0f, tempBuffer.getRMSLevel (tempBuffer.getNumChannels() > 1 ? 1 : 0, 0, size1 + size2));
+    startTimerHz(60);
 }
-*/
+
+void MyComponent::shutdownBackend()
+{
+    DE_BENNI("MyComponent::shutdownBackend()")
+    stopTimer();
+
+    if (openGLContext)
+    {
+        openGLContext->makeCurrent();
+    }
+    else
+    {
+        DE_ERROR("No wgl/glx context")
+    }
+
+    openGLContextClosing();   // <‑‑ your real shutdown
+
+    if (openGLContext)
+    {
+        openGLContext->doneCurrent();
+        openGLContext->destroy();
+        openGLContext.reset();
+    }
+    else
+    {
+        DE_ERROR("No wgl/glx context")
+    }
+}
+
+void MyComponent::timerCallback()
+{
+    if (!openGLContext)
+        return;
+
+    openGLContext->makeCurrent();
+    renderOpenGL();
+    openGLContext->swapBuffers();
+    openGLContext->doneCurrent();
+}
+
+#endif

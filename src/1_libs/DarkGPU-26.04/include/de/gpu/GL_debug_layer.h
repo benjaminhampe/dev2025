@@ -12,6 +12,8 @@
 
 bool de_glValidate( char const * file, int line, char const * func);
 
+#if 0
+
 #ifndef de_glEnable
 #define de_glEnable(param0) \
    de_impl_glEnable( __FILE__, __LINE__, __FUNCTION__, (param0) )
@@ -447,3 +449,5 @@ void de_impl_glBlendFunc( uint32_t sfactor, uint32_t dfactor )
 //glGetProgramiv(ID, GL_LINK_STATUS, &success);
 //glGetProgramInfoLog(ID, 1024, nullptr, infoLog);
 //glDeleteShader(fragment);
+
+#endif

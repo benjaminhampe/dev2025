@@ -8,8 +8,16 @@ MyProcessor::MyProcessor()
                       .withOutput ("Output", juce::AudioChannelSet::stereo(), true))
     , apvts (*this, nullptr, "PARAMS", createParameterLayout())
 {
+    DE_DEBUG("MyProcessor()")
+
     smoothedGain.reset (48000.0, 0.05); // 50ms smoothing
     smoothedGain.setCurrentAndTargetValue (1.0f);
+}
+
+MyProcessor::~MyProcessor()
+{
+    DE_DEBUG("~MyProcessor()")
+
 }
 
 juce::AudioProcessorValueTreeState::ParameterLayout
@@ -31,6 +39,10 @@ MyProcessor::createParameterLayout()
 void MyProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
 {
     smoothedGain.reset (sampleRate, 0.05);
+    if (m_canvas)
+    {
+        m_canvas->getCollector().dsp_init(samplesPerBlock,2,sampleRate);
+    }
 }
 
 bool MyProcessor::isBusesLayoutSupported (const BusesLayout& layouts) const

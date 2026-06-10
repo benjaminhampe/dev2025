@@ -19,7 +19,7 @@ struct FontTTF : public IFontAtlas
 // =======================
 // Font interface
 // =======================
-   Font const & getFont() const override { return m_Font; }
+   const Font & getFont() const override { return m_Font; }
    Font & getFont() override { return m_Font; }
 
 // =======================
@@ -27,19 +27,19 @@ struct FontTTF : public IFontAtlas
 // =======================
    void setDirty( bool dirty ) override { m_isDirty = dirty; }
    bool isDirty() const override { return m_isDirty; }
-   Image const* getAtlasImage() const override { return &m_AtlasPage0; }
+   const Image* getAtlasImage() const override { return &m_AtlasPage0; }
    Image* getAtlasImage() override { return &m_AtlasPage0; }
    void saveAtlas() override;
 
 // =======================
 // Glyph interface
 // =======================
-   bool cacheString( std::wstring const & msg ) override;
-   glm::ivec2 getKerning( uint32_t prev_unicode, uint32_t curr_unicode ) const override;
-   Glyph createGlyph( uint32_t unicode ) override;
-   bool hasGlyph( uint32_t unicode ) const override;
-   Glyph & getGlyph( uint32_t unicode ) override;
-   TextSize getGlyphSize( uint32_t unicode ) override;
+   bool cacheString( const std::wstring & msg ) override;
+   glm::ivec2 getKerning( const uint32_t prev_unicode, const uint32_t curr_unicode ) const override;
+   Glyph createGlyph( const uint32_t unicode ) override;
+   bool hasGlyph( const uint32_t unicode ) const override;
+   Glyph & getGlyph( const uint32_t unicode ) override;
+   TextSize getGlyphSize( const uint32_t unicode ) override;
 
 // =======================
 // Text interface
@@ -47,18 +47,18 @@ struct FontTTF : public IFontAtlas
    // x = lineWidth
    // y = lineHeight
    // z = baselineOffsetY
-   TextSize getTextSize( std::wstring const & txt ) override;
+   TextSize getTextSize( const std::wstring & txt ) override;
    // [Text] Draw
-   void drawText( Image & img, int x, int y, std::wstring const & txt,
+   void drawText( Image & img, int x, int y, const std::wstring& txt,
       uint32_t color = 0xFF000000, Align align = Align::Default ) override;
    // [Text] to Image
-   Image createTextImage( std::wstring const & txt, uint32_t txtColor = 0xFF000000,
+   Image createTextImage( const std::wstring & txt, uint32_t txtColor = 0xFF000000,
       uint32_t fillColor = 0xFFFFFFFF ) override;
 
    // Only for impl Section:
-   virtual std::string const & getAtlasImageName() const { return m_AtlasPage0.uri(); }
-   virtual std::string const & getUri() const { return m_Uri; }
-   virtual void setUri( std::string const & uri ) { m_Uri = uri; }
+   virtual const std::string& getAtlasImageName() const { return m_AtlasPage0.uri(); }
+   virtual const std::string& getUri() const { return m_Uri; }
+   virtual void setUri( const std::string& uri ) { m_Uri = uri; }
    virtual void setLib( FT_Library lib ) { m_ftLib = lib; }
    virtual void open( std::string uri );
    virtual void openMemory( const uint8_t* pBytes, size_t nBytes );

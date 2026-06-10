@@ -11,13 +11,13 @@ uint32_t
 SkyboxRenderer::loadCubemap( std::array<const Image*,6> const & faces )
 {
     uint32_t textureID = 0;
-    de_glGenTextures(1, &textureID);
-    de_glBindTexture(GL_TEXTURE_CUBE_MAP, textureID);
-    de_glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    de_glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    de_glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    de_glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    de_glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+    glGenTextures(1, &textureID); GL_VALIDATE
+    glBindTexture(GL_TEXTURE_CUBE_MAP, textureID); GL_VALIDATE
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR); GL_VALIDATE
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR); GL_VALIDATE
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE); GL_VALIDATE
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE); GL_VALIDATE
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE); GL_VALIDATE
 
     for (size_t i = 0; i < faces.size(); i++)
     {
@@ -27,7 +27,7 @@ SkyboxRenderer::loadCubemap( std::array<const Image*,6> const & faces )
         {
             if (img->pixelFormat() == PixelFormat::R8G8B8)
             {
-                de_glTexImage2D( GLenum(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i),
+                glTexImage2D( GLenum(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i),
                          0,
                          GL_RGB,
                          img->w(),
@@ -35,6 +35,7 @@ SkyboxRenderer::loadCubemap( std::array<const Image*,6> const & faces )
                          0,
                          GL_RGB,
                          GL_UNSIGNED_BYTE, img->data() );
+                 GL_VALIDATE
             }
             else
             {
@@ -75,20 +76,19 @@ SkyboxRenderer::loadCubemap( std::vector<std::string> const & faces )
                 0,
                 GL_RGB,
                 GL_UNSIGNED_BYTE, img.data() );
-            GL_VALIDATE;
+            GL_VALIDATE
         }
         else
         {
             DE_ERROR("Cubemap[",i,"] failed to load, ",faces[i])
         }
     }
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-    glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
-    GL_VALIDATE;
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR); GL_VALIDATE
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR); GL_VALIDATE
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE); GL_VALIDATE
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE); GL_VALIDATE
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE); GL_VALIDATE
+    glBindTexture(GL_TEXTURE_CUBE_MAP, 0); GL_VALIDATE
     return textureID;
 }
 
@@ -114,17 +114,17 @@ SkyboxRenderer::destroy()
 {
     if ( m_vao )
     {
-        de_glDeleteVertexArrays(1, &m_vao);
+        glDeleteVertexArrays(1, &m_vao); GL_VALIDATE
         m_vao = 0;
     }
     if ( m_vbo )
     {
-        de_glDeleteBuffers(1, &m_vbo);
+        glDeleteBuffers(1, &m_vbo); GL_VALIDATE
         m_vbo = 0;
     }
     if ( m_cubeMap )
     {
-        de_glDeleteTextures(1, &m_cubeMap);
+        glDeleteTextures(1, &m_cubeMap); GL_VALIDATE
         m_cubeMap = 0;
     }
 }
@@ -152,7 +152,7 @@ SkyboxRenderer::load(const Image* nx, const Image* px,
     if (m_cubeMap)
     {
         DE_WARN("Rewrite cubeMap texture")
-        de_glDeleteTextures( 1, &m_cubeMap);
+        glDeleteTextures( 1, &m_cubeMap); GL_VALIDATE
         m_cubeMap = 0;
     }
 
@@ -178,7 +178,7 @@ SkyboxRenderer::load( std::string const & mediaDir,
     if (m_cubeMap)
     {
         DE_WARN("Rewrite cubeMap texture")
-        de_glDeleteTextures( 1, &m_cubeMap);
+        glDeleteTextures( 1, &m_cubeMap); GL_VALIDATE
         m_cubeMap = 0;
     }
 

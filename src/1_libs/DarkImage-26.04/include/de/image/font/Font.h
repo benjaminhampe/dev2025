@@ -63,76 +63,106 @@ protected:
 struct TextSize
 // =======================================================================
 {
-   int32_t width; //  x = lineWidth, y = lineHeight, z = baselineOffsetY.
-   int32_t height;
-   int32_t baseline;
-   int32_t lineHeight;
-   int32_t lineCount;
+    int32_t m_width; //  x = lineWidth, y = lineHeight, z = baselineOffsetY.
+    int32_t m_height;
+    int32_t m_baseline;
+    int32_t m_lineHeight;
+    int32_t m_lineCount;
 
-   TextSize();
-   TextSize( int32_t w, int32_t h, int32_t baselineMax, int32_t _lineHeight, int32_t _lineCount );
-   std::string toString() const;
+    TextSize()
+        : m_width( 0 )
+        , m_height( 0 )
+        , m_baseline( 0 )
+        , m_lineHeight(0)
+        , m_lineCount(0)
+    {}
+
+    TextSize( int32_t w, int32_t h, int32_t baseline = 0, int32_t lineHeight = 0, int32_t lineCount = 0 )
+        : m_width( w )
+        , m_height( h )
+        , m_baseline( baseline )
+        , m_lineHeight( lineHeight )
+        , m_lineCount( lineCount )
+    {}
+
+    std::string str() const
+    {
+        std::ostringstream o;
+        o   << m_width << ","
+            << m_height << ","
+            << m_baseline << ","
+            << m_lineHeight << ","
+            << m_lineCount;
+        return o.str();
+    }
 };
 
 // =======================================================================
 struct Text
 // =======================================================================
 {
-   int x;
-   int y;
-   Align align;
-   std::wstring msg;
-   Font font;
-   Pen pen;
-   Brush brush;
+    int x;
+    int y;
+    Align align;
+    std::wstring msg;
+    Font font;
+    Pen pen;
+    Brush brush;
 
-   Text( int x = 0, int y = 0, std::wstring msg = L"", Align align = Align::Default,
-         uint32_t fillColor = 0xFFFFFFFF, uint32_t penColor = 0xFF000000 );
+    Text( int x = 0, int y = 0, std::wstring msg = L"", Align align = Align::Default,
+         uint32_t fillColor = 0xFFFFFFFF, uint32_t penColor = 0xFF000000 )
+        : x( x )
+        , y( y )
+        , align( align )
+        , msg( msg )
+        , pen( penColor)
+        , brush( fillColor )
+    {}
 };
 
 // =======================================================================
 struct Glyph
 // =======================================================================
 {
-   uint32_t unicode;
-   int32_t advance;
-   ImageRef ref;
-   Recti bmp; // bitmap infos from freetype2/3, so (x,y) are for baseline compute.
-   uint32_t glyph_index;
-   Image debugImg;
+    uint32_t unicode;
+    int32_t advance;
+    ImageRef ref;
+    Recti bmp; // bitmap infos from freetype2/3, so (x,y) are for baseline compute.
+    uint32_t glyph_index;
+    Image debugImg;
 
-   Glyph();
-   ~Glyph();
-   Image copyImage() const;
+    Glyph();
+    ~Glyph();
+    Image copyImage() const;
 
-   std::string getGlyphString() const;
+    std::string getGlyphString() const;
 
-   Image const * getAtlasImage() const;
-   Image * getAtlasImage();
-   Recti const & getAtlasRect() const;
+    Image const * getAtlasImage() const;
+    Image * getAtlasImage();
+    Recti const & getAtlasRect() const;
 
-   int32_t x() const;
-   int32_t y() const;
-   int32_t w() const;
-   int32_t h() const;
-   int32_t x1() const;
-   int32_t y1() const;
-   int32_t x2() const;
-   int32_t y2() const;
-   glm::ivec2 size() const;
-   Rectf texCoords() const;
+    int32_t x() const;
+    int32_t y() const;
+    int32_t w() const;
+    int32_t h() const;
+    int32_t x1() const;
+    int32_t y1() const;
+    int32_t x2() const;
+    int32_t y2() const;
+    glm::ivec2 size() const;
+    Rectf texCoords() const;
 
-//   float getU1() const;
-//   float getV1() const;
-//   float getU2() const;
-//   float getV2() const;
+    //   float getU1() const;
+    //   float getV1() const;
+    //   float getU2() const;
+    //   float getV2() const;
 
-   // offset < 0: above baseline
-   // offset = 0: on baseline ( standing from above baseline, touching it )
-   // offset > 0: below baseline ( a 'g' has positive baseline offset )
-   int32_t getBaselineOffset() const;
-   uint32_t getPixel( int32_t i, int32_t j ) const;
-   std::string toString() const;
+    // offset < 0: above baseline
+    // offset = 0: on baseline ( standing from above baseline, touching it )
+    // offset > 0: below baseline ( a 'g' has positive baseline offset )
+    int32_t getBaselineOffset() const;
+    uint32_t getPixel( int32_t i, int32_t j ) const;
+    std::string str() const;
 };
 
 
@@ -143,11 +173,9 @@ struct IFontAtlas
 {
    virtual ~IFontAtlas() = default;
 
-   virtual Font &
-   getFont() = 0;
+   virtual Font& getFont() = 0;
 
-   virtual Font const &
-   getFont() const = 0;
+   virtual const Font& getFont() const = 0;
 
    // =======================
    // Text interface
@@ -155,84 +183,45 @@ struct IFontAtlas
    // x = lineWidth
    // y = lineHeight
    // z = baselineOffsetY
-   virtual TextSize
-   getTextSize( std::wstring const & txt ) = 0;
+   virtual TextSize getTextSize( const std::wstring & txt ) = 0;
 
-   virtual Glyph
-   createGlyph( uint32_t unicode ) = 0;
+   virtual Glyph createGlyph( const uint32_t unicode ) = 0;
 
    // [Cache] multiple glyphs at once.
-   virtual bool
-   cacheString( std::wstring const & msg ) = 0;
+   virtual bool cacheString( const std::wstring& msg ) = 0;
 
    // [Kerning] between 2 unicode characters.
-   virtual glm::ivec2
-   getKerning( uint32_t prev, uint32_t curr ) const = 0;
+   virtual glm::ivec2 getKerning( const uint32_t prev, const uint32_t curr ) const = 0;
 
    // =======================
    // Glyph interface
    // =======================
-   virtual void
-   drawText(
-      Image & img,
-      int x, int y,
-      std::wstring const & txt,
-      uint32_t color = 0xFF000000,
-      Align align = Align::Default ) = 0;
+   virtual void drawText( Image & img, int x, int y, const std::wstring& txt,
+    uint32_t color = 0xFF000000, Align align = Align::Default ) = 0;
 
-   virtual Image
-   createTextImage(
-      std::wstring const & txt,
-      uint32_t txtColor = 0xFF000000,
-      uint32_t fillColor = 0xFFFFFFFF ) = 0;
+   virtual Image createTextImage( const std::wstring& txt,
+      uint32_t txtColor = 0xFF000000, uint32_t fillColor = 0xFFFFFFFF ) = 0;
 
    // =======================
    // Glyph interface
    // =======================
-   virtual bool
-   hasGlyph( uint32_t unicode ) const = 0;
+   virtual bool hasGlyph( const uint32_t unicode ) const = 0;
 
-   virtual Glyph &
-   getGlyph( uint32_t unicode ) = 0; // , bool* cachedHit = nullptr
+   virtual Glyph & getGlyph( const uint32_t unicode ) = 0; // , bool* cachedHit = nullptr
 
-   virtual TextSize
-   getGlyphSize( uint32_t unicode ) = 0;
+   virtual TextSize getGlyphSize( const uint32_t unicode ) = 0;
 
    // =======================
    // Atlas interface
    // =======================
 
+   virtual bool isDirty() const = 0;
+   virtual void setDirty( bool dirty ) = 0;
 
-   virtual bool
-   isDirty() const = 0;
-   virtual void
-   setDirty( bool dirty ) = 0;
+   virtual Image const * getAtlasImage() const = 0;
+   virtual Image * getAtlasImage() = 0;
 
-   virtual Image const *
-   getAtlasImage() const = 0;
-   virtual Image *
-   getAtlasImage() = 0;
-
-   virtual void
-   saveAtlas() = 0;
-
-
-//   virtual void
-//   drawGlyph(
-//      Image & img,
-//      int x, int y,
-//      uint32_t unicode,
-//      uint32_t color = 0xFF000000 ) = 0;
-
-//   virtual Image
-//   createGlyphImage(
-//      uint32_t unicode,
-//      uint32_t txtColor = 0xFF000000,
-//      uint32_t fillColor = 0xFFFFFFFF ) = 0;
-
-//   virtual bool
-//   cacheString( std::wstring const & msg, std::vector< Glyph > & glyphs ) = 0;
-
+   virtual void saveAtlas() = 0;
 };
 
 
@@ -240,7 +229,7 @@ struct IFontAtlas
 // FontAtlasManager interface
 // =======================
 std::shared_ptr< IFontAtlas >
-getFontFace( Font font );
+getFontFace( const Font& font );
 
 //de::addFontFamily( mediaDir + "fonts/garton.ttf", de::Font("garton", 32 ) );
 //de::addFontFamily( mediaDir + "fonts/carib.otf", de::Font("carib", 32 ) );
@@ -272,6 +261,7 @@ struct FontFamily
 void
 saveFonts();
 
+/*
 // ===========================================================================
 struct IFontManager
 // ===========================================================================
@@ -279,14 +269,15 @@ struct IFontManager
    virtual ~IFontManager() = default;
 
    virtual bool
-   addFont( std::string uri, Font font ) = 0;
+   addFont( const std::string& uri, const Font& font ) = 0;
 
    virtual std::shared_ptr< IFontAtlas >
-   getFont( Font font ) = 0;
+   getFont( const Font& font ) = 0;
 
    virtual void
    saveFonts() = 0;
 };
+*/
 
 // =======================
 // PreparedGlyphText

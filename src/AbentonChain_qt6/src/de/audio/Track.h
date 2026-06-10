@@ -22,6 +22,7 @@ class Track : public IDspChainElement
     IPlugin* m_chainEnd;
 
     std::vector<SharedPlugin> m_plugins;
+    std::vector<SharedPlugin> m_trashBin;
 
     std::string m_trackName;
 
@@ -31,6 +32,7 @@ public:
     Track();
     ~Track();
     void cleanupAll();
+    void cleanupTrash();
     void setAudioCentral( IAudioCentral* audioCentral);
     u32 getTrackId() const;
     void setTrackId(u32 trackId);

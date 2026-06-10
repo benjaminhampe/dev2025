@@ -38,11 +38,11 @@ else()
         ${LIB_SOURCE_DIR}/juce_audio_plugin_client/VST3/juce_VST3_Wrapper.cpp
     )
 
-    # if (WIN32)
-        # enable_language(RC)
-        # list(APPEND LIB_SOURCES ${CMAKE_CURRENT_LIST_DIR}/res/resource.h)
-        # list(APPEND LIB_SOURCES ${CMAKE_CURRENT_LIST_DIR}/res/resource.rc)
-    # endif()
+    if (WIN32)
+        enable_language(RC)
+        list(APPEND LIB_SOURCES ${CMAKE_CURRENT_LIST_DIR}/res/resource.h)
+        list(APPEND LIB_SOURCES ${CMAKE_CURRENT_LIST_DIR}/res/resource.rc)
+    endif()
 
     message("${BoldBlue}[benni] DLL: ${LIB_NAME}${ColourReset}")
     add_library(${LIB_NAME} SHARED "")
@@ -75,7 +75,7 @@ else()
     target_link_libraries(${LIB_NAME} PRIVATE de_juce_audio_devices)
     target_link_libraries(${LIB_NAME} PRIVATE de_juce_audio_processors)
     target_link_libraries(${LIB_NAME} PRIVATE de_juce_audio_utils)
-    target_link_libraries(${LIB_NAME} PRIVATE de_juce_opengl)
+    # target_link_libraries(${LIB_NAME} PRIVATE de_juce_opengl)
 
     target_link_libraries(${LIB_NAME} PRIVATE DarkImage_2604)
     target_link_libraries(${LIB_NAME} PRIVATE DarkGPU_2604)
@@ -97,6 +97,27 @@ else()
         OUTPUT_NAME "Abenton_Spectrum3d_1.0.0_x64"
         ARCHIVE_OUTPUT_NAME "Abenton_Spectrum3d_1.0.0_x64_vst3"
     )
+
+    target_link_options(${LIB_NAME} PRIVATE
+        -static
+        -stdlib=libc++
+        -Wl,-Bstatic -lc++ -lc++abi -lunwind -lwinpthread
+        -Wl,-Bdynamic
+    )
+
+    if (CMAKE_BUILD_TYPE STREQUAL "Release")
+
+        message(STATUS "Building in Release mode, strip symbols")
+        # --strip-debug : Removes only debugging symbols.
+        # --strip-unneeded : Removes debug symbols + other unused symbols (may affect debugging).
+        add_custom_command(
+            TARGET ${LIB_NAME}
+            POST_BUILD
+            COMMAND ${CMAKE_OBJCOPY} --strip-unneeded $<TARGET_FILE:${APP_NAME}>
+            COMMENT "Stripping debug symbols"
+        )
+
+    endif()
 
    # COPY MEDIA FILES relative to exe
    # file( COPY        ${CMAKE_CURRENT_LIST_DIR}/media/tux.png

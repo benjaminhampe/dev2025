@@ -1,7 +1,8 @@
 #include <de/gpu/GL_debug_layer.h>
+#include <de/Core.h>
 #include <de_opengl.h>
-#include <sstream>
-#include <iostream> // TODO: replace with printf() ?!
+// #include <sstream>
+// #include <iostream> // TODO: replace with printf() ?!
 
 std::string de_impl_glPrimitiveTypeStr( uint32_t mode )
 {
@@ -50,7 +51,7 @@ bool de_glCheckFramebufferStatus( uint32_t fbo_target )
          case GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE: msg = "GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE"; break;
          default: break;
       }
-      std::cout << "glCheckFramebufferStatus("<<fbo_target<<") :: [Fail] "<< msg << std::endl;
+      DE_ERROR("glCheckFramebufferStatus(",fbo_target,") :: [Fail] ",msg)
    }
    return ok;
 }
@@ -148,18 +149,23 @@ de_glValidate( char const * file, int line, char const * func) // , std::string 
    while ( e != 0 )
    {
       ok = false;
+
       std::ostringstream o; o <<
       "[GL-Error] " << file << ":" << line << " " << func << " :: "
       //"[GL] caller("<< caller << "), "
       "error(0x" << de_hex(uint16_t(e)) << "), "
       "msg(" << de_glGetErrorStr( e ) << ")";
-      std::cout << o.str() << std::endl;
+
+      DE_ERROR(o.str())
+      //std::cout << o.str() << std::endl;
 
       e = glGetError();
    }
 #endif
    return ok;
 }
+
+#if 0
 
 // ===========================================================================
 // Benni's GL_Debug_layer:
@@ -883,3 +889,5 @@ void de_glBlendFunc( uint32_t sfactor, uint32_t dfactor )
 //glGetProgramiv(ID, GL_LINK_STATUS, &success);
 //glGetProgramInfoLog(ID, 1024, nullptr, infoLog);
 //glDeleteShader(fragment);
+
+#endif

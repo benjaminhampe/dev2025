@@ -1,7 +1,7 @@
 #include "gui/track/Plugin.h"
 #include "App.h"
 #include "gui/Skin.h"
-// #include "gui/track/Track.h"
+#include "gui/track/Track.h"
 
 namespace {
 
@@ -149,7 +149,19 @@ void Plugin::unloadPlugin()
     //pad->setText(Pad::eT_Version, "");
     pad->setValueXY(0.0f,0.0f);
 
-    DE_TRACE("Unloaded plugin ", plugin->getName())
+    DE_TRACE("Unload plugin ", plugin->getName())
+/*
+    auto trackWidget = static_cast<Track*>(parentWidget());
+    if (trackWidget)
+    {
+        auto track = trackWidget->getTrack();
+        if (track)
+        {
+            track->markObsolete(plugin);
+        }
+    }
+*/
+    // plugin->closePlugin(); -> Too early, leads to segfault, collect in trashbin.
 
     setUpdatesEnabled(true); // Enable paintEvent()
 }

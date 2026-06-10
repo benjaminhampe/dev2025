@@ -355,7 +355,7 @@ FontTTF::saveAtlas()
 }
 
 bool
-FontTTF::hasGlyph( uint32_t unicode ) const
+FontTTF::hasGlyph( const uint32_t unicode ) const
 {
    auto it = m_glyphCache.find( unicode );
    if ( it == m_glyphCache.end() )
@@ -369,7 +369,7 @@ FontTTF::hasGlyph( uint32_t unicode ) const
 }
 
 Glyph &
-FontTTF::getGlyph( uint32_t unicode )
+FontTTF::getGlyph( const uint32_t unicode )
 {
    auto it = m_glyphCache.find( unicode );
    if ( it == m_glyphCache.end() )
@@ -384,7 +384,7 @@ FontTTF::getGlyph( uint32_t unicode )
 }
 
 Glyph
-FontTTF::createGlyph( uint32_t unicode )
+FontTTF::createGlyph( const uint32_t unicode )
 {
    //DE_DEBUG("unicode(",unicode,"), font(",m_Font.toString(),")")
    Glyph glyph;
@@ -565,7 +565,7 @@ FontTTF::cacheString( std::wstring const & msg )
 
 
 glm::ivec2
-FontTTF::getKerning( uint32_t prev, uint32_t curr ) const
+FontTTF::getKerning( const uint32_t prev, const uint32_t curr ) const
 {
    if ( !m_ftFace ) return {};
    if ( !prev ) return {};
@@ -577,7 +577,7 @@ Image
 FontTTF::createGlyphImage( uint32_t unicode, uint32_t textColor, uint32_t fillColor )
 {
    TextSize textSize = getGlyphSize( unicode );
-   Image img( textSize.width, textSize.height );
+   Image img( textSize.m_width, textSize.m_height );
    img.fill( fillColor );
    drawGlyph( img, 0, 0, unicode, textColor );
    return img;
@@ -644,7 +644,7 @@ Image
 FontTTF::createTextImage( std::wstring const & txt, uint32_t textColor, uint32_t fillColor )
 {
    TextSize ts = getTextSize( txt );
-   Image img( ts.width, ts.height );
+   Image img( ts.m_width, ts.m_height );
    img.fill( fillColor );
    drawText( img, 0, 0, txt, textColor );
    return img;
@@ -652,82 +652,83 @@ FontTTF::createTextImage( std::wstring const & txt, uint32_t textColor, uint32_t
 
 
 TextSize
-FontTTF::getTextSize( std::wstring const & msg )
+FontTTF::getTextSize( const std::wstring & msg )
 {
-//   int32_t m1 = getGlyph( uint32_t('g') ).bmp_y;
-//   int32_t m2 = getGlyph( uint32_t('j') ).bmp_y;
-//   int32_t m3 = getGlyph( uint32_t('_') ).bmp_y;
-//   int32_t m4 = getGlyph( uint32_t('W') ).bmp_y;
-//   int32_t m5 = getGlyph( uint32_t('q') ).bmp_y;
-//   int32_t m = std::max( m1, std::max( m2, std::max( m3, std::max( m4, m5 ))));
-//   int32_t n1 = getGlyph( uint32_t('g') ).bmp_h - getGlyph( uint32_t('g') ).bmp_y;
-//   int32_t n2 = getGlyph( uint32_t('j') ).bmp_h - getGlyph( uint32_t('j') ).bmp_y;
-//   int32_t n3 = getGlyph( uint32_t('_') ).bmp_h - getGlyph( uint32_t('_') ).bmp_y;
-//   int32_t n4 = getGlyph( uint32_t('W') ).bmp_h - getGlyph( uint32_t('W') ).bmp_y;
-//   int32_t n5 = getGlyph( uint32_t('q') ).bmp_h - getGlyph( uint32_t('q') ).bmp_y;
-//   int32_t n = std::max( n1, std::max( n2, std::max( n3, std::max( n4, n5 ))));
-   int32_t textWidth = 0;
-   int32_t textHeight = 0;
-   int32_t baselineMax = 0;
-   int32_t lineHeightMax = 0;
+    //   int32_t m1 = getGlyph( uint32_t('g') ).bmp_y;
+    //   int32_t m2 = getGlyph( uint32_t('j') ).bmp_y;
+    //   int32_t m3 = getGlyph( uint32_t('_') ).bmp_y;
+    //   int32_t m4 = getGlyph( uint32_t('W') ).bmp_y;
+    //   int32_t m5 = getGlyph( uint32_t('q') ).bmp_y;
+    //   int32_t m = std::max( m1, std::max( m2, std::max( m3, std::max( m4, m5 ))));
+    //   int32_t n1 = getGlyph( uint32_t('g') ).bmp_h - getGlyph( uint32_t('g') ).bmp_y;
+    //   int32_t n2 = getGlyph( uint32_t('j') ).bmp_h - getGlyph( uint32_t('j') ).bmp_y;
+    //   int32_t n3 = getGlyph( uint32_t('_') ).bmp_h - getGlyph( uint32_t('_') ).bmp_y;
+    //   int32_t n4 = getGlyph( uint32_t('W') ).bmp_h - getGlyph( uint32_t('W') ).bmp_y;
+    //   int32_t n5 = getGlyph( uint32_t('q') ).bmp_h - getGlyph( uint32_t('q') ).bmp_y;
+    //   int32_t n = std::max( n1, std::max( n2, std::max( n3, std::max( n4, n5 ))));
+    int32_t textWidth = 0;
+    int32_t textHeight = 0;
+    int32_t baselineMax = 0;
+    int32_t lineHeightMax = 0;
 
-   int32_t lineWidth = 0;
-   int32_t lineHeight = 0;
+    int32_t lineWidth = 0;
+    int32_t lineHeight = 0;
 
-   int32_t m = 0;
-   int32_t n = 0;
+    int32_t m = 0;
+    int32_t n = 0;
 
-   int32_t lineCount = 1;
+    int32_t lineCount = 1;
 
-   for ( size_t i = 0; i < msg.size(); ++i )
-   {
-      uint32_t unicode = msg[ i ];
+    for ( size_t i = 0; i < msg.size(); ++i )
+    {
+        uint32_t unicode = msg[ i ];
 
-      if ( unicode == '\r' )  // Mac or Windows line breaks.
-      {
-         textHeight += lineHeight;
-         lineWidth = 0;
-         lineHeight = 0;
-         lineCount++;
-         continue;
-      }
-      if ( unicode == '\n' )	// Mac or Windows line breaks.
-      {
-         textHeight += lineHeight;
-         lineWidth = 0;
-         lineHeight = 0;
-         lineCount++;
-         continue;
-      }
+        if ( unicode == '\r' )  // Mac or Windows line breaks.
+        {
+            textHeight += lineHeight;
+            lineWidth = 0;
+            lineHeight = 0;
+            lineCount++;
+            continue;
+        }
+        if ( unicode == '\n' )	// Mac or Windows line breaks.
+        {
+            textHeight += lineHeight;
+            lineWidth = 0;
+            lineHeight = 0;
+            lineCount++;
+            continue;
+        }
 
-      Glyph & glyph = getGlyph( unicode );
+        Glyph & glyph = getGlyph( unicode );
 
-      int32_t curr_m = glyph.bmp.y;
-      int32_t curr_n = glyph.bmp.h - glyph.bmp.y;
+        int32_t curr_m = glyph.bmp.y;
+        int32_t curr_n = glyph.bmp.h - glyph.bmp.y;
 
-      m = std::max( m, curr_m );
-      n = std::max( n, curr_n );
+        m = std::max( m, curr_m );
+        n = std::max( n, curr_n );
 
-      lineWidth += glyph.advance;
-      lineHeight = n + m + 2;
-      int32_t baselineY = m+1;
+        lineWidth += glyph.advance;
+        lineHeight = n + m + 2;
+        int32_t baselineY = m+1;
 
-      textWidth = std::max( textWidth, lineWidth );
-      baselineMax = std::max( baselineMax, baselineY );
-      lineHeightMax = std::max( lineHeightMax, lineHeight );
-   }
-   if ( textHeight < 1 )
-   {
-      textHeight = std::max( textHeight, lineHeightMax );
-   }
+        textWidth = std::max( textWidth, lineWidth );
+        baselineMax = std::max( baselineMax, baselineY );
+        lineHeightMax = std::max( lineHeightMax, lineHeight );
+    }
 
-   TextSize ts{ textWidth, textHeight, baselineMax, lineHeightMax, lineCount };
-   // DE_DEBUG( "TextSize(", ts.toString(), ")" )
-   return ts;
+    if ( textHeight < 1 )
+    {
+        textHeight = std::max( textHeight, lineHeightMax );
+    }
+
+    TextSize ts{ textWidth, textHeight, baselineMax, lineHeightMax, lineCount };
+    // DE_DEBUG( "TextSize(", ts.toString(), ")" )
+    return ts;
 }
 
 void
-FontTTF::drawText( Image & img, int x, int y, std::wstring const & msg,
+FontTTF::drawText( Image & img, int x, int y, const std::wstring& msg,
                     uint32_t color, Align align )
 {
    if (img.empty() || img.w() < 2 || img.h() < 2 ) return;
@@ -741,8 +742,8 @@ FontTTF::drawText( Image & img, int x, int y, std::wstring const & msg,
    // Recti r_patch = Align::applyTextAlign( Recti( x, y ), align, txt_size );
 
    // ALIGN POS
-   int32_t w = ts.width;
-   int32_t h = ts.height;
+   int32_t w = ts.m_width;
+   int32_t h = ts.m_height;
 
    glm::ivec2 pos(0,0);
 
@@ -783,7 +784,7 @@ FontTTF::drawText( Image & img, int x, int y, std::wstring const & msg,
 #endif
 
    int cx = pos.x;
-   int cy = pos.y + ts.baseline;
+   int cy = pos.y + ts.m_baseline;
 
    uint32_t last_unicode = 0;
 
@@ -795,7 +796,7 @@ FontTTF::drawText( Image & img, int x, int y, std::wstring const & msg,
       if ( unicode == '\n' || unicode == '\r' )
       {
          cx = pos.x;
-         cy += ts.lineHeight;
+         cy += ts.m_lineHeight;
          continue;
       }
 
@@ -845,14 +846,14 @@ FontTTF::drawText( Image & img, int x, int y, std::wstring const & msg,
          {
             if ( glyph.advance == 0 )
             {
-               DE_WARN("Got empty bitmap with advance = 0 for glyph ",glyph.toString())
+               DE_WARN("Got empty bitmap with advance = 0 for glyph ",glyph.str())
             }
 
          }
       }
       else
       {
-         DE_DEBUG("No glyph_index for unicode(", unicode, "), glyph(",glyph.toString(),")")
+         DE_DEBUG("No glyph_index for unicode(", unicode, "), glyph(",glyph.str(),")")
       }
 
       cx += glyph.advance;
@@ -1030,15 +1031,15 @@ FontTTF_Utils::computeOutlineBBox( FT_Face face )
 bool
 FontTTF_Utils::setPixelSize( FT_Face face, int pixelSize )
 {
-   if ( !face ) return false;
-   FT_Error e = FT_Set_Pixel_Sizes( face, 0, pixelSize );
-   if ( e )
-   {
-      DE_ERROR("Cant set pixelSize(", pixelSize, ")")
-      return false;
-   }
-   //DE_DEBUG("pixelHeight(", pixelHeight, ")")
-   return true;
+    if ( !face ) return false;
+    FT_Error e = FT_Set_Pixel_Sizes( face, 0, pixelSize );
+    if ( e )
+    {
+        DE_ERROR("Cant set pixelSize(", pixelSize, ")")
+        return false;
+    }
+    //DE_DEBUG("pixelHeight(", pixelHeight, ")")
+    return true;
 }
 
 uint32_t
@@ -1106,1208 +1107,6 @@ FontTTF_Utils::getKerning( FT_Face face, uint32_t prev, uint32_t curr )
    return kerning;
 }
 
-
-
 } // end namespace de.
-
-
-
-
-// ---------------------------------------------------------------------------
-/*
-void
-FontTTF_Utils::createLibInstance( FT_Library & lib )
-{
-   if ( lib ) { return; }
-   FT_Error e = FT_Init_FreeType( &lib );
-   if ( e != 0 )
-   {
-      DE_ERROR("FT_Init_FreeType() failed.")
-      lib = nullptr;
-   }
-}
-void
-FontTTF_Utils::destroyLibInstance( FT_Library & lib )
-{
-   if ( !lib ) { return; }
-   FT_Error e = FT_Done_FreeType( lib );
-   if ( e != 0 )
-   {
-      // DE_ERROR("FT_Done_FreeType() failed.")
-   }
-   lib = nullptr;
-}
-
-bool
-FontTTF_Utils::isFace( FT_Face face )
-{
-   return( face != nullptr );
-}
-
-void
-FontTTF_Utils::closeFace( FT_Face & face )
-{
-   if ( !face ) { return; } // Already closed.
-
-   // DE_DEBUG("Close face (", face, ")")
-   FT_Error e = FT_Done_Face( face );
-   if ( e != 0 )
-   {
-      // DE_ERROR("Got error while closing face(", face, ")" )
-   }
-   face = nullptr;
-}
-
-FT_Face
-FontTTF_Utils::openFace( FT_Library lib, std::string const & uri )
-{
-   if ( !lib ) { DE_ERROR("FT_Library is nullptr") return nullptr; }
-   if ( uri.empty() ) { DE_ERROR("FileName is empty") return nullptr; }
-
-   FT_Face face;
-   FT_Error e = FT_New_Face( lib, uri.c_str(), 0, &face );
-   if ( e == FT_Err_Unknown_File_Format )
-   { DE_ERROR("FT_New_Face() got unknown format") return nullptr; }
-   else if ( e )
-   { DE_ERROR("FT_New_Face() failed") return nullptr; }
-
-   if ( !face ) { DE_ERROR("Cant open font uri(",uri,")") return nullptr; }
-
-   FontTTF_Utils::setPixelSize( face, 16 );
-   DE_DEBUG( "Font.Scalable = ", FT_IS_SCALABLE( face ) ? "1" : "0" )
-   DE_DEBUG( "Font.Kerning = ", FT_HAS_KERNING( face ) ? "1" : "0" )
-   DE_DEBUG( "Font.Outline = ", FontTTF_Utils::hasOutline( face ) ? "1" : "0" )
-
-   int32_t ascender = 0;
-   int32_t descender = 0;
-
-   if ( face->size )
-   {
-      ascender = face->size->metrics.ascender;
-      descender = face->size->metrics.descender;
-      if ( FT_IS_SCALABLE( face ) )
-      {
-         ascender /= 64;
-         descender /= 64;
-      }
-   }
-
-   DE_DEBUG("Font.Ascender = ", ascender )
-   DE_DEBUG("Font.Descender = ", descender )
-
-   return face;
-}
-*/
-// ---------------------------------------------------------------------------
-
-
-
-/*
-bool
-FontTTF_Utils::setPointSize( FT_Face face, int pointHeight, int dpi )
-{
-   if ( !face ) return false;
-   FT_Error e = FT_Set_Char_Size( face, // handle to face object
-                  0,       // char_width in 1/64th of points, A point is 1/72th of an inch.
-                  pointHeight * 64,   // char_height in 1/64th of points
-                  dpi,  // horizontal device resolution in [dpi] dots-per-inch.
-                  dpi   // vertical device resolution in [dpi]
-   );
-   if ( e )
-   {
-      DE_ERROR("Cant set pointHeight(", pointHeight, ")")
-      return false;
-   }
-   else
-   {
-      // DE_DEBUG("pointHeight(", pointHeight, ")")
-      return true;
-   }
-}
-
-
-Glyph
-FontTTF_Utils::drawFtBitmapOnImage( Image & img, int x, int y, uint32_t unicode )
-{
-image::Image
-FontTTF_Utils::createGlyphImage( FT_Face face, uint32_t unicode, uint32_t pixelSize )
-{
-   image::Image img;
-   //DE_DEBUG("unicode(",unicode,").")
-   // For simplicity, use the charmap FreeType provides by default in most cases this means Unicode.
-   FT_UInt index = getGlyphIndex( face,unicode );
-   if ( index == 0 )
-   {
-      // its not a bug for white spaces and unprintable characters like margins, paddings
-      // it would spam the logs printing errors for white spaces.
-      // DE_ERROR("Invalid index. unicode(",unicode,")")
-      return img;
-   }
-
-   // This is because we cache faces and the face may have been set to a different size.
-   setPixelSize( pixelSize );
-
-   patch.unicode = unicode;
-
-   // FT_LOAD_DEFAULT
-   FT_Error e = FT_Load_Glyph( face, index, FT_LOAD_RENDER ); // FT_LOAD_NO_SCALE | FT_LOAD_NO_BITMAP
-   if ( e )
-   {
-      DE_ERROR("FT_Load_Glyph error. unicode(",unicode,")")
-      return patch;
-   }
-
-   FT_GlyphSlot ftGlyph = face->glyph;
-   if ( !ftGlyph )
-   {
-      DE_ERROR("Glyph access error. unicode(",unicode,")")
-      return patch;
-   }
-
-   // Finally we store a valid index.
-
-
-   FT_Glyph_Metrics const & ftGlyphMetrics = ftGlyph->metrics;
-   glyph.hBearing.x = ftGlyphMetrics.horiBearingX;
-   glyph.hBearing.y = ftGlyphMetrics.horiBearingY;
-   glyph.vBearing.x = ftGlyphMetrics.vertBearingX;
-   glyph.vBearing.y = ftGlyphMetrics.vertBearingY;
-
-   FT_Vector advance = ftGlyph->advance;
-   glyph.advance.x = advance.x;
-   glyph.advance.y = advance.y;
-   glyph.bbox = computeOutlineBBox();
-
-   glyph.offset.x = ftGlyph->bitmap_left;
-   glyph.offset.y = ftGlyph->bitmap_top;
-
-   // Now raster glyph to image and convert image to the dark side.
-   FT_Bitmap const & bmp = ftGlyph->bitmap;
-   FT_Pos const w = bmp.width;
-   FT_Pos const h = bmp.rows;
-
-   // Fill (my) glyph atlas struct and create (my) glyph image from ftBitmap.
-
-   if ( !bmp.buffer )
-   {
-      DE_ERROR("No bitmap was rendered")
-   }
-   else
-   {
-      Image img( w, h );
-
-      bool ok = true;
-      switch ( bmp.pixel_mode )
-      {
-      // Load the grayscale data in.
-      case FT_PIXEL_MODE_GRAY:
-         {
-            float const gray_count = float( bmp.num_grays );
-            // DE_DEBUG("FT_PIXEL_MODE_GRAY, gray_count = ",gray_count)
-
-            uint8_t const * src = bmp.buffer;
-            for ( int32_t y = 0; y < int32_t( bmp.rows ); ++y )
-            {
-               uint8_t const * row = src;
-               for ( int32_t x = 0; x < int32_t( bmp.width ); ++x )
-               {
-                  float const t = float( *row ) * ( 255.0f / float( gray_count ) );
-                  uint8_t const gray = uint8_t( Math::clampT< int >( int(t+0.5f), 0, 255 ) );
-                  img.setPixel( x,y, RGBA( 255,255,255,gray ) );
-                  ++row;
-               }
-               src += bmp.pitch;
-            }
-         }
-         break;
-      case FT_PIXEL_MODE_MONO:
-         {
-         DE_ERROR("FT_PIXEL_MODE_MONO")
-         //            // Create a blank image and fill it with transparent pixels.
-         //            texture_size = d.getOptimalSize(true, true);
-         //            image = driver->createImage(ECF_A1R5G5B5, texture_size);
-         //            image->fill(SColor(0, 255, 255, 255));
-
-         //            // Load the monochrome data in.
-         //            const u32 image_pitch = image->getPitch() / sizeof(u16);
-         //            u16* image_data = (u16*)image->lock();
-         //            u8* glyph_data = bmp.buffer;
-         //            for (u32 y = 0; y < bmp.rows; ++y)
-         //            {
-         //                u16* row = image_data;
-         //                for (u32 x = 0; x < bmp.width; ++x)
-         //                {
-         //                    // Monochrome bitmaps store 8 pixels per byte.  The left-most pixel is the bit 0x80.
-         //                    // So, we go through the data each bit at a time.
-         //                    if ((glyph_data[y * bmp.pitch + (x / 8)] & (0x80 >> (x % 8))) != 0)
-         //                        *row = 0xFFFF;
-         //                    ++row;
-         //                }
-         //                image_data += image_pitch;
-         //            }
-         //            image->unlock();
-         }
-         break;
-      default:
-         {
-         DE_ERROR("FT_PIXEL_MODE_UNKNOWN")
-         ok = false;
-         }
-         break;
-      }
-
-      if ( ok )
-      {
-         glyph.img = std::move( img );
-      }
-      else
-      {
-         DE_ERROR("OMG")
-      }
-   }
-
-   if ( FT_IS_SCALABLE( face ) )
-   {
-      glyph.hBearing /= 64;
-      glyph.vBearing /= 64;
-      glyph.advance /= 64;
-      glyph.bbox /= 64;
-      //glyph.offset /= 64;
-      // DE_DEBUG( "New scalable Glyph: ", glyph.toString() )
-   }
-   else
-   {
-      // DE_DEBUG( "New fixed Glyph: ", glyph.toString() )
-   }
-
-   // return up_glyph;
-
-   if ( patch.ok() )
-   {
-      m_Glyphs.emplace_back( patch );
-      patch = m_Glyphs.back();
-   }
-   else
-   {
-      DE_ERROR("Cannot create glyph unicode(", unicode,")")
-   }
-
-   return glyph;
-}
-
-glm::ivec2
-FontTTF_Utils::getGlyphSizePx( FT_Face face, uint32_t unicode )
-{
-   if ( !face ) return false;
-   FT_GlyphSlot glyph = face->glyph;
-   if ( !glyph ) return false; // Should never happen.
-
-   if ( !glyph ) return glm::ivec2(0,0);
-   int32_t w = glyph->advance.x;
-   int32_t h = m_ftMetrics.ascender;   // Grab the true height of the character, taking into account underhanging glyphs.
-   if ( FT_IS_SCALABLE( face ) )
-   {
-      h /= 64;
-   }
-   h += -glyph->offset.y + glyph->getImageSize().y;
-
-   return glm::ivec2( w, h );
-}
-
-
-uint32_t
-FontTTF_Utils::getCharacterWidthPx( uint32_t unicode )
-{
-   Glyph glyph = getGlyph( unicode );
-   return glyph.advance.x;
-//   if ( unicode >= 0x2000 )
-//   {
-//   return (m_ftMetrics.ascender / 64);
-//   }
-//   else
-//   {
-//   return (m_ftMetrics.ascender / 64) / 2;
-//   }
-}
-
-uint32_t
-FontTTF_Utils::getCharacterHeightPx( uint32_t unicode )
-{
-   // Grab the true height of the character, taking into account underhanging glyphs.
-   Glyph glyph = getGlyph( unicode );
-   int32_t h = m_ftMetrics.ascender;
-   if ( FT_IS_SCALABLE( face ) )
-   {
-      h /= 64;
-   }
-   h += -glyph.offset.y + glyph.getSize().y;
-   return h;
-}
-
-
-
-// ===========================================================================
-// Lib
-// ===========================================================================
-
-// Reference:
-// https://www.freetype.org/freetype2/docs/reference/ft2-base_interface.html
-// FT_Library object across threads is possible also,
-// as long as a mutex lock is used around FT_New_Face and FT_Done_Face.
-
-struct FreeTypeLib
-{
-   DE_CREATE_LOGGER("de.freetype3.Lib")
-   FT_Library lib;
-   FreeTypeLib() : lib( nullptr )
-   {
-      init();
-   }
-
-   ~FreeTypeLib()
-   {
-      deinit();
-   }
-
-   static FreeTypeLib &
-   getInstance()
-   {
-      static FreeTypeLib s_Instance;
-      return s_Instance;
-   }
-
-   FT_Library &
-   getLibrary()
-   {
-      return lib;
-   }
-
-   void
-   deinit()
-   {
-      if ( !lib )
-      {
-         return; // nothing todo
-      }
-      FT_Error e = FT_Done_FreeType( lib );
-      if ( e != 0 )
-      {
-         std::cout << "[Error] while shutting down FT_Library\n";
-      }
-      lib = nullptr;
-   }
-
-   void
-   init()
-   {
-      if ( lib )
-      {
-         // std::cout << "[Error] FT_Library already initialized.\n";
-         return;
-      }
-      FT_Error e = FT_Init_FreeType( &lib );
-      if ( e != 0 )
-      {
-         std::cout << "[Error] initializing FT_Library\n";
-         lib = nullptr;
-      }
-   }
-
-   FT_Library getLib()
-   {
-      init();
-      return lib;
-   }
-};
-
-TextSize
-FontTTF::getTextSizeMultiLine( std::wstring msg )
-{
-   //dbStrReplace( msg, L"\\", L"/");
-   dbStrReplace( msg, L"\n\r", L"\n");
-   dbStrReplace( msg, L"\r\n", L"\n");
-   std::vector< std::wstring > lines = dbStrSplit( msg, L'\n');
-
-   TextSize retVal;
-
-   for ( size_t i = 0; i < lines.size(); ++i )
-   {
-      auto ts = getTextSize( lines[ i ] );
-
-      // LeftToRight, TopToBottom -> German reading
-      retVal.width = std::max( retVal.width, ts.width );
-      retVal.height += ts.height;
-   }
-}
-
-void
-FontTTF::drawTextMultiLine(
-   Image & img, int x, int y, std::wstring msg,
-   uint32_t color, Align align )
-{
-   //dbStrReplace( msg, L"\\", L"/");
-   dbStrReplace( msg, L"\n\r", L"\n");
-   dbStrReplace( msg, L"\r\n", L"\n");
-   std::vector< std::wstring > lines = dbStrSplit( msg, L'\n');
-
-   for ( size_t i = 0; i < lines.size(); ++i )
-   {
-      drawText( img, x, y, lines[ i ], color, align );
-
-      auto ts = getTextSize( lines[ i ] );
-
-      y += ts.height;
-   }
-}
-
-TextSize
-FontTTF::getTextSize( std::wstring const & msg )
-{
-//   int32_t m1 = getGlyph( uint32_t('g') ).bmp_y;
-//   int32_t m2 = getGlyph( uint32_t('j') ).bmp_y;
-//   int32_t m3 = getGlyph( uint32_t('_') ).bmp_y;
-//   int32_t m4 = getGlyph( uint32_t('W') ).bmp_y;
-//   int32_t m5 = getGlyph( uint32_t('q') ).bmp_y;
-//   int32_t m = std::max( m1, std::max( m2, std::max( m3, std::max( m4, m5 ))));
-//   int32_t n1 = getGlyph( uint32_t('g') ).bmp_h - getGlyph( uint32_t('g') ).bmp_y;
-//   int32_t n2 = getGlyph( uint32_t('j') ).bmp_h - getGlyph( uint32_t('j') ).bmp_y;
-//   int32_t n3 = getGlyph( uint32_t('_') ).bmp_h - getGlyph( uint32_t('_') ).bmp_y;
-//   int32_t n4 = getGlyph( uint32_t('W') ).bmp_h - getGlyph( uint32_t('W') ).bmp_y;
-//   int32_t n5 = getGlyph( uint32_t('q') ).bmp_h - getGlyph( uint32_t('q') ).bmp_y;
-//   int32_t n = std::max( n1, std::max( n2, std::max( n3, std::max( n4, n5 ))));
-
-   int32_t lineWidth = 0;
-   int32_t m = 0;
-   int32_t n = 0;
-
-   for ( size_t i = 0; i < msg.size(); ++i )
-   {
-      Glyph const & glyph = getGlyph( msg[ i ] );
-
-      //   if ( unicode1 == '\r' )	// Mac or Windows line breaks.
-      //   {
-      //      continue;
-      //   }
-      //   if ( unicode1 == '\n' )	// Mac or Windows line breaks.
-      //   {
-      //      continue;
-      //   }
-
-      int32_t curr_m = glyph.bmp.getY();
-      int32_t curr_n = glyph.bmp.getHeight() - glyph.bmp.getY();
-
-      m = std::max( m, curr_m );
-      n = std::max( n, curr_n );
-
-      lineWidth += glyph.advance;
-   }
-
-   int32_t lineHeight = n + m + 2;
-   int32_t baselineY = m+1;
-
-   // DE_DEBUG( "msg(",dbStr( msg ),") has pixels ", lineWidth, " x ", lineHeight, ", baselineY = ", baselineY )
-   return { lineWidth, lineHeight, baselineY };
-}
-
-void
-FontTTF::drawText( Image & img, int x, int y, std::wstring const & msg,
-                    uint32_t color, Align align )
-{
-   if (img.empty()) return;
-   int img_w = img.getWidth();
-   int img_h = img.getHeight();
-   if ( img_w < 2 || img_h < 2 ) return;
-
-   std::vector< Glyph > glyphs;
-   cacheString( msg, glyphs );
-
-   TextSize textSize = getTextSize( msg );
-
-   // glm::ivec2 img_size = img.getSize();
-   // glm::ivec2 txt_size = getTextSize( txt );
-   // Recti r_patch = Align::applyTextAlign( Recti( x, y ), align, txt_size );
-
-#if 1 // ALIGN POS
-   int32_t w = textSize.width;
-   int32_t h = textSize.height;
-
-   glm::ivec2 aligned_pos;
-
-   // horizontal align to entire screen
-   if ( align & Align::Left )
-   {
-      aligned_pos.x = x;
-   }
-   else if ( align & Align::Center )
-   {
-      aligned_pos.x = x - w/2;
-   }
-   else if ( align & Align::Right )
-   {
-      aligned_pos.x = x - w;
-   }
-
-   // vertical align to entire screen
-   if ( align & Align::Top )
-   {
-      aligned_pos.y = y;
-   }
-   else if ( align & Align::Middle )
-   {
-      aligned_pos.y = y - h/2;
-   }
-   else if ( align & Align::Bottom )
-   {
-      aligned_pos.y = y - h;
-   }
-
-   int px = aligned_pos.x;
-   int py = aligned_pos.y;
-#endif
-
-#if 1
-   int32_t x1 = px;
-   int32_t y1 = py;
-   int32_t x2 = px + w;
-   int32_t y2 = py + h;
-   ImagePainter::drawOutlineRect( img, x1, y1, x2, y2, 0xFFFF6FFF );
-#endif
-
-   for ( size_t i = 0; i < glyphs.size(); ++i )
-   {
-      Glyph const & glyph = glyphs[ i ];
-      uint32_t unicode = glyph.unicode;
-
-      //drawGlyph( img, px + kerning.x, py + kerning.y, unicode, color );
-
-      glm::ivec2 kerning(0,0);
-      if ( i > 0 )
-      {
-         Glyph const & prev = glyphs[ i - 1 ];
-         kerning = getKerning( prev.unicode, unicode );
-      }
-
-      if ( !glyph.glyph_index )
-      {
-         DE_ERROR("No glyph_index for unicode(", unicode, ")" )
-         continue;
-      }
-
-      int bmp_y = glyph.bmp.getY();
-      int bmp_w = glyph.bmp.getWidth();
-      int bmp_h = glyph.bmp.getHeight();
-      if ( bmp_w > 0 && bmp_h > 0 )
-      {
-         py = aligned_pos.y + textSize.baseline - bmp_y;
-
-         // DE_DEBUG("Glyph[", char(unicode),"] = bmp_w(", bmp_w, "), bmp_h(", bmp_h, ")" )
-      #if 0
-         int32_t x1 = x;
-         int32_t y1 = y;
-         int32_t x2 = x + bmp_w;
-         int32_t y2 = y - bmp_h;
-         ImagePainter::drawOutlineRect( img, x1, y1, x2, y2, 0xFFFF6FFF );
-      #endif
-
-         int32_t r = RGBA_R( color );
-         int32_t g = RGBA_G( color );
-         int32_t b = RGBA_B( color );
-
-         for ( int32_t j = 0; j < bmp_h; ++j )
-         {
-            for ( int32_t i = 0; i < bmp_w; ++i )
-            {
-               int32_t a = RGBA_R( glyph.getPixel( i,j ) );
-
-               img.setPixel( px + i, py + j, RGBA( r,g,b,a ), true );
-            }
-         }
-      }
-
-      px += glyph.advance;
-      px += kerning.x;
-   }
-}
-
-
-// ===========================================================================
-// Lib
-// ===========================================================================
-struct FontLib
-{
-   DE_CREATE_LOGGER("de.FontLib")
-
-   FontLib()
-      : m_ftLib( nullptr )
-   {
-      if ( !m_ftLib )
-      {
-         FT_Error e = FT_Init_FreeType( &m_ftLib );
-         if ( e != 0 )
-         {
-            DE_ERROR("FT_Init_FreeType() failed.")
-            // throw std::runtime_error("FT_Init_FreeType() failed in FontTTF.");
-            m_ftLib = nullptr;
-         }
-      }
-   }
-
-   ~FontLib()
-   {
-      if ( m_ftLib )
-      {
-         FT_Error e = FT_Done_FreeType( m_ftLib );
-         if ( e != 0 )
-         {
-            DE_ERROR("FT_Done_FreeType() failed.")
-         }
-         m_ftLib = nullptr;
-      }
-   }
-
-   static std::shared_ptr< FontLib >
-   getInstance()
-   {
-      static std::shared_ptr< FontLib > s_Instance = std::make_shared< FontLib >();
-      return s_Instance;
-   }
-
-   void
-   closeFace( FT_Face & face )
-   {
-      //FontTTF_Utils::closeFace( face );
-      if ( !face ) { return; } // Already closed.
-
-      if ( !face->driver )
-      {
-         DE_ERROR("No face driver, face(", face, ")" )
-         return;
-      }
-
-      if ( !face->internal )
-      {
-         DE_ERROR("No face internal, face(", face, ")" )
-         return;
-      }
-
-      if ( face->internal->refcount < 1 )
-      {
-         DE_ERROR("FontTTF refcount already zero while closing face(", face, ")" )
-         return;
-      }
-
-      // DE_DEBUG("Close face (", face, ")")
-      FT_Error e = FT_Done_Face( face );
-      if ( e != 0 )
-      {
-         // DE_ERROR("Got error while closing face(", face, ")" )
-      }
-      face = nullptr;
-   }
-
-
-   FT_Face
-   openFace( std::string const & uri )
-   {
-      //return FontTTF_Utils::openFace( m_ftLib, uri );
-      if ( !m_ftLib ) { return nullptr; }
-      if ( uri.empty() ) { return nullptr; }
-
-      FT_Face face;
-      FT_Error e = FT_New_Face( m_ftLib, uri.c_str(), 0, &face );
-      if ( e == FT_Err_Unknown_File_Format )
-      { DE_ERROR("FT_New_Face() got unknown format") return nullptr; }
-      else if ( e )
-      { DE_ERROR("FT_New_Face() failed") return nullptr; }
-
-      if ( !face ) { DE_ERROR("Cant open font uri(",uri,")") return nullptr; }
-
-
-      // FontTTF_Utils::setPixelSize( face, 16 );
-      // DE_DEBUG( "Font.Scalable = ", FT_IS_SCALABLE( face ) ? "1" : "0" )
-      // DE_DEBUG( "Font.Kerning = ", FT_HAS_KERNING( face ) ? "1" : "0" )
-      // DE_DEBUG( "Font.Outline = ", FontTTF_Utils::hasOutline( face ) ? "1" : "0" )
-
-      // int32_t ascender = 0;
-      // int32_t descender = 0;
-
-      // if ( face->size )
-      // {
-         // ascender = face->size->metrics.ascender;
-         // descender = face->size->metrics.descender;
-         // if ( FT_IS_SCALABLE( face ) )
-         // {
-            // ascender /= 64;
-            // descender /= 64;
-         // }
-      // }
-
-      // DE_DEBUG("Font.Ascender = ", ascender )
-      // DE_DEBUG("Font.Descender = ", descender )
-
-      return face;
-   }
-
-   FT_Library m_ftLib;
-};
-
-
-
-
-
-Glyph
-FontTTF::drawFtBitmapOnImage( Image & img, int x, int y, uint32_t unicode )
-{
-   // Now raster glyph to image and convert image to the dark side.
-   FT_Bitmap const & bmp = ftGlyph->bitmap;
-   FT_Pos const w = bmp.width;
-   FT_Pos const h = bmp.rows;
-
-   // Fill (my) glyph atlas struct and create (my) glyph image from ftBitmap.
-
-   if ( !bmp.buffer )
-   {
-      DE_ERROR("No bitmap was rendered")
-   }
-   else
-   {
-      Image img( w, h );
-
-      bool ok = true;
-      switch ( bmp.pixel_mode )
-      {
-      // Load the grayscale data in.
-      case FT_PIXEL_MODE_GRAY:
-         {
-            float const gray_count = float( bmp.num_grays );
-            // DE_DEBUG("FT_PIXEL_MODE_GRAY, gray_count = ",gray_count)
-
-            uint8_t const * src = bmp.buffer;
-            for ( int32_t y = 0; y < int32_t( bmp.rows ); ++y )
-            {
-               uint8_t const * row = src;
-               for ( int32_t x = 0; x < int32_t( bmp.width ); ++x )
-               {
-                  float const t = float( *row ) * ( 255.0f / float( gray_count ) );
-                  uint8_t const gray = uint8_t( Math::clampT< int >( int(t+0.5f), 0, 255 ) );
-                  img.setPixel( x,y, RGBA( 255,255,255,gray ) );
-                  ++row;
-               }
-               src += bmp.pitch;
-            }
-         }
-         break;
-      case FT_PIXEL_MODE_MONO:
-         {
-         DE_ERROR("FT_PIXEL_MODE_MONO")
-         //            // Create a blank image and fill it with transparent pixels.
-         //            texture_size = d.getOptimalSize(true, true);
-         //            image = driver->createImage(ECF_A1R5G5B5, texture_size);
-         //            image->fill(SColor(0, 255, 255, 255));
-
-         //            // Load the monochrome data in.
-         //            const u32 image_pitch = image->getPitch() / sizeof(u16);
-         //            u16* image_data = (u16*)image->lock();
-         //            u8* glyph_data = bmp.buffer;
-         //            for (u32 y = 0; y < bmp.rows; ++y)
-         //            {
-         //                u16* row = image_data;
-         //                for (u32 x = 0; x < bmp.width; ++x)
-         //                {
-         //                    // Monochrome bitmaps store 8 pixels per byte.  The left-most pixel is the bit 0x80.
-         //                    // So, we go through the data each bit at a time.
-         //                    if ((glyph_data[y * bmp.pitch + (x / 8)] & (0x80 >> (x % 8))) != 0)
-         //                        *row = 0xFFFF;
-         //                    ++row;
-         //                }
-         //                image_data += image_pitch;
-         //            }
-         //            image->unlock();
-         }
-         break;
-      default:
-         {
-         DE_ERROR("FT_PIXEL_MODE_UNKNOWN")
-         ok = false;
-         }
-         break;
-      }
-
-      if ( ok )
-      {
-         glyph.img = std::move( img );
-      }
-      else
-      {
-         DE_ERROR("OMG")
-      }
-   }
-
-   if ( FT_IS_SCALABLE( m_ftFace ) )
-   {
-      glyph.hBearing /= 64;
-      glyph.vBearing /= 64;
-      glyph.advance /= 64;
-      glyph.bbox /= 64;
-      //glyph.offset /= 64;
-      // DE_DEBUG( "New scalable Glyph: ", glyph.toString() )
-   }
-   else {
-      // DE_DEBUG( "New fixed Glyph: ", glyph.toString() )
-   }
-
-   return glyph;
-}
-
-Glyph
-FontTTF::createGlyph( uint32_t unicode )
-{
-   FT_UInt index = FontTTF_Utils::getGlyphIndex( m_ftFace, unicode );
-   if ( index == 0 )
-   {
-      // its not a bug for white spaces and unprintable characters like margins, paddings
-      // it would spam the logs printing errors for white spaces.
-      // DE_ERROR("Invalid index. unicode(",unicode,")")
-      return nullptr;
-   }
-
-   // This is because we cache faces and the face may have been set to a different size.
-   FontTTF_Utils::setPixelSize( m_ftFace, m_Font.pixelSize );
-
-   Glyph glyph;
-   glyph.unicode = unicode;
-
-   // FT_LOAD_DEFAULT
-   FT_Error e = FT_Load_Glyph( m_ftFace, index, FT_LOAD_RENDER ); // FT_LOAD_NO_SCALE | FT_LOAD_NO_BITMAP
-   if ( e )
-   {
-      DE_ERROR("FT_Load_Glyph error. unicode(",unicode,")")
-      return glyph;
-   }
-
-   FT_GlyphSlot ftGlyph = m_ftFace->glyph;
-   if ( !ftGlyph )
-   {
-      DE_ERROR("Glyph access error. unicode(",unicode,")")
-      return glyph;
-   }
-
-   // Finally we store a valid glyph_index.
-   glyph.glyph_index = index;
-
-   FT_Glyph_Metrics const & ftGlyphMetrics = ftGlyph->metrics;
-   glyph.hBearing.x = ftGlyphMetrics.horiBearingX;
-   glyph.hBearing.y = ftGlyphMetrics.horiBearingY;
-   glyph.vBearing.x = ftGlyphMetrics.vertBearingX;
-   glyph.vBearing.y = ftGlyphMetrics.vertBearingY;
-
-   FT_Vector advance = ftGlyph->advance;
-   glyph.advance.x = advance.x;
-   glyph.advance.y = advance.y;
-   glyph.bbox = computeOutlineBBox();
-
-   glyph.offset.x = ftGlyph->bmp_left;
-   glyph.offset.y = ftGlyph->bmp_top;
-
-
-   // Now raster glyph to image and convert image to the dark side.
-   FT_Bitmap const & bmp = ftGlyph->bitmap;
-   FT_Pos const w = bmp.width;
-   FT_Pos const h = bmp.rows;
-
-   // Fill (my) glyph atlas struct and create (my) glyph image from ftBitmap.
-
-   if ( !bmp.buffer )
-   {
-      DE_ERROR("No bitmap was rendered")
-   }
-   else
-   {
-      Image img( w, h );
-
-      bool ok = true;
-      switch ( bmp.pixel_mode )
-      {
-      // Load the grayscale data in.
-      case FT_PIXEL_MODE_GRAY:
-         {
-            float const gray_count = float( bmp.num_grays );
-            // DE_DEBUG("FT_PIXEL_MODE_GRAY, gray_count = ",gray_count)
-
-            uint8_t const * src = bmp.buffer;
-            for ( int32_t y = 0; y < int32_t( bmp.rows ); ++y )
-            {
-               uint8_t const * row = src;
-               for ( int32_t x = 0; x < int32_t( bmp.width ); ++x )
-               {
-                  float const t = float( *row ) * ( 255.0f / float( gray_count ) );
-                  uint8_t const gray = uint8_t( Math::clampT< int >( int(t+0.5f), 0, 255 ) );
-                  img.setPixel( x,y, RGBA( 255,255,255,gray ) );
-                  ++row;
-               }
-               src += bmp.pitch;
-            }
-         }
-         break;
-      case FT_PIXEL_MODE_MONO:
-         {
-         DE_ERROR("FT_PIXEL_MODE_MONO")
-         //            // Create a blank image and fill it with transparent pixels.
-         //            texture_size = d.getOptimalSize(true, true);
-         //            image = driver->createImage(ECF_A1R5G5B5, texture_size);
-         //            image->fill(SColor(0, 255, 255, 255));
-
-         //            // Load the monochrome data in.
-         //            const u32 image_pitch = image->getPitch() / sizeof(u16);
-         //            u16* image_data = (u16*)image->lock();
-         //            u8* glyph_data = bmp.buffer;
-         //            for (u32 y = 0; y < bmp.rows; ++y)
-         //            {
-         //                u16* row = image_data;
-         //                for (u32 x = 0; x < bmp.width; ++x)
-         //                {
-         //                    // Monochrome bitmaps store 8 pixels per byte.  The left-most pixel is the bit 0x80.
-         //                    // So, we go through the data each bit at a time.
-         //                    if ((glyph_data[y * bmp.pitch + (x / 8)] & (0x80 >> (x % 8))) != 0)
-         //                        *row = 0xFFFF;
-         //                    ++row;
-         //                }
-         //                image_data += image_pitch;
-         //            }
-         //            image->unlock();
-         }
-         break;
-      default:
-         {
-         DE_ERROR("FT_PIXEL_MODE_UNKNOWN")
-         ok = false;
-         }
-         break;
-      }
-
-      if ( ok )
-      {
-         glyph.img = std::move( img );
-      }
-      else
-      {
-         DE_ERROR("OMG")
-      }
-   }
-
-   if ( FT_IS_SCALABLE( m_ftFace ) )
-   {
-      glyph.hBearing /= 64;
-      glyph.vBearing /= 64;
-      glyph.advance /= 64;
-      glyph.bbox /= 64;
-      //glyph.offset /= 64;
-      // DE_DEBUG( "New scalable Glyph: ", glyph.toString() )
-   }
-   else {
-      // DE_DEBUG( "New fixed Glyph: ", glyph.toString() )
-   }
-
-   return glyph;
-}
-
-glm::ivec2
-FontTTF::getGlyphSize( uint32_t unicode )
-{
-   std::shared_ptr< Glyph > glyph = getGlyph( unicode );
-   if ( !glyph ) return glm::ivec2(0,0);
-   return glyph->getImageSize();
-}
-
-
-glm::ivec2
-FontTTF::getCharacterSizePx( uint32_t unicode )
-{
-   std::shared_ptr< Glyph > glyph = getGlyph( unicode );
-   if ( !glyph ) return glm::ivec2(0,0);
-   int32_t w = glyph->advance.x;
-   int32_t h = m_ftMetrics.ascender;   // Grab the true height of the character, taking into account underhanging glyphs.
-   if ( FT_IS_SCALABLE( m_ftFace ) )
-   {
-      h /= 64;
-   }
-   h += -glyph->offset.y + glyph->getImageSize().y;
-
-   return glm::ivec2( w, h );
-}
-
-
-FT_UInt
-FontTTF::getGlyphIndex( uint32_t unicode ) const
-{
-   FT_UInt glyph_index = 0;
-   if ( m_ftFace )
-   {
-      glyph_index = FT_Get_Char_Index( m_ftFace, FT_ULong( unicode ) );
-   }
-   else
-   {
-      DE_ERROR("No ftFace. unicode(",unicode,")")
-   }
-
-   if ( glyph_index == 0 )
-   {
-      DE_ERROR("No glyph_index. unicode(",unicode,")")
-   }
-   // DE_DEBUG("getGlyphIndex(",unicode,") = ", glyph_index )
-   return glyph_index;
-}
-
-glm::ivec2
-FontTTF::getKerning( uint32_t prevLetter, uint32_t thisLetter )
-{
-   if ( !m_ftFace || !FT_HAS_KERNING( m_ftFace ) ) return glm::ivec2( 0,0 );
-   if ( prevLetter == 0 || thisLetter == 0 ){ return glm::ivec2( 0,0 ); }
-   FT_Vector ftKerning;
-   FT_Get_Kerning( m_ftFace, getGlyphIndex( prevLetter ),
-               getGlyphIndex( thisLetter ), FT_KERNING_DEFAULT, &ftKerning );
-   glm::ivec2 kerning( ftKerning.x, ftKerning.y );
-   if ( FT_IS_SCALABLE( m_ftFace ) )
-   {
-      kerning.x /= 64;
-      kerning.y /= 64;
-   }
-   return kerning;
-}
-
-
-uint32_t
-FontTTF::getCharacterWidthPx( uint32_t unicode )
-{
-   Glyph glyph = getGlyph( unicode );
-   return glyph.advance.x;
-//   if ( unicode >= 0x2000 )
-//   {
-//   return (m_ftMetrics.ascender / 64);
-//   }
-//   else
-//   {
-//   return (m_ftMetrics.ascender / 64) / 2;
-//   }
-}
-
-uint32_t
-FontTTF::getCharacterHeightPx( uint32_t unicode )
-{
-   // Grab the true height of the character, taking into account underhanging glyphs.
-   Glyph glyph = getGlyph( unicode );
-   int32_t h = m_ftMetrics.ascender;
-   if ( FT_IS_SCALABLE( m_ftFace ) )
-   {
-      h /= 64;
-   }
-   h += -glyph.offset.y + glyph.getSize().y;
-   return h;
-}
-
-
-void
-FontTTF::drawGlyph( Image & img, int x, int y, uint32_t unicode, uint32_t color )
-{
-   std::shared_ptr< Glyph > glyph = getGlyph( unicode );
-   if ( !glyph )
-   {
-      DE_ERROR("No glyph for unicode(", unicode, ")" )
-      return;
-   }
-   drawGlyphImage( img, x, y, glyph->img, color );
-}
-
-void
-FontTTF::drawGlyphImage( Image & img, int x, int y, Image const & glyph, uint32_t color )
-{
-   int32_t const w = glyph.getWidth();
-   int32_t const h = glyph.getHeight();
-   for ( int32_t j = 0; j < h; ++j )
-   {
-      for ( int32_t i = 0; i < w; ++i )
-      {
-         uint32_t src_color = glyph.getPixel( i,j );
-         int32_t r = RGBA_R( color );
-         int32_t g = RGBA_G( color );
-         int32_t b = RGBA_B( color );
-         int32_t a = RGBA_A( src_color );
-         int32_t px = x + i;
-         int32_t py = y + j;
-         img.setPixel( px, py, RGBA( r,g,b,a ), true );
-      }
-   }
-}
-
-void
-FontTTF::drawText( Image & img, int x, int y, std::wstring const & txt, uint32_t brushColor, Align align )
-{
-   glm::ivec2 text_size = getTextSize( txt );
-   glm::ivec2 pos_start = applyTextAlign( glm::ivec2( x, y ), align, text_size );
-
-#if 1
-   int32_t x1 = pos_start.x;
-   int32_t y1 = pos_start.y;
-
-   ImagePainter::drawEllipse( img, Recti( x1-1, y1-1, 3,3 ), 0xFFE80020 );
-   ImagePainter::drawLineRect( img, Recti( x1, y1, text_size.x, text_size.y ), 0xFF0000FF );
-#endif
-   //DE_DEBUG("brushColor(", brushColor, ")" )
-   //DE_DEBUG("TextSize(", text_size, ")" )
-
-   for ( size_t i = 0; i < txt.size(); ++i )
-   {
-      uint32_t unicode = uint32_t( txt[ i ] );
-
-      std::shared_ptr< Glyph > glyph = getGlyph( unicode );
-      if ( !glyph )
-      {
-         DE_ERROR("No glyph for unicode(", unicode, ")" )
-         continue;
-      }
-
-      // glyph exists:
-      glm::ivec2 img_size = glyph->getImageSize();
-      //DE_DEBUG("Glyph[",i,"] unicode(", unicode, "), img_size(", img_size, ")" )
-
-      // Draw
-      glm::ivec2 kerning(0,0);
-      // glm::ivec2 glyph_size = getCharacterSizePx( currUnic );
-      if ( i > 0 )
-      {
-         uint32_t prev = uint32_t( txt[ i-1 ] );
-         kerning = getKerning( prev, unicode );
-      }
-
-      int32_t bx1 = pos_start.x;
-      int32_t by1 = pos_start.y;
-      int32_t bx2 = pos_start.x + img_size.x;
-      int32_t by2 = pos_start.y - img_size.y;
-      ImagePainter::drawLineRect( img, bx1, by1, bx2, by2, 0xFF2090FF );
-      ImagePainter::drawEllipse( img, Recti( bx1-1, by1-1, 3,3 ), 0xFF209020 );
-
-      if ( img_size.x > 0 && img_size.y > 0 )
-      {
-         int32_t gx = pos_start.x + kerning.x;
-         int32_t gy = pos_start.y - kerning.y - glyph->offset.y;
-         drawGlyphImage( img, gx, gy, glyph->img, brushColor );
-      }
-
-      //pos_start.x += getCharacterWidthPx( currUnic );
-      pos_start.x += glyph->advance.x;
-   }
-}
-
-Image
-FontTTF::createImage( std::wstring const & txt, uint32_t textColor, uint32_t fillColor )
-{
-   glm::ivec2 s = getTextSize( txt );
-   Image img( s.x, s.y );
-   img.fill( fillColor );
-   drawText( img, 0, 0, txt, textColor );
-   return img;
-}
-
-*/
 
 #endif

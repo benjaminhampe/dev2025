@@ -84,13 +84,13 @@ Font5x8Renderer2D::destroy()
 {
    if ( m_vao )
    {
-      de_glDeleteVertexArrays(1,&m_vao);
+      glDeleteVertexArrays(1,&m_vao); GL_VALIDATE
       m_vao = 0;
    }
 
    if ( m_vbo )
    {
-      de_glDeleteBuffers(1,&m_vbo);
+      glDeleteBuffers(1,&m_vbo); GL_VALIDATE
       m_vbo = 0;
    }
 }
@@ -134,36 +134,36 @@ Font5x8Renderer2D::draw2DText( int x, int y, std::string const & msg,
    //
    if ( !m_vao )
    {
-      de_glGenVertexArrays(1, &m_vao);
+      glGenVertexArrays(1, &m_vao); GL_VALIDATE
       m_shouldUpload = true;
    }
 
    if ( !m_vbo )
    {
-      de_glGenBuffers(1, &m_vbo);
+      glGenBuffers(1, &m_vbo); GL_VALIDATE
       m_shouldUpload = true;
    }
 
    if ( m_shouldUpload )
    {
-      de_glBindVertexArray(m_vao);
-      de_glBindBuffer(GL_ARRAY_BUFFER, m_vbo);
-      de_glBufferData(GL_ARRAY_BUFFER,
+      glBindVertexArray(m_vao); GL_VALIDATE
+      glBindBuffer(GL_ARRAY_BUFFER, m_vbo); GL_VALIDATE
+      glBufferData(GL_ARRAY_BUFFER,
                       m_vertices.size() * sizeof(Font5x8Renderer2D_Vertex),
-                      m_vertices.data(), GL_STATIC_DRAW);
+                      m_vertices.data(), GL_STATIC_DRAW); GL_VALIDATE
 
       // a_pos:
-      de_glEnableVertexAttribArray(0);
-      de_glVertexAttribPointer( 0, 3, GL_FLOAT, GL_FALSE,
+      glEnableVertexAttribArray(0); GL_VALIDATE
+      glVertexAttribPointer( 0, 3, GL_FLOAT, GL_FALSE,
                                 sizeof(Font5x8Renderer2D_Vertex),
-                                reinterpret_cast<void*>(0) );
+                                reinterpret_cast<void*>(0) ); GL_VALIDATE
       // a_color:
-      de_glEnableVertexAttribArray(1);
-      de_glVertexAttribPointer( 1, 4, GL_UNSIGNED_BYTE, GL_FALSE,
+      glEnableVertexAttribArray(1); GL_VALIDATE
+      glVertexAttribPointer( 1, 4, GL_UNSIGNED_BYTE, GL_FALSE,
                                 sizeof(Font5x8Renderer2D_Vertex),
-                                reinterpret_cast<void*>(12) );
+                                reinterpret_cast<void*>(12) ); GL_VALIDATE
 
-      de_glBindVertexArray(0); //    GL_VALIDATE
+      glBindVertexArray(0); GL_VALIDATE
 
       //glDisableVertexAttribArray( 0 );       GL_VALIDATE
       //glDisable(GL_TEXTURE_2D);      GL_VALIDATE
@@ -183,13 +183,16 @@ Font5x8Renderer2D::draw2DText( int x, int y, std::string const & msg,
    m_shader->setVec1( "u_screenW", m_screenWidth );
    m_shader->setVec1( "u_screenH", m_screenHeight );
 
-   de_glDisable(GL_CULL_FACE); //GL_VALIDATE
+    m_driver->setCulling(Culling::disabled());
+    m_driver->setDepth(Depth::disabled());
+    
+   //glDisable(GL_CULL_FACE); GL_VALIDATE
    //glDisable(GL_TEXTURE_2D); GL_VALIDATE
-   de_glDisable(GL_DEPTH_TEST); //GL_VALIDATE
+   //glDisable(GL_DEPTH_TEST); GL_VALIDATE
 
-   de_glBindVertexArray(m_vao); //GL_VALIDATE
-   de_glDrawArrays( GL_TRIANGLES, 0, GLsizei( m_vertices.size() ) ); // GL_VALIDATE
-   de_glBindVertexArray(0); //  GL_VALIDATE
+   glBindVertexArray(m_vao); GL_VALIDATE
+   glDrawArrays( GL_TRIANGLES, 0, GLsizei( m_vertices.size() ) ); GL_VALIDATE
+   glBindVertexArray(0); GL_VALIDATE
 }
 
 void
