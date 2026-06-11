@@ -12,6 +12,15 @@ public:
 
     void resized() override;
 
+    // void mouseEnter (const MouseEvent& event) override;
+    // void mouseExit (const MouseEvent& event) override;
+    // void mouseDown (const MouseEvent& event) override;
+    // void mouseUp (const MouseEvent& event) override;
+    // void mouseMove (const MouseEvent& event) override;
+    // void mouseDoubleClick (const MouseEvent& event) override;
+
+    // void mouseDrag (const MouseEvent& event) override;
+
 private:
     MyProcessor& m_processor;
 

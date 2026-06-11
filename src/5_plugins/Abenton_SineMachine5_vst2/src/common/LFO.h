@@ -22,7 +22,7 @@ int main()
 
 enum class eFunction
 {
-    Const = 0,
+    Disabled = 0,
     Sine,
     Rect,
     Saw,

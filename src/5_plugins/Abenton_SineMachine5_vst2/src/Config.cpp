@@ -1,25 +1,13 @@
 #include "Config.h"
 
-Cfg::Cfg()
-    : m_masterVolume(80)
-    , m_partialVolumeSum(1.0f)
-    , m_partialVolumeSumInv(1.0f)
-{
-    setNumPartials( NUM_PARTIALS );
-}
-
-Cfg::~Cfg()
-{
-
-}
 
 size_t
-Cfg::getNumPartials() const { return m_partials.size(); }
+PartialsCfg::numPartials() const { return m_partials.size(); }
 
 void
-Cfg::setNumPartials(int numPartials)
+PartialsCfg::init()
 {
-    m_partials.resize(numPartials);
+    //m_partials.resize(numPartials);
 
     for (size_t i = 0; i < m_partials.size(); i++)
     {
@@ -27,12 +15,12 @@ Cfg::setNumPartials(int numPartials)
     }
     setPartial(0, 1.0f, 0);
     setDefaultColors();
-    setDefaultPartialsToRect();
+    makeRect();
 }
 
-void Cfg::setPartial(int index, float amplitude, double cent )
+void PartialsCfg::setPartial(int index, float amplitude, double cent )
 {
-    if (index < 0 || index >= getNumPartials())
+    if (index < 0 || index >= numPartials())
     {
         return;
     }
@@ -40,18 +28,16 @@ void Cfg::setPartial(int index, float amplitude, double cent )
     m_partials.at(index).iPartial = index + 1;
     m_partials.at(index).fAmplitude = amplitude;
     m_partials.at(index).fDetuneCent = cent;
-    m_partials.at(index).fPhase = 0.0f;
+    //m_partials.at(index).fPhase = 0.0f;
 }
 
-void Cfg::setDefaultColors()
+void PartialsCfg::setDefaultColors()
 {
     // 🌈 Rainbow coloring:
-    float color_step = 0.7f / float(getNumPartials() - 1);
+    float color_step = 0.7f / float(numPartials() - 1);
 
-    for (size_t i = 0; i < getNumPartials(); i++)
+    for (size_t i = 0; i < numPartials(); i++)
     {
-        m_partials.at(i).fPhase = 0.0f;
-
         auto color = de::RainbowColor::computeColor128(0.8f - color_step * i);
         m_partials.at(i).color.r = color.r;
         m_partials.at(i).color.g = color.g;
@@ -60,7 +46,7 @@ void Cfg::setDefaultColors()
     }
 }
 
-void Cfg::setDefaultPartialsToRect()
+void PartialsCfg::makeRect()
 {
     for (auto & partial : m_partials)
     {
@@ -68,7 +54,7 @@ void Cfg::setDefaultPartialsToRect()
     }
 }
 
-void Cfg::setDefaultPartialsToSaw()
+void PartialsCfg::makeSaw()
 {
     for (auto & partial : m_partials)
     {
@@ -76,7 +62,7 @@ void Cfg::setDefaultPartialsToSaw()
     }
 }
 
-void Cfg::setDefaultPartialsToSawRev()
+void PartialsCfg::makeSawRev()
 {
     for (auto & partial : m_partials)
     {
@@ -84,10 +70,12 @@ void Cfg::setDefaultPartialsToSawRev()
     }
 }
 
-void Cfg::setDefaultPartialsToTriangle()
+void PartialsCfg::makeTriangle()
 {
     for (auto & partial : m_partials)
     {
         partial.fAmplitude = de::calc_amplitude_triangle<float>( partial.iPartial );
     }
 }
+
+

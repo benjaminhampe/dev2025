@@ -37,10 +37,10 @@ juce_add_plugin(Odin2
     CLAP_PLUGIN_FEATURE_STEREO, \
     0
 
-#define CLAP_MANUAL_URL                 "https://www.thewavewarden.com/Odin2/manual"
-#define CLAP_SUPPORT_URL                "https://www.thewavewarden.com/Odin2/support"
+#define CLAP_MANUAL_URL                 "https://www.datsounds.ru/Obxd/manual"
+#define CLAP_SUPPORT_URL                "https://www.datsounds.ru/Obxd/support"
 
-#define CLAP_ID                         "com.thewavewarden.Odin2"
+#define CLAP_ID                         "ru.Datsounds.Obxd"
 
 
 // {0, 1}, {1, 1},
@@ -59,10 +59,10 @@ juce_add_plugin(Odin2
 #define JucePlugin_Manufacturer           "Datsounds"
 #endif
 #ifndef JucePlugin_ManufacturerWebsite
-#define JucePlugin_ManufacturerWebsite    ""
+#define JucePlugin_ManufacturerWebsite    "Filatov Vadim"
 #endif
 #ifndef JucePlugin_ManufacturerEmail
-#define JucePlugin_ManufacturerEmail      ""
+#define JucePlugin_ManufacturerEmail      "justdat_@_e1.ru"
 #endif
 #ifndef JucePlugin_ManufacturerCode
 #define JucePlugin_ManufacturerCode       '2DaT'
@@ -127,7 +127,7 @@ juce_add_plugin(Odin2
 #define JucePlugin_AUManufacturerCode     JucePlugin_ManufacturerCode
 #endif
 #ifndef JucePlugin_CFBundleIdentifier
-#define JucePlugin_CFBundleIdentifier     com.Datsounds.Obxd
+#define JucePlugin_CFBundleIdentifier     ru.datsounds.Obxd
 #endif
 #ifndef JucePlugin_RTASCategory
 #define JucePlugin_RTASCategory           ePlugInCategory_None
@@ -145,7 +145,7 @@ juce_add_plugin(Odin2
 #define JucePlugin_RTASDisableMultiMono   0
 #endif
 #ifndef JucePlugin_AAXIdentifier
-#define JucePlugin_AAXIdentifier          com.Datsounds.Obxd
+#define JucePlugin_AAXIdentifier          ru.datsounds.Obxd
 #endif
 #ifndef JucePlugin_AAXManufacturerCode
 #define JucePlugin_AAXManufacturerCode    JucePlugin_ManufacturerCode

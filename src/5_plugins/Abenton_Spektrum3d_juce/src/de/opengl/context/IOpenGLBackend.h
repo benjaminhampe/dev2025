@@ -23,6 +23,7 @@ class IOpenGLBackend
 public:
     virtual ~IOpenGLBackend() = default;
 
+    virtual void toggleFullscreen() = 0;
     virtual bool createWindow(void* parentHandle, int x, int y, int w, int h) = 0;
     virtual void destroy() = 0;
     virtual void resize(int x, int y, int w, int h) = 0;

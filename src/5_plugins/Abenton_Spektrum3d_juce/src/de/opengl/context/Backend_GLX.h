@@ -12,6 +12,8 @@ public:
     Window win = 0;
     GLXContext ctx = nullptr;
 
+    void toggleFullscreen() override {}
+
     bool createWindow(void* parentHandle, int x, int y, int w, int h) override
     {
         dpy = XOpenDisplay(nullptr);

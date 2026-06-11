@@ -9,98 +9,19 @@ AudioEffect* createEffectInstance(audioMasterCallback audioMaster)
 
 // ------------------ Plugin Implementation ------------------
 
-void
-Plugin::processDoubleReplacing (double** inputs, double** outputs, VstInt32 sampleFrames)
-{
-
-}
-
-void
-Plugin::processReplacing(float** inputs, float** outputs, VstInt32 sampleFrames)
-{
-    float* __restrict__ L = outputs[0];
-    float* __restrict__ R = outputs[1];
-
-    m_synth.setBlockSize(sampleFrames);
-    m_synth.process(L,R);
-}
-
-VstIntPtr
-Plugin::dispatcher(VstInt32 opCode, VstInt32 index, VstIntPtr value, void* ptr, float opt)
-{
-    switch (opCode)
-    {
-        // case effOpen:
-        //     DE_BENNI("effOpen")
-        //     return 0;
-        // case effClose:
-        //     DE_BENNI("effClose")
-        //     //delete this; // End lifecycle. We must delete ourselfs to prevent leaks.
-        //     return 0;
-        case effEditOpen:
-            DE_BENNI("effEditOpen")
-            m_editor.create(ptr);
-            return 1;
-        case effEditClose:
-            DE_BENNI("effEditClose")
-            m_editor.destroy();
-            return 1;
-        case effEditGetRect:
-            DE_BENNI("effEditGetRect")
-            *(ERect**)ptr = m_editor.getEditorRect();
-            return 1;
-        case effSetSampleRate:
-            DE_BENNI("effSetSampleRate")
-            m_synth.setSampleRate( int32_t(opt) );
-            return 1;
-        case effSetBlockSize:
-            DE_BENNI("effSetBlockSize")
-            m_synth.setBlockSize( int32_t(value) );
-            return 1;
-        case effMainsChanged:
-            if (value)
-            {
-                // Audio processing is starting
-                DE_BENNI("effMainsChanged = 1")
-            }
-            else
-            {
-                // Audio processing is stopping
-                DE_BENNI("effMainsChanged = 0")
-            }
-            return 1;
-/*
-struct VstSpeakerArrangement {
-    VstInt32 type;       // e.g., kSpeakerArr51 for 5.1
-    VstInt32 numChannels;
-    VstSpeakerProperties speakers[kMaxSpeakers];
-};
-
-VstSpeakerArrangement** arrangements = (VstSpeakerArrangement**)ptr;
-VstSpeakerArrangement* inputArrangement = arrangements[0];
-VstSpeakerArrangement* outputArrangement = arrangements[1];
-
-case effSetSpeakerArrangement: {
-    VstSpeakerArrangement** sa = (VstSpeakerArrangement**)ptr;
-    inputSpeakerArrangement = sa[0];   // may be nullptr
-    outputSpeakerArrangement = sa[1];  // may be nullptr
-    return 1;
-}
-*/
-        default:
-            return AudioEffectX::dispatcher(opCode, index, value, ptr, opt);
-    }
-}
 
 Plugin::Plugin(audioMasterCallback audioMaster)
                    // audioMasterCallback,
                    // VstInt32 numPrograms = 5, -> 0: Default/None, 1:Square/Rect, 2:Saw, 3:ReverseSaw, 4:Triangle
                    // VstInt32 numParams = nPartials * params_per_partial);
     : AudioEffectX(audioMaster, kNumParams, NUM_PARTIALS)
-    , m_cfg()
-    , m_synth(&m_cfg)
     , m_editor(this)
 {
+    Envelope::test();
+
+    m_cfg.init();
+    m_synth.init(&m_cfg);
+
     // 🎧 Audio & Processing
     //     "receiveVstEvents" — receive VST events (e.g. MIDI)
     //     "receiveVstMidiEvent" — receive MIDI events
@@ -161,6 +82,90 @@ Plugin::Plugin(audioMasterCallback audioMaster)
 
 Plugin::~Plugin()
 {}
+
+void
+Plugin::processDoubleReplacing (double** inputs, double** outputs, VstInt32 sampleFrames)
+{
+
+}
+
+void
+Plugin::processReplacing(float** inputs, float** outputs, VstInt32 sampleFrames)
+{
+    float* __restrict__ L = outputs[0];
+    float* __restrict__ R = outputs[1];
+
+    m_cfg.m_blockSize = sampleFrames;
+    m_synth.process(L,R);
+}
+
+VstIntPtr
+Plugin::dispatcher(VstInt32 opCode, VstInt32 index, VstIntPtr value, void* ptr, float opt)
+{
+    switch (opCode)
+    {
+        // case effOpen:
+        //     DE_BENNI("effOpen")
+        //     return 0;
+        // case effClose:
+        //     DE_BENNI("effClose")
+        //     //delete this; // End lifecycle. We must delete ourselfs to prevent leaks.
+        //     return 0;
+        case effEditOpen:
+            DE_BENNI("effEditOpen")
+            m_editor.create(ptr);
+            return 1;
+        case effEditClose:
+            DE_BENNI("effEditClose")
+            m_editor.destroy();
+            return 1;
+        case effEditGetRect:
+            DE_BENNI("effEditGetRect")
+            *(ERect**)ptr = m_editor.getEditorRect();
+            return 1;
+        case effSetSampleRate:
+            //DE_BENNI("effSetSampleRate")
+            m_cfg.setSampleRate(int32_t(opt));
+            return 1;
+        case effSetBlockSize:
+            //DE_BENNI("effSetBlockSize")
+            m_cfg.setBlockSize(int32_t(value));
+            return 1;
+        case effMainsChanged:
+            if (value)
+            {
+                // Audio processing is starting
+                DE_BENNI("effMainsChanged = 1")
+            }
+            else
+            {
+                // Audio processing is stopping
+                DE_BENNI("effMainsChanged = 0")
+            }
+            return 1;
+/*
+struct VstSpeakerArrangement {
+    VstInt32 type;       // e.g., kSpeakerArr51 for 5.1
+    VstInt32 numChannels;
+    VstSpeakerProperties speakers[kMaxSpeakers];
+};
+
+VstSpeakerArrangement** arrangements = (VstSpeakerArrangement**)ptr;
+VstSpeakerArrangement* inputArrangement = arrangements[0];
+VstSpeakerArrangement* outputArrangement = arrangements[1];
+
+case effSetSpeakerArrangement: {
+    VstSpeakerArrangement** sa = (VstSpeakerArrangement**)ptr;
+    inputSpeakerArrangement = sa[0];   // may be nullptr
+    outputSpeakerArrangement = sa[1];  // may be nullptr
+    return 1;
+}
+*/
+        default:
+            return AudioEffectX::dispatcher(opCode, index, value, ptr, opt);
+    }
+}
+
 
 VstInt32
 Plugin::canDo(char *text)
@@ -249,7 +254,7 @@ void
 Plugin::setParameter(VstInt32 index, float value)
 {
     const float fAmplitude = value;
-    m_cfg.setPartial(index,fAmplitude);
+    m_cfg.m_partials.setPartial(index,fAmplitude);
 
 #if 0
     switch (index) {
@@ -263,11 +268,11 @@ Plugin::setParameter(VstInt32 index, float value)
 float
 Plugin::getParameter(VstInt32 index)
 {
-    if (index < 0 || index >= int(m_cfg.getNumPartials()))
+    if (index < 0 || index >= int(m_cfg.m_partials.numPartials()))
     {
         return 0.0f;
     }
-    return m_cfg.m_partials[index].fAmplitude;
+    return m_cfg.m_partials.m_partials[index].fAmplitude;
 
 #if 0
     switch (index) {
@@ -354,8 +359,6 @@ void Plugin::handleShortMidi(char bytes[4])
     uint8_t channel = bytes[0] & 0x0F;
     uint8_t data1 = bytes[1] & 0x7F;
     uint8_t data2 = bytes[2] & 0x7F;
-
-    DE_OK("")
 
     switch (status)
     {

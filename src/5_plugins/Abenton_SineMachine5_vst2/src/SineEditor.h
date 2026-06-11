@@ -32,9 +32,9 @@ struct Preview
 
     Curve m_accum;
 
-    void init( const Cfg & cfg, int n = 1024 );
+    void init( const SynthCfg & cfg, int n = 1024 );
 
-    void update( const Cfg & cfg );
+    void update( const SynthCfg & cfg );
 
     void updatePoints( de::Recti pos, int n = 1024 );
 

@@ -45,3 +45,54 @@ void MyEditor::resized()
 */
     m_canvas.setBounds(getLocalBounds());
 }
+
+/*
+void MyEditor::mouseEnter (const MouseEvent& event)
+{
+    DE_OK("enterEvent")
+}
+
+void MyEditor::mouseExit (const MouseEvent& event)
+{
+    DE_OK("leaveEvent")
+}
+
+void MyEditor::mouseDown (const juce::MouseEvent& e)
+{
+    DE_OK("mousePressEvent")
+
+    if (e.mods.isRightButtonDown())
+    {
+        DE_OK("RightMouseButton")
+        juce::PopupMenu menu;
+        menu.addItem (1, "Option A");
+        menu.addItem (2, "Option B");
+        menu.addSeparator();
+        menu.addItem (3, "Quit");
+
+        menu.showMenuAsync (
+            juce::PopupMenu::Options().withTargetComponent (this),
+            [this](int result)
+            {
+                if (result == 1) {  }
+                if (result == 2) {  }
+                if (result == 3) {  }
+            });
+    }
+}
+
+void MyEditor::mouseUp (const MouseEvent& event)
+{
+    DE_OK("mouseReleaseEvent")
+}
+
+void MyEditor::mouseMove (const MouseEvent& event)
+{
+    DE_OK("mouseMoveEvent")
+}
+
+void MyEditor::mouseDoubleClick (const MouseEvent& event)
+{
+    DE_OK("mouseDblClickEvent")
+}
+*/

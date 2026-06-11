@@ -67,6 +67,14 @@ public:
     void visibilityChanged() override;
     void resized() override;
 
+
+    void mouseEnter (const MouseEvent& event) override;
+    void mouseExit (const MouseEvent& event) override;
+    void mouseDown (const MouseEvent& event) override;
+    void mouseUp (const MouseEvent& event) override;
+    void mouseMove (const MouseEvent& event) override;
+    void mouseDoubleClick (const MouseEvent& event) override;
+
 private:
     void timerCallback() override;
     void tryCreateBackend();

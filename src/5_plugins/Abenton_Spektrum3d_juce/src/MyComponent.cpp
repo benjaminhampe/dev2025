@@ -224,4 +224,56 @@ void MyComponent::timerCallback()
     openGLContext->doneCurrent();
 }
 
+
+
+
+void MyComponent::mouseEnter (const MouseEvent& event)
+{
+    DE_OK("enterEvent")
+}
+
+void MyComponent::mouseExit (const MouseEvent& event)
+{
+    DE_OK("leaveEvent")
+}
+
+void MyComponent::mouseDown (const juce::MouseEvent& e)
+{
+    DE_OK("mousePressEvent")
+
+    if (e.mods.isRightButtonDown())
+    {
+        DE_OK("RightMouseButton")
+        juce::PopupMenu menu;
+        menu.addItem (1, "Option A");
+        menu.addItem (2, "Option B");
+        menu.addSeparator();
+        menu.addItem (3, "Quit");
+
+        menu.showMenuAsync (
+            juce::PopupMenu::Options().withTargetComponent (this),
+            [this](int result)
+            {
+                if (result == 1) { /* ... */ }
+                if (result == 2) { /* ... */ }
+                if (result == 3) { /* ... */ }
+            });
+    }
+}
+
+void MyComponent::mouseUp (const MouseEvent& event)
+{
+    DE_OK("mouseReleaseEvent")
+}
+
+void MyComponent::mouseMove (const MouseEvent& event)
+{
+    DE_OK("mouseMoveEvent")
+}
+
+void MyComponent::mouseDoubleClick (const MouseEvent& event)
+{
+    DE_OK("mouseDblClickEvent")
+}
+
 #endif

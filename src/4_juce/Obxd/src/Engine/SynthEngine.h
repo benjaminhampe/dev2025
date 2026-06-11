@@ -116,11 +116,6 @@ public:
    {
       synth.economyMode = val>0.5;
    }
-#define ForEachVoice(expr) \
-   for(int i = 0 ; i < synth.MAX_VOICES;i++) \
-      {\
-         synth.voices[i].expr;\
-      }\
 
    void procAmpVelocityAmount(float val)
    {
@@ -214,11 +209,8 @@ public:
          synth.voices[i].fltKF = param;
       }
    }
-   void processSelfOscPush(float param)
-   {
-      ForEachVoice(selfOscPush = param>0.5);
-      ForEachVoice(flt.selfOscPush = param>0.5);
-   }
+   
+
    void processUnison(float param)
    {
       synth.uni = param>0.5f;
@@ -335,6 +327,18 @@ public:
          synth.voices[i].osc.pulseWidth = linsc(param,0.0,0.95);
       }
    }
+   
+#define ForEachVoice(expr) \
+   for(int i = 0 ; i < synth.MAX_VOICES;i++) \
+      {\
+         synth.voices[i].expr;\
+      }
+   
+   void processSelfOscPush(float param)
+   {
+      ForEachVoice(selfOscPush = param>0.5);
+      ForEachVoice(flt.selfOscPush = param>0.5);
+   }   
    void processPwEnv(float param)
    {
       ForEachVoice (pwenvmod=linsc(param,0,0.85));

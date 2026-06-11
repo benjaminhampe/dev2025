@@ -21,9 +21,9 @@
 #include "fonts/fonts_ShareTechMonoRegular_ttf.h"
 
 // 📊
-void Preview::init( const Cfg& cfg, int n )
+void Preview::init( const SynthCfg& cfg, int n )
 {
-    const std::vector<Partial> & partials = cfg.m_partials;
+    const auto & partials = cfg.m_partials.m_partials;
 
     DE_DEBUG("n = ",n)
     DE_DEBUG("partials.size() = ",partials.size())
@@ -65,9 +65,9 @@ void Preview::init( const Cfg& cfg, int n )
     }
 }
 
-void Preview::update( const Cfg & cfg )
+void Preview::update( const SynthCfg & cfg )
 {
-    const std::vector<Partial> & partials = cfg.m_partials;
+    const auto & partials = cfg.m_partials.m_partials;
     const size_t nPartials = partials.size();
     const size_t nSamples = m_curves.at(0).original.size();
 
@@ -837,18 +837,19 @@ void Editor::paintEvent( const de::PaintEvent& event )
     drawLineRect(m_vg, m_rPartial, nvgRGBA(255,100,100,255));
     drawLineRect(m_vg, m_rVolume, nvgRGBA(100,100,255,255));
 
-    const Cfg & cfg = m_plugin->getConfig();
+    const auto & cfg = m_plugin->getConfig();
 
     m_preview.update( cfg );
     m_preview.updatePoints( m_rPreview );
     m_preview.draw( m_vg, m_rPreview );
 
     // Draw overtone bars
-    for (int i = 0; i < cfg.getNumPartials(); ++i)
+    const auto & partials = cfg.m_partials.m_partials;
+    for (int i = 0; i < partials.size(); ++i)
     {
-        const auto & partial = cfg.m_partials.at(i);
+        const auto & partial = partials.at(i);
         float amp = partial.fAmplitude;
-        float barW = float(m_rPartial.w) / float(cfg.getNumPartials());
+        float barW = float(m_rPartial.w) / float(partials.size());
         float barH = amp * m_rPartial.h;
         float x = float(m_rPartial.x) + barW * i;
         float y = float(m_rPartial.y) + float(m_rPartial.h) - barH;
@@ -908,11 +909,11 @@ void Editor::doPartialDrawing()
         return;
     }
 
-    const Cfg & cfg = m_plugin->getConfig();
+    const auto & partials = m_plugin->getConfig().m_partials.m_partials;
 
-    float scale = float(cfg.getNumPartials()) / float(m_rPartial.w);
+    float scale = float(partials.size()) / float(m_rPartial.w);
     int bar = (m_mouseX - m_rPartial.x) * scale;
-    if (bar >= 0 && bar < cfg.getNumPartials())
+    if (bar >= 0 && bar < partials.size())
     {
         float t = (float(m_mouseY) - float(m_rPartial.y)) / float(m_rPartial.h);
         float A = std::clamp(1.0f - t, 0.0f, 1.0f);
@@ -969,22 +970,22 @@ void Editor::keyPressEvent(const de::KeyPressEvent& event)
 
     if (event.key == de::KEY_1)
     {
-        m_plugin->getConfig().setDefaultPartialsToRect();
+        m_plugin->getConfig().m_partials.makeRect();
     }
 
     if (event.key == de::KEY_2)
     {
-        m_plugin->getConfig().setDefaultPartialsToSaw();
+        m_plugin->getConfig().m_partials.makeSaw();
     }
 
     if (event.key == de::KEY_3)
     {
-        m_plugin->getConfig().setDefaultPartialsToSawRev();
+        m_plugin->getConfig().m_partials.makeSawRev();
     }
 
     if (event.key == de::KEY_4)
     {
-        m_plugin->getConfig().setDefaultPartialsToTriangle();
+        m_plugin->getConfig().m_partials.makeTriangle();
     }
 }
 

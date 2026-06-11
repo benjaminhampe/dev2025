@@ -3,13 +3,13 @@
 
 class Synth
 {
-    Cfg* m_cfg;
+    SynthCfg* m_cfg = nullptr;
 
-    std::vector<Note> m_notes;
+    std::vector<Voice> m_voices;
 
-    int64_t m_framePos;
-    int32_t m_blockSize;
-    int32_t m_sampleRate;
+    //int64_t m_framePos = 0;
+    // int32_t m_blockSize;
+    // int32_t m_sampleRate;
     // std::vector<Partial> m_partials;
     // float m_sampleRate;
     // float m_masterAmplitude;
@@ -17,57 +17,23 @@ class Synth
     //int32_t m_baseOctave;
 
 public:
-    Synth( Cfg* cfg )
-        : m_cfg(cfg)
-        , m_framePos(0)
-        , m_blockSize(0)
-        , m_sampleRate(48000)
-    {
-        m_notes.resize(20); // 20 note polyphony
-    }
 
-    void setBlockSize(int blockSize)
+    void init( SynthCfg* cfg )
     {
-        m_blockSize = blockSize;
-    }
-
-    void setSampleRate(int sampleRate)
-    {
-        m_sampleRate = sampleRate;
-    }
-
-    void noteOn(int channel, int note, int velocity)
-    {
-        DE_OK("NoteOn: ", note)
-        int slot = findIdleNoteSlot();
-        if (slot < 0)
+        m_cfg = cfg;
+        m_voices.resize(m_cfg->m_maxVoices); // polyphony
+        for (auto & voice : m_voices)
         {
-            return; // Discard, Information loss!
+            voice.init(m_cfg);
         }
-
-        DE_OK("Slot = ",slot)
-        m_notes[slot].init(*m_cfg, channel, note, velocity);
-        /*
-        m_baseFrequency = 440.0 * pow(2.0, (note - 69) / 12.0);  // MIDI to Hz
-        // Optionally: trigger envelopes, voices, etc.
-        calcPhaseIncrements( m_partials, m_baseFrequency, m_sampleRate );
-        */
+        DE_OK("Created ",m_voices.size()," voices.")
     }
 
-    void noteOff(int channel, int note, int velocity)
+    int findIdleVoice() const
     {
-        DE_OK("NoteOff: ",note)
-        if (m_cfg->m_singleShot)
+        for (size_t i = 0; i < m_voices.size(); i++)
         {
-            return;
-        }
-    }
-
-    int findIdleNoteSlot() const
-    {
-        for (size_t i = 0; i < m_notes.size(); i++)
-        {
-            if (m_notes[i].m_frameCount < 1)
+            if (!m_voices[i].isPlaying())
             {
                 return i;
             }
@@ -75,6 +41,43 @@ public:
         return -1;
     }
 
+    void noteOn(int channel, int note, int velocity)
+    {
+        DE_OK("NoteOn: ", note)
+        int voice = findIdleVoice();
+        if (voice < 0)
+        {
+            return; // Discard, Information loss!
+        }
+
+        DE_OK("IdleVoice = ",voice)
+        m_voices[voice].noteOn(channel, note, velocity);
+        /*
+        m_baseFrequency = 440.0 * pow(2.0, (note - 69) / 12.0);  // MIDI to Hz
+        // Optionally: trigger envelopes, voices, etc.
+        calcPhaseIncrements( m_partials, m_baseFrequency, m_sampleRate );
+        */
+    }
+
+    void noteOff(int channel, int midiNote, int velocity)
+    {
+        int nVoices = 0;
+
+        for (size_t i = 0; i < m_voices.size(); i++)
+        {
+            Voice & voice = m_voices[i];
+            if (voice.m_midiNote == midiNote)
+            {
+                if (!voice.m_cfg->m_envelope.bSingleShot)
+                {
+                    m_voices[i].noteOff(velocity);
+                    nVoices++;
+                }
+            }
+        }
+
+        DE_OK("NoteOff: ",midiNote, " for nVoices = ",nVoices)
+    }
 
     void controlChange(int channel, int controller, int value)
     {
@@ -116,50 +119,34 @@ public:
     {
         size_t nNotes = 0;
 
+        const int32_t blockSize = m_cfg->m_blockSize;
         //DE_OK("m_synth.m_notes.size() = ", m_synth.m_notes.size(), ", "
         //        "sampleFrames = ", sampleFrames)
 
-        for (Note & note : m_notes)
+        for (Voice & voice : m_voices)
         {
-            if (note.m_frameCount > 0)
+            voice.computeSamples(blockSize);
+
+            const float* __restrict__ srcL = voice.m_L.data();
+
+            DE_ASSUME_NO_OVERLAP(srcL,L,blockSize * sizeof(float));
+
+            for (int32_t i = 0; i < blockSize; i++)
             {
-                note.computeSamples(m_blockSize);
-
-                for (int32_t i = 0; i < m_blockSize; i++)
-                {
-                    L[i] += note.m_L.at(i);
-                }
-                for (int32_t i = 0; i < m_blockSize; i++)
-                {
-                    R[i] += note.m_R.at(i);
-                }
-            }
-        }
-
-    /*
-        for (int i = 0; i < sampleFrames; i++)
-        {
-            float sample = 0.0f;
-            float Asum = 0.0f;
-
-            for (Partial & partial : m_synth.m_partials)
-            {
-                float A = partial.A();
-                sample += A * sinf(partial.phase);
-                partial.phase += partial.phaseIncrement;
-                if (partial.phase > de::TWO_PI)
-                {
-                    partial.phase -= de::TWO_PI;
-                }
-                Asum += A;
+                L[i] += srcL[i];
             }
 
-            sample /= float(Asum);
+            const float* __restrict__ srcR = voice.m_R.data();
 
-            outL[i] = outR[i] = sample;
+            DE_ASSUME_NO_OVERLAP(srcR,R,blockSize * sizeof(float));
+
+            for (int32_t i = 0; i < blockSize; i++)
+            {
+                R[i] += srcR[i];
+            }
         }
-    */
     }
+
     // void setPartial(int index, float amplitude, double centDetune = 0.0);
     // void setPartialsToRect();
     // void setPartialsToSaw();
