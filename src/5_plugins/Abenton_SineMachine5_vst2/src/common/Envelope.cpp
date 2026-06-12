@@ -2,6 +2,12 @@
 
 float Envelope::nextSample()
 {
+    if (!m_bOK)
+    {
+        DE_ERROR("Not OK.")
+        return 0.0f;
+    }
+
     float A = 0.0f;
     m_frameCounter++;
 
@@ -112,15 +118,14 @@ void Envelope::test()
 // static
 void Envelope::test1()
 {
-    EnvelopeCfg cfg;
-    cfg.AttackFrames = 200;
-    cfg.DecayFrames = 300;
-    cfg.SustainLevel = 0.75;
-    cfg.ReleaseFrames = 500;
-    cfg.bSingleShot = true;
-
     Envelope env;
-    env.init(cfg);
+    env.m_baseAttackFrames = 200;
+    env.m_baseDecayFrames = 300;
+    env.m_baseSustainLevel = 0.75f;
+    env.m_baseReleaseFrames = 500;
+    env.m_cfg.bSingleShot = true;
+    env.m_bOK = true;
+    env.resetIdle();
 
     de::Image img(3000,256);
     img.fill(0xFFFFFFFF);
@@ -131,11 +136,11 @@ void Envelope::test1()
 
     // AttackPhase:
     env.triggerNoteOn(0.5f);
-    int w = cfg.AttackFrames; // 400
+    int w = env.m_baseAttackFrames; // 400
     draw(env,w,img,de::Recti(x,y,2*w,h),dbRGBA(255,0,0)); x += 2*w;
 
     // DecayPhase:
-    w = cfg.DecayFrames; // 600
+    w = env.m_baseDecayFrames; // 600
     draw(env,w,img,de::Recti(x,y,2*w,h),dbRGBA(0,200,0)); x += 2*w;
 
     // SustainPhase:
@@ -144,7 +149,7 @@ void Envelope::test1()
 
     // ReleasePhase:
     // env.triggerNoteOff(0.5f);
-    w = cfg.ReleaseFrames; //  1000
+    w = env.m_baseReleaseFrames; //  1000
     draw(env,w,img,de::Recti(x,y,2*w,h),dbRGBA(0,0,255)); x += 2*w;
 
     dbSaveImage(img,"Abenton_SineMachine5_Test1.bmp");
@@ -155,14 +160,14 @@ void Envelope::test1()
 // static
 void Envelope::test2()
 {
-    EnvelopeCfg cfg;
-    cfg.AttackFrames = 200;
-    cfg.DecayFrames = 300;
-    cfg.SustainLevel = 0.75;
-    cfg.ReleaseFrames = 500;
-
     Envelope env;
-    env.init(cfg);
+    env.m_baseAttackFrames = 200;
+    env.m_baseDecayFrames = 300;
+    env.m_baseSustainLevel = 0.75f;
+    env.m_baseReleaseFrames = 500;
+    env.m_cfg.bSingleShot = false;
+    env.m_bOK = true;
+    env.resetIdle();
 
     de::Image img(3000,256);
     img.fill(0xFFFFFFFF);
@@ -172,11 +177,11 @@ void Envelope::test2()
 
     // AttackPhase:
     env.triggerNoteOn(0.5f);
-    int w = cfg.AttackFrames; // 400
+    int w = env.m_baseAttackFrames; // 400
     draw(env,w,img,de::Recti(x,y,2*w,h),dbRGBA(255,0,0)); x += 2*w;
 
     // DecayPhase:
-    w = cfg.DecayFrames; // 600
+    w = env.m_baseDecayFrames; // 600
     draw(env,w,img,de::Recti(x,y,2*w,h),dbRGBA(0,200,0)); x += 2*w;
 
     // SustainPhase:
@@ -185,7 +190,7 @@ void Envelope::test2()
 
     // ReleasePhase:
     env.triggerNoteOff(0.5f);
-    w = cfg.ReleaseFrames; //  1000
+    w = env.m_baseReleaseFrames; //  1000
     draw(env,w,img,de::Recti(x,y,2*w,h),dbRGBA(0,0,255)); x += 2*w;
 
     dbSaveImage(img,"Abenton_SineMachine5_Test2.bmp");

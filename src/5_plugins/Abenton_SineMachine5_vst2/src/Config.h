@@ -68,8 +68,8 @@ struct PartialsCfg
 // 🎼
 struct SynthCfg
 {
-    int32_t m_sampleRate = 48000;
-    int32_t m_blockSize = 256;
+    int32_t m_sampleRate = 0;
+    int32_t m_blockSize = 0;
     int32_t m_maxVoices = 20;
     int32_t m_masterVolume = 80; // in [%]
     int32_t m_unisono = 4;

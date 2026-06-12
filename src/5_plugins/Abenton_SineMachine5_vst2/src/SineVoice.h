@@ -2,14 +2,13 @@
 #include <Config.h>
 #include <common/Envelope.h>
 #include <common/DspUtil.h>
+#include <de/audio/OSC_Saw.h>
 
 // 📊
-struct Voice
+struct OSC_Partials
 {
-    SynthCfg* m_cfg = nullptr;
-    PartialsCfg m_cfgPartials;
-    Envelope m_envelope;
-
+    PartialsCfg m_cfg;
+    int m_sampleRate = 44100;
     float m_baseFrequency = 220.f;
     float m_detuneCent = 0.0f;
 
@@ -28,59 +27,36 @@ struct Voice
     de::TAlignedVector<float> m_phases;
     de::TAlignedVector<float> m_phaseIncrements;
 
-    de::TAlignedVector<float> m_L;
-    de::TAlignedVector<float> m_R;
-
-    void init(SynthCfg* cfg)
+    void init(const PartialsCfg& cfg, int sampleRate)
     {
         m_cfg = cfg;
-        m_envelope.init(m_cfg->m_envelope);
-        m_cfgPartials = m_cfg->m_partials;
-
-        DSP_RESIZE(m_amplitudes, cfg->m_partials.numPartials());
-
-        DSP_RESIZE(m_phases, cfg->m_partials.numPartials());
-
-        DSP_RESIZE(m_phaseIncrements, cfg->m_partials.numPartials());
-
-        DSP_RESIZE(m_L, 1024);
-        DSP_RESIZE(m_R, 1024);
-    }
-
-
-    bool isPlaying() const
-    {
-        return m_envelope.isPlaying();
+        m_sampleRate = sampleRate;
+        DSP_RESIZE(m_amplitudes, m_cfg.numPartials());
+        DSP_RESIZE(m_phases, m_cfg.numPartials());
+        DSP_RESIZE(m_phaseIncrements, m_cfg.numPartials());
     }
 
     // calcPhaseIncrements
-    void noteOn( int midiNote, int velocity, float detuneCent = 0.0f )
+    void noteOn(const PartialsCfg& cfg, float freq, int velocity)
     {
-        m_envelope.init(m_cfg->m_envelope);
-        m_cfgPartials = m_cfg->m_partials;
-        const auto & m_cfgEnvelope = m_envelope.m_cfg;
+        m_cfg = cfg;
+        m_baseFrequency = freq;
 
-        m_envelope.triggerNoteOn( float(velocity) / 127.0f );
-
-        DSP_RESIZE(m_amplitudes, m_cfg->m_partials.numPartials());
-
-        DSP_RESIZE(m_phases, m_cfg->m_partials.numPartials());
-
-        DSP_RESIZE(m_phaseIncrements, m_cfg->m_partials.numPartials());
+        DSP_RESIZE(m_amplitudes, m_cfg.numPartials());
+        DSP_RESIZE(m_phases, m_cfg.numPartials());
+        DSP_RESIZE(m_phaseIncrements, m_cfg.numPartials());
 
         //m_frequencies.resize(cfg.getNumPartials());
 
-        m_baseFrequency = de::calc_frequencyFromMidi(midiNote, detuneCent);
-
-        const float fScale = de::TWO_PI * m_baseFrequency / float(m_cfg->m_sampleRate);
+        const float fScale = de::TWO_PI * m_baseFrequency / float(m_sampleRate);
 
         float amplitudeSum = 0.0f;
 
-        for (size_t i = 0; i < m_cfgPartials.numPartials(); i++)
+        for (size_t i = 0; i < m_cfg.numPartials(); i++)
         {
-            amplitudeSum += m_cfgPartials.m_partials[i].fAmplitude;
-            m_amplitudes[i] = m_cfgPartials.m_partials[i].fAmplitude;
-            //m_frequencies[i] = m_cfgPartials[i].fAmplitude;
+            amplitudeSum += m_cfg.m_partials[i].fAmplitude;
+            m_amplitudes[i] = m_cfg.m_partials[i].fAmplitude;
+            //m_frequencies[i] = m_cfg.m_partials[i].fAmplitude;
             m_phases[i] = 0.0f;
             m_phaseIncrements[i] = fScale * (i+1);
         }
@@ -98,24 +74,11 @@ struct Voice
 
     void noteOff( int velocity )
     {
-        m_envelope.triggerNoteOff( float(velocity) / 127.0f );
+
     }
 
-    struct StereoSampleF32
+    void nextSample(float & L, float & R)
     {
-        float L;
-        float R;
-    };
-
-    StereoSampleF32 nextSampleF32()
-    {
-        if (!m_envelope.isPlaying())
-        {
-            return { 0.0f, 0.0f };
-        }
-
-        const float env = m_envelope.nextSample();
-
         float Asum = 0.0f;
         float sample = 0.0f;
 
@@ -136,8 +99,100 @@ struct Voice
         }
 
         sample /= float(Asum);
-        sample *= env;
-        return { sample, sample };
+        L = sample;
+        R = sample;
+    }
+
+};
+
+// 📊
+struct Voice
+{
+    SynthCfg* m_cfg = nullptr;
+    Envelope m_envelope;
+    OSC_Partials m_oscPartials;
+    de::audio::OSC_Saw m_oscSaw;
+
+    int m_channel = -1;
+    int m_midiNote = -1;
+    float m_detuneCent = 0.0f;
+    float m_frequency = 220.f;
+
+    de::TAlignedVector<float> m_L;
+    de::TAlignedVector<float> m_R;
+
+    void init(SynthCfg* cfg)
+    {
+        m_cfg = cfg;
+        m_envelope.init(m_cfg->m_envelope);
+        m_oscPartials.init(m_cfg->m_partials, cfg->m_sampleRate);
+
+        DSP_RESIZE(m_L, 1024);
+        DSP_RESIZE(m_R, 1024);
+    }
+
+
+    bool isPlaying() const
+    {
+        return m_midiNote > -1;
+    }
+
+    void allNotesOff()
+    {
+        m_envelope.resetIdle();
+        m_midiNote = -1;
+    }
+
+    // calcPhaseIncrements
+    void noteOn( int midiNote, int velocity, float detuneCent = 0.0f )
+    {
+        if (m_midiNote > -1)
+        {
+            DE_ERROR("Already playing midiNote(",m_midiNote,")")
+            return;
+        }
+
+        m_midiNote = midiNote;
+        m_envelope.init(m_cfg->m_envelope);
+
+        m_frequency = de::calc_frequencyFromMidi(midiNote, detuneCent);
+
+        m_oscPartials.noteOn(m_cfg->m_partials, m_frequency, velocity);
+        m_oscSaw.noteOn(m_frequency, m_cfg->m_sampleRate, 100);
+        const auto & m_cfgEnvelope = m_envelope.m_cfg;
+
+        m_envelope.triggerNoteOn( float(velocity) / 127.0f );
+    }
+
+    void noteOff( int velocity )
+    {
+        m_envelope.triggerNoteOff( float(velocity) / 127.0f );
+    }
+
+    struct StereoSampleF32
+    {
+        float L;
+        float R;
+    };
+
+    StereoSampleF32 nextSampleF32()
+    {
+        if (!m_envelope.isPlaying())
+        {
+            DE_WARN("Envelope ended.")
+            m_midiNote = -1;
+            return { 0.0f, 0.0f };
+        }
+
+        const float env = m_envelope.nextSample();
+
+        float sample = m_oscSaw.computeSample();
+        float L = sample;
+        float R = sample;
+
+        // L *= env;
+        // R *= env;
+        return { L, R };
     }
 
     void computeSamples(int32_t blockSize)
@@ -145,7 +200,7 @@ struct Voice
         DSP_RESIZE(m_L, blockSize);
         DSP_RESIZE(m_R, blockSize);
 
-        for (int i = 0; i < blockSize; i++)
+        for (int i = 0; i < blockSize; ++i)
         {
             StereoSampleF32 sample = nextSampleF32();
             m_L[i] = sample.L;

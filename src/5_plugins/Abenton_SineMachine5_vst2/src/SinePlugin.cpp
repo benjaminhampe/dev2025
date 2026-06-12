@@ -19,8 +19,7 @@ Plugin::Plugin(audioMasterCallback audioMaster)
 {
     Envelope::test();
 
-    m_cfg.init();
-    m_synth.init(&m_cfg);
+    m_synth.init();
 
     // 🎧 Audio & Processing
     //     "receiveVstEvents" — receive VST events (e.g. MIDI)
@@ -95,7 +94,7 @@ Plugin::processReplacing(float** inputs, float** outputs, VstInt32 sampleFrames)
     float* __restrict__ L = outputs[0];
     float* __restrict__ R = outputs[1];
 
-    m_cfg.m_blockSize = sampleFrames;
+    m_synth.setBlockSize(sampleFrames);
     m_synth.process(L,R);
 }
 
@@ -125,11 +124,11 @@ Plugin::dispatcher(VstInt32 opCode, VstInt32 index, VstIntPtr value, void* ptr, 
             return 1;
         case effSetSampleRate:
             //DE_BENNI("effSetSampleRate")
-            m_cfg.setSampleRate(int32_t(opt));
+            m_synth.setSampleRate(int32_t(opt));
             return 1;
         case effSetBlockSize:
             //DE_BENNI("effSetBlockSize")
-            m_cfg.setBlockSize(int32_t(value));
+            m_synth.setBlockSize(int32_t(value));
             return 1;
         case effMainsChanged:
             if (value)
@@ -254,7 +253,7 @@ void
 Plugin::setParameter(VstInt32 index, float value)
 {
     const float fAmplitude = value;
-    m_cfg.m_partials.setPartial(index,fAmplitude);
+    m_synth.getConfig().m_partials.setPartial(index,fAmplitude);
 
 #if 0
     switch (index) {
@@ -268,11 +267,11 @@ Plugin::setParameter(VstInt32 index, float value)
 float
 Plugin::getParameter(VstInt32 index)
 {
-    if (index < 0 || index >= int(m_cfg.m_partials.numPartials()))
+    if (index < 0 || index >= int(m_synth.getConfig().m_partials.numPartials()))
     {
         return 0.0f;
     }
-    return m_cfg.m_partials.m_partials[index].fAmplitude;
+    return m_synth.getConfig().m_partials.m_partials[index].fAmplitude;
 
 #if 0
     switch (index) {

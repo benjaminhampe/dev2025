@@ -3,7 +3,8 @@
 
 class Synth
 {
-    SynthCfg* m_cfg = nullptr;
+
+    SynthCfg m_cfg;
 
     std::vector<Voice> m_voices;
 
@@ -18,15 +19,42 @@ class Synth
 
 public:
 
-    void init( SynthCfg* cfg )
+    const SynthCfg& getConfig() const { return m_cfg; }
+    SynthCfg& getConfig() { return m_cfg; }
+
+
+    void init()
     {
-        m_cfg = cfg;
-        m_voices.resize(m_cfg->m_maxVoices); // polyphony
+        m_cfg.init();
+
+        m_voices.resize(m_cfg.m_maxVoices); // polyphony
+
+        DE_OK("Created ",m_voices.size()," voices.")
+    }
+
+    void setSampleRate(int sampleRate)
+    {
+        if (sampleRate == m_cfg.m_sampleRate)
+        {
+            return;
+        }
+        m_cfg.m_sampleRate = sampleRate;
+        m_cfg.m_envelope.SampleRate = sampleRate;
         for (auto & voice : m_voices)
         {
-            voice.init(m_cfg);
+            voice.init(&m_cfg);
         }
-        DE_OK("Created ",m_voices.size()," voices.")
+        DE_BENNI("setSampleRate(",sampleRate,")")
+    }
+
+    void setBlockSize(int blockSize)
+    {
+        if (blockSize == m_cfg.m_blockSize)
+        {
+            return;
+        }
+        m_cfg.m_blockSize = blockSize;
+        DE_BENNI("setBlockSize(",blockSize,")")
     }
 
     int findIdleVoice() const
@@ -41,9 +69,9 @@ public:
         return -1;
     }
 
-    void noteOn(int channel, int note, int velocity)
+    void noteOn(int channel, int midiNote, int velocity)
     {
-        DE_OK("NoteOn: ", note)
+        DE_OK("NoteOn: ", midiNote)
         int voice = findIdleVoice();
         if (voice < 0)
         {
@@ -51,7 +79,7 @@ public:
         }
 
         DE_OK("IdleVoice = ",voice)
-        m_voices[voice].noteOn(channel, note, velocity);
+        m_voices[voice].noteOn(channel, midiNote, velocity);
         /*
         m_baseFrequency = 440.0 * pow(2.0, (note - 69) / 12.0);  // MIDI to Hz
         // Optionally: trigger envelopes, voices, etc.
@@ -68,36 +96,51 @@ public:
             Voice & voice = m_voices[i];
             if (voice.m_midiNote == midiNote)
             {
-                if (!voice.m_cfg->m_envelope.bSingleShot)
-                {
-                    m_voices[i].noteOff(velocity);
-                    nVoices++;
-                }
+                m_voices[i].noteOff(velocity);
+                nVoices++;
+
+                // if (!voice.m_cfg->m_envelope.bSingleShot)
+                // {
+                //     m_voices[i].noteOff(velocity);
+                //     nVoices++;
+                // }
             }
         }
 
         DE_OK("NoteOff: ",midiNote, " for nVoices = ",nVoices)
     }
 
+    void allNotesOff()
+    {
+        DE_OK("allNotesOff()")
+        for (size_t i = 0; i < m_voices.size(); i++)
+        {
+            Voice & voice = m_voices[i];
+            voice.allNotesOff();
+        }
+
+    }
+
     void controlChange(int channel, int controller, int value)
     {
-        /*
         switch (controller)
         {
-        case 1:  // Mod Wheel
-            modDepth = value / 127.0f;
-            break;
-        case 7:  // Volume
-            masterGain = value / 127.0f;
-            break;
-        case 74: // Filter cutoff (common mapping)
-            filterCutoff = value / 127.0f;
+        // case 1:  // Mod Wheel
+        //     modDepth = value / 127.0f;
+        //     break;
+        // case 7:  // Volume
+        //     masterGain = value / 127.0f;
+        //     break;
+        // case 74: // Filter cutoff (common mapping)
+        //     filterCutoff = value / 127.0f;
+        //     break;
+        case 123: // de::midi::CC_123_AllNotesOff
+            allNotesOff();
             break;
         default:
             // Handle other CCs or ignore
             break;
         }
-        */
     }
 
     void pitchBend(int channel, int bendValue)
@@ -119,30 +162,38 @@ public:
     {
         size_t nNotes = 0;
 
-        const int32_t blockSize = m_cfg->m_blockSize;
+        const int32_t blockSize = m_cfg.m_blockSize;
+        //DE_OK("blockSize = ",blockSize)
+
         //DE_OK("m_synth.m_notes.size() = ", m_synth.m_notes.size(), ", "
         //        "sampleFrames = ", sampleFrames)
 
+        std::memset(L,0,blockSize * sizeof(float));
+        std::memset(R,0,blockSize * sizeof(float));
+
         for (Voice & voice : m_voices)
         {
-            voice.computeSamples(blockSize);
-
-            const float* __restrict__ srcL = voice.m_L.data();
-
-            DE_ASSUME_NO_OVERLAP(srcL,L,blockSize * sizeof(float));
-
-            for (int32_t i = 0; i < blockSize; i++)
+            if (voice.isPlaying())
             {
-                L[i] += srcL[i];
-            }
+                voice.computeSamples(blockSize);
 
-            const float* __restrict__ srcR = voice.m_R.data();
+                const float* __restrict__ srcL = voice.m_L.data();
 
-            DE_ASSUME_NO_OVERLAP(srcR,R,blockSize * sizeof(float));
+                DE_ASSUME_NO_OVERLAP(srcL,L,blockSize * sizeof(float));
 
-            for (int32_t i = 0; i < blockSize; i++)
-            {
-                R[i] += srcR[i];
+                for (int32_t i = 0; i < blockSize; i++)
+                {
+                    L[i] += srcL[i];
+                }
+
+                const float* __restrict__ srcR = voice.m_R.data();
+
+                DE_ASSUME_NO_OVERLAP(srcR,R,blockSize * sizeof(float));
+
+                for (int32_t i = 0; i < blockSize; i++)
+                {
+                    R[i] += srcR[i];
+                }
             }
         }
     }

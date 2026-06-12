@@ -720,7 +720,7 @@ Editor::create(void* parent)
 
     updateLayout(w,h);
 
-    m_preview.init( m_plugin->getConfig() );
+    m_preview.init( m_plugin->getSynth().getConfig() );
 
     m_paintEventEnabled = true;
 
@@ -837,7 +837,7 @@ void Editor::paintEvent( const de::PaintEvent& event )
     drawLineRect(m_vg, m_rPartial, nvgRGBA(255,100,100,255));
     drawLineRect(m_vg, m_rVolume, nvgRGBA(100,100,255,255));
 
-    const auto & cfg = m_plugin->getConfig();
+    const auto & cfg = m_plugin->getSynth().getConfig();
 
     m_preview.update( cfg );
     m_preview.updatePoints( m_rPreview );
@@ -909,7 +909,7 @@ void Editor::doPartialDrawing()
         return;
     }
 
-    const auto & partials = m_plugin->getConfig().m_partials.m_partials;
+    const auto & partials = m_plugin->getSynth().getConfig().m_partials.m_partials;
 
     float scale = float(partials.size()) / float(m_rPartial.w);
     int bar = (m_mouseX - m_rPartial.x) * scale;
@@ -970,22 +970,22 @@ void Editor::keyPressEvent(const de::KeyPressEvent& event)
 
     if (event.key == de::KEY_1)
     {
-        m_plugin->getConfig().m_partials.makeRect();
+        m_plugin->getSynth().getConfig().m_partials.makeRect();
     }
 
     if (event.key == de::KEY_2)
     {
-        m_plugin->getConfig().m_partials.makeSaw();
+        m_plugin->getSynth().getConfig().m_partials.makeSaw();
     }
 
     if (event.key == de::KEY_3)
     {
-        m_plugin->getConfig().m_partials.makeSawRev();
+        m_plugin->getSynth().getConfig().m_partials.makeSawRev();
     }
 
     if (event.key == de::KEY_4)
     {
-        m_plugin->getConfig().m_partials.makeTriangle();
+        m_plugin->getSynth().getConfig().m_partials.makeTriangle();
     }
 }
 

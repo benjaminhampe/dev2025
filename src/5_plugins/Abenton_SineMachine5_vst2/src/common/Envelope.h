@@ -31,9 +31,6 @@ struct EnvelopeCfg
     float ReleaseTimeMs = 500.0f;
     float SampleRate = 0;
     float SustainLevel = 0.80f;   // init value
-    int32_t AttackFrames = 480;   // init value
-    int32_t DecayFrames = 480;    // init value
-    int32_t ReleaseFrames = 48000;// init value
     bool bDampedSustain = { false }; // false = Synth Hold (no energy loss), true = Piano like energy loss while holding sustain pedal.
     bool bSingleShot = { false };
     bool bAltReleaseFunc = { false };
@@ -47,6 +44,23 @@ struct EnvelopeCfg
     //bool bQuadraticAttack = { false }; // Linear = false, Squared = true
     //bool bQuadraticDecay = { false }; // Linear = false, Squared = true
     //bool bQuadraticRelease = { false }; // Linear = false, Squared = true
+    void dump() const
+    {
+        DE_DEBUG("EnvelopeCfg:")
+        DE_DEBUG("AttackTimeMs = ",AttackTimeMs)
+        DE_DEBUG("DecayTimeMs = ",DecayTimeMs)
+        DE_DEBUG("ReleaseTimeMs = ",ReleaseTimeMs)
+        DE_DEBUG("SampleRate = ",SampleRate)
+        DE_DEBUG("SustainLevel = ",SustainLevel)
+        DE_DEBUG("bDampedSustain = ",bDampedSustain)
+        DE_DEBUG("bSingleShot = ",bSingleShot)
+        DE_DEBUG("bAltReleaseFunc = ",bAltReleaseFunc)
+        DE_DEBUG("bVeloSquaredGain = ",bVeloSquaredGain)
+        DE_DEBUG("bVeloAffectsGain = ",bVeloAffectsGain)
+        DE_DEBUG("bVeloAffectsAttack = ",bVeloAffectsAttack)
+        DE_DEBUG("bVeloAffectsDecay = ",bVeloAffectsDecay)
+        DE_DEBUG("bVeloAffectsRelease = ",bVeloAffectsRelease)
+    }
 };
 
 class Envelope
@@ -60,6 +74,20 @@ public:
         Sustain,
         Release
     };
+
+    std::string phaseStr() const
+    {
+        switch (m_phase)
+        {
+            case Idle: return "Idle";
+            case Attack: return "Attack";
+            case Decay: return "Decay";
+            case Sustain: return "Sustain";
+            case Release: return "Release";
+            default: return "Unknown";
+        }
+    }
+
     const int32_t AttackMin = 8; // in [frames] prevent div by zero
     const int32_t AttackMax = 48000; // in [frames] 1 second
     const int32_t DecayMin = 8; // in [frames] prevent div by zero
@@ -75,6 +103,10 @@ public:
 //private:
     EnvelopeCfg m_cfg;
 
+    int32_t m_baseAttackFrames;  // real value (depends on params like velocity)
+    int32_t m_baseDecayFrames;   // real value (depends on params like velocity)
+    int32_t m_baseReleaseFrames; // real value (depends on params like velocity)
+    float m_baseSustainLevel;
     int32_t m_attackFrames;  // real value (depends on params like velocity)
     int32_t m_decayFrames;   // real value (depends on params like velocity)
     int32_t m_releaseFrames; // real value (depends on params like velocity)
@@ -82,6 +114,7 @@ public:
 
     int32_t m_currentFrame = 0;
     uint8_t m_phase = Idle;
+    bool m_bOK = false;
     bool m_bSustainPedal = 0;
     bool m_bTriggeredNoteOff = false;
     bool m_bReserved1 = false;
@@ -98,17 +131,31 @@ public:
 
     void init(const EnvelopeCfg& cfg)
     {
+        cfg.dump();
         m_cfg = cfg;
         if (m_cfg.SampleRate > 1.0f)
         {
-            m_cfg.AttackFrames = std::lround(0.001f * m_cfg.AttackTimeMs * m_cfg.SampleRate);
-            m_cfg.DecayFrames = std::lround(0.001f * m_cfg.DecayTimeMs * m_cfg.SampleRate);
-            m_cfg.ReleaseFrames = std::lround(0.001f * m_cfg.ReleaseTimeMs * m_cfg.SampleRate);
+            m_baseAttackFrames = std::lround(0.001f * m_cfg.AttackTimeMs * m_cfg.SampleRate);
+            m_baseDecayFrames = std::lround(0.001f * m_cfg.DecayTimeMs * m_cfg.SampleRate);
+            m_baseReleaseFrames = std::lround(0.001f * m_cfg.ReleaseTimeMs * m_cfg.SampleRate);
+            m_baseSustainLevel = std::clamp(m_cfg.SustainLevel,SustainMin,SustainMax);
+            m_baseAttackFrames = std::clamp(m_baseAttackFrames,AttackMin,AttackMax);
+            m_baseDecayFrames = std::clamp(m_baseDecayFrames,DecayMin,DecayMax);
+            m_baseReleaseFrames = std::clamp(m_baseReleaseFrames,ReleaseMin,ReleaseMax);
+            m_bOK = true;
         }
-        m_cfg.SustainLevel = std::clamp(m_cfg.SustainLevel,SustainMin,SustainMax);
-        m_cfg.AttackFrames = std::clamp(m_cfg.AttackFrames,AttackMin,AttackMax);
-        m_cfg.DecayFrames = std::clamp(m_cfg.DecayFrames,DecayMin,DecayMax);
-        m_cfg.ReleaseFrames = std::clamp(m_cfg.ReleaseFrames,ReleaseMin,ReleaseMax);
+        else
+        {
+            DE_ERROR("Failed with invalid sampleRate ", cfg.SampleRate)
+            m_bOK = false;
+        }
+
+        DE_OK("m_bOK = ",m_bOK)
+        DE_OK("m_baseAttackFrames = ",m_baseAttackFrames)
+        DE_OK("m_baseDecayFrames = ",m_baseDecayFrames)
+        DE_OK("m_baseReleaseFrames = ",m_baseReleaseFrames)
+        DE_OK("m_baseSustainLevel = ",m_baseSustainLevel)
+
         resetIdle();
     }
 
@@ -121,6 +168,12 @@ public:
 
     void triggerNoteOn(float velocity = 0.5f )
     {
+        if (!m_bOK)
+        {
+            DE_ERROR("Not OK, abort.")
+            return;
+        }
+
         if (m_phase != Idle)
         {
             DE_ERROR("Illegal retrigger attempt, abort.")
@@ -135,28 +188,39 @@ public:
 
         if (m_cfg.bVeloAffectsAttack)
         {
-            m_attackFrames = m_cfg.AttackFrames * m_noteOnVelocity;
+            m_attackFrames = m_baseAttackFrames * m_noteOnVelocity;
         }
         else
         {
-            m_attackFrames = m_cfg.AttackFrames;
+            m_attackFrames = m_baseAttackFrames;
         }
 
         if (m_cfg.bVeloAffectsDecay)
         {
-            m_decayFrames = m_cfg.DecayFrames * m_noteOnVelocity;
+            m_decayFrames = m_baseDecayFrames * m_noteOnVelocity;
         }
         else
         {
-            m_decayFrames = m_cfg.DecayFrames;
+            m_decayFrames = m_baseDecayFrames;
         }
 
         m_mAttack = float(1.0f) / float(m_attackFrames);
-        m_mDecay = float(m_cfg.SustainLevel - 1.0f) / float(m_decayFrames);
+        m_mDecay = float(m_baseSustainLevel - 1.0f) / float(m_decayFrames);
+
+        DE_BENNI("m_noteOnVelocity = ",m_noteOnVelocity)
+        DE_BENNI("m_attackFrames = ",m_attackFrames)
+        DE_BENNI("m_decayFrames = ",m_decayFrames)
+        DE_BENNI("m_mAttack = ",m_mAttack)
+        DE_BENNI("m_mDecay = ",m_mDecay)
     }
 
     void triggerNoteOff(float velocity = 0.5f )
     {
+        if (!m_bOK)
+        {
+            DE_ERROR("Not OK.")
+        }
+
         if (m_phase == Idle)
         {
             DE_ERROR("NoteOff before NoteOn, abort.")
@@ -170,8 +234,8 @@ public:
         }
 
         m_bTriggeredNoteOff = true;
-        m_phase = Release;
-        m_currentFrame = 0;
+        //m_phase = Release;
+        //m_currentFrame = 0;
         m_noteOffVelocity = std::clamp(velocity, VelocityMin, VelocityMax);
 
         // float v = velocity / 127.0f;
@@ -182,20 +246,26 @@ public:
             if (m_cfg.bAltReleaseFunc)
             {
                 // Physical piano dampening:
-                m_releaseFrames = m_cfg.ReleaseFrames * std::exp(-3.0f * m_noteOffVelocity);
+                m_releaseFrames = m_baseReleaseFrames * std::exp(-3.0f * m_noteOffVelocity);
             }
             else
             {
                 // Synth expressive dampening:
-                m_releaseFrames = m_cfg.ReleaseFrames * (1.5f - m_noteOffVelocity * m_noteOffVelocity);
+                m_releaseFrames = m_baseReleaseFrames * (1.5f - m_noteOffVelocity * m_noteOffVelocity);
             }
         }
         else
         {
-            m_releaseFrames = m_cfg.ReleaseFrames;
+            m_releaseFrames = m_baseReleaseFrames;
         }
 
         m_mRelease = -float(m_cfg.SustainLevel) / float(m_releaseFrames);
+
+        DE_WARN("m_noteOffVelocity = ",m_noteOffVelocity)
+        DE_WARN("m_releaseFrames = ",m_releaseFrames)
+        DE_WARN("m_mRelease = ",m_mRelease)
+        DE_WARN("m_phase = ",phaseStr())
+        DE_WARN("m_currentFrame = ",m_currentFrame)
     }
 
     float nextSample();

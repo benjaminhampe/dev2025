@@ -25,8 +25,6 @@ private:
     // int32_t m_sampleRate;
     // int32_t m_blockSize;
 
-    SynthCfg m_cfg;
-
     Synth m_synth;
 
     Editor m_editor;
@@ -60,8 +58,8 @@ public:
     void open() override;
     void close() override;
 
-    SynthCfg& getConfig() { return m_cfg; }
-    SynthCfg const& getConfig() const { return m_cfg; }
+    const Synth& getSynth() const { return m_synth; }
+    Synth& getSynth() { return m_synth; }
 
     VstInt32 processEvents(VstEvents* events) override;
     void handleShortMidi(char bytes[4]);
