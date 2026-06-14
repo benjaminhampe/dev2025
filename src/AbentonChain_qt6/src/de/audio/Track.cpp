@@ -281,7 +281,7 @@ void Track::updateDspChain()
     if (n == 1)
     {
         auto p0 = m_plugins.at(0);
-        p0->dsp_setInputSignal(nullptr);
+        p0->dsp_clearInputSignals();
         m_chainStart = p0.get();
         m_chainEnd = p0.get();
     }
@@ -289,7 +289,8 @@ void Track::updateDspChain()
     {
         auto p0 = m_plugins.at(0);
         auto p1 = m_plugins.at(1);
-        p0->dsp_setInputSignal(nullptr);
+        p0->dsp_clearInputSignals();
+        p1->dsp_clearInputSignals();
         p1->dsp_setInputSignal(p0.get());
         m_chainStart = p0.get();
         m_chainEnd = p1.get();
@@ -298,17 +299,19 @@ void Track::updateDspChain()
     {
         auto p0 = m_plugins.front();
         auto pL = m_plugins.back();
-        p0->dsp_setInputSignal(nullptr);
+        p0->dsp_clearInputSignals();
         m_chainStart = p0.get();
         m_chainEnd = pL.get();
 
         for (int i = 1; i < n-1; ++i)
         {
             auto p1 = m_plugins.at(i);
+            p1->dsp_clearInputSignals();
             p1->dsp_setInputSignal(p0.get());
             p0 = p1;
         }
 
+        pL->dsp_clearInputSignals();
         pL->dsp_setInputSignal(p0.get());
     }
 

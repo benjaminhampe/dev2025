@@ -115,6 +115,12 @@ void App::confAudio(int outputDevice, // = -1,
 
 void App::playAudio()
 {
+    if (m_endPoint.isPlaying())
+    {
+        DE_WARN("Audio already playing")
+        return;
+    }
+    getSampleCollector()->dsp_clearInputSignals();
     getSampleCollector()->dsp_setInputSignal(m_track);
     m_endPoint.setInputSignal(getSampleCollector());
     m_endPoint.play(&m_deviceGuardFlag);
@@ -122,7 +128,14 @@ void App::playAudio()
 
 void App::stopAudio()
 {
+    if (!m_endPoint.isPlaying())
+    {
+        DE_WARN("Audio already stoppen")
+        return;
+    }
+
     m_endPoint.stop();
+    getSampleCollector()->dsp_clearInputSignals();
 }
 
 void App::onAudioDeviceLost()

@@ -124,10 +124,14 @@ void Renderer::initializeGL()
 
     m_driver->getSkyboxRenderer()->load(&nx,&px,&ny,&py,&nz,&pz);
 #endif
+    m_bRenderingEnabled = true;
 }
 
 void Renderer::uninitGL()
 {
+    m_bRenderingEnabled = false;
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
     ASSERT_GL_CONTEXT();
 #if 0
     m_test.uninitGL();
@@ -157,6 +161,10 @@ void Renderer::resizeGL(int w, int h)
 
 void Renderer::paintGL()
 {
+    if (!m_bRenderingEnabled)
+    {
+        return;
+    }
     ASSERT_GL_CONTEXT();
 
     // juce::OpenGLHelpers().clear();

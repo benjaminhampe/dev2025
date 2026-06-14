@@ -18,9 +18,10 @@ AudioEffect* createEffectInstance(audioMasterCallback audioMaster);
 class Plugin : public AudioEffectX
 {
 private:
-    char m_programName[kVstMaxProgNameLen + 1];
+    std::atomic_bool m_bBypassed{ false };
+    std::atomic_bool m_bPluginOpen{ true };
 
-    std::set< std::string > m_canDo;
+    char m_programName[kVstMaxProgNameLen + 1];
 
     // int32_t m_sampleRate;
     // int32_t m_blockSize;

@@ -85,6 +85,8 @@ void Plugin::unloadPlugin()
         return;
     }
 
+    DE_TRACE(m_plugin->getName())
+
     setUpdatesEnabled(false); // Disable paintEvent()
 
     auto plugin = m_plugin; // Copy pointer and make m_plugin nullptr for internal slots using m_plugin.
@@ -148,8 +150,6 @@ void Plugin::unloadPlugin()
     pad->setText(Pad::eT_Vendor, "");
     //pad->setText(Pad::eT_Version, "");
     pad->setValueXY(0.0f,0.0f);
-
-    DE_TRACE("Unload plugin ", plugin->getName())
 /*
     auto trackWidget = static_cast<Track*>(parentWidget());
     if (trackWidget)
@@ -291,6 +291,8 @@ void Plugin::loadPlugin(de::audio::SharedPlugin plugin)
 
 void Plugin::setPlugin(de::audio::SharedPlugin plugin)
 {
+    DE_OK()
+
     unloadPlugin();
 
     loadPlugin(plugin);

@@ -91,28 +91,29 @@ void MyComponent::pushSamples(const de::TAlignedVector<float>& samples)
 #else
 
 MyComponent::MyComponent(juce::AudioProcessor& proc)
-    : processor(proc)
+    : m_processor(proc)
+    , m_openGLContext{ nullptr }
 {
     DE_DEBUG("MyComponent()")
     setOpaque(true);
-    static_cast<MyProcessor*>(&processor)->setCanvas(this);
+    // static_cast<MyProcessor*>(&m_processor)->setCanvas(this);
 }
 
 MyComponent::~MyComponent()
 {
-    DE_DEBUG("~MyComponent()")
+    DE_TRACE("~MyComponent()")
     shutdownBackend();
 }
 
 void MyComponent::newOpenGLContextCreated()
 {
-    DE_BENNI("openGLContextClosing()")
+    DE_OK()
     m_renderer.initializeGL();
 }
 
 void MyComponent::openGLContextClosing()
 {
-    DE_BENNI("openGLContextClosing()")
+    DE_OK()
     m_renderer.uninitGL();
 }
 
@@ -130,23 +131,36 @@ void MyComponent::pushSamples(const de::TAlignedVector<float>& samples)
 
 void MyComponent::parentHierarchyChanged()
 {
-    tryCreateBackend();
+    DE_TRACE("getParentComponent() = ",(void*)getParentComponent())
+    if (getParentComponent() == nullptr) // Wird entfernt
+        shutdownBackend();
+    else
+        tryCreateBackend();
 }
 
 void MyComponent::visibilityChanged()
 {
+    DE_TRACE("isShowing() = ",isShowing())
     if (isShowing())
         tryCreateBackend();
-    else
-        shutdownBackend();
 }
 
 void MyComponent::resized()
 {
-    if (openGLContext)
+    if (!m_openGLContext)
+    {
+        DE_TRACE()
+        tryCreateBackend();
+    }
+
+    if (m_openGLContext)
     {
         auto r = getLocalBounds();
-        openGLContext->resize(r.getX(), r.getY(), r.getWidth(), r.getHeight());
+        m_openGLContext->resize(r.getX(), r.getY(), r.getWidth(), r.getHeight());
+    }
+    else
+    {
+        DE_ERROR("No OpenGL context")
     }
 }
 
@@ -155,77 +169,75 @@ void MyComponent::resized()
 // ---------------------------------------------------------
 void MyComponent::tryCreateBackend()
 {
-    DE_DEBUG("tryCreateBackend()")
-    if (openGLContext)
+    if (m_openGLContext)
+    {
+        //DE_WARN("OpenGL context already exist")
         return;
+    }
 
-    auto* peer = getPeer();
+    auto peer = getPeer();
     if (!peer)
+    {
+        //DE_WARN("No peer")
         return;
+    }
+
+    DE_DEBUG("Create OpenGL context.")
 
     void* parent = peer->getNativeHandle();
     auto r = getLocalBounds();
 
 #ifdef _WIN32
-    openGLContext = std::make_unique<Backend_WGL>();
+    m_openGLContext = new Backend_WGL();
 #else
-    openGLContext = std::make_unique<Backend_GLX>();
+    m_openGLContext = new Backend_GLX();
 #endif
 
-    if (!openGLContext->createWindow(parent, r.getX(), r.getY(), r.getWidth(), r.getHeight()))
+    m_openGLContext->setMyComponent(this);
+
+    if (!m_openGLContext->createWindow(parent, r.getX(), r.getY(), r.getWidth(), r.getHeight()))
     {
-        openGLContext.reset();
+        delete m_openGLContext;
+        m_openGLContext = nullptr;
+        DE_ERROR("createWindow failed.")
         return;
     }
 
-    openGLContext->makeCurrent();
+    m_openGLContext->makeCurrent();
     newOpenGLContextCreated();   // <‑‑ your real init
-    openGLContext->doneCurrent();
+    m_openGLContext->doneCurrent();
 
     startTimerHz(60);
 }
 
 void MyComponent::shutdownBackend()
 {
-    DE_BENNI("MyComponent::shutdownBackend()")
-    stopTimer();
-
-    if (openGLContext)
+    if (m_openGLContext)
     {
-        openGLContext->makeCurrent();
-    }
-    else
-    {
-        DE_ERROR("No wgl/glx context")
-    }
-
-    openGLContextClosing();   // <‑‑ your real shutdown
-
-    if (openGLContext)
-    {
-        openGLContext->doneCurrent();
-        openGLContext->destroy();
-        openGLContext.reset();
-    }
-    else
-    {
-        DE_ERROR("No wgl/glx context")
+        stopTimer();
+        DE_DEBUG("Destroy OpenGL context:")
+        m_openGLContext->makeCurrent();
+        openGLContextClosing();   // <‑‑ your real shutdown
+        m_openGLContext->doneCurrent();
+        m_openGLContext->destroy();
+        delete m_openGLContext;
+        m_openGLContext = nullptr;
     }
 }
 
 void MyComponent::timerCallback()
 {
-    if (!openGLContext)
+    if (!m_openGLContext)
+    {
+        DE_ERROR("No OpenGL context")
         return;
+    }
 
-    openGLContext->makeCurrent();
+    m_openGLContext->makeCurrent();
     renderOpenGL();
-    openGLContext->swapBuffers();
-    openGLContext->doneCurrent();
+    m_openGLContext->swapBuffers();
+    m_openGLContext->doneCurrent();
 }
-
-
-
 
 void MyComponent::mouseEnter (const MouseEvent& event)
 {
@@ -268,7 +280,7 @@ void MyComponent::mouseUp (const MouseEvent& event)
 
 void MyComponent::mouseMove (const MouseEvent& event)
 {
-    DE_OK("mouseMoveEvent")
+    //DE_OK("mouseMoveEvent")
 }
 
 void MyComponent::mouseDoubleClick (const MouseEvent& event)

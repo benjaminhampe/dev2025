@@ -1,6 +1,8 @@
 #pragma once
 #include <JuceHeader.h>
 
+class MyComponent;
+
 namespace juce
 {
 
@@ -38,4 +40,19 @@ public:
     // }
 
     // juce::OpenGLRenderer* m_callbacks = nullptr;
+
+
+    void setMyComponent(MyComponent* parent)
+    {
+        m_myComponent = parent;
+    }
+
+
+    MyComponent* getMyComponent()
+    {
+        return m_myComponent;
+    }
+
+
+    MyComponent* m_myComponent = nullptr;
 };

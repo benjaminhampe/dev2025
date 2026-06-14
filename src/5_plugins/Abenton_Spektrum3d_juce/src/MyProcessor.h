@@ -1,7 +1,8 @@
 #pragma once
 #include <JuceHeader.h>
 
-class MyComponent;
+//class MyComponent;
+class MyEditor;
 
 class MyProcessor : public juce::AudioProcessor
 {
@@ -51,7 +52,8 @@ public:
 
     //de::TAlignedVector<float>& getSumVector() { return m_sumVector; }
 
-    void setCanvas( MyComponent* component ) { m_canvas = component; }
+    void setEditor( MyEditor* editor ) { m_editor = editor; }
+
 private:
     juce::SmoothedValue<float> smoothedGain;
     bool bypass = false;
@@ -60,7 +62,7 @@ private:
     // juce::AbstractFifo fifo { fifoSize };
     // juce::AudioBuffer<float> fifoBuffer;
 
-    MyComponent* m_canvas;
+    MyEditor* m_editor;
 
     de::TAlignedVector<float> m_sumVector;
 

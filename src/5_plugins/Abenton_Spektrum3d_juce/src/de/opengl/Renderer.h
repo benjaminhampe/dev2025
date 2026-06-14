@@ -22,7 +22,7 @@ public:
     bool m_bMouseRightPressed;
     bool m_bMouseMiddlePressed;
     bool m_bReserved1;
-    bool m_bRenderingEnabled;
+    std::atomic_bool m_bRenderingEnabled;
     bool m_bShowPerfOverlay;
     bool m_bRenderFftMatrix3D;
 

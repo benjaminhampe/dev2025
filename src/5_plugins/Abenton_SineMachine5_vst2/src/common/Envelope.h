@@ -110,9 +110,11 @@ public:
     int32_t m_attackFrames;  // real value (depends on params like velocity)
     int32_t m_decayFrames;   // real value (depends on params like velocity)
     int32_t m_releaseFrames; // real value (depends on params like velocity)
-    int32_t m_frameCounter = 0;
+    float m_sustainLevel;
 
     int32_t m_currentFrame = 0;
+    int32_t m_frameCounter = 0;
+
     uint8_t m_phase = Idle;
     bool m_bOK = false;
     bool m_bSustainPedal = 0;
@@ -125,13 +127,14 @@ public:
     float m_mAttack = .01f; // m = (dy/dx)
     float m_mDecay = -.01f; // m = (dy/dx)
     float m_mRelease = -.001f; // m = (dy/dx)
+    float m_lastOutput = 0.0f;
+    float m_releaseStart = 0.0f;
 
 public:
     bool isPlaying() const { return m_phase != Idle; }
 
     void init(const EnvelopeCfg& cfg)
     {
-        cfg.dump();
         m_cfg = cfg;
         if (m_cfg.SampleRate > 1.0f)
         {
@@ -150,11 +153,12 @@ public:
             m_bOK = false;
         }
 
-        DE_OK("m_bOK = ",m_bOK)
-        DE_OK("m_baseAttackFrames = ",m_baseAttackFrames)
-        DE_OK("m_baseDecayFrames = ",m_baseDecayFrames)
-        DE_OK("m_baseReleaseFrames = ",m_baseReleaseFrames)
-        DE_OK("m_baseSustainLevel = ",m_baseSustainLevel)
+        // cfg.dump();
+        // DE_OK("m_bOK = ",m_bOK)
+        // DE_OK("m_baseAttackFrames = ",m_baseAttackFrames)
+        // DE_OK("m_baseDecayFrames = ",m_baseDecayFrames)
+        // DE_OK("m_baseReleaseFrames = ",m_baseReleaseFrames)
+        // DE_OK("m_baseSustainLevel = ",m_baseSustainLevel)
 
         resetIdle();
     }
@@ -179,65 +183,54 @@ public:
             DE_ERROR("Illegal retrigger attempt, abort.")
             return;
         }
-        m_phase = Attack;
-        m_frameCounter = 0;
-        m_currentFrame = 0;
 
-        // Amplitude = m_sustainLevel * m_noteOnVelocity;
+        m_bTriggeredNoteOff = false;
+        m_phase = Attack;
+        m_currentFrame = 0;
+        m_frameCounter = 0;
         m_noteOnVelocity = std::clamp(velocity, VelocityMin, VelocityMax);
 
+        float attackFrames = m_baseAttackFrames;
         if (m_cfg.bVeloAffectsAttack)
         {
-            m_attackFrames = m_baseAttackFrames * m_noteOnVelocity;
+            attackFrames *= (1.0f - m_noteOnVelocity);
         }
-        else
-        {
-            m_attackFrames = m_baseAttackFrames;
-        }
-
-        if (m_cfg.bVeloAffectsDecay)
-        {
-            m_decayFrames = m_baseDecayFrames * m_noteOnVelocity;
-        }
-        else
-        {
-            m_decayFrames = m_baseDecayFrames;
-        }
-
+        m_attackFrames = std::max(long(1),std::lroundf(attackFrames));
         m_mAttack = float(1.0f) / float(m_attackFrames);
-        m_mDecay = float(m_baseSustainLevel - 1.0f) / float(m_decayFrames);
 
-        DE_BENNI("m_noteOnVelocity = ",m_noteOnVelocity)
-        DE_BENNI("m_attackFrames = ",m_attackFrames)
-        DE_BENNI("m_decayFrames = ",m_decayFrames)
-        DE_BENNI("m_mAttack = ",m_mAttack)
-        DE_BENNI("m_mDecay = ",m_mDecay)
+        float sustainLevel = m_baseSustainLevel;
+        if (m_cfg.bVeloAffectsGain)
+        {
+            sustainLevel *= m_noteOnVelocity;
+        }
+        m_sustainLevel = sustainLevel;
+
+        m_decayFrames = std::max(1,m_baseDecayFrames);
+        m_mDecay = float(m_sustainLevel - 1.0f) / float(m_decayFrames);
+
+        // DE_BENNI("m_noteOnVelocity = ",m_noteOnVelocity)
+        // DE_BENNI("m_attackFrames = ",m_attackFrames)
+        // DE_BENNI("m_decayFrames = ",m_decayFrames)
+        // DE_BENNI("m_sustainLevel = ",m_sustainLevel)
+        // DE_BENNI("m_mAttack = ",m_mAttack)
+        // DE_BENNI("m_mDecay = ",m_mDecay)
     }
 
     void triggerNoteOff(float velocity = 0.5f )
     {
-        if (!m_bOK)
-        {
-            DE_ERROR("Not OK.")
-        }
+        if (!m_bOK) { DE_ERROR("Not OK") return; }
+        if (m_phase == Idle) { DE_ERROR("Not Idle") return; }
+        if (m_bTriggeredNoteOff) { DE_ERROR("Triggered") return; }
 
-        if (m_phase == Idle)
-        {
-            DE_ERROR("NoteOff before NoteOn, abort.")
-            return;
-        }
-
-        if (m_bTriggeredNoteOff)
-        {
-            DE_ERROR("Illegal NoteOff trigger = ",m_bTriggeredNoteOff)
-            return;
-        }
-
-        m_bTriggeredNoteOff = true;
-        //m_phase = Release;
-        //m_currentFrame = 0;
         m_noteOffVelocity = std::clamp(velocity, VelocityMin, VelocityMax);
+        m_bTriggeredNoteOff = true;
+        // m_phase = Release;
+        //m_currentFrame = 0;
 
+        m_releaseStart = m_lastOutput;
+        m_releaseFrames = std::max(1,m_baseReleaseFrames);
+        m_mRelease = -m_sustainLevel / float(m_releaseFrames);
+/*
         // float v = velocity / 127.0f;
         // float R = baseRelease * (1.5f - v * v); // expressive
         // float R = baseRelease * std::exp(-3.0f * v); // physical
@@ -258,14 +251,13 @@ public:
         {
             m_releaseFrames = m_baseReleaseFrames;
         }
+*/
 
-        m_mRelease = -float(m_cfg.SustainLevel) / float(m_releaseFrames);
-
-        DE_WARN("m_noteOffVelocity = ",m_noteOffVelocity)
-        DE_WARN("m_releaseFrames = ",m_releaseFrames)
-        DE_WARN("m_mRelease = ",m_mRelease)
-        DE_WARN("m_phase = ",phaseStr())
-        DE_WARN("m_currentFrame = ",m_currentFrame)
+        // DE_WARN("m_noteOffVelocity = ",m_noteOffVelocity)
+        // DE_WARN("m_releaseFrames = ",m_releaseFrames)
+        // DE_WARN("m_mRelease = ",m_mRelease)
+        // DE_WARN("m_phase = ",phaseStr())
+        // DE_WARN("m_currentFrame = ",m_currentFrame)
     }
 
     float nextSample();

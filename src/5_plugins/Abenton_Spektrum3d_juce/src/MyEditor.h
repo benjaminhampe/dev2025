@@ -7,6 +7,7 @@ class MyEditor : public juce::AudioProcessorEditor
 {
 public:
     MyEditor(MyProcessor& p);
+    ~MyEditor() override;
 
     void paint (juce::Graphics& g) override;
 
@@ -21,6 +22,8 @@ public:
 
     // void mouseDrag (const MouseEvent& event) override;
 
+    const MyComponent* getCanvas() const { return &m_canvas; }
+    MyComponent* getCanvas() { return &m_canvas; }
 private:
     MyProcessor& m_processor;
 

@@ -676,33 +676,42 @@ Editor::create(void* parent)
 
     HWND parentHwnd = (HWND)parent;
 
-    WNDCLASS wc = {0};
-    wc.lpfnWndProc = WndProc;
-    wc.hInstance = GetModuleHandle(nullptr);
-    wc.lpszClassName = _T("SineMachine5_EditorClass");
-    RegisterClass(&wc);
+    static const wchar_t* lpszClassName = L"SineMachine5_EditorClass";
+    static bool reg = false;
+    if (!reg)
+    {
+        WNDCLASSW wc = {0};
+        wc.lpfnWndProc = WndProc;
+        wc.hInstance = GetModuleHandle(nullptr);
+        wc.lpszClassName = lpszClassName;
+        RegisterClassW(&wc);
+        reg = true;
+    }
 
-    _d->hwnd = CreateWindowEx(
+    _d->hwnd = CreateWindowExW(
         WS_EX_CONTROLPARENT,
-        wc.lpszClassName,
-        _T("SineMachine5"),
+        lpszClassName,
+        L"SineMachine5",
         WS_CHILD | WS_VISIBLE | WS_TABSTOP, //  | WS_CLIPCHILDREN
         0, 0, w, h,
         parentHwnd,
         nullptr,
-        wc.hInstance,
+        GetModuleHandleW(nullptr),
         this);
 
     SetFocus( _d->hwnd );
 
     _d->hdc = GetDC(_d->hwnd);
-    PIXELFORMATDESCRIPTOR pfd = {sizeof(PIXELFORMATDESCRIPTOR),
-                                 1,
-                                 PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL | PFD_DOUBLEBUFFER,
-                                 PFD_TYPE_RGBA,
-                                 32 };
+    PIXELFORMATDESCRIPTOR pfd = {
+        sizeof(PIXELFORMATDESCRIPTOR),
+        1,
+        PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL | PFD_DOUBLEBUFFER,
+        PFD_TYPE_RGBA,
+        32 };
+
     int pf = ChoosePixelFormat(_d->hdc, &pfd);
     SetPixelFormat(_d->hdc, pf, &pfd);
+
     _d->glrc = wglCreateContext(_d->hdc);
     wglMakeCurrent(_d->hdc, _d->glrc);
 
@@ -733,15 +742,27 @@ void Editor::destroy()
 {
     DE_DEBUG("")
 
+    m_paintEventEnabled = false;
+
+    Sleep(100);
+
     if (m_vg)
     {
+        wglMakeCurrent(_d->hdc, _d->glrc);
         nvgDeleteGL3(m_vg);
         m_vg = nullptr;
     }
 
-    wglMakeCurrent(nullptr, nullptr);
+    HGLRC current = wglGetCurrentContext();
+    if (current == _d->glrc)
+        wglMakeCurrent(nullptr, nullptr); // nur deinen Kontext entbinden
+
     wglDeleteContext(_d->glrc);
+    _d->glrc = nullptr;
+
     ReleaseDC(_d->hwnd, _d->hdc);
+    _d->hdc = nullptr;
+
     DestroyWindow(_d->hwnd);
     _d->hwnd = nullptr;
 }

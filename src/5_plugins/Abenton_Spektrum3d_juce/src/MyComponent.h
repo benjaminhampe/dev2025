@@ -75,15 +75,15 @@ public:
     void mouseMove (const MouseEvent& event) override;
     void mouseDoubleClick (const MouseEvent& event) override;
 
+    void shutdownBackend();
 private:
     void timerCallback() override;
     void tryCreateBackend();
-    void shutdownBackend();
 
-    juce::AudioProcessor& processor;
+    juce::AudioProcessor& m_processor;
     Renderer m_renderer;
 
-    std::unique_ptr<IOpenGLBackend> openGLContext;
+    IOpenGLBackend* m_openGLContext;
 
     // ---------------------------------------------------------
     // Backend handling

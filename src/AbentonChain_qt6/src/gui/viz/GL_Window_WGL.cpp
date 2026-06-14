@@ -171,10 +171,14 @@ void GL_Window_WGL::destroyGL()
 {
     if (_d->hGLRC)
     {
-        wglMakeCurrent(nullptr, nullptr);
+        HGLRC current = wglGetCurrentContext();
+        if (current == _d->hGLRC)
+            wglMakeCurrent(nullptr, nullptr); // nur deinen Kontext entbinden
+
         wglDeleteContext(_d->hGLRC);
         _d->hGLRC = nullptr;
     }
+
     if (_d->hDC)
     {
         HWND hwnd = reinterpret_cast<HWND>(winId());

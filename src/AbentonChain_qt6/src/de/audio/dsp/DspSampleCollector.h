@@ -117,7 +117,10 @@ public:
 
     void dsp_setInputSignal( IDspChainElement* inputSignal, int i = 0 ) override;
 
-    void dsp_clearInputSignals() override { m_inputSignal = nullptr; }
+    void dsp_clearInputSignals() override
+    {
+        m_inputSignal = nullptr;
+    }
 
     u32 dsp_getInputSignalCount() const override
     {

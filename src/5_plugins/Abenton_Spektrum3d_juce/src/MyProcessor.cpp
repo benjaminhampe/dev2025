@@ -16,8 +16,7 @@ MyProcessor::MyProcessor()
 
 MyProcessor::~MyProcessor()
 {
-    DE_DEBUG("~MyProcessor()")
-
+    DE_OK()
 }
 
 juce::AudioProcessorValueTreeState::ParameterLayout
@@ -39,9 +38,9 @@ MyProcessor::createParameterLayout()
 void MyProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
 {
     smoothedGain.reset (sampleRate, 0.05);
-    if (m_canvas)
+    if (m_editor)
     {
-        m_canvas->getCollector().dsp_init(samplesPerBlock,2,sampleRate);
+        m_editor->getCanvas()->getCollector().dsp_init(samplesPerBlock,2,sampleRate);
     }
 }
 
@@ -105,8 +104,8 @@ void MyProcessor::processBlock (juce::AudioBuffer<float>& buffer,
         dst[i] *= nInputsInv;
     }
 
-    if (m_canvas)
-        m_canvas->pushSamples(m_sumVector);
+    if (m_editor)
+        m_editor->getCanvas()->pushSamples(m_sumVector);
 
     // if (bypass)
     // {

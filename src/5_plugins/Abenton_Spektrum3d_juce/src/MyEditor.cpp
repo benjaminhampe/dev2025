@@ -8,7 +8,7 @@ MyEditor::MyEditor(MyProcessor& p)
     , m_bypassAttachment(m_processor.getAPVTS(), "bypass", m_bypassButton)
 {
     setSize (600, 400);
-
+    m_processor.setEditor(this);
 /*
     m_gainSlider.setSliderStyle (juce::Slider::RotaryHorizontalVerticalDrag);
     m_gainSlider.setTextBoxStyle (juce::Slider::TextBoxBelow, false, 60, 20);
@@ -20,6 +20,12 @@ MyEditor::MyEditor(MyProcessor& p)
 */
 
     addAndMakeVisible (m_canvas);
+}
+
+MyEditor::~MyEditor()
+{
+    DE_OK()
+    // m_canvas.shutdownBackend();
 }
 
 void MyEditor::paint (juce::Graphics& g)

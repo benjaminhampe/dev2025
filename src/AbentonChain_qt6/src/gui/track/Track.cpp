@@ -281,6 +281,8 @@ void Track::insertPlugin(int index, const QString &uri)
         return;
     }
 
+    App::instance()->stopAudio();
+
     // Create GUI Shell
     auto w = new Plugin(plugin, this);
     w->show();
@@ -300,6 +302,8 @@ void Track::insertPlugin(int index, const QString &uri)
     m_dragIndex = -1;
     m_dropIndex = -1;
     updateLayout();
+
+    App::instance()->playAudio();
 }
 
 void Track::removePlugin(Plugin* w)
@@ -311,6 +315,8 @@ void Track::removePlugin(Plugin* w)
         DE_ERROR("Got nullptr")
         return;
     }
+
+    App::instance()->stopAudio();
 
     w->setPlugin(nullptr);
 
@@ -350,6 +356,8 @@ void Track::removePlugin(Plugin* w)
     setUpdatesEnabled(true);
 
     updateLayout();
+
+    App::instance()->playAudio();
 }
 
 // ------------------------------------------------------------

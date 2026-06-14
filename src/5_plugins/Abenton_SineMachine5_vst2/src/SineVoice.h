@@ -3,6 +3,9 @@
 #include <common/Envelope.h>
 #include <common/DspUtil.h>
 #include <de/audio/OSC_Saw.h>
+#include <de/audio/OSC_Additive.h>
+#include <de/audio/OSC_AnalogDrift.h>
+#include <de/audio/OSC_BlepHybrid.h>
 
 // 📊
 struct OSC_Partials
@@ -112,6 +115,9 @@ struct Voice
     Envelope m_envelope;
     OSC_Partials m_oscPartials;
     de::audio::OSC_Saw m_oscSaw;
+    de::audio::OSC_Additive m_oscAdditive;
+    de::audio::OSC_AnalogDrift m_oscAnalogDrift;
+    de::audio::OSC_BlepHybrid m_oscBlepHybrid;
 
     int m_channel = -1;
     int m_midiNote = -1;
@@ -120,6 +126,13 @@ struct Voice
 
     de::TAlignedVector<float> m_L;
     de::TAlignedVector<float> m_R;
+
+    double m_t = 0.0;
+    double m_tStep = 0.0001;
+
+    // SinOsc
+    float m_phase = 0.0f;
+    float m_phaseInc = 0.0001;
 
     void init(SynthCfg* cfg)
     {
@@ -131,11 +144,7 @@ struct Voice
         DSP_RESIZE(m_R, 1024);
     }
 
-
-    bool isPlaying() const
-    {
-        return m_midiNote > -1;
-    }
+    bool isPlaying() const { return m_envelope.isPlaying(); }
 
     void allNotesOff()
     {
@@ -143,30 +152,51 @@ struct Voice
         m_midiNote = -1;
     }
 
-    // calcPhaseIncrements
-    void noteOn( int midiNote, int velocity, float detuneCent = 0.0f )
+    // Phase aus Sample‑Index:
+    //     float phase = 2.0f * M_PI * freq * (n / sampleRate);
+
+    // Phase aus Zeit t:
+    //     float phase = 2.0f * M_PI * freq * t;
+
+    bool noteOn(int midiNote, int velocity, float detuneCent = 0.0f )
     {
-        if (m_midiNote > -1)
+        if (m_envelope.isPlaying())
         {
-            DE_ERROR("Already playing midiNote(",m_midiNote,")")
-            return;
+            //DE_ERROR("Env still playing")
+            return false;
         }
 
-        m_midiNote = midiNote;
-        m_envelope.init(m_cfg->m_envelope);
+        // if (m_midiNote > -1)
+        // {
+        //     DE_ERROR("Already playing midiNote(",m_midiNote,")")
+        //     return false;
+        // }
 
+        const int m_sampleRate = m_cfg->m_sampleRate;
+
+        m_midiNote = midiNote;
         m_frequency = de::calc_frequencyFromMidi(midiNote, detuneCent);
+        float fSubOsc = de::calc_frequencyFromMidi(midiNote-12, detuneCent);
+        //DE_TRACE("midiNote = ",m_midiNote,", frequency = ",m_frequency," Hz")
+
+        m_envelope.init(m_cfg->m_envelope);
+        m_envelope.triggerNoteOn( float(velocity) / 127.0f );
 
         m_oscPartials.noteOn(m_cfg->m_partials, m_frequency, velocity);
-        m_oscSaw.noteOn(m_frequency, m_cfg->m_sampleRate, 100);
-        const auto & m_cfgEnvelope = m_envelope.m_cfg;
+        m_oscSaw.noteOn(m_frequency, m_sampleRate, 100);
 
-        m_envelope.triggerNoteOn( float(velocity) / 127.0f );
+        int nPartials = 64;
+        m_oscAdditive.noteOn(m_frequency, m_sampleRate, 64, de::audio::OSC_Additive::Saw);
+        m_oscAnalogDrift.noteOn(m_frequency, m_sampleRate, 64, de::audio::OSC_AnalogDrift::Saw);
+        m_oscBlepHybrid.noteOn(fSubOsc, m_sampleRate, de::audio::OSC_BlepHybrid::Saw);
+
+        return true;
     }
 
-    void noteOff( int velocity )
+    void noteOff(int velocity )
     {
         m_envelope.triggerNoteOff( float(velocity) / 127.0f );
+        m_midiNote = -1;
     }
 
     struct StereoSampleF32
@@ -177,21 +207,33 @@ struct Voice
 
     StereoSampleF32 nextSampleF32()
     {
+    // <Envelope>
         if (!m_envelope.isPlaying())
         {
-            DE_WARN("Envelope ended.")
+            //DE_WARN("Envelope ended.")
             m_midiNote = -1;
             return { 0.0f, 0.0f };
         }
+    // </Envelope>
 
+        float L,R;
+
+    // <OSC>
+        float sampleL = m_oscAdditive.process();
+        float sampleR = m_oscAnalogDrift.process();
+        float sample = m_oscBlepHybrid.process();
+        L = 0.5f * (sampleL + sample);
+        R = 0.5f * (sampleR + sample);
+    // </OSC>
+
+
+
+    // <Envelope>
         const float env = m_envelope.nextSample();
+        L *= env;
+        R *= env;
+    // </Envelope>
 
-        float sample = m_oscSaw.computeSample();
-        float L = sample;
-        float R = sample;
-
-        // L *= env;
-        // R *= env;
         return { L, R };
     }
 

@@ -3,6 +3,7 @@
 
 class Synth
 {
+    // bool m_bBypass = false;
 
     SynthCfg m_cfg;
 
@@ -18,6 +19,8 @@ class Synth
     //int32_t m_baseOctave;
 
 public:
+    de::TAlignedVector<float> m_L;
+    de::TAlignedVector<float> m_R;
 
     const SynthCfg& getConfig() const { return m_cfg; }
     SynthCfg& getConfig() { return m_cfg; }
@@ -25,12 +28,20 @@ public:
 
     void init()
     {
+        // m_bBypass = false;
+
         m_cfg.init();
 
         m_voices.resize(m_cfg.m_maxVoices); // polyphony
 
         DE_OK("Created ",m_voices.size()," voices.")
     }
+
+    // void setBypass(bool bBypassed)
+    // {
+    //     m_bBypass = bBypassed;
+    //     DE_BENNI("m_bBypass(",m_bBypass,")")
+    // }
 
     void setSampleRate(int sampleRate)
     {
@@ -54,7 +65,48 @@ public:
             return;
         }
         m_cfg.m_blockSize = blockSize;
+        m_L.resize(blockSize);
+        m_R.resize(blockSize);
         DE_BENNI("setBlockSize(",blockSize,")")
+    }
+
+    void process(int blockSize)
+    {
+        setBlockSize(blockSize);
+
+        size_t nNotes = 0;
+
+        //DE_OK("m_synth.m_notes.size() = ", m_synth.m_notes.size(), ", "
+        //        "sampleFrames = ", sampleFrames)
+
+        const uint32_t nChannelBytes = static_cast<uint32_t>(blockSize) * sizeof(float);
+
+        float* __restrict__ const Lout = m_L.data();
+        float* __restrict__ const Rout = m_R.data();
+
+        // Clear L+R:
+        std::memset(Lout,0,nChannelBytes);
+        std::memset(Rout,0,nChannelBytes);
+
+        // Fill L+R:
+        for (Voice & voice : m_voices)
+        {
+            if (voice.isPlaying())
+            {
+                // Produce L+R:
+                voice.computeSamples(blockSize);
+
+                // Add L:
+                const float* __restrict__ const Lin = voice.m_L.data();
+                DE_ASSUME_NO_OVERLAP(Lin,Lout,nChannelBytes);
+                for (long i = 0; i < blockSize; ++i) { Lout[i] += Lin[i]; }
+
+                // Add R:
+                const float* __restrict__ const Rin = voice.m_R.data();
+                DE_ASSUME_NO_OVERLAP(Rin,Rout,nChannelBytes);
+                for (long i = 0; i < blockSize; ++i) { Rout[i] += Rin[i]; }
+            }
+        }
     }
 
     int findIdleVoice() const
@@ -71,20 +123,15 @@ public:
 
     void noteOn(int channel, int midiNote, int velocity)
     {
-        DE_OK("NoteOn: ", midiNote)
         int voice = findIdleVoice();
         if (voice < 0)
         {
             return; // Discard, Information loss!
         }
 
-        DE_OK("IdleVoice = ",voice)
-        m_voices[voice].noteOn(channel, midiNote, velocity);
-        /*
-        m_baseFrequency = 440.0 * pow(2.0, (note - 69) / 12.0);  // MIDI to Hz
-        // Optionally: trigger envelopes, voices, etc.
-        calcPhaseIncrements( m_partials, m_baseFrequency, m_sampleRate );
-        */
+        //DE_OK("=============================================")
+        DE_OK("NoteOn: ", midiNote, ", IdleVoice = ",voice)
+        m_voices[voice].noteOn(midiNote, velocity);
     }
 
     void noteOff(int channel, int midiNote, int velocity)
@@ -156,46 +203,6 @@ public:
             calcPhaseIncrements( m_partials, m_baseFrequency, m_sampleRate );
         }
         */
-    }
-
-    void process( float* __restrict__ L, float* __restrict__ R )
-    {
-        size_t nNotes = 0;
-
-        const int32_t blockSize = m_cfg.m_blockSize;
-        //DE_OK("blockSize = ",blockSize)
-
-        //DE_OK("m_synth.m_notes.size() = ", m_synth.m_notes.size(), ", "
-        //        "sampleFrames = ", sampleFrames)
-
-        std::memset(L,0,blockSize * sizeof(float));
-        std::memset(R,0,blockSize * sizeof(float));
-
-        for (Voice & voice : m_voices)
-        {
-            if (voice.isPlaying())
-            {
-                voice.computeSamples(blockSize);
-
-                const float* __restrict__ srcL = voice.m_L.data();
-
-                DE_ASSUME_NO_OVERLAP(srcL,L,blockSize * sizeof(float));
-
-                for (int32_t i = 0; i < blockSize; i++)
-                {
-                    L[i] += srcL[i];
-                }
-
-                const float* __restrict__ srcR = voice.m_R.data();
-
-                DE_ASSUME_NO_OVERLAP(srcR,R,blockSize * sizeof(float));
-
-                for (int32_t i = 0; i < blockSize; i++)
-                {
-                    R[i] += srcR[i];
-                }
-            }
-        }
     }
 
     // void setPartial(int index, float amplitude, double centDetune = 0.0);

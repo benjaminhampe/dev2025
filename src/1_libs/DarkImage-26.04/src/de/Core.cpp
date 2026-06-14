@@ -99,7 +99,7 @@ void dbLogMessage( int logLevel, const std::string& msg,
     }
 
     o << " " << de::FileSystem::fileName(file) << ":" << line <<
-        // " " << func << "()"
+        " " << func << "()"
         " :: " << msg <<
         " " << dbResetTerminalColors();
 

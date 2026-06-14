@@ -1,5 +1,6 @@
 #include "GL_Mesh16.h"
 #include <de_opengl.h>
+#include <de/gpu/GL_debug_layer.h>
 
 /*
 inline uint64_t db1D(uint32_t x, uint32_t y, uint32_t w)
@@ -66,14 +67,14 @@ void GL_Mesh16::addIndexedQuad(uint32_t A,uint32_t B,uint32_t C,uint32_t D)
 
 void GL_Mesh16::destroy()
 {
-    if ( VAO ) { glDeleteVertexArrays(1, &VAO); VAO = 0; }
-    if ( VBO ) { glDeleteBuffers(1, &VBO); VBO = 0; }
-    if ( IBO ) { glDeleteBuffers(1, &IBO); IBO = 0; }
+    if ( VAO ) { glDeleteVertexArrays(1, &VAO); GL_VALIDATE; VAO = 0; }
+    if ( VBO ) { glDeleteBuffers(1, &VBO); GL_VALIDATE; VBO = 0; }
+    if ( IBO ) { glDeleteBuffers(1, &IBO); GL_VALIDATE; IBO = 0; }
 }
 
 void GL_Mesh16::draw() const
 {
-    if (VAO) { glBindVertexArray( VAO ); }
+    if (VAO) { glBindVertexArray( VAO ); GL_VALIDATE }
 
     if (VBO)
     {
@@ -87,14 +88,16 @@ void GL_Mesh16::draw() const
             const GLenum indexType = GL_UNSIGNED_SHORT;
 #endif
             glDrawElements( primType, GLsizei(Indices.size()), indexType, nullptr );
+            GL_VALIDATE
         }
         else
         {
             glDrawArrays( primType, 0, GLsizei(Vertices.size()) );
+            GL_VALIDATE
         }
     }
 
-    if (VAO) { glBindVertexArray(0); }
+    if (VAO) { glBindVertexArray(0); GL_VALIDATE }
 }
 
 void GL_Mesh16::upload( bool bNeedVertexUpload, bool bNeedIndexUpload )
@@ -103,38 +106,39 @@ void GL_Mesh16::upload( bool bNeedVertexUpload, bool bNeedIndexUpload )
     if ( !VAO )
     {
         glGenVertexArrays(1, &VAO);
+        GL_VALIDATE
         bNeedRebind = true;
         bNeedVertexUpload = true;
         bNeedIndexUpload = true;
     }
     if ( !VBO )
     {
-        glGenBuffers(1, &VBO);
+        glGenBuffers(1, &VBO); GL_VALIDATE
         bNeedRebind = true;
         bNeedVertexUpload = true;
     }
     if ( !IBO && Indices.size() > 0 )
     {
-        glGenBuffers(1, &IBO);
+        glGenBuffers(1, &IBO); GL_VALIDATE
         bNeedRebind = true;
         bNeedIndexUpload = true;
     }
 
     if ( bNeedRebind )
     {
-        glBindVertexArray(VAO);
+        glBindVertexArray(VAO); GL_VALIDATE
         // VBO
         {
-            glBindBuffer(GL_ARRAY_BUFFER, VBO);
-            glEnableVertexAttribArray( 0 );
+            glBindBuffer(GL_ARRAY_BUFFER, VBO); GL_VALIDATE
+            glEnableVertexAttribArray( 0 ); GL_VALIDATE
 #if 0
-            glVertexAttribPointer( 0, 4, GL_FLOAT, GL_FALSE, sizeof(GL_Mesh16_Vertex), reinterpret_cast<void*>(0) );
+            glVertexAttribPointer( 0, 4, GL_FLOAT, GL_FALSE, sizeof(GL_Mesh16_Vertex), reinterpret_cast<void*>(0) ); GL_VALIDATE
 #else
-            glVertexAttribPointer( 0, 4, GL_HALF_FLOAT, GL_FALSE, sizeof(GL_Mesh16_Vertex), reinterpret_cast<void*>(0) );
+            glVertexAttribPointer( 0, 4, GL_HALF_FLOAT, GL_FALSE, sizeof(GL_Mesh16_Vertex), reinterpret_cast<void*>(0) ); GL_VALIDATE
 #endif
             auto n = Vertices.size() * sizeof(GL_Mesh16_Vertex);
             auto p = reinterpret_cast< const uint8_t* >( Vertices.data() );
-            glBufferData(GL_ARRAY_BUFFER, GLsizeiptr(n), p, GL_STATIC_DRAW);
+            glBufferData(GL_ARRAY_BUFFER, GLsizeiptr(n), p, GL_STATIC_DRAW); GL_VALIDATE
             if (n<1) { DE_WARN("Uploading 0 vertices") }
             DE_OK("Upload ",n," vertices")
         }
@@ -144,18 +148,18 @@ void GL_Mesh16::upload( bool bNeedVertexUpload, bool bNeedIndexUpload )
 #ifdef USE_MESH16_INDICES_32BIT
             auto n = Indices.size() * sizeof(uint32_t);
             auto p = reinterpret_cast< const uint8_t* >( Indices.data() );
-            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IBO);
-            glBufferData(GL_ELEMENT_ARRAY_BUFFER, GLsizeiptr(n), p, GL_STATIC_DRAW);
+            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IBO); GL_VALIDATE
+            glBufferData(GL_ELEMENT_ARRAY_BUFFER, GLsizeiptr(n), p, GL_STATIC_DRAW); GL_VALIDATE
 #else // 16-bit
             auto n = Indices.size() * sizeof(uint16_t);
             auto p = reinterpret_cast< const uint8_t* >( Indices.data() );
-            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IBO);
-            glBufferData(GL_ELEMENT_ARRAY_BUFFER, GLsizeiptr(n), p, GL_STATIC_DRAW);
+            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IBO); GL_VALIDATE
+            glBufferData(GL_ELEMENT_ARRAY_BUFFER, GLsizeiptr(n), p, GL_STATIC_DRAW); GL_VALIDATE
 #endif
             if (n<1) { DE_WARN("Uploading 0 indices") }
             DE_OK("Upload ",n," indices")
         }
-        glBindVertexArray(0);
+        glBindVertexArray(0); GL_VALIDATE
         bNeedVertexUpload = false;
         bNeedIndexUpload = false;
     }
@@ -164,8 +168,8 @@ void GL_Mesh16::upload( bool bNeedVertexUpload, bool bNeedIndexUpload )
     {
         auto n = Vertices.size() * sizeof(GL_Mesh16_Vertex);
         auto p = reinterpret_cast< const uint8_t* >( Vertices.data() );
-        glBindBuffer(GL_ARRAY_BUFFER, VBO);
-        glBufferData(GL_ARRAY_BUFFER, GLsizeiptr(n), p, GL_STATIC_DRAW);
+        glBindBuffer(GL_ARRAY_BUFFER, VBO); GL_VALIDATE
+        glBufferData(GL_ARRAY_BUFFER, GLsizeiptr(n), p, GL_STATIC_DRAW); GL_VALIDATE
     }
 
     if ( IBO && bNeedIndexUpload )
@@ -173,13 +177,13 @@ void GL_Mesh16::upload( bool bNeedVertexUpload, bool bNeedIndexUpload )
 #ifdef USE_MESH16_INDICES_32BIT
         auto n = Indices.size() * sizeof(uint32_t);
         auto p = reinterpret_cast< const uint8_t* >( Indices.data() );
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IBO);
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER, GLsizeiptr(n), p, GL_STATIC_DRAW);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IBO); GL_VALIDATE
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, GLsizeiptr(n), p, GL_STATIC_DRAW); GL_VALIDATE
 #else // 16-bit
         auto n = Indices.size() * sizeof(uint16_t);
         auto p = reinterpret_cast< const uint8_t* >( Indices.data() );
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IBO);
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER, GLsizeiptr(n), p, GL_STATIC_DRAW);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IBO); GL_VALIDATE
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, GLsizeiptr(n), p, GL_STATIC_DRAW); GL_VALIDATE
 #endif
     }
 }
@@ -422,8 +426,8 @@ void GL_Mesh16_Shader3D::setMaterial( const GL_Mesh16_Material & material, const
         m_shader = m_driver->createShader( "3DMesh16", g_vs, g_fs );
         if (m_shader)
         {
-            m_u_mvp = glGetUniformLocation(m_shader->id, "u_mvp");
-            m_u_tex = glGetUniformLocation(m_shader->id, "u_tex");
+            m_u_mvp = glGetUniformLocation(m_shader->id, "u_mvp"); GL_VALIDATE
+            m_u_tex = glGetUniformLocation(m_shader->id, "u_tex"); GL_VALIDATE
         }
     }
 
@@ -437,11 +441,11 @@ void GL_Mesh16_Shader3D::setMaterial( const GL_Mesh16_Material & material, const
         viewProjMat = camera->getViewProjectionMatrix();
     }
     glm::mat4 u_mvp = viewProjMat * modelMat;
-    glUniformMatrix4fv(m_u_mvp, 1, GL_FALSE, glm::value_ptr(u_mvp));
+    glUniformMatrix4fv(m_u_mvp, 1, GL_FALSE, glm::value_ptr(u_mvp)); GL_VALIDATE
 
     // u_tex
-    glBindTextureUnit( 0, material.tex0.tex->id() );
-    glUniform1i(m_u_tex, 0);
+    glBindTextureUnit( 0, material.tex0.tex->id() ); GL_VALIDATE
+    glUniform1i(m_u_tex, 0); GL_VALIDATE
 
     // if (material.alpha < 1.0f)
     // {
@@ -545,9 +549,9 @@ void GL_Mesh16_Shader2D::setMaterial(
         m_shader = m_driver->createShader( "2DMesh16", g_vs, g_fs );
         if (m_shader)
         {
-            m_u_screenSize = glGetUniformLocation(m_shader->id, "u_screenSize");
-            m_u_tex = glGetUniformLocation(m_shader->id, "u_tex");
-            m_u_posTransform = glGetUniformLocation(m_shader->id, "u_posTransform");
+            m_u_screenSize = glGetUniformLocation(m_shader->id, "u_screenSize"); GL_VALIDATE
+            m_u_tex = glGetUniformLocation(m_shader->id, "u_tex"); GL_VALIDATE
+            m_u_posTransform = glGetUniformLocation(m_shader->id, "u_posTransform"); GL_VALIDATE
             //m_u_texTransform = glGetUniformLocation(m_shader->id, "u_texTransform");
             //m_u_alpha = glGetUniformLocation(m_shader->id, "u_alpha");
         }
@@ -559,15 +563,15 @@ void GL_Mesh16_Shader2D::setMaterial(
     const int w = m_driver->getScreenWidth();
     const int h = m_driver->getScreenHeight();
     glm::vec2 u_screenSize{ w, h };
-    glUniform2fv(m_u_screenSize, 1, glm::value_ptr( u_screenSize ));
+    glUniform2fv(m_u_screenSize, 1, glm::value_ptr( u_screenSize )); GL_VALIDATE
 
     // u_posTransform
     glm::vec4 u_posTransform{ pos.x(),pos.y(),pos.w(),pos.h() };
-    glUniform4fv(m_u_posTransform, 1, glm::value_ptr( u_posTransform ));
+    glUniform4fv(m_u_posTransform, 1, glm::value_ptr( u_posTransform )); GL_VALIDATE
 
     // u_tex
-    glBindTextureUnit( 0, material.tex0.tex->id() );
-    glUniform1i(m_u_tex, 0);
+    glBindTextureUnit( 0, material.tex0.tex->id() ); GL_VALIDATE
+    glUniform1i(m_u_tex, 0); GL_VALIDATE
 
     // u_alpha
     //glUniform1f(m_u_alpha, material.alpha);

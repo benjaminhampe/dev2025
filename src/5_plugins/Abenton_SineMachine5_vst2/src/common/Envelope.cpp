@@ -1,5 +1,6 @@
 #include "Envelope.h"
 
+/*
 float Envelope::nextSample()
 {
     if (!m_bOK)
@@ -9,7 +10,6 @@ float Envelope::nextSample()
     }
 
     float A = 0.0f;
-    m_frameCounter++;
 
     // if (m_phase == Idle)
     // {
@@ -105,9 +105,70 @@ float Envelope::nextSample()
         }
     }
 
+    m_frameCounter++;
     return std::clamp(A, 0.0f, 1.0f); // Limiter
 }
+*/
 
+float Envelope::nextSample()
+{
+    float A = 0.0f;
+
+    switch (m_phase)
+    {
+        case Attack:
+            if (m_currentFrame < m_attackFrames)
+            {
+                A = m_mAttack * m_currentFrame;
+                m_currentFrame++;
+            }
+            else
+            {
+                A = 1.0f;
+                m_phase = Decay;
+                m_currentFrame = 0;
+            } break;
+        case Decay:
+            if (m_currentFrame < m_decayFrames)
+            {
+                A = 1.0f + m_mDecay * m_currentFrame;
+                m_currentFrame++;
+            }
+            else
+            {
+                A = m_sustainLevel;
+                m_phase = Sustain;
+                m_currentFrame = 0;
+            } break;
+        case Sustain:
+            A = m_sustainLevel;
+            if (m_bTriggeredNoteOff || m_cfg.bSingleShot)
+            {
+                m_phase = Release;
+                m_currentFrame = 0;
+                //m_releaseStart = A;
+                //m_mRelease = -A / float(m_releaseFrames);
+            } break;
+        case Release:
+            if (m_currentFrame < m_releaseFrames)
+            {
+                A = m_mRelease * m_currentFrame + m_sustainLevel;
+                m_currentFrame++;
+            }
+            else
+            {
+                m_phase = Idle;
+            } break;
+        default: break;
+    }
+
+    // Apply velocity AFTER ADSR
+    if (m_cfg.bVeloAffectsGain)
+        A *= m_noteOnVelocity;
+
+    m_lastOutput = A;
+    return A;
+}
 // static
 void Envelope::test()
 {
@@ -152,8 +213,8 @@ void Envelope::test1()
     w = env.m_baseReleaseFrames; //  1000
     draw(env,w,img,de::Recti(x,y,2*w,h),dbRGBA(0,0,255)); x += 2*w;
 
-    dbSaveImage(img,"Abenton_SineMachine5_Test1.bmp");
-    dbSaveImage(img,"Abenton_SineMachine5_Test1.png");
+    //dbSaveImage(img,"Abenton_SineMachine5_Test1.bmp");
+    //dbSaveImage(img,"Abenton_SineMachine5_Test1.png");
     dbSaveImage(img,"Abenton_SineMachine5_Test1.webp");
 }
 
@@ -193,8 +254,8 @@ void Envelope::test2()
     w = env.m_baseReleaseFrames; //  1000
     draw(env,w,img,de::Recti(x,y,2*w,h),dbRGBA(0,0,255)); x += 2*w;
 
-    dbSaveImage(img,"Abenton_SineMachine5_Test2.bmp");
-    dbSaveImage(img,"Abenton_SineMachine5_Test2.png");
+    //dbSaveImage(img,"Abenton_SineMachine5_Test2.bmp");
+    //dbSaveImage(img,"Abenton_SineMachine5_Test2.png");
     dbSaveImage(img,"Abenton_SineMachine5_Test2.webp");
 
 

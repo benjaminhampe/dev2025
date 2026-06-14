@@ -20,6 +20,7 @@ public:
 
     bool m_bFullscreen = false;
     bool m_bFocused = false;
+    bool m_bWindowDestroyed = false;
 
     void toggleFullscreen() override;
     bool createWindow(void* parentHandle, int x, int y, int w, int h) override;
@@ -30,6 +31,8 @@ public:
     void swapBuffers() override;
 
     // void render() override;
+
+
 };
 
 LRESULT CALLBACK

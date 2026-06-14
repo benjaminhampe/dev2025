@@ -1,6 +1,6 @@
 #include "Backend_WGL.h"
 #include <DarkGPU.h>
-
+#include "MyComponent.h"
 #ifdef _WIN32
 
 #include <de_opengl.h>
@@ -20,34 +20,42 @@ void Backend_WGL::toggleFullscreen()
 
 bool Backend_WGL::createWindow(void* parentHandle, int x, int y, int w, int h)
 {
-    HWND parent = (HWND) parentHandle;
+    HWND parentHwnd = (HWND) parentHandle;
 
-    static const wchar_t* cls = L"WGL_CHILD";
+    static const wchar_t* lpszClassName = L"Spektrum3D_WinWGL_Class";
     static bool reg = false;
 
     if (!reg)
     {
         WNDCLASSW wc = {};
-        wc.style = CS_OWNDC;
+        //wc.style = CS_OWNDC;
         wc.lpfnWndProc = Backend_WGL_WndProc; // DefWindowProcW;
         wc.hInstance = GetModuleHandleW(nullptr);
-        wc.lpszClassName = cls;
+        wc.lpszClassName = lpszClassName;
         RegisterClassW(&wc);
         reg = true;
     }
 
     hwnd = CreateWindowExW(
-        0, cls, L"", WS_CHILD | WS_VISIBLE,
+        WS_EX_CONTROLPARENT,
+        lpszClassName,
+        L"Spektrum3D_WinWGL",
+        WS_CHILD | WS_VISIBLE | WS_TABSTOP,
         x, y, w, h,
-        parent, nullptr, GetModuleHandleW(nullptr), nullptr);
+        parentHwnd,
+        nullptr,
+        GetModuleHandleW(nullptr),
+        this);
 
     if (!hwnd) { DE_ERROR("No hwnd") return false; }
+
+    SetFocus(hwnd);
 
     hdc = GetDC(hwnd);
     if (!hdc) { DE_ERROR("No hdc") return false; }
 
     PIXELFORMATDESCRIPTOR pfd = {};
-    pfd.nSize = sizeof(pfd);
+    pfd.nSize = sizeof(PIXELFORMATDESCRIPTOR);
     pfd.nVersion = 1;
     pfd.dwFlags = PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL | PFD_DOUBLEBUFFER;
     pfd.iPixelType = PFD_TYPE_RGBA;
@@ -70,9 +78,28 @@ bool Backend_WGL::createWindow(void* parentHandle, int x, int y, int w, int h)
 
 void Backend_WGL::destroy()
 {
-    if (hgl) { wglDeleteContext(hgl); hgl = nullptr; }
-    if (hdc && hwnd) { ReleaseDC(hwnd, hdc); hdc = nullptr; }
-    if (hwnd) { DestroyWindow(hwnd); hwnd = nullptr; }
+    if (hgl)
+    {
+        DE_OK("Destroy WGL")
+        HGLRC current = wglGetCurrentContext();
+        if (current == hgl)
+            wglMakeCurrent(nullptr, nullptr); // nur deinen Kontext entbinden
+
+        wglDeleteContext(hgl);
+        hgl = nullptr;
+    }
+    if (hdc && hwnd)
+    {
+        DE_OK("Destroy DC")
+        ReleaseDC(hwnd, hdc);
+        hdc = nullptr;
+    }
+    if (hwnd)
+    {
+        DE_OK("Destroy Window")
+        DestroyWindow(hwnd);
+        hwnd = nullptr;
+    }
 }
 
 void Backend_WGL::resize(int x, int y, int w, int h)
@@ -90,7 +117,7 @@ void Backend_WGL::makeCurrent()
 
 void Backend_WGL::doneCurrent()
 {
-    wglMakeCurrent(nullptr, nullptr);
+    //wglMakeCurrent(nullptr, nullptr);
 }
 
 void Backend_WGL::swapBuffers()
@@ -314,8 +341,18 @@ Backend_WGL_WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
         case WM_DESTROY:
         {
             DE_OK("WM_DESTROY")
-            KillTimer(hwnd, 123);
+            //KillTimer(hwnd, 123);
             //PostQuitMessage(0);
+
+
+            if (self && !self->m_bWindowDestroyed)
+            {
+                // self->destroyed = true;
+                self->hwnd = nullptr; // Prevent another call to DestroyWindow -> WM_DESTROY message recursive loop
+                // self->notifyOwnerComponentWindowIsGone();
+                if (self->getMyComponent())
+                    self->getMyComponent()->shutdownBackend();
+            }
             return 0;
         }
         case WM_TIMER:
@@ -360,7 +397,7 @@ Backend_WGL_WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
             //int h = HIWORD(lParam);
             int w = GET_X_LPARAM( lParam );
             int h = GET_Y_LPARAM( lParam );
-            DE_OK("WM_SIZE(",w,",",h,")");
+            //DE_OK("WM_SIZE(",w,",",h,")");
             de::ResizeEvent event;
             event.w = w;
             event.h = h;
@@ -409,7 +446,7 @@ Backend_WGL_WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
             de::MouseMoveEvent event;
             event.x = int( LOWORD( lParam ) );
             event.y = int( HIWORD( lParam ) );
-            DE_OK("WM_MOUSEMOVE ",event.str())
+            //DE_OK("WM_MOUSEMOVE ",event.str())
             //self->mouseMoveEvent( event );
             return 0;
         }
