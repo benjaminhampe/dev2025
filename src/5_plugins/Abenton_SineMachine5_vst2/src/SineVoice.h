@@ -80,7 +80,7 @@ struct OSC_Partials
 
     }
 
-    void nextSample(float & L, float & R)
+    void process(float & L, float & R)
     {
         float Asum = 0.0f;
         float sample = 0.0f;
@@ -216,20 +216,27 @@ struct Voice
         }
     // </Envelope>
 
-        float L,R;
+        float L = 0.0f;
+        float R = 0.0f;
+
+        float Lp, Rp;
+        m_oscPartials.process(Lp, Rp);
+        L += Lp;
+        R += Rp;
 
     // <OSC>
         float sampleL = m_oscAdditive.process();
         float sampleR = m_oscAnalogDrift.process();
+        L += sampleL;
+        R += sampleR;
+
         float sample = m_oscBlepHybrid.process();
-        L = 0.5f * (sampleL + sample);
-        R = 0.5f * (sampleR + sample);
+        L += sample;
+        R += sample;
     // </OSC>
 
-
-
     // <Envelope>
-        const float env = m_envelope.nextSample();
+        const float env = m_envelope.process();
         L *= env;
         R *= env;
     // </Envelope>

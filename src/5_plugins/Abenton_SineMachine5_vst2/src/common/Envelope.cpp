@@ -110,7 +110,7 @@ float Envelope::nextSample()
 }
 */
 
-float Envelope::nextSample()
+float Envelope::process()
 {
     float A = 0.0f;
 
@@ -267,11 +267,11 @@ void Envelope::draw(Envelope & env, int nCalls, de::Image & img, const de::Recti
     int dx = pos.w / nCalls;
 
     int x1 = pos.x;
-    int y1 = pos.y + std::lroundf((1.0f - env.nextSample()) * pos.h);
+    int y1 = pos.y + std::lroundf((1.0f - env.process()) * pos.h);
     for (int i = 0; i < nCalls; ++i)
     {
         int x2 = x1 + dx;
-        int y2 = pos.y + std::lroundf((1.0f - env.nextSample()) * pos.h);
+        int y2 = pos.y + std::lroundf((1.0f - env.process()) * pos.h);
         de::ImagePainter::drawLine(img,x1,y1,x2,y2,color,false);
         x1 = x2;
         y1 = y2;

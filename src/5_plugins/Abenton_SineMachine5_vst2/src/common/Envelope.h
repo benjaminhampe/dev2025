@@ -260,7 +260,7 @@ public:
         // DE_WARN("m_currentFrame = ",m_currentFrame)
     }
 
-    float nextSample();
+    float process();
 
     static void test();
     static void test1();
