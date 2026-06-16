@@ -16,7 +16,7 @@ public:
     virtual void play(bool* guardFlag) = 0;
     virtual void stop() = 0;
     virtual void setInputSignal( IDspChainElement* inputSignal ) = 0;
-
+    //virtual void shutdown() = 0;
     // u32 getOutputDeviceId() const;
     // u32 getInputDeviceId() const;
     // u32 getSampleRate() const;

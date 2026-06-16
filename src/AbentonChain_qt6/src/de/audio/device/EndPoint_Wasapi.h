@@ -27,7 +27,7 @@ public:
     void play(bool * guardFlag) override;
     void stop() override;
     void setInputSignal( IDspChainElement* inputSignal ) override;
-
+    //void shutdown() override;
     s32 getOutputDeviceId() const;
     s32 getInputDeviceId() const;
     s32 getChannelCount() const override;

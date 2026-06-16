@@ -123,10 +123,11 @@ void SvgButton::applySkin()
 */
 void SvgButton::paintEvent(QPaintEvent* event)
 {
+    if (!isVisible()) { return; }
     const int w = width();
     const int h = height();
-    if (w<2) return;
-    if (h<2) return;
+    if (w < 1) return;
+    if (h < 1) return;
 
     QPainter dc(this);
 

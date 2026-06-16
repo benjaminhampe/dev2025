@@ -22,22 +22,26 @@ public:
     ComboBox* getComboParam1() { return m_cbxParam1; }
     ComboBox* getComboParam2() { return m_cbxParam2; }
     void applySkin();
+    void updateLayout();
 
 protected slots:
 
 protected:
-    void paintEvent(QPaintEvent* event) override;
+    void resizeEvent(QResizeEvent* e) override;
+    void paintEvent(QPaintEvent* e) override;
 
 private:
-    int m_baseWidth = 300;
-    int m_baseHeight = 338;
-    int m_baseMargin = 10;
+    int m_zoom = 100;
 
-    int m_width;
-    int m_height;
+    // int m_baseWidth = 300;
+    // int m_baseHeight = 338;
+    // int m_baseMargin = 10;
 
-    EnableButton* m_btnLoadPlugin;
-    EnableButton* m_btnSavePreset;
+    // int m_width;
+    // int m_height;
+
+    // EnableButton* m_btnLoadPlugin;
+    // EnableButton* m_btnSavePreset;
     ComboBox* m_cbxPreset;
     ComboBox* m_cbxParam1;
     ComboBox* m_cbxParam2;

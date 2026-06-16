@@ -97,7 +97,7 @@ setButtonSvg(QPushButton* btn, const QString &svg, int w, int h)
     // btn->setStyleSheet("background: transparent; border: none;");
     btn->setIcon(QIcon(mkSvg(svg,w,h)));
     btn->setIconSize(QSize(w,h));
-    btn->setFixedSize(w,h);
+    //btn->setFixedSize(w,h);
 }
 
 void
@@ -107,7 +107,7 @@ setButtonPix(QPushButton* btn, const QPixmap &pix)
     // btn->setStyleSheet("background: transparent; border: none;");
     btn->setIcon(QIcon(pix));
     btn->setIconSize(pix.size());
-    btn->setFixedSize(pix.size());
+    //btn->setFixedSize(pix.size());
 }
 
 

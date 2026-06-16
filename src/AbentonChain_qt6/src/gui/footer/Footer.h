@@ -14,6 +14,7 @@
 // #include "gui/footer/TrackOverviewButton.h"
 // #include "gui/footer/ClipOverview.h"
 // #include "gui/footer/LongText.h"
+// #include "gui/footer/FooterButton.h"
 
 struct FooterOverview
 {
@@ -135,6 +136,11 @@ public:
 
     void setTrackOverview(QPixmap pix, int visibleWidth, int totalWidth, int xPos);
 signals:
+    void showClipEditor(bool bVisible);
+    void showTrackEditor(bool bVisible);
+    void showQuickHelp(bool bVisible);
+    void showArrangement(bool bVisible);
+
 public slots:
     //void setTextSpurOverview( QString txt ) { m_spurText = txt; updateLayout(); }
 protected slots:
@@ -168,6 +174,9 @@ private:
     ImageButton* createShowDetailPanelButton();
 */
     QPixmap createArrowRight(int w, int h,
+        QColor windowColor, QColor panelColor, QColor symbolColor);
+
+    QPixmap createArrowUp(int w, int h,
         QColor windowColor, QColor panelColor, QColor symbolColor);
 
     QPixmap createFromText(int w, int h, QString text,

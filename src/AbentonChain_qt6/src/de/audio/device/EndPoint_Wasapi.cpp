@@ -26,9 +26,9 @@
 #include <mmdeviceapi.h>
 #include <functiondiscoverykeys_devpkey.h>
 
-#define ASSERT_THROW(c,e)   if(!(c)) { throw std::runtime_error(e); }
-#define CLOSE_HANDLE(x)     if((x)) { CloseHandle(x); x = nullptr; }
-#define RELEASE(x)          if((x)) { (x)->Release(); x = nullptr; }
+#define ASSERT_THROW(c,e) if(!(c)) { throw std::runtime_error(e); }
+#define CLOSE_HANDLE(x)   if((x)) { CloseHandle(x); (x) = nullptr; }
+#define RELEASE(x)        if((x)) { (x)->Release(); (x) = nullptr; }
 
 // struct ComInit {
 //     ComInit()  { CoInitializeEx(nullptr, COINIT_MULTITHREADED); }
@@ -252,10 +252,10 @@ public:
             newState == DEVICE_STATE_DISABLED)
         {
             *m_deviceLostFlag = true;
-            // if (m_deviceLostFunc)
-            // {
-            //     m_deviceLostFunc();
-            // }
+            if (m_deviceLostFunc)
+            {
+                m_deviceLostFunc();
+            }
         }
         return S_OK;
     }
@@ -377,6 +377,11 @@ public:
         m_inputSignal = inputSignal;
     }
 
+    void shutdown()
+    {
+
+    }
+
     void play(bool * guardFlag)
     {
         // if (guardFlag && *guardFlag)
@@ -436,14 +441,10 @@ public:
             m_sampleType = GetSampleType(m_renderFormat);
             m_sampleRate = m_renderFormat->nSamplesPerSec;
             m_channels   = m_renderFormat->nChannels;
-            DE_TRACE("RenderFormat.SampleType = ",getStr(m_sampleType))
-            DE_TRACE("RenderFormat.SampleRate = ",m_sampleRate)
-            DE_TRACE("RenderFormat.Channels = ",m_channels)
 
             REFERENCE_TIME defPeriod, minPeriod;
             hr = m_audioClient->GetDevicePeriod(&defPeriod, &minPeriod);
             ASSERT_THROW(SUCCEEDED(hr), "No m_audioClient->GetDevicePeriod()");
-
 
             hr = m_audioClient->Initialize(
                   AUDCLNT_SHAREMODE_SHARED
@@ -473,10 +474,16 @@ public:
 
             m_blockSizeMin = std::round(f64(minPeriod) * f64(m_sampleRate) / f64(10000000ULL));
             m_blockSizeDef = std::round(f64(defPeriod) * f64(m_sampleRate) / f64(10000000ULL));
-            DE_TRACE("BlockSize.Minimum = ",m_blockSizeMin)
-            DE_TRACE("BlockSize.Default = ",m_blockSizeDef)
-            DE_TRACE("BlockSize.Wasapi  = ",m_blockSizeWasapi)
-            DE_TRACE("BlockSize.Dsp     = ",m_blockSizeDsp)
+
+            DE_TRACE("RenderFormat{"
+                     " ",m_channels,"x"
+                     " ",m_sampleRate," Hz à"
+                     " ",getStr(m_sampleType)," }")
+            DE_TRACE("BlockSize{"
+                    " Min:",m_blockSizeMin,";"
+                    " Dsp:",m_blockSizeDsp,";"
+                    " Def:",m_blockSizeDef,";"
+                    " Max:",m_blockSizeWasapi,"; }")
 
             // REFERENCE_TIME hns = (REFERENCE_TIME)((frames * 10000000LL) / frameRate);
             // UINT32 defaultFrames = (defaultPeriod * sampleRate) / 10000000;
@@ -489,7 +496,6 @@ public:
             // int hnsBufferDuration = (u64(m_blockSizeDsp) * 10000000ULL) / m_sampleRate;
             // double bdInSec = (double)hnsBufferDuration / 10000000.0;
             // double bdInMilliSec = (double)hnsBufferDuration / 10000.0;
-
 
             // DE_TRACE("hnsBufferDuration = ",hnsBufferDuration)
             // DE_TRACE("BufferDuration.Seconds = ",bdInSec)
@@ -528,8 +534,8 @@ public:
 
             if (guardFlag && (*guardFlag))
             {
-				*guardFlag = false;
-				DE_OK("Reset GuardFlag to false.")
+                *guardFlag = false;
+                DE_OK("Reset GuardFlag to false.")
             }
 
             m_bIsPlaying = true;
@@ -552,6 +558,8 @@ public:
         }
 
         m_bIsPlaying = false;
+
+        m_audioClient->Stop();
 
         if (m_hCloseEvent)
         {
@@ -602,7 +610,7 @@ private:
         //ComInit comInit {};
 
         // while (!m_deviceLostFlag)
-        //{
+        // {
             const HANDLE events[2] = { m_hCloseEvent, m_hRenderEvent };
             for (bool run = true; run; )
             {
@@ -619,12 +627,12 @@ private:
                     if (FAILED(hr))
                     {
                         DE_ERROR(WasapiErrorToString(hr))
-                        // if (hr == AUDCLNT_E_DEVICE_INVALIDATED ||
-                        //     hr == HRESULT_FROM_WIN32(ERROR_DEVICE_NOT_CONNECTED))
-                        // {
-                        //     m_deviceLostFlag = true;
-                        //     break;
-                        // }
+                        if (hr == AUDCLNT_E_DEVICE_INVALIDATED ||
+                            hr == HRESULT_FROM_WIN32(ERROR_DEVICE_NOT_CONNECTED))
+                        {
+                            m_deviceLostFlag = true;
+                            break;
+                        }
                     }
 
                     const int32_t oFrames = int32_t(m_blockSizeWasapi) - int32_t(padding);
@@ -638,13 +646,13 @@ private:
                         if (FAILED(hr))
                         {
                             DE_ERROR(WasapiErrorToString(hr))
-                            // if (hr == AUDCLNT_E_DEVICE_INVALIDATED ||
-                            //     hr == HRESULT_FROM_WIN32(ERROR_DEVICE_NOT_CONNECTED))
-                            // {
-                            //     m_deviceLostFlag = true;
-                            //     break;
-                            // }
-                            // continue;
+                            if (hr == AUDCLNT_E_DEVICE_INVALIDATED ||
+                                hr == HRESULT_FROM_WIN32(ERROR_DEVICE_NOT_CONNECTED))
+                            {
+                                m_deviceLostFlag = true;
+                                break;
+                            }
+                            continue;
                         }
 
                         // FillZeroes:
@@ -696,8 +704,8 @@ private:
                     }
                 }
             }
-        //}
-		DE_TRACE("Exit AudioThread")
+        // }
+        DE_TRACE("Exit AudioThread")
         return 0;
     }
 };

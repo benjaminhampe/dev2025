@@ -12,12 +12,11 @@ class Track : public QWidget
 public:
     Track(de::audio::Track* track, QWidget* parent = nullptr);
     ~Track() override;
+    // QSize sizeHint() const override;
+    // QSize minimumSizeHint() const override;
 
     const de::audio::Track* getTrack() const { return m_track; }
     de::audio::Track* getTrack() { return m_track; }
-
-    QSize sizeHint() const override;
-    QSize minimumSizeHint() const override;
 
     void applySkin();
 
@@ -37,8 +36,8 @@ protected:
     // ----------------------------------------
     // Zeichnen
     // ----------------------------------------
-    void paintEvent(QPaintEvent* e) override;
     void resizeEvent(QResizeEvent* e) override;
+    void paintEvent(QPaintEvent* e) override;
     // ----------------------------------------
     // Drag&Drop Reorder:
     // ----------------------------------------

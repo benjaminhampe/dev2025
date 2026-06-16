@@ -5,28 +5,10 @@
 UpdateButton::UpdateButton(QWidget* parent)
     : SvgButton(parent)
 {
-    // setSizePolicy(QSizePolicy::Fixed,QSizePolicy::Fixed);
-    // setContextMenuPolicy(Qt::CustomContextMenu);
-    // setStyleSheet("background:transparent; border:none;");
     setCheckable( true );
     setChecked( false );
     applySkin();
-
-    // connect(this, &QWidget::customContextMenuRequested,
-            // this, &UpdateButton::showContextMenu);
-
-    // connect(this, &QPushButton::toggled,
-    //         this, &UpdateButton::onToggled);
-
 }
-
-// void UpdateButton::onToggled(bool checked)
-// {
-//     applySkin();
-// }
-
-// QSize UpdateButton::sizeHint() const { return QSize(m_width, m_height); }
-// QSize UpdateButton::minimumSizeHint() const { return sizeHint(); }
 
 void UpdateButton::applySkin()
 {
@@ -84,15 +66,3 @@ void UpdateButton::applySkin()
     // updateGeometry(); // tells Qt: “my sizeHint() changed”
     update();
 }
-
-/*
-void UpdateButton::showContextMenu(const QPoint &pos)
-{
-    QMenu menu;
-    QAction *removeAct = menu.addAction("Entfernen");
-    QAction *chosen = menu.exec(mapToGlobal(pos));
-
-    if (chosen == removeAct)
-        emit requestRemoval(this);
-}
-*/

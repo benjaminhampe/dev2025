@@ -16,9 +16,13 @@ Footer::Footer(QWidget* parent )
     m_longText = QString("LongText");
 
     m_clipOverview.btnShow = new PixButton(this);
+    m_clipOverview.btnShow->setCheckable(true);
+    m_clipOverview.btnShow->setChecked(false);
     m_clipOverview.btnName = new PixButton(this);
     m_trackOverview.btnShow = new PixButton(this);
     m_trackOverview.btnName = new PixButton(this);
+    m_trackOverview.btnShow->setCheckable(true);
+    m_trackOverview.btnShow->setChecked(true);
 
     connect( m_btnQuickHelp, SIGNAL(toggled(bool)),
             this, SLOT(on_btnShowQuickHelpPanel(bool)) );
@@ -26,10 +30,10 @@ Footer::Footer(QWidget* parent )
     connect( m_btnMidiKeyboard, SIGNAL(toggled(bool)),
             this, SLOT(on_btnShowMidiKeyboard(bool)) );
 
-    connect( m_clipOverview.btnShow, SIGNAL(clicked(bool)),
+    connect( m_clipOverview.btnShow, SIGNAL(toggled(bool)),
             this, SLOT(on_btnShowClipOverview(bool)) );
 
-    connect( m_trackOverview.btnShow, SIGNAL(clicked(bool)),
+    connect( m_trackOverview.btnShow, SIGNAL(toggled(bool)),
             this, SLOT(on_btnShowTrackOverview(bool)) );
 
     connect( m_btnDetails, SIGNAL(toggled(bool)),
@@ -291,7 +295,7 @@ void Footer::applySkin()
     PIX_createMidiKeyboard(m_btnMidiKeyboard, 2*m_buttonHeight,m_buttonHeight);
 
     auto pixOff = createArrowRight(48,48,m_windowColor,m_panelColor,m_textColor);
-    auto pixOn = createArrowRight(48,48,m_windowColor,m_activeColor,m_textColor);
+    auto pixOn = createArrowUp(48,48,m_windowColor,m_activeColor,m_textColor);
     m_clipOverview.btnShow->setPixmaps(pixOn,pixOff);
 
     pixOff = createFromText(0,48,"1-ClipEditor", m_textColor,m_panelColor);
@@ -299,7 +303,7 @@ void Footer::applySkin()
     m_clipOverview.btnName->setPixmaps(pixOn,pixOff);
 
     pixOff = createArrowRight(48,48,m_windowColor,m_panelColor,m_textColor);
-    pixOn = createArrowRight(48,48,m_windowColor,m_activeColor,m_textColor);
+    pixOn = createArrowUp(48,48,m_windowColor,m_activeColor,m_textColor);
     m_trackOverview.btnShow->setPixmaps(pixOn,pixOff);
 
     pixOff = createFromText(0,48,"1-AudioTrack", m_textColor,m_panelColor);
@@ -343,18 +347,21 @@ Footer::updateLayout()
 }
 
 void
-Footer::resizeEvent( QResizeEvent* event )
+Footer::resizeEvent(QResizeEvent* e)
 {
+    const int w = e->size().width();
+    const int h = e->size().height();
+    if (w < 1) return;
+    if (h < 1) return;
     updateLayout();
-    QWidget::resizeEvent( event );
 }
 
-void Footer::paintEvent( QPaintEvent* event )
+void Footer::paintEvent(QPaintEvent* e)
 {
-    int w = width();
-    int h = height();
-    if ( w < 2 ) return;
-    if ( h < 2 ) return;
+    const int w = width();
+    const int h = height();
+    if (w < 1) return;
+    if (h < 1) return;
 
     //std::cout << "w = " << w << ", h = " << h << std::endl;
 
@@ -405,30 +412,30 @@ Footer::setTrackOverview(QPixmap pix, int visibleWidth, int totalWidth, int xPos
     updateLayout();
 }
 
-QPixmap SVG_createSymbolArrowRight(int w, int h, QColor symbolColor)
-{
-    auto s = QString(R"(
-<svg width="%1" height="%2" viewBox="0 0 %1 %2" xmlns="http://www.w3.org/2000/svg" >
-    <path d="M0,0 L%1,%3 L0,%2z" fill="%4" />
-</svg>
-)")
-    .arg(w)  // %1
-    .arg(h)  // %2
-    .arg(h/2)  // %3
-    .arg(toSvg(symbolColor)) // %4
-    ;
-    return mkSvg(s,w,h);
-}
-
 QPixmap Footer::createArrowRight(int w, int h,
     QColor windowColor, QColor panelColor, QColor symbolColor)
 {
-    // const auto lineColor = QColor(79,79,79);
-    // const auto onColor = QColor(255,181,1);
-    // const auto offColor = QColor(207,207,207);
-    // const auto textColor = skin.textColor;
+    float fx = 18.f / 48.f;
 
-    auto svgArrow = SVG_createSymbolArrowRight(9,9,symbolColor);
+    int sx = std::lround(fx * w);
+
+
+    auto SVG_createArrowRight = [](int w, int h, QColor symbolColor) -> QPixmap
+    {
+        auto s = QString(R"(
+    <svg width="%1" height="%2" viewBox="0 0 %1 %2" xmlns="http://www.w3.org/2000/svg" >
+        <path d="M0,0 L%1,%3 L0,%2z" fill="%4" />
+    </svg>
+    )")
+        .arg(w)  // %1
+        .arg(h)  // %2
+        .arg(h/2)  // %3
+        .arg(toSvg(symbolColor)) // %4
+        ;
+        return mkSvg(s,w,h);
+    };
+
+    auto symbol = SVG_createArrowRight(sx,sx,symbolColor);
 
     QPixmap pm(w, h);
     pm.fill(windowColor);
@@ -442,9 +449,55 @@ QPixmap Footer::createArrowRight(int w, int h,
         dc.drawRoundedRect(0,0,w,h, m_radius,m_radius );
         dc.drawRect(w/2,0,w,h);
 
-        int W = svgArrow.width();
-        int H = svgArrow.height();
-        dc.drawPixmap((w-W)/2,(h-H)/2,svgArrow);
+        int W = symbol.width();
+        int H = symbol.height();
+        dc.drawPixmap((w-W)/2,(h-H)/2,symbol);
+
+        dc.end();
+    }
+
+    return pm;
+}
+
+QPixmap Footer::createArrowUp(int w, int h,
+    QColor windowColor, QColor panelColor, QColor symbolColor)
+{
+    float fx = 18.f / 48.f;
+
+    int sx = std::lround(fx * w);
+
+    auto SVG_createArrowUp = [](int w, int h, QColor symbolColor) -> QPixmap
+    {
+        auto s = QString(R"(
+    <svg width="%1" height="%2" viewBox="0 0 %1 %2" xmlns="http://www.w3.org/2000/svg" >
+        <path d="M%3,0 L%1,%2 L0,%2z" fill="%4" />
+    </svg>
+    )")
+        .arg(w)  // %1
+        .arg(h)  // %2
+        .arg(w/2)  // %3
+        .arg(toSvg(symbolColor)) // %4
+        ;
+        return mkSvg(s,w,h);
+    };
+
+    auto symbol = SVG_createArrowUp(sx,sx,symbolColor);
+
+    QPixmap pm(w, h);
+    pm.fill(windowColor);
+
+    QPainter dc;
+    if (dc.begin(&pm))
+    {
+        dc.setRenderHint(QPainter::Antialiasing);
+        dc.setPen( Qt::NoPen );
+        dc.setBrush( QBrush( panelColor ) );
+        dc.drawRoundedRect(0,0,w,h, m_radius,m_radius );
+        dc.drawRect(w/2,0,w,h);
+
+        int W = symbol.width();
+        int H = symbol.height();
+        dc.drawPixmap((w-W)/2,(h-H)/2,symbol);
 
         dc.end();
     }
@@ -460,26 +513,14 @@ QPixmap Footer::createFromText(int w, int h, QString text, QColor textColor, QCo
     int tw = r.width() + 10;
     int th = r.height() + 2;
 
-    if (w > 0)
-    {
-        w = std::max(w,tw);
-    }
-    else
-    {
-        w = tw;
-    }
+    if (w > 0)  { w = std::max(w,tw); }
+    else        { w = tw; }
 
-    if (h > 0)
-    {
-        h = std::max(h,th);
-    }
-    else
-    {
-        h = th;
-    }
+    if (h > 0)  { h = std::max(h,th); }
+    else        { h = th; }
 
     QPixmap pm(w, h);
-    pm.fill(fillColor);
+    pm.fill(Qt::white); // fillColor
 
     QPainter dc;
     if (dc.begin(&pm))
@@ -487,7 +528,9 @@ QPixmap Footer::createFromText(int w, int h, QString text, QColor textColor, QCo
         dc.setRenderHint(QPainter::Antialiasing);
         dc.setPen(QPen(textColor));
         dc.setBrush(Qt::NoBrush);
-        dc.drawText(10,(h-th)/2,text);
+
+        QRect r = pm.rect();
+        dc.drawText(r, Qt::AlignCenter, text, &r);
         dc.end();
     }
 
@@ -610,6 +653,9 @@ Footer::on_btnShowQuickHelpPanel( bool checked )
     DE_DEBUG("checked = ",checked, ", "
              "isDetailsVisible = ", skin.bIsDetailsVisible, ", "
              "isQuickHelpVisible = ", skin.bIsQuickHelpVisible )
+
+    emit showQuickHelp(checked);
+/*
     if ( checked )
     {
         skin.bIsDetailsVisible = true;
@@ -626,7 +672,7 @@ Footer::on_btnShowQuickHelpPanel( bool checked )
     {
         skin.bIsQuickHelpVisible = false;
     }
-
+*/
     // updateLayout();
 }
 
@@ -639,6 +685,10 @@ Footer::on_btnShowClipOverview( bool checked )
              "isDetailsVisible = ", skin.bIsDetailsVisible, ", "
              "isQuickHelpVisible = ", skin.bIsQuickHelpVisible )
 
+    emit showClipEditor(checked);
+
+
+/*
     if ( !skin.bIsDetailsVisible )
     {
         if ( !m_btnDetails->isChecked() )
@@ -660,7 +710,7 @@ Footer::on_btnShowClipOverview( bool checked )
     }
 
     skin.bIsClipEditorVisible = true;
-
+*/
 
     //   if ( !m_btnShowQuickHelpPanel->isChecked() )
     //   {
@@ -686,6 +736,9 @@ Footer::on_btnShowTrackOverview( bool checked )
             "isDetailsVisible = ", skin.bIsDetailsVisible, ", "
             "isQuickHelpVisible = ", skin.bIsQuickHelpVisible )
 
+    emit showTrackEditor(checked);
+
+/*
     if ( !skin.bIsDetailsVisible )
     {
         if ( !m_btnDetails->isChecked() )
@@ -706,7 +759,7 @@ Footer::on_btnShowTrackOverview( bool checked )
     }
 
     skin.bIsClipEditorVisible = false;
-
+*/
     // m_clipContent->blockSignals( true );
     // m_clipContent->hide();
     // m_clipContent->blockSignals( false );
@@ -727,6 +780,9 @@ Footer::on_btnShowDetailPanel( bool checked )
                "isDetailVisible = ", skin.bIsDetailsVisible, ", "
                "isQuickHelpVisible = ", skin.bIsQuickHelpVisible )
 
+    emit showArrangement(checked);
+
+/*
     if ( checked )
     {
         skin.bIsDetailsVisible = true;
@@ -749,7 +805,7 @@ Footer::on_btnShowDetailPanel( bool checked )
             m_btnQuickHelp->blockSignals( false );
         }
     }
-
+*/
     //updateLayout();
 }
 /*

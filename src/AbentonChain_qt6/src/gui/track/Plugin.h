@@ -22,29 +22,33 @@ public:
     ~Plugin() override;
     //QSize sizeHint() const override;
     //QSize minimumSizeHint() const override;
-
-    de::audio::SharedPlugin getPlugin();
+    QRect labelRect() const { return m_rcLabel; }
+    de::audio::SharedPlugin getPlugin() { return m_plugin; }
 
     void setPlugin(de::audio::SharedPlugin plugin);
 
-    QRect labelRect() const;
-
     void applySkin();
+    void updateLayout();
+    int computeBestWidth() const;
+    int computeBestFontHeight(QFont baseFont, int maxHeight) const;
+
 signals:
     void requestRemoval(Plugin *self);
     void collapseChanged(); // Trigger relayout of Track
 
 protected:
-    void resizeEvent(QResizeEvent *) override;
-    void paintEvent(QPaintEvent *) override;
+    void resizeEvent(QResizeEvent*) override;
+    void paintEvent(QPaintEvent*) override;
 
-    void mousePressEvent(QMouseEvent* event) override;
-    void mouseReleaseEvent(QMouseEvent* event) override;
-    void mouseMoveEvent(QMouseEvent* event) override;
-    void mouseDoubleClickEvent(QMouseEvent* event) override;
+    void mousePressEvent(QMouseEvent*) override;
+    void mouseReleaseEvent(QMouseEvent*) override;
+    void mouseMoveEvent(QMouseEvent*) override;
+    void mouseDoubleClickEvent(QMouseEvent*) override;
 
-    void focusInEvent(QFocusEvent* event) override;
-    void focusOutEvent(QFocusEvent* event) override;
+    void enterEvent(QEnterEvent*) override;
+    void leaveEvent(QEvent*) override;
+    void focusInEvent(QFocusEvent*) override;
+    void focusOutEvent(QFocusEvent*) override;
 public slots:
     // void setIsDragging(bool);
 
@@ -77,20 +81,22 @@ private:
 
     QString m_title;
 
-    int m_baseWidth = 300;
-    int m_baseHeight = 376;
+    int m_zoom = 100;
+    //int m_baseHeaderWidth = 38;
+    //int m_baseHeaderHeight = 34;
+
+    // int m_baseWidth = 300;
+    // int m_baseHeight = 376;
     int m_baseRadius = 6;
-    int m_baseHeaderWidth = 38;
-    int m_baseHeaderHeight = 34;
     int m_baseButtonSize = 30;
     int m_baseSpacing4 = 4;
     int m_baseSpacing2 = 2;
 
     // RealTime Draw infos:
-    int m_width;
-    int m_height;
+    // int m_width;
+    // int m_height;
+    int m_headerHeight; // Paint needs it.
     int m_radius;
-    int m_headerHeight;
     int m_buttonSize;
     int m_spacing2;
     int m_spacing4;
@@ -102,7 +108,7 @@ private:
     QRect m_rcHeader;
     QRect m_rcBody;
     QRect m_rcLabel;
-    QRect m_rcAudioMeter;
+    QFont m_headerFont;
 
     QColor m_windowColor;
     QColor m_panelColor;

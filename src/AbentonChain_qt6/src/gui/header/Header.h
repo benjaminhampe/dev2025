@@ -56,8 +56,10 @@ class Header : public QWidget
 
 public:
    explicit Header( QWidget* parent = 0 );
-   ~Header() override {}
+   ~Header() override;
 
+    void applySkin();
+    void updateLayout();
 signals:
 public slots:
    //void updateLayout();
@@ -66,9 +68,9 @@ protected slots:
    void on_stopButton( bool checked );
    void on_recordButton( bool checked );
 protected:
-   //void updateLayout( QRect const & clipRect );
-   // void resizeEvent( QResizeEvent* event ) override;
-   // void paintEvent( QPaintEvent* event ) override;
+
+   void resizeEvent( QResizeEvent* event ) override;
+   void paintEvent( QPaintEvent* event ) override;
 
 /*
    int getGroup1Width() const

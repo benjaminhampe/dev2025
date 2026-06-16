@@ -6,17 +6,22 @@ std::shared_ptr<App> App::m_pInstance = nullptr;
 
 App::App(QObject* parent)
     : QObject(parent)
-    //, m_canvas{ nullptr }
-    , m_inputDeviceId(0)
-    , m_outputDeviceId(0)
-    , m_blockSize(0)
-    , m_channels(0)
-    , m_sampleRate(0)
-    , m_endPoint{ [this]() { QMetaObject::invokeMethod( this, "onAudioDeviceLost", Qt::QueuedConnection); } }
-    , m_deviceGuardFlag{ false }
+    // , m_canvas{ nullptr }
+    // , m_inputDeviceId(0)
+    // , m_outputDeviceId(0)
+    // , m_blockSize(0)
+    // , m_channels(0)
+    // , m_sampleRate(0)
+    , m_endPoint{
+        [this]()
+        {
+            QMetaObject::invokeMethod( this, "onAudioDeviceLost", Qt::QueuedConnection);
+        } }
+    //, m_deviceGuardFlag{ false }
+    //, m_bShutdown{ false }
     , m_track(nullptr)
 {
-    DE_TRACE("")
+    // DE_TRACE("")
 
     //de::audio::WindowFunction::test();
 
@@ -43,10 +48,12 @@ std::shared_ptr<App> App::instance()
 //     m_canvas = canvas;
 // }
 
-void App::cleanupAll()
+void App::shutdown()
 {
     // Your cleanup before destruction
     DE_WARN("")
+
+    //m_bShutdown = true;
 
     stopAudio();
 
@@ -123,7 +130,9 @@ void App::playAudio()
     getSampleCollector()->dsp_clearInputSignals();
     getSampleCollector()->dsp_setInputSignal(m_track);
     m_endPoint.setInputSignal(getSampleCollector());
-    m_endPoint.play(&m_deviceGuardFlag);
+
+    // &m_deviceGuardFlag
+    m_endPoint.play(nullptr);
 }
 
 void App::stopAudio()
@@ -140,13 +149,18 @@ void App::stopAudio()
 
 void App::onAudioDeviceLost()
 {
-    if (m_deviceGuardFlag)
-        return; // prevents infinite loops
+    DE_ERROR("AudioDevice lost")
 
-    m_deviceGuardFlag = true;
+    //if (m_deviceGuardFlag)
+    //     return; // prevents infinite loops
 
-    stopAudio();
-    DE_ERROR("AudioDevice lost, restart...")
+    // if (m_deviceGuardFlag)
+    //     return; // prevents infinite loops
+
+    // m_deviceGuardFlag = true;
+
+    //stopAudio();
+    //DE_ERROR("AudioDevice restart...")
     // playAudio();
 }
 

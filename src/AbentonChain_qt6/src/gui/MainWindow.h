@@ -4,11 +4,7 @@
 #include <gui/Keyboard2MidiNote_Mapping.h>
 #include <gui/conf/AudioConfigDialog.h>
 #include <gui/conf/MidiConfigDialog.h>
-#include <gui/header/Header.h>
-#include <gui/viz/GL_Canvas.h>
-#include <gui/clip/ClipEditor.h>
-#include <gui/track/ChainStack.h>
-#include <gui/footer/Footer.h>
+#include <gui/CentralWidget.h>
 
 class MainWindow : public QMainWindow
 {
@@ -34,10 +30,13 @@ private:
 
     Keyboard2MidiNote_Mapping m_keyboard2MidiNoteMapping;
     QString     m_appTitle;
-    Header*     m_header;
-    QWidget*    m_canvasContainer;
-    GL_Canvas*  m_canvas;
-    ClipEditor* m_clipEditor; // PianoRoll
-    ChainStack* m_chainStack;
-    Footer*     m_footer;
+
+    CentralWidget* m_body;
+
+    // createMenuView
+    QAction* m_actShowHeader{ nullptr };
+    QAction* m_actShowCanvas{ nullptr };
+    QAction* m_actShowPianoRoll{ nullptr };
+    QAction* m_actShowChain{ nullptr };
+    QAction* m_actShowFooter{ nullptr };
 };

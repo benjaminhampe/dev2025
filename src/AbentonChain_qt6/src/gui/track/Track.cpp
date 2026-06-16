@@ -25,12 +25,13 @@ Track::Track(de::audio::Track* track, QWidget* parent)
 
 Track::~Track()
 {
-    for (auto p : m_plugins) { delete p; }
-    m_plugins.clear();
+    DE_OK()
+    // for (auto p : m_plugins) { delete p; }
+    // m_plugins.clear();
 }
 
-QSize Track::sizeHint() const { return QSize(0, m_height); }
-QSize Track::minimumSizeHint() const { return sizeHint(); }
+// QSize Track::sizeHint() const { return QSize(0, m_height); }
+// QSize Track::minimumSizeHint() const { return QSize(0, m_height); }
 
 void Track::applySkin()
 {
@@ -52,6 +53,7 @@ void Track::applySkin()
     m_dropIndicatorWidth = (m_baseDropIndicatorWidth * skin.zoom) / 100;
     m_dropTargetWidth = (m_baseDropTargetWidth * skin.zoom) / 100;
 
+    //setFixedHeight(m_height);
     updateLayout();
 }
 
@@ -73,7 +75,8 @@ void Track::updateLayout()
             x += m_dropIndicatorWidth + m_widgetSpacing;
         }
 
-        pWidget->move(x,y);
+        int bestWidth = pWidget->computeBestWidth();
+        pWidget->setGeometry(x,y,bestWidth,height());
 
         x += pWidget->width() + m_widgetSpacing;
     }
@@ -84,16 +87,13 @@ void Track::updateLayout()
     }
 
     m_width = x;
-    m_bEmitOverview = true;
-    updateLayoutOfDropTarget();
-}
 
-void Track::updateLayoutOfDropTarget()
-{
-    //DE_TRACE("updateLayoutOfDropTarget()")
     int dropTargetWidth = std::max(width() - m_width, m_dropTargetWidth);
-    m_rcDropTarget = QRect(m_width, 0, dropTargetWidth, m_height);
+    m_rcDropTarget = QRect(m_width, 0, dropTargetWidth, height());
+
+    m_bEmitOverview = true;
     update();
+
 }
 
 std::vector<de::audio::SharedPlugin>
@@ -121,13 +121,28 @@ Track::collectPlugins() const
 // ------------------------------------------------------------
 void Track::resizeEvent(QResizeEvent* e)
 {
-    //DE_TRACE("resizeEvent(",e->size().width(),",",e->size().height(),")")
-    updateLayoutOfDropTarget();
     QWidget::resizeEvent(e);
+
+    if (!isVisible()) { return; }
+    const int w = e->size().width();
+    const int h = e->size().height();
+    if (w < 1) return;
+    if (h < 1) return;
+
+    // int w = e->size().width();
+    // int h = e->size().height();
+    // DE_TRACE("w(",w,"), h(",h,")")
+    updateLayout();
 }
 
 void Track::paintEvent(QPaintEvent* e)
 {
+    if (!isVisible()) { return; }
+    const int w = width();
+    const int h = height();
+    if (w < 1) return;
+    if (h < 1) return;
+
     if (m_bInPaintEvent)
     {
         DE_ERROR("m_bInPaintEvent")
@@ -179,7 +194,7 @@ void Track::paintEvent(QPaintEvent* e)
 
             auto fm = QFontMetrics(font());
             int x = width() - 11 - fm.boundingRect(s).width();
-            int y = height() - 11 - fm.ascent();
+            int y = height() - 11; // - fm.ascent();
             dc.setPen(QPen(Qt::white));
             dc.drawText( x, y, s);
 #endif
@@ -220,18 +235,21 @@ void Track::emitTrackOverview()
     int dst_h = m_overviewHeight > 0 ? m_overviewHeight : 48;
     int dst_w = std::lround((float(src_w) / float(src_h)) * float(dst_h));
 
+    // dst_w = std::clamp(dst_w,8,2*1024);
+    // dst_h = std::clamp(dst_h,8,2*1024);
     // DE_BENNI("dst(",dst_w,",",dst_h,")")
+    float fx = float(dst_w) / float(src_w);
+    float fy = float(dst_h) / float(src_h);
+    DE_BENNI("scale(",fx,",",fy,")")
+    // float scale_x = de::clampf( float(dst_w) / float(src_w), 0.001f, 1.0f);
+    // float scale_y = de::clampf( float(dst_h) / float(src_h), 0.001f, 1.0f);
 
     QPixmap pixmap(dst_w, dst_h);
     pixmap.fill(Qt::transparent);
     QPainter dc;
     if (dc.begin(&pixmap))
     {
-        float scale_x = float(dst_w) / float(src_w);
-        float scale_y = float(dst_h) / float(src_h);
-
-        // DE_BENNI("scale(",scale_x,",",scale_y,")")
-        dc.scale(scale_x,scale_y);
+        dc.scale(fx,fy);
         dc.setRenderHint(QPainter::Antialiasing, true);
         dc.setRenderHint(QPainter::TextAntialiasing, true);
         render(&dc);
@@ -243,11 +261,6 @@ void Track::emitTrackOverview()
     {
         DE_ERROR("dc inactive")
     }
-
-    // final downscale
-    //QPixmap final = pm.scaled(targetW, targetH, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
-
-
 }
 
 // ------------------------------------------------------------
@@ -411,7 +424,6 @@ int Track::computeDragIndex(const QPoint &pos)
 
     return -1;
 }
-
 
 void Track::dragMoveEvent(QDragMoveEvent* e)
 {

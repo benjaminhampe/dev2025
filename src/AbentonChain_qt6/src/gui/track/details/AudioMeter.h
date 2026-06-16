@@ -9,10 +9,11 @@ class AudioMeter : public QWidget
    Q_OBJECT
 public:
     AudioMeter( QWidget* parent = 0 );
-    // QSize sizeHint() const override;
-    // QSize minimumSizeHint() const override;
+    int computeBestWidth() const;
 
-	void applySkin();
+    void applySkin();
+    void updateLayout();
+
     void setPlugin( de::audio::IPlugin* plugin )
     {
         m_plugin = plugin;
@@ -22,29 +23,32 @@ public:
     void playUpdateTimer();
     void stopUpdateTimer();
 protected:
-    void timerEvent( QTimerEvent* event ) override;
-    void paintEvent( QPaintEvent* event ) override;
-   
+    void resizeEvent(QResizeEvent* e) override;
+    void paintEvent(QPaintEvent* e) override;
+    void timerEvent(QTimerEvent* e) override;
+
 private:
     std::atomic<de::audio::IPlugin*> m_plugin;
     int m_updateTimerId;
+    int m_zoom = 100;
     float m_Lnow;
     float m_Rnow;
     float m_Lmin;
     float m_Rmin;
     float m_Lmax;
     float m_Rmax;
-    int m_baseWidth;
-    int m_baseHeight;
-    int m_baseTop;
-    int m_baseSpacing;
+
+    // int m_baseWidth;
+    // int m_baseHeight;
+    // int m_baseTop;
+    // int m_baseSpacing;
+
     QColor m_fillColor;
     QColor m_markColor;
     QColor m_windowColor;
-    int m_width;
-    int m_height;
-    int m_top;
-    int m_spacing;
+    // int m_width;
+    // int m_height;
+
     QRect m_rcLeft;
     QRect m_rcRight;
     QRect m_rcLeftMark;

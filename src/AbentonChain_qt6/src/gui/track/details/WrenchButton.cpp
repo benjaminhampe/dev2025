@@ -5,28 +5,10 @@
 WrenchButton::WrenchButton(QWidget* parent)
     : SvgButton(parent)
 {
-    // setSizePolicy(QSizePolicy::Fixed,QSizePolicy::Fixed);
-    // setContextMenuPolicy(Qt::CustomContextMenu);
-    // setStyleSheet("background:transparent; border:none;");
     setCheckable( true );
     setChecked( false );
     applySkin();
-
-    // connect(this, &QWidget::customContextMenuRequested,
-            // this, &WrenchButton::showContextMenu);
-
-    // connect(this, &QPushButton::toggled,
-    //         this, &WrenchButton::onToggled);
-
 }
-
-// void WrenchButton::onToggled(bool checked)
-// {
-//     applySkin();
-// }
-
-// QSize WrenchButton::sizeHint() const { return QSize(m_width, m_height); }
-// QSize WrenchButton::minimumSizeHint() const { return sizeHint(); }
 
 void WrenchButton::applySkin()
 {

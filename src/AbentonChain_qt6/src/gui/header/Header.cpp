@@ -178,6 +178,126 @@ Header::Header(QWidget* parent)
     connect( m_btnRecord, SIGNAL(clicked(bool)), this, SLOT(on_recordButton(bool)) );
 }
 
+Header::~Header()
+{
+}
+
+void Header::applySkin()
+{
+    const auto& skin = App::instance()->getSkin();
+/*
+    m_windowColor = skin.windowColor;
+    m_panelColor = skin.panelColor;
+    m_textColor = skin.textColor;
+    m_activeColor = skin.symbolColorActive;
+    m_radius = (m_baseRadius * skin.zoom) / 100;
+    m_padding = (m_basePadding * skin.zoom) / 100;
+    m_buttonHeight = (m_baseButtonHeight * skin.zoom) / 100;
+
+    SVG_createQuickHelp(m_btnQuickHelp, m_buttonHeight,m_buttonHeight);
+    PIX_createMidiKeyboard(m_btnMidiKeyboard, 2*m_buttonHeight,m_buttonHeight);
+
+    auto pixOff = createArrowRight(48,48,m_windowColor,m_panelColor,m_textColor);
+    auto pixOn = createArrowUp(48,48,m_windowColor,m_activeColor,m_textColor);
+    m_clipOverview.btnShow->setPixmaps(pixOn,pixOff);
+
+    pixOff = createFromText(0,48,"1-ClipEditor", m_textColor,m_panelColor);
+    pixOn = createFromText(0,48,"1-ClipEditor", m_textColor,m_panelColor);
+    m_clipOverview.btnName->setPixmaps(pixOn,pixOff);
+
+    pixOff = createArrowRight(48,48,m_windowColor,m_panelColor,m_textColor);
+    pixOn = createArrowUp(48,48,m_windowColor,m_activeColor,m_textColor);
+    m_trackOverview.btnShow->setPixmaps(pixOn,pixOff);
+
+    pixOff = createFromText(0,48,"1-AudioTrack", m_textColor,m_panelColor);
+    pixOn = createFromText(0,48,"1-AudioTrack", m_textColor,m_panelColor);
+    m_trackOverview.btnName->setPixmaps(pixOn,pixOff);
+
+    PIX_createDetails(m_btnDetails, 2*m_buttonHeight,m_buttonHeight);
+
+    // QColor m_panelColor(128,128,128);
+    // QColor m_contentColor(255,255,255);
+    // QColor m_symbolColor(255,128,0);
+    // QColor m_focusColor(32,32,32);
+*/
+    updateLayout();
+}
+
+void Header::updateLayout()
+{
+/*
+    int w = width();
+    int h = height();
+    int p = 10;
+
+    int xHelp = p;
+    int xMidi = xHelp + m_btnQuickHelp->width() + p;
+    int xLong = xMidi + m_btnMidiKeyboard->width() + p;
+
+    int xLast = w - 1 - p;
+    int xDeta = xLast - m_btnDetails->width();
+    int xTrack = xDeta - p - m_trackOverview.width();
+    int xClip = xTrack - p - m_clipOverview.width();
+    int wLong = xClip - xLong - p;
+
+    m_btnQuickHelp->move(xHelp,p);
+    m_btnMidiKeyboard->move(xMidi,p);
+    m_rcLongText = QRect(xLong, p, wLong, h-2*p);
+    m_clipOverview.move(xClip,p);
+    m_trackOverview.move(xTrack,p);
+    m_btnDetails->move(xDeta,p);
+*/
+    update();
+}
+
+void Header::resizeEvent(QResizeEvent* e)
+{
+    const int w = e->size().width();
+    const int h = e->size().height();
+    if (w < 1) return;
+    if (h < 1) return;
+    updateLayout();
+}
+
+void Header::paintEvent(QPaintEvent* e)
+{
+    const int w = width();
+    const int h = height();
+    if (w < 1) return;
+    if (h < 1) return;
+/*
+    //std::cout << "w = " << w << ", h = " << h << std::endl;
+
+    QPainter dc( this );
+    dc.fillRect( rect(), m_windowColor );
+
+    dc.setPen( Qt::NoPen );
+    dc.setBrush( QBrush( m_panelColor ) );
+    dc.drawRoundedRect( m_rcLongText, m_radius,m_radius );
+
+    //m_fillColor( 200,200,200 )
+    //m_textColor( 46,56,66 )
+
+    QFont m_font = QFont("FontAwesome", 10, QFont::Normal, false );
+    m_font.setHintingPreference( QFont::PreferFullHinting );
+    m_font.setKerning( true );
+    m_font.setStyleStrategy( QFont::PreferAntialias );
+
+    dc.setFont( m_font );
+    dc.setPen( QPen( m_textColor ) );
+    dc.setBrush( Qt::NoBrush );
+
+    QRect r_longText = m_rcLongText.adjusted(10,2,-10,-2);
+    dc.drawText( r_longText,
+                 Qt::AlignVCenter | Qt::AlignLeft,
+                 m_longText,
+                 &r_longText );
+
+    m_clipOverview.draw(dc);
+    m_trackOverview.draw(dc);
+*/
+}
+
 void
 Header::on_playButton( bool checked )
 {

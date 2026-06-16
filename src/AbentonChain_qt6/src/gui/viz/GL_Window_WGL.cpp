@@ -75,28 +75,44 @@ void GL_Window_WGL::timerEvent(QTimerEvent*)
 
 void GL_Window_WGL::resizeEvent(QResizeEvent* e)
 {
-    QWindow::resizeEvent(e);
-    // If you use FBOs or size-dependent resources, update them here.
-    int w = e->size().width();
-    int h = e->size().height();
+    QWindow::resizeEvent(e);   // always first
+
+    if (!isVisible()) return;
+    const int w = e->size().width();
+    const int h = e->size().height();
+    if (w<1) return;
+    if (h<1) return;
+    if (!isExposed()) return;
+    if (!_d->hDC) return;
+    if (!_d->hGLRC) return;
+    wglMakeCurrent(_d->hDC, _d->hGLRC);
     resizeGL(w,h);
+    requestUpdate(); // schedule redraw
 }
 
 void GL_Window_WGL::renderNow()
 {
-    if (!isExposed())
-        return;
+    if (!isVisible()) return;
+    if (width()<1) return;
+    if (height()<1) return;
+    if (!isExposed()) return;
 
-    if (!_d->initialized) {
+    if (!_d->initialized)
+    {
         initGL();
-        _d->initialized = true;
-        initializeGL();
+        if (_d->initialized)
+        {
+            initializeGL();
+        }
+        else
+        {
+            DE_ERROR("GL not ready")
+            return;
+        }
     }
 
     wglMakeCurrent(_d->hDC, _d->hGLRC);
-
     paintGL();
-
     SwapBuffers(_d->hDC);
 }
 
@@ -165,6 +181,8 @@ void GL_Window_WGL::initGL()
     int ms = 1000.0f / hz;
     DE_TRACE("Refresh time = ", ms, " ms")
     startTimer(ms); // ~60 FPS
+
+    _d->initialized = true;
 }
 
 void GL_Window_WGL::destroyGL()

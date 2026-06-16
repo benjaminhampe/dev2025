@@ -1,4 +1,4 @@
-#include "gui/track/ChainStack.h"
+#include "ChainStack.h"
 #include "App.h"
 #include "gui/Skin.h"
 
@@ -7,12 +7,15 @@ ChainStack::ChainStack(QWidget* parent)
 {
     DE_TRACE("")
 
+    setObjectName("ChainStack");
     setMinimumWidth(100);
     setContentsMargins(0,0,0,0);
+    setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Fixed);
 
     // QStackedWidget holds multiple pages; only one is visible at a time
     m_stack = new QStackedWidget;
     m_stack->setStyleSheet("background: transparent;");
+    m_stack->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Fixed);
 
     // // External scrollbar that will control the visible child widget
     m_scrollBar = new QScrollBar(Qt::Horizontal);
@@ -47,8 +50,19 @@ ChainStack::~ChainStack()
     DE_TRACE("")
 }
 
+QSize ChainStack::sizeHint() const
+{
+    return QSize(0,m_height);
+}
+QSize ChainStack::minimumSizeHint() const
+{
+    return QSize(0,m_height);
+}
+
 void ChainStack::applySkin()
 {
+    DE_TRACE()
+
     if (m_stack->currentWidget())
     {
         static_cast<ChainWrapper*>(m_stack->currentWidget())->applySkin();
@@ -56,10 +70,12 @@ void ChainStack::applySkin()
 
     const auto& skin = App::instance()->getSkin();
     m_windowColor = skin.windowColor;
-    // int w = (m_baseWidth * skin.zoom) / 100;
-    // int h = (m_baseHeight * skin.zoom) / 100;
-    // setFixedSize(w,h);
 
+    //int w = (m_baseWidth * skin.zoom) / 100;
+    m_height = (m_baseHeight * skin.zoom) / 100;
+    //setMinimumHeight(h);
+    //setMaximumHeight(h);
+    setFixedHeight(m_height);
     update();
 }
 
@@ -105,7 +121,8 @@ void ChainStack::paintEvent(QPaintEvent* event)
     }
 
     QPainter dc(this);
-    dc.fillRect(rect(), m_windowColor);
+    //dc.fillRect(rect(), m_windowColor);
+    dc.fillRect(rect(), QColor(255,255,0));
 
     // dc.setBrush(Qt::NoBrush);
     // dc.setPen(QPen(QColor(255,0,0)));

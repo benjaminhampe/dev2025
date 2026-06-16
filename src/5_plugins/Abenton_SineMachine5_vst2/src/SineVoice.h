@@ -225,6 +225,7 @@ struct Voice
         R += Rp;
 
     // <OSC>
+    /*
         float sampleL = m_oscAdditive.process();
         float sampleR = m_oscAnalogDrift.process();
         L += sampleL;
@@ -233,6 +234,7 @@ struct Voice
         float sample = m_oscBlepHybrid.process();
         L += sample;
         R += sample;
+    */
     // </OSC>
 
     // <Envelope>

@@ -24,60 +24,55 @@ MainWindow::MainWindow(QWidget *parent)
 
     m_keyboard2MidiNoteMapping.addGermanLayout();
 
-    m_header = new Header(this);
-    m_header->setVisible(false);
+    m_body = new CentralWidget(this);
 
-    m_canvas = new GL_Canvas(this);
-    m_canvasContainer = QWidget::createWindowContainer(m_canvas);
-    m_canvasContainer->setMinimumSize(320, 240);
-    m_canvasContainer->setVisible(false);
-
-    m_clipEditor = new ClipEditor(this);
-    m_clipEditor->setVisible(false);
-
-    m_chainStack = new ChainStack(this);
-    m_chainStack->setVisible(true);
-
-    m_footer = new Footer(this);
-    m_footer->setVisible(true);
-
-    connect(m_chainStack, &ChainStack::newTrackOverview,
-            this, [=] (QPixmap pix)
+    connect(m_body->m_trackStack, &TrackStack::newTrackOverview, this,
+            [=] (QPixmap pix)
             {
                 int visibWidth = pix.width();
                 int totalWidth = pix.width();
                 int xPos = 0;
 
-                m_footer->setTrackOverview(pix,visibWidth,totalWidth,xPos);
+                m_body->m_footer->setTrackOverview(pix,visibWidth,totalWidth,xPos);
+            });
+
+    connect(m_body->m_footer, &Footer::showQuickHelp, this,
+            [=] (bool checked)
+            {
+                //m_qui->setVisible(checked);
+                //m_actShowPianoRoll->setChecked(checked);
+            });
+
+    connect(m_body->m_footer, &Footer::showClipEditor, this,
+            [=] (bool checked)
+            {
+                m_body->m_clipEditor->setVisible(checked);
+                m_actShowPianoRoll->setChecked(checked);
+            });
+
+    connect(m_body->m_footer, &Footer::showTrackEditor, this,
+            [=] (bool checked)
+            {
+                m_body->m_trackStack->setVisible(checked);
+                m_actShowChain->setChecked(checked);
+            });
+
+    connect(m_body->m_footer, &Footer::showArrangement, this,
+            [=] (bool checked)
+            {
+                //m_qui->setVisible(checked);
+                //m_actShowPianoRoll->setChecked(checked);
             });
 
     // m_chainStack->applySkin();
 
-    auto v = new QVBoxLayout;
-    v->setContentsMargins(0,0,0,0);
-    v->setSpacing(0);
-    v->addWidget(m_header);
-    v->addWidget(m_canvasContainer,1);
-    v->addWidget(m_clipEditor);
-    v->addWidget(m_chainStack);
-    v->addWidget(m_footer);
-
-    auto content = new QWidget(this);
-    content->setLayout(v);
-
     // Install event filter on the whole window
     this->installEventFilter(this);
 
-    setCentralWidget(content);
+    setCentralWidget(m_body);
     resize(800, 350);
     show();
-
-    // If you want zoom to work inside central widget too:
-    if (centralWidget())
-        centralWidget()->installEventFilter(this);
-
     setWindowTitle(m_appTitle);
-
     createMenuFile();
     createMenuEdit();
     createMenuView();
@@ -126,71 +121,72 @@ void MainWindow::createMenuEdit()
 
 void MainWindow::createMenuView()
 {
-    QAction* actShowHeader = new QAction("Show Header/Transport", this);
-    actShowHeader->setCheckable(true);
-    actShowHeader->setChecked(m_header->isVisible());
+    m_actShowHeader = new QAction("Show Header/Transport", this);
+    m_actShowHeader->setCheckable(true);
+    m_actShowHeader->setChecked(m_body->m_header->isVisible());
 
-    connect(actShowHeader, &QAction::triggered, this, [=](bool checked)
+    connect(m_actShowHeader, &QAction::triggered, this, [=](bool checked)
     {
-        m_header->setVisible(checked);
+        m_body->m_header->setVisible(checked);
     });
 
-    QAction* actShowCanvas = new QAction("Show 3D Canvas Vizualization", this);
-    actShowCanvas->setCheckable(true);
-    actShowCanvas->setChecked(m_canvasContainer->isVisible());
+    m_actShowCanvas = new QAction("Show 3D Canvas Vizualization", this);
+    m_actShowCanvas->setCheckable(true);
+    m_actShowCanvas->setChecked(m_body->m_canvasContainer->isVisible());
 
-    connect(actShowCanvas, &QAction::triggered, this, [=](bool checked)
+    connect(m_actShowCanvas, &QAction::triggered, this, [=](bool checked)
     {
         if (checked)
         {
-            m_canvasContainer->setVisible(true);
-            m_canvas->setRenderingEnabled(true);
+            m_body->m_canvasContainer->setVisible(true);
+            m_body->m_canvas->setRenderingEnabled(true);
             App::instance()->getSampleCollector()->setBypassed(false);
         }
         else
         {
             // Save some collecting CPU cycles when drawing is disabled
-            m_canvas->setRenderingEnabled(false);
-            m_canvasContainer->setVisible(false);
+            m_body->m_canvas->setRenderingEnabled(false);
+            m_body->m_canvasContainer->setVisible(false);
             App::instance()->getSampleCollector()->setBypassed(true);
         }
     });
 
-    QAction* actShowPianoRoll = new QAction("Show ClipEditor/PianoRoll", this);
-    actShowPianoRoll->setCheckable(true);
-    actShowPianoRoll->setChecked(m_clipEditor->isVisible());
+    m_actShowPianoRoll = new QAction("Show ClipEditor/PianoRoll", this);
+    m_actShowPianoRoll->setCheckable(true);
+    m_actShowPianoRoll->setChecked(m_body->m_clipEditor->isVisible());
 
-    connect(actShowPianoRoll, &QAction::triggered, this, [=](bool checked)
+    connect(m_actShowPianoRoll, &QAction::triggered, this, [=](bool checked)
     {
-        m_clipEditor->setVisible(checked);
+        m_body->m_clipEditor->setVisible(checked);
     });
 
-    QAction* actShowChain = new QAction("Show AudioDspChainStack", this);
-    actShowChain->setCheckable(true);
-    actShowChain->setChecked(m_chainStack->isVisible());
+    m_actShowChain = new QAction("Show AudioDspChainStack", this);
+    m_actShowChain->setCheckable(true);
+    m_actShowChain->setChecked(m_body->m_trackStack->isVisible());
 
-    connect(actShowChain, &QAction::triggered, this, [=](bool checked)
+    connect(m_actShowChain, &QAction::triggered, this, [=](bool checked)
     {
-        m_chainStack->setVisible(checked);
+        DE_TRACE("On trigger m_actShowChain")
+        m_body->m_trackStack->setVisible(checked);
     });
 
-    QAction* actShowFooter = new QAction("Show Footer/Scrollbar/QuickHelp", this);
-    actShowFooter->setCheckable(true);
-    actShowFooter->setChecked(m_footer->isVisible());
+    m_actShowFooter = new QAction("Show Footer/Scrollbar/QuickHelp", this);
+    m_actShowFooter->setCheckable(true);
+    m_actShowFooter->setChecked(m_body->m_footer->isVisible());
 
-    connect(actShowFooter, &QAction::triggered, this, [=](bool checked)
+    connect(m_actShowFooter, &QAction::triggered, this, [=](bool checked)
     {
-        m_footer->setVisible(checked);
+        m_body->m_footer->setVisible(checked);
     });
 
     QMenu* menuView = menuBar()->addMenu("View");
-    menuView->addAction(actShowHeader);
+    menuView->addAction(m_actShowHeader);
     menuView->addSeparator();
-    menuView->addAction(actShowCanvas);
+    menuView->addAction(m_actShowCanvas);
     menuView->addSeparator();
-    menuView->addAction(actShowPianoRoll);
-    menuView->addAction(actShowChain);
-    menuView->addAction(actShowFooter);
+    menuView->addAction(m_actShowPianoRoll);
+    menuView->addAction(m_actShowChain);
+    menuView->addAction(m_actShowFooter);
 }
 
 void MainWindow::createMenuCanvas()
@@ -205,15 +201,17 @@ void MainWindow::createMenuCanvas()
     actShowMatrixFft->setCheckable(true);
     actShowMatrixFft->setChecked(true);
 
-    connect(actShowPerfOverlay, &QAction::triggered, this, [=](bool checked)
-    {
-        m_canvas->showPerfOverlay( checked );
-    });
-    connect(actShowMatrixFft, &QAction::triggered, this, [=](bool checked)
-    {
-        App::instance()->getSampleCollector()->setCollectAccumMatrix(checked);
-        m_canvas->showFftMatrix(checked);
-    });
+    connect(actShowPerfOverlay, &QAction::triggered, this,
+        [=](bool checked)
+        {
+            m_body->m_canvas->showPerfOverlay( checked );
+        });
+    connect(actShowMatrixFft, &QAction::triggered, this,
+        [=](bool checked)
+        {
+            App::instance()->getSampleCollector()->setCollectAccumMatrix(checked);
+            m_body->m_canvas->showFftMatrix(checked);
+        });
 
     menuCanvas->addAction(actShowPerfOverlay);
     menuCanvas->addAction(actShowMatrixFft);
@@ -330,7 +328,7 @@ void MainWindow::createMenuCanvas()
 
 void MainWindow::closeEvent(QCloseEvent* event)
 {
-    App::instance()->cleanupAll();
+    App::instance()->shutdown();
 
     // Let Qt continue closing the window
     QMainWindow::closeEvent(event);
@@ -353,9 +351,9 @@ bool MainWindow::eventFilter(QObject *obj, QEvent *event)
 
             // void MainWindow::adjustHeightOnly()
             // {
-                int w = width();      // keep current width
-                adjustSize();         // let Qt compute the new height
-                resize(w, height());  // restore width, keep new height
+            //    int w = width();      // keep current width
+            //    adjustSize();         // let Qt compute the new height
+            //    resize(w, height());  // restore width, keep new height
             // }
             return true; // Stop event propagation
         }
@@ -378,6 +376,7 @@ void MainWindow::zoomIn()
     App::instance()->setZoom( pc + 25 );
     //qDebug() << "Zooming in (" << App::instance()->getZoom() << "%)";
     updateWindowTitle();
+    m_body->updateLayout();
 }
 
 void MainWindow::zoomOut()
@@ -386,6 +385,7 @@ void MainWindow::zoomOut()
     App::instance()->setZoom( pc - 25 );
     //qDebug() << "Zooming out (" << App::instance()->getZoom() << "%)";
     updateWindowTitle();
+    m_body->updateLayout();
 }
 
 void MainWindow::keyPressEvent( QKeyEvent* event )

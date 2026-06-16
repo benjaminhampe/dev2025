@@ -13,6 +13,10 @@ public:
     explicit ClipEditor(QWidget* parent = 0);
     ~ClipEditor() override;
 
+    void applySkin();
+    void updateLayout();
+
+
     bool isMouseOverPianoBar() const;
     bool isMouseOverBeatGrid() const;
     int getKeyIndexFromMousePos() const;

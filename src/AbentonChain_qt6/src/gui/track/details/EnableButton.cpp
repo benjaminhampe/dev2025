@@ -5,27 +5,10 @@
 EnableButton::EnableButton(QWidget* parent)
     : SvgButton(parent)
 {
-    // setSizePolicy(QSizePolicy::Fixed,QSizePolicy::Fixed);
-    // setContextMenuPolicy(Qt::CustomContextMenu);
-    // setStyleSheet("background:transparent; border:none;");
     setCheckable( true );
     setChecked( true );
     applySkin();
-
-    // connect(this, &QWidget::customContextMenuRequested,
-            // this, &EnableButton::showContextMenu);
-
-    // connect(this, &QPushButton::toggled,
-    //         this, &EnableButton::onToggled);
 }
-
-// void EnableButton::onToggled(bool checked)
-// {
-//     applySkin();
-// }
-
-//QSize EnableButton::sizeHint() const { return QSize(m_width, m_height); }
-//QSize EnableButton::minimumSizeHint() const { return sizeHint(); }
 
 void EnableButton::applySkin()
 {

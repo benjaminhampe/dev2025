@@ -7,28 +7,10 @@ ArrowButton::ArrowButton(QWidget* parent)
 // =================================================================
     : SvgButton(parent)
 {
-    // setSizePolicy(QSizePolicy::Fixed,QSizePolicy::Fixed);
-    // setContextMenuPolicy(Qt::CustomContextMenu);
-    // setStyleSheet("background:transparent; border:none;");
     setCheckable( true );
     setChecked( false );
     applySkin();
-
-    // connect(this, &QWidget::customContextMenuRequested,
-            // this, &ArrowButton::showContextMenu);
-
-    // connect(this, &QPushButton::toggled,
-    //         this, &ArrowButton::onToggled);
-
 }
-
-// void ArrowButton::onToggled(bool checked)
-// {
-//     applySkin();
-// }
-
-//QSize ArrowButton::sizeHint() const { return QSize(m_width, m_height); }
-//QSize ArrowButton::minimumSizeHint() const { return sizeHint(); }
 
 void ArrowButton::applySkin()
 {

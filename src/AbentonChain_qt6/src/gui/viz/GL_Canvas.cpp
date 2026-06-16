@@ -124,6 +124,7 @@ void GL_Canvas::initializeGL()
 void
 GL_Canvas::resizeGL(int w, int h)
 {
+    if (!isVisible() || width()<1 || height()<1) return;
     //DE_OK("w(",w,"), h(",h,")")
     if (m_driver)
     {

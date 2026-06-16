@@ -16,10 +16,10 @@ Pad::Pad(QWidget* parent)
             // this, &Pad::onToggled);
 }
 
-void Pad::onToggled(bool checked)
-{
-    applySkin();
-}
+// void Pad::onToggled(bool checked)
+// {
+//     applySkin();
+// }
 
 //QSize Pad::sizeHint() const { return QSize(m_width, m_height); }
 //QSize Pad::minimumSizeHint() const { return sizeHint(); }
@@ -28,23 +28,48 @@ void Pad::applySkin()
 {
     // DE_DEBUG("")
     const auto& skin = App::instance()->getSkin();
-    m_width = (m_baseWidth * skin.zoom) / 100;
-    m_height = (m_baseHeight * skin.zoom) / 100;
+    m_zoom = skin.zoom;
+    //setFixedSize(m_width,m_height);
+    // updateGeometry(); // tells Qt: “my sizeHint() changed”
+    updateLayout();
+}
 
-    m_borderRadius = (m_baseBorderRadius * skin.zoom) / 100;
-    m_circleRadius = (m_baseCircleRadius * skin.zoom) / 100;
-    m_circleBorder = (m_baseCircleBorder * skin.zoom) / 100;
+void Pad::updateLayout()
+{
+    // DE_DEBUG("")
+    //m_width = (m_baseWidth * m_zoom) / 100;
+    //m_height = (m_baseHeight * m_zoom) / 100;
+
+    m_borderRadius = (m_baseBorderRadius * m_zoom) / 100;
+    m_circleRadius = (m_baseCircleRadius * m_zoom) / 100;
+    m_circleBorder = (m_baseCircleBorder * m_zoom) / 100;
 
     int d = m_circleRadius + m_circleBorder;
-    m_rcBody = QRect(d, d, m_width - 2*d-3, m_height - 2*d + 1);
+    m_rcBody = QRect(d, d, width() - 2*d-3, height() - 2*d + 1);
 
-    setFixedSize(m_width,m_height);
+    //setFixedSize(m_width,m_height);
     // updateGeometry(); // tells Qt: “my sizeHint() changed”
     update();
 }
 
-void Pad::paintEvent(QPaintEvent* event)
+void Pad::resizeEvent(QResizeEvent* e)
 {
+    QWidget::resizeEvent(e);
+    const int w = e->size().width();
+    const int h = e->size().height();
+    if (w < 1) return;
+    if (h < 1) return;
+    updateLayout();
+}
+
+void Pad::paintEvent(QPaintEvent* e)
+{
+    if (!isVisible()) { return; }
+    const int w = width();
+    const int h = height();
+    if (w < 1) return;
+    if (h < 1) return;
+
     QPainter dc(this);
     dc.setPen(Qt::NoPen);
     dc.setBrush(QBrush(QColor(36,36,36)));
@@ -115,12 +140,6 @@ void Pad::paintEvent(QPaintEvent* event)
         dc.setPen(QPen(orange, m_circleBorder));
         dc.drawEllipse(QPoint(x,y),m_circleRadius,m_circleRadius);
     }
-}
-
-void Pad::resizeEvent(QResizeEvent* event)
-{
-    applySkin();
-    QWidget::resizeEvent(event);
 }
 
 /*

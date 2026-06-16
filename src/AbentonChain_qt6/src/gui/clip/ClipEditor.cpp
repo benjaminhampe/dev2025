@@ -24,88 +24,91 @@ ClipEditor::~ClipEditor()
     // stopPlayTimer();
 }
 
-void
-ClipEditor::reset()
+void ClipEditor::applySkin()
 {
-   m_clip = nullptr;
-   m_bpm = 60.0f;
-//   m_beatBeg = 0;
-//   m_beatEnd = 0;
-//   m_timeBeg = 0; // 0.5 sec
-//   m_timeEnd = int64_t(1000 * 1000 * 1000); // 1 sec
-   m_isBeatSync = true;
-   m_loops = 0;
-   //m_beatCount = m_beatEnd - m_beatBeg;
-   m_midiTicksPerBeat = 96; //?
-   // m_barCount = 4;
+    const auto& skin = App::instance()->getSkin();
+/*
+    m_windowColor = skin.windowColor;
+    m_panelColor = skin.panelColor;
+    m_textColor = skin.textColor;
+    m_activeColor = skin.symbolColorActive;
+    m_radius = (m_baseRadius * skin.zoom) / 100;
+    m_padding = (m_basePadding * skin.zoom) / 100;
+    m_buttonHeight = (m_baseButtonHeight * skin.zoom) / 100;
 
-   // 128 piano keys to draw on. Ascending keyIndex ...
-   for ( size_t i = 0; i < m_keys.size(); ++i )
-   {
-      m_keys[ i ].reset( 127 - i ); // ... but descending frequency ( draw order ).
-   }
+    SVG_createQuickHelp(m_btnQuickHelp, m_buttonHeight,m_buttonHeight);
+    PIX_createMidiKeyboard(m_btnMidiKeyboard, 2*m_buttonHeight,m_buttonHeight);
 
-   // X-Axis is time 't' ( complicated ) in [s], [bars], [ticks] and [beats]
-   m_beatIndex = 0;
-   m_beatCount = 16;  // show 4 bars eats
+    auto pixOff = createArrowRight(48,48,m_windowColor,m_panelColor,m_textColor);
+    auto pixOn = createArrowUp(48,48,m_windowColor,m_activeColor,m_textColor);
+    m_clipOverview.btnShow->setPixmaps(pixOn,pixOff);
 
-   m_topHeight = 20; // includes x-axis labels
+    pixOff = createFromText(0,48,"1-ClipEditor", m_textColor,m_panelColor);
+    pixOn = createFromText(0,48,"1-ClipEditor", m_textColor,m_panelColor);
+    m_clipOverview.btnName->setPixmaps(pixOn,pixOff);
 
-   m_isPlaying = false;
-   m_timeStart = dbTimeInNanoseconds();
-   m_time = 0;
-   m_loopTime = int64_t(500 * 1000 * 1000); // 0.5 sec
-   m_loopTimeStart = 0;
-   m_loopTimeEnd = int64_t(1000 * 1000 * 1000) * 2; // 2 sec
-   m_loopTimeRange = m_loopTimeEnd - m_loopTimeStart;
-   m_pixelsPerNanosecond = 250.0 / 1.0e9;
-   m_nanosecondsPerPixel = 1.0 / m_pixelsPerNanosecond;
-   //m_nanosecondsPerBeat = 1.0 / m_pixelsPerNanosecond;
-   // [beat/px] = [beat/sec] *
-   //m_beatsPerPixel = 1.0 / m_pixelsPerNanosecond;
-   // [px/beat] = [beat/sec] *
-   //m_pixelPerBeat = (m_bpm / 60.0);   //?
+    pixOff = createArrowRight(48,48,m_windowColor,m_panelColor,m_textColor);
+    pixOn = createArrowUp(48,48,m_windowColor,m_activeColor,m_textColor);
+    m_trackOverview.btnShow->setPixmaps(pixOn,pixOff);
 
-   // Single piano key size of the left shown PianoBar.
-   m_keyWidth = 32;  // the width of the header column 0 ( const so far )
-   m_keyHeight = 10; // line-height ( changed by mousedragY over col[0] )
+    pixOff = createFromText(0,48,"1-AudioTrack", m_textColor,m_panelColor);
+    pixOn = createFromText(0,48,"1-AudioTrack", m_textColor,m_panelColor);
+    m_trackOverview.btnName->setPixmaps(pixOn,pixOff);
 
-   // Y-Axis is keyIndex low to high, but gives freqs from high to low
-   m_keyStart = 0;   // keyIndex start ( changed by mousewheel y )
-   m_keyCount = 0;   // visible keys in y-dir ( changed by widget resize )
+    PIX_createDetails(m_btnDetails, 2*m_buttonHeight,m_buttonHeight);
 
-
-   //m_loopStart = 0;  // for Looping
-
-   m_mouseX = 0;
-   m_mouseY = 0;
-   m_detectedKeyIndex = -1;
-   m_hoveredNote.reset();
-   m_selectedNote.reset();
-   m_isOverPianoBar = false;
-   m_isOverBeatGrid = false;
-
-   m_dragMode = 0;
-   m_dragStartX = 0;
-   m_dragStartY = 0;
-
-   // 8 synths we send notes to.
-   for ( size_t i = 0; i < m_synths.size(); ++i )
-   {
-      m_synths[ i ] = nullptr;
-   }
+    // QColor m_panelColor(128,128,128);
+    // QColor m_contentColor(255,255,255);
+    // QColor m_symbolColor(255,128,0);
+    // QColor m_focusColor(32,32,32);
+*/
+    updateLayout();
 }
 
-void ClipEditor::resizeEvent( QResizeEvent* event )
+void ClipEditor::updateLayout()
 {
-   update();
-   QWidget::resizeEvent( event );
+/*
+    int w = width();
+    int h = height();
+    int p = 10;
+
+    int xHelp = p;
+    int xMidi = xHelp + m_btnQuickHelp->width() + p;
+    int xLong = xMidi + m_btnMidiKeyboard->width() + p;
+
+    int xLast = w - 1 - p;
+    int xDeta = xLast - m_btnDetails->width();
+    int xTrack = xDeta - p - m_trackOverview.width();
+    int xClip = xTrack - p - m_clipOverview.width();
+    int wLong = xClip - xLong - p;
+
+    m_btnQuickHelp->move(xHelp,p);
+    m_btnMidiKeyboard->move(xMidi,p);
+    m_rcLongText = QRect(xLong, p, wLong, h-2*p);
+    m_clipOverview.move(xClip,p);
+    m_trackOverview.move(xTrack,p);
+    m_btnDetails->move(xDeta,p);
+*/
+    update();
 }
+
+void ClipEditor::resizeEvent(QResizeEvent* e)
+{
+    const int w = e->size().width();
+    const int h = e->size().height();
+    if (w < 1) return;
+    if (h < 1) return;
+    updateLayout();
+}
+
 
 void ClipEditor::paintEvent( QPaintEvent* event )
 {
-   int w = width();
-   int h = height();
+    const int w = width();
+    const int h = height();
+    if (w < 1) return;
+    if (h < 1) return;
+
    m_keyCount = std::clamp( (h - m_topHeight) / m_keyHeight, 0, 127 );
    m_keyStart = std::clamp( m_keyStart, 0, std::clamp( 127 - m_keyCount + 2, 0, 127 ) );
    //m_pixelPerBeat = w / m_beatCount;
@@ -290,6 +293,79 @@ void ClipEditor::paintEvent( QPaintEvent* event )
       int y2 = y1 + m_keyHeight;
       dc.setBrush( QBrush( QColor(255,100,100) ) );
       dc.drawRect( x1, y1, x2-x1+1, y2-y1 );
+   }
+}
+
+
+void
+ClipEditor::reset()
+{
+   m_clip = nullptr;
+   m_bpm = 60.0f;
+//   m_beatBeg = 0;
+//   m_beatEnd = 0;
+//   m_timeBeg = 0; // 0.5 sec
+//   m_timeEnd = int64_t(1000 * 1000 * 1000); // 1 sec
+   m_isBeatSync = true;
+   m_loops = 0;
+   //m_beatCount = m_beatEnd - m_beatBeg;
+   m_midiTicksPerBeat = 96; //?
+   // m_barCount = 4;
+
+   // 128 piano keys to draw on. Ascending keyIndex ...
+   for ( size_t i = 0; i < m_keys.size(); ++i )
+   {
+      m_keys[ i ].reset( 127 - i ); // ... but descending frequency ( draw order ).
+   }
+
+   // X-Axis is time 't' ( complicated ) in [s], [bars], [ticks] and [beats]
+   m_beatIndex = 0;
+   m_beatCount = 16;  // show 4 bars eats
+
+   m_topHeight = 20; // includes x-axis labels
+
+   m_isPlaying = false;
+   m_timeStart = dbTimeInNanoseconds();
+   m_time = 0;
+   m_loopTime = int64_t(500 * 1000 * 1000); // 0.5 sec
+   m_loopTimeStart = 0;
+   m_loopTimeEnd = int64_t(1000 * 1000 * 1000) * 2; // 2 sec
+   m_loopTimeRange = m_loopTimeEnd - m_loopTimeStart;
+   m_pixelsPerNanosecond = 250.0 / 1.0e9;
+   m_nanosecondsPerPixel = 1.0 / m_pixelsPerNanosecond;
+   //m_nanosecondsPerBeat = 1.0 / m_pixelsPerNanosecond;
+   // [beat/px] = [beat/sec] *
+   //m_beatsPerPixel = 1.0 / m_pixelsPerNanosecond;
+   // [px/beat] = [beat/sec] *
+   //m_pixelPerBeat = (m_bpm / 60.0);   //?
+
+   // Single piano key size of the left shown PianoBar.
+   m_keyWidth = 32;  // the width of the header column 0 ( const so far )
+   m_keyHeight = 10; // line-height ( changed by mousedragY over col[0] )
+
+   // Y-Axis is keyIndex low to high, but gives freqs from high to low
+   m_keyStart = 0;   // keyIndex start ( changed by mousewheel y )
+   m_keyCount = 0;   // visible keys in y-dir ( changed by widget resize )
+
+
+   //m_loopStart = 0;  // for Looping
+
+   m_mouseX = 0;
+   m_mouseY = 0;
+   m_detectedKeyIndex = -1;
+   m_hoveredNote.reset();
+   m_selectedNote.reset();
+   m_isOverPianoBar = false;
+   m_isOverBeatGrid = false;
+
+   m_dragMode = 0;
+   m_dragStartX = 0;
+   m_dragStartY = 0;
+
+   // 8 synths we send notes to.
+   for ( size_t i = 0; i < m_synths.size(); ++i )
+   {
+      m_synths[ i ] = nullptr;
    }
 }
 

@@ -150,10 +150,11 @@ DspSampleCollector::dsp_init( u64 frames, u32 channels, u32 sampleRate )
     m_accum_vec_out.resize(m_cols);
     m_accum_mat.resize(m_cols, m_rows);
 
-    DE_WARN("blockSize = ", m_blockSize)
-    DE_WARN("fftSize = ", m_fftSize)
-    DE_WARN("cols = ", m_cols)
-    DE_WARN("rows = ", m_rows)
+    DE_WARN("{"
+            " blockSize:",m_blockSize,";"
+            " fftSize:",m_fftSize,";"
+            " cols:",m_cols,";"
+            " rows:",m_rows,"; }")
 
     if (m_inputSignal)
     {

@@ -113,6 +113,14 @@ int main(int argc, char **argv)
 
     QApplication app(argc, argv);
 
+    qApp->setStyleSheet(
+        "QToolTip { "
+        "color: white; "
+        "background-color: #303030; "
+        "border: 1px solid #5A5A5A; "
+        "padding: 4px; "
+        "}");
+
     //static Win32EventFilter filter;
     //app.installNativeEventFilter(&filter);
 

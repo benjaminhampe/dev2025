@@ -1,4 +1,4 @@
-#include "gui/track/ChainWrapper.h"
+#include "ChainWrapper.h"
 #include "App.h"
 #include "gui/Skin.h"
 
@@ -13,15 +13,17 @@ ChainWrapper::ChainWrapper(QWidget* parent)
     , m_track(nullptr)
 {
     DE_TRACE("")
+    setObjectName("ChainWrapper");
     setContentsMargins(0,8,8,8);
     setStyleSheet("background: transparent;");
+    setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Fixed);
 
     m_scrollArea = new QScrollArea(this);
+    m_scrollArea->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Fixed);
     m_scrollArea->setContentsMargins(0,0,0,0);
     m_scrollArea->setWidgetResizable(true);
     m_scrollArea->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     m_scrollArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-
     m_scrollArea->setFrameShape(QFrame::NoFrame);
     m_scrollArea->setAttribute(Qt::WA_NoSystemBackground, true);
     m_scrollArea->setStyleSheet("background: transparent;");
@@ -32,6 +34,7 @@ ChainWrapper::ChainWrapper(QWidget* parent)
       //viewPort->setFrameShape(QFrame::NoFrame);
         viewPort->setAttribute(Qt::WA_NoSystemBackground, true);
         viewPort->setStyleSheet("background: transparent;");
+        viewPort->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Fixed);
     }
     else
     {
@@ -79,37 +82,34 @@ ChainWrapper::~ChainWrapper()
     DE_TRACE("")
 }
 
-bool ChainWrapper::eventFilter(QObject* obj, QEvent* event)
+QSize ChainWrapper::sizeHint() const
 {
-    if (event->type() == QEvent::Wheel)
-        return true; // block scrolling
-
-    return QWidget::eventFilter(obj, event);
+    return QSize(0,m_height);
 }
-
-void ChainWrapper::setAudioOnly(bool bAudioOnly)
+QSize ChainWrapper::minimumSizeHint() const
 {
-    m_bAudioOnly = bAudioOnly;
-    m_audioMeter->setVisible( bAudioOnly );
-    m_midiMeter->setVisible( !bAudioOnly );
-    update();
+    return QSize(0,m_height);
 }
 
 void ChainWrapper::applySkin()
 {
+    DE_TRACE()
     m_midiMeter->applySkin();
     m_audioMeter->applySkin();
     m_track->applySkin();
 
     //m_scrollArea->setSizeAdjustPolicy(0,m_track->height());
-    m_scrollArea->setMinimumSize(0,m_track->height());
-
     const auto& skin = App::instance()->getSkin();
     m_windowColor = skin.windowColor;
+    m_height = (m_baseHeight * skin.zoom) / 100;
     m_margin = (m_baseMargin * skin.zoom) / 100;
     m_radius = ((m_baseRadius-2) * skin.zoom) / 100;
-
-    updateGeometry(); // tells Qt: “my sizeHint() changed”
+    //setFixedHeight(m_height);
+    // setMinimumHeight(h);
+    // setMaximumHeight(h);
+    // m_scrollArea->setMinimumSize(0,h);
+    // m_scrollArea->setMaximumSize(0,h);
+    // updateGeometry(); // tells Qt: “my sizeHint() changed”
     update();
 }
 
@@ -130,6 +130,8 @@ void ChainWrapper::paintEvent(QPaintEvent* event)
     }
 
     QPainter dc(this);
+    dc.fillRect(rect(), QColor(255,200,0));
+
     dc.setRenderHint(QPainter::Antialiasing);
 
     if (m_bHovered || m_bFocused)
@@ -159,6 +161,14 @@ void ChainWrapper::paintEvent(QPaintEvent* event)
     // dc.drawRect(rect().adjusted(1,1,-1,-1));
 }
 
+bool ChainWrapper::eventFilter(QObject* obj, QEvent* event)
+{
+    if (event->type() == QEvent::Wheel)
+        return true; // block scrolling
+
+    return QWidget::eventFilter(obj, event);
+}
+
 void ChainWrapper::focusInEvent(QFocusEvent* event)
 {
     m_bFocused = true;
@@ -184,4 +194,13 @@ void ChainWrapper::leaveEvent( QEvent* event )
     m_bHovered = false;
     update();
     QWidget::leaveEvent( event );
+}
+
+
+void ChainWrapper::setAudioOnly(bool bAudioOnly)
+{
+    m_bAudioOnly = bAudioOnly;
+    m_audioMeter->setVisible( bAudioOnly );
+    m_midiMeter->setVisible( !bAudioOnly );
+    update();
 }

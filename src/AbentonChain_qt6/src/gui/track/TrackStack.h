@@ -1,24 +1,31 @@
 #pragma once
 #include <QWidget>
-#include <QScrollArea>
-#include <QScrollBar>
+#include <QStackedWidget>
 #include "gui/track/Track.h"
 #include "gui/track/details/AudioMeter.h"
 #include "gui/track/details/MidiMeter.h"
 
 // ============================================
-class ChainWrapper : public QWidget
+class TrackStack : public QWidget
 // ============================================
 {
     Q_OBJECT
 public:
-    ChainWrapper(QWidget* parent = nullptr);
-    ~ChainWrapper() override;
+    TrackStack(QWidget* parent = nullptr);
+    ~TrackStack() override;
+    // QSize sizeHint() const override;
+    // QSize minimumSizeHint() const override;
     void applySkin();
+    void updateLayout();
+
     void setAudioOnly(bool bAudioOnly);
 
-    const Track* trackWidget() const { return m_track; }
-    Track* trackWidget() { return m_track; }
+    const Track* trackWidget() const { return m_trackWidget; }
+    Track* trackWidget() { return m_trackWidget; }
+
+
+signals:
+    void newTrackOverview(QPixmap pix); // for Footer
 
 protected:
     bool eventFilter(QObject* obj, QEvent* event) override;
@@ -34,22 +41,26 @@ protected slots:
 private slots:
 
 private:
+    QWidget* m_quickHelp;
     MidiMeter* m_midiMeter;
     AudioMeter* m_audioMeter;
-    QScrollArea* m_scrollArea;
-    Track* m_track;
-
-    int m_baseWidth = 284;
-    int m_baseHeight = 326;
-
-    int m_baseMargin = 4;
-    int m_baseRadius = 10;
+    Track* m_trackWidget;
 
     bool m_bAudioOnly = false; // false = MidiMeter visible, AudioMeter invisible.
     bool m_bFocused = false;
     bool m_bHovered = false;
 
-    QColor m_windowColor;
+    int m_zoom = 100;
+    //int m_baseWidth = 284;
+    //int m_baseHeight = 376 + 10;
+
+    int m_baseMargin = 4;
+    int m_baseRadius = 10;
+
+    //int m_height;
     int m_margin;
     int m_radius;
+
+    QColor m_windowColor;
+
 };

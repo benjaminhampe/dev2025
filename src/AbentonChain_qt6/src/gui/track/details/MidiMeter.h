@@ -9,17 +9,19 @@ class MidiMeter : public QWidget
 public:
     MidiMeter( QWidget* parent = 0 );
     ~MidiMeter() override {}
-    QSize sizeHint() const override;
-    QSize minimumSizeHint() const override;
+    // QSize sizeHint() const override;
+    // QSize minimumSizeHint() const override;
 
     void applySkin();
 
 protected:
     void paintEvent( QPaintEvent* event ) override;
+    void resizeEvent(QResizeEvent* event) override;
 
 private:
     const int m_numCircles = 21;
 
+    int m_zoom = 100;
     int m_baseWidth = 18;
     int m_baseCircleSpacing = 4;
     int m_baseCircleRadius = 6;

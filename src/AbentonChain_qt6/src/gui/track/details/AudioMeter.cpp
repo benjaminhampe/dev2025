@@ -14,78 +14,78 @@ AudioMeter::AudioMeter( QWidget* parent )
     , m_Rmin{ 0.f }
     , m_Lmax{ 0.f }
     , m_Rmax{ 0.f }
-    , m_baseWidth{ 4 }
-    , m_baseHeight{ 216 }
-    , m_baseTop{ 22 }
-    , m_baseSpacing{ 2 }
     , m_fillColor{ 36,36,36 }
     , m_markColor{ 165,165,165 }
-
 {
     setObjectName( "AudioMeter" );
     setContentsMargins(0,0,0,0);
     setStyleSheet("background: transparent;");
-    // m_ColorGradient.addStop( 0.0f, 0xFFFFFFFF );
-    // m_ColorGradient.addStop( 0.1f, 0xFF000000 );
-    // m_ColorGradient.addStop( 0.5f, 0xFF00FF00 );
-    // m_ColorGradient.addStop( 0.6f, 0xFF002000 );
-    // m_ColorGradient.addStop( 0.8f, 0xFF00FFFF );
-    // m_ColorGradient.addStop( 1.0f, 0xFF0000FF );
-    // m_ColorGradient.addStop( 1.1f, 0xFFFF00FF );
-
-    // Feed LevelMeter
-    // m_Lmin = m_Lmax = m_Rmin = m_Rmax = 0.0f;
-
-    //       connect( this, SIGNAL(newSamples(float*,uint32_t,uint32_t)),
-    //                this, SLOT(pushSamples(float*,uint32_t,uint32_t)), Qt::QueuedConnection );
-
     applySkin();
 }
 
-// QSize AudioMeter::sizeHint() const
-// {
-//     return QSize(m_width * 4 + m_spacing, m_height);
-// }
-
-// QSize AudioMeter::minimumSizeHint() const
-// {
-//     return sizeHint();
-// }
+int AudioMeter::computeBestWidth() const
+{
+    int w = (4 * m_zoom) / 100;
+    int s = (2 * m_zoom) / 100;
+    return (4*w) + s;
+}
 
 void AudioMeter::applySkin()
 {
     // DE_DEBUG("")
     const auto& skin = App::instance()->getSkin();
+    m_zoom = skin.zoom;
     m_windowColor = skin.windowColor;
-    m_width = (m_baseWidth * skin.zoom) / 100;
-    m_height = (m_baseHeight * skin.zoom) / 100;
-    m_top = (m_baseTop * skin.zoom) / 100;
-    m_spacing = (m_baseSpacing * skin.zoom) / 100;
-    setFixedSize(m_width * 4 + m_spacing, m_height);
+    updateLayout();
+}
 
-    m_rcLeft = QRect(m_width, 0, m_width, m_height);
-    m_rcRight = QRect(m_width*2 + m_spacing, 0, m_width, m_height);
+void AudioMeter::updateLayout()
+{
+    int m_width = (4 * m_zoom) / 100;
+    int m_height = (216 * m_zoom) / 100;
+    int top = (22 * m_zoom) / 100;
+    int spacing = (2 * m_zoom) / 100;
+
+    if (m_height > height())
+    {
+        m_height = height();
+    }
+
+    int y = (height() - m_height) / 2;
+    m_rcLeft = QRect(m_width, y, m_width, m_height);
+    m_rcRight = QRect(m_width*2 + spacing, y, m_width, m_height);
+
 
     m_rcLeftMark = QRect(m_rcLeft.x(),
-                         m_rcLeft.y() + m_top,
+                         m_rcLeft.y() + top,
                          m_rcLeft.width(),
-                         m_spacing);
+                         spacing);
 
     m_rcRightMark = QRect(m_rcRight.x(),
-                         m_rcRight.y() + m_top,
-                         m_rcRight.width(),
-                         m_spacing);
+                          m_rcRight.y() + top,
+                          m_rcRight.width(),
+                          spacing);
 
-    // updateGeometry(); // tells Qt: “my sizeHint() changed”
     update();
 }
 
-void AudioMeter::paintEvent( QPaintEvent* event )
+void AudioMeter::resizeEvent(QResizeEvent* e)
 {
-    if (!isVisible())
-    {
-        return;
-    }
+    const int w = e->size().width();
+    const int h = e->size().height();
+    if (w < 1) return;
+    if (h < 1) return;
+    updateLayout();
+}
+
+void AudioMeter::paintEvent(QPaintEvent*)
+{
+    if (!isVisible()) { return; }
+    const int w = width();
+    const int h = height();
+    if (w < 1) return;
+    if (h < 1) return;
+
     QPainter dc(this);
     // dc.fillRect( rect(), QColor(255,255,255) );
 
@@ -190,6 +190,13 @@ void AudioMeter::paintEvent( QPaintEvent* event )
 */
 }
 
+void AudioMeter::timerEvent( QTimerEvent* event )
+{
+    if (event->timerId() == m_updateTimerId)
+    {
+        update();
+    }
+}
 void AudioMeter::playUpdateTimer()
 {
     if (m_updateTimerId) return; // Already running
@@ -202,11 +209,4 @@ void AudioMeter::stopUpdateTimer()
     killTimer(m_updateTimerId);
     m_updateTimerId = 0;
     //DE_TRACE("")
-}
-void AudioMeter::timerEvent( QTimerEvent* event )
-{
-    if (event->timerId() == m_updateTimerId)
-    {
-        update();
-    }
 }

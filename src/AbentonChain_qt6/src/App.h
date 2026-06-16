@@ -16,29 +16,32 @@ class App : public QObject
 // ============================================
 {
     Q_OBJECT
-
 public:
     SkinManager m_skinManager;
-    //GL_Canvas* m_canvas;
-    // AudioCentral
-    int m_inputDeviceId;
-    int m_outputDeviceId;
-    int m_blockSize;
-    int m_channels;
-    int m_sampleRate;
+
+    // int m_inputDeviceId;
+    // int m_outputDeviceId;
+    // int m_blockSize;
+    // int m_channels;
+    // int m_sampleRate;
     de::audio::PluginFactory m_pluginFactory;
     de::midi::MidiCentral m_midiCentral;
-    de::audio::Track m_track0;
+
     de::audio::DspSampleCollector m_sampleCollector;
     de::audio::EndPoint_Wasapi m_endPoint;
-    bool m_deviceGuardFlag;
+    //bool m_deviceGuardFlag;
+    //bool m_bShutdown;
     //de::audio::EndPoint_RtAudio m_endPoint;
+
+    de::audio::Track m_track0;
+    std::vector<de::audio::Track*> m_tracks;
     de::audio::Track* m_track;
+
 public:
     explicit App(QObject* parent = nullptr);
     ~App() override;
 
-    void cleanupAll();
+    void shutdown();
 
     //=========================
     // SkinApi

@@ -2,7 +2,7 @@
 #include <QWidget>
 #include <QStackedWidget>
 #include <QScrollBar>
-#include "gui/track/ChainWrapper.h"
+#include "ChainWrapper.h"
 
 // ============================================
 class ChainStack : public QWidget
@@ -12,9 +12,10 @@ class ChainStack : public QWidget
 public:
     ChainStack(QWidget* parent = nullptr);
     ~ChainStack() override;
+    QSize sizeHint() const override;
+    QSize minimumSizeHint() const override;
 
     void applySkin();
-
     void addPage(ChainWrapper* page);
 
 protected:
@@ -31,8 +32,10 @@ private slots:
 
 private:
     int m_baseWidth = 284;
-    int m_baseHeight = 326;
+    int m_baseHeight = 376 + 20;
     int m_baseMargin = 10;
+
+    int m_height;
 
     QColor m_windowColor;
 

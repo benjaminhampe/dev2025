@@ -74,9 +74,366 @@ Plugin::~Plugin()
     DE_TRACE("")
 }
 
-QRect Plugin::labelRect() const { return m_rcLabel; }
+// QSize Plugin::sizeHint() const { return QSize(m_width, m_height); }
+// QSize Plugin::minimumSizeHint() const { return sizeHint(); }
 
-de::audio::SharedPlugin Plugin::getPlugin() { return m_plugin; }
+void Plugin::applySkin()
+{
+    DE_TRACE("")
+    m_btnEnable->applySkin();
+    m_btnExpand->applySkin();
+    m_btnWrench->applySkin();
+    m_btnUpdate->applySkin();
+    m_btnEditor->applySkin();
+    m_body->applySkin();
+    m_audioMeter->applySkin();
+
+    const auto& skin = App::instance()->getSkin();
+    m_zoom = skin.zoom;
+    m_headerFont = QFont("Noto Sans", 10, QFont::Bold);
+    m_windowColor = skin.windowColor;
+    m_panelColor = skin.panelColor;
+    m_headerColor = skin.headerColor;
+    m_headerColorActive = skin.headerColorActive;
+    m_textColor = skin.textColor;
+
+    updateLayout();
+}
+
+int Plugin::computeBestWidth() const
+{
+    if (m_bCollapsed)
+    {
+        return ((38+18) * m_zoom) / 100; // m_baseHeaderWidth = 38
+    }
+    else
+    {
+        return ((300+18) * m_zoom) / 100; // m_baseWidth = 300
+    }
+}
+
+int Plugin::computeBestFontHeight(QFont baseFont, int maxHeight) const
+{
+    QFont tf = baseFont;
+    tf.setPixelSize(maxHeight);
+
+    QFontMetrics fm(tf);
+
+    int i = 0;
+    int textHeight = fm.tightBoundingRect("Wg").height();
+
+    DE_OK("Start "
+          "fontSize(",tf.pixelSize(), "), "
+          "maxHeight(", maxHeight,"), "
+          "textHeight(",textHeight, ")")
+
+    while (textHeight < maxHeight)
+    {
+        int lastSize = tf.pixelSize() + 1;
+        if (lastSize > 28)
+        {
+            tf.setPixelSize(28);
+            break;
+        }
+        tf.setPixelSize(lastSize);
+        fm = QFontMetrics(tf);
+        textHeight = fm.tightBoundingRect("Wg").height();
+
+        DE_OK("[",i,"] "
+          "fontSize(",tf.pixelSize(), "), "
+          "maxHeight(", maxHeight,"), "
+          "textHeight(",textHeight, ")")
+        i++;
+    }
+
+    while (textHeight > maxHeight)
+    {
+        int lastSize = tf.pixelSize() - 1;
+        if (lastSize < 8)
+        {
+            tf.setPixelSize(8);
+            break;
+        }
+        tf.setPixelSize(lastSize);
+        fm = QFontMetrics(tf);
+        textHeight = fm.tightBoundingRect("Wg").height();
+
+        DE_OK("[",i,"] "
+          "fontSize(",tf.pixelSize(), "), "
+          "maxHeight(", maxHeight,"), "
+          "textHeight(",textHeight, ")")
+
+        i++;
+    }
+
+    int pixelSize = tf.pixelSize();
+    DE_OK("Got final Font.pixelSize = ",pixelSize," after ",i," tries")
+    return pixelSize;
+}
+
+void Plugin::updateLayout()
+{
+    const int w = width();
+    const int h = height();
+    DE_OK("w(",w,"), h(",h,"), zoom(",m_zoom,")")
+
+    m_radius = (m_baseRadius * m_zoom) / 100;
+    m_spacing2 = (m_baseSpacing2 * m_zoom) / 100;
+    m_spacing4 = (m_baseSpacing4 * m_zoom) / 100;
+
+    const int wMeter = m_audioMeter->computeBestWidth();
+    const int wHeader = w - wMeter;
+    const int hHeader = (34 * m_zoom) / 100;
+    const int hBody = h - hHeader;
+
+    m_headerHeight = hHeader;
+
+    const int bw = (30 * m_zoom) / 100; // m_btnEnable->width();
+    const int bh = (30 * m_zoom) / 100; // m_btnEnable->height();
+
+    if (m_bCollapsed)
+    {
+        m_btnExpand->hide();
+        m_body->hide();
+        m_rcHeader = QRect(0,0,wHeader,hHeader);
+        m_audioMeter->setGeometry(wHeader,0,wMeter,h);
+
+        int x = (m_rcHeader.width() - bw)/2;
+        int y = (m_rcHeader.height() - bh)/2;
+        m_btnEnable->move(x,y);
+
+        int s2 = m_spacing2;
+        int s4 = m_spacing4;
+        int s6 = s2 + s4;
+
+        y = h - (s6 + bh);
+        m_btnEditor->move(x,y);
+        y -= s4 + bh;
+        m_btnUpdate->move(x,y);
+        y -= s4 + bh;
+        m_btnWrench->move(x,y);
+
+        int lh = h - hHeader - 3*bh - 4*s4 - s6;
+        int ly = hHeader + s4;
+        m_rcLabel = QRect(3,ly,wHeader-5,lh);
+
+        int pixelSize = computeBestFontHeight(m_headerFont,m_rcLabel.width() - 2);
+        m_headerFont.setPixelSize(pixelSize);
+    }
+    else // Normal
+    {
+        m_btnExpand->show();
+        m_body->show();
+        m_rcHeader = QRect(0,0,wHeader,hHeader);
+        m_body->setGeometry(0,hHeader+1,wHeader,hBody);
+        m_audioMeter->setGeometry(wHeader,0,wMeter,h);
+
+        int x = m_spacing4;
+        int y = (hHeader - bh)/2;
+        m_btnEnable->move(x,y);
+        x += bw + m_spacing2;
+
+        m_btnExpand->move(x,y);
+        x += bw + m_spacing2;
+
+        m_btnWrench->move(x,y);
+        x += bw + m_spacing2;
+
+        int lx1 = x;
+
+        x = wHeader - m_spacing4 - bw;
+        m_btnEditor->move(x,y);
+        x -= m_spacing4 + bw;
+        m_btnUpdate->move(x,y);
+        x -= m_spacing4;
+
+        int lx2 = x;
+        m_rcLabel = QRect(lx1,2,lx2-lx1,hHeader-4);
+
+        int pixelSize = computeBestFontHeight(m_headerFont,m_rcLabel.height() - 2);
+        m_headerFont.setPixelSize(pixelSize);
+    }
+
+    update();
+}
+
+void Plugin::resizeEvent(QResizeEvent* e)
+{
+    QWidget::resizeEvent(e);
+    const int w = e->size().width();
+    const int h = e->size().height();
+    if (w < 1) return;
+    if (h < 1) return;
+    updateLayout();
+}
+
+void drawShell(QPainter & dc, QRect pos,
+    int headerHeight, QColor panelColor, int panelRadius,
+    QColor headerColor)
+{
+    dc.setRenderHint(QPainter::Antialiasing);
+    dc.setPen(Qt::NoPen);
+
+    dc.setBrush(panelColor);
+    int d = headerHeight/2;
+    int r = panelRadius;
+    int x = pos.x();
+    int y = pos.y();
+    int w = pos.width();
+    int h = pos.height();
+    dc.drawRoundedRect(QRect(x,y+d,w,h-d), r,r);
+
+    dc.setBrush(QBrush(headerColor));
+    dc.drawRoundedRect(QRect(x,y,w,headerHeight-2), r,r);
+    dc.drawRect(QRect(x,y+r+2,w,headerHeight-2-r));
+}
+
+void drawLabelH(QPainter & dc, QRect pos,
+                QColor textColor, QString fullText, QFont font )
+{
+    dc.fillRect(pos, QColor(255,255,255));
+
+    dc.setBrush(Qt::NoBrush);
+    dc.setPen(QPen(textColor));
+    dc.setFont(font);
+
+    QFontMetrics fm(font);
+    QString s = fm.elidedText(fullText,
+                              Qt::ElideRight, pos.width());
+
+    dc.drawText(pos, Qt::AlignLeft | Qt::AlignVCenter,
+                s, &pos);
+}
+
+void drawLabelV(QPainter & dc, QRect pos,
+    QColor textColor, QString fullText, QFont font, int dy )
+{
+    dc.fillRect(pos, QColor(255,255,255));
+
+    dc.setPen(QPen(textColor));
+    dc.setBrush(Qt::NoBrush);
+
+    QFontMetrics fm(font);
+    QString s = fm.elidedText(fullText,
+        Qt::ElideRight, pos.height());
+
+    dc.save(); // <--- save state
+    dc.setFont(font);
+    dc.translate(pos.left() + fm.ascent() - dy,pos.bottom());
+    dc.rotate(-90); // ccw
+    dc.drawText(0, 0, s);
+    dc.restore();
+}
+
+void Plugin::paintEvent(QPaintEvent *)
+{
+    if (!isVisible()) return;
+    const int w = width();
+    const int h = height();
+    if (w < 1) return;
+    if (h < 1) return;
+
+    QPainter dc(this);
+
+    if (m_plugin && m_body)
+    {
+        auto pad = m_body->getPad();
+        if (pad)
+        {
+            double runTime = 0.0;
+            if (m_plugin)
+            {
+                runTime = m_plugin->getRuntime();
+            }
+            pad->setText(Pad::eT_Runtime, QString::fromStdString(createPerfStr(runTime)));
+        }
+    }
+
+    // [Draw] Shell
+    QRect r_shell(0,0,m_rcHeader.width(),h);
+    drawShell(dc,
+              r_shell,
+              m_headerHeight,
+              m_panelColor,
+              m_radius,
+              m_bFocused ? m_headerColorActive
+                         : m_headerColor);
+
+    // <debug>
+    dc.setPen(QPen(QColor(255,55,55)));
+    dc.setBrush(Qt::NoBrush);
+    dc.drawRect(m_rcLabel);
+    // </debug>
+
+    // [Draw] Label
+    if (m_bCollapsed)
+    {
+        drawLabelV(dc, m_rcLabel, m_textColor,
+                   m_title, m_headerFont, (4*m_zoom)/100);
+    }
+    else
+    {
+        drawLabelH(dc, m_rcLabel, m_textColor,
+                   m_title, m_headerFont);
+    }
+}
+
+void Plugin::enterEvent(QEnterEvent* e)
+{
+    QWidget::enterEvent(e);
+    m_bFocused = true;
+    update();
+}
+void Plugin::leaveEvent(QEvent* e)
+{
+    QWidget::leaveEvent(e);
+    m_bFocused = false;
+    update();
+}
+void Plugin::focusInEvent(QFocusEvent* event)
+{
+    m_bFocused = true;
+    update();
+    QWidget::focusInEvent(event);
+}
+void Plugin::focusOutEvent(QFocusEvent* event)
+{
+    m_bFocused = false;
+    update();
+    QWidget::focusOutEvent(event);
+}
+void Plugin::mousePressEvent(QMouseEvent* event)
+{
+    QWidget::mousePressEvent(event);
+}
+void Plugin::mouseReleaseEvent(QMouseEvent* event)
+{
+    QWidget::mouseReleaseEvent(event);
+}
+void Plugin::mouseDoubleClickEvent(QMouseEvent* event)
+{
+    auto pos = event->position().toPoint();
+
+    QRect r_label = labelRect();
+    if (r_label.contains(pos))
+    {
+        m_bCollapsed = !m_bCollapsed;
+        applySkin();
+        emit collapseChanged();
+    }
+    QWidget::mouseDoubleClickEvent(event);
+}
+void Plugin::mouseMoveEvent(QMouseEvent* event)
+{
+    QWidget::mouseMoveEvent(event);
+}
+
+void Plugin::setPlugin(de::audio::SharedPlugin plugin)
+{
+    DE_OK()
+    unloadPlugin();
+    loadPlugin(plugin);
+}
 
 void Plugin::unloadPlugin()
 {
@@ -289,15 +646,6 @@ void Plugin::loadPlugin(de::audio::SharedPlugin plugin)
     setUpdatesEnabled(true); // Enable paintEvent()
 }
 
-void Plugin::setPlugin(de::audio::SharedPlugin plugin)
-{
-    DE_OK()
-
-    unloadPlugin();
-
-    loadPlugin(plugin);
-}
-
 void Plugin::on_showContextMenu(const QPoint &pos)
 {
     QMenu menu;
@@ -492,277 +840,3 @@ void Plugin::on_pressedBtnEditor( bool checked )
 
 // }
 
-// QSize Plugin::sizeHint() const { return QSize(m_width, m_height); }
-// QSize Plugin::minimumSizeHint() const { return sizeHint(); }
-
-void Plugin::applySkin()
-{
-    // DE_DEBUG("")
-    m_btnEnable->applySkin();
-    m_btnExpand->applySkin();
-    m_btnWrench->applySkin();
-    m_btnUpdate->applySkin();
-    m_btnEditor->applySkin();
-    m_body->applySkin();
-    m_audioMeter->applySkin();
-
-    const int bw = m_btnEnable->width();
-    const int bh = m_btnEnable->height();
-
-    const int aw = m_audioMeter->width();
-    const int ah = m_audioMeter->height();
-
-    DE_TRACE("b(",bw,",",bh,"), a(",aw,",",ah,")")
-
-    const auto& skin = App::instance()->getSkin();
-    m_windowColor = skin.windowColor;
-    m_panelColor = skin.panelColor;
-    m_headerColor = skin.headerColor;
-    m_headerColorActive = skin.headerColorActive;
-    m_textColor = skin.textColor;
-
-    m_radius = (m_baseRadius * skin.zoom) / 100;
-    m_headerHeight = (m_baseHeaderHeight * skin.zoom) / 100;
-    m_spacing2 = (m_baseSpacing2 * skin.zoom) / 100;
-    m_spacing4 = (m_baseSpacing4 * skin.zoom) / 100;
-
-    if (m_bCollapsed)
-    {
-        m_btnExpand->hide();
-        m_body->hide();
-
-        m_width = (m_baseHeaderWidth * skin.zoom) / 100;
-        m_height = (m_baseHeight * skin.zoom) / 100;
-
-        m_rcHeader = QRect(0,0,m_width,m_headerHeight);
-
-        int x = (m_rcHeader.width() - bw)/2;
-        int y = (m_rcHeader.height() - bh)/2;
-        m_btnEnable->move(x,y);
-
-        int s2 = m_spacing2;
-        int s4 = m_spacing4;
-        int s6 = s2 + s4;
-
-        y = m_height - (s6 + bh);
-        m_btnEditor->move(x,y);
-        y -= s4 + bh;
-        m_btnUpdate->move(x,y);
-        y -= s4 + bh;
-        m_btnWrench->move(x,y);
-
-        int lh = m_height - m_headerHeight - 3*bh - 4*s4 - s6;
-        int ly = m_headerHeight + s4;
-        m_rcLabel = QRect(3,ly,m_width-5,lh);
-
-        m_rcAudioMeter = QRect(m_width,0,aw,m_height);
-
-        int ay = (m_height - m_audioMeter->height())/2;
-        m_audioMeter->move(m_width,ay);
-
-        //setFixedSize( m_width + aw, m_height );
-        setMinimumSize( m_width + aw, m_height );
-        setMaximumSize( m_width + aw, m_height );
-    }
-    else // Normal
-    {
-        m_btnExpand->show();
-        m_body->show();
-
-        m_width = (m_baseWidth * skin.zoom) / 100;
-        m_height = (m_baseHeight * skin.zoom) / 100;
-
-        m_rcHeader = QRect(0,0,m_width,m_headerHeight);
-
-        int x = m_spacing4;
-        int y = (m_headerHeight - bh)/2;
-        m_btnEnable->move(x,y);
-        x += bw + m_spacing2;
-
-        m_btnExpand->move(x,y);
-        x += bw + m_spacing2;
-
-        m_btnWrench->move(x,y);
-        x += bw + m_spacing2;
-
-        int lx1 = x;
-
-        x = m_width - m_spacing4 - bw;
-        m_btnEditor->move(x,y);
-        x -= m_spacing4 + bw;
-        m_btnUpdate->move(x,y);
-        x -= m_spacing4;
-
-        int lx2 = x;
-
-        m_rcLabel = QRect(lx1,2,lx2-lx1,m_headerHeight-4);
-
-        m_body->move( 0,m_headerHeight+1 );
-
-        m_rcAudioMeter = QRect(m_width,0,aw,m_height);
-
-        int ay = (m_height - m_audioMeter->height())/2;
-        m_audioMeter->move(m_width,ay);
-
-        //setFixedSize( m_width + aw, m_height );
-        setMinimumSize( m_width + aw, m_height );
-        setMaximumSize( m_width + aw, m_height );
-    }
-
-    updateGeometry(); // tells Qt: “my sizeHint() changed”
-    update();
-}
-
-void Plugin::resizeEvent(QResizeEvent* e)
-{
-    QWidget::resizeEvent(e);
-
-    // const int w = e->size().width();
-    // const int h = e->size().height();
-}
-
-
-void drawShell(QPainter & dc, QRect pos,
-    int headerHeight, QColor panelColor, int panelRadius,
-    QColor headerColor)
-{
-    dc.setRenderHint(QPainter::Antialiasing);
-    dc.setPen(Qt::NoPen);
-
-    dc.setBrush(panelColor);
-    int d = headerHeight/2;
-    int r = panelRadius;
-    int x = pos.x();
-    int y = pos.y();
-    int w = pos.width();
-    int h = pos.height();
-    dc.drawRoundedRect(QRect(x,y+d,w,h-d), r,r);
-
-    dc.setBrush(QBrush(headerColor));
-    dc.drawRoundedRect(QRect(x,y,w,headerHeight-2), r,r);
-    dc.drawRect(QRect(x,y+r+2,w,headerHeight-2-r));
-}
-
-void drawLabelH(QPainter & dc, QRect pos,
-                QColor textColor, QString fullText, QFont font )
-{
-    dc.fillRect(pos, QColor(255,255,255));
-
-    dc.setBrush(Qt::NoBrush);
-    dc.setPen(QPen(textColor));
-    dc.setFont(font);
-
-    QFontMetrics fm(font);
-    QString s = fm.elidedText(fullText,
-                              Qt::ElideRight, pos.width());
-
-    dc.drawText(pos, Qt::AlignLeft | Qt::AlignVCenter,
-                s, &pos);
-}
-
-void drawLabelV(QPainter & dc, QRect pos,
-    QColor textColor, QString fullText, QFont font )
-{
-    dc.fillRect(pos, QColor(255,255,255));
-
-    dc.setPen(QPen(textColor));
-    dc.setBrush(Qt::NoBrush);
-
-    QFontMetrics fm(font);
-    QString s = fm.elidedText(fullText,
-        Qt::ElideRight, pos.height());
-
-    dc.save(); // <--- save state
-    dc.setFont(font);
-    dc.translate(pos.left() + fm.ascent(),pos.bottom());
-    dc.rotate(-90); // ccw
-    dc.drawText(0, 0, s);
-    dc.restore();
-}
-
-void Plugin::paintEvent(QPaintEvent *)
-{
-    QPainter dc(this);
-
-    if (m_plugin && m_body)
-    {
-        auto pad = m_body->getPad();
-        if (pad)
-        {
-            double runTime = 0.0;
-            if (m_plugin)
-            {
-                runTime = m_plugin->getRuntime();
-            }
-            pad->setText(Pad::eT_Runtime, QString::fromStdString(createPerfStr(runTime)));
-        }
-    }
-
-    // [Draw] Shell
-    QRect r_shell(0,0,m_width,m_height);
-    drawShell(dc,
-              r_shell,
-              m_headerHeight,
-              m_panelColor,
-              m_radius,
-              m_bFocused ? m_headerColorActive
-                         : m_headerColor);
-
-    // <debug>
-    dc.setPen(QPen(QColor(255,55,55)));
-    dc.setBrush(Qt::NoBrush);
-    dc.drawRect(m_rcLabel);
-    // </debug>
-
-    // [Draw] Label
-    auto f = QFont("Noto Sans", 10, QFont::Bold);
-
-    if (m_bCollapsed)
-    {
-        drawLabelV(dc, m_rcLabel, m_textColor,
-                   m_title, f);
-    }
-    else
-    {
-        drawLabelH(dc, m_rcLabel, m_textColor,
-                   m_title, f);
-    }
-}
-
-void Plugin::focusInEvent(QFocusEvent* event)
-{
-    m_bFocused = true;
-    update();
-    QWidget::focusInEvent(event);
-}
-void Plugin::focusOutEvent(QFocusEvent* event)
-{
-    m_bFocused = false;
-    update();
-    QWidget::focusOutEvent(event);
-}
-void Plugin::mousePressEvent(QMouseEvent* event)
-{
-    QWidget::mousePressEvent(event);
-}
-void Plugin::mouseReleaseEvent(QMouseEvent* event)
-{
-    QWidget::mouseReleaseEvent(event);
-}
-void Plugin::mouseDoubleClickEvent(QMouseEvent* event)
-{
-    auto pos = event->position().toPoint();
-
-    QRect r_label = labelRect();
-    if (r_label.contains(pos))
-    {
-        m_bCollapsed = !m_bCollapsed;
-        applySkin();
-        emit collapseChanged();
-    }
-    QWidget::mouseDoubleClickEvent(event);
-}
-void Plugin::mouseMoveEvent(QMouseEvent* event)
-{
-    QWidget::mouseMoveEvent(event);
-}

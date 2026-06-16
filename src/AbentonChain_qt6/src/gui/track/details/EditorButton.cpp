@@ -5,28 +5,10 @@
 EditorButton::EditorButton(QWidget* parent)
     : SvgButton(parent)
 {
-    // setSizePolicy(QSizePolicy::Fixed,QSizePolicy::Fixed);
-    // setContextMenuPolicy(Qt::CustomContextMenu);
-    // setStyleSheet("background:transparent; border:none;");
     setCheckable( true );
     setChecked( false );
     applySkin();
-
-    // connect(this, &QWidget::customContextMenuRequested,
-            // this, &EditorButton::showContextMenu);
-
-    // connect(this, &QPushButton::toggled,
-    //         this, &EditorButton::onToggled);
-
 }
-
-// void EditorButton::onToggled(bool checked)
-// {
-//     applySkin();
-// }
-
-// QSize EditorButton::sizeHint() const { return QSize(m_width, m_height); }
-// QSize EditorButton::minimumSizeHint() const { return sizeHint(); }
 
 void EditorButton::applySkin()
 {

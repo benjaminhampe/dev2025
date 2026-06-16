@@ -12,6 +12,7 @@ public:
     // QSize minimumSizeHint() const override;
 
     void applySkin();
+    void updateLayout();
 
     enum eText
     {
@@ -49,7 +50,7 @@ public slots:
     // void setParamY(uint32_t id) { m_paramY = id; }
 
 protected slots:
-    void onToggled( bool checked );
+    // void onToggled( bool checked );
 
 protected:
     void paintEvent(QPaintEvent* event) override;
@@ -60,14 +61,16 @@ protected:
     // void mouseDoubleClickEvent(QMouseEvent* event) override;
 
 private:
-    int m_baseWidth = 280;
-    int m_baseHeight = 250;
+    int m_zoom = 100;
+
+    // int m_baseWidth = 280;
+    // int m_baseHeight = 250;
     int m_baseBorderRadius = 4;
     int m_baseCircleRadius = 13;
     int m_baseCircleBorder = 4;
 
-    int m_width;
-    int m_height;
+    // int m_width;
+    // int m_height;
     int m_borderRadius;
     int m_circleRadius;
     int m_circleBorder;

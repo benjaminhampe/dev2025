@@ -129,8 +129,7 @@ public:
             return; // Discard, Information loss!
         }
 
-        //DE_OK("=============================================")
-        DE_OK("NoteOn: ", midiNote, ", IdleVoice = ",voice)
+        //DE_OK("NoteOn: ", midiNote, ", IdleVoice = ",voice)
         m_voices[voice].noteOn(midiNote, velocity);
     }
 
@@ -154,7 +153,7 @@ public:
             }
         }
 
-        DE_OK("NoteOff: ",midiNote, " for nVoices = ",nVoices)
+        //DE_OK("NoteOff: ",midiNote, " for nVoices = ",nVoices)
     }
 
     void allNotesOff()
