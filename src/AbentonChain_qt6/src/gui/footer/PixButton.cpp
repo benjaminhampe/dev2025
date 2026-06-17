@@ -1,5 +1,6 @@
 #include "PixButton.h"
 #include <QPainter>
+#include <QResizeEvent>
 
 // =================================================================
 PixButton::PixButton(QWidget* parent)
@@ -23,19 +24,17 @@ PixButton::PixButton(QWidget* parent)
     // btn->setStyleSheet("background: transparent; border: none;");
     //setIcon(QIcon(pix));
     //setIconSize(pix.size());
-    setFixedSize(30,30);
+    //setFixedSize(30,30);
 }
 
-void PixButton::setKeyAssign( bool enabled )
+void PixButton::applySkin()
 {
-    m_bEnabledKeyAssign = enabled;
-    update();
+
 }
 
-void PixButton::setMidiAssign( bool enabled )
+void PixButton::updateLayout()
 {
-    m_bEnabledMidiAssign = enabled;
-    update();
+
 }
 
 void PixButton::setPixmaps(QPixmap pixActive, QPixmap pixDeactive)
@@ -49,12 +48,21 @@ void PixButton::setPixmaps(QPixmap pixActive, QPixmap pixDeactive)
     setFixedSize(w,h);
 }
 
+void PixButton::resizeEvent(QResizeEvent* e)
+{
+    const int w = e->size().width();
+    const int h = e->size().height();
+    if (w<1) return;
+    if (h<1) return;
+    //updateLayout();
+}
+
 void PixButton::paintEvent(QPaintEvent* event)
 {
     const int w = width();
     const int h = height();
-    if (w<2) return;
-    if (h<2) return;
+    if (w<1) return;
+    if (h<1) return;
 
     QPainter dc(this);
 
@@ -69,23 +77,40 @@ void PixButton::paintEvent(QPaintEvent* event)
 
     if (isCheckable() && !isChecked())
     {
-        const int w2 = m_deactive.width();
-        const int h2 = m_deactive.height();
-        const int x = (w - w2)/2;
-        const int y = (h - h2)/2;
-        dc.drawPixmap(x,y,m_deactive);
+        if (!m_deactive.isNull())
+        {
+            const int a = m_deactive.width();
+            const int b = m_deactive.height();
+            const int x = (w - a)/2;
+            const int y = (h - b)/2;
+            dc.drawPixmap(x,y,m_deactive);
+        }
     }
     else
     {
-        const int w2 = m_active.width();
-        const int h2 = m_active.height();
-        const int x = (w - w2)/2;
-        const int y = (h - h2)/2;
-        dc.drawPixmap(x,y,m_active);
+        if (!m_active.isNull())
+        {
+            const int a = m_active.width();
+            const int b = m_active.height();
+            const int x = (w - a)/2;
+            const int y = (h - b)/2;
+            dc.drawPixmap(x,y,m_active);
+        }
     }
 
 }
 
+void PixButton::setKeyAssign( bool enabled )
+{
+    m_bEnabledKeyAssign = enabled;
+    update();
+}
+
+void PixButton::setMidiAssign( bool enabled )
+{
+    m_bEnabledMidiAssign = enabled;
+    update();
+}
 
 /*
 void PixButton::showContextMenu(const QPoint &pos)

@@ -7,37 +7,43 @@ Footer::Footer(QWidget* parent )
    , m_hasFocus( false )
 {
     setObjectName( "Footer" );
-    setContentsMargins( 0,0,0,0 );
+    setContentsMargins(8,8,8,8);
     setMouseTracking( true );
 
     m_btnQuickHelp = new PixButton(this);
+    m_btnQuickHelp->setCheckable(true);
+    m_btnQuickHelp->setChecked(false);
+
     m_btnMidiKeyboard = new PixButton(this);
-    m_btnDetails = new PixButton(this);
+    m_btnMidiKeyboard->setCheckable(true);
+    m_btnMidiKeyboard->setChecked(false);
+
     m_longText = QString("LongText");
 
-    m_clipOverview.btnShow = new PixButton(this);
-    m_clipOverview.btnShow->setCheckable(true);
-    m_clipOverview.btnShow->setChecked(false);
-    m_clipOverview.btnName = new PixButton(this);
-    m_trackOverview.btnShow = new PixButton(this);
-    m_trackOverview.btnName = new PixButton(this);
-    m_trackOverview.btnShow->setCheckable(true);
-    m_trackOverview.btnShow->setChecked(true);
+    m_clipOverview = new OverviewButton(this);
+    m_clipOverview->setNameText("1 - Clip");
 
-    connect( m_btnQuickHelp, SIGNAL(toggled(bool)),
-            this, SLOT(on_btnShowQuickHelpPanel(bool)) );
+    m_trackOverview = new OverviewButton(this);
+    m_trackOverview->setNameText("1 - Audio");
+    //m_trackOverview->m_
+
+    m_btnDetails = new PixButton(this);
+    m_btnDetails->setCheckable(true);
+    m_btnDetails->setChecked(false);
+
+    connect( m_btnQuickHelp, &PixButton::toggled, this, &Footer::on_btnShowQuickHelp );
 
     connect( m_btnMidiKeyboard, SIGNAL(toggled(bool)),
             this, SLOT(on_btnShowMidiKeyboard(bool)) );
 
-    connect( m_clipOverview.btnShow, SIGNAL(toggled(bool)),
-            this, SLOT(on_btnShowClipOverview(bool)) );
+    connect( m_clipOverview, &OverviewButton::sig_show,
+            this, &Footer::on_btnShowClipOverview );
 
-    connect( m_trackOverview.btnShow, SIGNAL(toggled(bool)),
-            this, SLOT(on_btnShowTrackOverview(bool)) );
+    connect( m_trackOverview, &OverviewButton::sig_show,
+            this, &Footer::on_btnShowTrackOverview );
 
     connect( m_btnDetails, SIGNAL(toggled(bool)),
-            this, SLOT(on_btnShowDetailPanel(bool)) );
+            this, SLOT(on_btnShowDetails(bool)) );
 
     //   connect( &m_trackList, SIGNAL(currentTrackIdChanged(int)),
     //           this, SLOT(on_currentTrackIdChanged(int)) );
@@ -53,8 +59,8 @@ Footer::Footer(QWidget* parent )
     // h->addWidget(m_btnShowDetailPanel);
     // setLayout(h);
 
-    setMinimumHeight(68);
-    setMaximumHeight(68);
+    // setMinimumHeight(68);
+    // setMaximumHeight(68);
     applySkin();
 }
 
@@ -240,22 +246,35 @@ void PIX_createTrackOverview(PixButton* btn, int w, int h)
 
 void PIX_createDetails(PixButton* btn, int w, int h)
 {
+    if (!btn)
+    {
+        DE_ERROR("Got nullptr")
+        return;
+    }
+
+    if (w < 1 || h < 1)
+    {
+        DE_ERROR("w < 1 || h < 1")
+    }
+
     //const int outlineWidth = (m_baseOutlineWidth * skin.zoom) / 100;
     //const auto lineColor = QColor(79,79,79);
     const auto onColor = QColor(255,181,1);
     const auto offColor = QColor(207,207,207);
     // const auto textColor = skin.textColor;
 
+
     QPixmap pm(w, h);
     pm.fill(Qt::transparent);
 
-    QColor fillColor(235,181,22);
-    QColor lineColor(255,220,55);
-
-    int s = 8;
-    int bw = (w - 4*s) / 5;
+    QPainter dc;
+    if (dc.begin(&pm))
     {
-        QPainter dc(&pm);
+        QColor fillColor(235,181,22);
+        QColor lineColor(255,220,55);
+
+        int s = 8;
+        int bw = (w - 4*s) / 5;
 
         int x = 0;
         int y = 2;
@@ -279,38 +298,34 @@ void PIX_createDetails(PixButton* btn, int w, int h)
     btn->setPixmaps(pm,pm);
 }
 
+int Footer::computeBestHeight() const
+{
+    int hInner = (48 * m_zoom) / 100;
+    int padding = (8 * m_zoom) / 100;
+    return 2*padding + hInner;
+}
 
 void Footer::applySkin()
 {
+    m_btnQuickHelp->applySkin();
+    m_btnMidiKeyboard->applySkin();
+    m_clipOverview->applySkin();
+    m_trackOverview->applySkin();
+    m_btnDetails->applySkin();
+
     const auto& skin = App::instance()->getSkin();
+    m_zoom = skin.zoom;
     m_windowColor = skin.windowColor;
     m_panelColor = skin.panelColor;
     m_textColor = skin.textColor;
     m_activeColor = skin.symbolColorActive;
-    m_radius = (m_baseRadius * skin.zoom) / 100;
-    m_padding = (m_basePadding * skin.zoom) / 100;
-    m_buttonHeight = (m_baseButtonHeight * skin.zoom) / 100;
+    const int hInner = (48 * skin.zoom) / 100;
+    m_padding = (height() - hInner) / 2;
+    m_radius = m_padding;
 
-    SVG_createQuickHelp(m_btnQuickHelp, m_buttonHeight,m_buttonHeight);
-    PIX_createMidiKeyboard(m_btnMidiKeyboard, 2*m_buttonHeight,m_buttonHeight);
-
-    auto pixOff = createArrowRight(48,48,m_windowColor,m_panelColor,m_textColor);
-    auto pixOn = createArrowUp(48,48,m_windowColor,m_activeColor,m_textColor);
-    m_clipOverview.btnShow->setPixmaps(pixOn,pixOff);
-
-    pixOff = createFromText(0,48,"1-ClipEditor", m_textColor,m_panelColor);
-    pixOn = createFromText(0,48,"1-ClipEditor", m_textColor,m_panelColor);
-    m_clipOverview.btnName->setPixmaps(pixOn,pixOff);
-
-    pixOff = createArrowRight(48,48,m_windowColor,m_panelColor,m_textColor);
-    pixOn = createArrowUp(48,48,m_windowColor,m_activeColor,m_textColor);
-    m_trackOverview.btnShow->setPixmaps(pixOn,pixOff);
-
-    pixOff = createFromText(0,48,"1-AudioTrack", m_textColor,m_panelColor);
-    pixOn = createFromText(0,48,"1-AudioTrack", m_textColor,m_panelColor);
-    m_trackOverview.btnName->setPixmaps(pixOn,pixOff);
-
-    PIX_createDetails(m_btnDetails, 2*m_buttonHeight,m_buttonHeight);
+    SVG_createQuickHelp(m_btnQuickHelp, hInner,hInner);
+    PIX_createMidiKeyboard(m_btnMidiKeyboard, 2*hInner,hInner);
+    PIX_createDetails(m_btnDetails, 2*hInner,hInner);
 
     // QColor m_panelColor(128,128,128);
     // QColor m_contentColor(255,255,255);
@@ -322,26 +337,29 @@ void Footer::applySkin()
 void
 Footer::updateLayout()
 {
-    int w = width();
-    int h = height();
-    int p = 10;
+    const int w = width();
+    const int h = height();
+    //int p = 10;
 
-    int xHelp = p;
-    int xMidi = xHelp + m_btnQuickHelp->width() + p;
-    int xLong = xMidi + m_btnMidiKeyboard->width() + p;
+    const int hInner = (48 * m_zoom) / 100;
+    m_padding = (height() - hInner) / 2;
 
-    int xLast = w - 1 - p;
+    int xHelp = m_padding;
+    int xMidi = xHelp + m_btnQuickHelp->width() + m_padding;
+    int xLong = xMidi + m_btnMidiKeyboard->width() + m_padding;
+
+    int xLast = w - 1 - m_padding;
     int xDeta = xLast - m_btnDetails->width();
-    int xTrack = xDeta - p - m_trackOverview.width();
-    int xClip = xTrack - p - m_clipOverview.width();
-    int wLong = xClip - xLong - p;
+    int xTrack = xDeta - m_padding - m_trackOverview->computeBestWidth();
+    int xClip = xTrack - m_padding - m_clipOverview->computeBestWidth();
+    int wLong = xClip - xLong - m_padding;
 
-    m_btnQuickHelp->move(xHelp,p);
-    m_btnMidiKeyboard->move(xMidi,p);
-    m_rcLongText = QRect(xLong, p, wLong, h-2*p);
-    m_clipOverview.move(xClip,p);
-    m_trackOverview.move(xTrack,p);
-    m_btnDetails->move(xDeta,p);
+    m_btnQuickHelp->setGeometry(xHelp,m_padding, m_btnQuickHelp->width(), m_btnQuickHelp->height());
+    m_btnMidiKeyboard->setGeometry(xMidi,m_padding, m_btnMidiKeyboard->width(), m_btnMidiKeyboard->height());
+    m_rcLongText = QRect(xLong, m_padding, wLong, hInner);
+    m_clipOverview->setGeometry(xClip,m_padding, m_clipOverview->width(), m_clipOverview->height());
+    m_trackOverview->setGeometry(xTrack,m_padding, m_trackOverview->width(), m_trackOverview->height());
+    m_btnDetails->setGeometry(xDeta,m_padding, m_btnDetails->width(), m_btnDetails->height());
 
     update();
 }
@@ -390,8 +408,8 @@ void Footer::paintEvent(QPaintEvent* e)
                  m_longText,
                  &r_longText );
 
-    m_clipOverview.draw(dc);
-    m_trackOverview.draw(dc);
+    // m_clipOverview.draw(dc);
+    // m_trackOverview.draw(dc);
 }
 
 void
@@ -402,14 +420,11 @@ Footer::setTrackOverview(QPixmap pix, int visibleWidth, int totalWidth, int xPos
         return;
     }
 
-    m_trackOverview.pix = pix;
-    m_trackOverview.viewWidth = visibleWidth;
-    m_trackOverview.totalWidth = totalWidth;
-    m_trackOverview.viewPos = xPos;
+    m_trackOverview->setOverviewPixmap(pix,visibleWidth,totalWidth,xPos);
 
     //m_trackOverview->setPixmaps(m_trackOverviewPixmap,m_trackOverviewPixmap);
 
-    updateLayout();
+    //updateLayout();
 }
 
 QPixmap Footer::createArrowRight(int w, int h,
@@ -638,176 +653,27 @@ drawText( QPainter & dc, int x, int y, QString const & msg, QColor textColor )
 
 */
 
-void
-Footer::on_btnShowMidiKeyboard( bool checked )
+void Footer::on_btnShowMidiKeyboard( bool checked )
 {
-    //m_midiMasterKeyboard->setVisible( checked );
-   //updateLayout();
+    emit sig_showMidiKeyboard(checked);
+}
+void Footer::on_btnShowQuickHelp( bool checked )
+{
+    emit sig_showQuickHelp(checked);
+}
+void Footer::on_btnShowClipOverview( bool checked )
+{
+    emit sig_showClipEditor(checked);
+}
+void Footer::on_btnShowTrackOverview( bool checked )
+{
+    emit sig_showTrackEditor(checked);
+}
+void Footer::on_btnShowDetails( bool checked )
+{
+    emit sig_showArrangement(checked);
 }
 
-void
-Footer::on_btnShowQuickHelpPanel( bool checked )
-{
-    auto& skin = App::instance()->getSkin();
-
-    DE_DEBUG("checked = ",checked, ", "
-             "isDetailsVisible = ", skin.bIsDetailsVisible, ", "
-             "isQuickHelpVisible = ", skin.bIsQuickHelpVisible )
-
-    emit showQuickHelp(checked);
-/*
-    if ( checked )
-    {
-        skin.bIsDetailsVisible = true;
-        skin.bIsQuickHelpVisible = true;
-
-        if ( !m_btnDetails->isChecked() )
-        {
-            m_btnDetails->blockSignals( true );
-            m_btnDetails->setChecked( true );
-            m_btnDetails->blockSignals( false );
-        }
-    }
-    else
-    {
-        skin.bIsQuickHelpVisible = false;
-    }
-*/
-    // updateLayout();
-}
-
-
-void
-Footer::on_btnShowClipOverview( bool checked )
-{
-    Skin& skin = App::instance()->getSkin();
-    DE_DEBUG("checked = ",checked, ", "
-             "isDetailsVisible = ", skin.bIsDetailsVisible, ", "
-             "isQuickHelpVisible = ", skin.bIsQuickHelpVisible )
-
-    emit showClipEditor(checked);
-
-
-/*
-    if ( !skin.bIsDetailsVisible )
-    {
-        if ( !m_btnDetails->isChecked() )
-        {
-            m_btnDetails->blockSignals( true );
-            m_btnDetails->setChecked( true );
-            m_btnDetails->blockSignals( false );
-        }
-
-        if ( skin.bIsQuickHelpVisible )
-        {
-            if ( !m_btnQuickHelp->isChecked() )
-            {
-                m_btnQuickHelp->blockSignals( true );
-                m_btnQuickHelp->setChecked( true );
-                m_btnQuickHelp->blockSignals( false );
-            }
-        }
-    }
-
-    skin.bIsClipEditorVisible = true;
-*/
-
-    //   if ( !m_btnShowQuickHelpPanel->isChecked() )
-    //   {
-    //      m_btnShowQuickHelpPanel->blockSignals( true );
-    //      m_btnShowQuickHelpPanel->setChecked( true );
-    //      m_btnShowQuickHelpPanel->blockSignals( false );
-    //   }
-
-    // m_clipContent->blockSignals( true );
-    // m_clipContent->show();
-    // m_clipContent->blockSignals( false );
-
-    // m_detailStack->blockSignals( true );
-    // m_detailStack->hide();
-    // m_detailStack->blockSignals( false );
-}
-
-void
-Footer::on_btnShowTrackOverview( bool checked )
-{
-    Skin& skin = App::instance()->getSkin();
-    DE_DEBUG("checked = ",checked, ", "
-            "isDetailsVisible = ", skin.bIsDetailsVisible, ", "
-            "isQuickHelpVisible = ", skin.bIsQuickHelpVisible )
-
-    emit showTrackEditor(checked);
-
-/*
-    if ( !skin.bIsDetailsVisible )
-    {
-        if ( !m_btnDetails->isChecked() )
-        {
-            m_btnDetails->blockSignals( true );
-            m_btnDetails->setChecked( true );
-            m_btnDetails->blockSignals( false );
-        }
-        if ( skin.bIsQuickHelpVisible )
-        {
-            if ( !m_btnQuickHelp->isChecked() )
-            {
-                m_btnQuickHelp->blockSignals( true );
-                m_btnQuickHelp->setChecked( true );
-                m_btnQuickHelp->blockSignals( false );
-            }
-        }
-    }
-
-    skin.bIsClipEditorVisible = false;
-*/
-    // m_clipContent->blockSignals( true );
-    // m_clipContent->hide();
-    // m_clipContent->blockSignals( false );
-
-    // m_detailStack->blockSignals( true );
-    // m_detailStack->show();
-    // m_detailStack->blockSignals( false );
-
-    //updateLayout();
-}
-
-
-void
-Footer::on_btnShowDetailPanel( bool checked )
-{
-    Skin& skin = App::instance()->getSkin();
-    DE_DEBUG("checked = ",checked, ", "
-               "isDetailVisible = ", skin.bIsDetailsVisible, ", "
-               "isQuickHelpVisible = ", skin.bIsQuickHelpVisible )
-
-    emit showArrangement(checked);
-
-/*
-    if ( checked )
-    {
-        skin.bIsDetailsVisible = true;
-
-        if ( skin.bIsQuickHelpVisible && !m_btnQuickHelp->isChecked() )
-        {
-            m_btnQuickHelp->blockSignals( true );
-            m_btnQuickHelp->setChecked( true );
-            m_btnQuickHelp->blockSignals( false );
-        }
-    }
-    else
-    {
-        skin.bIsDetailsVisible = false;
-
-        if ( m_btnQuickHelp->isChecked() )
-        {
-            m_btnQuickHelp->blockSignals( true );
-            m_btnQuickHelp->setChecked( false );
-            m_btnQuickHelp->blockSignals( false );
-        }
-    }
-*/
-    //updateLayout();
-}
 /*
 void
 Footer::mouseReleaseEvent( QMouseEvent* event )

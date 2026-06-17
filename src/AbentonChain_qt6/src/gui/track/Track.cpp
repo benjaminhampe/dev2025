@@ -151,64 +151,60 @@ void Track::paintEvent(QPaintEvent* e)
 
     m_bInPaintEvent = true;
 
-    if (isVisible())
+    QPainter dc;
+    if (dc.begin(this))
     {
-        QPainter dc;
-        if (dc.begin(this))
+        dc.setRenderHint( QPainter::Antialiasing );
+
+        // [Draw] drawDropTarget.Panel:
+        dc.setPen( Qt::NoPen );
+        dc.setBrush( QBrush( m_panelColor ) );
+        dc.drawRoundedRect( m_rcDropTarget, m_radius, m_radius );
+
+        // [Draw] drawDropTarget.Text:
+        dc.setPen( QPen(m_textColor) );
+        dc.setBrush(Qt::NoBrush);
+        QRect r_text = QRect( m_rcDropTarget.x() + m_radius,
+                              m_rcDropTarget.y() + m_radius,
+                              m_rcDropTarget.width()-2*m_radius,
+                              m_rcDropTarget.height()-2*m_radius );
+
+        dc.drawText(r_text, Qt::TextWordWrap | Qt::AlignCenter,
+                    m_msg, &r_text );
+
+
+        // [Draw] Blue drawDropIndicator stripe:
+        int dragIndicatorPosX = computeDropIndicatorPosX(m_dragIndex, m_dropIndex);
+        if (dragIndicatorPosX > -1)
         {
-            dc.setRenderHint( QPainter::Antialiasing );
+            m_rcDropIndicator = QRect(dragIndicatorPosX, 0, m_dropIndicatorWidth, height());
+            dc.fillRect(m_rcDropIndicator, QColor(0, 0, 255, 120));
+        }
 
-            // [Draw] drawDropTarget.Panel:
-            dc.setPen( Qt::NoPen );
-            dc.setBrush( QBrush( m_panelColor ) );
-            dc.drawRoundedRect( m_rcDropTarget, m_radius, m_radius );
-
-            // [Draw] drawDropTarget.Text:
-            dc.setPen( QPen(m_textColor) );
-            dc.setBrush(Qt::NoBrush);
-            QRect r_text = QRect( m_rcDropTarget.x() + m_radius,
-                                  m_rcDropTarget.y() + m_radius,
-                                  m_rcDropTarget.width()-2*m_radius,
-                                  m_rcDropTarget.height()-2*m_radius );
-
-            dc.drawText(r_text, Qt::TextWordWrap | Qt::AlignCenter,
-                        m_msg, &r_text );
-
-
-            // [Draw] Blue drawDropIndicator stripe:
-            int dragIndicatorPosX = computeDropIndicatorPosX(m_dragIndex, m_dropIndex);
-            if (dragIndicatorPosX > -1)
-            {
-                m_rcDropIndicator = QRect(dragIndicatorPosX, 0, m_dropIndicatorWidth, height());
-                dc.fillRect(m_rcDropIndicator, QColor(0, 0, 255, 120));
-            }
-
-            //<debug>
+        //<debug>
 #if 1
-            // [Draw] Drag/Drop indices as white text
-            auto s = QString("dragIndex(%1), dropIndex(%2)")
-                .arg(m_dragIndex)
-                .arg(m_dropIndex)
-                //.arg(qstr(m_rcDropIndicator))
-            ;
+        // [Draw] Drag/Drop indices as white text
+        auto s = QString("dragIndex(%1), dropIndex(%2)")
+            .arg(m_dragIndex)
+            .arg(m_dropIndex)
+            //.arg(qstr(m_rcDropIndicator))
+        ;
 
-            auto fm = QFontMetrics(font());
-            int x = width() - 11 - fm.boundingRect(s).width();
-            int y = height() - 11; // - fm.ascent();
-            dc.setPen(QPen(Qt::white));
-            dc.drawText( x, y, s);
+        auto fm = QFontMetrics(font());
+        int x = width() - 11 - fm.boundingRect(s).width();
+        int y = height() - 11; // - fm.ascent();
+        dc.setPen(QPen(Qt::white));
+        dc.drawText( x, y, s);
 #endif
-            //</debug>
+        //</debug>
 
-            dc.end();
-        }
+        dc.end();
+    }
 
-        if (m_bEmitOverview)
-        {
-            m_bEmitOverview = false;
-            QMetaObject::invokeMethod(this, "emitTrackOverview", Qt::QueuedConnection);
-        }
-
+    if (m_bEmitOverview)
+    {
+        m_bEmitOverview = false;
+        QMetaObject::invokeMethod(this, "emitTrackOverview", Qt::QueuedConnection);
     }
 
     m_bInPaintEvent = false;

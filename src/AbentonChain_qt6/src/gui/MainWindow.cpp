@@ -24,7 +24,22 @@ MainWindow::MainWindow(QWidget *parent)
 
     m_keyboard2MidiNoteMapping.addGermanLayout();
 
+    createMenuFile();
+    createMenuEdit();
+    createMenuView();
+    createMenuCanvas();
+
     m_body = new CentralWidget(this);
+
+    // Install event filter on the whole window
+    this->installEventFilter(this);
+
+    setCentralWidget(m_body);
+    resize(800, 350);
+    show();
+    setWindowTitle(m_appTitle);
+
+    updateMenuView();
 
     connect(m_body->m_trackStack, &TrackStack::newTrackOverview, this,
             [=] (QPixmap pix)
@@ -36,47 +51,81 @@ MainWindow::MainWindow(QWidget *parent)
                 m_body->m_footer->setTrackOverview(pix,visibWidth,totalWidth,xPos);
             });
 
-    connect(m_body->m_footer, &Footer::showQuickHelp, this,
-            [=] (bool checked)
-            {
-                //m_qui->setVisible(checked);
-                //m_actShowPianoRoll->setChecked(checked);
-            });
-
-    connect(m_body->m_footer, &Footer::showClipEditor, this,
+    connect(m_body->m_footer, &Footer::sig_showClipEditor, this,
             [=] (bool checked)
             {
                 m_body->m_clipEditor->setVisible(checked);
-                m_actShowPianoRoll->setChecked(checked);
+                m_body->updateLayout();
+                updateMenuView();
             });
 
-    connect(m_body->m_footer, &Footer::showTrackEditor, this,
+    connect(m_body->m_footer, &Footer::sig_showQuickHelp, this,
+            [=] (bool checked)
+            {
+                m_body->m_trackStack->showQuickHelp(checked);
+                updateMenuView();
+            });
+
+    connect(m_body->m_footer, &Footer::sig_showTrackEditor, this,
             [=] (bool checked)
             {
                 m_body->m_trackStack->setVisible(checked);
-                m_actShowChain->setChecked(checked);
+                m_body->updateLayout();
+                updateMenuView();
             });
 
-    connect(m_body->m_footer, &Footer::showArrangement, this,
+    connect(m_body->m_footer, &Footer::sig_showArrangement, this,
             [=] (bool checked)
             {
                 //m_qui->setVisible(checked);
                 //m_actShowPianoRoll->setChecked(checked);
+                updateMenuView();
             });
 
-    // m_chainStack->applySkin();
 
-    // Install event filter on the whole window
-    this->installEventFilter(this);
+    connect(m_actShowHeader, &QAction::triggered, this, [this](bool checked)
+    {
+        m_body->m_header->setVisible(checked);
+        m_body->updateLayout();
+    });
 
-    setCentralWidget(m_body);
-    resize(800, 350);
-    show();
-    setWindowTitle(m_appTitle);
-    createMenuFile();
-    createMenuEdit();
-    createMenuView();
-    createMenuCanvas();
+    connect(m_actShowCanvas, &QAction::triggered, this, [this](bool checked)
+    {
+        if (checked)
+        {
+            m_body->m_canvasContainer->setVisible(true);
+            m_body->m_canvas->setRenderingEnabled(true);
+            App::instance()->getSampleCollector()->setBypassed(false);
+        }
+        else
+        {
+            // Save some collecting CPU cycles when drawing is disabled
+            m_body->m_canvas->setRenderingEnabled(false);
+            m_body->m_canvasContainer->setVisible(false);
+            App::instance()->getSampleCollector()->setBypassed(true);
+        }
+        m_body->updateLayout();
+    });
+
+    connect(m_actShowPianoRoll, &QAction::triggered, this, [this](bool checked)
+    {
+        m_body->m_clipEditor->setVisible(checked);
+        m_body->updateLayout();
+    });
+
+    connect(m_actShowChain, &QAction::triggered, this, [this](bool checked)
+    {
+        m_body->m_trackStack->setVisible(checked);
+        m_body->updateLayout();
+    });
+
+    connect(m_actShowFooter, &QAction::triggered, this, [this](bool checked)
+    {
+        m_body->m_footer->setVisible(checked);
+        m_body->updateLayout();
+    });
+
+    m_body->applySkin();
 }
 
 MainWindow::~MainWindow()
@@ -119,65 +168,46 @@ void MainWindow::createMenuEdit()
     m->addAction(actMidiConfig);
 }
 
+void MainWindow::updateMenuView()
+{
+    m_actShowHeader->blockSignals(true);
+    m_actShowHeader->setChecked(m_body->m_header->isVisible());
+    m_actShowHeader->blockSignals(false);
+
+    m_actShowCanvas->blockSignals(true);
+    m_actShowCanvas->setChecked(m_body->m_canvasContainer->isVisible());
+    m_actShowCanvas->blockSignals(false);
+
+    m_actShowPianoRoll->blockSignals(true);
+    m_actShowPianoRoll->setChecked(m_body->m_clipEditor->isVisible());
+    m_actShowPianoRoll->blockSignals(false);
+
+    m_actShowChain->blockSignals(true);
+    m_actShowChain->setChecked(m_body->m_trackStack->isVisible());
+    m_actShowChain->blockSignals(false);
+
+    m_actShowFooter->blockSignals(true);
+    m_actShowFooter->setChecked(m_body->m_footer->isVisible());
+    m_actShowFooter->blockSignals(false);
+}
+
 void MainWindow::createMenuView()
 {
     m_actShowHeader = new QAction("Show Header/Transport", this);
     m_actShowHeader->setCheckable(true);
-    m_actShowHeader->setChecked(m_body->m_header->isVisible());
-
-    connect(m_actShowHeader, &QAction::triggered, this, [=](bool checked)
-    {
-        m_body->m_header->setVisible(checked);
-    });
 
     m_actShowCanvas = new QAction("Show 3D Canvas Vizualization", this);
     m_actShowCanvas->setCheckable(true);
-    m_actShowCanvas->setChecked(m_body->m_canvasContainer->isVisible());
-
-    connect(m_actShowCanvas, &QAction::triggered, this, [=](bool checked)
-    {
-        if (checked)
-        {
-            m_body->m_canvasContainer->setVisible(true);
-            m_body->m_canvas->setRenderingEnabled(true);
-            App::instance()->getSampleCollector()->setBypassed(false);
-        }
-        else
-        {
-            // Save some collecting CPU cycles when drawing is disabled
-            m_body->m_canvas->setRenderingEnabled(false);
-            m_body->m_canvasContainer->setVisible(false);
-            App::instance()->getSampleCollector()->setBypassed(true);
-        }
-    });
 
     m_actShowPianoRoll = new QAction("Show ClipEditor/PianoRoll", this);
     m_actShowPianoRoll->setCheckable(true);
-    m_actShowPianoRoll->setChecked(m_body->m_clipEditor->isVisible());
-
-    connect(m_actShowPianoRoll, &QAction::triggered, this, [=](bool checked)
-    {
-        m_body->m_clipEditor->setVisible(checked);
-    });
 
     m_actShowChain = new QAction("Show AudioDspChainStack", this);
     m_actShowChain->setCheckable(true);
-    m_actShowChain->setChecked(m_body->m_trackStack->isVisible());
-
-    connect(m_actShowChain, &QAction::triggered, this, [=](bool checked)
-    {
-        DE_TRACE("On trigger m_actShowChain")
-        m_body->m_trackStack->setVisible(checked);
-    });
 
     m_actShowFooter = new QAction("Show Footer/Scrollbar/QuickHelp", this);
     m_actShowFooter->setCheckable(true);
-    m_actShowFooter->setChecked(m_body->m_footer->isVisible());
 
-    connect(m_actShowFooter, &QAction::triggered, this, [=](bool checked)
-    {
-        m_body->m_footer->setVisible(checked);
-    });
 
     QMenu* menuView = menuBar()->addMenu("View");
     menuView->addAction(m_actShowHeader);
@@ -202,12 +232,12 @@ void MainWindow::createMenuCanvas()
     actShowMatrixFft->setChecked(true);
 
     connect(actShowPerfOverlay, &QAction::triggered, this,
-        [=](bool checked)
+        [this](bool checked)
         {
             m_body->m_canvas->showPerfOverlay( checked );
         });
     connect(actShowMatrixFft, &QAction::triggered, this,
-        [=](bool checked)
+        [this](bool checked)
         {
             App::instance()->getSampleCollector()->setCollectAccumMatrix(checked);
             m_body->m_canvas->showFftMatrix(checked);
@@ -237,15 +267,16 @@ void MainWindow::createMenuCanvas()
     cbx_fftSize->addItem("8192",uint32_t(1024*8));
     cbx_fftSize->addItem("16k", uint32_t(1024*16));
 
-    connect(cbx_fftSize, QOverload<int>::of(&QComboBox::currentIndexChanged), this, [=](int index)
-    {
-        qDebug() << "FFT Size changed:" << index;
+    connect(cbx_fftSize, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
+        [=](int index)
+        {
+            qDebug() << "FFT Size changed:" << index;
 
-        uint32_t fftSize = cbx_fftSize->currentData().toUInt();
+            uint32_t fftSize = cbx_fftSize->currentData().toUInt();
 
-        App::instance()->getSampleCollector()->setFftSize(fftSize);
+            App::instance()->getSampleCollector()->setFftSize(fftSize);
 
-    });
+        });
 
     menuCanvas->addAction(act_fftSize);
 

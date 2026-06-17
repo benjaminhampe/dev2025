@@ -11,18 +11,18 @@ TrackStack::TrackStack(QWidget* parent)
     , m_audioMeter(nullptr)
     , m_trackWidget(nullptr)
 {
-    DE_TRACE("")
     setObjectName("TrackStack");
     setContentsMargins(0,8,8,8);
     setStyleSheet("background: transparent;");
     //setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Fixed);
 
-    m_quickHelp = new QWidget(this);
-    m_quickHelp->setMinimumWidth(300);
-    m_quickHelp->setMaximumWidth(300);
+    m_quickHelp = new QuickHelp(this);
+    m_quickHelp->setVisible(false);
     m_midiMeter = new MidiMeter(this);
     m_audioMeter = new AudioMeter(this);
     m_trackWidget = new Track(App::instance()->getTrack(0), this);
+
+    //m_lastQuickHelpWidth = m_baseQuickHelpWidth;
 
     // Install event filter so we detect when
     // the child resizes
@@ -45,9 +45,6 @@ TrackStack::TrackStack(QWidget* parent)
     // h -> addWidget(m_trackWidget,1);
     // setLayout(h);
 
-    connect(App::instance().get(), &App::skinChanged,
-            this, &TrackStack::applySkin);
-
     setAudioOnly(false);
 
     applySkin();
@@ -64,7 +61,7 @@ TrackStack::~TrackStack()
 void TrackStack::applySkin()
 {
     DE_TRACE()
-    //m_quickHelp->applySkin();
+    m_quickHelp->applySkin();
     m_midiMeter->applySkin();
     m_audioMeter->applySkin();
     m_trackWidget->applySkin();
@@ -98,7 +95,7 @@ void TrackStack::updateLayout()
     int y = t;
     if (m_quickHelp->isVisible())
     {
-        int w1 = m_quickHelp->width();
+        int w1 = (m_quickHelpWidth * m_zoom) / 100;
         m_quickHelp->setGeometry(x,y,w1,h - (t+b));
         x += w1;
     }
@@ -218,4 +215,15 @@ void TrackStack::setAudioOnly(bool bAudioOnly)
     m_audioMeter->setVisible( bAudioOnly );
     m_midiMeter->setVisible( !bAudioOnly );
     update();
+}
+
+void TrackStack::showQuickHelp(bool bVisible)
+{
+    if (m_quickHelp)
+    {
+        m_quickHelp->blockSignals(true);
+        m_quickHelp->setVisible(bVisible);
+        m_quickHelp->blockSignals(false);
+    }
+    updateLayout();
 }

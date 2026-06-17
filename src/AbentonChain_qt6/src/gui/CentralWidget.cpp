@@ -43,6 +43,10 @@ CentralWidget::CentralWidget(QWidget* parent )
     installEventFilter(this);
 
     applySkin();
+
+    connect(App::instance().get(), &App::skinChanged,
+            this, &CentralWidget::applySkin);
+
 }
 
 CentralWidget::~CentralWidget()
@@ -70,49 +74,6 @@ void CentralWidget::applySkin()
     m_trackStack->applySkin();
     m_clipEditor->applySkin();
     //m_canvasContainer->applySkin();
-/*
-
-    m_windowColor = skin.windowColor;
-    m_panelColor = skin.panelColor;
-    m_textColor = skin.textColor;
-    m_activeColor = skin.symbolColorActive;
-    m_radius = (m_baseRadius * skin.zoom) / 100;
-    m_padding = (m_basePadding * skin.zoom) / 100;
-    m_buttonHeight = (m_baseButtonHeight * skin.zoom) / 100;
-
-    SVG_createQuickHelp(m_btnQuickHelp, m_buttonHeight,m_buttonHeight);
-    PIX_createMidiKeyboard(m_btnMidiKeyboard, 2*m_buttonHeight,m_buttonHeight);
-
-    auto pixOff = createArrowRight(48,48,m_windowColor,m_panelColor,m_textColor);
-    auto pixOn = createArrowUp(48,48,m_windowColor,m_activeColor,m_textColor);
-    m_clipOverview.btnShow->setPixmaps(pixOn,pixOff);
-
-    pixOff = createFromText(0,48,"1-ClipEditor", m_textColor,m_panelColor);
-    pixOn = createFromText(0,48,"1-ClipEditor", m_textColor,m_panelColor);
-    m_clipOverview.btnName->setPixmaps(pixOn,pixOff);
-
-    pixOff = createArrowRight(48,48,m_windowColor,m_panelColor,m_textColor);
-    pixOn = createArrowUp(48,48,m_windowColor,m_activeColor,m_textColor);
-    m_trackOverview.btnShow->setPixmaps(pixOn,pixOff);
-
-    pixOff = createFromText(0,48,"1-AudioTrack", m_textColor,m_panelColor);
-    pixOn = createFromText(0,48,"1-AudioTrack", m_textColor,m_panelColor);
-    m_trackOverview.btnName->setPixmaps(pixOn,pixOff);
-
-    PIX_createDetails(m_btnDetails, 2*m_buttonHeight,m_buttonHeight);
-
-    // QColor m_panelColor(128,128,128);
-    // QColor m_contentColor(255,255,255);
-    // QColor m_symbolColor(255,128,0);
-    // QColor m_focusColor(32,32,32);
-    updateLayout();
-*/
-    updateLayout();
-}
-
-void
-CentralWidget::resizeEvent( QResizeEvent* event )
-{
     updateLayout();
 }
 
@@ -122,9 +83,9 @@ CentralWidget::updateLayout()
     const int w = width();
     const int h = height();
     int h_remain = h;
-    int headerHeight = (32 * m_zoom) / 100;
-    int footerHeight = 20 + (48 * m_zoom) / 100;
-    int trackHeight = (400 * m_zoom) / 100;
+    int headerHeight = (48 * m_zoom) / 100;
+    int footerHeight = m_footer->computeBestHeight();
+    int trackHeight = (376 * m_zoom) / 100;
     int clipHeight = (400 * m_zoom) / 100;
     int canvasHeight = (400 * m_zoom) / 100;
 
@@ -168,35 +129,41 @@ CentralWidget::updateLayout()
         clipHeight = 0;
     }
 
+    // TODO: Add Arrangement
+
     if (m_canvasContainer->isVisible())
     {
-        canvasHeight = std::min(canvasHeight,h_remain);
-        h_remain -= canvasHeight;
+        canvasHeight = h_remain;
     }
     else
     {
         canvasHeight = 0;
     }
 
-    int x = 0;
-    int y = 0;
+    int x = 0, y = 0;
 
-    m_footer->setGeometry(x,h-footerHeight,w,footerHeight);
+    y = headerHeight;
+    m_canvasContainer->setGeometry(x,y,w,canvasHeight);
+    //m_canvasContainer->raise();
+    // m_canvas->setGeometry(m_canvasContainer->x(),
+    //                       m_canvasContainer->y(),w,canvasHeight);
+    //m_canvas->raise();
 
-    m_header->setGeometry(x,0,w,headerHeight);
+    y = h-footerHeight-trackHeight-clipHeight;
+    m_clipEditor->setGeometry(x,y,w,clipHeight);
+    //m_clipEditor->raise();
 
-    m_trackStack->setGeometry(  x,
-                                h-footerHeight-trackHeight,
-                                w,
-                                trackHeight);
+    y = h-footerHeight-trackHeight;
+    m_trackStack->setGeometry(x,y,w,trackHeight);
+    //m_trackStack->raise();
 
-    m_clipEditor->setGeometry(  x,
-                                h-footerHeight-trackHeight-clipHeight,
-                                w,
-                                clipHeight);
+    y = 0;
+    m_header->setGeometry(x,y,w,headerHeight);
+    //m_header->raise();
 
-    m_canvasContainer->setGeometry(x,headerHeight,w,canvasHeight);
-    m_canvas->setGeometry(x,headerHeight,w,canvasHeight);
+    y = h-footerHeight;
+    m_footer->setGeometry(x,y,w,footerHeight);
+    //m_footer->raise();
 
     if (headerHeight < 0)
     {
@@ -219,6 +186,12 @@ CentralWidget::updateLayout()
         DE_ERROR("Computed bad footerHeight = ",footerHeight)
     }
     update();
+}
+
+void CentralWidget::resizeEvent( QResizeEvent* event )
+{
+    QWidget::resizeEvent(event);
+    updateLayout();
 }
 
 void CentralWidget::paintEvent( QPaintEvent* event )

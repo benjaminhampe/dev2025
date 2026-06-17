@@ -10,17 +10,20 @@ public:
     PixButton(QWidget* parent = nullptr);
     //QSize sizeHint() const override;
     //QSize minimumSizeHint() const override;
+    void applySkin();
+    void updateLayout();
+    int maxWidth() const {
+        return std::max( m_active.width(), m_deactive.width() );
+    }
+    void setPixmaps(QPixmap pixActive, QPixmap pixDeactive);
 
     // Toggles background color for different mode
     void setKeyAssign( bool enabled );
     void setMidiAssign( bool enabled );
 
-    void setPixmaps(QPixmap pixActive, QPixmap pixDeactive);
-// protected slots:
-//     void onToggled( bool checked );
-
 protected:
-    void paintEvent(QPaintEvent* event) override;
+    void resizeEvent(QResizeEvent* e) override;
+    void paintEvent(QPaintEvent* e) override;
 
 protected:
     bool m_bEnabledKeyAssign = false;

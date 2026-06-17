@@ -26,6 +26,7 @@ private:
     void createMenuFile();
     void createMenuEdit();
     void createMenuView();
+    void updateMenuView();
     void createMenuCanvas();
 
     Keyboard2MidiNote_Mapping m_keyboard2MidiNoteMapping;
@@ -37,6 +38,7 @@ private:
     QAction* m_actShowHeader{ nullptr };
     QAction* m_actShowCanvas{ nullptr };
     QAction* m_actShowPianoRoll{ nullptr };
+    QAction* m_actShowQuickHelp{ nullptr };
     QAction* m_actShowChain{ nullptr };
     QAction* m_actShowFooter{ nullptr };
 };
