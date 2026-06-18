@@ -10,118 +10,167 @@
 #include <QDebug>
 #include <QThread>
 
-#include "gui/footer/OverviewButton.h"
-// #include "gui/footer/TrackOverviewButton.h"
-// #include "gui/footer/ClipOverview.h"
-// #include "gui/footer/LongText.h"
-// #include "gui/footer/FooterButton.h"
-
 // ============================================================================
 class Footer : public QWidget
 // ============================================================================
 {
     Q_OBJECT
-    bool m_hasFocus;
-    //bool m_isQuickHelpPanelVisible;
-    //bool m_isMidiKeyboardVisible;
-    //bool m_isDetailPanelVisible;
+    bool m_bHelpVisible{ false };
+    bool m_bMidiVisible{ false };
+    bool m_bClipVisible{ false };
+    bool m_bTrackVisible{ true };
+    bool m_bArraVisible{ true };
 
-    PixButton* m_btnQuickHelp;
-    //LongText* m_longText;
-    PixButton* m_btnMidiKeyboard;
-    //PixButton* m_btnClipOverview;
-    //PixButton* m_btnTrackOverview;
+    struct QuickHelp
+    {
+        QRect rc;
+        QPixmap on;
+        QPixmap off;
+    };
+    QuickHelp m_quickHelp;
 
-    PixButton* m_btnDetails;
+    struct LongText
+    {
+        QRect rc;
+        QString text;
+    };
+    LongText m_longText;
 
-    QString m_longText;
+    struct MidiKeyboard
+    {
+        QRect rc;
+        QPixmap on;
+        QPixmap off;
+    };
+    MidiKeyboard m_midiKeyboard;
+
+    struct ClipShow
+    {
+        QRect rc;
+    };
+    QPixmap m_arrowUp;
+    QPixmap m_arrowRight;
+
+    ClipShow m_clipShow;
+
+    struct ClipName
+    {
+        QRect rc;
+        QPixmap pix;
+        QString text;
+    };
+    ClipName m_clipName;
+
+    struct ClipScroll
+    {
+        QRect rc;
+        QRect rcOverview;
+        QPixmap pix;
+        int view = 100; // Scrollbar
+        int total = 100; // Scrollbar
+        int pos = 0; // Scrollbar
+        int borderRadius = 8;
+        int borderWidth = 4;
+        QColor borderColor = QColor(32,32,32);
+    };
+    ClipScroll m_clipScroll;
+
+    struct TrackShow
+    {
+        QRect rc;
+    };
+    TrackShow m_trackShow;
+
+    struct TrackName
+    {
+        QRect rc;
+        QPixmap pix;
+        QString text;
+    };
+    TrackName m_trackName;
+
+    struct TrackScroll
+    {
+        QRect rc;
+        QRect rcOverview;
+        QPixmap pix;
+        int view = 100; // Scrollbar
+        int total = 100; // Scrollbar
+        int pos = 0; // Scrollbar
+        int borderRadius = 8;
+        int borderWidth = 4;
+        QColor borderColor = QColor(32,32,32);
+    };
+    TrackScroll m_trackScroll;
+
+    struct Details
+    {
+        QRect rc;
+        QPixmap on;
+        QPixmap off;
+    };
+    Details m_details;
+
+    // Skin
     QColor m_windowColor;
     QColor m_panelColor;
     QColor m_textColor;
     QColor m_activeColor;
+    QFont m_helpFont;
 
     int m_zoom = 100;
     int m_radius;
     int m_padding;
     int m_buttonHeight;
 
-    QRect m_rcLongText;
-
-    OverviewButton* m_clipOverview;
-    OverviewButton* m_trackOverview;
-
-    // QRect m_rcClipName;
-    // QRect m_rcTrackName;
-
-    // QPixmap m_trackOverviewPixmap;
-    // int m_trackOverviewVisibleWidth; // Scrollbar
-    // int m_trackOverviewTotalWidth;   // Scrollbar
-    // int m_trackOverviewPos;          // Scrollbar
-    // Footer Contents, Computed
-    // QRect m_rcFooterContent;
-    // QRect m_rcBtnShowQuickHelpPanel;
-    // QRect m_rcLongPanel;
-    // QRect m_rcLongView;
-    // QRect m_rcBtnShowMidiKeyboardPanel;
-    // QRect m_rcClipOverviewPanel;
-    // QRect m_rcClipOverview;
-    // QRect m_rcTrackOverviewPanel;
-    // QRect m_rcTrackOverview;
-    // QRect m_rcBtnShowDetailPanel; // Computed
 public:
     Footer(QWidget* parent = 0);
-    ~Footer() override;
     void applySkin();
     void updateLayout();
     int computeBestHeight() const;
-    bool hasFocus() const { return m_hasFocus; }
-
-    void setTrackOverview(QPixmap pix, int visibleWidth, int totalWidth, int xPos);
 signals:
     void sig_showQuickHelp(bool bVisible);
     void sig_showMidiKeyboard(bool bVisible);
     void sig_showClipEditor(bool bVisible);
     void sig_showTrackEditor(bool bVisible);
     void sig_showArrangement(bool bVisible);
-
 public slots:
-    //void setTextSpurOverview( QString txt ) { m_spurText = txt; updateLayout(); }
-protected slots:
-    void on_btnShowMidiKeyboard( bool checked );
-    void on_btnShowQuickHelp( bool checked );
-    void on_btnShowDetails( bool checked );
-    //void on_currentTrackIdChanged( int index );
-    void on_btnShowClipOverview( bool checked );
-    void on_btnShowTrackOverview( bool checked );
-
+    void setTrackOverview(QPixmap pix, int visibleWidth, int totalWidth, int xPos);
+// protected slots:
 protected:
     bool event(QEvent* event) override;
     void resizeEvent( QResizeEvent* event ) override;
     void paintEvent( QPaintEvent* event ) override;
-    void focusInEvent( QFocusEvent* event ) override;
-    void focusOutEvent( QFocusEvent* event ) override;
+    void mousePressEvent( QMouseEvent* event ) override;
+    void mouseReleaseEvent( QMouseEvent* event ) override;
 /*
     void enterEvent( QEnterEvent* event ) override;
     void leaveEvent( QEvent* event ) override;
-    void mousePressEvent( QMouseEvent* event ) override;
-    void mouseReleaseEvent( QMouseEvent* event ) override;
+    void focusInEvent( QFocusEvent* event ) override;
+    void focusOutEvent( QFocusEvent* event ) override;
     void mouseMoveEvent( QMouseEvent* event ) override;
     void wheelEvent( QWheelEvent* event ) override;
     void keyPressEvent( QKeyEvent* event ) override;
     void keyReleaseEvent( QKeyEvent* event ) override;
 */
 private:
-/*
-    ImageButton* createShowQuickHelpPanelButton();
-    ImageButton* createShowMidiKeyboardButton();
-    ImageButton* createShowDetailPanelButton();
-*/
-    QPixmap createArrowRight(int w, int h,
-        QColor windowColor, QColor panelColor, QColor symbolColor);
 
-    QPixmap createArrowUp(int w, int h,
-        QColor windowColor, QColor panelColor, QColor symbolColor);
+    static QPixmap
+    PIX_createFromText(int padd_x, int padd_y, QString text, QColor fillColor, QColor textColor, QFont font);
 
-    QPixmap createFromText(int w, int h, QString text,
-        QColor textColor, QColor fillColor = Qt::transparent);
+    static QPixmap
+    PIX_createQuickHelp(int w, int h, const QColor& fillColor, const QColor& lineColor);
+
+    static QPixmap
+    PIX_createMidiKeyboard(int w, int h, QColor whiteColor, QColor blackColor, QColor redColor, QColor blueColor);
+
+    static QPixmap
+    PIX_createArrowRight(int w, int h, int r, QColor windowColor, QColor panelColor, QColor symbolColor);
+
+    static QPixmap
+    PIX_createArrowUp(int w, int h, int r, QColor windowColor, QColor panelColor, QColor symbolColor);
+
+    static QPixmap
+    PIX_createDetails(int w, int h, QColor fillColor, QColor lineColor);
+
 };

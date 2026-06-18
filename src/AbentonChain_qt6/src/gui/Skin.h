@@ -59,6 +59,9 @@ drawKey(QPainter & dc, QRect pos, QColor brushColor, QColor penColor );
 QColor
 blendRGB(QColor from, QColor to, float t);
 
+int
+computeBestFontHeight(QFont baseFont, int maxHeight);
+
 // ============================================
 struct Skin
 // ============================================

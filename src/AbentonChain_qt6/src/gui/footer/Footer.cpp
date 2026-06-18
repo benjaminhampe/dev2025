@@ -4,333 +4,54 @@
 
 Footer::Footer(QWidget* parent )
    : QWidget(parent)
-   , m_hasFocus( false )
 {
     setObjectName( "Footer" );
     setContentsMargins(8,8,8,8);
     setMouseTracking( true );
 
-    m_btnQuickHelp = new PixButton(this);
-    m_btnQuickHelp->setCheckable(true);
-    m_btnQuickHelp->setChecked(false);
+    m_helpFont = QFont("FontAwesome", 10, QFont::Normal, false );
+    m_helpFont.setHintingPreference( QFont::PreferFullHinting );
+    m_helpFont.setKerning( true );
+    m_helpFont.setStyleStrategy( QFont::PreferAntialias );
 
-    m_btnMidiKeyboard = new PixButton(this);
-    m_btnMidiKeyboard->setCheckable(true);
-    m_btnMidiKeyboard->setChecked(false);
+    m_clipName.text = "1 - Clip";
+    m_trackName.text = "1 - Audio";
 
-    m_longText = QString("LongText");
-
-    m_clipOverview = new OverviewButton(this);
-    m_clipOverview->setNameText("1 - Clip");
-
-    m_trackOverview = new OverviewButton(this);
-    m_trackOverview->setNameText("1 - Audio");
-    //m_trackOverview->m_
-
-    m_btnDetails = new PixButton(this);
-    m_btnDetails->setCheckable(true);
-    m_btnDetails->setChecked(false);
-
-    connect( m_btnQuickHelp, &PixButton::toggled, this, &Footer::on_btnShowQuickHelp );
-
-    connect( m_btnMidiKeyboard, SIGNAL(toggled(bool)),
-            this, SLOT(on_btnShowMidiKeyboard(bool)) );
-
-    connect( m_clipOverview, &OverviewButton::sig_show,
-            this, &Footer::on_btnShowClipOverview );
-
-    connect( m_trackOverview, &OverviewButton::sig_show,
-            this, &Footer::on_btnShowTrackOverview );
-
-    connect( m_btnDetails, SIGNAL(toggled(bool)),
-            this, SLOT(on_btnShowDetails(bool)) );
-
-    //   connect( &m_trackList, SIGNAL(currentTrackIdChanged(int)),
-    //           this, SLOT(on_currentTrackIdChanged(int)) );
-
-    // auto h = new QHBoxLayout;
-    // h->setContentsMargins(0,0,0,0);
-    // h->setSpacing(0);
-    // h->addWidget(m_btnShowQuickHelpPanel);
-    // h->addWidget(m_longText,1);
-    // h->addWidget(m_btnShowMidiKeyboard);
-    // h->addWidget(m_btnClipOverview);
-    // h->addWidget(m_btnTrackOverview);
-    // h->addWidget(m_btnShowDetailPanel);
-    // setLayout(h);
-
-    // setMinimumHeight(68);
-    // setMaximumHeight(68);
     applySkin();
 }
 
-Footer::~Footer()
-{}
-
-bool Footer::event(QEvent* e)
-{
-    if (e->type() == QEvent::LayoutRequest)
-    {
-        DE_BENNI("Got QEvent::LayoutRequest")
-        //updateLayout();
-        return true;
-    }
-
-    return QWidget::event(e);
-}
-
-void SVG_createQuickHelp(PixButton* btn, int w, int h)
-{
-    //const int outlineWidth = (m_baseOutlineWidth * skin.zoom) / 100;
-    const auto lineColor = QColor(79,79,79);
-    const auto onColor = QColor(255,181,1);
-    const auto offColor = QColor(207,207,207);
-    // const auto textColor = skin.textColor;
-
-    auto mkSvg_Power = [](int w, int h,
-        const QColor& fillColor,
-        const QColor& lineColor) -> QPixmap
-    {
-        auto s = QString(R"(
-<svg width="30" height="30" viewBox="0 0 30 30" xmlns="http://www.w3.org/2000/svg" >
-<circle cx="15" cy="15" r="12" fill="%1" stroke="%2" stroke-width="2" />
-<line x1="15" y1="6" x2="15" y2="9" stroke="%2" stroke-width="3" />
-<line x1="15" y1="11" x2="15" y2="24" stroke="%2" stroke-width="3" />
-</svg>
-)")
-        .arg(toSvg(fillColor))  // %1
-        .arg(toSvg(lineColor))  // %2
-        ;
-        return mkSvg(s,w,h);
-    };
-
-    auto act = mkSvg_Power(w,h, onColor, lineColor );
-    auto dea = mkSvg_Power(w,h, offColor, lineColor );
-
-    btn->setPixmaps(act,dea);
-}
-
-inline void
-drawRect( QPainter & dc, int x, int y, int w, int h, QColor const & color )
-{
-   if ( w < 1 || h < 1 ) return;
-   dc.setPen( Qt::NoPen );
-   dc.setBrush( QBrush( color ) );
-   dc.drawRect( QRect(x,y,w,h) );
-}
-
-inline void
-drawFillRect( QPainter & dc, const QRect& pos, QColor const & fillColor )
-{
-    int w = pos.width();
-    int h = pos.height();
-    if (w < 1 || h < 1) return;
-    int x = pos.x();
-    int y = pos.y();
-    dc.setPen( Qt::NoPen );
-    dc.setBrush( QBrush( fillColor ) );
-    dc.drawRect( QRect(x,y,w,h) );
-}
-
-inline void
-drawLineRect( QPainter & dc, const QRect& pos, QColor const & lineColor )
-{
-    int w = pos.width();
-    int h = pos.height();
-    if (w < 1 || h < 1) return;
-    int x = pos.x();
-    int y = pos.y();
-    dc.setPen( QPen(lineColor) );
-    dc.setBrush( Qt::NoBrush );
-    dc.drawRect( QRect(x,y,w-1,h-1) );
-}
-
-void PIX_createMidiKeyboard(PixButton* btn, int w, int h)
-{
-    //const int outlineWidth = (m_baseOutlineWidth * skin.zoom) / 100;
-    const auto lineColor = QColor(79,79,79);
-    const auto onColor = QColor(255,181,1);
-    const auto offColor = QColor(207,207,207);
-    // const auto textColor = skin.textColor;
-
-    QPixmap pm(w, h);
-    pm.fill(Qt::transparent);
-
-    int ww = w / 7;
-    int cw = w - 6 * ww;
-
-    int bw = 2*ww/3;
-    int bh = 5*h/8;
-
-    {
-        QPainter dc(&pm);
-
-        int x = 0;
-        int y = 0;
-        drawFillRect(dc,QRect(0,0,cw,h),Qt::white);
-        drawLineRect(dc,QRect(0,0,cw,h),Qt::red);
-        x += cw;
-
-        for (int i = 0; i < 6; ++i)
-        {
-            drawFillRect(dc,QRect(x,y,ww,h),Qt::white);
-            drawLineRect(dc,QRect(x,y,ww,h),Qt::red);
-            x += ww;
-        }
-
-        x = cw - bw/2;
-        drawFillRect(dc,QRect(x,y,bw,bh),Qt::black);
-        drawLineRect(dc,QRect(x,y,bw,bh),Qt::blue);
-        x += ww;
-        drawFillRect(dc,QRect(x,y,bw,bh),Qt::black);
-        drawLineRect(dc,QRect(x,y,bw,bh),Qt::blue);
-        x += 2*ww;
-        drawFillRect(dc,QRect(x,y,bw,bh),Qt::black);
-        drawLineRect(dc,QRect(x,y,bw,bh),Qt::blue);
-        x += ww;
-        drawFillRect(dc,QRect(x,y,bw,bh),Qt::black);
-        drawLineRect(dc,QRect(x,y,bw,bh),Qt::blue);
-        x += ww;
-        drawFillRect(dc,QRect(x,y,bw,bh),Qt::black);
-        drawLineRect(dc,QRect(x,y,bw,bh),Qt::blue);
-        // x += ww;
-    }
-
-    pm.save("A_createMidiKeyboard.png");
-
-    btn->setPixmaps(pm,pm);
-}
-
-void PIX_createClipOverview(PixButton* btn, int w, int h)
-{
-    //const int outlineWidth = (m_baseOutlineWidth * skin.zoom) / 100;
-    const auto lineColor = QColor(79,79,79);
-    const auto onColor = QColor(255,181,1);
-    const auto offColor = QColor(207,207,207);
-    // const auto textColor = skin.textColor;
-
-    QPixmap pm(w, h);
-    pm.fill(Qt::transparent);
-
-    {
-        QPainter dc(&pm);
-
-        drawFillRect(dc,QRect(0,0,w,h),Qt::white);
-        drawLineRect(dc,QRect(0,0,w,h),Qt::black);
-    }
-
-    btn->setPixmaps(pm,pm);
-}
-
-
-void PIX_createTrackOverview(PixButton* btn, int w, int h)
-{
-    //const int outlineWidth = (m_baseOutlineWidth * skin.zoom) / 100;
-    const auto lineColor = QColor(79,79,79);
-    const auto onColor = QColor(255,181,1);
-    const auto offColor = QColor(207,207,207);
-    // const auto textColor = skin.textColor;
-
-    QPixmap pm(w, h);
-    pm.fill(Qt::transparent);
-
-    {
-        QPainter dc(&pm);
-
-        drawFillRect(dc,QRect(0,0,w,h),Qt::white);
-        drawLineRect(dc,QRect(0,0,w,h),Qt::black);
-    }
-
-    btn->setPixmaps(pm,pm);
-}
-
-void PIX_createDetails(PixButton* btn, int w, int h)
-{
-    if (!btn)
-    {
-        DE_ERROR("Got nullptr")
-        return;
-    }
-
-    if (w < 1 || h < 1)
-    {
-        DE_ERROR("w < 1 || h < 1")
-    }
-
-    //const int outlineWidth = (m_baseOutlineWidth * skin.zoom) / 100;
-    //const auto lineColor = QColor(79,79,79);
-    const auto onColor = QColor(255,181,1);
-    const auto offColor = QColor(207,207,207);
-    // const auto textColor = skin.textColor;
-
-
-    QPixmap pm(w, h);
-    pm.fill(Qt::transparent);
-
-    QPainter dc;
-    if (dc.begin(&pm))
-    {
-        QColor fillColor(235,181,22);
-        QColor lineColor(255,220,55);
-
-        int s = 8;
-        int bw = (w - 4*s) / 5;
-
-        int x = 0;
-        int y = 2;
-        drawFillRect(dc,QRect(x,y,bw,h-y-1),fillColor);
-        drawLineRect(dc,QRect(x,y,bw,h-y-1),lineColor); x += bw + s;
-        y = 12;
-        drawFillRect(dc,QRect(x,y,bw,h-y-1),fillColor);
-        drawLineRect(dc,QRect(x,y,bw,h-y-1),lineColor); x += bw + s;
-        y = 5;
-        drawFillRect(dc,QRect(x,y,bw,h-y-1),fillColor);
-        drawLineRect(dc,QRect(x,y,bw,h-y-1),lineColor); x += bw + s;
-        y = 14;
-        drawFillRect(dc,QRect(x,y,bw,h-y-1),fillColor);
-        drawLineRect(dc,QRect(x,y,bw,h-y-1),lineColor); x += bw + s;
-        y = 8;
-        drawFillRect(dc,QRect(x,y,bw,h-y-1),fillColor);
-        drawLineRect(dc,QRect(x,y,bw,h-y-1),lineColor);
-        //x += bw + s;
-    }
-
-    btn->setPixmaps(pm,pm);
-}
-
-int Footer::computeBestHeight() const
-{
-    int hInner = (48 * m_zoom) / 100;
-    int padding = (8 * m_zoom) / 100;
-    return 2*padding + hInner;
-}
+int Footer::computeBestHeight() const { return ((48 + 2*8) * m_zoom) / 100; }
 
 void Footer::applySkin()
 {
-    m_btnQuickHelp->applySkin();
-    m_btnMidiKeyboard->applySkin();
-    m_clipOverview->applySkin();
-    m_trackOverview->applySkin();
-    m_btnDetails->applySkin();
-
     const auto& skin = App::instance()->getSkin();
     m_zoom = skin.zoom;
     m_windowColor = skin.windowColor;
     m_panelColor = skin.panelColor;
     m_textColor = skin.textColor;
     m_activeColor = skin.symbolColorActive;
-    const int hInner = (48 * skin.zoom) / 100;
-    m_padding = (height() - hInner) / 2;
+    const int b = (48 * skin.zoom) / 100;
+    m_padding = (8 * skin.zoom) / 100;
     m_radius = m_padding;
 
-    SVG_createQuickHelp(m_btnQuickHelp, hInner,hInner);
-    PIX_createMidiKeyboard(m_btnMidiKeyboard, 2*hInner,hInner);
-    PIX_createDetails(m_btnDetails, 2*hInner,hInner);
+    m_arrowRight = PIX_createArrowRight(b,b,m_radius,m_windowColor,m_panelColor,m_textColor);
+    m_arrowUp = PIX_createArrowUp(b,b,m_radius,m_windowColor,m_activeColor,m_textColor);
 
-    // QColor m_panelColor(128,128,128);
-    // QColor m_contentColor(255,255,255);
-    // QColor m_symbolColor(255,128,0);
-    // QColor m_focusColor(32,32,32);
+    m_quickHelp.on = PIX_createQuickHelp(b,b,m_activeColor,m_textColor);
+    m_quickHelp.off = PIX_createQuickHelp(b,b,m_panelColor,m_textColor);
+
+    m_midiKeyboard.on = PIX_createMidiKeyboard(2*b,b,Qt::white, Qt::black, Qt::gray, Qt::gray);
+    m_midiKeyboard.off = PIX_createMidiKeyboard(2*b,b,Qt::white, Qt::black, Qt::gray, Qt::gray);
+
+    int pixelSize = computeBestFontHeight(m_helpFont,b - m_padding);
+    m_helpFont.setPixelSize(pixelSize);
+
+    m_clipName.pix = PIX_createFromText(m_padding,m_padding/2,m_clipName.text,Qt::white,m_textColor,m_helpFont);
+    m_trackName.pix = PIX_createFromText(m_padding,m_padding/2,m_trackName.text,Qt::white,m_textColor,m_helpFont);
+
+    m_details.on = PIX_createDetails(b,b,QColor(235,181,22),QColor(255,220,55));
+    m_details.off = PIX_createDetails(b,b,m_panelColor,m_textColor);
+
     updateLayout();
 }
 
@@ -339,27 +60,48 @@ Footer::updateLayout()
 {
     const int w = width();
     const int h = height();
-    //int p = 10;
 
     const int hInner = (48 * m_zoom) / 100;
     m_padding = (height() - hInner) / 2;
 
-    int xHelp = m_padding;
-    int xMidi = xHelp + m_btnQuickHelp->width() + m_padding;
-    int xLong = xMidi + m_btnMidiKeyboard->width() + m_padding;
+    int wHelp = m_quickHelp.on.width();
+    int hHelp = m_quickHelp.on.height();
 
+    int wMidi = m_midiKeyboard.on.width();
+    int hMidi = m_midiKeyboard.on.height();
+
+    int wTrack = m_arrowUp.width() + 1 + m_trackName.rc.width() + m_trackScroll.rc.width();
+    int wClip = m_arrowUp.width() + 1 + m_clipName.rc.width() + m_clipScroll.rc.width();
+
+    int xHelp = m_padding;
+    int xMidi = xHelp + wHelp + m_padding;
+    int xLong = xMidi + wMidi + m_padding;
     int xLast = w - 1 - m_padding;
-    int xDeta = xLast - m_btnDetails->width();
-    int xTrack = xDeta - m_padding - m_trackOverview->computeBestWidth();
-    int xClip = xTrack - m_padding - m_clipOverview->computeBestWidth();
+    int wDeta = m_details.rc.width();
+    int xDeta = xLast - wDeta;
+    int xTrack = xDeta - wDeta - m_padding - wTrack;
+    int xClip = xTrack - m_padding - wClip;
     int wLong = xClip - xLong - m_padding;
 
-    m_btnQuickHelp->setGeometry(xHelp,m_padding, m_btnQuickHelp->width(), m_btnQuickHelp->height());
-    m_btnMidiKeyboard->setGeometry(xMidi,m_padding, m_btnMidiKeyboard->width(), m_btnMidiKeyboard->height());
-    m_rcLongText = QRect(xLong, m_padding, wLong, hInner);
-    m_clipOverview->setGeometry(xClip,m_padding, m_clipOverview->width(), m_clipOverview->height());
-    m_trackOverview->setGeometry(xTrack,m_padding, m_trackOverview->width(), m_trackOverview->height());
-    m_btnDetails->setGeometry(xDeta,m_padding, m_btnDetails->width(), m_btnDetails->height());
+    m_quickHelp.rc = QRect(xHelp, m_padding, wHelp, hHelp);
+    m_midiKeyboard.rc = QRect(xMidi,m_padding, wMidi, hMidi);
+    m_longText.rc = QRect(xLong, m_padding, wLong, hInner);
+
+    int x = xClip;
+    m_clipShow.rc = QRect(x,m_padding, m_arrowUp.width(), m_arrowUp.height());
+    x += m_arrowUp.width()+1;
+    m_clipName.rc = QRect(x,m_padding, m_clipName.pix.width(), m_clipName.pix.height());
+    x += m_clipName.pix.width();
+    m_clipScroll.rc = QRect(x,m_padding, m_clipScroll.pix.width(), m_clipScroll.pix.height());
+
+    x = xTrack;
+    m_trackShow.rc = QRect(x,m_padding, m_arrowUp.width(), m_arrowUp.height());
+    x += m_arrowUp.width()+1;
+    m_trackName.rc = QRect(x,m_padding, m_trackName.pix.width(), m_trackName.pix.height());
+    x += m_trackName.pix.width();
+    m_trackScroll.rc = QRect(x,m_padding, m_trackScroll.pix.width(), m_trackScroll.pix.height());
+
+    m_details.rc = QRect(xDeta,m_padding, m_details.on.width(), m_details.on.height());
 
     update();
 }
@@ -386,54 +128,230 @@ void Footer::paintEvent(QPaintEvent* e)
     QPainter dc( this );
     dc.fillRect( rect(), m_windowColor );
 
+    //<QuickHelp>
+    dc.drawPixmap(m_quickHelp.rc, m_bHelpVisible ? m_quickHelp.on : m_quickHelp.off);
+    //</QuickHelp>
+
+    //<MidiKeyboard>
+    dc.drawPixmap(m_midiKeyboard.rc, m_bMidiVisible ? m_midiKeyboard.on : m_midiKeyboard.off);
+    //</MidiKeyboard>
+
+    //<LongText>
     dc.setPen( Qt::NoPen );
     dc.setBrush( QBrush( m_panelColor ) );
-    dc.drawRoundedRect( m_rcLongText, m_radius,m_radius );
+    dc.drawRoundedRect( m_longText.rc, m_radius,m_radius );
 
-    //m_fillColor( 200,200,200 )
-    //m_textColor( 46,56,66 )
-
-    QFont m_font = QFont("FontAwesome", 10, QFont::Normal, false );
-    m_font.setHintingPreference( QFont::PreferFullHinting );
-    m_font.setKerning( true );
-    m_font.setStyleStrategy( QFont::PreferAntialias );
-
-    dc.setFont( m_font );
+    dc.setFont( m_helpFont );
     dc.setPen( QPen( m_textColor ) );
     dc.setBrush( Qt::NoBrush );
 
-    QRect r_longText = m_rcLongText.adjusted(10,2,-10,-2);
+    QRect r_longText = m_longText.rc.adjusted(10,2,-10,-2);
     dc.drawText( r_longText,
                  Qt::AlignVCenter | Qt::AlignLeft,
-                 m_longText,
+                 m_longText.text,
                  &r_longText );
 
-    // m_clipOverview.draw(dc);
-    // m_trackOverview.draw(dc);
+    //</LongText>
+
+    //<ClipOverview>
+    dc.drawPixmap(m_clipShow.rc, m_bClipVisible ? m_arrowUp : m_arrowRight);
+    dc.drawPixmap(m_clipName.rc, m_clipName.pix);
+    dc.drawPixmap(m_clipScroll.rc, m_clipScroll.pix);
+    //</ClipOverview>
+
+    //<TrackOverview>
+    dc.drawPixmap(m_trackShow.rc, m_bTrackVisible ? m_arrowUp : m_arrowRight);
+    dc.drawPixmap(m_trackName.rc, m_trackName.pix);
+    dc.drawPixmap(m_trackScroll.rc, m_trackScroll.pix);
+    //</TrackOverview>
+
+    //<Details>
+    dc.drawPixmap(m_details.rc, m_bArraVisible ? m_details.on : m_details.off);
+    //</Details>
 }
 
 void
 Footer::setTrackOverview(QPixmap pix, int visibleWidth, int totalWidth, int xPos)
 {
-    if (!pix)
-    {
-        return;
-    }
-
-    m_trackOverview->setOverviewPixmap(pix,visibleWidth,totalWidth,xPos);
-
-    //m_trackOverview->setPixmaps(m_trackOverviewPixmap,m_trackOverviewPixmap);
-
-    //updateLayout();
+    m_trackScroll.pix = pix;
+    m_trackScroll.view = visibleWidth;
+    m_trackScroll.total = totalWidth;
+    m_trackScroll.pos = xPos;
+    updateLayout();
 }
 
-QPixmap Footer::createArrowRight(int w, int h,
-    QColor windowColor, QColor panelColor, QColor symbolColor)
+bool Footer::event(QEvent* e)
 {
+    if (e->type() == QEvent::LayoutRequest)
+    {
+        DE_BENNI("Got QEvent::LayoutRequest")
+        //updateLayout();
+        return true;
+    }
+
+    return QWidget::event(e);
+}
+
+void Footer::mousePressEvent( QMouseEvent* event )
+{
+    auto mp = event->pos();
+
+    if (isMouseOver(mp,m_quickHelp.rc))
+    {
+        m_bHelpVisible = !m_bHelpVisible;
+        emit sig_showQuickHelp(m_bHelpVisible);
+        update();
+    }
+    else if (isMouseOver(mp,m_midiKeyboard.rc))
+    {
+        m_bMidiVisible = !m_bMidiVisible;
+        emit sig_showMidiKeyboard(m_bMidiVisible);
+        update();
+    }
+    else if (isMouseOver(mp,m_clipShow.rc))
+    {
+        m_bClipVisible = !m_bClipVisible;
+        emit sig_showClipEditor(m_bClipVisible);
+        update();
+    }
+    else if (isMouseOver(mp,m_trackShow.rc))
+    {
+        m_bTrackVisible = !m_bTrackVisible;
+        emit sig_showTrackEditor(m_bTrackVisible);
+        update();
+    }
+    else if (isMouseOver(mp,m_details.rc))
+    {
+        m_bArraVisible = !m_bArraVisible;
+        emit sig_showArrangement(m_bArraVisible);
+        update();
+    }
+
+    QWidget::mousePressEvent( event );
+}
+
+void Footer::mouseReleaseEvent( QMouseEvent* event )
+{
+
+   QWidget::mouseReleaseEvent( event );
+}
+
+
+// static
+QPixmap Footer::PIX_createFromText(int padd_x, int padd_y, QString text, QColor fillColor, QColor textColor, QFont font)
+{
+    QFontMetrics fm(font);
+    const QRect r_text = fm.boundingRect(text);
+
+    const int w = r_text.width();
+    const int h = r_text.height();
+
+    QPixmap pix(w + padd_x * 2, h + padd_y * 2);
+    pix.fill(fillColor);
+
+    QPainter dc;
+    if (dc.begin(&pix))
+    {
+        dc.setFont(font);
+        dc.setRenderHint(QPainter::Antialiasing);
+        dc.setPen(QPen(textColor));
+        dc.setBrush(Qt::NoBrush);
+
+        QRect r = pix.rect();
+        dc.drawText(r, Qt::AlignCenter, text, &r);
+        dc.end();
+    }
+
+    return pix;
+}
+
+// static
+QPixmap Footer::PIX_createQuickHelp(int w, int h, const QColor& fillColor, const QColor& lineColor)
+{
+    if (w<1 || h<1) return QPixmap();
+
+    auto mkSvg_Power = [](int w, int h,
+            const QColor& fillColor, const QColor& lineColor) -> QPixmap
+    {
+        auto s = QString(R"(
+<svg width="30" height="30" viewBox="0 0 30 30" xmlns="http://www.w3.org/2000/svg" >
+<circle cx="15" cy="15" r="12" fill="%1" stroke="%2" stroke-width="2" />
+<line x1="15" y1="6" x2="15" y2="9" stroke="%2" stroke-width="3" />
+<line x1="15" y1="11" x2="15" y2="24" stroke="%2" stroke-width="3" />
+</svg>
+)")
+        .arg(toSvg(fillColor))  // %1
+        .arg(toSvg(lineColor))  // %2
+        ;
+        return mkSvg(s,w,h);
+    };
+
+    return mkSvg_Power(w,h, fillColor, lineColor );
+}
+
+// static
+QPixmap Footer::PIX_createMidiKeyboard(int w, int h, QColor whiteColor, QColor blackColor, QColor redColor, QColor blueColor)
+{
+    if (w<1 || h<1) return QPixmap();
+
+    QPixmap pm(w, h);
+    pm.fill(Qt::transparent);
+
+    auto drawBar = [] (QPainter& dc, int x, int y, int w, int h,
+            QColor fillColor, QColor lineColor)
+    {
+        dc.setPen(Qt::NoPen);
+        dc.setBrush(QBrush(fillColor));
+        dc.drawRect(x,y,w,h);
+
+        dc.setPen(QPen(lineColor));
+        dc.setBrush(Qt::NoBrush);
+        dc.drawRect(x,y,w-1,h-1);
+    };
+
+    QPainter dc;
+    if (dc.begin(&pm))
+    {
+        int ww = w / 7;
+        int cw = w - 6 * ww;
+        int bw = 2*ww/3;
+        int bh = 5*h/8;
+
+        int x = 0;
+        int y = 0;
+        drawBar(dc,0,0,cw,h,whiteColor,redColor);
+        x += cw;
+
+        for (int i = 0; i < 6; ++i)
+        {
+            drawBar(dc,x,y,ww,h,whiteColor,redColor);
+            x += ww;
+        }
+
+        x = cw - bw/2;
+        drawBar(dc,x,y,bw,bh,blackColor,blueColor);
+        x += ww;
+        drawBar(dc,x,y,bw,bh,blackColor,blueColor);
+        x += 2*ww;
+        drawBar(dc,x,y,bw,bh,blackColor,blueColor);
+        x += ww;
+        drawBar(dc,x,y,bw,bh,blackColor,blueColor);
+        x += ww;
+        drawBar(dc,x,y,bw,bh,blackColor,blueColor);
+        // x += ww;
+    }
+
+    //pm.save("A_createMidiKeyboard.png");
+    return pm;
+}
+
+// static
+QPixmap Footer::PIX_createArrowRight(int w, int h, int r, QColor windowColor, QColor panelColor, QColor symbolColor)
+{
+    if (w<1 || h<1) return QPixmap();
+
     float fx = 18.f / 48.f;
-
     int sx = std::lround(fx * w);
-
 
     auto SVG_createArrowRight = [](int w, int h, QColor symbolColor) -> QPixmap
     {
@@ -459,9 +377,9 @@ QPixmap Footer::createArrowRight(int w, int h,
     if (dc.begin(&pm))
     {
         dc.setRenderHint(QPainter::Antialiasing);
-        dc.setPen( Qt::NoPen );
-        dc.setBrush( QBrush( panelColor ) );
-        dc.drawRoundedRect(0,0,w,h, m_radius,m_radius );
+        dc.setPen(Qt::NoPen);
+        dc.setBrush(QBrush(panelColor));
+        dc.drawRoundedRect(0,0,w,h,r,r);
         dc.drawRect(w/2,0,w,h);
 
         int W = symbol.width();
@@ -474,11 +392,12 @@ QPixmap Footer::createArrowRight(int w, int h,
     return pm;
 }
 
-QPixmap Footer::createArrowUp(int w, int h,
-    QColor windowColor, QColor panelColor, QColor symbolColor)
+// static
+QPixmap Footer::PIX_createArrowUp(int w, int h, int r, QColor windowColor, QColor panelColor, QColor symbolColor)
 {
-    float fx = 18.f / 48.f;
+    if (w<1 || h<1) return QPixmap();
 
+    float fx = 18.f / 48.f;
     int sx = std::lround(fx * w);
 
     auto SVG_createArrowUp = [](int w, int h, QColor symbolColor) -> QPixmap
@@ -505,9 +424,9 @@ QPixmap Footer::createArrowUp(int w, int h,
     if (dc.begin(&pm))
     {
         dc.setRenderHint(QPainter::Antialiasing);
-        dc.setPen( Qt::NoPen );
-        dc.setBrush( QBrush( panelColor ) );
-        dc.drawRoundedRect(0,0,w,h, m_radius,m_radius );
+        dc.setPen(Qt::NoPen);
+        dc.setBrush(QBrush(panelColor));
+        dc.drawRoundedRect(0,0,w,h,r,r);
         dc.drawRect(w/2,0,w,h);
 
         int W = symbol.width();
@@ -520,444 +439,48 @@ QPixmap Footer::createArrowUp(int w, int h,
     return pm;
 }
 
-QPixmap Footer::createFromText(int w, int h, QString text, QColor textColor, QColor fillColor)
+// static
+QPixmap Footer::PIX_createDetails(int w, int h, QColor fillColor, QColor lineColor)
 {
-    QFontMetrics fm(font());
-    QRect r = fm.tightBoundingRect(text);
+    if (w<1 || h<1) return QPixmap();
 
-    int tw = r.width() + 10;
-    int th = r.height() + 2;
+    auto drawBar = [] (QPainter& dc, int x, int y, int w, int h, QColor fillColor, QColor lineColor)
+    {
+        dc.setPen(Qt::NoPen);
+        dc.setBrush(QBrush(fillColor));
+        dc.drawRect(x,y,w,h);
 
-    if (w > 0)  { w = std::max(w,tw); }
-    else        { w = tw; }
-
-    if (h > 0)  { h = std::max(h,th); }
-    else        { h = th; }
+        dc.setPen(QPen(lineColor));
+        dc.setBrush(Qt::NoBrush);
+        dc.drawRect(x,y,w-1,h-1);
+    };
 
     QPixmap pm(w, h);
-    pm.fill(Qt::white); // fillColor
+    pm.fill(Qt::transparent);
 
     QPainter dc;
     if (dc.begin(&pm))
     {
-        dc.setRenderHint(QPainter::Antialiasing);
-        dc.setPen(QPen(textColor));
-        dc.setBrush(Qt::NoBrush);
+        int s = 8;
+        int bw = (w - 4*s) / 5;
 
-        QRect r = pm.rect();
-        dc.drawText(r, Qt::AlignCenter, text, &r);
-        dc.end();
+        int x = 0;
+        int y = 2;
+        drawBar(dc,x,y,bw,h-y-1,fillColor,lineColor);
+        x += bw + s;
+        y = 12;
+        drawBar(dc,x,y,bw,h-y-1,fillColor,lineColor);
+        x += bw + s;
+        y = 5;
+        drawBar(dc,x,y,bw,h-y-1,fillColor,lineColor);
+        x += bw + s;
+        y = 14;
+        drawBar(dc,x,y,bw,h-y-1,fillColor,lineColor);
+        x += bw + s;
+        y = 8;
+        drawBar(dc,x,y,bw,h-y-1,fillColor,lineColor);
+        //x += bw + s;
     }
 
     return pm;
 }
-
-/*
-inline void
-drawRoundRectFill( QPainter & dc, QRect const & rect, QColor const & color, int rx = 6, int ry = 6 )
-{
-   dc.setPen( Qt::NoPen );
-   dc.setBrush( QBrush( color ) );
-   dc.drawRoundedRect( rect, rx,ry );
-}
-
-inline void
-drawRoundRectFill( QPainter & dc, int x, int y, int w, int h, QColor const & color, int rx = 6, int ry = 6 )
-{
-   drawRoundRectFill( dc, QRect(x,y,w,h), color, rx,ry );
-}
-
-
-inline void
-drawRectFill( QPainter & dc, int x, int y, int w, int h, QColor const & color )
-{
-   if ( w < 1 || h < 1 ) return;
-   dc.setPen( Qt::NoPen );
-   dc.setBrush( QBrush( color ) );
-   dc.drawRect( QRect(x,y,w,h) );
-}
-
-inline void
-drawRectFill( QPainter & dc, QRect const & pos, QColor const & color )
-{
-   int x = pos.x();
-   int y = pos.y();
-   int w = pos.width();
-   int h = pos.height();
-   drawRectFill( dc, x,y,w,h, color );
-}
-
-inline void
-drawContent( QPainter & dc, QRect pos, QColor const & contentColor )
-{
-   int x = pos.x();
-   int y = pos.y();
-   int w = pos.width();
-   int h = pos.height();
-   if ( w < 2 || h < 2 ) return;
-
-   // Draw background
-   drawRectFill( dc, QRect( x, y, w, h ), contentColor );
-}
-
-
-inline void
-drawHelpView( QPainter & dc, QRect pos, int titleH, int tdH, QColor titleColor, QColor tdColor, QColor contentColor )
-{
-   int x = pos.x();
-   int y = pos.y();
-   int w = pos.width();
-   int h = pos.height();
-   if ( w < 2 || h < 2 ) return;
-
-   // Draw background
-   drawRectFill( dc, QRect( x, y, w, h ), contentColor );
-
-   // Draw title rect
-   if ( h > titleH )
-   {
-      drawRectFill( dc, QRect( x, y, w, titleH ), titleColor );
-      if ( h > titleH + tdH )
-      {
-         drawRectFill( dc, QRect( x, y + titleH, w, tdH ), tdColor );
-      }
-      else
-      {
-         drawRectFill( dc, QRect( x, y + titleH, w, h - titleH ), tdColor );
-      }
-   }
-   else
-   {
-      drawRectFill( dc, QRect( x, y, w, h ), titleColor );
-   }
-
-   // Draw table header
-   if ( h > titleH + tdH )
-   {
-
-   }
-
-}
-
-inline void
-drawText( QPainter & dc, int x, int y, QString const & msg, QColor textColor )
-{
-   auto fm = dc.fontMetrics();
-   //auto ts = dc.fontMetrics().tightBoundingRect( msg ).size();
-//   auto w = fm.horizontalAdvance( msg );
-//   auto h = fm.height();
-   dc.setPen( QPen( textColor ) );
-   dc.setBrush( Qt::NoBrush );
-   dc.drawText( x, y + fm.ascent(), msg );
-}
-
-*/
-
-void Footer::on_btnShowMidiKeyboard( bool checked )
-{
-    emit sig_showMidiKeyboard(checked);
-}
-void Footer::on_btnShowQuickHelp( bool checked )
-{
-    emit sig_showQuickHelp(checked);
-}
-void Footer::on_btnShowClipOverview( bool checked )
-{
-    emit sig_showClipEditor(checked);
-}
-void Footer::on_btnShowTrackOverview( bool checked )
-{
-    emit sig_showTrackEditor(checked);
-}
-void Footer::on_btnShowDetails( bool checked )
-{
-    emit sig_showArrangement(checked);
-}
-
-/*
-void
-Footer::mouseReleaseEvent( QMouseEvent* event )
-{
-   LiveSkin & skin = m_skin;
-   int mx = event->x();
-   int my = event->y();
-   if ( isMouseOverRect( mx,my, m_rcClipOverviewPanel ) )
-   {
-
-   }
-
-   if ( isMouseOverRect( mx,my, m_rcTrackOverviewPanel ) )
-   {
-
-   }
-
-   QWidget::mouseReleaseEvent( event );
-}
-*/
-
-void
-Footer::focusInEvent( QFocusEvent* event )
-{
-   m_hasFocus = true;
-   update();
-   QWidget::focusInEvent( event );
-}
-
-void
-Footer::focusOutEvent( QFocusEvent* event )
-{
-   m_hasFocus = true;
-   update();
-   QWidget::focusOutEvent( event );
-}
-
-#if 0
-void
-Footer::enterEvent( QEnterEvent* event )
-{
-   QWidget::enterEvent( event );
-}
-
-void
-Footer::leaveEvent( QEvent* event )
-{
-   QWidget::leaveEvent( event );
-}
-
-void
-Footer::mouseMoveEvent( QMouseEvent* event )
-{
-//   m_mouseX = event->x();
-//   m_mouseY = event->y();
-   QWidget::mouseMoveEvent( event );
-}
-
-void
-Footer::wheelEvent( QWheelEvent* event )
-{
-   //int wheel = event->angleDelta().y();
-   QWidget::wheelEvent( event );
-}
-
-void
-Footer::mousePressEvent( QMouseEvent* event )
-{
-   QWidget::mousePressEvent( event );
-}
-
-void
-Footer::mouseReleaseEvent( QMouseEvent* event )
-{
-
-   QWidget::mouseReleaseEvent( event );
-}
-
-void
-Footer::keyPressEvent( QKeyEvent* event )
-{
-   //DE_DEBUG("KeyPress(",event->key(),")")
-   QWidget::keyPressEvent( event );
-}
-
-void
-Footer::keyReleaseEvent( QKeyEvent* event )
-{
-   //DE_DEBUG("KeyRelease(",event->key(),")")
-   QWidget::keyReleaseEvent( event );
-}
-
-ImageButton*
-Footer::createShowQuickHelpPanelButton()
-{
-   auto btn = new ImageButton( this );
-
-   LiveSkin const & skin = m_skin;
-   int cbs = skin.getInt( LiveSkin::CircleButtonSize );
-
-   btn->setCheckable( true );
-   btn->setChecked( true );
-
-   auto symColor = skin.symbolColor;
-   auto bgColor = skin.windowColor;
-   auto fgColor = skin.panelColor;
-
-   //QFont font = getFontAwesome( 14 );
-   std::string
-   msg = "##\n"
-         "####\n"
-         "######\n"
-         "########\n"
-         "#########\n"
-         "########\n"
-         "######\n"
-         "####\n"
-         "##\n";
-
-   // [idle]
-   QImage ico = createAsciiArt( symColor, fgColor, msg );
-   QImage img = createCircleImage( cbs,cbs, bgColor, fgColor, ico );
-   btn->setImage( 0, img );
-   // [idle_hover]
-   btn->setImage( 1, img );
-
-   // [active]
-   msg = "    #\n"
-         "   ###\n"
-         "   ###\n"
-         "  #####\n"
-         "  #####\n"
-         " #######\n"
-         " #######\n"
-         "#########\n"
-         "#########\n";
-
-   ico = createAsciiArt( symColor, fgColor, msg );
-   img = createCircleImage( cbs,cbs, bgColor, fgColor, ico );
-   btn->setImage( 2, img );
-   // [active_hover]
-   btn->setImage( 3, img );
-   return btn;
-}
-
-
-ImageButton*
-Footer::createShowMidiKeyboardButton()
-{
-   auto btn = new ImageButton( this );
-
-   LiveSkin const & skin = m_skin;
-   int bw = 2*skin.getInt( LiveSkin::CircleButtonSize );
-   int bh = skin.getInt( LiveSkin::CircleButtonSize );
-
-   btn->setCheckable( true );
-   btn->setChecked( true );
-
-   auto symColor = skin.symbolColor;
-   auto bgColor = skin.windowColor;
-   auto fgColor = skin.panelColor;
-
-/*
- *    //QFont font = getFontAwesome( 14 );
-   std::string
-   msg = "ooooooooooooooooooooooooo        ##\n"
-         "o o#o o#o o o#o o#o o#o o      ####\n"
-         "o o#o o#o o o#o o#o o#o o    ######\n"
-         "o o#o o#o o o#o o#o o#o o  ########\n"
-         "o  o   o  o  o   o   o  o #########\n"
-         "o  o   o  o  o   o   o  o  ########\n"
-         "o  o   o  o  o   o   o  o    ######\n"
-         "o  o   o  o  o   o   o  o      ####\n"
-         "ooooooooooooooooooooooooo        ##\n";
-   // [idle]
-   QImage ico = createAsciiArt( symColor, fgColor, msg );
-   QImage img = createRoundRectImage( bw,bh, bgColor, fgColor, ico );
-   btn->setImage( 0, img );
-   // [idle_hover]
-   btn->setImage( 1, img );
-
-   // [active]
-   msg = "ooooooooooooooooooooooooo #########\n"
-         "o o#o o#o o o#o o#o o#o o #########\n"
-         "o o#o o#o o o#o o#o o#o o  ####### \n"
-         "o o#o o#o o o#o o#o o#o o  ####### \n"
-         "o  o   o  o  o   o   o  o   #####  \n"
-         "o  o   o  o  o   o   o  o   #####  \n"
-         "o  o   o  o  o   o   o  o    ###   \n"
-         "o  o   o  o  o   o   o  o    ###   \n"
-         "ooooooooooooooooooooooooo     #    \n";
-
-*/
-   std::string
-   msg = "ooooooooooooooooooooooooo\n"
-         "o o#o o#o o o#o o#o o#o o\n"
-         "o o#o o#o o o#o o#o o#o o\n"
-         "o o#o o#o o o#o o#o o#o o\n"
-         "o  o   o  o  o   o   o  o\n"
-         "o  o   o  o  o   o   o  o\n"
-         "o  o   o  o  o   o   o  o\n"
-         "o  o   o  o  o   o   o  o\n"
-         "ooooooooooooooooooooooooo\n";
-
-   // [idle]
-   QImage ico = createAsciiArt( symColor, fgColor, msg );
-   QImage img = createRoundRectImage( bw,bh, bgColor, fgColor, ico );
-   btn->setImage( 0, img );
-   // [idle_hover]
-   btn->setImage( 1, img );
-
-   // [active]
-   msg = "ooooooooooooooooooooooooo\n"
-         "o o#o o#o o o#o o#o o#o o\n"
-         "o o#o o#o o o#o o#o o#o o\n"
-         "o o#o o#o o o#o o#o o#o o\n"
-         "o o#o o#o o o#o o#o o#o o\n"
-         "o o#o o#o o o#o o#o o#o o\n"
-         "o o#o o#o o o#o o#o o#o o\n"
-         "o  o   o  o  o   o   o  o\n"
-         "o  o   o  o  o   o   o  o\n"
-         "o  o   o  o  o   o   o  o\n"
-         "o  o   o  o  o   o   o  o\n"
-         "o  o   o  o  o   o   o  o\n"
-         "ooooooooooooooooooooooooo\n";
-
-   ico = createAsciiArt( symColor, fgColor, msg );
-   img = createRoundRectImage( bw,bh, bgColor, fgColor, ico );
-   btn->setImage( 2, img );
-   // [active_hover]
-   btn->setImage( 3, img );
-   return btn;
-}
-
-ImageButton*
-Footer::createShowDetailPanelButton()
-{
-   auto btn = new ImageButton( this );
-
-   LiveSkin const & skin = m_skin;
-   int cbs = skin.getInt( LiveSkin::CircleButtonSize );
-
-   btn->setCheckable( true );
-   btn->setChecked( true );
-
-   auto symColor = skin.symbolColor;
-   auto bgColor = skin.windowColor;
-   auto fgColor = skin.panelColor;
-
-   //QFont font = getFontAwesome( 14 );
-   std::string
-   msg = "       ##\n"
-         "     ####\n"
-         "   ######\n"
-         " ########\n"
-         "#########\n"
-         " ########\n"
-         "   ######\n"
-         "     ####\n"
-         "       ##\n";
-
-   // [idle]
-   QImage ico = createAsciiArt( symColor, fgColor, msg );
-   QImage img = createCircleImage( cbs,cbs, bgColor, fgColor, ico );
-   btn->setImage( 0, img );
-   // [idle_hover]
-   btn->setImage( 1, img );
-
-   // [active]
-   msg = "    #\n"
-         "   ###\n"
-         "   ###\n"
-         "  #####\n"
-         "  #####\n"
-         " #######\n"
-         " #######\n"
-         "#########\n"
-         "#########\n";
-
-   ico = createAsciiArt( symColor, fgColor, msg );
-   img = createCircleImage( cbs,cbs, bgColor, fgColor, ico );
-   btn->setImage( 2, img );
-   // [active_hover]
-   btn->setImage( 3, img );
-   return btn;
-}
-#endif

@@ -103,6 +103,7 @@ void GL_Window_WGL::renderNow()
         if (_d->initialized)
         {
             initializeGL();
+            resizeGL(width(),height());
         }
         else
         {

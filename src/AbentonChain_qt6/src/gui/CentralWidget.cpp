@@ -12,6 +12,9 @@ CentralWidget::CentralWidget(QWidget* parent )
     m_header = new Header(this);
     m_header->setVisible(false);
 
+    m_arraCentral = new ArraCentral(this);
+    m_arraCentral->setVisible(true);
+
     m_canvas = new GL_Canvas(this);
     m_canvasContainer = QWidget::createWindowContainer(m_canvas);
     m_canvasContainer->setParent(this);
@@ -52,19 +55,6 @@ CentralWidget::CentralWidget(QWidget* parent )
 CentralWidget::~CentralWidget()
 {}
 
-bool CentralWidget::event(QEvent* e)
-{
-    if (e->type() == QEvent::LayoutRequest)
-    {
-        DE_BENNI("Got QEvent::LayoutRequest")
-        //updateLayout();
-        return true;
-    }
-
-    return QWidget::event(e);
-}
-
-
 void CentralWidget::applySkin()
 {
     const auto& skin = App::instance()->getSkin();
@@ -88,6 +78,7 @@ CentralWidget::updateLayout()
     int trackHeight = (376 * m_zoom) / 100;
     int clipHeight = (400 * m_zoom) / 100;
     int canvasHeight = (400 * m_zoom) / 100;
+    int arrangeHeight = (48 * m_zoom) / 100;
 
     if (m_footer->isVisible())
     {
@@ -129,7 +120,15 @@ CentralWidget::updateLayout()
         clipHeight = 0;
     }
 
-    // TODO: Add Arrangement
+    if (m_arraCentral->isVisible())
+    {
+        arrangeHeight = h_remain;
+        h_remain -= arrangeHeight;
+    }
+    else
+    {
+        arrangeHeight = 0;
+    }
 
     if (m_canvasContainer->isVisible())
     {
@@ -148,6 +147,10 @@ CentralWidget::updateLayout()
     // m_canvas->setGeometry(m_canvasContainer->x(),
     //                       m_canvasContainer->y(),w,canvasHeight);
     //m_canvas->raise();
+
+    y = headerHeight + canvasHeight;
+    m_arraCentral->setGeometry(x,y,w,arrangeHeight);
+    //m_arraCentral->raise();
 
     y = h-footerHeight-trackHeight-clipHeight;
     m_clipEditor->setGeometry(x,y,w,clipHeight);
@@ -169,6 +172,10 @@ CentralWidget::updateLayout()
     {
         DE_ERROR("Computed bad headerHeight = ",headerHeight)
     }
+    if (arrangeHeight < 0)
+    {
+        DE_ERROR("Computed bad arrangeHeight = ",arrangeHeight)
+    }
     if (canvasHeight < 0)
     {
         DE_ERROR("Computed bad canvasHeight = ",canvasHeight)
@@ -186,6 +193,19 @@ CentralWidget::updateLayout()
         DE_ERROR("Computed bad footerHeight = ",footerHeight)
     }
     update();
+}
+
+
+bool CentralWidget::event(QEvent* e)
+{
+    if (e->type() == QEvent::LayoutRequest)
+    {
+        DE_BENNI("Got QEvent::LayoutRequest")
+        updateLayout();
+        return true;
+    }
+
+    return QWidget::event(e);
 }
 
 void CentralWidget::resizeEvent( QResizeEvent* event )

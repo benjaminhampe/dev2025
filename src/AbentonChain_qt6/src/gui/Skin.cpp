@@ -6,6 +6,10 @@
 bool
 isMouseOver(const QPoint &pos, const QRect &r)
 {
+    if ( r.width() < 1 || r.height() < 1)
+    {
+        return false;
+    }
     const int m = pos.x();
     const int n = pos.y();
     const int x1 = r.x();
@@ -166,4 +170,65 @@ blendRGB( QColor from, QColor to, float t )
     b = std::clamp( int32_t( t * db + float( b ) ), 0, 255 );
     //a = std::clamp( int32_t( t * da + float( a ) ), 0, 255 );
     return QColor( r, g, b );
+}
+
+int
+computeBestFontHeight(QFont baseFont, int maxHeight)
+{
+    QFont tf = baseFont;
+    tf.setPixelSize(maxHeight);
+
+    QFontMetrics fm(tf);
+
+    static const QString testText = "1WCgp";
+    int i = 0;
+    int textHeight = fm.boundingRect(testText).height();
+
+    // DE_OK("Start "
+    //       "fontSize(",tf.pixelSize(), "), "
+    //       "maxHeight(", maxHeight,"), "
+    //       "textHeight(",textHeight, ")")
+
+    while (textHeight < maxHeight)
+    {
+        int lastSize = tf.pixelSize() + 1;
+        if (lastSize > 64)
+        {
+            tf.setPixelSize(64);
+            break;
+        }
+        tf.setPixelSize(lastSize);
+        fm = QFontMetrics(tf);
+        textHeight = fm.boundingRect(testText).height();
+
+        // DE_OK("[",i,"] "
+        //   "fontSize(",tf.pixelSize(), "), "
+        //   "maxHeight(", maxHeight,"), "
+        //   "textHeight(",textHeight, ")")
+        i++;
+    }
+
+    while (textHeight > maxHeight)
+    {
+        int lastSize = tf.pixelSize() - 1;
+        if (lastSize < 8)
+        {
+            tf.setPixelSize(8);
+            break;
+        }
+        tf.setPixelSize(lastSize);
+        fm = QFontMetrics(tf);
+        textHeight = fm.boundingRect(testText).height();
+
+        // DE_OK("[",i,"] "
+        //   "fontSize(",tf.pixelSize(), "), "
+        //   "maxHeight(", maxHeight,"), "
+        //   "textHeight(",textHeight, ")")
+
+        i++;
+    }
+
+    int pixelSize = tf.pixelSize();
+    DE_OK("Computed best Font.pixelSize = ",pixelSize," after ",i," tries")
+    return pixelSize;
 }

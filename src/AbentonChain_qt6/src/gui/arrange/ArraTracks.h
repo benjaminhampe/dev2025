@@ -1,19 +1,19 @@
 ﻿#pragma once
-#include "PianoRoll.h"
+#include "ArraTrack.h"
 #include <QWidget>
 
 // ============================================================================
-class ClipEditor : public QWidget
+class ArraTracks : public QWidget
 // ============================================================================
 {
     Q_OBJECT
 public:
-    explicit ClipEditor(QWidget* parent = 0);
+    explicit ArraTracks(QWidget* parent = 0);
     void applySkin();
     void updateLayout();
     
 public slots:
-    void setClip( Clip* clip );
+    //void setClip( Clip* clip );
         
 protected:
     void resizeEvent( QResizeEvent* event ) override;
@@ -29,8 +29,9 @@ protected:
     void wheelEvent( QWheelEvent* event ) override;
 */    
 protected:
-    PianoRoll* m_pianoRoll{ nullptr };
-    Clip* m_clip{ nullptr };
+    //PianoRoll* m_pianoRoll{ nullptr };
+    //Clip* m_clip{ nullptr };
+    std::vector<ArraTrack*> m_tracks;
     
     int m_zoom = 100;
     int m_margin = 8;

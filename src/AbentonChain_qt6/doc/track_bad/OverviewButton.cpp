@@ -1,6 +1,7 @@
-#include "Footer.h"
+#include "OverviewButton.h"
 #include <QResizeEvent>
 #include "App.h"
+#include "Footer.h"
 
 QPixmap
 OverviewButton::createTextPixmap(int maxHeight, QString text, QColor textColor, QColor fillColor, QFont font)
@@ -84,7 +85,7 @@ void OverviewButton::applySkin()
     m_textColor = skin.textColor;
     m_activeColor = skin.symbolColorActive;
 
-    const int b = height();
+    const int b = (48 * skin.zoom) / 100;
     auto pixShow = createArrowRight(b,b,m_radius,m_windowColor,m_panelColor,m_textColor);
     auto pixHide = createArrowUp(b,b,m_radius,m_windowColor,m_activeColor,m_textColor);
     m_btnShow->setPixmaps(pixHide,pixShow);
@@ -97,10 +98,11 @@ void OverviewButton::applySkin()
     }
     else
     {
-        auto pix = createTextPixmap(height()-2,m_nameText,m_textColor,Qt::white,font());
+        auto pix = createTextPixmap(b,m_nameText,m_textColor,Qt::white,font());
         m_btnName->setPixmaps(pix,pix);
         m_btnName->setVisible(true);
     }
+
 
     updateLayout();
 }

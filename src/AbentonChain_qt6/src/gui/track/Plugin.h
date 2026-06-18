@@ -30,7 +30,6 @@ public:
     void applySkin();
     void updateLayout();
     int computeBestWidth() const;
-    int computeBestFontHeight(QFont baseFont, int maxHeight) const;
 
 signals:
     void requestRemoval(Plugin *self);

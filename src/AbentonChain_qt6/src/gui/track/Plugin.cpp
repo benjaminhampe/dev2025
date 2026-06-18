@@ -112,65 +112,6 @@ int Plugin::computeBestWidth() const
     }
 }
 
-int Plugin::computeBestFontHeight(QFont baseFont, int maxHeight) const
-{
-    QFont tf = baseFont;
-    tf.setPixelSize(maxHeight);
-
-    QFontMetrics fm(tf);
-
-    int i = 0;
-    int textHeight = fm.tightBoundingRect("Wg").height();
-
-    DE_OK("Start "
-          "fontSize(",tf.pixelSize(), "), "
-          "maxHeight(", maxHeight,"), "
-          "textHeight(",textHeight, ")")
-
-    while (textHeight < maxHeight)
-    {
-        int lastSize = tf.pixelSize() + 1;
-        if (lastSize > 28)
-        {
-            tf.setPixelSize(28);
-            break;
-        }
-        tf.setPixelSize(lastSize);
-        fm = QFontMetrics(tf);
-        textHeight = fm.tightBoundingRect("Wg").height();
-
-        DE_OK("[",i,"] "
-          "fontSize(",tf.pixelSize(), "), "
-          "maxHeight(", maxHeight,"), "
-          "textHeight(",textHeight, ")")
-        i++;
-    }
-
-    while (textHeight > maxHeight)
-    {
-        int lastSize = tf.pixelSize() - 1;
-        if (lastSize < 8)
-        {
-            tf.setPixelSize(8);
-            break;
-        }
-        tf.setPixelSize(lastSize);
-        fm = QFontMetrics(tf);
-        textHeight = fm.tightBoundingRect("Wg").height();
-
-        DE_OK("[",i,"] "
-          "fontSize(",tf.pixelSize(), "), "
-          "maxHeight(", maxHeight,"), "
-          "textHeight(",textHeight, ")")
-
-        i++;
-    }
-
-    int pixelSize = tf.pixelSize();
-    DE_OK("Got final Font.pixelSize = ",pixelSize," after ",i," tries")
-    return pixelSize;
-}
-
 void Plugin::updateLayout()
 {
     const int w = width();

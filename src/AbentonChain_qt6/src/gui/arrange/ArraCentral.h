@@ -1,20 +1,22 @@
 ﻿#pragma once
-#include "PianoRoll.h"
+#include "ArraOverview.h"
+#include "ArraTracks.h"
+#include "ArraMixer.h"
 #include <QWidget>
 
 // ============================================================================
-class ClipEditor : public QWidget
+class ArraCentral : public QWidget
 // ============================================================================
 {
     Q_OBJECT
 public:
-    explicit ClipEditor(QWidget* parent = 0);
+    explicit ArraCentral(QWidget* parent = 0);
     void applySkin();
     void updateLayout();
-    
+
 public slots:
-    void setClip( Clip* clip );
-        
+    //void setClip( Clip* clip );
+
 protected:
     void resizeEvent( QResizeEvent* event ) override;
     void paintEvent( QPaintEvent* event ) override;
@@ -27,11 +29,12 @@ protected:
     void mouseReleaseEvent( QMouseEvent* event ) override;
     void mouseMoveEvent( QMouseEvent* event ) override;
     void wheelEvent( QWheelEvent* event ) override;
-*/    
+*/
 protected:
-    PianoRoll* m_pianoRoll{ nullptr };
-    Clip* m_clip{ nullptr };
-    
+    ArraOverview* m_overview{ nullptr };
+    ArraTracks* m_tracks{ nullptr };
+    ArraMixer* m_mixer{ nullptr };
+
     int m_zoom = 100;
     int m_margin = 8;
 

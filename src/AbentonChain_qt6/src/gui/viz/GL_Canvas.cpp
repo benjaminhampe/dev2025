@@ -116,7 +116,7 @@ void GL_Canvas::stopFpsTimer()
 
 void GL_Canvas::initializeGL()
 {
-    m_driver = de::gpu::createVideoDriver(2*640,2*480,winId());
+    m_driver = de::gpu::createVideoDriver(width(),height(),winId());
 
     m_renderer.initializeGL(m_driver);
 }
@@ -124,8 +124,8 @@ void GL_Canvas::initializeGL()
 void
 GL_Canvas::resizeGL(int w, int h)
 {
-    if (!isVisible() || width()<1 || height()<1) return;
-    //DE_OK("w(",w,"), h(",h,")")
+    if (w<1 || h<1) return;
+
     if (m_driver)
     {
         m_driver->resize(w,h);

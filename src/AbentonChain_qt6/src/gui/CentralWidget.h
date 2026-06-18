@@ -1,6 +1,7 @@
 #pragma once
 #include <QWidget>
 #include <gui/header/Header.h>
+#include <gui/arrange/ArraCentral.h>
 #include <gui/viz/GL_Canvas.h>
 #include <gui/clip/ClipEditor.h>
 #include <gui/track/TrackStack.h>
@@ -13,6 +14,7 @@ class CentralWidget : public QWidget
     Q_OBJECT
 public:
     Header*     m_header;
+    ArraCentral*m_arraCentral;
     QWidget*    m_canvasContainer;
     GL_Canvas*  m_canvas;
     ClipEditor* m_clipEditor; // PianoRoll

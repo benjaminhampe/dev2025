@@ -51,6 +51,19 @@ MainWindow::MainWindow(QWidget *parent)
                 m_body->m_footer->setTrackOverview(pix,visibWidth,totalWidth,xPos);
             });
 
+
+    connect(m_body->m_footer, &Footer::sig_showArrangement, this,
+            [=] (bool checked)
+            {
+                m_body->m_arraCentral->setVisible(checked);
+                if (checked)
+                {
+                    m_body->m_canvasContainer->setVisible(false);
+                }
+                m_body->updateLayout();
+                updateMenuView();
+            });
+
     connect(m_body->m_footer, &Footer::sig_showClipEditor, this,
             [=] (bool checked)
             {
@@ -63,6 +76,11 @@ MainWindow::MainWindow(QWidget *parent)
             [=] (bool checked)
             {
                 m_body->m_trackStack->showQuickHelp(checked);
+                if (checked && !m_body->m_trackStack->isVisible())
+                {
+                    m_body->m_trackStack->setVisible(true);
+                    m_body->updateLayout();
+                }
                 updateMenuView();
             });
 
@@ -74,18 +92,15 @@ MainWindow::MainWindow(QWidget *parent)
                 updateMenuView();
             });
 
-    connect(m_body->m_footer, &Footer::sig_showArrangement, this,
-            [=] (bool checked)
-            {
-                //m_qui->setVisible(checked);
-                //m_actShowPianoRoll->setChecked(checked);
-                updateMenuView();
-            });
-
-
     connect(m_actShowHeader, &QAction::triggered, this, [this](bool checked)
     {
         m_body->m_header->setVisible(checked);
+        m_body->updateLayout();
+    });
+
+    connect(m_actShowArrange, &QAction::triggered, this, [this](bool checked)
+    {
+        m_body->m_arraCentral->setVisible(checked);
         m_body->updateLayout();
     });
 
@@ -174,6 +189,10 @@ void MainWindow::updateMenuView()
     m_actShowHeader->setChecked(m_body->m_header->isVisible());
     m_actShowHeader->blockSignals(false);
 
+    m_actShowArrange->blockSignals(true);
+    m_actShowArrange->setChecked(m_body->m_arraCentral->isVisible());
+    m_actShowArrange->blockSignals(false);
+
     m_actShowCanvas->blockSignals(true);
     m_actShowCanvas->setChecked(m_body->m_canvasContainer->isVisible());
     m_actShowCanvas->blockSignals(false);
@@ -196,26 +215,31 @@ void MainWindow::createMenuView()
     m_actShowHeader = new QAction("Show Header/Transport", this);
     m_actShowHeader->setCheckable(true);
 
-    m_actShowCanvas = new QAction("Show 3D Canvas Vizualization", this);
+    m_actShowArrange = new QAction("Show Arrangement/Mixer", this);
+    m_actShowArrange->setCheckable(true);
+
+    m_actShowCanvas = new QAction("Show 3D Vizualization", this);
     m_actShowCanvas->setCheckable(true);
 
     m_actShowPianoRoll = new QAction("Show ClipEditor/PianoRoll", this);
     m_actShowPianoRoll->setCheckable(true);
 
-    m_actShowChain = new QAction("Show AudioDspChainStack", this);
+    m_actShowChain = new QAction("Show TrackEditor", this);
     m_actShowChain->setCheckable(true);
 
-    m_actShowFooter = new QAction("Show Footer/Scrollbar/QuickHelp", this);
+    m_actShowFooter = new QAction("Show Footer/Scrollbar", this);
     m_actShowFooter->setCheckable(true);
-
 
     QMenu* menuView = menuBar()->addMenu("View");
     menuView->addAction(m_actShowHeader);
+    menuView->addSeparator();
+    menuView->addAction(m_actShowArrange);
     menuView->addSeparator();
     menuView->addAction(m_actShowCanvas);
     menuView->addSeparator();
     menuView->addAction(m_actShowPianoRoll);
     menuView->addAction(m_actShowChain);
+    menuView->addSeparator();
     menuView->addAction(m_actShowFooter);
 }
 

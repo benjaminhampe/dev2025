@@ -7,7 +7,7 @@ QuickHelp::QuickHelp(QWidget* parent)
 {
     // setSizePolicy(QSizePolicy::Fixed,QSizePolicy::Fixed);
     // setContextMenuPolicy(Qt::CustomContextMenu);
-    setStyleSheet("background: transparent;"); // border:none;
+    //setStyleSheet("background: transparent;"); // border:none;
 
     applySkin();
 
@@ -26,6 +26,7 @@ void QuickHelp::applySkin()
     m_zoom = skin.zoom;
     m_windowColor = skin.windowColor;
     m_panelColor = skin.panelColor;
+    m_headerColor = skin.headerColor;
     m_textColor = skin.textColor;
     updateLayout();
 }
@@ -51,27 +52,39 @@ void QuickHelp::paintEvent(QPaintEvent* event)
     if (w < 1) return;
     if (h < 1) return;
     const int r = (6 * m_zoom) / 100;
+    const int m = (8 * m_zoom) / 100;
+    int headerHeight = (38 * m_zoom)/100;
 
     QPainter dc;
-    if (!dc.begin(this))
+    if (dc.begin(this))
     {
-        return;
+        // [Draw] Window:
+        dc.fillRect(rect(),m_windowColor);
+        // QRect r_panel(m,0,w-m,h);
+
+        // [Draw] Header:
+        dc.setRenderHint( QPainter::Antialiasing );
+        dc.setPen(Qt::NoPen);
+        dc.setBrush(QBrush(m_headerColor));
+        dc.drawRoundedRect(m,0,w-m,headerHeight,r,r);
+        dc.drawRect(m,headerHeight/2,w-m,headerHeight-1-r);
+
+        // [Draw] Panel:
+        dc.setPen(Qt::NoPen);
+        dc.setBrush(QBrush(m_panelColor));
+        dc.drawRoundedRect(m,headerHeight+1,w-m,h-headerHeight-1,r,r);
+        dc.drawRect(m,headerHeight+1,w-m,r+1);
+
+        // [Draw] Text:
+        dc.setPen( QPen(m_textColor) );
+        dc.setBrush(Qt::NoBrush);
+        QRect r_text = QRect(2*m,headerHeight+3*m,w-4*m,h-headerHeight-4*m);
+        dc.drawText(r_text, Qt::TextWordWrap | Qt::AlignCenter, m_helpText, &r_text );
+
     }
-    // dc.fillRect(rect(),m_windowColor);
 
-    dc.setRenderHint( QPainter::Antialiasing );
 
-    // [Draw] Panel:
-    dc.setPen( Qt::NoPen );
-    dc.setBrush( QBrush( m_panelColor ) );
-    QRect r_panel(0,0,w,h);
-    dc.drawRoundedRect(r_panel,r,r);
 
-    // [Draw] Text:
-    dc.setPen( QPen(m_textColor) );
-    dc.setBrush(Qt::NoBrush);
-    QRect r_text = QRect(2*r,2*r,w-4*r,h-4*r);
-    dc.drawText(r_text, Qt::TextWordWrap | Qt::AlignCenter, m_helpText, &r_text );
 }
 /*
 void QuickHelp::showContextMenu(const QPoint &pos)

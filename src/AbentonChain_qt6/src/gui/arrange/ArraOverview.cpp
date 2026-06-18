@@ -1,19 +1,18 @@
-#include "ClipEditor.h"
+#include "ArraOverview.h"
 #include <App.h>
 
-ClipEditor::ClipEditor(QWidget* parent )
+ArraOverview::ArraOverview(QWidget* parent )
    : QWidget( parent )
-   , m_clip{ nullptr }
 {
-   setObjectName( "ClipEditor" );
+   setObjectName( "ArraOverview" );
    setMouseTracking( true );
    
-   m_pianoRoll = new PianoRoll(this);
+   //m_pianoRoll = new PianoRoll(this);
    
    applySkin();
 }
-
-void ClipEditor::setClip( Clip* clip )
+/*
+void ArraOverview::setClip( Clip* clip )
 {
     if ( m_clip != clip )
     {
@@ -22,8 +21,8 @@ void ClipEditor::setClip( Clip* clip )
         update();
     }
 }
-
-void ClipEditor::applySkin()
+*/
+void ArraOverview::applySkin()
 {
     const auto& skin = App::instance()->getSkin();
     m_zoom = skin.zoom;
@@ -33,7 +32,7 @@ void ClipEditor::applySkin()
     updateLayout();
 }
 
-void ClipEditor::updateLayout()
+void ArraOverview::updateLayout()
 {
     const int w = width();
     const int h = height();
@@ -43,11 +42,11 @@ void ClipEditor::updateLayout()
     int m = 2*m_margin; // inner margin
     int dx = std::max(w - 2*m,0);
     int dy = std::max(h - 2*m,0);
-    m_pianoRoll->setGeometry(m,m,dx,dy);
+    //m_pianoRoll->setGeometry(m,m,dx,dy);
     update();
 }
 
-void ClipEditor::resizeEvent(QResizeEvent* e)
+void ArraOverview::resizeEvent(QResizeEvent* e)
 {
     const int w = e->size().width();
     const int h = e->size().height();
@@ -56,7 +55,7 @@ void ClipEditor::resizeEvent(QResizeEvent* e)
     updateLayout();
 }
 
-void ClipEditor::paintEvent( QPaintEvent* event )
+void ArraOverview::paintEvent( QPaintEvent* event )
 {
     const int w = width();
     const int h = height();
@@ -80,13 +79,13 @@ void ClipEditor::paintEvent( QPaintEvent* event )
 #if 0
 
 void
-ClipEditor::hideEvent( QHideEvent* event )
+ArraOverview::hideEvent( QHideEvent* event )
 {
    QWidget::hideEvent( event );
 }
 
 void
-ClipEditor::showEvent( QShowEvent* event )
+ArraOverview::showEvent( QShowEvent* event )
 {
    //DE_DEBUG("")
    QWidget::showEvent( event );
@@ -95,7 +94,7 @@ ClipEditor::showEvent( QShowEvent* event )
 
 
 void
-ClipEditor::mouseMoveEvent( QMouseEvent* event )
+ArraOverview::mouseMoveEvent( QMouseEvent* event )
 {
    m_mouseX = event->x();
    m_mouseY = event->y();
@@ -121,7 +120,7 @@ ClipEditor::mouseMoveEvent( QMouseEvent* event )
 }
 
 void
-ClipEditor::wheelEvent( QWheelEvent* event )
+ArraOverview::wheelEvent( QWheelEvent* event )
 {
    int wheel = event->angleDelta().y();
    DE_DEBUG("MouseWheel = ",wheel )
@@ -156,7 +155,7 @@ ClipEditor::wheelEvent( QWheelEvent* event )
 
 
 void
-ClipEditor::mousePressEvent( QMouseEvent* event )
+ArraOverview::mousePressEvent( QMouseEvent* event )
 {
 //   m_X = event->x();
 //   m_Y = event->y();
@@ -196,7 +195,7 @@ ClipEditor::mousePressEvent( QMouseEvent* event )
 }
 
 void
-ClipEditor::mouseReleaseEvent( QMouseEvent* event )
+ArraOverview::mouseReleaseEvent( QMouseEvent* event )
 {
    m_mouseX = event->x();
    m_mouseY = event->y();
@@ -244,7 +243,7 @@ ClipEditor::mouseReleaseEvent( QMouseEvent* event )
 
 
 void
-ClipEditor::keyPressEvent( QKeyEvent* event )
+ArraOverview::keyPressEvent( QKeyEvent* event )
 {
    //DE_DEBUG("KeyPress(",event->key(),")")
 
@@ -265,7 +264,7 @@ ClipEditor::keyPressEvent( QKeyEvent* event )
 }
 
 void
-ClipEditor::keyReleaseEvent( QKeyEvent* event )
+ArraOverview::keyReleaseEvent( QKeyEvent* event )
 {
    //DE_DEBUG("KeyRelease(",event->key(),")")
 

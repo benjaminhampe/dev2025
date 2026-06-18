@@ -60,7 +60,7 @@ TrackStack::~TrackStack()
 
 void TrackStack::applySkin()
 {
-    DE_TRACE()
+    // DE_TRACE()
     m_quickHelp->applySkin();
     m_midiMeter->applySkin();
     m_audioMeter->applySkin();
@@ -142,7 +142,7 @@ void TrackStack::paintEvent(QPaintEvent* event)
     if (h < 1) return;
 
     QPainter dc(this);
-    dc.fillRect(rect(), QColor(255,200,0));
+    dc.fillRect(rect(), m_windowColor); // QColor(255,200,0)
 
     dc.setRenderHint(QPainter::Antialiasing);
 
