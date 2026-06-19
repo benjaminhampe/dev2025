@@ -316,16 +316,16 @@ struct MidiCentral_Private
         if (n <= 4)
         {
             ShortMidiMessage e;
-            e.status = message->at(0);
-            if (n > 1) e.data1 = message->at(1);
-            if (n > 2) e.data2 = message->at(2);
-            if (n > 3) e.data3 = message->at(3);
+            e.m_status = message->at(0);
+            if (n > 1) e.m_data1 = message->at(1);
+            if (n > 2) e.m_data2 = message->at(2);
+            if (n > 3) e.m_data3 = message->at(3);
 
             // Filter CC LSB controller events
-            uint8_t command = e.status & 0xF0;
+            uint8_t command = e.m_status & 0xF0;
             //uint8_t channel = e.status & 0x0F;
 
-            if (command == 0xB0 && e.data1 > 31 && e.data1 < 64)
+            if (command == 0xB0 && e.m_data1 > 31 && e.m_data1 < 64)
             {
                 DE_WARN("Filtered CC LSB controller event ", e.str())
             }

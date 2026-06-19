@@ -1917,8 +1917,8 @@ public:
     std::optional<Steinberg::Vst::Event>
     createEvent(const midi::ShortMidiMessage& msg, uint16_t isLive = 1 )
     {
-        const uint8_t command = msg.status & 0xF0;
-        const uint8_t channel = msg.status & 0x0F;
+        const uint8_t command = msg.m_status & 0xF0;
+        const uint8_t channel = msg.m_status & 0x0F;
 
         Steinberg::Vst::Event e;
         e.busIndex = 0;
@@ -1926,25 +1926,25 @@ public:
         e.ppqPosition = 0.0;
         e.flags = isLive; // Steinberg::Vst::Event::kIsLive;
 
-        if (command == 0x90 && msg.data2 != 0) // ✔ Note On
+        if (command == 0x90 && msg.m_data2 != 0) // ✔ Note On
         {
             e.type = Steinberg::Vst::Event::kNoteOnEvent;
             e.noteOn.channel    = static_cast<int16_t>(channel);
-            e.noteOn.pitch      = static_cast<int16_t>(msg.data1 & 0x7F);
+            e.noteOn.pitch      = static_cast<int16_t>(msg.m_data1 & 0x7F);
             e.noteOn.tuning     = 0.0f; // 1.f = +1 cent, -1.f = -1 cent
-            e.noteOn.velocity   = static_cast<float>(msg.data2 & 0x7F) / 127.0f;
+            e.noteOn.velocity   = static_cast<float>(msg.m_data2 & 0x7F) / 127.0f;
             e.noteOn.length     = 0;
             e.noteOn.noteId     = -1;
             return e;
         }
         else if (command == 0x80 ||
-                (command == 0x90 && msg.data2 == 0)) // ✔ Note Off
+                (command == 0x90 && msg.m_data2 == 0)) // ✔ Note Off
         {
             e.type = Steinberg::Vst::Event::kNoteOffEvent;
             e.noteOff.channel   = static_cast<int16_t>(channel);
-            e.noteOff.pitch     = static_cast<int16_t>(msg.data1 & 0x7F);
+            e.noteOff.pitch     = static_cast<int16_t>(msg.m_data1 & 0x7F);
             e.noteOff.tuning    = 0.0f; // 1.f = +1 cent, -1.f = -1 cent
-            e.noteOff.velocity  = static_cast<float>(msg.data2 & 0x7F) / 127.0f;
+            e.noteOff.velocity  = static_cast<float>(msg.m_data2 & 0x7F) / 127.0f;
             e.noteOn.length     = 0;
             e.noteOn.noteId     = -1;
             return e;
@@ -1953,8 +1953,8 @@ public:
         {
             e.type = Steinberg::Vst::Event::kPolyPressureEvent;
             e.polyPressure.channel  = channel;
-            e.polyPressure.pitch    = static_cast<int16_t>(msg.data1 & 0x7F);
-            e.polyPressure.pressure = static_cast<float>(msg.data2 & 0x7F) / 127.0f;   // normalize
+            e.polyPressure.pitch    = static_cast<int16_t>(msg.m_data1 & 0x7F);
+            e.polyPressure.pressure = static_cast<float>(msg.m_data2 & 0x7F) / 127.0f;   // normalize
             e.polyPressure.noteId   = -1; // unless you track note IDs
             return e;
         }
@@ -1962,9 +1962,9 @@ public:
         {
             e.type = Steinberg::Vst::Event::kLegacyMIDICCOutEvent;
             e.midiCCOut.channel     = channel;
-            e.midiCCOut.controlNumber = msg.data1; // 64 = sustain on/off
-            e.midiCCOut.value       = static_cast<int8_t>(msg.data2 & 0x7F); // [0-127]
-            e.midiCCOut.value2      = static_cast<int8_t>(msg.data3 & 0x7F); // [0-127]
+            e.midiCCOut.controlNumber = msg.m_data1; // 64 = sustain on/off
+            e.midiCCOut.value       = static_cast<int8_t>(msg.m_data2 & 0x7F); // [0-127]
+            e.midiCCOut.value2      = static_cast<int8_t>(msg.m_data3 & 0x7F); // [0-127]
             return e;
         }
 #if 0
@@ -2070,8 +2070,8 @@ public:
         const int deltaFrames = std::clamp( int(dt * m_sampleRate),
                                             int(0),
                                             int(m_blockSize) - 10);
-        const u8 command = msg.status & 0xF0;
-        const u8 channel = msg.status & 0x0F;
+        const u8 command = msg.m_status & 0xF0;
+        const u8 channel = msg.m_status & 0x0F;
 
         //e.busIndex = 0;
         e->sampleOffset = deltaFrames; // relative to start of current blockSize.

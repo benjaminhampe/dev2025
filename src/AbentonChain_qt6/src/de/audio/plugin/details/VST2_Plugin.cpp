@@ -965,10 +965,10 @@ public:
         e.deltaFrames = deltaFrames;
         e.type        = kVstMidiType;
         e.flags       = kVstMidiEventIsRealtime;
-        e.midiData[0] = static_cast<char>( msg.status);
-        e.midiData[1] = static_cast<char>( msg.data1 );
-        e.midiData[2] = static_cast<char>( msg.data2 );
-        // e.midiData[3] = static_cast<char>( msg.data3 );
+        e.midiData[0] = static_cast<char>( msg.m_status);
+        e.midiData[1] = static_cast<char>( msg.m_data1 );
+        e.midiData[2] = static_cast<char>( msg.m_data2 );
+        // e.midiData[3] = static_cast<char>( msg.m_data3 );
 
         // Special event: All Notes Off (Bn 7B 00):
         /*

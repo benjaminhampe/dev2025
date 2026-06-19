@@ -1952,9 +1952,9 @@ public:
         // m_eventBus.sendShortMidi(static_cast<u32>(deltaFrames),
         //                         msg.status,msg.data1,msg.data2,msg.data3);
 
-        uint8_t command = msg.status & 0xF0;
-        uint8_t channel = msg.status & 0x0F;
-        uint8_t velocity = msg.data2;
+        uint8_t command = msg.m_status & 0xF0;
+        uint8_t channel = msg.m_status & 0x0F;
+        uint8_t velocity = msg.m_data2;
 
         // --- NOTE ON ---
         if (command == 0x90 && velocity > 0)
@@ -1969,7 +1969,7 @@ public:
             ev.note_id    = -1; // let plugin assign voice
             ev.port_index = -1;
             ev.channel    = static_cast<s16>(channel);
-            ev.key        = static_cast<s16>(msg.data1);
+            ev.key        = static_cast<s16>(msg.m_data1);
             ev.velocity   = double(velocity) / 127.0;
 
             //std::lock_guard<std::mutex> lock(mutex);
@@ -1989,7 +1989,7 @@ public:
             ev.note_id    = -1;
             ev.port_index = -1;
             ev.channel    = static_cast<s16>(channel);
-            ev.key        = static_cast<s16>(msg.data1);
+            ev.key        = static_cast<s16>(msg.m_data1);
             ev.velocity   = double(velocity) / 127.0;
 
             //std::lock_guard<std::mutex> lock(mutex);
@@ -2032,9 +2032,9 @@ public:
             ev.header.type      = CLAP_EVENT_MIDI;
             ev.header.flags     = CLAP_EVENT_IS_LIVE;
             ev.port_index       = 0;
-            ev.data[0]          = msg.status;// 0xA0 | channel
-            ev.data[1]          = msg.data1; // note number
-            ev.data[2]          = msg.data2; // pressure
+            ev.data[0]          = msg.m_status;// 0xA0 | channel
+            ev.data[1]          = msg.m_data1; // note number
+            ev.data[2]          = msg.m_data2; // pressure
             m_incomingEvents.push( ev );
         }
         else if (command == 0xB0) // ✔ CC Control Change (7-bit, 14‑bit for two combined MSB+LSB 7-bit events)
@@ -2046,9 +2046,9 @@ public:
             ev.header.type      = CLAP_EVENT_MIDI;
             ev.header.flags     = CLAP_EVENT_IS_LIVE;
             ev.port_index       = 0;
-            ev.data[0]          = msg.status;
-            ev.data[1]          = msg.data1;
-            ev.data[2]          = msg.data2;
+            ev.data[0]          = msg.m_status;
+            ev.data[1]          = msg.m_data1;
+            ev.data[2]          = msg.m_data2;
             m_incomingEvents.push( ev );
         }
         else if (command == 0xC0) // ✔ Program Change (Always 7‑bit)
@@ -2060,8 +2060,8 @@ public:
             ev.header.type      = CLAP_EVENT_MIDI;
             ev.header.flags     = CLAP_EVENT_IS_LIVE;
             ev.port_index       = 0;
-            ev.data[0]          = msg.status;
-            ev.data[1]          = msg.data1;
+            ev.data[0]          = msg.m_status;
+            ev.data[1]          = msg.m_data1;
             ev.data[2]          = 0;
             m_incomingEvents.push( ev );
         }
@@ -2074,8 +2074,8 @@ public:
             ev.header.type      = CLAP_EVENT_MIDI;
             ev.header.flags     = CLAP_EVENT_IS_LIVE;
             ev.port_index       = 0;
-            ev.data[0]          = msg.status;
-            ev.data[1]          = msg.data1; // pressure (0–127)
+            ev.data[0]          = msg.m_status;
+            ev.data[1]          = msg.m_data1; // pressure (0–127)
             ev.data[2]          = 0;
             m_incomingEvents.push( ev );
         }
@@ -2090,10 +2090,10 @@ public:
             ev.header.type      = CLAP_EVENT_MIDI;
             ev.header.flags     = CLAP_EVENT_IS_LIVE;
             ev.port_index       = 0;
-            ev.data[0]          = msg.status;
-            ev.data[1]          = msg.data1;
-            ev.data[2]          = msg.data2;
-            ev.data[3]          = msg.data3;
+            ev.data[0]          = msg.m_status;
+            ev.data[1]          = msg.m_data1;
+            ev.data[2]          = msg.m_data2;
+            ev.data[3]          = msg.m_data3;
             m_incomingEvents.push( ev );
 
             /*

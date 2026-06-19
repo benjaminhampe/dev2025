@@ -1,6 +1,5 @@
 #pragma once
-#include <cstdint>
-#include <sstream>
+#include <string>
 
 /*
 // VST_PLUGIN_WANT_MIDI_OUTPUT
@@ -335,7 +334,7 @@ constexpr static int musicScales[MUSIC_NUM_SCALES][MUSIC_NUM_KEYS] =
 
 // General MIDI stuff
 
-enum EMidiStatus
+enum eMidiStatus
 {
    kNoteOff = 0x80,
    kNoteOn = 0x90,
@@ -359,7 +358,7 @@ enum EMidiStatus
 };
 
 // MIDI Defines :: General Midi Instrument categories
-enum EMidiGM_Category
+enum eMidiGM_Category
 {
    GMCat_Piano = 0,
    GMCat_ChromaticPercussion = 8,
@@ -381,7 +380,7 @@ enum EMidiGM_Category
 };
 
 // MIDI Defines
-enum EMidiDrum
+enum eMidiGM_Drum
 {
    GM_Drum_35_B0_Acoustic_Bassdrum = 35,
    GM_Drum_36_C1_Bass_Drum,
@@ -439,7 +438,7 @@ enum EMidiDrum
 std::string GM_Drum_toString( int drum );
 
 // MIDI Defines General Midi Instruments
-enum EMidiGM
+enum eMidiGM_Instrument
 {
    GM_0_AcousticGrandPiano = 0,
    GM_1_BrightAcousticPiano,
@@ -719,7 +718,7 @@ std::string GM_Instrument_toString( int instrument );
 
 // 64-127 are always 7-bit controllers.
 
-enum EMidiCC
+enum eMidiCC
 {
     // 32 MSB controllers (1st 7-bit part of 14-bit controllers)
     CC_0_BankSelect = 0, // 0-127 MSB
