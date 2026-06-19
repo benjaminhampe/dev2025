@@ -75,8 +75,6 @@ struct Util
 struct MidiUtil
 // =======================================================================
 {
-   DE_CREATE_LOGGER("de.MidiUtil")
-
    static void
    test()
    {
