@@ -22,7 +22,7 @@ struct DE_FFT_pffft_Private
         //, m_input("pffft_input")
         //, m_output("pffft_output")
     {
-        DE_TRACE("")
+        // DE_TRACE("")
     }
 
     ~DE_FFT_pffft_Private()

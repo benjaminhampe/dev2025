@@ -13,13 +13,15 @@ CentralWidget::CentralWidget(QWidget* parent )
     m_header->setVisible(false);
 
     m_arraCentral = new ArraCentral(this);
-    m_arraCentral->setVisible(true);
+    m_arraCentral->setVisible(false);
 
     m_canvas = new GL_Canvas(this);
+    //m_canvas->setVisible(true);
     m_canvasContainer = QWidget::createWindowContainer(m_canvas);
     m_canvasContainer->setParent(this);
     m_canvasContainer->setMinimumSize(320, 240);
-    m_canvasContainer->setVisible(false);
+    m_canvasContainer->setVisible(true);
+    m_canvas->setRenderingEnabled(true);
 
     m_clipEditor = new ClipEditor(this);
     m_clipEditor->setVisible(false);
@@ -63,7 +65,7 @@ void CentralWidget::applySkin()
     m_footer->applySkin();
     m_trackStack->applySkin();
     m_clipEditor->applySkin();
-    //m_canvasContainer->applySkin();
+    m_canvasContainer->update();
     updateLayout();
 }
 
@@ -133,6 +135,7 @@ CentralWidget::updateLayout()
     if (m_canvasContainer->isVisible())
     {
         canvasHeight = h_remain;
+        h_remain -= canvasHeight;
     }
     else
     {
@@ -142,15 +145,13 @@ CentralWidget::updateLayout()
     int x = 0, y = 0;
 
     y = headerHeight;
+    m_arraCentral->setGeometry(x,y,w,arrangeHeight);
+
     m_canvasContainer->setGeometry(x,y,w,canvasHeight);
     //m_canvasContainer->raise();
     // m_canvas->setGeometry(m_canvasContainer->x(),
     //                       m_canvasContainer->y(),w,canvasHeight);
     //m_canvas->raise();
-
-    y = headerHeight + canvasHeight;
-    m_arraCentral->setGeometry(x,y,w,arrangeHeight);
-    //m_arraCentral->raise();
 
     y = h-footerHeight-trackHeight-clipHeight;
     m_clipEditor->setGeometry(x,y,w,clipHeight);
@@ -200,7 +201,7 @@ bool CentralWidget::event(QEvent* e)
 {
     if (e->type() == QEvent::LayoutRequest)
     {
-        DE_BENNI("Got QEvent::LayoutRequest")
+        //DE_BENNI("Got QEvent::LayoutRequest")
         updateLayout();
         return true;
     }

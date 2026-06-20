@@ -459,7 +459,7 @@ struct VideoDriver
     bool                open(int w, int h);
     void                close();
     void                resize( int w, int h );
-    void                beginRender( const glm::vec4& clearColor = glm::vec4(0) );
+    bool                beginRender( const glm::vec4& clearColor = glm::vec4(0) );
     void                endRender();
     void                beginRender( IRenderTarget* rt, const glm::vec4& clearColor = glm::vec4(0) );
     void                endRender( IRenderTarget* rt );

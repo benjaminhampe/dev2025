@@ -32,7 +32,7 @@ Track::Track()
     , m_chainStart(nullptr)
     , m_chainEnd(nullptr)
 {
-    DE_TRACE("")
+    //DE_TRACE("")
 }
 
 Track::~Track()

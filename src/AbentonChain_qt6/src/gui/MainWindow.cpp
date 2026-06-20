@@ -55,11 +55,29 @@ MainWindow::MainWindow(QWidget *parent)
     connect(m_body->m_footer, &Footer::sig_showArrangement, this,
             [=] (bool checked)
             {
+                // m_body->m_arraCentral->setVisible(checked);
+                // if (checked)
+                // {
+                //     m_body->m_canvasContainer->setVisible(false);
+                // }
+                // m_body->updateLayout();
                 m_body->m_arraCentral->setVisible(checked);
+                m_body->m_footer->m_bArraVisible = checked;
                 if (checked)
                 {
+                    // Save some collecting CPU cycles when drawing is disabled
+                    m_body->m_canvas->setRenderingEnabled(false);
                     m_body->m_canvasContainer->setVisible(false);
+                    App::instance()->getSampleCollector()->setBypassed(true);
                 }
+                else
+                {
+                    m_body->m_canvasContainer->setVisible(true);
+                    m_body->m_canvas->setRenderingEnabled(true);
+                    App::instance()->getSampleCollector()->setBypassed(false);
+
+                }
+
                 m_body->updateLayout();
                 updateMenuView();
             });
@@ -101,9 +119,25 @@ MainWindow::MainWindow(QWidget *parent)
     connect(m_actShowArrange, &QAction::triggered, this, [this](bool checked)
     {
         m_body->m_arraCentral->setVisible(checked);
-        m_body->updateLayout();
-    });
+        m_body->m_footer->m_bArraVisible = checked;
+        if (checked)
+        {
+            // Save some collecting CPU cycles when drawing is disabled
+            m_body->m_canvas->setRenderingEnabled(false);
+            m_body->m_canvasContainer->setVisible(false);
+            App::instance()->getSampleCollector()->setBypassed(true);
+        }
+        else
+        {
+            m_body->m_canvasContainer->setVisible(true);
+            m_body->m_canvas->setRenderingEnabled(true);
+            App::instance()->getSampleCollector()->setBypassed(false);
+        }
 
+        m_body->updateLayout();
+
+    });
+/*
     connect(m_actShowCanvas, &QAction::triggered, this, [this](bool checked)
     {
         if (checked)
@@ -121,7 +155,7 @@ MainWindow::MainWindow(QWidget *parent)
         }
         m_body->updateLayout();
     });
-
+*/
     connect(m_actShowPianoRoll, &QAction::triggered, this, [this](bool checked)
     {
         m_body->m_clipEditor->setVisible(checked);
@@ -193,9 +227,9 @@ void MainWindow::updateMenuView()
     m_actShowArrange->setChecked(m_body->m_arraCentral->isVisible());
     m_actShowArrange->blockSignals(false);
 
-    m_actShowCanvas->blockSignals(true);
-    m_actShowCanvas->setChecked(m_body->m_canvasContainer->isVisible());
-    m_actShowCanvas->blockSignals(false);
+    // m_actShowCanvas->blockSignals(true);
+    // m_actShowCanvas->setChecked(m_body->m_canvasContainer->isVisible());
+    // m_actShowCanvas->blockSignals(false);
 
     m_actShowPianoRoll->blockSignals(true);
     m_actShowPianoRoll->setChecked(m_body->m_clipEditor->isVisible());
@@ -215,11 +249,11 @@ void MainWindow::createMenuView()
     m_actShowHeader = new QAction("Show Header/Transport", this);
     m_actShowHeader->setCheckable(true);
 
-    m_actShowArrange = new QAction("Show Arrangement/Mixer", this);
+    m_actShowArrange = new QAction("Show Arrangement/Hide 3D canvas", this);
     m_actShowArrange->setCheckable(true);
 
-    m_actShowCanvas = new QAction("Show 3D Vizualization", this);
-    m_actShowCanvas->setCheckable(true);
+    // m_actShowCanvas = new QAction("Show 3D Vizualization", this);
+    // m_actShowCanvas->setCheckable(true);
 
     m_actShowPianoRoll = new QAction("Show ClipEditor/PianoRoll", this);
     m_actShowPianoRoll->setCheckable(true);
@@ -234,8 +268,8 @@ void MainWindow::createMenuView()
     menuView->addAction(m_actShowHeader);
     menuView->addSeparator();
     menuView->addAction(m_actShowArrange);
-    menuView->addSeparator();
-    menuView->addAction(m_actShowCanvas);
+    // menuView->addSeparator();
+    // menuView->addAction(m_actShowCanvas);
     menuView->addSeparator();
     menuView->addAction(m_actShowPianoRoll);
     menuView->addAction(m_actShowChain);

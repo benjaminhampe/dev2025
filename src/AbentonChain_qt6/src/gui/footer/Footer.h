@@ -15,12 +15,13 @@ class Footer : public QWidget
 // ============================================================================
 {
     Q_OBJECT
+public:
     bool m_bHelpVisible{ false };
     bool m_bMidiVisible{ false };
     bool m_bClipVisible{ false };
     bool m_bTrackVisible{ true };
-    bool m_bArraVisible{ true };
-
+    bool m_bArraVisible{ false };
+protected:
     struct QuickHelp
     {
         QRect rc;

@@ -77,12 +77,12 @@ void GL_Window_WGL::resizeEvent(QResizeEvent* e)
 {
     QWindow::resizeEvent(e);   // always first
 
-    if (!isVisible()) return;
+    //if (!isVisible()) return;
     const int w = e->size().width();
     const int h = e->size().height();
-    if (w<1) return;
-    if (h<1) return;
-    if (!isExposed()) return;
+    // if (w<1) return;
+    // if (h<1) return;
+    // if (!isExposed()) return;
     if (!_d->hDC) return;
     if (!_d->hGLRC) return;
     wglMakeCurrent(_d->hDC, _d->hGLRC);

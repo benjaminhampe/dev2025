@@ -3,7 +3,7 @@
 namespace de {
 namespace gpu {
 
-Camera::Camera() 
+Camera::Camera()
     : m_logLevel(0)
     , m_IsOrtho( false )
     , m_IsInputEnabled( true )
@@ -105,11 +105,11 @@ void Camera::setUp( V3 up )
 void Camera::setPos( T x, T y, T z ) { setPos( {x,y,z} ); }
 void Camera::setDir( T x, T y, T z ) { setDir( {x,y,z} ); }
 void Camera::setTarget( T x, T y, T z ) { setTarget( {x,y,z} ); }
-void Camera::setUp(  T x, T y, T z ) { setUp( {x,y,z} ); }    
+void Camera::setUp(  T x, T y, T z ) { setUp( {x,y,z} ); }
 void Camera::setMoveSpeed( T velocity ) { m_MoveSpeed = velocity; }
 void Camera::setStrafeSpeed( T velocity ) { m_StrafeSpeed = velocity; }
 void Camera::setUpSpeed( T velocity ) { m_UpSpeed = velocity; }
-void Camera::setTurnSpeed( T velocity ) { m_TurnSpeed = velocity; }   
+void Camera::setTurnSpeed( T velocity ) { m_TurnSpeed = velocity; }
 
 // [ViewMatrix]
 void Camera::move( T dt )
@@ -278,7 +278,7 @@ Camera::T Camera::getNearValue() const { return m_ZNear; }
 Camera::T Camera::getFarValue() const { return m_ZFar; }
 Camera::T Camera::getFOV() const { return m_Fovy; }
 
-    
+
 // [Viewport]
 void Camera::setViewport( Recti const & viewport )
 {
@@ -355,9 +355,10 @@ glm::mat4 buildLookAtLH(const glm::vec3& pos,
 // [Update]
 void Camera::update()
 {
+    if (getWidth() < 1 || getHeight() < 1) return;
+
     if ( m_IsDirtyView )
     {
-
         m_ViewMatrix = buildLookAtLH( m_Pos, m_Target );
 
 #if 0

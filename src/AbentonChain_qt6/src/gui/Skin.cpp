@@ -229,6 +229,6 @@ computeBestFontHeight(QFont baseFont, int maxHeight)
     }
 
     int pixelSize = tf.pixelSize();
-    DE_OK("Computed best Font.pixelSize = ",pixelSize," after ",i," tries")
+    //DE_OK("Computed best Font.pixelSize = ",pixelSize," after ",i," tries")
     return pixelSize;
 }

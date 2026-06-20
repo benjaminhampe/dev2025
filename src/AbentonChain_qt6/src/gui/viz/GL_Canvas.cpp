@@ -99,7 +99,7 @@ void GL_Canvas::startFpsTimer()
     }
     auto ms = 1000 / 60;
     m_fpsTimerId = startTimer(ms - 1);
-    DE_OK("Started FPS update timer ", ms)
+    // DE_OK("Started FPS update timer ", ms)
 }
 
 void GL_Canvas::stopFpsTimer()
@@ -111,7 +111,7 @@ void GL_Canvas::stopFpsTimer()
     }
     killTimer(m_fpsTimerId);
     m_fpsTimerId = 0;
-    DE_OK("Stopped FPS update timer")
+    // DE_OK("Stopped FPS update timer")
 }
 
 void GL_Canvas::initializeGL()
@@ -124,7 +124,7 @@ void GL_Canvas::initializeGL()
 void
 GL_Canvas::resizeGL(int w, int h)
 {
-    if (w<1 || h<1) return;
+    //if (!isExposed() || w<1 || h<1) return;
 
     if (m_driver)
     {
@@ -135,7 +135,7 @@ GL_Canvas::resizeGL(int w, int h)
 void
 GL_Canvas::paintGL()
 {
-    if (!isVisible() || width()<1 || height()<1) return;
+    if (!isExposed() || width()<1 || height()<1) return;
 
     //=======================
     // No RenderTarget
@@ -179,32 +179,32 @@ GL_Canvas::paintGL()
     //=======================
     // No RenderTarget
     //=======================
-    m_driver->beginRender();
-
-    auto camera = m_driver->getCamera();
-    if (camera)
+    if (m_driver->beginRender())
     {
-        int w = m_driver->getRenderWidth();
-        int h = m_driver->getRenderHeight();
-        camera->setScreenSize(w,h);
-        camera->update();
+        // auto camera = m_driver->getCamera();
+        // if (camera)
+        // {
+        //     int w = m_driver->getRenderWidth();
+        //     int h = m_driver->getRenderHeight();
+        //     camera->setScreenSize(w,h);
+        //     camera->update();
+        // }
+
+        m_driver->getSkyboxRenderer()->render();
+
+        m_renderer.paintGL();
+
+        // int w = m_driver->getRenderWidth();
+        // int h = m_driver->getRenderHeight();
+        // rend->draw2D(de::Rectf(0,0,w,h),tex,true);
+
+        if (m_bShowPerfOverlay)
+        {
+            m_driver->draw2DPerfOverlay();
+            draw2DFftOverlay();
+        }
+        m_driver->endRender();
     }
-
-    m_driver->getSkyboxRenderer()->render();
-
-    m_renderer.paintGL();
-
-    // int w = m_driver->getRenderWidth();
-    // int h = m_driver->getRenderHeight();
-    // rend->draw2D(de::Rectf(0,0,w,h),tex,true);
-
-    if (m_bShowPerfOverlay)
-    {
-        m_driver->draw2DPerfOverlay();
-        draw2DFftOverlay();
-    }
-    m_driver->endRender();
-
 #else
     //=======================
     // Draw to RenderTarget
@@ -328,7 +328,7 @@ GL_Canvas::mouseMoveEvent( QMouseEvent* event )
 
     if (m_bFirstMouse)
     {
-        DE_BENNI("firstMouse(",mx,",",my,")")
+        // DE_BENNI("firstMouse(",mx,",",my,")")
         m_lastMouseX = mx;
         m_lastMouseY = my;
         m_bFirstMouse = false;

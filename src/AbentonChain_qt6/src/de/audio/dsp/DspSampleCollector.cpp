@@ -75,7 +75,7 @@ DspSampleCollector::DspSampleCollector()
     //, m_accum_vec_in("samcoll_accum_vec_in")
     //, m_accum_vec_out("samcoll_accum_vec_out")
 {
-    DE_TRACE("")
+    //DE_TRACE("")
 
     m_accum_win.setFunction(WindowFunction::Blackman);
 

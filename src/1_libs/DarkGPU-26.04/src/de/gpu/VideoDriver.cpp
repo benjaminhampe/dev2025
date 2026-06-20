@@ -563,11 +563,11 @@ void VideoDriver::close()
 
 void VideoDriver::resize( int w, int h )
 {
-    if (w < 1 || h < 1)
-    {
-        DE_ERROR("")
-        return;
-    }
+    // if (w < 1 || h < 1)
+    // {
+    //     DE_ERROR("")
+    //     return;
+    // }
 
     m_screenWidth = w;
     m_screenHeight = h;
@@ -579,8 +579,18 @@ void VideoDriver::resize( int w, int h )
     }
 }
 
-void VideoDriver::beginRender(const glm::vec4& clearColor)
+bool VideoDriver::beginRender(const glm::vec4& clearColor)
 {
+    const int w = getScreenWidth();
+    const int h = getScreenHeight();
+    if (w < 1 || h < 1) return false;
+
+    if (getCamera())
+    {
+        getCamera()->setScreenSize(w,h);
+        getCamera()->update();
+    }
+
     // DE_BENNI("beginRender()")
     // wglMakeCurrent(ps.hdc, self->_d->glrc);
 GL_VALIDATE
@@ -595,8 +605,6 @@ GL_VALIDATE
         m_rt = nullptr;
     }
 
-    const int w = getScreenWidth();
-    const int h = getScreenHeight();
     glDisable(GL_SCISSOR_TEST);
 GL_VALIDATE
     // glScissor(0,0,w,h);
@@ -618,6 +626,7 @@ GL_VALIDATE
     //     camera->setScreenSize(w,h);
     //     camera->update();
     // }
+    return true;
 }
 
 void VideoDriver::endRender()

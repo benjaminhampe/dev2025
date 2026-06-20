@@ -37,7 +37,7 @@ private:
     // createMenuView
     QAction* m_actShowHeader{ nullptr };
     QAction* m_actShowArrange{ nullptr };
-    QAction* m_actShowCanvas{ nullptr };
+    //QAction* m_actShowCanvas{ nullptr };
     QAction* m_actShowPianoRoll{ nullptr };
     QAction* m_actShowQuickHelp{ nullptr };
     QAction* m_actShowChain{ nullptr };
