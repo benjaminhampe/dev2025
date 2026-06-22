@@ -33,11 +33,11 @@ public:
     void dsp_clearInputSignals() override;
 
 
-    const Track* getTrack() const override;
+    const DspTrack* getTrack() const override;
 
-    Track* getTrack() override;
+    DspTrack* getTrack() override;
 
-    void setTrack(Track* track) override;
+    void setTrack(DspTrack* track) override;
 
 
     u32 getPluginId() const override;

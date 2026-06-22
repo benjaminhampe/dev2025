@@ -52,6 +52,7 @@ CentralWidget::CentralWidget(QWidget* parent )
     connect(App::instance().get(), &App::skinChanged,
             this, &CentralWidget::applySkin);
 
+    App::instance()->m_centralWidget = this;
 }
 
 CentralWidget::~CentralWidget()

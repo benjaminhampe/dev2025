@@ -7,15 +7,15 @@ ClipEditor::ClipEditor(QWidget* parent )
 {
    setObjectName( "ClipEditor" );
    setMouseTracking( true );
-   
+
    m_pianoRoll = new PianoRoll(this);
-   
+
    applySkin();
 }
 
-void ClipEditor::setClip( Clip* clip )
+void ClipEditor::setClip(std::shared_ptr<de::session::Clip> clip)
 {
-    if ( m_clip != clip )
+    if (m_clip != clip)
     {
         m_clip = clip;
         m_pianoRoll->setClip(clip);
@@ -64,7 +64,7 @@ void ClipEditor::paintEvent( QPaintEvent* event )
     if (h < 1) return;
     QPainter dc( this );
     dc.fillRect(rect(), m_windowColor );
-    
+
     int m = m_margin;
     int dx = std::max(0, w - 2*m);
     int dy = std::max(0, h - 2*m);

@@ -1,4 +1,4 @@
-#include <de/audio/fft/DE_FFT_generic.h>
+#include <de/math/fft/DE_FFT_generic.h>
 
 /*
 ┌────────────────────────────────────────────────────────────────────────────┐
@@ -17,7 +17,7 @@
 */
 
 namespace de {
-namespace audio {
+namespace math {
 namespace fft {
 
 void DE_FFT_generic::resize(size_t n)
@@ -233,7 +233,7 @@ void DE_FFT_generic::ifft(const std::vector<float>& spectrum, std::vector<float>
 }
 
 } // end namespace fft.
-} // end namespace audio.
+} // end namespace math.
 } // end namespace de.
 
 

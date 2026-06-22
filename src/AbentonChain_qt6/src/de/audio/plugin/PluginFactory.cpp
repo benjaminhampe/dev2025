@@ -108,7 +108,7 @@ SharedPlugin PluginFactory::createPlugin( std::string uri )
         }
         else
         {
-            plugin->setPluginId( GetFreeId() );
+            plugin->setPluginId( GetFreePluginId() );
             // m_plugins.emplace_back( plugin );
         }
     }

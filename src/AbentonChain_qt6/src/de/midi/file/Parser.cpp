@@ -12,6 +12,20 @@ Parser::Parser()
 
 bool Parser::parse( std::string const & uri )
 {
+    auto ext = FileSystem::fileSuffix(uri);
+    if (ext != "mid" && ext != "midi")
+    {
+        DE_ERROR("No a supported file extension (*.mid, *.midi)")
+        return false;
+    }
+
+    auto fileSize = FileSystem::fileSize(uri);
+    if (fileSize > 10 * 1024 * 1024)
+    {
+        DE_ERROR("MidiFile must be max. 10MB")
+        return false;
+    }
+
     // (c) 2014 by <benjaminhampe@gmx.de>
     de::PerformanceTimer perf;
     perf.start();

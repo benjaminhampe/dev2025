@@ -1,19 +1,10 @@
-#include <de/audio/Track.h>
+#include <de/audio/dsp/DspTrack.h>
 #include <App.h>
 
 namespace de {
 namespace audio {
 
-// static
-// ===========================================================================
-u32 Track::GetFreeTrackId()
-// ===========================================================================
-{
-    static u32 s_id = 0;
-    return ++s_id;
-}
-
-std::string Track::debugStr() const
+std::string DspTrack::debugStr() const
 {
     std::ostringstream o;
     o << "[" << m_plugins.size() << "]{";
@@ -26,16 +17,15 @@ std::string Track::debugStr() const
     return o.str();
 }
 
-Track::Track()
-    : m_audioCentral(nullptr)
-    , m_trackId(GetFreeTrackId())
+DspTrack::DspTrack(de::session::Track* parent)
+    : m_track{ parent }
     , m_chainStart(nullptr)
     , m_chainEnd(nullptr)
 {
     //DE_TRACE("")
 }
 
-Track::~Track()
+DspTrack::~DspTrack()
 {
     if (!m_plugins.empty())
     {
@@ -44,7 +34,7 @@ Track::~Track()
     }
 }
 
-void Track::cleanupAll()
+void DspTrack::cleanupAll()
 {
     DE_DEBUG("Delete (",m_plugins.size(),") Plugins...")
     for (size_t i = 0; i < m_plugins.size(); ++i)
@@ -65,7 +55,7 @@ void Track::cleanupAll()
     cleanupTrash();
 }
 
-void Track::cleanupTrash()
+void DspTrack::cleanupTrash()
 {
     DE_DEBUG("TrashBin: Delete (",m_trashBin.size(),") Plugins...")
     for (size_t i = 0; i < m_trashBin.size(); ++i)
@@ -84,20 +74,11 @@ void Track::cleanupTrash()
     m_trashBin.clear();
 }
 
-void
-Track::setAudioCentral( IAudioCentral* audioCentral)
-{
-    m_audioCentral = audioCentral;
-}
-
-u32
-Track::getTrackId() const { return m_trackId; }
-
-void
-Track::setTrackId(u32 trackId) { m_trackId = trackId; }
-
-std::string
-Track::getTrackName() const { return m_trackName; }
+// void
+// DspTrack::setAudioCentral( IAudioCentral* audioCentral)
+// {
+//     m_audioCentral = audioCentral;
+// }
 
 bool containsPlugin( const std::vector<SharedPlugin>& plugins,
                      const SharedPlugin& searchPlugin)
@@ -111,7 +92,7 @@ bool containsPlugin( const std::vector<SharedPlugin>& plugins,
 }
 
 void
-Track::setPlugins( std::vector<SharedPlugin> newPlugins )
+DspTrack::setPlugins( std::vector<SharedPlugin> newPlugins )
 {
     App::instance()->stopAudio();
 
@@ -134,7 +115,7 @@ Track::setPlugins( std::vector<SharedPlugin> newPlugins )
 
     m_plugins.swap(newPlugins);
 
-    for (auto & plugin : m_plugins)
+    for (SharedPlugin & plugin : m_plugins)
     {
         plugin->setTrack(this);
     }
@@ -146,7 +127,7 @@ Track::setPlugins( std::vector<SharedPlugin> newPlugins )
 
 /*
 void
-Track::removePlugin( IPlugin* plugin )
+DspTrack::removePlugin( IPlugin* plugin )
 {
     if (!plugin)
     {
@@ -177,7 +158,7 @@ Track::removePlugin( IPlugin* plugin )
 */
 
 SharedPlugin
-Track::createPlugin( std::string uri, int index )
+DspTrack::createPlugin( std::string uri, int index )
 {
     SharedPlugin plugin = App::instance()->getPluginFactory().createPlugin(uri);
     if (!plugin)
@@ -223,7 +204,7 @@ Track::createPlugin( std::string uri, int index )
     return plugin;
 }
 
-// void Track::deregisterMidiListeners()
+// void DspTrack::deregisterMidiListeners()
 // {
 //     for (IPlugin* p : m_plugins)
 //     {
@@ -231,7 +212,7 @@ Track::createPlugin( std::string uri, int index )
 //     }
 // }
 
-void Track::dumpChain()
+void DspTrack::dumpChain()
 {
     // <debug>
     std::vector< std::string > pluginNames;
@@ -266,7 +247,7 @@ void Track::dumpChain()
     // </debug>
 }
 
-void Track::updateDspChain()
+void DspTrack::updateDspChain()
 {
     DE_TRACE("")
 
@@ -332,7 +313,52 @@ void Track::updateDspChain()
     dumpChain();
 }
 
-void Track::dsp_read(f64 pts, u32 frames, u32 sampleRate,
+
+bool DspTrack::swapPlugins(int dragIndex, int dropIndex)
+{
+    if (dragIndex == dropIndex)
+    {
+        return false;
+    }
+
+    const int n = static_cast<int>(m_plugins.size());
+    if (n < 2)
+    {
+        return false;
+    }
+
+    if (dropIndex - dragIndex >= 2)
+    {
+        dropIndex--; // swap(dragIndex, dropIndex - 1);
+    }
+
+    // if (dragIndex - dropIndex >= 1)
+    // {
+    //     return true; // swap(dragIndex, dropIndex);
+    // }
+
+    if (dragIndex < 0 || dragIndex >= n)
+    {
+        // qDebug() << "Invalid drag index " << drag << " of " << n;
+        return false;
+    }
+
+    if (dropIndex < 0 || dropIndex >= n)
+    {
+        // qDebug() << "Invalid drop index " << drop << " of " << n;
+        return false;
+    }
+
+    // qDebug() << "Swap index " << (drag+1) << " <-> "  << (drop+1) << " of " << n;
+
+    std::swap( m_plugins[ dragIndex ], m_plugins[ dropIndex ] );
+
+    // emit reorderedWidgets();
+
+    return true;
+}
+
+void DspTrack::dsp_read(f64 pts, u32 frames, u32 sampleRate,
             f32* __restrict__ L,
             f32* __restrict__ R )
 {
@@ -342,7 +368,7 @@ void Track::dsp_read(f64 pts, u32 frames, u32 sampleRate,
     }
 }
 
-void Track::dsp_init(u64 frames, u32 channels, u32 sampleRate)
+void DspTrack::dsp_init(u64 frames, u32 channels, u32 sampleRate)
 {
     if (m_chainEnd)
     {
@@ -350,28 +376,28 @@ void Track::dsp_init(u64 frames, u32 channels, u32 sampleRate)
     }
 }
 
-u32 Track::dsp_getInputSignalCount() const
+u32 DspTrack::dsp_getInputSignalCount() const
 {
     return 0;
 }
 
-IDspChainElement* Track::dsp_getInputSignal(int i)
+IDspChainElement* DspTrack::dsp_getInputSignal(int i)
 {
     DE_ERROR("Should not be called!")
     return nullptr;
 }
 
-void Track::dsp_setInputSignal(IDspChainElement* input, int i)
+void DspTrack::dsp_setInputSignal(IDspChainElement* input, int i)
 {
     DE_ERROR("Should not be called, use setPluginIds()!")
 }
 
-void Track::dsp_clearInputSignals()
+void DspTrack::dsp_clearInputSignals()
 {
     DE_ERROR("Should not be called, use setPluginIds()!")
 }
 
-// void Track::onMidiMessage(f64 pts, const midi::MidiMessage& msg)
+// void DspTrack::onMidiMessage(f64 pts, const midi::MidiMessage& msg)
 // {
 //     if (m_chainStart)
 //     {
@@ -379,7 +405,7 @@ void Track::dsp_clearInputSignals()
 //     }
 // }
 
-// void Track::onShortMidiMessage(f64 pts, const midi::ShortMidiMessage& msg)
+// void DspTrack::onShortMidiMessage(f64 pts, const midi::ShortMidiMessage& msg)
 // {
 //     if (m_chainStart)
 //     {

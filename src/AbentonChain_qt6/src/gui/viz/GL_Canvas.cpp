@@ -268,7 +268,7 @@ void GL_Canvas::draw2DFftOverlay()
 
     auto s0 = dbStr("SampleRate.Hz = ",p2->getSampleRate());
     auto s1 = dbStr("FFT-Size = ",p1->fftSize());
-    auto s2 = dbStr("FFT-Window = ",de::audio::WindowFunction::getString(p1->windowFunc()));
+    auto s2 = dbStr("FFT-Window = ",de::math::WindowFunction::getString(p1->windowFunc()));
     auto s3 = dbStr("Matrix3D.Cols = ",p1->cols());
     auto s4 = dbStr("Matrix3D.Rows = ",p1->rows());
     auto s5 = dbStr("BlockSize.Now = ",p2->getBlockSizeNow());

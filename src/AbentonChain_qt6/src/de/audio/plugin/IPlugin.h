@@ -26,6 +26,7 @@ namespace de {
 namespace audio {
 
 class IPlugin;
+class DspTrack;
 
 // ================================================================
 struct Parameter
@@ -124,8 +125,6 @@ struct Program
 typedef std::vector<Program> Programs;
 
 
-class Track;
-
 // ===========================================================================
 class IPlugin : public IDspChainElement,
                  public midi::IMidiMessageListener
@@ -147,11 +146,11 @@ public:
 
     // virtual ~IPlugin() {}
 
-    virtual const Track* getTrack() const = 0;
+    virtual const DspTrack* getTrack() const = 0;
 
-    virtual Track* getTrack() = 0;
+    virtual DspTrack* getTrack() = 0;
 
-    virtual void setTrack(Track* track) = 0;
+    virtual void setTrack(DspTrack* track) = 0;
 
 
     virtual u32 getPluginId() const = 0;

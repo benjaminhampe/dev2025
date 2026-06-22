@@ -319,7 +319,7 @@ struct MidiFile
     float m_speed;
     TempoMap m_tempoMap;
     std::vector< Track > m_tracks;  // Up to 65536 tracks possible?!
-
+    bool m_bParsed;
     MidiFile();
     double getDurationInSec() const;
     size_t computeMemoryConsumption() const;

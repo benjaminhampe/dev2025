@@ -18,7 +18,7 @@ protected:
     bool eventFilter(QObject *obj, QEvent *event) override;
     void keyPressEvent( QKeyEvent* event ) override;
     void keyReleaseEvent( QKeyEvent* event ) override;
-
+    void showEvent(QShowEvent* event) override;
 private:
     void zoomIn();
     void zoomOut();

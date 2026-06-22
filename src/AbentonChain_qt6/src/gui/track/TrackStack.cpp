@@ -20,7 +20,7 @@ TrackStack::TrackStack(QWidget* parent)
     m_quickHelp->setVisible(false);
     m_midiMeter = new MidiMeter(this);
     m_audioMeter = new AudioMeter(this);
-    m_trackWidget = new Track(App::instance()->getTrack(0), this);
+    m_trackWidget = new TrackWidget(this);
 
     //m_lastQuickHelpWidth = m_baseQuickHelpWidth;
 
@@ -29,7 +29,7 @@ TrackStack::TrackStack(QWidget* parent)
     // (needed because sizeHint changes dynamically)
     //m_trackWidget->installEventFilter(this);
 
-    connect(m_trackWidget, &Track::newOverview,
+    connect(m_trackWidget, &TrackWidget::newOverview,
         this, [=] (QPixmap pix)
         {
             // DE_BENNI("newTrackOverview")

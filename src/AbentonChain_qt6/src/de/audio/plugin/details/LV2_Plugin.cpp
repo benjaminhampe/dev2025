@@ -184,7 +184,7 @@ public:
     LilvInstance* m_instance;
     IDspChainElement* m_inputSignal;
     PluginEditorWindow* m_editor;
-    Track* m_track;
+    DspTrack* m_track;
 
     // Ports
     struct PortInfo {
@@ -567,11 +567,11 @@ void LV2_Plugin::setBypassed( bool bBypassed )
 
 // ===================================================
 
-const Track* LV2_Plugin::getTrack() const { return _d->m_track; }
+const DspTrack* LV2_Plugin::getTrack() const { return _d->m_track; }
 
-Track* LV2_Plugin::getTrack() { return _d->m_track; }
+DspTrack* LV2_Plugin::getTrack() { return _d->m_track; }
 
-void LV2_Plugin::setTrack(Track* track) { _d->m_track = track; }
+void LV2_Plugin::setTrack(DspTrack* track) { _d->m_track = track; }
 
 // ===================================================
 

@@ -14,7 +14,7 @@ struct Player_Impl
     u32 m_pluginId = 0;
     bool m_bIsPluginOpen = false;
     bool m_bIsBypassed = false;
-    Track* m_track = nullptr;
+    DspTrack* m_track = nullptr;
     PluginEditorWindow* m_editor = nullptr;
     IDspChainElement* m_inputSignal = nullptr;
 
@@ -265,11 +265,11 @@ void Player::setBypassed( bool bBypassed )
 
 // ===================================================
 
-const Track* Player::getTrack() const { return _d->m_track; }
+const DspTrack* Player::getTrack() const { return _d->m_track; }
 
-Track* Player::getTrack() { return _d->m_track; }
+DspTrack* Player::getTrack() { return _d->m_track; }
 
-void Player::setTrack(Track* track) { _d->m_track = track; }
+void Player::setTrack(DspTrack* track) { _d->m_track = track; }
 
 // ===================================================
 

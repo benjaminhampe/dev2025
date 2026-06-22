@@ -182,6 +182,17 @@ MainWindow::~MainWindow()
     //DE_TRACE("")
 }
 
+void MainWindow::showEvent(QShowEvent* e)
+{
+    QMainWindow::showEvent(e);
+
+    static bool first = true;
+    if (first) {
+        first = false;
+        App::instance()->m_session.newSession();   // your session init
+    }
+}
+
 void MainWindow::createMenuFile()
 {
     QAction* actExitProgram = new QAction("Exit Program", this);
@@ -378,15 +389,15 @@ void MainWindow::createMenuCanvas()
         group->setExclusive(true);
 
         auto currWinFunc = App::instance()->getSampleCollector()->windowFunc();
-        for (int i = 0; i < de::audio::WindowFunction::eFuncMax; ++i)
+        for (int i = 0; i < de::math::WindowFunction::eFuncMax; ++i)
         {
-            auto func = (de::audio::WindowFunction::eFunc)i;
+            auto func = (de::math::WindowFunction::eFunc)i;
             //auto ico = QApplication::style()->standardIcon(QStyle::SP_ArrowRight);
             int w = 64;
             int h = 64;
-            auto svg = de::audio::WindowFunction::createSVG(func,w,h,256);
+            auto svg = de::math::WindowFunction::createSVG(func,w,h,256);
             auto ico = toQIcon(QString::fromStdString(svg),w,h);
-            auto dat = QString::fromStdString(de::audio::WindowFunction::getString(func));
+            auto dat = QString::fromStdString(de::math::WindowFunction::getString(func));
             auto a = menuWinFunc->addAction(ico,dat);
             a->setCheckable(true);
             a->setData(i);
@@ -407,8 +418,8 @@ void MainWindow::createMenuCanvas()
         // Connect to selection changes
         connect(group, &QActionGroup::triggered, this, [=](QAction* a)
         {
-            auto t = (de::audio::WindowFunction::eFunc)a->data().toInt();
-            DE_WARN("Got ", de::audio::WindowFunction::getString(t))
+            auto t = (de::math::WindowFunction::eFunc)a->data().toInt();
+            DE_WARN("Got ", de::math::WindowFunction::getString(t))
             App::instance()->getSampleCollector()->setWindowFunc(t);
         });
     }

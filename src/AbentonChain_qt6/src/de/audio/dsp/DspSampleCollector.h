@@ -1,8 +1,8 @@
 #pragma once
 #include <de/audio/dsp/IDspChainElement.h>
-//#include <de/audio/fft/approx_math.h>
-#include <de/audio/fft/WindowFunction.h>
-#include <de/audio/fft/DE_FFT_pffft.h>
+//#include <de/math/fft/approx_math.h>
+#include <de/math/fft/WindowFunction.h>
+#include <de/math/fft/DE_FFT_pffft.h>
 
 namespace de {
 namespace audio {
@@ -34,7 +34,7 @@ class DspSampleCollector : public IDspChainElement
     // AlignedFloatShiftMatrix m_raw_fft_matrix;
 
     // shiftVector FFT
-    WindowFunction m_accum_win;
+    math::WindowFunction m_accum_win;
     //AlignedFloatShiftVector m_accum;
     AlignedFloatVector m_accum_ori;
     AlignedFloatVector m_accum_tmp;
@@ -76,7 +76,7 @@ public:
     uint32_t fftSize() const { return m_fftSize; }
     uint32_t cols() const { return m_cols; }
     uint32_t rows() const { return m_rows; }
-    WindowFunction::eFunc windowFunc() const { return m_accum_win.function(); }
+    math::WindowFunction::eFunc windowFunc() const { return m_accum_win.function(); }
 
     void setBypassed( bool bBypassed )
     {
@@ -90,7 +90,7 @@ public:
 
     void setWindowFunc( int windowFunc )
     {
-        m_accum_win.setFunction((WindowFunction::eFunc)windowFunc);
+        m_accum_win.setFunction((math::WindowFunction::eFunc)windowFunc);
     }
 
     void setFftSize( uint32_t fftSize )

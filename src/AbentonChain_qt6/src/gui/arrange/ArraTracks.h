@@ -11,10 +11,9 @@ public:
     explicit ArraTracks(QWidget* parent = 0);
     void applySkin();
     void updateLayout();
-    
+    void updateFromSession();
+
 public slots:
-    //void setClip( Clip* clip );
-        
 protected:
     void resizeEvent( QResizeEvent* event ) override;
     void paintEvent( QPaintEvent* event ) override;
@@ -27,12 +26,11 @@ protected:
     void mouseReleaseEvent( QMouseEvent* event ) override;
     void mouseMoveEvent( QMouseEvent* event ) override;
     void wheelEvent( QWheelEvent* event ) override;
-*/    
+*/
 protected:
-    //PianoRoll* m_pianoRoll{ nullptr };
-    //Clip* m_clip{ nullptr };
-    std::vector<ArraTrack*> m_tracks;
-    
+    ArraTrack m_masterTrack;
+    std::vector<ArraTrack> m_tracks;
+
     int m_zoom = 100;
     int m_margin = 8;
 

@@ -3,7 +3,7 @@
 #include <de/MathMusic.h>
 
 namespace de {
-namespace audio {
+namespace math {
 namespace fft {
 
 struct DE_FFT_generic
@@ -18,6 +18,6 @@ struct DE_FFT_generic
 };
 
 } // end namespace fft.
-} // end namespace audio.
+} // end namespace math.
 } // end namespace de.
 

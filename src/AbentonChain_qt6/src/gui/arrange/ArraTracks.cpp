@@ -4,24 +4,38 @@
 ArraTracks::ArraTracks(QWidget* parent)
    : QWidget( parent )
 {
-   setObjectName( "ArraTracks" );
-   setMouseTracking( true );
-   
-   // m_pianoRoll = new PianoRoll(this);
-   
-   applySkin();
+    setObjectName("ArraTracks");
+    setMouseTracking( true );
+    applySkin();
 }
-/*
-void ArraTracks::setClip( Clip* clip )
+
+void ArraTracks::updateFromSession()
 {
-    if ( m_clip != clip )
+    const auto& session = App::instance()->m_session;
+    m_tracks.clear();
+
+    const int w = width();
+    const int h = height();
+    const int b = (50 * m_zoom) / 100;
+    m_masterTrack.m_rect = QRect(0,h-b,w,b);
+    m_masterTrack.m_color = QColor(255,128,0);
+    m_masterTrack.m_track = session.m_masterTrack;
+    m_masterTrack.m_name = session.m_masterTrack->m_trackName;
+
+    for (int i = 0; i < session.m_tracks.size(); ++i)
     {
-        m_clip = clip;
-        m_pianoRoll->setClip(clip);
-        update();
+        auto sessionTrack = session.m_tracks[ i ];
+        ArraTrack arraTrack;
+        arraTrack.m_track = sessionTrack;
+        arraTrack.m_color = sessionTrack->m_trackcolor;
+        arraTrack.m_name = sessionTrack->m_trackName;
+        arraTrack.m_rect = QRect(0,b*i,w,b);
+        m_tracks.emplace_back(std::move(arraTrack));
     }
+
+    updateLayout();
 }
-*/
+
 void ArraTracks::applySkin()
 {
     const auto& skin = App::instance()->getSkin();
@@ -39,10 +53,9 @@ void ArraTracks::updateLayout()
     if (w < 1) return;
     if (h < 1) return;
 
-    int m = 2*m_margin; // inner margin
-    int dx = std::max(w - 2*m,0);
-    int dy = std::max(h - 2*m,0);
-    //m_pianoRoll->setGeometry(m,m,dx,dy);
+    const int m = 2*m_margin; // inner margin
+    const int dx = std::max(w - 2*m,0);
+    const int dy = std::max(h - 2*m,0);
     update();
 }
 
@@ -63,7 +76,7 @@ void ArraTracks::paintEvent( QPaintEvent* event )
     if (h < 1) return;
     QPainter dc( this );
     dc.fillRect(rect(), m_windowColor );
-    
+
     int m = m_margin;
     int dx = std::max(0, w - 2*m);
     int dy = std::max(0, h - 2*m);
@@ -74,6 +87,28 @@ void ArraTracks::paintEvent( QPaintEvent* event )
         dc.setBrush(QBrush(m_panelColor));
         dc.drawRoundedRect(QRect(m,m,dx,dy),m,m);
     }
+
+    for (int i = 0; i < m_tracks.size(); ++i)
+    {
+        const auto& track = m_tracks[ i ];
+
+        dc.setPen(QPen(track.m_color));
+        dc.setBrush(QBrush(m_panelColor));
+        dc.drawRect(track.m_rect);
+
+        QRect r_text = track.m_rect;
+        dc.drawText(r_text,0, track.m_name, &r_text);
+    }
+
+    const auto& track = m_masterTrack;
+
+    dc.setPen(QPen(track.m_color));
+    dc.setBrush(QBrush(m_panelColor));
+    dc.drawRect(track.m_rect);
+
+    QRect r_text = track.m_rect;
+    dc.drawText(r_text,0, track.m_name, &r_text);
+
 }
 
 #if 0

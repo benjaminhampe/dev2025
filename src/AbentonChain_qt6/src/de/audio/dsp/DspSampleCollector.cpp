@@ -77,7 +77,7 @@ DspSampleCollector::DspSampleCollector()
 {
     //DE_TRACE("")
 
-    m_accum_win.setFunction(WindowFunction::Blackman);
+    m_accum_win.setFunction(math::WindowFunction::Blackman);
 
 #if 0
     m_accum_fft = std::make_shared<DE_FFT_pffft>();

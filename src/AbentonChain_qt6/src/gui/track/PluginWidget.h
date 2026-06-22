@@ -13,13 +13,13 @@
 #include <de/audio/plugin/PluginFactory.h>
 
 // ============================================
-class Plugin : public QWidget
+class PluginWidget : public QWidget
 // ============================================
 {
     Q_OBJECT
 public:
-    Plugin(de::audio::SharedPlugin plugin, QWidget* parent = nullptr);
-    ~Plugin() override;
+    PluginWidget(QWidget* parent = nullptr);
+    ~PluginWidget() override;
     //QSize sizeHint() const override;
     //QSize minimumSizeHint() const override;
     QRect labelRect() const { return m_rcLabel; }
@@ -32,8 +32,8 @@ public:
     int computeBestWidth() const;
 
 signals:
-    void requestRemoval(Plugin *self);
-    void collapseChanged(); // Trigger relayout of Track
+    void requestRemoval(PluginWidget *self);
+    void collapseChanged(); // Trigger relayout of TrackWidget
 
 protected:
     void resizeEvent(QResizeEvent*) override;

@@ -79,7 +79,7 @@ public:
 */
 
 private:
-    static u32 GetFreeId()
+    static u32 GetFreePluginId()
     {
         static u32 s_id = 0;
         return ++s_id;

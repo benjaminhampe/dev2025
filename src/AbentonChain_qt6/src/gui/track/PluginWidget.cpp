@@ -1,7 +1,7 @@
-#include "gui/track/Plugin.h"
+#include "gui/track/PluginWidget.h"
 #include "App.h"
 #include "gui/Skin.h"
-#include "gui/track/Track.h"
+#include "gui/track/TrackWidget.h"
 
 namespace {
 
@@ -48,7 +48,7 @@ namespace {
     }
 }
 
-Plugin::Plugin(de::audio::SharedPlugin plugin, QWidget* parent)
+PluginWidget::PluginWidget(QWidget* parent)
     : QWidget(parent)
     , m_plugin(nullptr)
 {
@@ -66,18 +66,18 @@ Plugin::Plugin(de::audio::SharedPlugin plugin, QWidget* parent)
 
     applySkin();
 
-    setPlugin(plugin);
+    //setPlugin(plugin);
 }
 
-Plugin::~Plugin()
+PluginWidget::~PluginWidget()
 {
     DE_TRACE("")
 }
 
-// QSize Plugin::sizeHint() const { return QSize(m_width, m_height); }
-// QSize Plugin::minimumSizeHint() const { return sizeHint(); }
+// QSize PluginWidget::sizeHint() const { return QSize(m_width, m_height); }
+// QSize PluginWidget::minimumSizeHint() const { return sizeHint(); }
 
-void Plugin::applySkin()
+void PluginWidget::applySkin()
 {
     DE_TRACE("")
     m_btnEnable->applySkin();
@@ -100,7 +100,7 @@ void Plugin::applySkin()
     updateLayout();
 }
 
-int Plugin::computeBestWidth() const
+int PluginWidget::computeBestWidth() const
 {
     if (m_bCollapsed)
     {
@@ -112,7 +112,7 @@ int Plugin::computeBestWidth() const
     }
 }
 
-void Plugin::updateLayout()
+void PluginWidget::updateLayout()
 {
     const int w = width();
     const int h = height();
@@ -198,7 +198,7 @@ void Plugin::updateLayout()
     update();
 }
 
-void Plugin::resizeEvent(QResizeEvent* e)
+void PluginWidget::resizeEvent(QResizeEvent* e)
 {
     QWidget::resizeEvent(e);
     const int w = e->size().width();
@@ -266,7 +266,7 @@ void drawLabelV(QPainter & dc, QRect pos,
     dc.restore();
 }
 
-void Plugin::paintEvent(QPaintEvent *)
+void PluginWidget::paintEvent(QPaintEvent *)
 {
     if (!isVisible()) return;
     const int w = width();
@@ -319,39 +319,39 @@ void Plugin::paintEvent(QPaintEvent *)
     }
 }
 
-void Plugin::enterEvent(QEnterEvent* e)
+void PluginWidget::enterEvent(QEnterEvent* e)
 {
     QWidget::enterEvent(e);
     m_bFocused = true;
     update();
 }
-void Plugin::leaveEvent(QEvent* e)
+void PluginWidget::leaveEvent(QEvent* e)
 {
     QWidget::leaveEvent(e);
     m_bFocused = false;
     update();
 }
-void Plugin::focusInEvent(QFocusEvent* event)
+void PluginWidget::focusInEvent(QFocusEvent* event)
 {
     m_bFocused = true;
     update();
     QWidget::focusInEvent(event);
 }
-void Plugin::focusOutEvent(QFocusEvent* event)
+void PluginWidget::focusOutEvent(QFocusEvent* event)
 {
     m_bFocused = false;
     update();
     QWidget::focusOutEvent(event);
 }
-void Plugin::mousePressEvent(QMouseEvent* event)
+void PluginWidget::mousePressEvent(QMouseEvent* event)
 {
     QWidget::mousePressEvent(event);
 }
-void Plugin::mouseReleaseEvent(QMouseEvent* event)
+void PluginWidget::mouseReleaseEvent(QMouseEvent* event)
 {
     QWidget::mouseReleaseEvent(event);
 }
-void Plugin::mouseDoubleClickEvent(QMouseEvent* event)
+void PluginWidget::mouseDoubleClickEvent(QMouseEvent* event)
 {
     auto pos = event->position().toPoint();
 
@@ -364,19 +364,19 @@ void Plugin::mouseDoubleClickEvent(QMouseEvent* event)
     }
     QWidget::mouseDoubleClickEvent(event);
 }
-void Plugin::mouseMoveEvent(QMouseEvent* event)
+void PluginWidget::mouseMoveEvent(QMouseEvent* event)
 {
     QWidget::mouseMoveEvent(event);
 }
 
-void Plugin::setPlugin(de::audio::SharedPlugin plugin)
+void PluginWidget::setPlugin(de::audio::SharedPlugin plugin)
 {
     DE_OK()
     unloadPlugin();
     loadPlugin(plugin);
 }
 
-void Plugin::unloadPlugin()
+void PluginWidget::unloadPlugin()
 {
     if (!m_plugin)
     {
@@ -449,7 +449,7 @@ void Plugin::unloadPlugin()
     //pad->setText(Pad::eT_Version, "");
     pad->setValueXY(0.0f,0.0f);
 /*
-    auto trackWidget = static_cast<Track*>(parentWidget());
+    auto trackWidget = static_cast<TrackWidget*>(parentWidget());
     if (trackWidget)
     {
         auto track = trackWidget->getTrack();
@@ -464,7 +464,7 @@ void Plugin::unloadPlugin()
     setUpdatesEnabled(true); // Enable paintEvent()
 }
 
-void Plugin::loadPlugin(de::audio::SharedPlugin plugin)
+void PluginWidget::loadPlugin(de::audio::SharedPlugin plugin)
 {
     if (!plugin)
     {
@@ -555,39 +555,41 @@ void Plugin::loadPlugin(de::audio::SharedPlugin plugin)
 
 
     connect(this, &QWidget::customContextMenuRequested,
-            this, &Plugin::on_showContextMenu);
+            this, &PluginWidget::on_showContextMenu);
 
     connect(m_btnEnable, &QPushButton::toggled,
-            this, &Plugin::on_pressedBtnEnable);
+            this, &PluginWidget::on_pressedBtnEnable);
 
     connect(m_btnExpand, &QPushButton::toggled,
-            this, &Plugin::on_pressedBtnExpand);
+            this, &PluginWidget::on_pressedBtnExpand);
 
     connect(m_btnWrench, &QPushButton::toggled,
-            this, &Plugin::on_pressedBtnWrench);
+            this, &PluginWidget::on_pressedBtnWrench);
 
     connect(m_btnUpdate, &QPushButton::toggled,
-            this, &Plugin::on_pressedBtnUpdate);
+            this, &PluginWidget::on_pressedBtnUpdate);
 
     connect(m_btnEditor, &QPushButton::toggled,
-            this, &Plugin::on_pressedBtnEditor);
+            this, &PluginWidget::on_pressedBtnEditor);
 
     connect(m_body->getPad(), &Pad::onParamChanged,
-            this, &Plugin::on_pad);
+            this, &PluginWidget::on_pad);
 
     connect(m_body->getComboPreset(), &ComboBox::currentIndexChanged,
-            this, &Plugin::on_comboPreset);
+            this, &PluginWidget::on_comboPreset);
 
     connect(m_body->getComboParam1(), &ComboBox::currentIndexChanged,
-            this, &Plugin::on_comboParam1);
+            this, &PluginWidget::on_comboParam1);
 
     connect(m_body->getComboParam2(), &ComboBox::currentIndexChanged,
-            this, &Plugin::on_comboParam2);
+            this, &PluginWidget::on_comboParam2);
 
     setUpdatesEnabled(true); // Enable paintEvent()
+
+    applySkin();
 }
 
-void Plugin::on_showContextMenu(const QPoint &pos)
+void PluginWidget::on_showContextMenu(const QPoint &pos)
 {
     QMenu menu;
     QAction *removeAct = menu.addAction("Delete/Entfernen");
@@ -597,7 +599,7 @@ void Plugin::on_showContextMenu(const QPoint &pos)
         emit requestRemoval(this);
 }
 
-void Plugin::on_pad(float x, float y)
+void PluginWidget::on_pad(float x, float y)
 {
     if (!m_plugin)
     {
@@ -622,7 +624,7 @@ void Plugin::on_pad(float x, float y)
 }
 
 // On comboBox1 currentIndexChanged we set Pad.X to current value of selected Param1
-void Plugin::on_comboPreset(int index)
+void PluginWidget::on_comboPreset(int index)
 {
     if (!m_plugin)
     {
@@ -642,7 +644,7 @@ void Plugin::on_comboPreset(int index)
 }
 
 // On comboBox1 currentIndexChanged we set Pad.X to current value of selected Param1
-void Plugin::on_comboParam1(int index)
+void PluginWidget::on_comboParam1(int index)
 {
     if (!m_plugin)
     {
@@ -659,7 +661,7 @@ void Plugin::on_comboParam1(int index)
 }
 
 // On comboBox2 currentIndexChanged we set Pad.Y to current value of selected Param2
-void Plugin::on_comboParam2(int index)
+void PluginWidget::on_comboParam2(int index)
 {
     if (!m_plugin)
     {
@@ -675,7 +677,7 @@ void Plugin::on_comboParam2(int index)
     }
 }
 
-void Plugin::on_editorWindowClosed()
+void PluginWidget::on_editorWindowClosed()
 {
     //DE_ERROR("Editor closed")
     m_btnWrench->blockSignals( true );
@@ -683,7 +685,7 @@ void Plugin::on_editorWindowClosed()
     m_btnWrench->blockSignals( false );
 }
 
-void Plugin::on_pressedBtnEnable( bool checked )
+void PluginWidget::on_pressedBtnEnable( bool checked )
 {
     if (!m_plugin)
     {
@@ -708,11 +710,11 @@ void Plugin::on_pressedBtnEnable( bool checked )
     m_plugin->setBypassed(!checked);
 }
 
-void Plugin::on_pressedBtnExpand( bool checked )
+void PluginWidget::on_pressedBtnExpand( bool checked )
 {
 
 }
-void Plugin::on_pressedBtnWrench( bool checked )
+void PluginWidget::on_pressedBtnWrench( bool checked )
 {
     if (!m_plugin)
     {
@@ -761,22 +763,22 @@ void Plugin::on_pressedBtnWrench( bool checked )
     }
 }
 
-void Plugin::on_pressedBtnUpdate( bool checked )
+void PluginWidget::on_pressedBtnUpdate( bool checked )
 {
 
 }
-void Plugin::on_pressedBtnEditor( bool checked )
+void PluginWidget::on_pressedBtnEditor( bool checked )
 {
     // m_bCollapsed = checked;
     // applySkin();
-    // static_cast<Track*>(parent())->updateLayout();
+    // static_cast<TrackWidget*>(parent())->updateLayout();
 }
 
-// void Plugin::on_doubleClickedLabel()
+// void PluginWidget::on_doubleClickedLabel()
 // {
 
 // }
-// void Plugin::on_dragStarted(QPoint dragStart)
+// void PluginWidget::on_dragStarted(QPoint dragStart)
 // {
 
 // }

@@ -2,7 +2,7 @@
 #include <DarkImage.h>
 
 namespace de {
-namespace audio {
+namespace math {
 
 // Kaiser window β (beta)
 
@@ -104,6 +104,6 @@ private:
     AlignedFloatVector m_lut; // LookupTable
 };
 
-} // end namespace audio.
+} // end namespace math.
 } // end namespace de.
 

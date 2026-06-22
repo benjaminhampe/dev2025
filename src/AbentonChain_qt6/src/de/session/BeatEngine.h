@@ -1,5 +1,188 @@
 #pragma once
 #include <DarkImage.h>
+
+namespace de {
+namespace session {
+
+constexpr int PPQ = 960; // Pulses/Ticks per QuarterNote musical grid.
+
+// ============================
+struct TempoEvent
+// ============================
+{
+    int64_t ppq; // tick position
+    double  bpm; // tempo at this tick
+};
+
+typedef std::vector<TempoEvent> TempoMap;
+
+/*
+ * Example:
+
+    int64_t notePPQ = 3840; // e.g. bar 2 at PPQ=960
+
+    double t = timeInSecondsFromPPQ(notePPQ, tempoMap);
+    int64_t s = samplePosFromPPQ(notePPQ, tempoMap, 48000.0);
+*/
+
+inline double
+timeInSecFromPPQ(int64_t ppqPos, const TempoMap& tempoMap, double bpm)
+{
+    if (tempoMap.empty())
+        return 0.0;
+
+    double seconds = 0.0;
+
+    // Walk tempo events
+    for (size_t i = 0; i < tempoMap.size(); ++i)
+    {
+        const auto& cur = tempoMap[i];
+
+        // If this event is beyond the target, stop
+        if (cur.ppq >= ppqPos)
+            break;
+
+        // Determine end of this tempo segment
+        int64_t nextPPQ = (i + 1 < tempoMap.size())
+            ? tempoMap[i + 1].ppq
+            : ppqPos;
+
+        if (nextPPQ > ppqPos)
+            nextPPQ = ppqPos;
+
+        int64_t deltaPPQ = nextPPQ - cur.ppq;
+        if (deltaPPQ <= 0)
+            continue;
+
+        // BPM → seconds per tick
+        double secPerTick = (bpm / cur.bpm) / double(PPQ);
+
+        seconds += deltaPPQ * secPerTick;
+    }
+
+    return seconds;
+}
+
+inline int64_t
+samplePosFromPPQ(   int64_t ppqPos,
+                    const TempoMap& tempoMap,
+                    double sampleRate,
+                    double bpm)
+{
+    double seconds = timeInSecFromPPQ(ppqPos, tempoMap, bpm);
+    return (int64_t)std::llround(seconds * sampleRate);
+}
+
+/*
+🎯 1) Convert PPQ → seconds (with tempo map)
+
+This walks the tempo map and integrates time across tempo regions.
+
+double timeInSecondsFromPPQ(int64_t targetPPQ,
+                            const std::vector<TempoEvent>& tempoMap)
+{
+    if (tempoMap.empty())
+        return 0.0;
+
+    double seconds = 0.0;
+
+    // Walk tempo events
+    for (size_t i = 0; i < tempoMap.size(); ++i)
+    {
+        const auto& cur = tempoMap[i];
+
+        // If this event is beyond the target, stop
+        if (cur.ppq >= targetPPQ)
+            break;
+
+        // Determine end of this tempo segment
+        int64_t nextPPQ = (i + 1 < tempoMap.size())
+            ? tempoMap[i + 1].ppq
+            : targetPPQ;
+
+        if (nextPPQ > targetPPQ)
+            nextPPQ = targetPPQ;
+
+        int64_t deltaPPQ = nextPPQ - cur.ppq;
+        if (deltaPPQ <= 0)
+            continue;
+
+        // BPM → seconds per tick
+        double secPerTick = (60.0 / cur.bpm) / 960.0;
+
+        seconds += deltaPPQ * secPerTick;
+    }
+
+    return seconds;
+}
+
+✔ Handles unlimited tempo changes
+✔ Exact integer PPQ
+✔ No drift
+✔ Same logic Ableton uses internally
+🎯 2) Convert PPQ → sample position (with tempo map)
+
+Just multiply the seconds by sampleRate.
+
+int64_t samplePosFromPPQ(int64_t targetPPQ,
+                         const std::vector<TempoEvent>& tempoMap,
+                         double sampleRate)
+{
+    double seconds = timeInSecondsFromPPQ(targetPPQ, tempoMap);
+    return (int64_t)std::llround(seconds * sampleRate);
+}
+
+✔ Sample‑accurate
+✔ Works with any sample rate
+✔ Works with any tempo map shape
+🎯 Example usage
+
+int64_t notePPQ = 3840; // e.g. bar 2 at PPQ=960
+
+double t = timeInSecondsFromPPQ(notePPQ, tempoMap);
+int64_t s = samplePosFromPPQ(notePPQ, tempoMap, 48000.0);
+
+*/
+// ============================
+struct BeatEngine // 64 bytes
+// ============================
+{
+    // --- 16 Bytes ---
+    uint64_t framePos;
+    uint32_t blockSize;
+    uint32_t sampleRate;
+    // f64 pts = double(framePos) / double(sampleRate);
+
+    // --- 16 Bytes --- TransportFlags / Tempo / Beat / PPQ ---
+    uint8_t channels;   // 2...8
+    uint8_t flags;      // eTransport::<Playing|Looping|Recording>
+    uint8_t timeSigNum; // 4
+    uint8_t timeSigDen; // 4
+    float bpm;          // defaul: 120.0f etc.
+
+    // --- 16 Bytes
+    uint64_t loopBeg;   // loop start frame.
+    uint64_t loopEnd;   // loop end frame.
+
+    // --- 16 Bytes
+    int32_t ppq = 960;  // Pulses/TicksPerQuarterNote
+    double ppqPosition; // fractional beat position
+    double ppqPerSample;// (bpm / 60) / sampleRateOut
+
+    // --- Automation (sample-genau)
+    //AutomationQueue* automation; // pointer auf host queue
+
+    // --- Globale Parameter
+    //double globalTempoFactor;   // z.B. für Time-Stretch
+    //double globalPitch;         // semitones
+
+    //f32* outputs[8]; // 32 bytes
+    //f32* __restrict__ L;
+    //f32* __restrict__ R;
+};
+
+} // end namespace session.
+} // end namespace de.
 /*
 
 float* __restrict__ L = buffer.getWritePointer(0);
@@ -56,111 +239,92 @@ struct DspProcessContext
 };
 
 Warum ist das gut?
-
     Du kannst jederzeit neue Felder hinzufügen → API bleibt stabil
-
     Jedes DSP‑Element bekommt alle Informationen, ohne eigene State‑Variablen
-
     Sample‑genaue Automation wird trivial
-
     Beat‑basierte Effekte (LFO sync, Delay sync, Sequencer) werden sauber
-
     Transport‑abhängige DSPs (Looper, Sampler, Granular) funktionieren korrekt
 
 🎯 3. Sample‑genaue Automation ohne framePos pro Element
 
 Du brauchst keine framePos‑Variable mehr in jedem Element.
 
-Beispiel:
-cpp
+    for (uint32_t i = 0; i < ctx.blockSize; ++i)
+    {
+        uint64_t absFrame = ctx.frameIndex + i;
 
-for (uint32_t i = 0; i < ctx.blockSize; ++i)
-{
-    uint64_t absFrame = ctx.frameIndex + i;
+        float cutoff = ctx.automation->getValueAtSample(absFrame, PARAM_CUTOFF);
+        float gain   = ctx.automation->getValueAtSample(absFrame, PARAM_GAIN);
 
-    float cutoff = ctx.automation->getValueAtSample(absFrame, PARAM_CUTOFF);
-    float gain   = ctx.automation->getValueAtSample(absFrame, PARAM_GAIN);
-
-    // DSP...
-}
+        // DSP...
+    }
 
 Das ist exakt wie VST3 / CLAP es machen.
 🎼 4. Beat‑Informationen für Sync‑Effekte
 
 Du kannst PPQ pro Sample vorberechnen:
-cpp
 
-ctx.ppqPerSample = (ctx.bpm / 60.0) / ctx.sampleRateOut;
+    ctx.ppqPerSample = (ctx.bpm / 60.0) / ctx.sampleRateOut;
 
 Dann im DSP:
-cpp
 
-double ppq = ctx.ppqPosition + i * ctx.ppqPerSample;
+    double ppq = ctx.ppqPosition + i * ctx.ppqPerSample;
 
 Damit kannst du:
 
     LFO sync
-
     Delay sync
-
     Sequencer steps
-
     Arpeggiator
-
     Granular windows auf Beat‑Raster
 
 ohne zusätzlichen Aufwand.
 🧱 5. Transport‑Informationen für Looper / Sampler
 
 Ein DSP‑Element kann jetzt:
-cpp
 
-if (!ctx.isPlaying)
-    return; // freeze output or bypass
+    if (!ctx.isPlaying)
+        return; // freeze output or bypass
 
 Oder Loop‑Aware:
-cpp
 
-if (ctx.isLooping && ctx.frameIndex >= ctx.loopEndFrame)
-{
-    // reposition sample pointer
-}
+    if (ctx.isLooping && ctx.frameIndex >= ctx.loopEndFrame)
+    {
+        // reposition sample pointer
+    }
 
 🧩 6. Beispiel: Dein Resampler bekommt jetzt alles sauber
 
 Dein aktuelles dsp_init() Problem (BlockSizeIn/Out) löst sich sauber, weil du:
 
     sampleRateIn/out
-
     blockSize
-
     frameIndex
 
 immer im Context hast.
 🛠️ 7. Beispiel: Ein komplettes DSP‑Element mit neuem Context
-cpp
 
-class DspFilter : public DspElement
-{
-public:
-    void dsp_process(const DspProcessContext& ctx,
-                     float* __restrict__ L,
-                     float* __restrict__ R) override
+    class DspFilter : public DspElement
     {
-        for (uint32_t i = 0; i < ctx.blockSize; ++i)
+    public:
+        void dsp_process(const DspProcessContext& ctx,
+                         float* __restrict__ L,
+                         float* __restrict__ R) override
         {
-            uint64_t absFrame = ctx.frameIndex + i;
+            for (uint32_t i = 0; i < ctx.blockSize; ++i)
+            {
+                uint64_t absFrame = ctx.frameIndex + i;
 
-            float cutoff = ctx.automation->getValueAtSample(absFrame, PARAM_CUTOFF);
-            float reso   = ctx.automation->getValueAtSample(absFrame, PARAM_RESO);
+                float cutoff = ctx.automation->getValueAtSample(absFrame, PARAM_CUTOFF);
+                float reso   = ctx.automation->getValueAtSample(absFrame, PARAM_RESO);
 
-            updateCoeffs(cutoff, reso);
+                updateCoeffs(cutoff, reso);
 
-            L[i] = processSample(L[i]);
-            R[i] = processSample(R[i]);
+                L[i] = processSample(L[i]);
+                R[i] = processSample(R[i]);
+            }
         }
-    }
-};
+    };
 
 🚀 8. Warum das deine Architektur massiv verbessert
 
@@ -193,25 +357,17 @@ Kurzfassung zuerst:
 blockStart, isPlaying und globalPitch sind optionale Felder, die du nur brauchst, wenn dein Host diese Informationen sinnvoll nutzt.
 Ich erkläre dir jetzt präzise, wofür jedes Feld in einer professionellen DSP‑Host‑Architektur existiert — und wann du es weglassen kannst.
 🎯 Takeaway
-
     blockStart → nur nötig, wenn du Sub‑Block‑Processing oder Block‑Splitting machst (z. B. sample‑genaue Automation innerhalb eines Blocks).
-
     isPlaying → nur nötig, wenn DSP‑Elemente auf Transport reagieren sollen (Sequencer, Sampler, LFO‑Sync, Delays, Looping).
-
     globalPitch → nur nötig, wenn du globales Pitch‑Shifting, Master‑Pitch, Time‑Stretch‑Engines oder Pitch‑modulierte DSPs hast.
 
 🧩 1. Wozu brauche ich blockStart?
 
 blockStart ist der Start‑Frame innerhalb eines größeren Host‑Blocks, wenn der Host den Block intern aufteilt, z. B.:
-
     sample‑genaue Automation
-
     MIDI‑Events mitten im Block
-
     Transport‑Sprünge mitten im Block
-
     Loop‑Boundary mitten im Block
-
     Latenzkompensation, die Blöcke splittet
 
 Beispiel:
@@ -219,15 +375,13 @@ Der Host bekommt 512 Frames vom Audio‑Backend.
 Aber in Frame 120 kommt ein Automation‑Event.
 
 Dann macht der Host:
-Code
 
-Block 0: 120 Frames  (blockStart = 0)
-Block 1: 392 Frames  (blockStart = 120)
+    Block 0: 120 Frames  (blockStart = 0)
+    Block 1: 392 Frames  (blockStart = 120)
 
-Wenn du sample‑genaue Automation willst, brauchst du blockStart, um:
-cpp
+    Wenn du sample‑genaue Automation willst, brauchst du blockStart, um:
 
-uint64_t absFrame = ctx.frameIndex + (i + ctx.blockStart);
+    uint64_t absFrame = ctx.frameIndex + (i + ctx.blockStart);
 
 Ohne blockStart kannst du sample‑genaue Events nicht korrekt verarbeiten, wenn der Host Blöcke splittet.
 
@@ -238,27 +392,20 @@ isPlaying ist ein Transport‑Flag.
 Du brauchst es für jede Art von DSP, die vom Transport abhängt:
 
     Sampler (nur spielen, wenn Transport läuft)
-
     Step‑Sequencer
-
     Arpeggiator
-
     Beat‑Synced LFOs
-
     Delays, die bei Stop einfrieren sollen
-
     Granular‑Engines, die bei Stop resetten
-
     Loop‑Punkte
 
 Beispiel:
-cpp
 
-if (!ctx.isPlaying)
-{
-    // Sequencer nicht weiterschalten
-    return;
-}
+    if (!ctx.isPlaying)
+    {
+        // Sequencer nicht weiterschalten
+        return;
+    }
 
 Wenn dein DSP‑System keine Transport‑abhängigen Elemente hat → kannst du isPlaying weglassen.
 
@@ -269,43 +416,32 @@ Also: Du wirst isPlaying brauchen.
 
 globalPitch ist ein Master‑Pitch‑Offset, den der Host vorgibt.
 Das ist extrem nützlich für:
-
     Time‑Stretch / Pitch‑Shift Engines
-
     Master‑Pitch (wie bei DAWs: ±12 Semitones)
-
     Playback‑Speed‑Änderungen
-
     DJ‑Style Pitch
-
     globale Transposition
-
     Sampler, die sich an Host‑Pitch anpassen sollen
-
     Synths, die global transponiert werden sollen
 
 Beispiel:
-cpp
 
-double pitchFactor = pow(2.0, ctx.globalPitch / 12.0);
-osc.frequency = baseFreq * pitchFactor;
+    double pitchFactor = pow(2.0, ctx.globalPitch / 12.0);
+    osc.frequency = baseFreq * pitchFactor;
 
 Wenn du keine globale Pitch‑Modulation brauchst → kannst du globalPitch weglassen.
+
 🧠 Wann brauchst du diese Felder wirklich?
-Feld	Brauchst du es?	Wofür?
-blockStart	Ja, wenn du sample‑genaue Automation willst	Sub‑Block‑Processing
-isPlaying	Ja, wenn du Transport‑abhängige DSPs hast	Sequencer, Sampler, Sync
-globalPitch	Nur wenn du globale Pitch‑Modulation willst	Master‑Pitch, Stretching
+    Feld	Brauchst du es?	Wofür?
+    blockStart	Ja, wenn du sample‑genaue Automation willst	Sub‑Block‑Processing
+    isPlaying	Ja, wenn du Transport‑abhängige DSPs hast	Sequencer, Sampler, Sync
+    globalPitch	Nur wenn du globale Pitch‑Modulation willst	Master‑Pitch, Stretching
 🔥 Meine Empfehlung für deine Architektur
 
 Da du:
-
     sample‑genaue Automation willst
-
     BPM / Beat‑Sync willst
-
     frameIndex einführen willst
-
     später Sampler / Sequencer / Granular willst
 
 → blockStart und isPlaying solltest du behalten.
@@ -313,11 +449,8 @@ Da du:
 ❓ Willst du, dass ich dir eine minimalistische Version der Context‑Struct baue, die nur die Felder enthält, die du wirklich brauchst?
 
 Optionen:
-
     Minimaler Context
-
     Vollständiger Context
-
     Context ohne globalPitch
 
 Sag einfach, welche Variante du willst.
@@ -328,11 +461,8 @@ Es meint den Transport‑Play‑State, also ob dein Host gerade abspielt oder st
 
 Das ist ein extrem wichtiger Unterschied.
 🎯 Takeaway
-
     AudioStream läuft → bedeutet nur: dein WASAPI/ASIO/Backend liefert kontinuierlich Blöcke.
-
     isPlaying = true → bedeutet: dein Host spielt gerade ein Projekt, eine Timeline, ein Pattern, einen Clip ab.
-
     isPlaying = false → bedeutet: Transport steht, aber Audio läuft weiter.
 
 🧩 Was isPlaying wirklich bedeutet
@@ -341,70 +471,52 @@ isPlaying beschreibt den Zustand des Musik‑Transports, nicht des Audio‑Gerä
 
 Beispiele:
 1) Du hast WASAPI Shared Mode offen
-
     Browser spielt YouTube
-
     Dein Host läuft
-
     Du drückst in deinem Host „Stop“
 
 Dann ist:
-Code
 
-AudioStream: läuft
-isPlaying: false
+    AudioStream: läuft
+    isPlaying: false
 
 2) Du drückst „Play“ in deinem Host
 
-Dann ist:
-Code
+    Dann ist:
 
-AudioStream: läuft
-isPlaying: true
+    AudioStream: läuft
+    isPlaying: true
 
 3) Du scrubbst in der Timeline
 
-Dann ist:
-Code
+    Dann ist:
 
-AudioStream: läuft
-isPlaying: false
+    AudioStream: läuft
+    isPlaying: false
 
 🎵 Warum DSP‑Elemente isPlaying brauchen
 
 Viele DSP‑Elemente müssen wissen, ob der Transport läuft:
-
     Sequencer → nur weiterschalten, wenn isPlaying
-
     Sampler → nur abfeuern, wenn isPlaying
-
     Beat‑Sync LFO → Phase nur weiterlaufen lassen, wenn isPlaying
-
     Delay → Freeze bei Stop
-
     Granular → Reset bei Stop
-
     Arpeggiator → nur bei Play aktiv
-
     Loop‑Punkte → nur relevant bei Play
 
 Beispiel:
-cpp
 
-if (!ctx.isPlaying)
-{
-    // Sequencer nicht weiterschalten
-    return;
-}
+    if (!ctx.isPlaying)
+    {
+        // Sequencer nicht weiterschalten
+        return;
+    }
 
 Ohne isPlaying würdest du:
-
     Sequencer laufen lassen, obwohl der Host steht
-
     LFOs weiterlaufen lassen, obwohl der Transport stoppt
-
     Sampler würden weitertriggern
-
     Beat‑Sync wäre falsch
 
 🧠 Warum du es brauchst, obwohl du WASAPI Shared Mode nutzt
@@ -412,9 +524,7 @@ Ohne isPlaying würdest du:
 Weil Transport != AudioStream.
 
 Du nutzt Shared Mode, um:
-
     YouTube + dein Host gleichzeitig zu hören
-
     dein Programm als Instrument zu spielen
 
 Das ist super.
@@ -422,13 +532,9 @@ Aber der Transport deines Hosts ist eine komplett andere Ebene.
 🧱 Wann du isPlaying NICHT brauchst
 
 Wenn dein Host:
-
     keine Timeline hat
-
     keine BPM‑Sync‑Effekte hat
-
     keine Sampler/Sequencer hat
-
     keine Transport‑abhängigen DSPs hat
 
 Dann kannst du isPlaying weglassen.
@@ -436,13 +542,9 @@ Dann kannst du isPlaying weglassen.
 Aber du hast bereits:
 
     BPM
-
     PPQ
-
     Beat‑Informationen
-
     sample‑genaue Automation
-
     frameIndex
 
 → Das ist alles Transport‑abhängig.
@@ -450,11 +552,8 @@ Aber du hast bereits:
 🔥 Wenn du willst, kann ich dir jetzt die minimal sinnvolle Transport‑Struct bauen
 
 Optionen:
-
     Minimaler TransportContext
-
     Vollständiger TransportContext
-
     Transport ohne Sequencer‑Features
 
 Sag einfach, welche Richtung du willst.
@@ -467,28 +566,19 @@ Ne, erkläre lieber nochmal alles über     // --- Tempo / Beat / PPQ
 und wie man diese in bezug setzt, aka functionen die alles ineinander umrechnen/konvertieren
 
 Alles klar Benjamin — ich gebe dir jetzt die komplette, saubere, mathematisch korrekte Erklärung zu:
-
     bpm
-
     ppqPosition
-
     ppqPerSample
-
     timeSigNum / timeSigDen
 
 und wie man alles ineinander umrechnet.
 
 Ich mache das präzise, DSP‑tauglich, sample‑genau, ohne Abstraktionsmüll.
 🎯 Takeaway
-
     PPQ = "Pulses Per Quarter Note" → Beat‑Position in Viertelnoten.
-
     ppqPosition = aktuelle Beat‑Position (z. B. 128.75 = 128 + 3/4).
-
     bpm bestimmt, wie schnell PPQ pro Sekunde steigt.
-
     ppqPerSample = wie viel PPQ pro Sample vergeht.
-
     timeSigNum/Den definieren, wie viele PPQ ein Takt hat.
 
 Damit kannst du jede Zeit‑/Beat‑/Musik‑Position ineinander umrechnen.
@@ -508,88 +598,69 @@ Jetzt auf Samples runtergebrochen:
 ppqPerSample=bpm60⋅sampleRate
 
 Das ist exakt das Feld:
-cpp
 
-ctx.ppqPerSample = (ctx.bpm / 60.0) / ctx.sampleRateOut;
+    ctx.ppqPerSample = (ctx.bpm / 60.0) / ctx.sampleRateOut;
 
 🧩 2. PPQ‑Position pro Sample fortschreiben
 
 Wenn du die Startposition des Blocks kennst:
-cpp
 
-double ppq = ctx.ppqPosition + i * ctx.ppqPerSample;
+    double ppq = ctx.ppqPosition + i * ctx.ppqPerSample;
 
 Damit hast du sample‑genaue Beat‑Positionen.
 🧩 3. PPQ ↔ Zeit (Sekunden) umrechnen
-PPQ → Sekunden
-t=PPQbpm/60
+    PPQ → Sekunden
+    t=PPQbpm/60
 
-C++:
-cpp
+    double seconds = ppq / (bpm / 60.0);
 
-double seconds = ppq / (bpm / 60.0);
+    Sekunden → PPQ
+    PPQ=t⋅bpm60
 
-Sekunden → PPQ
-PPQ=t⋅bpm60
-
-C++:
-cpp
-
-double ppq = seconds * (bpm / 60.0);
+    double ppq = seconds * (bpm / 60.0);
 
 🧩 4. PPQ ↔ Samples umrechnen
-PPQ → Samples
-samples=PPQppqPerSample
+    PPQ → Samples
+    samples=PPQppqPerSample
 
-C++:
-cpp
+    uint64_t samples = (uint64_t)(ppq / ctx.ppqPerSample);
 
-uint64_t samples = (uint64_t)(ppq / ctx.ppqPerSample);
+    Samples → PPQ
+    PPQ=samples⋅ppqPerSample
 
-Samples → PPQ
-PPQ=samples⋅ppqPerSample
-
-C++:
-cpp
-
-double ppq = samples * ctx.ppqPerSample;
+    double ppq = samples * ctx.ppqPerSample;
 
 🧩 5. Taktart (timeSigNum/Den) einbeziehen
 
 Taktart:
-
     4/4 → 4 Viertelnoten pro Takt
-
     3/4 → 3 Viertelnoten pro Takt
-
     6/8 → 6 Achtelnoten pro Takt = 3 Viertelnoten
 
 Die Formel:
-PPQ per bar=timeSigNum⋅4timeSigDen
+    PPQ per bar = timeSigNum ⋅ 4timeSigDen
 
 Beispiele:
-Taktart	PPQ pro Takt
-4/4	4
-3/4	3
-6/8	3
-7/8	3.5
-5/4	5
+    Taktart	PPQ pro Takt
+    4/4	4
+    3/4	3
+    6/8	3
+    7/8	3.5
+    5/4	5
 
-C++:
-
-double ppqPerBar = ctx.timeSigNum * (4.0 / ctx.timeSigDen);
+    double ppqPerBar = ctx.timeSigNum * (4.0 / ctx.timeSigDen);
 
 🧩 6. PPQ → Takt + Beat + Subdivision
 
-Wenn du z. B. ppq = 128.75 hast:
+    Wenn du z. B. ppq = 128.75 hast:
 
-double ppqPerBar = ctx.timeSigNum * (4.0 / ctx.timeSigDen);
+    double ppqPerBar = ctx.timeSigNum * (4.0 / ctx.timeSigDen);
 
-int bar = (int)(ppq / ppqPerBar);
-double ppqInBar = ppq - bar * ppqPerBar;
+    int bar = (int)(ppq / ppqPerBar);
+    double ppqInBar = ppq - bar * ppqPerBar;
 
-int beat = (int)ppqInBar;      // 0–3 bei 4/4
-double frac = ppqInBar - beat; // 0.0–1.0
+    int beat = (int)ppqInBar;      // 0–3 bei 4/4
+    double frac = ppqInBar - beat; // 0.0–1.0
 
 Damit kannst du:
     Step‑Sequencer
@@ -601,35 +672,35 @@ Damit kannst du:
 präzise steuern.
 🧩 7. Komplettes C++‑Utility‑Set (low‑level, inline)
 
-inline double bpmToPpqPerSample(double bpm, double sampleRate)
-{
-    return (bpm / 60.0) / sampleRate;
-}
+    inline double bpmToPpqPerSample(double bpm, double sampleRate)
+    {
+        return (bpm / 60.0) / sampleRate;
+    }
 
-inline double ppqToSeconds(double ppq, double bpm)
-{
-    return ppq / (bpm / 60.0);
-}
+    inline double ppqToSeconds(double ppq, double bpm)
+    {
+        return ppq / (bpm / 60.0);
+    }
 
-inline double secondsToPpq(double seconds, double bpm)
-{
-    return seconds * (bpm / 60.0);
-}
+    inline double secondsToPpq(double seconds, double bpm)
+    {
+        return seconds * (bpm / 60.0);
+    }
 
-inline uint64_t ppqToSamples(double ppq, double ppqPerSample)
-{
-    return (uint64_t)(ppq / ppqPerSample);
-}
+    inline uint64_t ppqToSamples(double ppq, double ppqPerSample)
+    {
+        return (uint64_t)(ppq / ppqPerSample);
+    }
 
-inline double samplesToPpq(uint64_t samples, double ppqPerSample)
-{
-    return samples * ppqPerSample;
-}
+    inline double samplesToPpq(uint64_t samples, double ppqPerSample)
+    {
+        return samples * ppqPerSample;
+    }
 
-inline double ppqPerBar(uint32_t num, uint32_t den)
-{
-    return num * (4.0 / den);
-}
+    inline double ppqPerBar(uint32_t num, uint32_t den)
+    {
+        return num * (4.0 / den);
+    }
 
 🧠 Damit kannst du jetzt ALLES konvertieren
     Samples → PPQ
@@ -660,213 +731,209 @@ BeatEngine: kompakte, sample‑genaue Beat-/Tempo‑Engine in C++
 Ich baue dir eine minimal saubere, aber erweiterbare BeatEngine, die:
 
     BPM, Taktart, Transport hält
-
     PPQ/sample‑genau fortschreibt
-
     Samples ↔ PPQ ↔ Sekunden konvertiert
-
     Bar/Beat‑Infos liefert
 
 Header: BeatEngine.hpp
 
-#pragma once
-#include <cstdint>
-#include <cmath>
+    #pragma once
+    #include <cstdint>
+    #include <cmath>
 
-class BeatEngine
-{
-public:
-    BeatEngine()
+    class BeatEngine
     {
-        reset();
-    }
+    public:
+        BeatEngine()
+        {
+            reset();
+        }
 
-    void reset()
-    {
-        m_sampleRate   = 44100.0;
-        m_bpm          = 120.0;
-        m_timeSigNum   = 4;
-        m_timeSigDen   = 4;
-        m_ppqPosition  = 0.0;
-        m_isPlaying    = false;
-        updateDerived();
-    }
+        void reset()
+        {
+            m_sampleRate   = 44100.0;
+            m_bpm          = 120.0;
+            m_timeSigNum   = 4;
+            m_timeSigDen   = 4;
+            m_ppqPosition  = 0.0;
+            m_isPlaying    = false;
+            updateDerived();
+        }
 
-    // --- Setup / Host-Updates ------------------------------------------------
+        // --- Setup / Host-Updates ------------------------------------------------
 
-    void setSampleRate(double sr)
-    {
-        m_sampleRate = (sr > 0.0) ? sr : 44100.0;
-        updateDerived();
-    }
+        void setSampleRate(double sr)
+        {
+            m_sampleRate = (sr > 0.0) ? sr : 44100.0;
+            updateDerived();
+        }
 
-    void setTempo(double bpm)
-    {
-        m_bpm = (bpm > 0.0) ? bpm : 120.0;
-        updateDerived();
-    }
+        void setTempo(double bpm)
+        {
+            m_bpm = (bpm > 0.0) ? bpm : 120.0;
+            updateDerived();
+        }
 
-    void setTimeSignature(uint32_t num, uint32_t den)
-    {
-        m_timeSigNum = (num == 0) ? 4 : num;
-        m_timeSigDen = (den == 0) ? 4 : den;
-        updateDerived();
-    }
+        void setTimeSignature(uint32_t num, uint32_t den)
+        {
+            m_timeSigNum = (num == 0) ? 4 : num;
+            m_timeSigDen = (den == 0) ? 4 : den;
+            updateDerived();
+        }
 
-    void setTransportPlaying(bool playing)
-    {
-        m_isPlaying = playing;
-    }
+        void setTransportPlaying(bool playing)
+        {
+            m_isPlaying = playing;
+        }
 
-    void setPpqPosition(double ppq)
-    {
-        m_ppqPosition = ppq;
-    }
+        void setPpqPosition(double ppq)
+        {
+            m_ppqPosition = ppq;
+        }
 
-    // --- Pro Block / Pro Sample ----------------------------------------------
+        // --- Pro Block / Pro Sample ----------------------------------------------
 
-    // Host ruft das pro Block auf, um PPQ-Startposition zu setzen
-    // (z.B. aus eigener Transport-Logik)
-    void beginBlock(double ppqStart)
-    {
-        m_ppqPosition = ppqStart;
-    }
+        // Host ruft das pro Block auf, um PPQ-Startposition zu setzen
+        // (z.B. aus eigener Transport-Logik)
+        void beginBlock(double ppqStart)
+        {
+            m_ppqPosition = ppqStart;
+        }
 
-    // Host kann alternativ einfach "advanceSamples" benutzen,
-    // wenn er nur fortschreibt:
-    void advanceSamples(uint32_t numSamples)
-    {
-        if (!m_isPlaying)
-            return;
+        // Host kann alternativ einfach "advanceSamples" benutzen,
+        // wenn er nur fortschreibt:
+        void advanceSamples(uint32_t numSamples)
+        {
+            if (!m_isPlaying)
+                return;
 
-        m_ppqPosition += m_ppqPerSample * (double)numSamples;
-    }
+            m_ppqPosition += m_ppqPerSample * (double)numSamples;
+        }
 
-    // Für DSP: PPQ an Sample-Offset im aktuellen Block
-    inline double ppqAtSampleOffset(uint32_t sampleOffset) const
-    {
-        return m_ppqPosition + m_ppqPerSample * (double)sampleOffset;
-    }
+        // Für DSP: PPQ an Sample-Offset im aktuellen Block
+        inline double ppqAtSampleOffset(uint32_t sampleOffset) const
+        {
+            return m_ppqPosition + m_ppqPerSample * (double)sampleOffset;
+        }
 
-    // --- Konvertierungen ------------------------------------------------------
+        // --- Konvertierungen ------------------------------------------------------
 
-    inline double getBpm() const { return m_bpm; }
-    inline double getPpqPosition() const { return m_ppqPosition; }
-    inline double getPpqPerSample() const { return m_ppqPerSample; }
+        inline double getBpm() const { return m_bpm; }
+        inline double getPpqPosition() const { return m_ppqPosition; }
+        inline double getPpqPerSample() const { return m_ppqPerSample; }
 
-    inline uint32_t getTimeSigNum() const { return m_timeSigNum; }
-    inline uint32_t getTimeSigDen() const { return m_timeSigDen; }
+        inline uint32_t getTimeSigNum() const { return m_timeSigNum; }
+        inline uint32_t getTimeSigDen() const { return m_timeSigDen; }
 
-    inline bool isPlaying() const { return m_isPlaying; }
+        inline bool isPlaying() const { return m_isPlaying; }
 
-    // PPQ <-> Sekunden
-    inline double ppqToSeconds(double ppq) const
-    {
-        return ppq / m_ppqPerSecond;
-    }
+        // PPQ <-> Sekunden
+        inline double ppqToSeconds(double ppq) const
+        {
+            return ppq / m_ppqPerSecond;
+        }
 
-    inline double secondsToPpq(double seconds) const
-    {
-        return seconds * m_ppqPerSecond;
-    }
+        inline double secondsToPpq(double seconds) const
+        {
+            return seconds * m_ppqPerSecond;
+        }
 
-    // PPQ <-> Samples
-    inline double ppqToSamples(double ppq) const
-    {
-        return ppq / m_ppqPerSample;
-    }
+        // PPQ <-> Samples
+        inline double ppqToSamples(double ppq) const
+        {
+            return ppq / m_ppqPerSample;
+        }
 
-    inline double samplesToPpq(uint64_t samples) const
-    {
-        return (double)samples * m_ppqPerSample;
-    }
+        inline double samplesToPpq(uint64_t samples) const
+        {
+            return (double)samples * m_ppqPerSample;
+        }
 
-    // Takt-Infos: Bar/Beat/Frac aus PPQ
-    struct BarBeat
-    {
-        int   bar;      // 0-basiert
-        int   beat;     // 0-basiert
-        double frac;    // 0..1 innerhalb des Beats
+        // Takt-Infos: Bar/Beat/Frac aus PPQ
+        struct BarBeat
+        {
+            int   bar;      // 0-basiert
+            int   beat;     // 0-basiert
+            double frac;    // 0..1 innerhalb des Beats
+        };
+
+        inline BarBeat ppqToBarBeat(double ppq) const
+        {
+            BarBeat bb{0,0,0.0};
+
+            double ppqPerBar = m_ppqPerBar;
+            if (ppqPerBar <= 0.0)
+                return bb;
+
+            int bar = (int)std::floor(ppq / ppqPerBar);
+            double ppqInBar = ppq - (double)bar * ppqPerBar;
+
+            int beat = (int)std::floor(ppqInBar);
+            double frac = ppqInBar - (double)beat;
+
+            bb.bar  = bar;
+            bb.beat = beat;
+            bb.frac = frac;
+            return bb;
+        }
+
+    private:
+        void updateDerived()
+        {
+            m_ppqPerSecond = m_bpm / 60.0;
+            m_ppqPerSample = (m_sampleRate > 0.0)
+                           ? (m_ppqPerSecond / m_sampleRate)
+                           : 0.0;
+
+            // 4/4 -> 4 PPQ pro Takt, 3/4 -> 3, 6/8 -> 3, etc.
+            m_ppqPerBar = (double)m_timeSigNum * (4.0 / (double)m_timeSigDen);
+        }
+
+    private:
+        double   m_sampleRate;
+        double   m_bpm;
+        uint32_t m_timeSigNum;
+        uint32_t m_timeSigDen;
+
+        double   m_ppqPosition;   // aktuelle PPQ-Position (Viertelnoten)
+        bool     m_isPlaying;
+
+        // abgeleitete Werte
+        double   m_ppqPerSecond;
+        double   m_ppqPerSample;
+        double   m_ppqPerBar;
     };
 
-    inline BarBeat ppqToBarBeat(double ppq) const
+Typische Nutzung im Host:
+
+    BeatEngine beat;
+
+    // Setup
+    beat.setSampleRate(48000.0);
+    beat.setTempo(128.0);
+    beat.setTimeSignature(4, 4);
+    beat.setTransportPlaying(true);
+
+    // Pro Block:
+    void processBlock(uint32_t numFrames)
     {
-        BarBeat bb{0,0,0.0};
+        // Variante A: Host hält eigene PPQ-Position
+        double ppqStart = transportPpq; // z.B. aus deiner Transport-Logik
+        beat.beginBlock(ppqStart);
 
-        double ppqPerBar = m_ppqPerBar;
-        if (ppqPerBar <= 0.0)
-            return bb;
+        for (uint32_t i = 0; i < numFrames; ++i)
+        {
+            double ppq = beat.ppqAtSampleOffset(i);
 
-        int bar = (int)std::floor(ppq / ppqPerBar);
-        double ppqInBar = ppq - (double)bar * ppqPerBar;
+            // z.B. Beat-synchroner LFO:
+            // phase = fmod(ppq * (1.0 / noteLengthInBeats), 1.0);
 
-        int beat = (int)std::floor(ppqInBar);
-        double frac = ppqInBar - (double)beat;
+            // ...
+        }
 
-        bb.bar  = bar;
-        bb.beat = beat;
-        bb.frac = frac;
-        return bb;
+        // Transport fortschreiben:
+        transportPpq += beat.getPpqPerSample() * numFrames;
     }
-
-private:
-    void updateDerived()
-    {
-        m_ppqPerSecond = m_bpm / 60.0;
-        m_ppqPerSample = (m_sampleRate > 0.0)
-                       ? (m_ppqPerSecond / m_sampleRate)
-                       : 0.0;
-
-        // 4/4 -> 4 PPQ pro Takt, 3/4 -> 3, 6/8 -> 3, etc.
-        m_ppqPerBar = (double)m_timeSigNum * (4.0 / (double)m_timeSigDen);
-    }
-
-private:
-    double   m_sampleRate;
-    double   m_bpm;
-    uint32_t m_timeSigNum;
-    uint32_t m_timeSigDen;
-
-    double   m_ppqPosition;   // aktuelle PPQ-Position (Viertelnoten)
-    bool     m_isPlaying;
-
-    // abgeleitete Werte
-    double   m_ppqPerSecond;
-    double   m_ppqPerSample;
-    double   m_ppqPerBar;
-};
-
-Typische Nutzung im Host
-cpp
-
-BeatEngine beat;
-
-// Setup
-beat.setSampleRate(48000.0);
-beat.setTempo(128.0);
-beat.setTimeSignature(4, 4);
-beat.setTransportPlaying(true);
-
-// Pro Block:
-void processBlock(uint32_t numFrames)
-{
-    // Variante A: Host hält eigene PPQ-Position
-    double ppqStart = transportPpq; // z.B. aus deiner Transport-Logik
-    beat.beginBlock(ppqStart);
-
-    for (uint32_t i = 0; i < numFrames; ++i)
-    {
-        double ppq = beat.ppqAtSampleOffset(i);
-
-        // z.B. Beat-synchroner LFO:
-        // phase = fmod(ppq * (1.0 / noteLengthInBeats), 1.0);
-
-        // ...
-    }
-
-    // Transport fortschreiben:
-    transportPpq += beat.getPpqPerSample() * numFrames;
-}
 
 Wenn du willst, kann ich dir als nächsten Schritt direkt zeigen, wie du BeatEngine in deinen DspProcessContext integrierst und z.B. ein Delay/LFO sample‑genau auf Beats synchronisierst.
 BeatEngine in deinen DspProcessContext integrierst und z.B. ein Delay/LFO sample‑genau auf Beats synchronisierst.
@@ -877,20 +944,18 @@ Ich halte alles C++‑nah, byte‑klar, ohne Abstraktionsmüll, exakt so wie du 
 🔧 1. BeatEngine in den DspProcessContext integrieren
 
 Du erweiterst deinen Context einfach um eine Referenz oder einen Pointer auf die BeatEngine.
-cpp
 
-struct DspProcessContext
-{
-    uint64_t frameIndex;
-    uint32_t blockSize;
-    uint32_t sampleRate;
+    struct DspProcessContext
+    {
+        uint64_t frameIndex;
+        uint32_t blockSize;
+        uint32_t sampleRate;
 
-    // Beat / Tempo / Transport
-    const BeatEngine* beat;   // Host setzt das pro Block
-};
+        // Beat / Tempo / Transport
+        const BeatEngine* beat;   // Host setzt das pro Block
+    };
 
 Der Host füllt das so:
-cpp
 
 DspProcessContext ctx;
 ctx.frameIndex = globalFrameIndex;

@@ -876,6 +876,7 @@ MidiFile::computeMemoryConsumption() const
 void
 MidiFile::reset()
 {
+    m_bParsed = false;
     m_fileName = "";
     m_fileType = -1;
     m_trackCount = -1;

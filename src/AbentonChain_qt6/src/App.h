@@ -3,13 +3,13 @@
 #include <QObject>
 #include <QColor>
 #include <de/midi/MidiCentral.h>
-#include <de/audio/Track.h>
+#include <de/session/Session.h>
 #include <de/audio/plugin/PluginFactory.h>
 #include <de/audio/dsp/DspSampleCollector.h>
 //#include <de/audio/device/EndPoint_RtAudio.h>
 #include <de/audio/device/EndPoint_Wasapi.h>
 
-class GL_Canvas;
+class CentralWidget;
 
 // ============================================
 class App : public QObject
@@ -33,9 +33,9 @@ public:
     //bool m_bShutdown;
     //de::audio::EndPoint_RtAudio m_endPoint;
 
-    de::audio::Track m_track0;
-    std::vector<de::audio::Track*> m_tracks;
-    de::audio::Track* m_track;
+    de::session::Session m_session;
+
+    CentralWidget* m_centralWidget;
 
 public:
     explicit App(QObject* parent = nullptr);
@@ -93,13 +93,6 @@ public:
     // de::audio::SharedPlugin createPlugin( std::string uri );
     de::audio::PluginFactory& getPluginFactory();
     const de::audio::PluginFactory& getPluginFactory() const;
-
-    //=========================
-    // TrackApi
-    //=========================
-    int addTrack( std::string name );
-    void removeTrack( int id );
-    de::audio::Track* getTrack( int id );
 
 protected:
 public slots:

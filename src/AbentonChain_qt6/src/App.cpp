@@ -19,14 +19,9 @@ App::App(QObject* parent)
         } }
     //, m_deviceGuardFlag{ false }
     //, m_bShutdown{ false }
-    , m_track(nullptr)
+    , m_centralWidget{ nullptr }
 {
-    // DE_TRACE("")
 
-    //de::audio::WindowFunction::test();
-
-    m_track = &m_track0;
-    //m_sampleCollector = std::make_shared<de::audio::DspSampleCollector>();
 }
 
 App::~App()
@@ -76,7 +71,7 @@ void App::shutdown()
     std::this_thread::sleep_for(
         std::chrono::nanoseconds(100000));
 
-    m_track0.cleanupAll();
+    m_session.shutdown();
 }
 
 const Skin&
@@ -127,8 +122,7 @@ void App::playAudio()
         DE_WARN("Audio already playing")
         return;
     }
-    getSampleCollector()->dsp_clearInputSignals();
-    getSampleCollector()->dsp_setInputSignal(m_track);
+    //getSampleCollector()->dsp_clearInputSignals();
     m_endPoint.setInputSignal(getSampleCollector());
 
     // &m_deviceGuardFlag
@@ -144,7 +138,6 @@ void App::stopAudio()
     }
 
     m_endPoint.stop();
-    getSampleCollector()->dsp_clearInputSignals();
 }
 
 void App::onAudioDeviceLost()
@@ -164,6 +157,7 @@ void App::onAudioDeviceLost()
     // playAudio();
 }
 
+/*
 //=========================
 // TrackApi
 //=========================
@@ -182,6 +176,16 @@ void App::removeTrack( int id )
 {
     // m_track0
 }
+
+void addTracks( const de::midi::file::MidiFile& midiFile)
+{
+    for (int i = 0; i < midiFile.m_tracks.size(); ++i)
+    {
+        auto track = new de::audio::Track;
+
+    }
+}
+*/
 
 //=========================
 // PluginApi

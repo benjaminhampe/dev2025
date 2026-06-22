@@ -4,14 +4,15 @@
 ArraCentral::ArraCentral(QWidget* parent )
    : QWidget( parent )
 {
-   setObjectName( "ArraCentral" );
-   setMouseTracking( true );
+    setObjectName( "ArraCentral" );
+    setMouseTracking( true );
+    setAcceptDrops(true);
 
-   m_overview = new ArraOverview(this);
-   m_tracks = new ArraTracks(this);
-   m_mixer = new ArraMixer(this);
+    m_overview = new ArraOverview(this);
+    m_tracks = new ArraTracks(this);
+    m_mixer = new ArraMixer(this);
 
-   applySkin();
+    applySkin();
 }
 
 void ArraCentral::applySkin()
@@ -32,12 +33,12 @@ void ArraCentral::updateLayout()
     if (h < 1) return;
 
     const int m = 2*m_margin; // inner margin
-    int dx = std::max(w - 2*m,0);
-    int dy = std::max(h - 2*m,0);
+    const int dx = std::max(w - 2*m,0);
+    const int dy = std::max(h - 2*m,0);
 
-    int h1 = dy/8;
-    int h2 = 5*dy/8;
-    int h3 = 2*dy/8;
+    int h1 = 1*dy/10;
+    int h2 = 7*dy/10;
+    int h3 = 2*dy/10;
 
     int x = m;
     int y = m;
@@ -79,6 +80,102 @@ void ArraCentral::paintEvent( QPaintEvent* event )
     }
 }
 
+// ------------------------------------------------------------
+// Drag&Drop
+// ------------------------------------------------------------
+void ArraCentral::dragEnterEvent(QDragEnterEvent* e)
+{
+    if (e->mimeData()->hasUrls())
+    {
+        e->acceptProposedAction();
+
+        const auto l = e->mimeData()->urls();
+        const auto n = l.size();
+        DE_DEBUG("Urls.Count = ",n)
+        if (n)
+        {
+            auto u = l.at(0).toLocalFile();
+            DE_DEBUG("Urls[0] ",u.toStdString())
+
+            QFileInfo fi(u);
+            if (fi.exists() && fi.isFile())
+            {
+                m_midiFile.reset();
+                de::midi::file::ParserListener listener;
+                de::midi::file::Parser parser;
+                listener.setMidiFile(&m_midiFile);
+                parser.addListener(&listener);
+                if (parser.parse(u.toStdString()))
+                {
+                    DE_OK("MidiParser: OK.")
+                    m_midiFile.m_bParsed = true;
+                    DE_BENNI(m_midiFile.str())
+                }
+                else
+                {
+                    DE_ERROR("MidiParser: ERROR")
+                }
+            }
+        }
+    }
+}
+
+void ArraCentral::dragMoveEvent(QDragMoveEvent* e)
+{
+    // qDebug() << "dragMoveEvent()";
+    QPoint pos = e->position().toPoint();
+
+}
+
+void ArraCentral::dragLeaveEvent(QDragLeaveEvent*)
+{
+    // qDebug() << "dragLeaveEvent()";
+}
+
+void ArraCentral::dropEvent(QDropEvent* e)
+{
+    // qDebug() << "dropEvent()";
+
+    // m_scrollTimer->stop();
+
+    if (!e->mimeData()->hasUrls())
+    {
+        // qDebug() << "No urls.";
+        return;
+    }
+
+    e->acceptProposedAction();
+
+    // const auto l = e->mimeData()->urls();
+    // const auto n = l.size();
+    // DE_DEBUG("Urls.Count = ",n)
+    // if (n)
+    // {
+    //     auto u = l.at(0).toLocalFile().toStdString();
+    //     DE_DEBUG("Urls[0] ",u)
+    // }
+
+    if (m_midiFile.m_bParsed)
+    {
+        App::instance()->m_session.addTracks(m_midiFile);
+        m_midiFile.reset();
+    }
+/*
+    const auto& liste = e->mimeData()->urls();
+    for (const auto& item : liste)
+    {
+        QString url = item.toLocalFile();
+        if (QFileInfo::exists(url))
+        {
+            insertPlugin(m_dropIndex, url);
+        }
+        else
+        {
+            DE_ERROR("File not exist: ", url.toStdString())
+        }
+    }
+*/
+}
 #if 0
 
 void

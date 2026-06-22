@@ -1,9 +1,9 @@
-#include <de/audio/fft/WindowFunction.h>
+#include <de/math/fft/WindowFunction.h>
 #include <sstream>
 #include <algorithm>
 
 namespace de {
-namespace audio {
+namespace math {
 
 std::string drawSvgStippleLine(float x1, float y1, float x2, float y2, float strokeWidth,
                            const std::string& strokeColor, const std::string& dashPattern)
@@ -463,7 +463,7 @@ void WindowFunction::apply(const float* __restrict__ pIn, uint32_t nIn,
     for (size_t i = nOut; i < N; ++i) { pOut[i] = 0.0f; }
 }
 
-} // end namespace audio.
+} // end namespace math.
 } // end namespace de.
 
 

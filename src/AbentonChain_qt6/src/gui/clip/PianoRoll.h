@@ -1,5 +1,5 @@
 ﻿#pragma once
-#include "Clip.h"
+#include <de/session/Clip.h>
 #include <de/audio/dsp/IDspChainElement.h>
 #include <QWidget>
 #include "QFont5x8.h"
@@ -15,7 +15,6 @@ public:
 
     void applySkin();
     void updateLayout();
-
 
     bool isMouseOverPianoBar() const;
     bool isMouseOverBeatGrid() const;
@@ -44,7 +43,7 @@ public:
     //   void noteOff( int channel, int midiNote );
 public slots:
     void reset();
-    void setClip( Clip* clip );
+    void setClip( std::shared_ptr<de::session::Clip> clip );
     // void setSynth( int i, de::audio::IDspChainElement* synth );
     // void sendNote( de::audio::Note const & note );
     //void play( int mode = 0 );
@@ -117,7 +116,7 @@ protected:
     std::array< de::audio::IDspChainElement*, 8 > m_synths;
 
     // Array is build up from highest note to lowest, because we draw them that way.
-    Clip* m_clip;
+    std::shared_ptr<de::session::Clip> m_clip;
 
 
     // What the sequencer stores, draws and sends to synths.

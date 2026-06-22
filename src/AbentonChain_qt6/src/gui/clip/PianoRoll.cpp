@@ -494,7 +494,7 @@ PianoRoll::showEvent( QShowEvent* event )
 }
 
 void
-PianoRoll::setClip( Clip* clip )
+PianoRoll::setClip(std::shared_ptr<de::session::Clip> clip )
 {
    if ( m_clip != clip )
    {

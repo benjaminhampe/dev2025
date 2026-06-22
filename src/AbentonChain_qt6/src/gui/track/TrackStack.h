@@ -1,7 +1,7 @@
 #pragma once
 #include <QWidget>
 #include <QStackedWidget>
-#include "gui/track/Track.h"
+#include "gui/track/TrackWidget.h"
 #include "gui/track/QuickHelp.h"
 #include "gui/track/details/AudioMeter.h"
 #include "gui/track/details/MidiMeter.h"
@@ -18,8 +18,8 @@ public:
     void updateLayout();
     void setAudioOnly(bool bAudioOnly);
     void showQuickHelp(bool bVisible);
-    const Track* trackWidget() const { return m_trackWidget; }
-    Track* trackWidget() { return m_trackWidget; }
+    const TrackWidget* trackWidget() const { return m_trackWidget; }
+    TrackWidget* trackWidget() { return m_trackWidget; }
 signals:
     void newTrackOverview(QPixmap pix); // for Footer
 protected:
@@ -34,7 +34,7 @@ private:
     QuickHelp* m_quickHelp;
     MidiMeter* m_midiMeter;
     AudioMeter* m_audioMeter;
-    Track* m_trackWidget;
+    TrackWidget* m_trackWidget;
 
     //bool m_bShowQuickHelp = false; // false = MidiMeter visible, AudioMeter invisible.
     bool m_bAudioOnly = false; // false = MidiMeter visible, AudioMeter invisible.

@@ -1,4 +1,4 @@
-#include <de/audio/fft/DE_FFT_pffft.h>
+#include <de/math/fft/DE_FFT_pffft.h>
 
 #if 1
 

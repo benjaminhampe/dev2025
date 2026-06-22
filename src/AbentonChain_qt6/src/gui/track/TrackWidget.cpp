@@ -1,11 +1,11 @@
-#include "Track.h"
+#include "TrackWidget.h"
 #include "App.h"
 
 // ==================================================
-Track::Track(de::audio::Track* track, QWidget* parent)
+TrackWidget::TrackWidget(QWidget* parent)
 // ==================================================
     : QWidget(parent)
-    , m_track(track)
+    , m_track{ nullptr }
 {
     //setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding);
     setContentsMargins(0,0,0,0);
@@ -14,33 +14,65 @@ Track::Track(de::audio::Track* track, QWidget* parent)
     setStyleSheet("background: transparent;");
 
     // m_scrollTimer = new QTimer(this);
-    // connect(App::instance(), &App::skinChanged, this, &Track::applySkin);
+    // connect(App::instance(), &App::skinChanged, this, &TrackWidget::applySkin);
 
-    // connect(m_scrollTimer, &QTimer::timeout, this, &Track::autoScroll);
+    // connect(m_scrollTimer, &QTimer::timeout, this, &TrackWidget::autoScroll);
 
     // m_dropTarget = new DropTarget(this);
 
     applySkin();
 }
 
-Track::~Track()
+TrackWidget::~TrackWidget()
 {
     DE_OK()
     // for (auto p : m_plugins) { delete p; }
     // m_plugins.clear();
 }
 
-// QSize Track::sizeHint() const { return QSize(0, m_height); }
-// QSize Track::minimumSizeHint() const { return QSize(0, m_height); }
+// QSize TrackWidget::sizeHint() const { return QSize(0, m_height); }
+// QSize TrackWidget::minimumSizeHint() const { return QSize(0, m_height); }
 
-void Track::applySkin()
+void TrackWidget::setTrack(de::audio::DspTrack* track)
+{
+    if (m_track == track)
+    {
+        return; // Nothing todo
+    }
+
+    for (auto p : m_plugins)
+    {
+        p->setPlugin(nullptr);
+        p->deleteLater();
+    }
+    m_plugins.clear();
+
+    m_track = track;
+
+    if (m_track)
+    {
+        auto plugins = m_track->getPlugins();
+        m_plugins.reserve(plugins.size());
+        for (auto & p : plugins)
+        {
+            if (!p) { DE_ERROR("Got nullptr") continue; }
+            auto pluginWidget = new PluginWidget(this);
+            pluginWidget->setPlugin(p);
+            m_plugins.emplace_back(pluginWidget);
+        }
+    }
+
+    updateLayout();
+}
+
+void TrackWidget::applySkin()
 {
     for (auto p : m_plugins)
     {
         p->applySkin();
     }
 
-    //qDebug() << "Track::applySkin()";
+    //qDebug() << "TrackWidget::applySkin()";
     const auto& skin = App::instance()->getSkin();
     m_windowColor = skin.windowColor;
     m_panelColor = skin.panelColor;
@@ -57,7 +89,7 @@ void Track::applySkin()
     updateLayout();
 }
 
-void Track::updateLayout()
+void TrackWidget::updateLayout()
 {
     //DE_TRACE("updateLayout()")
 
@@ -97,7 +129,7 @@ void Track::updateLayout()
 }
 
 std::vector<de::audio::SharedPlugin>
-Track::collectPlugins() const
+TrackWidget::collectPlugins() const
 {
     std::vector<de::audio::SharedPlugin> plugins;
     plugins.reserve( m_plugins.size() );
@@ -119,7 +151,7 @@ Track::collectPlugins() const
 // ------------------------------------------------------------
 // Zeichnen
 // ------------------------------------------------------------
-void Track::resizeEvent(QResizeEvent* e)
+void TrackWidget::resizeEvent(QResizeEvent* e)
 {
     QWidget::resizeEvent(e);
 
@@ -135,7 +167,7 @@ void Track::resizeEvent(QResizeEvent* e)
     updateLayout();
 }
 
-void Track::paintEvent(QPaintEvent* e)
+void TrackWidget::paintEvent(QPaintEvent* e)
 {
     if (!isVisible()) { return; }
     const int w = width();
@@ -211,7 +243,7 @@ void Track::paintEvent(QPaintEvent* e)
 }
 
 
-void Track::emitTrackOverview()
+void TrackWidget::emitTrackOverview()
 {
     if (m_width < 1)
     {
@@ -260,14 +292,14 @@ void Track::emitTrackOverview()
 }
 
 // ------------------------------------------------------------
-// Plugin hinzufügen
+// PluginWidget hinzufügen
 // ------------------------------------------------------------
-void Track::addPlugin(const QString &uri)
+void TrackWidget::addPlugin(const QString &uri)
 {
     insertPlugin(m_plugins.size(), uri);
 }
 
-void Track::insertPlugin(int index, const QString &uri)
+void TrackWidget::insertPlugin(int index, const QString &uri)
 {
     DE_DEBUG("Dropped index(",index,"), file(",dbFileName(uri.toStdString()),")")
 
@@ -279,7 +311,7 @@ void Track::insertPlugin(int index, const QString &uri)
 
     if (!m_track)
     {
-        DE_ERROR("No track")
+        DE_ERROR("No DspTrack")
         return;
     }
 
@@ -293,13 +325,14 @@ void Track::insertPlugin(int index, const QString &uri)
     App::instance()->stopAudio();
 
     // Create GUI Shell
-    auto w = new Plugin(plugin, this);
+    auto w = new PluginWidget(this);
+    w->setPlugin(plugin);
     w->show();
 
     // Connect GUI Shell
-    connect(w, &Plugin::requestRemoval, this, &Track::removePlugin);
+    connect(w, &PluginWidget::requestRemoval, this, &TrackWidget::removePlugin);
 
-    connect(w, &Plugin::collapseChanged, this, &Track::updateLayout);
+    connect(w, &PluginWidget::collapseChanged, this, &TrackWidget::updateLayout);
 
     // Manage GUI Shell
     m_plugins.insert(m_plugins.begin() + index, w);
@@ -315,7 +348,7 @@ void Track::insertPlugin(int index, const QString &uri)
     App::instance()->playAudio();
 }
 
-void Track::removePlugin(Plugin* w)
+void TrackWidget::removePlugin(PluginWidget* w)
 {
     setUpdatesEnabled(false);
 
@@ -372,7 +405,7 @@ void Track::removePlugin(Plugin* w)
 // ------------------------------------------------------------
 // Drag&Drop
 // ------------------------------------------------------------
-void Track::dragEnterEvent(QDragEnterEvent* e)
+void TrackWidget::dragEnterEvent(QDragEnterEvent* e)
 {
     if (e->mimeData()->hasUrls())
     {
@@ -383,7 +416,7 @@ void Track::dragEnterEvent(QDragEnterEvent* e)
     }
 }
 
-int Track::computeDropIndex(const QPoint &pos)
+int TrackWidget::computeDropIndex(const QPoint &pos)
 {
     for (int i = 0; i < m_plugins.size(); ++i)
     {
@@ -402,7 +435,7 @@ int Track::computeDropIndex(const QPoint &pos)
 // Drag&Drop Reorder:
 // ------------------------------------------------------------
 
-int Track::computeDragIndex(const QPoint &pos)
+int TrackWidget::computeDragIndex(const QPoint &pos)
 {
     for (int i = 0; i < m_plugins.size(); ++i)
     {
@@ -421,7 +454,7 @@ int Track::computeDragIndex(const QPoint &pos)
     return -1;
 }
 
-void Track::dragMoveEvent(QDragMoveEvent* e)
+void TrackWidget::dragMoveEvent(QDragMoveEvent* e)
 {
     // qDebug() << "dragMoveEvent()";
     QPoint pos = e->position().toPoint();
@@ -435,7 +468,7 @@ void Track::dragMoveEvent(QDragMoveEvent* e)
     }
 }
 
-void Track::dragLeaveEvent(QDragLeaveEvent*)
+void TrackWidget::dragLeaveEvent(QDragLeaveEvent*)
 {
     // qDebug() << "dragLeaveEvent()";
     m_dragIndex = -1;
@@ -444,7 +477,7 @@ void Track::dragLeaveEvent(QDragLeaveEvent*)
     //updateLayout();
 }
 
-void Track::dropEvent(QDropEvent* e)
+void TrackWidget::dropEvent(QDropEvent* e)
 {
     // qDebug() << "dropEvent()";
 
@@ -474,7 +507,7 @@ void Track::dropEvent(QDropEvent* e)
 // ------------------------------------------------------------
 // Positionierung
 // ------------------------------------------------------------
-int Track::computeDropIndicatorPosX(int dragIndex, int dropIndex)
+int TrackWidget::computeDropIndicatorPosX(int dragIndex, int dropIndex)
 {
     // if (dragIndex <= 0)
     // {
@@ -525,7 +558,7 @@ bool isValidDropIndex(int dragIndex, int dropIndex)
     return false;
 }
 
-void Track::mouseMoveEvent(QMouseEvent* e)
+void TrackWidget::mouseMoveEvent(QMouseEvent* e)
 {
     m_posMouse = e->position().toPoint();
     if (m_isDragInit)
@@ -568,7 +601,7 @@ void Track::mouseMoveEvent(QMouseEvent* e)
     }
 }
 
-void Track::mousePressEvent(QMouseEvent* e)
+void TrackWidget::mousePressEvent(QMouseEvent* e)
 {
     if (e->button() == Qt::LeftButton)
     {
@@ -582,7 +615,7 @@ void Track::mousePressEvent(QMouseEvent* e)
         auto pos = e->position().toPoint();
         m_posMouse = pos;
 
-        // If mouse is over Plugin->m_rcLabel
+        // If mouse is over PluginWidget->m_rcLabel
         // then start a drag operation...
         int index = computeDragIndex( pos );
         if (index >= 0 && index < int(m_plugins.size()))
@@ -601,7 +634,7 @@ void Track::mousePressEvent(QMouseEvent* e)
     }
 }
 
-void Track::mouseReleaseEvent(QMouseEvent* e)
+void TrackWidget::mouseReleaseEvent(QMouseEvent* e)
 {
     if (e->button() == Qt::LeftButton)
     {
@@ -636,7 +669,7 @@ void Track::mouseReleaseEvent(QMouseEvent* e)
     }
 }
 
-bool Track::swapWidgets(int dragIndex, int dropIndex)
+bool TrackWidget::swapWidgets(int dragIndex, int dropIndex)
 {
     if (dragIndex == dropIndex)
     {
@@ -680,53 +713,10 @@ bool Track::swapWidgets(int dragIndex, int dropIndex)
     return true;
 }
 
-
-// ------------------------------------------------------------
-// Speicherung / Laden
-// ------------------------------------------------------------
-void Track::saveState(const QString &path)
-{
-    QJsonArray arr;
-    for (Plugin* w : m_plugins)
-    {
-        auto plugin = w->getPlugin();
-        if (!plugin)
-        {
-            DE_ERROR("No plugin")
-            continue;
-        }
-
-        arr.append(QString::fromStdString(plugin->getUri()));
-    }
-
-    QFile f(path);
-    if (f.open(QIODevice::WriteOnly))
-    {
-        f.write(QJsonDocument(arr).toJson());
-    }
-}
-
-void Track::loadState(const QString &path)
-{
-    QFile f(path);
-    if (!f.open(QIODevice::ReadOnly))
-    {
-        return;
-    }
-
-    QJsonDocument doc = QJsonDocument::fromJson(f.readAll());
-    for (const auto& v : doc.array())
-    {
-        addPlugin(v.toString());
-    }
-    updateLayout();
-}
-
-
 // ------------------------------------------------------------
 // Auto-Scroll
 // ------------------------------------------------------------
-void Track::startAutoScrollIfNeeded(const QPoint &pos)
+void TrackWidget::startAutoScrollIfNeeded(const QPoint &pos)
 {
     /*
     int margin = 40;
@@ -754,7 +744,7 @@ void Track::startAutoScrollIfNeeded(const QPoint &pos)
 */
 }
 
-void Track::autoScroll()
+void TrackWidget::autoScroll()
 {
     /*
     auto scrollArea = qobject_cast<QScrollArea*>(parentWidget()->parentWidget());
@@ -773,13 +763,13 @@ void Track::autoScroll()
 
 /*
 // ============================================================
-Track::Track(QWidget *parent)
+TrackWidget::TrackWidget(QWidget *parent)
 // ============================================================
     : QWidget(parent)
 {
     setContentsMargins(0,0,0,0);
 
-    m_Track = new Track;
+    m_Track = new TrackWidget;
 
     m_scrollArea = new QScrollArea;
     m_scrollArea -> setContentsMargins(0,0,0,0);
@@ -794,7 +784,7 @@ Track::Track(QWidget *parent)
 }
 
 // ============================================================
-Track::~Track()
+TrackWidget::~TrackWidget()
 // ============================================================
 {
 

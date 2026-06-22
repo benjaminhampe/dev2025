@@ -978,7 +978,7 @@ public:
     bool m_bIsSynth;
     bool m_bIsBypassed;
     bool m_bIgnoreQtResize; // to avoid feedback loops;
-    Track* m_track;
+    DspTrack* m_track;
     PluginEditorWindow* m_editor;
     IDspChainElement* m_inputSignal;
     const clap_plugin_entry_t* m_entry;
@@ -2238,11 +2238,11 @@ void CLAP_Plugin::setBypassed( bool bBypassed )
 
 // ===================================================
 
-const Track* CLAP_Plugin::getTrack() const { return _d->m_track; }
+const DspTrack* CLAP_Plugin::getTrack() const { return _d->m_track; }
 
-Track* CLAP_Plugin::getTrack() { return _d->m_track; }
+DspTrack* CLAP_Plugin::getTrack() { return _d->m_track; }
 
-void CLAP_Plugin::setTrack(Track* track) { _d->m_track = track; }
+void CLAP_Plugin::setTrack(DspTrack* track) { _d->m_track = track; }
 
 // ===================================================
 

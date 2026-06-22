@@ -5,18 +5,21 @@
 #include <de/audio/plugin/PluginFactory.h>
 
 namespace de {
+namespace session {
+
+class Track;
+
+} // end namespace session.
+} // end namespace de.
+
+namespace de {
 namespace audio {
 
-class IAudioCentral;
-
 // ===========================================================================
-class Track : public IDspChainElement
+class DspTrack : public IDspChainElement
 // ===========================================================================
 {
-    static u32 GetFreeTrackId();
-
-    IAudioCentral* m_audioCentral;
-    int m_trackId;
+    de::session::Track* m_track;
 
     IPlugin* m_chainStart;
     IPlugin* m_chainEnd;
@@ -24,19 +27,17 @@ class Track : public IDspChainElement
     std::vector<SharedPlugin> m_plugins;
     std::vector<SharedPlugin> m_trashBin;
 
-    std::string m_trackName;
-
     std::string debugStr() const;
 
 public:
-    Track();
-    ~Track();
+    explicit DspTrack(de::session::Track* parent);
+    ~DspTrack();
     void cleanupAll();
     void cleanupTrash();
-    void setAudioCentral( IAudioCentral* audioCentral);
-    u32 getTrackId() const;
-    void setTrackId(u32 trackId);
-    std::string getTrackName() const;
+    //void setAudioCentral( IAudioCentral* audioCentral);
+
+    const std::vector<SharedPlugin>& getPlugins() const { return m_plugins; }
+    std::vector<SharedPlugin>& getPlugins() { return m_plugins; }
 
     void setPlugins( std::vector<SharedPlugin> plugins );
 
@@ -61,6 +62,8 @@ public:
     void dsp_setInputSignal(IDspChainElement* input, int i = 0) override;
 
     void dsp_clearInputSignals() override;
+
+    bool swapPlugins(int dragIndex, int dropIndex);
 
 private:
     void updateDspChain();

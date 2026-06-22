@@ -1,30 +1,26 @@
 #pragma once
-#include "Plugin.h"
+#include "PluginWidget.h"
 #include <vector>
 #include <QHBoxLayout>
-#include <de/audio/Track.h>
+#include <de/audio/dsp/DspTrack.h>
 
 // ============================================
-class Track : public QWidget
+class TrackWidget : public QWidget
 // ============================================
 {
     Q_OBJECT
 public:
-    Track(de::audio::Track* track, QWidget* parent = nullptr);
-    ~Track() override;
-    // QSize sizeHint() const override;
-    // QSize minimumSizeHint() const override;
-
-    const de::audio::Track* getTrack() const { return m_track; }
-    de::audio::Track* getTrack() { return m_track; }
-
+    TrackWidget(QWidget* parent = nullptr);
+    ~TrackWidget() override;
     void applySkin();
+    void updateLayout();
+    void updateLayoutOfDropTarget();
 
-    // ----------------------------------------
-    // Speicherung / Laden
-    // ----------------------------------------
-    void saveState(const QString &path);
-    void loadState(const QString &path);
+    // const std::shared_ptr<de::audio::DspTrack> &
+    // getTrack() const { return m_track; }
+    void setTrack(de::audio::DspTrack* track);
+    const de::audio::DspTrack* getTrack() const { return m_track; }
+    de::audio::DspTrack* getTrack() { return m_track; }
 
 signals:
     void newOverview(QPixmap overview);
@@ -55,14 +51,13 @@ protected:
     bool swapWidgets(int drag, int drop);
 
 private:
-    void updateLayout();
-    void updateLayoutOfDropTarget();
+
 
     std::vector<de::audio::SharedPlugin> collectPlugins() const;
 
-    std::vector<Plugin*> m_plugins;
+    std::vector<PluginWidget*> m_plugins;
 
-    de::audio::Track* m_track;
+    de::audio::DspTrack* m_track;
 
     int m_baseHeight = 376;
     int m_baseRadius = 6;
@@ -102,11 +97,11 @@ private:
     int m_overviewHeight;
 
     // ----------------------------------------
-    // Plugin hinzufügen
+    // PluginWidget hinzufügen
     // ----------------------------------------
     void addPlugin(const QString &name);
     void insertPlugin(int index, const QString &name);
-    void removePlugin(Plugin* w);
+    void removePlugin(PluginWidget* w);
 
     // ----------------------------------------
     // Positionierung

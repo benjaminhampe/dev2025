@@ -1,5 +1,24 @@
 ﻿#pragma once
 #include <QWidget>
+#include <de/session/Track.h>
+
+// ============================================================================
+class ArraTrack
+// ============================================================================
+{
+public:
+    std::shared_ptr<de::session::Track> m_track;
+    QString m_name;
+    QRect m_rect;
+    QColor m_color;
+
+    // QColor m_windowColor;
+    // QColor m_panelColor;
+
+
+};
+
+#if 0
 
 // ============================================================================
 class ArraTrack : public QWidget
@@ -37,3 +56,5 @@ protected:
     QColor m_windowColor;
     QColor m_panelColor;
 };
+
+#endif

@@ -1,6 +1,8 @@
 #include "ArraTrack.h"
 #include <App.h>
 
+#if 0
+
 ArraTrack::ArraTrack(QWidget* parent )
    : QWidget( parent )
 {
@@ -76,7 +78,7 @@ void ArraTrack::paintEvent( QPaintEvent* event )
     }
 }
 
-#if 0
+
 
 void
 ArraTrack::hideEvent( QHideEvent* event )
