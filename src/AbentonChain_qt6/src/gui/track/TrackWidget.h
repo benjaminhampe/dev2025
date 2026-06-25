@@ -2,7 +2,12 @@
 #include "PluginWidget.h"
 #include <vector>
 #include <QHBoxLayout>
-#include <de/audio/dsp/DspTrack.h>
+
+namespace de {
+namespace session {
+    class Track;
+} // end namespace session.
+} // end namespace de.
 
 // ============================================
 class TrackWidget : public QWidget
@@ -12,15 +17,16 @@ class TrackWidget : public QWidget
 public:
     TrackWidget(QWidget* parent = nullptr);
     ~TrackWidget() override;
+    void shutdown();
     void applySkin();
     void updateLayout();
     void updateLayoutOfDropTarget();
 
     // const std::shared_ptr<de::audio::DspTrack> &
     // getTrack() const { return m_track; }
-    void setTrack(de::audio::DspTrack* track);
-    const de::audio::DspTrack* getTrack() const { return m_track; }
-    de::audio::DspTrack* getTrack() { return m_track; }
+    void setTrack(de::session::Track* track);
+    //const de::session::SharedTrack getTrack() const { return m_track; }
+    de::session::Track* getTrack() const { return m_track; }
 
 signals:
     void newOverview(QPixmap overview);
@@ -48,16 +54,37 @@ protected:
     void dragLeaveEvent(QDragLeaveEvent* e) override;
     void dropEvent(QDropEvent* e) override;
 
-    bool swapWidgets(int drag, int drop);
+    //bool swapWidgets(int drag, int drop);
 
 private:
 
+    // ----------------------------------------
+    // PluginWidget hinzufügen
+    // ----------------------------------------
+    // void addPlugin(const QString &name);
+    // void insertPlugin(int index, const QString &name);
+    // void removePlugin(PluginWidget* w);
 
-    std::vector<de::audio::SharedPlugin> collectPlugins() const;
+    // ----------------------------------------
+    // Positionierung
+    // ----------------------------------------
+    // void repositionWidgets();
+    int computeDragIndex(const QPoint &pos);
+    int computeDropIndex(const QPoint &pos);
+    int computeDropIndicatorPosX(int dragIndex, int dropIndex);
 
-    std::vector<PluginWidget*> m_plugins;
+    // ----------------------------------------
+    // Auto-Scroll
+    // ----------------------------------------
+    void startAutoScrollIfNeeded(const QPoint &pos);
+    void autoScroll();
 
-    de::audio::DspTrack* m_track;
+    // std::vector<de::audio::SharedPlugin> collectPlugins() const;
+
+    // std::vector<SharedPlugin> m_plugins;
+    // std::vector<SharedPlugin> m_trashBin;
+public:
+    de::session::Track* m_track; // weak_ptr to parent.
 
     int m_baseHeight = 376;
     int m_baseRadius = 6;
@@ -96,24 +123,4 @@ private:
     bool m_bInPaintEvent = false;
     int m_overviewHeight;
 
-    // ----------------------------------------
-    // PluginWidget hinzufügen
-    // ----------------------------------------
-    void addPlugin(const QString &name);
-    void insertPlugin(int index, const QString &name);
-    void removePlugin(PluginWidget* w);
-
-    // ----------------------------------------
-    // Positionierung
-    // ----------------------------------------
-    // void repositionWidgets();
-    int computeDragIndex(const QPoint &pos);
-    int computeDropIndex(const QPoint &pos);
-    int computeDropIndicatorPosX(int dragIndex, int dropIndex);
-
-    // ----------------------------------------
-    // Auto-Scroll
-    // ----------------------------------------
-    void startAutoScrollIfNeeded(const QPoint &pos);
-    void autoScroll();
 };

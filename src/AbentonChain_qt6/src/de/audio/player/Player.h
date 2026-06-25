@@ -14,6 +14,8 @@ public:
     Player();
     ~Player() override;
 
+    std::string dsp_name() const override { return "Player"; }
+
     void dsp_init(u64 frames,
                   u32 channels,
                   u32 sampleRate ) override;

@@ -6,11 +6,11 @@
 namespace de {
 namespace session {
 
-typedef std::shared_ptr<Track> SharedTrack;
+// typedef std::shared_ptr<Track> SharedTrack;
 
-typedef std::vector<SharedTrack> SharedTracks;
+// typedef std::vector<SharedTrack> SharedTracks;
 
-typedef std::function<void(SharedTrack)> FN_onTrack;
+typedef std::function<void(Track*)> FN_onTrack;
 
 //=========================
 struct Session
@@ -25,12 +25,13 @@ struct Session
     // int m_masterTrackId = -1;
     // std::vector<int> m_userTracksId;
     // std::vector<int> m_sendTracksId;
-    SharedTracks m_tracks;
+    std::vector<Track*> m_tracks;
 
     de::audio::DspMixer m_dspMixer;
 
     Session();
     ~Session();
+    void dumpDspChain();
     void destroyWidgets();
     void shutdown();
     void newSession();
@@ -51,9 +52,9 @@ struct Session
 
     int getActiveTrackId() const { return m_activeTrackId; }
 
-    SharedTrack getActiveTrack() const { return getTrack(m_activeTrackId); }
+    Track* getActiveTrack() const { return getTrack(m_activeTrackId); }
 
-    SharedTrack getTrack( int trackId ) const
+    Track* getTrack( int trackId ) const
     {
         if (trackId < 0)
         {
@@ -71,9 +72,10 @@ struct Session
         }
     }
 
+/*
     void forEachTrack(const FN_onTrack& onTrack)
     {
-        for (const SharedTrack &trk : m_tracks)
+        for (Track* trk : m_tracks)
         {
             onTrack(trk);
         }
@@ -81,7 +83,7 @@ struct Session
 
     void forEachTrack(int trackType, const FN_onTrack& onTrack)
     {
-        for (const SharedTrack &trk : m_tracks)
+        for (Track* trk : m_tracks)
         {
             if (trk->m_trackType == trackType)
             {
@@ -89,10 +91,11 @@ struct Session
             }
         }
     }
+*/
 
-    SharedTrack getMasterTrack() const
+    Track* getMasterTrack() const
     {
-        for (SharedTrack trk : m_tracks)
+        for (Track* trk : m_tracks)
         {
             if (trk->m_trackType == Track::Master)
             {
@@ -105,7 +108,7 @@ struct Session
     int numUserTracks() const
     {
         int n = 0;
-        for (const SharedTrack &trk : m_tracks)
+        for (const Track* const trk : m_tracks)
         {
             if (trk->m_trackType == Track::User)
             {

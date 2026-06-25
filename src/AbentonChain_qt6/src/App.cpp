@@ -1,5 +1,9 @@
 #include "App.h"
-#include <gui/viz/GL_Canvas.h>
+#include <de/audio/plugin/details/VST2_Plugin.h>
+#include <de/audio/plugin/details/VST3_Plugin.h>
+#include <de/audio/plugin/details/CLAP_Plugin.h>
+#include <de/audio/player/Player.h>
+// #include <gui/viz/GL_Canvas.h>
 
 // Singleton instance pointer.
 std::shared_ptr<App> App::m_pInstance = nullptr;
@@ -35,6 +39,79 @@ std::shared_ptr<App> App::instance()
         m_pInstance = std::make_shared<App>();
 
     return m_pInstance;
+}
+
+//=========================
+// PluginApi
+//=========================
+
+de::audio::IPlugin*
+App::createPlugin(std::string uri)
+{
+    de::PerformanceTimer timer;
+    timer.start();
+
+    uri = de::FileSystem::makeAbsolute( uri );
+
+    de::audio::IPlugin* plugin = nullptr;
+
+
+
+    std::string suffix = de::FileSystem::fileSuffix( uri );
+    if (suffix.empty())
+    {
+        DE_ERROR("Got empty extension, not able to determine plugin type.")
+    }
+#ifdef BENNI_USE_VST2
+    else if (suffix == "dll")  { plugin = new de::audio::VST2_Plugin; }
+#endif
+#ifdef BENNI_USE_VST3
+    else if (suffix == "vst3") { plugin = new de::audio::VST3_Plugin; }
+#endif
+#ifdef BENNI_USE_CLAP
+    else if (suffix == "clap") { plugin = new de::audio::CLAP_Plugin; }
+#endif
+    else if (
+        (suffix == "mp4") || (suffix == "m4a") ||
+        (suffix == "mp3") ||
+        (suffix == "wav"))
+    {
+        plugin = new de::audio::Player;
+    }
+    else
+    {
+        DE_ERROR("Unsupported extension (yet) ", suffix)
+    }
+
+    if (plugin)
+    {
+        plugin->openPlugin(uri);
+
+        if (!plugin->isPluginOpen())
+        {
+            DE_ERROR("Cant open")
+            delete plugin;
+            plugin = nullptr;
+
+        }
+        else
+        {
+            plugin->setPluginId( GetFreePluginId() );
+            // m_plugins.emplace_back( plugin );
+        }
+    }
+
+    if (plugin->isSynth())
+    {
+        getMidiCentral().registerListener(plugin);
+    }
+
+    // plugin->setTrack(m_dsp.get());
+
+    timer.stop();
+    DE_OK("[",suffix,"] ", timer.ms(), "ms|", dbFileName(uri))
+
+    return plugin;
 }
 
 // void App::setCanvas( GL_Canvas* canvas )
@@ -187,13 +264,6 @@ void addTracks( const de::midi::file::MidiFile& midiFile)
 }
 */
 
-//=========================
-// PluginApi
-//=========================
-de::audio::PluginFactory&
-App::getPluginFactory() { return m_pluginFactory; }
-const de::audio::PluginFactory&
-App::getPluginFactory() const { return m_pluginFactory; }
 
 #if 0
 de::audio::SharedPlugin

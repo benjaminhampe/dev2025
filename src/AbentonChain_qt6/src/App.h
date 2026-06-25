@@ -4,7 +4,6 @@
 #include <QColor>
 #include <de/midi/MidiCentral.h>
 #include <de/session/Session.h>
-#include <de/audio/plugin/PluginFactory.h>
 #include <de/audio/dsp/DspSampleCollector.h>
 //#include <de/audio/device/EndPoint_RtAudio.h>
 #include <de/audio/device/EndPoint_Wasapi.h>
@@ -24,7 +23,6 @@ public:
     // int m_blockSize;
     // int m_channels;
     // int m_sampleRate;
-    de::audio::PluginFactory m_pluginFactory;
     de::midi::MidiCentral m_midiCentral;
 
     de::audio::DspSampleCollector m_sampleCollector;
@@ -90,9 +88,7 @@ public:
     //=========================
     // PluginApi
     //=========================
-    // de::audio::SharedPlugin createPlugin( std::string uri );
-    de::audio::PluginFactory& getPluginFactory();
-    const de::audio::PluginFactory& getPluginFactory() const;
+    de::audio::IPlugin* createPlugin(std::string uri);
 
 protected:
 public slots:
@@ -107,5 +103,15 @@ signals:
 private:
     static std::shared_ptr<App> m_pInstance;
 
+    static int GetFreePluginId()
+    {
+        static int s_id = 0;
+        return ++s_id;
+    }
+
+    // std::vector< IPlugin* > m_plugins;
+
+    bool m_bDebug = true;
+    bool m_bThrowOnFail = false;
 
 };

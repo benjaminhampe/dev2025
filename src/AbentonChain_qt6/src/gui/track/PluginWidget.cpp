@@ -50,7 +50,7 @@ namespace {
 
 PluginWidget::PluginWidget(QWidget* parent)
     : QWidget(parent)
-    , m_plugin(nullptr)
+    , m_plugin{ nullptr }
 {
     //setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Expanding);
     setContextMenuPolicy(Qt::CustomContextMenu);
@@ -400,7 +400,7 @@ void PluginWidget::mouseMoveEvent(QMouseEvent* event)
     QWidget::mouseMoveEvent(event);
 }
 
-void PluginWidget::setPlugin(de::audio::SharedPlugin plugin)
+void PluginWidget::setPlugin(de::audio::IPlugin* plugin)
 {
     DE_OK()
     unloadPlugin();
@@ -496,7 +496,7 @@ void PluginWidget::unloadPlugin()
     setUpdatesEnabled(true); // Enable paintEvent()
 }
 
-void PluginWidget::loadPlugin(de::audio::SharedPlugin plugin)
+void PluginWidget::loadPlugin(de::audio::IPlugin* plugin)
 {
     if (!plugin)
     {
@@ -509,7 +509,7 @@ void PluginWidget::loadPlugin(de::audio::SharedPlugin plugin)
     // Transition:
     m_plugin = plugin;
     m_bCollapsed = m_plugin->isCollapsed(); // GUI state
-    m_audioMeter->setPlugin(m_plugin.get());
+    m_audioMeter->setPlugin(m_plugin);
     m_audioMeter->playUpdateTimer();
 
     m_title = QString::fromStdString(m_plugin->getName());

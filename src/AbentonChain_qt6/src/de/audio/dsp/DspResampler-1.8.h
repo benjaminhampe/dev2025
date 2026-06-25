@@ -66,6 +66,8 @@ public:
 
     void setSampleRateIn(u32 sampleRate);
 
+    std::string dsp_name() const override { return "DspResampler-1.8"; }
+
     void dsp_init( u64 frames, u32 channels, u32 sampleRate ) override;
 
     void dsp_read( f64 pts, u32 frames, u32 sampleRate,

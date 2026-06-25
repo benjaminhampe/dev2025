@@ -13,7 +13,7 @@ ClipEditor::ClipEditor(QWidget* parent )
    applySkin();
 }
 
-void ClipEditor::setClip(std::shared_ptr<de::session::Clip> clip)
+void ClipEditor::setClip(de::session::Clip* clip)
 {
     if (m_clip != clip)
     {

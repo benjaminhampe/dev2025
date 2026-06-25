@@ -109,6 +109,8 @@ public:
         m_rows = std::max(8u,rows);
     }
 
+    std::string dsp_name() const override { return "DspSampleCollector"; }
+
     void dsp_init( u64 frames, u32 channels, u32 sampleRate ) override;
 
     void dsp_read( f64 pts, u32 frames, u32 sampleRate,

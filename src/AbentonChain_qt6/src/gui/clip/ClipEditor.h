@@ -13,7 +13,7 @@ public:
     void updateLayout();
 
 public slots:
-    void setClip(std::shared_ptr<de::session::Clip> clip );
+    void setClip(de::session::Clip* clip );
 
 protected:
     void resizeEvent( QResizeEvent* event ) override;
@@ -30,7 +30,7 @@ protected:
 */
 protected:
     PianoRoll* m_pianoRoll{ nullptr };
-    std::shared_ptr<de::session::Clip> m_clip;
+    de::session::Clip* m_clip;
 
     int m_zoom = 100;
     int m_margin = 8;

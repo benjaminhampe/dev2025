@@ -39,6 +39,8 @@ public:
     }
 */
 
+    std::string dsp_name() const override { return "Sound"; }
+
     void dsp_init(u64 frames,
                   u32 channels,
                   u32 sampleRate ) override;

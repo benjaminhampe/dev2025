@@ -16,6 +16,8 @@ public:
     VST3_Plugin();
     ~VST3_Plugin() override;
 
+    std::string dsp_name() const override { return std::string("VST3_Plugin - ") + getName(); }
+
     void dsp_init(u64 frames,
                   u32 channels,
                   u32 sampleRate ) override;

@@ -43,7 +43,7 @@ public:
     //   void noteOff( int channel, int midiNote );
 public slots:
     void reset();
-    void setClip( std::shared_ptr<de::session::Clip> clip );
+    void setClip(de::session::Clip* clip );
     // void setSynth( int i, de::audio::IDspChainElement* synth );
     // void sendNote( de::audio::Note const & note );
     //void play( int mode = 0 );
@@ -113,10 +113,10 @@ protected:
     QFont5x8 m_font5x8;
 
     // Where the sequencer sends notes to.
-    std::array< de::audio::IDspChainElement*, 8 > m_synths;
+    //std::array< de::audio::IDspChainElement*, 8 > m_synths;
 
     // Array is build up from highest note to lowest, because we draw them that way.
-    std::shared_ptr<de::session::Clip> m_clip;
+    de::session::Clip* m_clip;
 
 
     // What the sequencer stores, draws and sends to synths.

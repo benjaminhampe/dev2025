@@ -16,6 +16,8 @@ public:
     CLAP_Plugin();
     ~CLAP_Plugin() override;
 
+    std::string dsp_name() const override { return std::string("CLAP_Plugin - ") + getName(); }
+
     void dsp_init(u64 frames,
                   u32 channels,
                   u32 sampleRate ) override;

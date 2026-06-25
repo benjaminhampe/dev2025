@@ -1,5 +1,6 @@
 #include "TrackWidget.h"
 #include "App.h"
+#include <de/session/Track.h>
 
 // ==================================================
 TrackWidget::TrackWidget(QWidget* parent)
@@ -20,35 +21,43 @@ TrackWidget::TrackWidget(QWidget* parent)
 
     // m_dropTarget = new DropTarget(this);
 
+    resize(600,300);
     applySkin();
 }
 
 TrackWidget::~TrackWidget()
 {
     DE_OK()
-    // for (auto p : m_plugins) { delete p; }
-    // m_plugins.clear();
 }
 
-// QSize TrackWidget::sizeHint() const { return QSize(0, m_height); }
-// QSize TrackWidget::minimumSizeHint() const { return QSize(0, m_height); }
-
-void TrackWidget::setTrack(de::audio::DspTrack* track)
+void TrackWidget::shutdown()
 {
+    setTrack(nullptr);
+    setParent(nullptr);
+}
+
+void TrackWidget::setTrack(de::session::Track* track)
+{
+    setUpdatesEnabled(false);
+/*
     if (m_track == track)
     {
         return; // Nothing todo
     }
 
-    for (auto p : m_plugins)
+    if (m_track)
     {
-        p->setPlugin(nullptr);
-        p->deleteLater();
+        for (auto p : m_plugins)
+        {
+            p->setPlugin(nullptr);
+            p->deleteLater();
+        }
     }
+
     m_plugins.clear();
-
+*/
     m_track = track;
-
+/*
     if (m_track)
     {
         auto plugins = m_track->getPlugins();
@@ -61,15 +70,19 @@ void TrackWidget::setTrack(de::audio::DspTrack* track)
             m_plugins.emplace_back(pluginWidget);
         }
     }
-
+*/
+    setUpdatesEnabled(true);
     updateLayout();
 }
 
 void TrackWidget::applySkin()
 {
-    for (auto p : m_plugins)
+    if (m_track)
     {
-        p->applySkin();
+        for (auto p : m_track->m_pluginWidgets)
+        {
+            if (p) p->applySkin();
+        }
     }
 
     //qDebug() << "TrackWidget::applySkin()";
@@ -91,16 +104,22 @@ void TrackWidget::applySkin()
 
 void TrackWidget::updateLayout()
 {
-    //DE_TRACE("updateLayout()")
+    if (!m_track)
+    {
+        DE_ERROR("No track")
+        return;
+    }
 
-    const int n = static_cast<int>(m_plugins.size());
+    const auto& pluginWidgets = m_track->m_pluginWidgets;
+
+    const int n = static_cast<int>(pluginWidgets.size());
 
     int x = 0;
     int y = 0;
 
     for (int i = 0; i < n; ++i)
     {
-        auto pWidget = m_plugins[ i ];
+        auto pWidget = pluginWidgets[ i ];
 
         if (m_dropIndex == i)
         {
@@ -128,6 +147,7 @@ void TrackWidget::updateLayout()
 
 }
 
+/*
 std::vector<de::audio::SharedPlugin>
 TrackWidget::collectPlugins() const
 {
@@ -147,6 +167,7 @@ TrackWidget::collectPlugins() const
 
     return plugins;
 }
+*/
 
 // ------------------------------------------------------------
 // Zeichnen
@@ -291,6 +312,7 @@ void TrackWidget::emitTrackOverview()
     }
 }
 
+/*
 // ------------------------------------------------------------
 // PluginWidget hinzufügen
 // ------------------------------------------------------------
@@ -315,7 +337,7 @@ void TrackWidget::insertPlugin(int index, const QString &uri)
         return;
     }
 
-    auto plugin = m_track->createPlugin(uri.toStdString(), index);
+    auto plugin = App::instance()->createPlugin(uri.toStdString());
     if (!plugin)
     {
         DE_ERROR("No plugin")
@@ -324,6 +346,7 @@ void TrackWidget::insertPlugin(int index, const QString &uri)
 
     App::instance()->stopAudio();
 
+    plugin->setTrack(
     // Create GUI Shell
     auto w = new PluginWidget(this);
     w->setPlugin(plugin);
@@ -401,6 +424,7 @@ void TrackWidget::removePlugin(PluginWidget* w)
 
     App::instance()->playAudio();
 }
+*/
 
 // ------------------------------------------------------------
 // Drag&Drop
@@ -418,9 +442,17 @@ void TrackWidget::dragEnterEvent(QDragEnterEvent* e)
 
 int TrackWidget::computeDropIndex(const QPoint &pos)
 {
-    for (int i = 0; i < m_plugins.size(); ++i)
+    if (!m_track)
     {
-        auto w = m_plugins[ i ];
+        DE_ERROR("No track")
+        return -1;
+    }
+
+    const auto& pluginWidgets = m_track->m_pluginWidgets;
+
+    for (int i = 0; i < pluginWidgets.size(); ++i)
+    {
+        auto w = pluginWidgets[ i ];
 
         if (pos.x() < w->x() + w->width() / 2)
         {
@@ -428,7 +460,7 @@ int TrackWidget::computeDropIndex(const QPoint &pos)
         }
     }
 
-    return m_plugins.size();
+    return pluginWidgets.size();
 }
 
 // ------------------------------------------------------------
@@ -437,9 +469,17 @@ int TrackWidget::computeDropIndex(const QPoint &pos)
 
 int TrackWidget::computeDragIndex(const QPoint &pos)
 {
-    for (int i = 0; i < m_plugins.size(); ++i)
+    if (!m_track)
     {
-        auto w = m_plugins[ i ];
+        DE_ERROR("No track")
+        return -1;
+    }
+
+    const auto& pluginWidgets = m_track->m_pluginWidgets;
+
+    for (int i = 0; i < pluginWidgets.size(); ++i)
+    {
+        auto w = pluginWidgets[ i ];
 
         QRect r_label = w->labelRect();
         QRect r_parentRect = r_label.translated( w->pos() );
@@ -495,7 +535,14 @@ void TrackWidget::dropEvent(QDropEvent* e)
         QString url = item.toLocalFile();
         if (QFileInfo::exists(url))
         {
-            insertPlugin(m_dropIndex, url);
+            if (!m_track)
+            {
+                DE_ERROR("No track")
+            }
+            else
+            {
+                m_track->insertPlugin(m_dropIndex, url);
+            }
         }
         else
         {
@@ -519,17 +566,25 @@ int TrackWidget::computeDropIndicatorPosX(int dragIndex, int dropIndex)
         return -1; // Invalid
     }
 
-    const int n = static_cast<int>(m_plugins.size());
+    if (!m_track)
+    {
+        DE_ERROR("No track")
+        return -1;
+    }
+
+    const auto& pluginWidgets = m_track->m_pluginWidgets;
+
+    const int n = static_cast<int>(pluginWidgets.size());
     if (n > 0)
     {
         if (dropIndex >= n)
         {
-            auto p = m_plugins.back();
+            auto p = pluginWidgets.back();
             return p->x() + p->width() + m_widgetSpacing;
         }
         else
         {
-            return m_plugins[dropIndex]->x() - m_widgetSpacing - m_dropIndicatorWidth;
+            return pluginWidgets[dropIndex]->x() - m_widgetSpacing - m_dropIndicatorWidth;
         }
     }
     else
@@ -603,6 +658,14 @@ void TrackWidget::mouseMoveEvent(QMouseEvent* e)
 
 void TrackWidget::mousePressEvent(QMouseEvent* e)
 {
+    if (!m_track)
+    {
+        DE_ERROR("No track")
+        return;
+    }
+
+    const auto& pluginWidgets = m_track->m_pluginWidgets;
+
     if (e->button() == Qt::LeftButton)
     {
         m_isLeftPressed = true;
@@ -618,7 +681,7 @@ void TrackWidget::mousePressEvent(QMouseEvent* e)
         // If mouse is over PluginWidget->m_rcLabel
         // then start a drag operation...
         int index = computeDragIndex( pos );
-        if (index >= 0 && index < int(m_plugins.size()))
+        if (index >= 0 && index < int(pluginWidgets.size()))
         {
             m_isDragInit = true;
             m_posDragInit = pos;
@@ -636,6 +699,14 @@ void TrackWidget::mousePressEvent(QMouseEvent* e)
 
 void TrackWidget::mouseReleaseEvent(QMouseEvent* e)
 {
+    if (!m_track)
+    {
+        DE_ERROR("No track")
+        return;
+    }
+
+    const auto& pluginWidgets = m_track->m_pluginWidgets;
+
     if (e->button() == Qt::LeftButton)
     {
         m_isLeftPressed = false;
@@ -644,7 +715,13 @@ void TrackWidget::mouseReleaseEvent(QMouseEvent* e)
 
         if (m_isDragging)
         {
-            didSwap = swapWidgets( m_dragIndex, m_dropIndex );
+            m_isDragInit = false;
+            m_isDragging = false;
+
+            didSwap = m_track->swapPlugins( m_dragIndex, m_dropIndex );
+
+            m_dropIndex = -1; // Reset before calling swapPlugins
+            m_dragIndex = -1;
 
             // for (auto p : m_plugins)
             // {
@@ -652,23 +729,18 @@ void TrackWidget::mouseReleaseEvent(QMouseEvent* e)
             // }
         }
 
-        m_isDragInit = false;
-        m_isDragging = false;
-        m_dropIndex = -1;
-        m_dragIndex = -1;
-
         if (didSwap)
         {
             updateLayout();
-
-            if (m_track)
-            {
-                m_track->setPlugins(collectPlugins());
-            }
+            // if (m_track)
+            // {
+            //     m_track->setPlugins(collectPlugins());
+            // }
         }
     }
 }
 
+/*
 bool TrackWidget::swapWidgets(int dragIndex, int dropIndex)
 {
     if (dragIndex == dropIndex)
@@ -712,7 +784,7 @@ bool TrackWidget::swapWidgets(int dragIndex, int dropIndex)
 
     return true;
 }
-
+*/
 // ------------------------------------------------------------
 // Auto-Scroll
 // ------------------------------------------------------------

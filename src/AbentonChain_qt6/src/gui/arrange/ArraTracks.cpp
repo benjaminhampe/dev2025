@@ -1,5 +1,6 @@
 #include "ArraTracks.h"
 #include <App.h>
+#include <de/session/Session.h>
 
 ArraTracks::ArraTracks(QWidget* parent)
    : QWidget( parent )
@@ -36,24 +37,22 @@ void ArraTracks::updateLayout()
     const int w = std::max(width() - 2*m,0);
     const int h = std::max(height() - 2*m,0);
 
-    using de::session::SharedTrack;
     const auto& session = App::instance()->m_session;
 
     //const int b = (50 * m_zoom) / 100;
 
     int x = m;
     int y = m;
-    int w2 = w;
     if (m_bVertical)
     {
-        SharedTrack masterTrack = session.getMasterTrack();
+        auto masterTrack = session.getMasterTrack();
         int mw = masterTrack->m_width;
         masterTrack->m_rect = QRect(x+w-mw,y,mw,h);
 
         int nUser = 0;
         for (int i = 0; i < session.m_tracks.size(); ++i)
         {
-            SharedTrack track = session.m_tracks[ i ];
+            auto track = session.m_tracks[ i ];
             if (track->getTrackType() != de::session::Track::User)
             {
                 continue;
@@ -70,7 +69,7 @@ void ArraTracks::updateLayout()
         int nUser = 0;
         for (int i = 0; i < session.m_tracks.size(); ++i)
         {
-            SharedTrack track = session.m_tracks[ i ];
+            auto track = session.m_tracks[ i ];
             if (track->getTrackType() != de::session::Track::User)
             {
                 continue;
@@ -114,14 +113,12 @@ void ArraTracks::paintEvent( QPaintEvent* event )
         dc.drawRoundedRect(QRect(m,m,dx,dy),m,m);
     }
 
-    using de::session::SharedTrack;
     const auto& session = App::instance()->m_session;
 
     int nUser = 0;
     for (int i = 0; i < session.m_tracks.size(); ++i)
     {
-        SharedTrack track = session.m_tracks[ i ];
-
+        auto track = session.m_tracks[ i ];
         if (track->getTrackType() != de::session::Track::User)
         {
             continue;
@@ -132,12 +129,12 @@ void ArraTracks::paintEvent( QPaintEvent* event )
         nUser++;
     }
 
-    SharedTrack track = session.getMasterTrack();
+    auto track = session.getMasterTrack();
     drawTrack(dc, track, QColor(200,200,200));
 }
 
 void ArraTracks::drawTrack(QPainter & dc,
-    de::session::SharedTrack track, QColor fillColor) const
+    de::session::Track* track, QColor fillColor) const
 {
     auto r_track = track->m_rect;
     dc.setPen(QPen(track->m_trackColor));

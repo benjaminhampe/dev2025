@@ -123,6 +123,7 @@ DspMixer::dsp_setInputSignal( IDspChainElement* inputSignal, int i )
     //     return;
     // }
 
+    DE_OK(inputSignal->dsp_name()," at index ",i)
     inputSignal->dsp_init(m_initFrames,m_initChannels,m_initSampleRate);
 
     m_inputSignals[ i ] = inputSignal;

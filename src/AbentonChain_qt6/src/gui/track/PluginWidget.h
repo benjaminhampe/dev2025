@@ -10,7 +10,7 @@
 #include <QHBoxLayout>
 #include <QVBoxLayout>
 
-#include <de/audio/plugin/PluginFactory.h>
+#include <de/audio/plugin/IPlugin.h>
 
 // ============================================
 class PluginWidget : public QWidget
@@ -23,9 +23,9 @@ public:
     //QSize sizeHint() const override;
     //QSize minimumSizeHint() const override;
     QRect labelRect() const { return m_rcLabel; }
-    de::audio::SharedPlugin getPlugin() { return m_plugin; }
 
-    void setPlugin(de::audio::SharedPlugin plugin);
+    de::audio::IPlugin* getPlugin() { return m_plugin; }
+    void setPlugin(de::audio::IPlugin* plugin);
 
     void applySkin();
     void updateLayout();
@@ -72,11 +72,11 @@ private slots:
 
 private:
     void unloadPlugin();
-    void loadPlugin(de::audio::SharedPlugin);
+    void loadPlugin(de::audio::IPlugin*);
 
     //uint32_t m_trackId = 0; // AudioCentral
     //uint32_t m_pluginId = 0; // AudioCentral
-    de::audio::SharedPlugin m_plugin; // AudioCentral
+    de::audio::IPlugin* m_plugin; // Owner of plugin instance
 
     QString m_title;
 

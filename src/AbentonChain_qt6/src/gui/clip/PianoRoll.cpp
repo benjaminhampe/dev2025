@@ -24,6 +24,15 @@ PianoRoll::~PianoRoll()
     // stopPlayTimer();
 }
 
+void PianoRoll::setClip(de::session::Clip* clip )
+{
+    if (m_clip != clip)
+    {
+        m_clip = clip;
+        update();
+    }
+}
+
 void PianoRoll::applySkin()
 {
     const auto& skin = App::instance()->getSkin();
@@ -362,10 +371,10 @@ PianoRoll::reset()
    m_dragStartY = 0;
 
    // 8 synths we send notes to.
-   for ( size_t i = 0; i < m_synths.size(); ++i )
-   {
-      m_synths[ i ] = nullptr;
-   }
+   // for ( size_t i = 0; i < m_synths.size(); ++i )
+   // {
+   //    m_synths[ i ] = nullptr;
+   // }
 }
 
 
@@ -492,17 +501,6 @@ PianoRoll::showEvent( QShowEvent* event )
    QWidget::showEvent( event );
    //event->accept();
 }
-
-void
-PianoRoll::setClip(std::shared_ptr<de::session::Clip> clip )
-{
-   if ( m_clip != clip )
-   {
-      m_clip = clip;
-      update();
-   }
-}
-
 
 
 bool

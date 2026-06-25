@@ -13,8 +13,12 @@ Session::Session()
 Session::~Session()
 {
     DE_TRACE("")
-
+    if (m_tracks.size())
+    {
+        DE_ERROR("Forgot call to shutdown()")
+    }
 }
+
 
 void Session::destroyWidgets()
 {
@@ -23,12 +27,12 @@ void Session::destroyWidgets()
 
 void Session::shutdown()
 {
-    m_activeTrackId = -1;
+    setActiveTrack(-1);
 
     for (auto & track : m_tracks)
     {
         track->shutdown();
-        track.reset();
+        delete track;
     }
     m_tracks.clear();
 }
@@ -44,29 +48,21 @@ void Session::newSession()
     m_sessionName = "Untitled new session";
 
     // Create 1 master Track
-    auto masterTrk = std::make_shared<Track>();
+    auto masterTrk = new Track;
+    masterTrk->setSession(this);
     masterTrk->setTrackName("Master");
     masterTrk->setTrackType(Track::Master);
     m_tracks.emplace_back(masterTrk);
 
     // Create 1 user Track
-    auto userTrk = std::make_shared<Track>();
+    auto userTrk = new Track;
+    userTrk->setSession(this);
     userTrk->setTrackName("1 - Audio");
     userTrk->setTrackType(Track::User);
     m_tracks.emplace_back(userTrk);
 
     // Connect DSP user -> mixer
-    m_dspMixer.dsp_clearInputSignals();
-    m_dspMixer.dsp_setInputSignalCount(1);
-    m_dspMixer.dsp_setInputSignal(userTrk->m_dsp.get(), 0);
-
-    // Connect DSP mixer -> master
-    masterTrk->m_dsp.get()->dsp_clearInputSignals();
-    masterTrk->m_dsp.get()->dsp_setInputSignal(&m_dspMixer, 0);
-
-    // Connect DSP master -> collector
-    app->getSampleCollector()->dsp_clearInputSignals();
-    app->getSampleCollector()->dsp_setInputSignal(masterTrk->m_dsp.get());
+    updateDspConnections();
 
     // Set active track
     setActiveTrack(userTrk->getTrackId());
@@ -74,46 +70,92 @@ void Session::newSession()
     app->playAudio();
 }
 
-bool Session::setActiveTrack(int trackId)
+void Session::updateDspConnections()
 {
-    if (trackId < 0)
+    // Connect DSP userTracks to mixer
+    m_dspMixer.dsp_clearInputSignals();
+    m_dspMixer.dsp_setInputSignalCount(numUserTracks());
+    int iUserTrack = 0;
+    for (auto track : m_tracks)
     {
-        return false;
+        if (track->m_trackType == Track::User)
+        {
+            m_dspMixer.dsp_setInputSignal(track, iUserTrack);
+            iUserTrack++;
+        }
     }
 
+    // Connect DSP mixer -> master
+    auto masterTrk = getMasterTrack();
+    masterTrk->dsp_clearInputSignals();
+    masterTrk->dsp_setInputSignal(&m_dspMixer, 0);
+
+    // Connect DSP master -> collector
+    auto app = App::instance();
+    app->getSampleCollector()->dsp_clearInputSignals();
+    app->getSampleCollector()->dsp_setInputSignal(masterTrk);
+
+    dumpDspChain();
+}
+
+int dumpDspChainRecursive(de::audio::IDspChainElement* root, int n)
+{
+    if (!root) return n;
+
+    for (int i = 0; i < root->dsp_getInputSignalCount(); ++i)
+    {
+        DE_BENNI("[",n,"][",i,"] ",root->dsp_name())
+        n += dumpDspChainRecursive(root->dsp_getInputSignal(i), n);
+    }
+
+    return n;
+}
+
+void Session::dumpDspChain()
+{
+    DE_BENNI("//==============================================")
+    DE_BENNI(m_sessionName)
+    DE_BENNI("//==============================================")
+    dumpDspChainRecursive(getMasterTrack(),0);
+}
+
+bool Session::setActiveTrack(int trackId)
+{
     if (trackId == m_activeTrackId)
     {
         return false; // Nothing todo
     }
 
-    SharedTrack track;
-    for (const auto& cached : m_tracks)
+    auto app = App::instance();
+    app->m_centralWidget->m_trackStack->setTrackWidget(nullptr);
+    app->m_centralWidget->m_footer->setTrackName("None");
+
+    if (trackId < 0)
     {
-        if (cached->getTrackId() == trackId)
-        {
-            track = cached;
-            break;
-        }
-    }
-
-    if (track)
-    {
-        DE_OK("TrackId ", trackId)
-        m_activeTrackId = trackId;
-
-        auto app = App::instance();
-        app->m_centralWidget->m_trackStack
-            ->trackWidget()->setTrack(track->m_dsp.get());
-
-        app->m_centralWidget->m_footer
-            ->setTrackName(track->getTrackName());
-
+        m_activeTrackId = -1;
         return true;
     }
     else
     {
-        DE_ERROR("No trackId ",trackId)
-        return false;
+        Track* track = getTrack(trackId);
+        if (track)
+        {
+            DE_OK("TrackId ", trackId)
+            m_activeTrackId = trackId;
+
+            auto app = App::instance();
+            app->m_centralWidget->m_trackStack->setTrackWidget(track->m_trackWidget);
+            app->m_centralWidget->m_footer->setTrackName(track->getTrackName());
+
+            //track->dumpChain();
+            return true;
+        }
+        else
+        {
+            m_activeTrackId = -1;
+            DE_ERROR("No trackId ",trackId)
+            return false;
+        }
     }
 }
 
@@ -132,13 +174,16 @@ bool Session::setActiveClip(int clipId)
         return false;
     }
 
-    const auto& activeClip = track->getActiveClip();
-    if (clipId == activeClip->m_clipId)
+    auto activeClip = track->getActiveClip();
+    if (activeClip)
     {
-        return false; // Nothing todo
+        if (clipId == activeClip->m_clipId)
+        {
+            return false; // Nothing todo
+        }
     }
 
-    const auto& clip = track->getClip( clipId );
+    auto clip = track->getClip( clipId );
     if (!clip)
     {
         DE_ERROR("No clipId ",clipId)
@@ -148,9 +193,7 @@ bool Session::setActiveClip(int clipId)
     DE_OK("ClipId ", clip->m_clipId)
     auto app = App::instance();
     app->m_centralWidget->m_clipEditor->setClip(clip);
-
-    app->m_centralWidget->m_footer
-            ->setClipName(QString::fromStdString(clip->m_name));
+    app->m_centralWidget->m_footer->setClipName(QString::fromStdString(clip->m_name));
     return true;
 }
 
@@ -166,31 +209,6 @@ Session::saveSession()
     return false;
 }
 
-void Session::updateDspConnections()
-{
-    // Connect DSP user -> mixer
-    m_dspMixer.dsp_clearInputSignals();
-    m_dspMixer.dsp_setInputSignalCount(numUserTracks());
-    int iUserTrack = 0;
-    for (const SharedTrack &trk : m_tracks)
-    {
-        if (trk->m_trackType == Track::User)
-        {
-            m_dspMixer.dsp_setInputSignal(trk->m_dsp.get(), iUserTrack);
-            iUserTrack++;
-        }
-    }
-
-    // Connect DSP mixer -> master
-    auto masterTrk = getMasterTrack();
-    masterTrk->m_dsp.get()->dsp_clearInputSignals();
-    masterTrk->m_dsp.get()->dsp_setInputSignal(&m_dspMixer, 0);
-
-    // Connect DSP master -> collector
-    auto app = App::instance();
-    app->getSampleCollector()->dsp_clearInputSignals();
-    app->getSampleCollector()->dsp_setInputSignal(masterTrk->m_dsp.get());
-}
 
 void Session::addTrack()
 {
@@ -199,17 +217,17 @@ void Session::addTrack()
     app->stopAudio();
 
     // Create 1 user Track
-    auto userTrk = std::make_shared<Track>();
-    //userTrk->setTrackName("1 - Audio");
-    userTrk->setTrackType(Track::User);
-    m_tracks.emplace_back(userTrk);
+    auto track = new Track;
+    track->setSession(this);
+    m_tracks.emplace_back(track);
 
     app->m_centralWidget->m_arraCentral->m_tracks->updateFromSession();
+    app->m_centralWidget->m_trackStack->setTrackWidget(track->m_trackWidget);
 
     updateDspConnections();
 
     // Set active track
-    setActiveTrack(userTrk->getTrackId());
+    setActiveTrack(track->m_trackId);
 
     app->playAudio();
 }
@@ -223,7 +241,7 @@ void Session::addTracks(const de::midi::file::MidiFile& midiFile)
     for (int i = 0; i < midiFile.m_tracks.size(); ++i)
     {
         const auto& midiTrack = midiFile.m_tracks[i];
-        auto sessionTrack = std::make_shared<Track>();
+        auto sessionTrack = new Track;
 
         QString trackName;
         if (midiTrack.name().empty())

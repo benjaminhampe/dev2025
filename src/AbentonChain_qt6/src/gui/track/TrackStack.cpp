@@ -20,7 +20,6 @@ TrackStack::TrackStack(QWidget* parent)
     m_quickHelp->setVisible(false);
     m_midiMeter = new MidiMeter(this);
     m_audioMeter = new AudioMeter(this);
-    m_trackWidget = new TrackWidget(this);
 
     //m_lastQuickHelpWidth = m_baseQuickHelpWidth;
 
@@ -29,12 +28,6 @@ TrackStack::TrackStack(QWidget* parent)
     // (needed because sizeHint changes dynamically)
     //m_trackWidget->installEventFilter(this);
 
-    connect(m_trackWidget, &TrackWidget::newOverview,
-        this, [=] (QPixmap pix)
-        {
-            // DE_BENNI("newTrackOverview")
-            emit newTrackOverview(pix); // for Footer overview/scrollbar
-        });
 
     // auto h = new QHBoxLayout;
     // h -> setContentsMargins(0,0,0,0);
@@ -57,6 +50,31 @@ TrackStack::~TrackStack()
 
 // QSize TrackStack::sizeHint() const { return QSize(0,m_height); }
 // QSize TrackStack::minimumSizeHint() const { return QSize(0,m_height); }
+void TrackStack::setTrackWidget(TrackWidget* trackWidget)
+{
+    if (m_trackWidget)
+    {
+        m_trackWidget->setParent(nullptr);
+        m_trackWidget->hide();
+    }
+
+    m_trackWidget = trackWidget;
+
+    if (m_trackWidget)
+    {
+        m_trackWidget->setParent(this);
+        m_trackWidget->show();
+
+        connect(m_trackWidget, &TrackWidget::newOverview,
+        this, [=] (QPixmap pix)
+        {
+            // DE_BENNI("newTrackOverview")
+            emit newTrackOverview(pix); // for Footer overview/scrollbar
+        });
+    }
+
+    updateLayout();
+}
 
 void TrackStack::applySkin()
 {
@@ -64,7 +82,7 @@ void TrackStack::applySkin()
     m_quickHelp->applySkin();
     m_midiMeter->applySkin();
     m_audioMeter->applySkin();
-    m_trackWidget->applySkin();
+    if (m_trackWidget) m_trackWidget->applySkin();
 
     const auto& skin = App::instance()->getSkin();
     m_windowColor = skin.windowColor;
@@ -84,6 +102,12 @@ void TrackStack::applySkin()
 
 void TrackStack::updateLayout()
 {
+    if (!m_trackWidget)
+    {
+        DE_ERROR("No trackWidget")
+        return;
+    }
+
     const int w = width();
     const int h = height();
     const int l = contentsMargins().left();
@@ -114,7 +138,7 @@ void TrackStack::updateLayout()
         x += w1;
     }
 
-    // if (m_trackWidget->isVisible())
+    if (m_trackWidget)
     {
         int w1 = w - r - x;
         m_trackWidget->setGeometry(x,y,w1,h - (t+b));

@@ -1,6 +1,11 @@
 ﻿#pragma once
 #include <QWidget>
-#include <de/session/Session.h>
+
+namespace de {
+namespace session {
+    class Track;
+} // end namespace session.
+} // end namespace de.
 
 // ============================================================================
 class ArraTracks : public QWidget
@@ -29,7 +34,7 @@ protected:
     void wheelEvent( QWheelEvent* event ) override;
 */
     void drawTrack(QPainter & dc,
-                de::session::SharedTrack track,
+                de::session::Track* track,
                 QColor fillColor) const;
 protected:
 

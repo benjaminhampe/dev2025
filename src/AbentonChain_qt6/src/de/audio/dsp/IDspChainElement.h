@@ -126,6 +126,8 @@ struct IDspChainElement
 {
     virtual ~IDspChainElement() {}
 
+    virtual std::string dsp_name() const = 0;
+
     virtual void dsp_init(u64 frames, u32 channels, u32 sampleRate) = 0;
 
     virtual void dsp_read(f64 pts, u32 frames, u32 sampleRate,

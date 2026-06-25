@@ -18,8 +18,11 @@ public:
     void updateLayout();
     void setAudioOnly(bool bAudioOnly);
     void showQuickHelp(bool bVisible);
-    const TrackWidget* trackWidget() const { return m_trackWidget; }
-    TrackWidget* trackWidget() { return m_trackWidget; }
+
+    void setTrackWidget(TrackWidget* trackWidget);
+    const TrackWidget* getTrackWidget() const { return m_trackWidget; }
+    TrackWidget* getTrackWidget() { return m_trackWidget; }
+
 signals:
     void newTrackOverview(QPixmap pix); // for Footer
 protected:
