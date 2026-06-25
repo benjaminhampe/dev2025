@@ -11,27 +11,6 @@ ArraTracks::ArraTracks(QWidget* parent)
 
 void ArraTracks::updateFromSession()
 {
-    const auto& session = App::instance()->m_session;
-    m_tracks.clear();
-
-    const int w = width();
-    const int h = height();
-    const int b = (50 * m_zoom) / 100;
-    m_masterTrack.m_rect = QRect(0,h-b,w,b);
-    m_masterTrack.m_color = QColor(255,128,0);
-    m_masterTrack.m_track = session.m_masterTrack;
-    m_masterTrack.m_name = session.m_masterTrack->m_trackName;
-
-    for (int i = 0; i < session.m_tracks.size(); ++i)
-    {
-        auto sessionTrack = session.m_tracks[ i ];
-        ArraTrack arraTrack;
-        arraTrack.m_track = sessionTrack;
-        arraTrack.m_color = sessionTrack->m_trackcolor;
-        arraTrack.m_name = sessionTrack->m_trackName;
-        arraTrack.m_rect = QRect(0,b*i,w,b);
-        m_tracks.emplace_back(std::move(arraTrack));
-    }
 
     updateLayout();
 }
@@ -43,19 +22,66 @@ void ArraTracks::applySkin()
     m_margin = (8* m_zoom)/100;
     m_windowColor = skin.windowColor;
     m_panelColor = skin.panelColor;
+    m_alternatingPanelColor = m_panelColor.lighter(50);
+    m_headerHeight = (48 * m_zoom) / 100;
     updateLayout();
 }
 
 void ArraTracks::updateLayout()
 {
-    const int w = width();
-    const int h = height();
-    if (w < 1) return;
-    if (h < 1) return;
+    if (width() < 1) return;
+    if (height() < 1) return;
 
     const int m = 2*m_margin; // inner margin
-    const int dx = std::max(w - 2*m,0);
-    const int dy = std::max(h - 2*m,0);
+    const int w = std::max(width() - 2*m,0);
+    const int h = std::max(height() - 2*m,0);
+
+    using de::session::SharedTrack;
+    const auto& session = App::instance()->m_session;
+
+    //const int b = (50 * m_zoom) / 100;
+
+    int x = m;
+    int y = m;
+    int w2 = w;
+    if (m_bVertical)
+    {
+        SharedTrack masterTrack = session.getMasterTrack();
+        int mw = masterTrack->m_width;
+        masterTrack->m_rect = QRect(x+w-mw,y,mw,h);
+
+        int nUser = 0;
+        for (int i = 0; i < session.m_tracks.size(); ++i)
+        {
+            SharedTrack track = session.m_tracks[ i ];
+            if (track->getTrackType() != de::session::Track::User)
+            {
+                continue;
+            }
+
+            int tw = track->m_width;
+            track->m_rect = QRect(x,y,tw,h);
+            x += tw;
+            nUser++;
+        }
+    }
+    else // Horizontal
+    {
+        int nUser = 0;
+        for (int i = 0; i < session.m_tracks.size(); ++i)
+        {
+            SharedTrack track = session.m_tracks[ i ];
+            if (track->getTrackType() != de::session::Track::User)
+            {
+                continue;
+            }
+
+            const int th = track->m_height;
+            track->m_rect = QRect(x,y,w,th);
+            y += th;
+        }
+    }
+
     update();
 }
 
@@ -88,27 +114,56 @@ void ArraTracks::paintEvent( QPaintEvent* event )
         dc.drawRoundedRect(QRect(m,m,dx,dy),m,m);
     }
 
-    for (int i = 0; i < m_tracks.size(); ++i)
+    using de::session::SharedTrack;
+    const auto& session = App::instance()->m_session;
+
+    int nUser = 0;
+    for (int i = 0; i < session.m_tracks.size(); ++i)
     {
-        const auto& track = m_tracks[ i ];
+        SharedTrack track = session.m_tracks[ i ];
 
-        dc.setPen(QPen(track.m_color));
-        dc.setBrush(QBrush(m_panelColor));
-        dc.drawRect(track.m_rect);
+        if (track->getTrackType() != de::session::Track::User)
+        {
+            continue;
+        }
 
-        QRect r_text = track.m_rect;
-        dc.drawText(r_text,0, track.m_name, &r_text);
+        auto fillColor = (nUser % 2 == 0) ? m_panelColor : m_alternatingPanelColor;
+        drawTrack(dc, track, fillColor);
+        nUser++;
     }
 
-    const auto& track = m_masterTrack;
+    SharedTrack track = session.getMasterTrack();
+    drawTrack(dc, track, QColor(200,200,200));
+}
 
-    dc.setPen(QPen(track.m_color));
-    dc.setBrush(QBrush(m_panelColor));
-    dc.drawRect(track.m_rect);
+void ArraTracks::drawTrack(QPainter & dc,
+    de::session::SharedTrack track, QColor fillColor) const
+{
+    auto r_track = track->m_rect;
+    dc.setPen(QPen(track->m_trackColor));
+    dc.setBrush(QBrush(fillColor));
+    dc.drawRect(r_track);
 
-    QRect r_text = track.m_rect;
-    dc.drawText(r_text,0, track.m_name, &r_text);
+    QRect r_text = r_track;
+    dc.drawText(r_text,0, track->m_trackName, &r_text);
 
+    auto & clip = track->m_clips[0];
+
+    float zoom_x = 64.0f / 960.0f;
+    float zoom_y = 1.0f;
+
+    dc.setPen(Qt::NoPen);
+    for (int i = 0; i < clip->m_notes.size(); ++i)
+    {
+        const auto & note = clip->m_notes[i];
+        int x1 = r_track.x() + std::lroundf(zoom_x * note.ppqNoteOn);
+        int y1 = r_track.y() + r_track.height() - note.midiNote;
+        int x2 = r_track.x() + std::lroundf(zoom_x * note.ppqNoteOff);
+        int y2 = y1 - 1;
+        const QColor color = toQColor(note.color);
+        dc.setBrush(QBrush(color));
+        dc.drawRect(x1,y1,x2-x1,y2-y1);
+    }
 }
 
 #if 0

@@ -5,28 +5,35 @@ namespace session {
 
 // static
 // ===========================================================================
-u32 Track::GetFreeTrackId()
+int Track::GetFreeTrackId()
 // ===========================================================================
 {
-    static u32 s_id = 0;
+    static int s_id = 0;
     return ++s_id;
 }
 
 Track::Track()
-    : m_trackId(GetFreeTrackId())
+    : m_trackId{ GetFreeTrackId() }
+    , m_trackType{ User }
+    , m_trackName{ QString("%1 - Audio").arg(m_trackId) }
 {
-    DE_TRACE(trackName().toStdString())
+    DE_TRACE(getTrackName().toStdString())
     m_dsp = std::make_shared<audio::DspTrack>(this);
     newClip();
 
 }
 Track::~Track()
 {
-    DE_TRACE(trackName().toStdString())
+    DE_TRACE(getTrackName().toStdString())
 }
 
 void Track::shutdown()
 {
+    if (m_dsp)
+    {
+        m_dsp->cleanupAll();
+        m_dsp.reset();
+    }
     m_clips.clear();
 }
 

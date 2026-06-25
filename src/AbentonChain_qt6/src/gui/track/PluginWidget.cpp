@@ -1,7 +1,7 @@
 #include "gui/track/PluginWidget.h"
 #include "App.h"
 #include "gui/Skin.h"
-#include "gui/track/TrackWidget.h"
+//#include "gui/track/TrackWidget.h"
 
 namespace {
 
@@ -63,6 +63,37 @@ PluginWidget::PluginWidget(QWidget* parent)
     m_btnEditor = new EditorButton(this);
     m_body = new Body(this);
     m_audioMeter = new AudioMeter(this);
+
+
+    connect(this, &QWidget::customContextMenuRequested,
+            this, &PluginWidget::on_showContextMenu);
+
+    connect(m_btnEnable, &QPushButton::toggled,
+            this, &PluginWidget::on_pressedBtnEnable);
+
+    connect(m_btnExpand, &QPushButton::toggled,
+            this, &PluginWidget::on_pressedBtnExpand);
+
+    connect(m_btnWrench, &QPushButton::toggled,
+            this, &PluginWidget::on_pressedBtnWrench);
+
+    connect(m_btnUpdate, &QPushButton::toggled,
+            this, &PluginWidget::on_pressedBtnUpdate);
+
+    connect(m_btnEditor, &QPushButton::toggled,
+            this, &PluginWidget::on_pressedBtnEditor);
+
+    connect(m_body->getPad(), &Pad::onParamChanged,
+            this, &PluginWidget::on_pad);
+
+    connect(m_body->getComboPreset(), &ComboBox::currentIndexChanged,
+            this, &PluginWidget::on_comboPreset);
+
+    connect(m_body->getComboParam1(), &ComboBox::currentIndexChanged,
+            this, &PluginWidget::on_comboParam1);
+
+    connect(m_body->getComboParam2(), &ComboBox::currentIndexChanged,
+            this, &PluginWidget::on_comboParam2);
 
     applySkin();
 
@@ -388,6 +419,7 @@ void PluginWidget::unloadPlugin()
     setUpdatesEnabled(false); // Disable paintEvent()
 
     auto plugin = m_plugin; // Copy pointer and make m_plugin nullptr for internal slots using m_plugin.
+    m_plugin->setCollapsed(m_bCollapsed);
     m_plugin = nullptr;
 
     m_audioMeter->stopUpdateTimer();
@@ -406,11 +438,11 @@ void PluginWidget::unloadPlugin()
     }
 
     // disconnect(nullptr, nullptr, this, nullptr ); // Disconnect signals;
-    disconnect(this, nullptr, nullptr, nullptr ); // Disconnect slots;
-    disconnect(m_body->getPad(), nullptr, nullptr, nullptr ); // Disconnect slots;
-    disconnect(m_body->getComboPreset(), nullptr, nullptr, nullptr ); // Disconnect slots;
-    disconnect(m_body->getComboParam1(), nullptr, nullptr, nullptr ); // Disconnect slots;
-    disconnect(m_body->getComboParam2(), nullptr, nullptr, nullptr ); // Disconnect slots;
+    // disconnect(this, nullptr, nullptr, nullptr ); // Disconnect slots;
+    // disconnect(m_body->getPad(), nullptr, nullptr, nullptr ); // Disconnect slots;
+    // disconnect(m_body->getComboPreset(), nullptr, nullptr, nullptr ); // Disconnect slots;
+    // disconnect(m_body->getComboParam1(), nullptr, nullptr, nullptr ); // Disconnect slots;
+    // disconnect(m_body->getComboParam2(), nullptr, nullptr, nullptr ); // Disconnect slots;
 
     m_title = "";
     m_btnEnable->blockSignals(true);
@@ -476,7 +508,7 @@ void PluginWidget::loadPlugin(de::audio::SharedPlugin plugin)
 
     // Transition:
     m_plugin = plugin;
-
+    m_bCollapsed = m_plugin->isCollapsed(); // GUI state
     m_audioMeter->setPlugin(m_plugin.get());
     m_audioMeter->playUpdateTimer();
 
@@ -553,7 +585,7 @@ void PluginWidget::loadPlugin(de::audio::SharedPlugin plugin)
         }
     }
 
-
+/*
     connect(this, &QWidget::customContextMenuRequested,
             this, &PluginWidget::on_showContextMenu);
 
@@ -583,6 +615,7 @@ void PluginWidget::loadPlugin(de::audio::SharedPlugin plugin)
 
     connect(m_body->getComboParam2(), &ComboBox::currentIndexChanged,
             this, &PluginWidget::on_comboParam2);
+*/
 
     setUpdatesEnabled(true); // Enable paintEvent()
 
@@ -679,6 +712,12 @@ void PluginWidget::on_comboParam2(int index)
 
 void PluginWidget::on_editorWindowClosed()
 {
+    if (!m_plugin)
+    {
+        DE_ERROR("No plugin")
+        return;
+    }
+
     //DE_ERROR("Editor closed")
     m_btnWrench->blockSignals( true );
     m_btnWrench->setChecked( false );
@@ -712,6 +751,11 @@ void PluginWidget::on_pressedBtnEnable( bool checked )
 
 void PluginWidget::on_pressedBtnExpand( bool checked )
 {
+    if (!m_plugin)
+    {
+        DE_ERROR("No plugin")
+        return;
+    }
 
 }
 void PluginWidget::on_pressedBtnWrench( bool checked )
@@ -765,10 +809,21 @@ void PluginWidget::on_pressedBtnWrench( bool checked )
 
 void PluginWidget::on_pressedBtnUpdate( bool checked )
 {
+    if (!m_plugin)
+    {
+        DE_ERROR("No plugin")
+        return;
+    }
 
 }
 void PluginWidget::on_pressedBtnEditor( bool checked )
 {
+    if (!m_plugin)
+    {
+        DE_ERROR("No plugin")
+        return;
+    }
+
     // m_bCollapsed = checked;
     // applySkin();
     // static_cast<TrackWidget*>(parent())->updateLayout();

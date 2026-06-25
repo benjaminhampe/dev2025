@@ -5,45 +5,79 @@
 namespace de {
 namespace session {
 
+typedef std::shared_ptr<::de::audio::DspTrack> SharedDspTrack;
+
+typedef std::shared_ptr<Clip> SharedClip;
+
+typedef std::vector<SharedClip> SharedClips;
+
 // ============================================================================
 struct Track
 // ============================================================================
 {
-    static u32
+    enum eType
+    {
+        Master = 0,
+        Send,
+        User
+    };
+
+    static int
     GetFreeTrackId();
 
-    //IAudioCentral* m_audioCentral;
-    u32 m_trackId;
-    QColor m_trackcolor;
+    int m_trackId;
+    int m_trackType; // 0 = master, 1 = send, 2 = user
+    QColor m_trackColor;
     QString m_trackName;
-    std::shared_ptr<::de::audio::DspTrack> m_dsp; // Contains Plugins
+    int m_width = 128;    // in vertical mode
+    int m_height = 64;   // in horizontal mode
+
+    QRect m_rect;
+
+    SharedDspTrack m_dsp; // Contains Plugins
 
     // A track manages one Audio DSP chain and several Midi Clips on a timeline.
     // MidiProducer < only for MidiTrack > .
-    std::vector< std::shared_ptr<Clip> > m_clips;
+    int m_activeClipId = -1;
+    SharedClips m_clips;
 
     Track();
     ~Track();
     void shutdown();
 
-    void setTrackName( QString name ) { m_trackName = name; }
-    QString trackName() const { return m_trackName; }
-    u32 trackId() const { return m_trackId; }
+    void setTrackType(int typ) { m_trackType = typ; }
+    int getTrackType() const { return m_trackType; }
+
+    void setTrackId(int id) { m_trackId = id; }
+    int getTrackId() const { return m_trackId; }
+
+    void setTrackName(const QString& name) { m_trackName = name; }
+    const QString& getTrackName() const { return m_trackName; }
 
     // void clear();
     // void reset();
     void newClip();
 
-    size_t
-    numClips() const { return m_clips.size(); }
+    int getActiveClipId() const { return m_activeClipId; }
 
-    std::vector< std::shared_ptr<Clip> > const &
-    clips() const { return m_clips; }
-    std::vector< std::shared_ptr<Clip> > &
-    clips() { return m_clips; }
+    SharedClip getActiveClip() const { return getClip(m_activeClipId); }
 
+    const SharedClips& getClips() const { return m_clips; }
+    SharedClips& getClips() { return m_clips; }
 
-
+    SharedClip getClip(int clipId) const
+    {
+        auto it = std::find_if(m_clips.begin(), m_clips.end(),
+                    [clipId](const auto& sp) { return sp->m_clipId == clipId; });
+        if (it == m_clips.end())
+        {
+            return nullptr;
+        }
+        else
+        {
+            return *it;
+        }
+    }
 };
 
 } // end namespace session

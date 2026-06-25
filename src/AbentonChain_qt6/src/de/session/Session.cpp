@@ -23,27 +23,135 @@ void Session::destroyWidgets()
 
 void Session::shutdown()
 {
+    m_activeTrackId = -1;
 
+    for (auto & track : m_tracks)
+    {
+        track->shutdown();
+        track.reset();
+    }
+    m_tracks.clear();
 }
 
 void Session::newSession()
 {
     auto app = App::instance();
+
     app->stopAudio();
 
+    shutdown();
+
     m_sessionName = "Untitled new session";
-    m_masterTrack = std::make_shared<Track>();
-    m_masterTrack->setTrackName("Master");
-    m_activeTrack = m_masterTrack;
-    m_tracks.clear();
 
-    auto masterTrack = m_masterTrack->m_dsp.get();
-    app->m_centralWidget->m_trackStack->trackWidget()->setTrack(masterTrack);
+    // Create 1 master Track
+    auto masterTrk = std::make_shared<Track>();
+    masterTrk->setTrackName("Master");
+    masterTrk->setTrackType(Track::Master);
+    m_tracks.emplace_back(masterTrk);
 
+    // Create 1 user Track
+    auto userTrk = std::make_shared<Track>();
+    userTrk->setTrackName("1 - Audio");
+    userTrk->setTrackType(Track::User);
+    m_tracks.emplace_back(userTrk);
+
+    // Connect DSP user -> mixer
+    m_dspMixer.dsp_clearInputSignals();
+    m_dspMixer.dsp_setInputSignalCount(1);
+    m_dspMixer.dsp_setInputSignal(userTrk->m_dsp.get(), 0);
+
+    // Connect DSP mixer -> master
+    masterTrk->m_dsp.get()->dsp_clearInputSignals();
+    masterTrk->m_dsp.get()->dsp_setInputSignal(&m_dspMixer, 0);
+
+    // Connect DSP master -> collector
     app->getSampleCollector()->dsp_clearInputSignals();
-    app->getSampleCollector()->dsp_setInputSignal(masterTrack);
+    app->getSampleCollector()->dsp_setInputSignal(masterTrk->m_dsp.get());
+
+    // Set active track
+    setActiveTrack(userTrk->getTrackId());
 
     app->playAudio();
+}
+
+bool Session::setActiveTrack(int trackId)
+{
+    if (trackId < 0)
+    {
+        return false;
+    }
+
+    if (trackId == m_activeTrackId)
+    {
+        return false; // Nothing todo
+    }
+
+    SharedTrack track;
+    for (const auto& cached : m_tracks)
+    {
+        if (cached->getTrackId() == trackId)
+        {
+            track = cached;
+            break;
+        }
+    }
+
+    if (track)
+    {
+        DE_OK("TrackId ", trackId)
+        m_activeTrackId = trackId;
+
+        auto app = App::instance();
+        app->m_centralWidget->m_trackStack
+            ->trackWidget()->setTrack(track->m_dsp.get());
+
+        app->m_centralWidget->m_footer
+            ->setTrackName(track->getTrackName());
+
+        return true;
+    }
+    else
+    {
+        DE_ERROR("No trackId ",trackId)
+        return false;
+    }
+}
+
+
+bool Session::setActiveClip(int clipId)
+{
+    if (clipId < 0)
+    {
+        return false;
+    }
+
+    const auto& track = getActiveTrack();
+    if (!track)
+    {
+        DE_ERROR("No active track")
+        return false;
+    }
+
+    const auto& activeClip = track->getActiveClip();
+    if (clipId == activeClip->m_clipId)
+    {
+        return false; // Nothing todo
+    }
+
+    const auto& clip = track->getClip( clipId );
+    if (!clip)
+    {
+        DE_ERROR("No clipId ",clipId)
+        return false;
+    }
+
+    DE_OK("ClipId ", clip->m_clipId)
+    auto app = App::instance();
+    app->m_centralWidget->m_clipEditor->setClip(clip);
+
+    app->m_centralWidget->m_footer
+            ->setClipName(QString::fromStdString(clip->m_name));
+    return true;
 }
 
 bool
@@ -58,39 +166,120 @@ Session::saveSession()
     return false;
 }
 
+void Session::updateDspConnections()
+{
+    // Connect DSP user -> mixer
+    m_dspMixer.dsp_clearInputSignals();
+    m_dspMixer.dsp_setInputSignalCount(numUserTracks());
+    int iUserTrack = 0;
+    for (const SharedTrack &trk : m_tracks)
+    {
+        if (trk->m_trackType == Track::User)
+        {
+            m_dspMixer.dsp_setInputSignal(trk->m_dsp.get(), iUserTrack);
+            iUserTrack++;
+        }
+    }
+
+    // Connect DSP mixer -> master
+    auto masterTrk = getMasterTrack();
+    masterTrk->m_dsp.get()->dsp_clearInputSignals();
+    masterTrk->m_dsp.get()->dsp_setInputSignal(&m_dspMixer, 0);
+
+    // Connect DSP master -> collector
+    auto app = App::instance();
+    app->getSampleCollector()->dsp_clearInputSignals();
+    app->getSampleCollector()->dsp_setInputSignal(masterTrk->m_dsp.get());
+}
+
+void Session::addTrack()
+{
+    auto app = App::instance();
+
+    app->stopAudio();
+
+    // Create 1 user Track
+    auto userTrk = std::make_shared<Track>();
+    //userTrk->setTrackName("1 - Audio");
+    userTrk->setTrackType(Track::User);
+    m_tracks.emplace_back(userTrk);
+
+    app->m_centralWidget->m_arraCentral->m_tracks->updateFromSession();
+
+    updateDspConnections();
+
+    // Set active track
+    setActiveTrack(userTrk->getTrackId());
+
+    app->playAudio();
+}
+
 void Session::addTracks(const de::midi::file::MidiFile& midiFile)
 {
+    auto app = App::instance();
+
+    app->stopAudio();
+
     for (int i = 0; i < midiFile.m_tracks.size(); ++i)
     {
         const auto& midiTrack = midiFile.m_tracks[i];
         auto sessionTrack = std::make_shared<Track>();
-        sessionTrack->m_trackName = QString::fromLocal8Bit(midiTrack.name());
 
-        auto clip = Clip::create();
-        clip->m_ticksPerBeat = midiFile.m_ticksPerQuarterNote;
+        QString trackName;
+        if (midiTrack.name().empty())
+        {
+            trackName = QString("%1 - %2")
+                .arg(sessionTrack->getTrackId())
+                .arg(QString::fromStdString(FileSystem::fileBase(midiFile.m_fileName)));
+        }
+        else
+        {
+            trackName = QString("%1 - %2")
+                .arg(sessionTrack->getTrackId())
+                .arg(QString::fromStdString(midiTrack.name()));
+        }
+        sessionTrack->setTrackName(trackName);
+
+        auto clip = sessionTrack->m_clips[0];
+        clip->m_ppq = midiFile.m_ticksPerQuarterNote;
+        auto tempoMap = midiFile.m_tempoMap.m_setTempoEvents;
+        clip->m_bpm = tempoMap.empty() ? 120.0f : tempoMap.front().m_bpm;
+        clip->m_noteRange.reset();
+        clip->m_ppqRange.reset();
+
         for (int c = 0; c < midiTrack.m_channels.size(); ++c)
         {
+            auto channelColor = de::randomColorRGB();
             auto ch = midiTrack.m_channels[c];
             clip->m_channelIndex = ch.m_channelIndex;
+
             for (int n = 0; n < ch.m_notes.size(); ++n)
             {
                 auto note = ch.m_notes[n];
                 ClipNote clipNote;
-                clipNote.midiNote = note.m_midiNote;
+                clipNote.color = channelColor;
                 clipNote.channel = note.m_channel;
-                clipNote.noteOnVelocity = note.m_attack;
-                clipNote.noteOffVelocity = note.m_release;
-                clipNote.tickAttack = note.m_attackMs;
-                clipNote.tickRelease = note.m_releaseMs;
+                clipNote.midiNote = note.m_midiNote;
+                clipNote.velNoteOn = note.m_velNoteOn;
+                clipNote.velNoteOff = note.m_velNoteOff;
+                clipNote.ppqNoteOn = note.m_ppqNoteOn;
+                clipNote.ppqNoteOff = note.m_ppqNoteOff;
                 clip->m_notes.emplace_back( std::move(clipNote) );
+                clip->m_noteRange.addPoint(note.m_midiNote);
+                clip->m_ppqRange.addPoint(note.m_ppqNoteOn);
+                clip->m_ppqRange.addPoint(note.m_ppqNoteOff);
             }
         }
+
+        clip->finalize();
         m_tracks.emplace_back(sessionTrack);
     }
 
-    auto app = App::instance();
-
     app->m_centralWidget->m_arraCentral->m_tracks->updateFromSession();
+
+    updateDspConnections();
+
+    app->playAudio();
 }
 
 /*

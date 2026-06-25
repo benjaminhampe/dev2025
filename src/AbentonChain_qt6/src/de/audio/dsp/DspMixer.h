@@ -35,6 +35,8 @@ public:
 
     void dsp_removeInputSignal( IDspChainElement* inputSignal ); // override;
 
+    void dsp_setInputSignalCount( uint32_t count ); // override;
+
 };
 
 } // end namespace audio.

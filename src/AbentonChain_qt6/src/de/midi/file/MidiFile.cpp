@@ -223,106 +223,6 @@ TimeSignatureEvent::str() const
     return o.str();
 }
 
-// =======================================================================
-NoteEvent::NoteEvent()
-    : m_channel(0), m_midiNote(0)
-    , m_attack(0), m_attackMs(0)
-    , m_release(0), m_releaseMs(0)
-{}
-
-NoteEvent::NoteEvent(int channel, int midiNote,
-        int attack, uint64_t attackMs,
-        int release, uint64_t releaseMs)
-    : m_channel(0), m_midiNote(midiNote)
-    , m_attack(attack), m_attackMs(attackMs)
-    , m_release(release), m_releaseMs(releaseMs)
-{}
-
-size_t
-NoteEvent::computeMemoryConsumption() const
-{
-    size_t n = sizeof(*this);
-    return n;
-}
-
-uint64_t
-NoteEvent::duration() const { return m_releaseMs - m_attackMs; }
-
-std::string
-NoteEvent::str() const
-{
-    std::ostringstream o; o <<
-    "channel(" << m_channel << "), "
-    "midiNote(" << m_midiNote << "), "
-    "velocity(" << m_attack << "," << m_release << "), "
-    "duration(" << m_attackMs << "," << m_releaseMs << ")";
-    return o.str();
-}
-
-// =======================================================================
-NoteOnEvent::NoteOnEvent()
-    : m_tick(0)
-    , m_channel(0)
-    , m_midiNote(0)
-    , m_velocity(0)
-{}
-
-NoteOnEvent::NoteOnEvent( uint64_t tick, int channel, int midiNote, int velocity )
-    : m_tick(tick)
-    , m_channel(channel)
-    , m_midiNote(midiNote)
-    , m_velocity(velocity)
-{}
-
-size_t
-NoteOnEvent::computeMemoryConsumption() const
-{
-    size_t n = sizeof(*this);
-    return n;
-}
-
-std::string
-NoteOnEvent::str() const
-{
-    std::ostringstream o; o <<
-    "tick(" << m_tick << "), channel(" << m_channel << "), "
-    "note(" << m_midiNote << "), velocity(" << m_velocity << ")";
-    return o.str();
-}
-
-// =======================================================================
-NoteOffEvent::NoteOffEvent()
-    : m_tick(0)
-    , m_channel(0)
-    , m_midiNote(0)
-    , m_velocity(0)
-{}
-
-NoteOffEvent::NoteOffEvent( uint64_t tick, int channel, int midiNote, int velocity )
-    : m_tick(tick)
-    , m_channel(channel)
-    , m_midiNote(midiNote)
-    , m_velocity(velocity)
-{}
-
-size_t
-NoteOffEvent::computeMemoryConsumption() const
-{
-    size_t n = sizeof(*this);
-    return n;
-}
-
-std::string
-NoteOffEvent::str() const
-{
-    std::ostringstream o; o <<
-    "tick(" << m_tick << "), "
-    "channel(" << m_channel << "), "
-    "note(" << m_midiNote << "), "
-    "velocity(" << m_velocity << ")";
-    return o.str();
-}
-
 // Standard Midi Event CC - Controller Change
 // =======================================================================
 ControlChangeEvent::ControlChangeEvent()
@@ -387,8 +287,7 @@ ControlChangeEventMap::getValueRange() const
     for ( size_t i = 0; i < m_events.size(); ++i )
     {
         ControlChangeEvent const & e = m_events[ i ];
-        range.min = std::min( e.m_value, range.min );
-        range.max = std::max( e.m_value, range.max );
+        range.addPoint(e.m_value);
     }
     return range;
 }
@@ -400,8 +299,7 @@ ControlChangeEventMap::getTickRange() const
     for ( size_t i = 0; i < m_events.size(); ++i )
     {
         ControlChangeEvent const & e = m_events[ i ];
-        range.min = std::min( e.m_tick, range.min );
-        range.max = std::max( e.m_tick, range.max );
+        range.addPoint(e.m_tick);
     }
     return range;
 }
@@ -438,16 +336,16 @@ Channel::addNote( NoteEvent const & note )
 
 NoteEvent*
 Channel::addNote( int channel, int midiNote,
-        int attack, uint32_t attackMs,
-        int release, uint32_t releaseMs)
+        int veloAttack, int64_t ppqAttack,
+        int veloRelease, int64_t ppqRelease)
 {
     NoteEvent note;
     note.m_channel = channel;
     note.m_midiNote = midiNote;
-    note.m_attack = attack;
-    note.m_attackMs = attackMs;
-    note.m_release = release;
-    note.m_releaseMs = releaseMs;
+    note.m_velNoteOn = veloAttack;
+    note.m_velNoteOff = veloRelease;
+    note.m_ppqNoteOn = ppqAttack;
+    note.m_ppqNoteOff = ppqRelease;
     return addNote( note );
 }
 
@@ -516,25 +414,22 @@ Channel::getNoteRange() const
     {
         auto const & note = m_notes[ i ];
         int midiNote = note.m_midiNote;
-        range.min = std::min( midiNote, range.min );
-        range.max = std::max( midiNote, range.max );
+        range.addPoint(midiNote);
     }
     return range;
 }
 
-Range<uint64_t>
+Range<int64_t>
 Channel::getTickRange() const
 {
-    Range<uint64_t> range;
+    Range<int64_t> range;
     for ( size_t i = 0; i < m_notes.size(); ++i )
     {
-        auto const & note = m_notes[ i ];
-        uint64_t tickStart = note.m_attackMs;
-        uint64_t tickEnd = note.m_releaseMs;
-        range.min = std::min( tickStart, range.min );
-        range.max = std::max( tickStart, range.max );
-        range.min = std::min( tickEnd, range.min );
-        range.max = std::max( tickEnd, range.max );
+        const auto & note = m_notes[ i ];
+        int64_t tickStart = note.m_ppqNoteOn;
+        int64_t tickEnd = note.m_ppqNoteOff;
+        range.addPoint(tickStart);
+        range.addPoint(tickEnd);
     }
     return range;
 }
@@ -677,6 +572,7 @@ TempoMap::mpFileHeader( int fileType, int trackCount, int ticksPerQuarterNote )
 void
 TempoMap::mpEnd()
 {
+    DE_TRACE("")
     finalizeTempoMap();
 }
 
@@ -889,6 +785,7 @@ MidiFile::reset()
 void
 MidiFile::finalize()
 {
+    DE_TRACE("")
     m_tempoMap.finalizeTempoMap();
     // finalizeNotes();
 }

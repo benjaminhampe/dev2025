@@ -1,6 +1,34 @@
 #include "ArraTrack.h"
 #include <App.h>
 
+void ArraTrack::draw(QPainter & dc, QColor panelColor) const
+{
+    dc.setPen(QPen(m_color));
+    dc.setBrush(QBrush(panelColor));
+    dc.drawRect(m_rect);
+
+    QRect r_text = m_rect;
+    dc.drawText(r_text,0, m_name, &r_text);
+
+    auto & clip = m_track->m_clips[0];
+
+    float zoom_x = 64.0f / 960.0f;
+    float zoom_y = 1.0f;
+
+    dc.setPen(Qt::NoPen);
+    for (int i = 0; i < clip->m_notes.size(); ++i)
+    {
+        const auto & note = clip->m_notes[i];
+        int x1 = m_rect.x() + std::lroundf(zoom_x * note.ppqNoteOn);
+        int y1 = m_rect.y() + m_rect.height() - note.midiNote;
+        int x2 = m_rect.x() + std::lroundf(zoom_x * note.ppqNoteOff);
+        int y2 = y1 - 1;
+        const QColor color = toQColor(note.color);
+        dc.setBrush(QBrush(color));
+        dc.drawRect(x1,y1,x2-x1,y2-y1);
+    }
+}
+
 #if 0
 
 ArraTrack::ArraTrack(QWidget* parent )

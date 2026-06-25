@@ -270,6 +270,13 @@ public:
 
 
 */
+
+    // GUI state:
+
+    bool m_bCollapsed{false};
+
+    void setCollapsed( bool bCollapsed ) { m_bCollapsed = bCollapsed; }
+    bool isCollapsed() const { return m_bCollapsed; }
 };
 
 } // end namespace audio.

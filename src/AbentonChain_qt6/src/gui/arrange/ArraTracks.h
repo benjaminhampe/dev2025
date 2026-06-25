@@ -1,6 +1,6 @@
 ﻿#pragma once
-#include "ArraTrack.h"
 #include <QWidget>
+#include <de/session/Session.h>
 
 // ============================================================================
 class ArraTracks : public QWidget
@@ -15,6 +15,7 @@ public:
 
 public slots:
 protected:
+    void drawTrack(QPainter & dc) const;
     void resizeEvent( QResizeEvent* event ) override;
     void paintEvent( QPaintEvent* event ) override;
 /*
@@ -27,13 +28,17 @@ protected:
     void mouseMoveEvent( QMouseEvent* event ) override;
     void wheelEvent( QWheelEvent* event ) override;
 */
+    void drawTrack(QPainter & dc,
+                de::session::SharedTrack track,
+                QColor fillColor) const;
 protected:
-    ArraTrack m_masterTrack;
-    std::vector<ArraTrack> m_tracks;
 
     int m_zoom = 100;
     int m_margin = 8;
+    int m_headerHeight = 48;
+    bool m_bVertical = false;
 
     QColor m_windowColor;
     QColor m_panelColor;
+    QColor m_alternatingPanelColor;
 };

@@ -391,11 +391,11 @@ Parser::parseEvent( uint8_t const* const beg, uint8_t const* const end )
    {
       if ( m_runStatus < 8 )
       {
-         e = dbStr(  "- BAD runningStatus ", StringUtil::hex(m_runStatus) );
+         e = dbStr(  "- BAD runningStatus ", dbHex(m_runStatus) );
       }
       else
       {
-         e = dbStr(  "- OK runningStatus ", StringUtil::hex(m_runStatus) );
+         e = dbStr(  "- OK runningStatus ", dbHex(m_runStatus) );
       }
 
       event = m_runStatus; // Repeat last command
@@ -427,14 +427,14 @@ Parser::parseEvent( uint8_t const* const beg, uint8_t const* const end )
       if ( isOn )
       {
          auto s = dbStr( "dt(",dt,"), ch(",ch,") NOTE_ON(",MidiUtil::getNoteStr(note),
-            "), velocity(", velocity,"), runstat(0x", StringUtil::hex(m_runStatus),")" );
+            "), velocity(", velocity,"), runstat(0x", dbHex(m_runStatus),")" );
          mpToken( beg, src, s );
          mpNoteOn( m_currTick, ch, note, velocity );
       }
       else
       {
          auto s = dbStr( "dt(",dt,"), ch(",ch,") NOTE_OFF(",MidiUtil::getNoteStr(note),
-            "), velocity(", velocity,"), runstat(0x", StringUtil::hex(m_runStatus),")" );
+            "), velocity(", velocity,"), runstat(0x", dbHex(m_runStatus),")" );
          mpToken( beg, src, s );
          mpNoteOff( m_currTick, ch, note, velocity );
       }
@@ -445,9 +445,9 @@ Parser::parseEvent( uint8_t const* const beg, uint8_t const* const end )
       d2 = *src++;         // Fetch param2
       int value = ( (d1 & 0x7F) << 7 ) | (d2 & 0x7F);
       s = dbStr( "dt(",dt,"), ch(",ch,") AfterTouch(",value,"), "
-            "d1(0x",StringUtil::hex(d1),"), "
-            "d2(0x",StringUtil::hex(d2),"), "
-            "runstat(0x", StringUtil::hex(m_runStatus),")" );
+            "d1(0x",dbHex(d1),"), "
+            "d2(0x",dbHex(d2),"), "
+            "runstat(0x", dbHex(m_runStatus),")" );
       mpToken( beg, src, s );
       mpPolyphonicAftertouch( m_currTick, d2 ); // 16383 not 127 range
    }
@@ -458,8 +458,8 @@ Parser::parseEvent( uint8_t const* const beg, uint8_t const* const end )
       int cc = d1;
       int value = d2;
       auto ccStr = CC_toString( eMidiCC(d1) );
-      s = dbStr( "dt(",dt,"), ch(",ch,") ",ccStr,"(0x",StringUtil::hex(d2),"), "
-                             "runstat(0x", StringUtil::hex(m_runStatus),")" );
+      s = dbStr( "dt(",dt,"), ch(",ch,") ",ccStr,"(0x",dbHex(d2),"), "
+                             "runstat(0x", dbHex(m_runStatus),")" );
       mpToken( beg, src, s );
       mpControlChange( m_currTick, ch, cc, value );
    }
@@ -467,8 +467,8 @@ Parser::parseEvent( uint8_t const* const beg, uint8_t const* const end )
    else if ( command == 12 )
    {
       s = dbStr( "dt(",dt,"), ch(",ch,") ",
-                             GM_Instrument_toString( eMidiGM_Instrument(d1) ), "(0x",StringUtil::hex(d1),"), "
-                             "runstat(0x", StringUtil::hex(m_runStatus),")" );
+                             GM_Instrument_toString( eMidiGM_Instrument(d1) ), "(0x",dbHex(d1),"), "
+                             "runstat(0x", dbHex(m_runStatus),")" );
       mpToken( beg, src, s );
       mpProgramChange( m_currTick, ch, d1 );
    }
@@ -477,8 +477,8 @@ Parser::parseEvent( uint8_t const* const beg, uint8_t const* const end )
    {
       int value = d1;
       s = dbStr( "dt(",dt,"), ch(",ch,") ChannelPressure(",value,"), "
-                             "d1(0x",StringUtil::hex(d1),"), "
-                             "runstat(0x", StringUtil::hex(m_runStatus),")" );
+                             "d1(0x",dbHex(d1),"), "
+                             "runstat(0x", dbHex(m_runStatus),")" );
       mpToken( beg, src, s );
       mpChannelAftertouch( m_currTick, ch, value );
    }
@@ -491,9 +491,9 @@ Parser::parseEvent( uint8_t const* const beg, uint8_t const* const end )
       d2 = *src++;
       int bend = (( d2 & 0x7F ) << 7) | ( d1 & 0x7F );
       s = dbStr( "dt(",dt,"), ch(",ch,") PitchBend(",bend,"), "
-                             "d1(0x",StringUtil::hex(d1),"), "
-                             "d2(0x",StringUtil::hex(d2),"), "
-                             "runstat(0x", StringUtil::hex(m_runStatus),")" );
+                             "d1(0x",dbHex(d1),"), "
+                             "d2(0x",dbHex(d2),"), "
+                             "runstat(0x", dbHex(m_runStatus),")" );
       mpToken( beg, src, s );
       mpPitchBend( m_currTick, ch, bend );
    }
@@ -510,46 +510,46 @@ Parser::parseEvent( uint8_t const* const beg, uint8_t const* const end )
                k = *src++;
             }
             s = dbStr( "dt(",dt,") F0 - Sysex begin, "
-                                   "runstat(0x", StringUtil::hex(m_runStatus),")" );
+                                   "runstat(0x", dbHex(m_runStatus),")" );
             mpToken( beg, src, s );
           }
             break;
          case 1: // F1 - Time Code QuarterNote Frame
             d2 = *src++;
             s = dbStr( "dt(",dt,") F1 - TimeCode Quarter Frame(",int(d2),"), "
-                                   "runstat(0x", StringUtil::hex(m_runStatus),")");
+                                   "runstat(0x", dbHex(m_runStatus),")");
             mpToken( beg, src, s );
             //mpF1_TimeCodeQuarterNoteFrame( m_currTick, int(d2) );
             break;
          case 2: // F2 - Song Position Pointer
             d2 = *src++;
             s = dbStr( "dt(",dt,") F2 - Song Position Pointer(",int(d2),"), "
-                                   "runstat(0x", StringUtil::hex(m_runStatus),")");
+                                   "runstat(0x", dbHex(m_runStatus),")");
             mpToken( beg, src, s );
             //mpF2_SongPositionPointer( m_currTick, int(d2) );
             break;
          case 3: // F3 - Song Select (Song #) 1byte (0-127)
             d2 = *src++;
             s = dbStr( "dt(",dt,") F3 - Song Select(",int(d2),"), "
-                                   "runstat(0x", StringUtil::hex(m_runStatus),")");
+                                   "runstat(0x", dbHex(m_runStatus),")");
             mpToken( beg, src, s );
             //mpF3_SongSelect( m_currTick, int(d2) );
             break;
          case 4: // F4 - Undefined (Reserved)
             s = dbStr( "dt(",dt,") F4 - Undefined (Reserved), "
-                                   "runstat(0x", StringUtil::hex(m_runStatus),")");
+                                   "runstat(0x", dbHex(m_runStatus),")");
             mpToken( beg, src, s );
             //mpF4( m_currTick,  );
             break;
          case 5: // F5 - Undefined (Reserved)
             s = dbStr( "dt(",dt,") F5 - Undefined (Reserved), "
-                                   "runstat(0x", StringUtil::hex(m_runStatus),")");
+                                   "runstat(0x", dbHex(m_runStatus),")");
             mpToken( beg, src, s );
             //mpF5( m_currTick, );
             break;
          case 6: // F6 - TuneRequest
             s = dbStr( "dt(",dt,") NOIMPL F6 - TuneRequest, "
-                                   "runstat(0x", StringUtil::hex(m_runStatus),")");
+                                   "runstat(0x", dbHex(m_runStatus),")");
             mpToken( beg, src, s );
             //mpF6_TuneRequest( m_currTick );
             break;
@@ -562,50 +562,50 @@ Parser::parseEvent( uint8_t const* const beg, uint8_t const* const end )
                k = *src++;
             }
             s = dbStr( "dt(",dt,") F7 - SysEx end., "
-                                   "runstat(0x", StringUtil::hex(m_runStatus),")");
+                                   "runstat(0x", dbHex(m_runStatus),")");
             mpToken( beg, src, s );
             //mpF7_SystemExclusive( m_currTick );
           }
             break;
          case 8: // F8 - Timing clock
             s = dbStr( "dt(",dt,") NOIMPL F8 - Timing clock, "
-                                   "runstat(0x", StringUtil::hex(m_runStatus),")");
+                                   "runstat(0x", dbHex(m_runStatus),")");
             mpToken( beg, src, s );
             //mpF8_TimingClock( m_currTick );
             break;
          case 9: // F9 - Undefined (Reserved)
             s = dbStr( "dt(",dt,") NOIMPL F9 - Undefined (Reserved), "
-                                   "runstat(0x", StringUtil::hex(m_runStatus),")");
+                                   "runstat(0x", dbHex(m_runStatus),")");
             mpToken( beg, src, s );
             //mpF9( m_currTick );
             break;
          case 10: // FA - MidiClock Start
             s = dbStr( "dt(",dt,") NOIMPL FA - MidiClock Start, "
-                                   "runstat(0x", StringUtil::hex(m_runStatus),")");
+                                   "runstat(0x", dbHex(m_runStatus),")");
             mpToken( beg, src, s );
             //mpFA_MidiClockStart( m_currTick );
             break;
          case 11: // FB - MidiClock Continue
             s = dbStr( "dt(",dt,") NOIMPL FB - MidiClock Continue, "
-                                   "runstat(0x", StringUtil::hex(m_runStatus),")");
+                                   "runstat(0x", dbHex(m_runStatus),")");
             mpToken( beg, src, s );
             //mpFB_MidiClockContinue( m_currTick );
             break;
          case 12: // FC - MidiClock Stop
             s = dbStr( "dt(",dt,") NOIMPL FC - MidiClock Stop, "
-                                   "runstat(0x", StringUtil::hex(m_runStatus),")");
+                                   "runstat(0x", dbHex(m_runStatus),")");
             mpToken( beg, src, s );
             //mpFC_MidiClockStop( m_currTick );
             break;
          case 13: // FD - Undefined (Reserved)
             s = dbStr( "dt(",dt,") NOIMPL FD - Undefined (Reserved), "
-                                   "runstat(0x", StringUtil::hex(m_runStatus),")");
+                                   "runstat(0x", dbHex(m_runStatus),")");
             mpToken( beg, src, s );
             //mpFD( m_currTick );
             break;
          case 14: // FE - Active Sensing
             s = dbStr( "dt(",dt,") NOIMPL FE - Active Sensing, "
-                                   "runstat(0x", StringUtil::hex(m_runStatus),")");
+                                   "runstat(0x", dbHex(m_runStatus),")");
             mpToken( beg, src, s );
             //mpFE_ActiveSensing( m_currTick );
             break;
@@ -617,9 +617,9 @@ Parser::parseEvent( uint8_t const* const beg, uint8_t const* const end )
    }
    else
    {
-      DE_ERROR("[",(void*)src,"] ",StringUtil::hex(beg,src)," dt(",dt,") "
-         "NOIMPL Unknown command(0x", StringUtil::hex( event ),"), "
-         "runstat(0x", StringUtil::hex(m_runStatus),")" )
+      DE_ERROR("[",(void*)src,"] ",dbHex(beg,src)," dt(",dt,") "
+         "NOIMPL Unknown command(0x", dbHex( event ),"), "
+         "runstat(0x", dbHex(m_runStatus),")" )
    }
 
    return static_cast< size_t >(src - beg);
@@ -667,7 +667,7 @@ Parser::parseMetaEvent(uint8_t const* const ori,
       s = dbStr(  "dt(",dt,") FF 00 02 - SequenceNumber(",sequenceNumber,")" );
       if ( c3 != 0x02 )
       {
-         s += " ERROR c3(" + StringUtil::hex(c3) + ") != 0x02";
+         s += " ERROR c3(" + dbHex(c3) + ") != 0x02";
       }
       mpToken( ori, src, s );
       mpSequenceNumber( m_currTick, sequenceNumber );
@@ -687,7 +687,7 @@ Parser::parseMetaEvent(uint8_t const* const ori,
       n = MidiUtil::parseVLQ( src, end, dataSize );
       if ( n < 1 )
       {
-         //DE_ERROR("FF ",StringUtil::hex(metatype)," :: ParseError :: Expected VLQ, but not found")
+         //DE_ERROR("FF ",dbHex(metatype)," :: ParseError :: Expected VLQ, but not found")
       }
       else
       {
@@ -759,7 +759,7 @@ Parser::parseMetaEvent(uint8_t const* const ori,
       s = dbStr( "dt(",dt,") FF 20 01 - Channel prefix ", int(c4) );
       if ( c3 != 0x01 )
       {
-         s += " ERROR c3(0x" + StringUtil::hex(c3) + ") != 0x02";
+         s += " ERROR c3(0x" + dbHex(c3) + ") != 0x02";
       }
       mpToken( ori, src, s );
       mpChannelPrefix(m_currTick, int(c4) );
@@ -772,7 +772,7 @@ Parser::parseMetaEvent(uint8_t const* const ori,
       s = dbStr( "dt(",dt,") FF 21 (01)? - MIDI port display = ", port );
       if (c3 != 0x01)
       {
-         s += " ERROR c3(0x" + StringUtil::hex(c3) + ") != 0x01";
+         s += " ERROR c3(0x" + dbHex(c3) + ") != 0x01";
       }
       mpToken( ori, src, s );
       mpPortDisplay(m_currTick, port );
@@ -784,7 +784,7 @@ Parser::parseMetaEvent(uint8_t const* const ori,
       s = dbStr( "dt(",dt,") FF 2F 00 - EndOfTrack" );
       if (c3 != 0x00)
       {
-         s += " ERROR c3(0x" + StringUtil::hex(c3) + ") != 0x00";
+         s += " ERROR c3(0x" + dbHex(c3) + ") != 0x00";
       }
 
       mpToken( ori, src, s );
@@ -817,7 +817,7 @@ Parser::parseMetaEvent(uint8_t const* const ori,
       s = dbStr( "dt(",dt,") FF 51 03 - SetTempo(", bpm, "), microseconds(",us, ")" );
       if ( c3 != 0x03 )
       {
-         s += " ERROR c3(0x" + StringUtil::hex(c3) + ") != 0x03";
+         s += " ERROR c3(0x" + dbHex(c3) + ") != 0x03";
       }
       mpToken( ori, src, s );
       mpSetTempo( m_currTick, float(bpm), us );
@@ -835,7 +835,7 @@ Parser::parseMetaEvent(uint8_t const* const ori,
       s = dbStr( "dt(",dt,") FF 54 05 - SMPTE(",hh,":",mm,":",ss,"), fc(",fc,"), subfc(",sf,")");
       if ( c3 != 0x05 )
       {
-         s += " ERROR c3(0x" + StringUtil::hex(c3) + ") != 0x05";
+         s += " ERROR c3(0x" + dbHex(c3) + ") != 0x05";
       }
       mpToken( ori, src, s );
       mpSMPTEOffset( m_currTick, hh, mm, ss, fc, sf );
@@ -856,7 +856,7 @@ Parser::parseMetaEvent(uint8_t const* const ori,
                              "iClocksPerBeat(",iClocksPerBeat,"), 32nd_notes_per_beat(",i32ndNotesPerBeat,")" );
       if ( c3 != 0x04 )
       {
-         s += " ERROR c3(0x" + StringUtil::hex(c3) + ") != 0x04";
+         s += " ERROR c3(0x" + dbHex(c3) + ") != 0x04";
       }
       mpToken( ori, src, s );
       mpTimeSignature( m_currTick, top, bottom, iClocksPerBeat, i32ndNotesPerBeat );
@@ -878,7 +878,7 @@ Parser::parseMetaEvent(uint8_t const* const ori,
       s = dbStr( "dt(",dt,") FF 59 02 - KeySignature(Cdur + ",tonart,"), minor(",minor,")" );
       if ( c3 != 0x02 )
       {
-         s += " ERROR c3(0x" + StringUtil::hex(c3) + ") != 0x02";
+         s += " ERROR c3(0x" + dbHex(c3) + ") != 0x02";
       }
       mpToken( ori, src, s );
       mpKeySignature( m_currTick, tonart, minor );
@@ -887,7 +887,7 @@ Parser::parseMetaEvent(uint8_t const* const ori,
    else if (metatype == 0x7F)
    {
       uint8_t c3 = *src++;
-      s = dbStr( "dt(",dt,") FF 7F ", StringUtil::hex(c3), " - UNKNOWN, try skip" );
+      s = dbStr( "dt(",dt,") FF 7F ", dbHex(c3), " - UNKNOWN, try skip" );
       if ( c3 < 1 )
       {
          s += " ERROR invalid size";
@@ -906,7 +906,7 @@ Parser::parseMetaEvent(uint8_t const* const ori,
 
       src += n;
 
-      s = dbStr( "dt(",dt,") FF ",StringUtil::hex(metatype),
+      s = dbStr( "dt(",dt,") FF ",dbHex(metatype),
                              " - UNKNOWN META TYPE :: Probably FATAL." );
       //DE_DEBUG(name, hexStr(ori,src), s )
       mpToken( ori, src, s );

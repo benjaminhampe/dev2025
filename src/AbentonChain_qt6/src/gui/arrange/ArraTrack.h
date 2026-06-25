@@ -15,7 +15,7 @@ public:
     // QColor m_windowColor;
     // QColor m_panelColor;
 
-
+    void draw(QPainter & dc, QColor panelColor) const;
 };
 
 #if 0

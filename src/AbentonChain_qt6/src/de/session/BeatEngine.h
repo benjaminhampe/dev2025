@@ -10,7 +10,7 @@ constexpr int PPQ = 960; // Pulses/Ticks per QuarterNote musical grid.
 struct TempoEvent
 // ============================
 {
-    int64_t ppq; // tick position
+    int64_t ppqPos; // tick position
     double  bpm; // tempo at this tick
 };
 
@@ -39,18 +39,18 @@ timeInSecFromPPQ(int64_t ppqPos, const TempoMap& tempoMap, double bpm)
         const auto& cur = tempoMap[i];
 
         // If this event is beyond the target, stop
-        if (cur.ppq >= ppqPos)
+        if (cur.ppqPos >= ppqPos)
             break;
 
         // Determine end of this tempo segment
         int64_t nextPPQ = (i + 1 < tempoMap.size())
-            ? tempoMap[i + 1].ppq
+            ? tempoMap[i + 1].ppqPos
             : ppqPos;
 
         if (nextPPQ > ppqPos)
             nextPPQ = ppqPos;
 
-        int64_t deltaPPQ = nextPPQ - cur.ppq;
+        int64_t deltaPPQ = nextPPQ - cur.ppqPos;
         if (deltaPPQ <= 0)
             continue;
 

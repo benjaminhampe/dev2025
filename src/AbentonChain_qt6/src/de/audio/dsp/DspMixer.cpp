@@ -28,12 +28,17 @@ DspMixer::dsp_init( u64 frames, u32 channels, u32 sampleRate )
     m_initChannels = channels;
     m_initSampleRate = sampleRate;
 
-    for (auto m_inputSignal : m_inputSignals)
+    for (auto inputSignal : m_inputSignals)
     {
-        if (m_inputSignal)
+#ifndef NDEBUG
+        if (!inputSignal)
         {
-            m_inputSignal->dsp_init(frames, channels, sampleRate);
+            DE_ERROR("Got nullptr")
+            continue;
         }
+#endif // NDEBUG
+
+        inputSignal->dsp_init(frames, channels, sampleRate);
     }
 }
 
@@ -49,41 +54,32 @@ DspMixer::dsp_read( f64 pts, u32 frames, u32 sampleRate,
 
     for (auto inputSignal : m_inputSignals)
     {
+#ifndef NDEBUG
         if (!inputSignal)
         {
+            DE_ERROR("Got nullptr")
             continue;
         }
+#endif // NDEBUG
 
-        inputSignal->dsp_read( pts, frames, sampleRate, m_L.data(), m_R.data() );
+        // Read signal
+        float* __restrict__ Lout = m_L.data();
+        float* __restrict__ Rout = m_R.data();
+        DE_ASSUME_NO_OVERLAP(Lout,Rout,frames * sizeof(float));
+        inputSignal->dsp_read( pts, frames, sampleRate, Lout, Rout );
 
+        // Add signal
+        const float* __restrict__ Lin = m_L.data();
+        const float* __restrict__ Rin = m_R.data();
+        DE_ASSUME_NO_OVERLAP(Lin,Rin,frames * sizeof(float));
+        DE_ASSUME_NO_OVERLAP(L,  Lin,frames * sizeof(float));
+        DE_ASSUME_NO_OVERLAP(R,  Rin,frames * sizeof(float));
         for (size_t i = 0; i < frames; ++i)
         {
-            L[i] += m_L[i];
-            R[i] += m_R[i];
+            L[i] += Lin[i];
+            R[i] += Rin[i];
         }
     }
-}
-
-void
-DspMixer::dsp_setInputSignal( IDspChainElement* inputSignal, int /* i */ )
-{
-    if (!inputSignal)
-    {
-        DE_ERROR("Got nullptr")
-        return;
-    }
-
-    auto it = std::find_if(m_inputSignals.begin(),m_inputSignals.end(), [inputSignal]( IDspChainElement* cached ) { return cached == inputSignal; });
-
-    if (it != m_inputSignals.end())
-    {
-        DE_ERROR("inputSignal already added, abort")
-        return;
-    }
-
-    inputSignal->dsp_init(m_initFrames,m_initChannels,m_initSampleRate);
-
-    m_inputSignals.emplace_back(inputSignal);
 }
 
 void
@@ -102,6 +98,34 @@ IDspChainElement*
 DspMixer::dsp_getInputSignal(int i)
 {
     return m_inputSignals.at(i);
+}
+
+void
+DspMixer::dsp_setInputSignalCount( uint32_t count )
+{
+    m_inputSignals.resize(count);
+}
+
+void
+DspMixer::dsp_setInputSignal( IDspChainElement* inputSignal, int i )
+{
+    if (!inputSignal) { DE_ERROR("No signal") return; }
+    if (i < 0 || i >= int(m_inputSignals.size()))
+    {
+        DE_ERROR("Invalid signal index ",i, " of n = ",m_inputSignals.size())
+        return;
+    }
+
+    // auto it = std::find_if(m_inputSignals.begin(),m_inputSignals.end(), [inputSignal]( IDspChainElement* cached ) { return cached == inputSignal; });
+    // if (it != m_inputSignals.end())
+    // {
+    //     DE_ERROR("inputSignal already added, abort")
+    //     return;
+    // }
+
+    inputSignal->dsp_init(m_initFrames,m_initChannels,m_initSampleRate);
+
+    m_inputSignals[ i ] = inputSignal;
 }
 
 void

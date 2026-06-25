@@ -21,7 +21,7 @@ public:
     bool m_bClipVisible{ false };
     bool m_bTrackVisible{ true };
     bool m_bArraVisible{ false };
-protected:
+
     struct QuickHelp
     {
         QRect rc;
@@ -137,13 +137,18 @@ signals:
     void sig_showArrangement(bool bVisible);
 public slots:
     void setTrackOverview(QPixmap pix, int visibleWidth, int totalWidth, int xPos);
-// protected slots:
+    void setTrackName(QString name);
+    void setClipName(QString name);
+protected slots:
+    void on_showContextMenuTrack(const QPoint& pos);
+    void on_showContextMenuClip(const QPoint& pos);
 protected:
     bool event(QEvent* event) override;
     void resizeEvent( QResizeEvent* event ) override;
     void paintEvent( QPaintEvent* event ) override;
     void mousePressEvent( QMouseEvent* event ) override;
     void mouseReleaseEvent( QMouseEvent* event ) override;
+
 /*
     void enterEvent( QEnterEvent* event ) override;
     void leaveEvent( QEvent* event ) override;

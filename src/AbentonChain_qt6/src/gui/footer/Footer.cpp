@@ -7,6 +7,7 @@ Footer::Footer(QWidget* parent )
 {
     setObjectName( "Footer" );
     setContentsMargins(8,8,8,8);
+    setContextMenuPolicy(Qt::CustomContextMenu);
     setMouseTracking( true );
 
     m_helpFont = QFont("FontAwesome", 10, QFont::Normal, false );
@@ -180,6 +181,20 @@ Footer::setTrackOverview(QPixmap pix, int visibleWidth, int totalWidth, int xPos
     updateLayout();
 }
 
+void Footer::setTrackName(QString name)
+{
+    m_trackName.text = name;
+    m_trackName.pix = PIX_createFromText(m_padding,m_padding/2,m_trackName.text,Qt::white,m_textColor,m_helpFont);
+    updateLayout();
+}
+
+void Footer::setClipName(QString name)
+{
+    m_clipName.text = name;
+    m_clipName.pix = PIX_createFromText(m_padding,m_padding/2,m_clipName.text,Qt::white,m_textColor,m_helpFont);
+    updateLayout();
+}
+
 bool Footer::event(QEvent* e)
 {
     if (e->type() == QEvent::LayoutRequest)
@@ -192,50 +207,141 @@ bool Footer::event(QEvent* e)
     return QWidget::event(e);
 }
 
-void Footer::mousePressEvent( QMouseEvent* event )
+void Footer::mousePressEvent(QMouseEvent* e)
 {
-    auto mp = event->pos();
+    auto mp = e->pos();
 
-    if (isMouseOver(mp,m_quickHelp.rc))
+    if (e->button() == Qt::RightButton)
     {
-        m_bHelpVisible = !m_bHelpVisible;
-        emit sig_showQuickHelp(m_bHelpVisible);
-        update();
+        if (isMouseOver(mp, m_trackName.rc))
+        {
+            on_showContextMenuTrack(mp);
+        }
+        else if (isMouseOver(mp, m_clipName.rc))
+        {
+            on_showContextMenuClip(mp);
+        }
     }
-    else if (isMouseOver(mp,m_midiKeyboard.rc))
+    else if (e->button() == Qt::LeftButton)
     {
-        m_bMidiVisible = !m_bMidiVisible;
-        emit sig_showMidiKeyboard(m_bMidiVisible);
-        update();
+        if (isMouseOver(mp,m_quickHelp.rc))
+        {
+            m_bHelpVisible = !m_bHelpVisible;
+            emit sig_showQuickHelp(m_bHelpVisible);
+            update();
+        }
+        else if (isMouseOver(mp,m_midiKeyboard.rc))
+        {
+            m_bMidiVisible = !m_bMidiVisible;
+            emit sig_showMidiKeyboard(m_bMidiVisible);
+            update();
+        }
+        else if (isMouseOver(mp,m_clipShow.rc))
+        {
+            m_bClipVisible = !m_bClipVisible;
+            emit sig_showClipEditor(m_bClipVisible);
+            update();
+        }
+        else if (isMouseOver(mp,m_trackShow.rc))
+        {
+            m_bTrackVisible = !m_bTrackVisible;
+            emit sig_showTrackEditor(m_bTrackVisible);
+            update();
+        }
+        else if (isMouseOver(mp,m_details.rc))
+        {
+            m_bArraVisible = !m_bArraVisible;
+            emit sig_showArrangement(m_bArraVisible);
+            update();
+        }
     }
-    else if (isMouseOver(mp,m_clipShow.rc))
-    {
-        m_bClipVisible = !m_bClipVisible;
-        emit sig_showClipEditor(m_bClipVisible);
-        update();
-    }
-    else if (isMouseOver(mp,m_trackShow.rc))
-    {
-        m_bTrackVisible = !m_bTrackVisible;
-        emit sig_showTrackEditor(m_bTrackVisible);
-        update();
-    }
-    else if (isMouseOver(mp,m_details.rc))
-    {
-        m_bArraVisible = !m_bArraVisible;
-        emit sig_showArrangement(m_bArraVisible);
-        update();
-    }
-
-    QWidget::mousePressEvent( event );
+    QWidget::mousePressEvent(e);
 }
 
-void Footer::mouseReleaseEvent( QMouseEvent* event )
+void Footer::mouseReleaseEvent(QMouseEvent* e)
 {
-
-   QWidget::mouseReleaseEvent( event );
+    QWidget::mouseReleaseEvent(e);
 }
 
+void Footer::on_showContextMenuTrack(const QPoint& pos)
+{
+    QMenu menu;
+
+    const auto& tracks = App::instance()->m_session.m_tracks;
+
+    int nUser = 0;
+    for (const auto& trk : tracks)
+    {
+        if (trk->getTrackType() == de::session::Track::User)
+        {
+            auto act = menu.addAction(trk->getTrackName());
+            act->setData(trk->getTrackId());
+            nUser++;
+        }
+    }
+
+    if (nUser > 0)
+        menu.addSeparator();
+
+    int nSend = 0;
+    for (const auto& trk : tracks)
+    {
+        if (trk->getTrackType() == de::session::Track::Master)
+        {
+            auto act = menu.addAction(trk->getTrackName());
+            act->setData(trk->getTrackId());
+            break;
+        }
+    }
+
+    if (nSend > 0)
+        menu.addSeparator();
+
+    for (const auto& trk : tracks)
+    {
+        if (trk->getTrackType() == de::session::Track::Send)
+        {
+            auto act = menu.addAction(trk->getTrackName());
+            act->setData(trk->getTrackId());
+        }
+    }
+
+    QAction *chosen = menu.exec(mapToGlobal(pos));
+
+    if (chosen)
+    {
+        int trackId = chosen->data().toInt();
+        App::instance()->m_session.setActiveTrack(trackId);
+    }
+}
+
+void Footer::on_showContextMenuClip(const QPoint& pos)
+{
+    QMenu menu;
+
+    const auto& activeTrack = App::instance()->m_session.getActiveTrack();
+    if (!activeTrack)
+    {
+        DE_ERROR("No active Track")
+        return;
+    }
+
+    int nClip = 0;
+    for (const auto& clip : activeTrack->m_clips)
+    {
+        auto act = menu.addAction(QString::fromStdString(clip->m_name));
+        act->setData(clip->m_clipId);
+        nClip++;
+    }
+
+    QAction *chosen = menu.exec(mapToGlobal(pos));
+
+    if (chosen)
+    {
+        int clipId = chosen->data().toInt();
+        App::instance()->m_session.setActiveTrack(clipId);
+    }
+}
 
 // static
 QPixmap Footer::PIX_createFromText(int padd_x, int padd_y, QString text, QColor fillColor, QColor textColor, QFont font)

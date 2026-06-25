@@ -14,12 +14,12 @@ struct ParserListener : public IParserListener
     Track m_track; // current Track
     int m_trackNumber;
 
-    ParserListener() 
+    ParserListener()
         : m_file(nullptr)
-        , m_trackNumber(0) 
+        , m_trackNumber(0)
     {}
-    
-    ~ParserListener() override 
+
+    ~ParserListener() override
     {}
 
     void setMidiFile( MidiFile* file )
@@ -55,12 +55,12 @@ struct ParserListener : public IParserListener
         m_track = Track( m_trackNumber );
         m_file->m_tempoMap.mpFileHeader( fileType, trackCount, ticksPerQuarterNote );
     }
-    
+
     void mpTrackStart( int trackNumber ) override
     {
 
     }
-    
+
     void mpTrackEnd() override
     {
         if ( !m_file ) { std::runtime_error("No MidiFile pointer"); }
@@ -85,18 +85,18 @@ struct ParserListener : public IParserListener
         if ( !m_file ) { std::runtime_error("No MidiFile pointer"); }
         NoteOnEvent noteOn;
         noteOn.m_tick = tick;
-        noteOn.m_channel = uint8_t( channel ) & 0x0F;
-        noteOn.m_midiNote = uint8_t( midiNote ) & 0x7F;
-        noteOn.m_velocity = uint8_t( velocity ) & 0x7F;
+        noteOn.m_channel = static_cast<int8_t>(uint8_t( channel ) & 0x0F);
+        noteOn.m_midiNote = static_cast<int8_t>(uint8_t( midiNote ) & 0x7F);
+        noteOn.m_velocity = static_cast<int8_t>(uint8_t( velocity ) & 0x7F);
         m_track.getChannel(channel).m_noteOnEvents.emplace_back( std::move( noteOn ) );
 
         NoteEvent note;
         note.m_channel = channel;
         note.m_midiNote = midiNote;
-        note.m_attack = velocity;
-        note.m_attackMs = tick;
-        note.m_release = velocity;
-        note.m_releaseMs = tick;
+        note.m_velNoteOn = velocity;
+        note.m_ppqNoteOn = tick;
+        note.m_velNoteOff = velocity;
+        note.m_ppqNoteOff = tick;
         m_track.getChannel(channel).addNote( note );
 
         m_file->m_tempoMap.mpNoteOn( tick, channel, midiNote, velocity );
@@ -106,9 +106,9 @@ struct ParserListener : public IParserListener
         if ( !m_file ) { std::runtime_error("No MidiFile pointer"); }
         NoteOffEvent noteOff;
         noteOff.m_tick = tick;
-        noteOff.m_channel = uint8_t( channel ) & 0x0F;
-        noteOff.m_midiNote = uint8_t( midiNote ) & 0x7F;
-        noteOff.m_velocity = uint8_t( velocity ) & 0x7F;
+        noteOff.m_channel = static_cast<int8_t>(uint8_t( channel ) & 0x0F);
+        noteOff.m_midiNote = static_cast<int8_t>(uint8_t( midiNote ) & 0x7F);
+        noteOff.m_velocity = static_cast<int8_t>(uint8_t( velocity ) & 0x7F);
         m_track.getChannel(channel).m_noteOffEvents.emplace_back( std::move( noteOff ) );
 
         NoteEvent* note = m_track.getChannel(channel).getLastNote( midiNote );
@@ -118,8 +118,8 @@ struct ParserListener : public IParserListener
             //DE_ERROR("No last note to finish ch(",select,"), midiNote(",midiNote,"), release(",velocity,")" )
             return;
         }
-        note->m_releaseMs = tick;
-        note->m_release = velocity;
+        note->m_ppqNoteOff = tick;
+        note->m_velNoteOff = velocity;
 
         m_file->m_tempoMap.mpNoteOff( tick, channel, midiNote, velocity );
     }

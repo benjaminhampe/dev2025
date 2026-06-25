@@ -1,4 +1,5 @@
 #pragma once
+#include <de/math/Range.h>
 #include <de/midi/GeneralMidi.h>
 #include <de/midi/file/IParserListener.h>
 // #include <cstdint>
@@ -9,25 +10,6 @@
 namespace de {
 namespace midi {
 namespace file {
-
-// =======================================================================
-template< typename T > struct Range
-// =======================================================================
-{
-    T min = std::numeric_limits< T >::max();
-    T max = std::numeric_limits< T >::lowest();
-
-    T
-    getRange() const { return max - min; }
-
-    std::string
-    str() const
-    {
-        std::ostringstream o;
-        o << min << "," << max;
-        return o.str();
-    }
-};
 
 // For all meta text events
 // =======================================================================
@@ -135,52 +117,120 @@ struct TimeSignatureEvent
 struct NoteEvent
 // =======================================================================
 {
-    int m_channel;
-    int m_midiNote;
-    int m_attack;
-    uint64_t m_attackMs;
-    int m_release;
-    uint64_t m_releaseMs;
+    int8_t m_channel;
+    int8_t m_midiNote;
+    int8_t m_velNoteOn; // velocity
+    int8_t m_velNoteOff;
+    int64_t m_ppqNoteOn; // tick
+    int64_t m_ppqNoteOff;
 
-    NoteEvent();
-    NoteEvent(int channel, int midiNote,
-            int attack, uint64_t attackMs,
-            int release, uint64_t releaseMs);
-    size_t computeMemoryConsumption() const;
-    uint64_t duration() const;
-    std::string str() const;
+    NoteEvent()
+        : m_channel(0), m_midiNote(0)
+        , m_velNoteOn(0), m_velNoteOff(0)
+        , m_ppqNoteOn(0), m_ppqNoteOff(0)
+    {}
+
+    // NoteEvent(
+    //     int channel, int midiNote,
+    //     int veloNoteOn, int64_t ppqNoteOn,
+    //     int veloNoteOff, int64_t ppqNoteOff)
+    //     : m_channel(0)
+    //     , m_midiNote(midiNote)
+    //     , m_velNoteOn(veloNoteOn)
+    //     , m_velNoteOff(veloNoteOff)
+    //     , m_ppqNoteOn(ppqNoteOn)
+    //     , m_ppqNoteOff(ppqNoteOff)
+    // {}
+
+    size_t computeMemoryConsumption() const { return sizeof(*this); }
+
+    int64_t duration() const { return m_ppqNoteOff - m_ppqNoteOn; }
+
+    std::string str() const
+    {
+        std::ostringstream o; o <<
+        "channel(" << int(m_channel) << "), "
+        "midiNote(" << int(m_midiNote) << "), "
+        "NoteOn(ppq:" << m_ppqNoteOn << ", vel:" << m_velNoteOn << "), "
+        "NoteOff(ppq:" << m_ppqNoteOff << ", vel:" << m_velNoteOff << ")";
+        return o.str();
+    }
 };
 
 // =======================================================================
 struct NoteOnEvent
 // =======================================================================
 {
-    uint64_t m_tick;
-    uint8_t m_channel;
-    uint8_t m_midiNote;
-    uint8_t m_velocity;
-    uint8_t m_dummy;
+    int64_t m_tick;
+    int8_t m_channel;
+    int8_t m_midiNote;
+    int8_t m_velocity;
+    int8_t m_dummy;
 
-    NoteOnEvent();
-    NoteOnEvent( uint64_t tick, int channel, int midiNote, int velocity );
-    size_t computeMemoryConsumption() const;
-    std::string str() const;
+    NoteOnEvent()
+        : m_tick(0)
+        , m_channel(0)
+        , m_midiNote(0)
+        , m_velocity(0)
+    {}
+
+    // NoteOnEvent(int64_t tick, int channel, int midiNote, int velocity)
+    //     : m_tick(tick)
+    //     , m_channel(channel)
+    //     , m_midiNote(midiNote)
+    //     , m_velocity(velocity)
+    // {}
+
+    size_t
+    computeMemoryConsumption() const { return sizeof(*this); }
+
+    std::string
+    str() const
+    {
+        std::ostringstream o; o <<
+        "ppq(" << m_tick << "), "
+        "NoteOn(ch:" << m_channel << ", "
+        "note:" << m_midiNote << ", "
+        "vel:" << m_velocity << ")";
+        return o.str();
+    }
 };
 
 // =======================================================================
 struct NoteOffEvent
 // =======================================================================
 {
-    uint64_t m_tick;
-    uint8_t m_channel;
-    uint8_t m_midiNote;
-    uint8_t m_velocity;
-    uint8_t m_dummy;
+    int64_t m_tick;
+    int8_t m_channel;
+    int8_t m_midiNote;
+    int8_t m_velocity;
+    int8_t m_dummy;
 
-    NoteOffEvent();
-    NoteOffEvent( uint64_t tick, int channel, int midiNote, int velocity );
-    size_t computeMemoryConsumption() const;
-    std::string str() const;
+    NoteOffEvent()
+        : m_tick(0)
+        , m_channel(0)
+        , m_midiNote(0)
+        , m_velocity(0)
+    {}
+
+    // NoteOffEvent(int64_t tick, int channel, int midiNote, int velocity)
+    //     : m_tick(tick)
+    //     , m_channel(channel)
+    //     , m_midiNote(midiNote)
+    //     , m_velocity(velocity)
+    // {}
+
+    size_t computeMemoryConsumption() const { return sizeof(*this); }
+
+    std::string str() const
+    {
+        std::ostringstream o; o <<
+        "ppq(" << m_tick << "), "
+        "NoteOff(ch:" << m_channel << ", "
+        "note:" << m_midiNote << ", "
+        "vel:" << m_velocity << ")";
+        return o.str();
+    }
 };
 
 // Standard Midi Event CC - Controller Change
@@ -231,13 +281,13 @@ struct Channel
     size_t computeMemoryConsumption() const;
     NoteEvent* addNote( NoteEvent const & note );
     NoteEvent* addNote( int channel, int midiNote,
-            int attack, uint32_t attackMs,
-            int release, uint32_t releaseMs);
+            int attack, int64_t ppqAttack,
+            int release, int64_t ppqRelease);
     NoteEvent* getLastNote( int midiNote );
     ControlChangeEventMap & getController( int cc ); // We guarantee that the controller exists.
     std::string str( bool withNotes = false ) const;
     Range<int> getNoteRange() const;
-    Range<uint64_t> getTickRange() const;
+    Range<int64_t> getTickRange() const;
 };
 
 // Midi can have u16 (65536) tracks with each 16 channels. Channel 9 is reserved for drums.
@@ -284,8 +334,7 @@ struct TempoMap : public IParserListener
     double getDurationInSec() const;
     void reset();
     void mpFileHeader( int fileType, int trackCount, int ticksPerQuarterNote ) override;
-    // Finalize TempoMap ( finalize duration of last SetTempo event )
-    void mpEnd() override;
+    void mpEnd() override; // Finalize TempoMap ( finalize duration of last SetTempo event )
     void finalizeTempoMap();
     void mpSetTempo( uint64_t tick, float bpm, int microsecondsPerQuarterNote ) override;
     void mpNoteOn( uint64_t tick, int channel, int midiNote, int velocity ) override;
