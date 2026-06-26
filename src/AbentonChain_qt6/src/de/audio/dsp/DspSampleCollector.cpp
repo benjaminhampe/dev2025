@@ -139,6 +139,8 @@ DspSampleCollector::dsp_init( u64 frames, u32 channels, u32 sampleRate )
         return;
     }
 
+    DE_OK("frames(",frames,"), channels(",channels,"), sampleRate(",sampleRate,")")
+
     m_blockSize = frames;
     m_L.resize(frames);
     m_R.resize(frames);
@@ -177,16 +179,34 @@ DspSampleCollector::dsp_read(f64 pts, u32 frames, u32 sampleRate,
         return;
     }
 
+    m_L.resize(frames);
+    m_R.resize(frames);
+
+    const size_t nBytesPerChannel = sizeof(float) * frames;
+
+    // Get inputSignal:
+    {
+        float* __restrict__ l = m_L.data();
+        float* __restrict__ r = m_R.data();
+        //DE_ASSUME_NO_OVERLAP(l,r,nBytesPerChannel);
+        m_inputSignal->dsp_read( pts, frames, sampleRate, l, r );
+    }
+
+    // Relay inputSignal:
+    {
+        const float* __restrict__ Lin = m_L.data();
+        const float* __restrict__ Rin = m_R.data();
+        //DE_ASSUME_NO_OVERLAP(Lin,L,nBytesPerChannel);
+        //DE_ASSUME_NO_OVERLAP(Rin,R,nBytesPerChannel);
+        std::memcpy(L, Lin, nBytesPerChannel);
+        std::memcpy(R, Rin, nBytesPerChannel);
+    }
+
     if (m_bBypassed)
     {
-        // Relay signal
-        DE_ASSUME(L != R);
-        m_inputSignal->dsp_read( pts, frames, sampleRate, L, R );
         return;
     }
 
-    m_L.resize(frames);
-    m_R.resize(frames);
     m_sum.resize(frames);
     m_accum_ori.resize(m_fftSize);
     m_accum_tmp.resize(m_fftSize);
@@ -194,31 +214,6 @@ DspSampleCollector::dsp_read(f64 pts, u32 frames, u32 sampleRate,
     m_accum_vec_in.resize(m_fftSize);
     m_accum_vec_out.resize(m_cols);
     m_accum_mat.resize(m_cols, m_rows);
-
-    // Get input signal
-    {
-        float* __restrict__ l = m_L.data();
-        float* __restrict__ r = m_R.data();
-        DE_ASSUME(l != r);
-        m_inputSignal->dsp_read( pts, frames, sampleRate, l, r );
-    }
-
-    // Relay signal
-    {
-#if 1
-        de_memcpy_no_overlap(L, m_L.data(), frames * sizeof(float));
-        de_memcpy_no_overlap(R, m_R.data(), frames * sizeof(float));
-#else
-        const float* __restrict__ l = m_L.data();
-        const float* __restrict__ r = m_R.data();
-        DE_ASSUME(l != r);
-        DE_ASSUME(l != L);
-        DE_ASSUME(r != R);
-        DE_ASSUME(L != R);
-        std::memcpy(L, l, frames * sizeof(float));
-        std::memcpy(R, r, frames * sizeof(float));
-#endif
-    }
 
     // Sum L+R
     {

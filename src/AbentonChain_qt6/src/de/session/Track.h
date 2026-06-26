@@ -131,8 +131,8 @@ public:
     //SharedPlugin createPlugin( std::string uri, int index = -1);
 
     // void deregisterMidiListeners();
-
-    // void dumpChain();
+    void updateDspChain();
+    void dumpDspChain();
 
     std::string
     dsp_name() const override { return std::string("Track - ") + getTrackName().toStdString(); }
@@ -160,7 +160,6 @@ public:
     // bool swapPlugins(int dragIndex, int dropIndex);
 
 private:
-    void updateDspChain();
 
     std::string debugStr() const
     {

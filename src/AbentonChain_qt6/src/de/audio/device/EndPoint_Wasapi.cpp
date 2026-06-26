@@ -710,7 +710,6 @@ private:
     }
 };
 
-
 // =============================================
 EndPoint_Wasapi::EndPoint_Wasapi(const std::function<void()>& deviceLostFunc)
 // =============================================

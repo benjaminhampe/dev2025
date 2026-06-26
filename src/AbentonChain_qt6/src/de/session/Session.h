@@ -1,7 +1,7 @@
 #pragma once
 #include <de/session/Track.h>
 #include <de/midi/file/MidiFile.h>
-#include <de/audio/dsp/DspMixer.h>
+#include <de/session/Mixer.h>
 
 namespace de {
 namespace session {
@@ -27,7 +27,7 @@ struct Session
     // std::vector<int> m_sendTracksId;
     std::vector<Track*> m_tracks;
 
-    de::audio::DspMixer m_dspMixer;
+    Mixer m_mixer;
 
     Session();
     ~Session();
@@ -37,7 +37,7 @@ struct Session
     void newSession();
     bool loadSession();
     bool saveSession();
-    void updateDspConnections();
+    void updateDspChain();
 
     //=========================
     // TrackApi

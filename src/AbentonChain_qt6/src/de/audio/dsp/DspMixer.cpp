@@ -28,18 +28,18 @@ DspMixer::dsp_init( u64 frames, u32 channels, u32 sampleRate )
     m_initChannels = channels;
     m_initSampleRate = sampleRate;
 
-    for (auto inputSignal : m_inputSignals)
-    {
-#ifndef NDEBUG
-        if (!inputSignal)
-        {
-            DE_ERROR("Got nullptr")
-            continue;
-        }
-#endif // NDEBUG
+//     for (auto inputSignal : m_inputSignals)
+//     {
+// #ifndef NDEBUG
+//         if (!inputSignal)
+//         {
+//             DE_ERROR("Got nullptr")
+//             continue;
+//         }
+// #endif // NDEBUG
 
-        inputSignal->dsp_init(frames, channels, sampleRate);
-    }
+//         inputSignal->dsp_init(frames, channels, sampleRate);
+//     }
 }
 
 void
@@ -71,7 +71,7 @@ DspMixer::dsp_read( f64 pts, u32 frames, u32 sampleRate,
         // Add signal
         const float* __restrict__ Lin = m_L.data();
         const float* __restrict__ Rin = m_R.data();
-        DE_ASSUME_NO_OVERLAP(Lin,Rin,frames * sizeof(float));
+        //DE_ASSUME_NO_OVERLAP(Lin,Rin,frames * sizeof(float));
         DE_ASSUME_NO_OVERLAP(L,  Lin,frames * sizeof(float));
         DE_ASSUME_NO_OVERLAP(R,  Rin,frames * sizeof(float));
         for (size_t i = 0; i < frames; ++i)
@@ -103,7 +103,7 @@ DspMixer::dsp_getInputSignal(int i)
 void
 DspMixer::dsp_setInputSignalCount( uint32_t count )
 {
-    m_inputSignals.resize(count);
+    m_inputSignals.resize(count, nullptr);
 }
 
 void

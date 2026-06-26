@@ -209,7 +209,14 @@ void Track::insertPlugin(int index, const QString &uri)
     m_trackWidget->updateLayout();
 
     // Update DSP Chain...
-    updateDspChain();
+    if (m_session)
+    {
+        m_session->updateDspChain();
+    }
+    else
+    {
+        DE_ERROR("No session, dsp chain failed.")
+    }
 
     App::instance()->playAudio();
 }
@@ -252,7 +259,10 @@ void Track::removePlugin(PluginWidget* widget)
     m_trackWidget->updateLayout();
 
     // Update DSP Chain...
-    updateDspChain();
+    if (m_session)
+    {
+        m_session->updateDspChain();
+    }
 
     App::instance()->playAudio();
 }
@@ -304,7 +314,10 @@ bool Track::swapPlugins(int dragIndex, int dropIndex)
     m_trackWidget->setUpdatesEnabled(true);
 
     // Update DSP Chain...
-    updateDspChain();
+    if (m_session)
+    {
+        m_session->updateDspChain();
+    }
 
     App::instance()->playAudio();
 
@@ -318,12 +331,13 @@ bool Track::swapPlugins(int dragIndex, int dropIndex)
 
 void Track::updateDspChain()
 {
+    auto s = m_trackName.toStdString();
     auto n = m_plugins.size();
-    DE_TRACE("n = ",n)
-    for (int i = n-1; i > -1; i--)
-    {
-        DE_TRACE("[",i,"] ",m_plugins[i]->dsp_name())
-    }
+    DE_BENNI(s," Plugin.Count = ",n)
+    // for (int i = n-1; i > -1; i--)
+    // {
+    //     DE_BENNI(s,"[",i,"] ",m_plugins[i]->dsp_name())
+    // }
 
     if (n > 0)
     {
@@ -335,12 +349,25 @@ void Track::updateDspChain()
                 auto b = m_plugins[i];
                 b->dsp_clearInputSignals();
                 b->dsp_setInputSignal(a,0);
+
+                DE_BENNI(s," Plugin[",i,"] ",b->dsp_name(), " <-- ",a->dsp_name())
             }
         }
-        m_plugins[0]->dsp_clearInputSignals();
-        m_plugins[0]->dsp_setInputSignal(m_inputSignal,0);
+        auto a = m_inputSignal;
+        auto b = m_plugins.front();
+        b->dsp_clearInputSignals();
+        b->dsp_setInputSignal(a,0);
+        DE_BENNI(s," Plugin[0] ",b->dsp_name(), " <-- ", (a ? a->dsp_name() : "nullptr"))
     }
 
+    if (m_inputSignal)
+    {
+        DE_BENNI(s," InputSignal = ",m_inputSignal->dsp_name())
+    }
+    else
+    {
+        DE_BENNI(s," InputSignal = nullptr")
+    }
 /*
         auto p0 = m_plugins.at(0);
 
@@ -409,48 +436,41 @@ void Track::updateDspChain()
     }
 */
 
-    if (m_session)
-        m_session->dumpDspChain();
+    // if (m_session)
+    // {
+    //     //m_session->updateDspConnections();
+    //     m_session->dumpDspChain();
+    // }
+}
+
+void Track::dumpDspChain()
+{
+/*
+    auto s = m_trackName.toStdString();
+
+    // DE_BENNI(s)
+
+    IDspChainElement* p{ nullptr };
+    if (m_plugins.empty())
+    {
+        p = m_inputSignal;
+    }
+    else
+    {
+        p = m_plugins.back();
+    }
+
+    int i = 0;
+    while (p)
+    {
+        DE_BENNI(s," DspTrack[",i,"] ",p->dsp_name())
+        p = p->dsp_getInputSignal(0);
+        i++;
+    }
+    */
 }
 
 /*
-void Track::dumpChain()
-{
-    // <debug>
-    std::vector< std::string > pluginNames;
-    pluginNames.reserve(64);
-
-    DE_BENNI(getTrackName().toStdString())
-
-    IDspChainElement* p = m_chainEnd;
-    while (p)
-    {
-        std::string name;
-        auto plugin = dynamic_cast<de::audio::IPlugin*>(p);
-        if (plugin)
-        {
-            name = plugin->getName();
-            if (plugin->isSynth()) name += " (Synth)";
-        }
-        else
-        {
-            DE_ERROR("Cast failed.")
-            name = "CastFailed";
-        }
-        pluginNames.emplace_back( std::move( name ) );
-
-        p = p->dsp_getInputSignal(0);
-    }
-    std::reverse(pluginNames.begin(), pluginNames.end());
-
-    DE_WARN("DspChain.Count = ",pluginNames.size())
-    for (size_t i = 0; i < pluginNames.size(); i++)
-    {
-        DE_DEBUG("DspChain[",i,"] ",pluginNames[i])
-    }
-    // </debug>
-}
-
 bool DspTrack::swapPlugins(int dragIndex, int dropIndex)
 {
     if (dragIndex == dropIndex)

@@ -62,7 +62,7 @@ void Session::newSession()
     m_tracks.emplace_back(userTrk);
 
     // Connect DSP user -> mixer
-    updateDspConnections();
+    updateDspChain();
 
     // Set active track
     setActiveTrack(userTrk->getTrackId());
@@ -70,25 +70,53 @@ void Session::newSession()
     app->playAudio();
 }
 
-void Session::updateDspConnections()
+void Session::updateDspChain()
 {
-    // Connect DSP userTracks to mixer
-    m_dspMixer.dsp_clearInputSignals();
-    m_dspMixer.dsp_setInputSignalCount(numUserTracks());
-    int iUserTrack = 0;
+    DE_BENNI("//==============================================")
+    DE_BENNI(m_sessionName)
+    DE_BENNI("//==============================================")
+
+    // Connect DSP user-tracks to mixer
+    m_mixer.dsp_clearInputSignals();
+    m_mixer.dsp_setInputSignalCount(numUserTracks());
+    int nUser = 0;
     for (auto track : m_tracks)
     {
         if (track->m_trackType == Track::User)
         {
-            m_dspMixer.dsp_setInputSignal(track, iUserTrack);
-            iUserTrack++;
+            track->dsp_clearInputSignals();
+            track->updateDspChain();
+            m_mixer.dsp_setInputSignal(track, nUser);
+            //masterTrk->dsp_setInputSignal(track, 0);
+            nUser++;
+        }
+    }
+
+    DE_BENNI("Mixer.Count = ",m_mixer.dsp_getInputSignalCount())
+    for (int i = 0; i < m_mixer.dsp_getInputSignalCount(); ++i)
+    {
+        auto p = m_mixer.dsp_getInputSignal(i);
+        if (p)
+        {
+            DE_BENNI("Mixer[",i,"] ",p->dsp_name())
+
+            auto t = dynamic_cast<Track*>(p);
+            if (t)
+            {
+                t->dumpDspChain();
+            }
+        }
+        else
+        {
+            DE_BENNI("DspMixer[",nUser,"] nullptr")
         }
     }
 
     // Connect DSP mixer -> master
     auto masterTrk = getMasterTrack();
     masterTrk->dsp_clearInputSignals();
-    masterTrk->dsp_setInputSignal(&m_dspMixer, 0);
+    masterTrk->dsp_setInputSignal(&m_mixer, 0);
+    masterTrk->updateDspChain();
 
     // Connect DSP master -> collector
     auto app = App::instance();
@@ -98,6 +126,7 @@ void Session::updateDspConnections()
     dumpDspChain();
 }
 
+/*
 int dumpDspChainRecursive(de::audio::IDspChainElement* root, int n)
 {
     if (!root) return n;
@@ -110,13 +139,36 @@ int dumpDspChainRecursive(de::audio::IDspChainElement* root, int n)
 
     return n;
 }
+*/
 
 void Session::dumpDspChain()
 {
     DE_BENNI("//==============================================")
     DE_BENNI(m_sessionName)
     DE_BENNI("//==============================================")
-    dumpDspChainRecursive(getMasterTrack(),0);
+    getMasterTrack()->dumpDspChain();
+
+    uint32_t n = m_mixer.dsp_getInputSignalCount();
+    DE_BENNI("Mixer.Count = ",n)
+
+    for (uint32_t i = 0; i < n; ++i)
+    {
+        auto p = m_mixer.dsp_getInputSignal(i);
+        if (p)
+        {
+            DE_BENNI("Mixer[",i,"] ",p->dsp_name())
+
+            auto t = dynamic_cast<Track*>(p);
+            if (t)
+            {
+                t->dumpDspChain();
+            }
+        }
+        else
+        {
+            DE_BENNI("Mixer[",i,"] nullptr")
+        }
+    }
 }
 
 bool Session::setActiveTrack(int trackId)
@@ -224,7 +276,7 @@ void Session::addTrack()
     app->m_centralWidget->m_arraCentral->m_tracks->updateFromSession();
     app->m_centralWidget->m_trackStack->setTrackWidget(track->m_trackWidget);
 
-    updateDspConnections();
+    updateDspChain();
 
     // Set active track
     setActiveTrack(track->m_trackId);
@@ -241,24 +293,26 @@ void Session::addTracks(const de::midi::file::MidiFile& midiFile)
     for (int i = 0; i < midiFile.m_tracks.size(); ++i)
     {
         const auto& midiTrack = midiFile.m_tracks[i];
-        auto sessionTrack = new Track;
+        auto userTrack = new Track;
+        userTrack->setSession(this);
+        userTrack->setTrackType(Track::User);
 
         QString trackName;
         if (midiTrack.name().empty())
         {
             trackName = QString("%1 - %2")
-                .arg(sessionTrack->getTrackId())
+                .arg(userTrack->getTrackId())
                 .arg(QString::fromStdString(FileSystem::fileBase(midiFile.m_fileName)));
         }
         else
         {
             trackName = QString("%1 - %2")
-                .arg(sessionTrack->getTrackId())
+                .arg(userTrack->getTrackId())
                 .arg(QString::fromStdString(midiTrack.name()));
         }
-        sessionTrack->setTrackName(trackName);
+        userTrack->setTrackName(trackName);
 
-        auto clip = sessionTrack->m_clips[0];
+        auto clip = userTrack->m_clips[0];
         clip->m_ppq = midiFile.m_ticksPerQuarterNote;
         auto tempoMap = midiFile.m_tempoMap.m_setTempoEvents;
         clip->m_bpm = tempoMap.empty() ? 120.0f : tempoMap.front().m_bpm;
@@ -290,12 +344,12 @@ void Session::addTracks(const de::midi::file::MidiFile& midiFile)
         }
 
         clip->finalize();
-        m_tracks.emplace_back(sessionTrack);
+        m_tracks.emplace_back(userTrack);
     }
 
     app->m_centralWidget->m_arraCentral->m_tracks->updateFromSession();
 
-    updateDspConnections();
+    updateDspChain();
 
     app->playAudio();
 }
