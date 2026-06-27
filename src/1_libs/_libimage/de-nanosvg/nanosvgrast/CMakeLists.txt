@@ -29,6 +29,11 @@ else()
     target_include_directories(${LIB_NAME} PRIVATE ${LIB_SOURCE_DIR})
 	
 	target_compile_definitions(${LIB_NAME} PRIVATE HAVE_LIBNANOSVGRAST=1)
+    target_compile_definitions(${LIB_NAME} PUBLIC NANOSVGRAST_IMPLEMENTATION=1) # Must be defined once in one .cpp file to compile the rasterizer.
+    target_compile_definitions(${LIB_NAME} PUBLIC NANOSVGRAST_USE_FABS=1) # Use fabs() instead of abs() for float math.
+    target_compile_definitions(${LIB_NAME} PUBLIC NANOSVGRAST_USE_SQRT=1) # Use sqrtf() for curve flattening.
+    # target_compile_definitions(${LIB_NAME} PUBLIC NANOSVGRAST_MAX_EDGE_COUNT # Max edges in rasterizer (default 512).
+    # target_compile_definitions(${LIB_NAME} PUBLIC NANOSVGRAST_MAX_SCANLINE # Max scanline buffer size (default 1024).
 
 	target_link_libraries(${LIB_NAME} PUBLIC de_nanosvg)
 	

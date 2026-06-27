@@ -1,5 +1,10 @@
 add_subdirectory(0_tools)
 add_subdirectory(1_libs)
+
+add_subdirectory(win32_OpenGL_Overlay)
+add_subdirectory(win32_OpenGL_Overlay2)
+add_subdirectory(win32_OpenGL_Overlay3)
+
 add_subdirectory(AVX_Mandelbrot_de_glew)
 
 if (BENNI_USE_DEMOS)

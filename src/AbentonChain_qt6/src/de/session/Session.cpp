@@ -86,7 +86,7 @@ void Session::updateDspChain()
         {
             track->dsp_clearInputSignals();
             track->updateDspChain();
-            m_mixer.dsp_setInputSignal(track, nUser);
+            m_mixer.setTrack(track, nUser);
             //masterTrk->dsp_setInputSignal(track, 0);
             nUser++;
         }

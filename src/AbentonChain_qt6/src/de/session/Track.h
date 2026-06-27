@@ -2,7 +2,8 @@
 #include <de/session/Clip.h>
 #include <de/audio/plugin/IPlugin.h>
 //#include <de/audio/dsp/DspTrack.h>
-//#include <gui/track/PluginWidget.h>
+#include <gui/track/details/AudioMeter.h>
+#include <QPushButton>
 
 class PluginWidget;
 class TrackWidget;
@@ -56,6 +57,24 @@ public:
     std::vector<de::audio::IPlugin*> m_plugins;
     //std::vector<de::audio::IPlugin*> m_trashBin;
     std::vector<PluginWidget*> m_pluginWidgets;
+
+    struct MixerData
+    {
+        int m_volume = 100;
+        float m_fVolume = 1.0f;
+        int m_dispWidth = 100;
+        QRect m_rect;
+        QWidget* m_panel{ nullptr };
+        AudioMeter* m_levelMeter{ nullptr };
+        QPushButton* m_muteAudio{ nullptr };
+        QPushButton* m_muteMidi{ nullptr };
+        QPushButton* m_record{ nullptr };
+        QPushButton* m_only{ nullptr };
+
+
+    };
+
+    MixerData m_mixer;
 
     Track();
     ~Track();

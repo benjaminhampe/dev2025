@@ -1,5 +1,5 @@
 ﻿#pragma once
-#include "ArraMixerItem.h"
+#include <de/session/MixerItemWidget.h>
 #include <QWidget>
 
 // ============================================================================
@@ -9,12 +9,14 @@ class ArraMixer : public QWidget
     Q_OBJECT
 public:
     explicit ArraMixer(QWidget* parent = 0);
+
+    void updateFromSession();
     void applySkin();
     void updateLayout();
-    
+
 public slots:
     //void setClip( Clip* clip );
-        
+
 protected:
     void resizeEvent( QResizeEvent* event ) override;
     void paintEvent( QPaintEvent* event ) override;
@@ -27,16 +29,17 @@ protected:
     void mouseReleaseEvent( QMouseEvent* event ) override;
     void mouseMoveEvent( QMouseEvent* event ) override;
     void wheelEvent( QWheelEvent* event ) override;
-*/    
+*/
 protected:
     //PianoRoll* m_pianoRoll{ nullptr };
     //Clip* m_clip{ nullptr };
-    
+
     int m_zoom = 100;
     int m_margin = 8;
+    int m_headerHeight = 32;
 
     QColor m_windowColor;
     QColor m_panelColor;
-    
-    std::vector<ArraMixerItem*> m_items;
+
+    std::vector<MixerItemWidget*> m_widgets;
 };

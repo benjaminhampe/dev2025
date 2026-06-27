@@ -65,10 +65,11 @@ Mixer::dsp_read( f64 pts, u32 frames, u32 sampleRate,
         DE_ASSUME_NO_OVERLAP(Lin, Laccum, bytesPerChannel);
         DE_ASSUME_NO_OVERLAP(Rin, Raccum, bytesPerChannel);
 
+        const float fVolume = item.m_inputSignal->m_mixer.m_fVolume;
         for (size_t i = 0; i < frames; ++i)
         {
-            Laccum[i] += Lin[i] * item.m_fVolume;
-            Raccum[i] += Rin[i] * item.m_fVolume;
+            Laccum[i] += Lin[i] * fVolume;
+            Raccum[i] += Rin[i] * fVolume;
         }
     }
 
@@ -108,19 +109,25 @@ Mixer::dsp_setInputSignalCount( uint32_t count )
 }
 
 void
-Mixer::dsp_setInputSignal( IDspChainElement* inputSignal, int i )
+Mixer::setTrack(Track* track, int i)
 {
-    if (!inputSignal) { DE_ERROR("No signal") return; }
+    if (!track) { DE_ERROR("No track") return; }
 
     if (i < 0 || i >= int(m_items.size()))
     {
-        DE_ERROR("Invalid signal index ",i, " of n = ",m_items.size())
+        DE_ERROR("Invalid track index ",i, " of n = ",m_items.size())
         return;
     }
 
-    DE_OK(inputSignal->dsp_name()," at index ",i)
+    DE_OK(track->dsp_name()," at index ",i)
 
-    m_items[ i ].m_inputSignal = inputSignal;
+    m_items[ i ].m_inputSignal = track;
+}
+
+void
+Mixer::dsp_setInputSignal( IDspChainElement* inputSignal, int i )
+{
+    DE_ERROR("NOT IMPLEMENTED! Use setTrack() instead.")
 }
 
 void

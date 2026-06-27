@@ -12,27 +12,61 @@ ArraMixer::ArraMixer(QWidget* parent )
    applySkin();
 }
 
+void ArraMixer::updateFromSession()
+{
+    const auto& tracks = App::instance()->m_session.m_tracks;
+
+}
+
 void ArraMixer::applySkin()
 {
     const auto& skin = App::instance()->getSkin();
     m_zoom = skin.zoom;
-    m_margin = (8* m_zoom)/100;
+    m_margin = (8 * m_zoom) / 100;
     m_windowColor = skin.windowColor;
     m_panelColor = skin.panelColor;
+    m_headerHeight = (32 * m_zoom) / 100;
     updateLayout();
 }
 
 void ArraMixer::updateLayout()
 {
-    const int w = width();
-    const int h = height();
-    if (w < 1) return;
-    if (h < 1) return;
+    const int m = 2*m_margin; // inner margin
+    const int w = std::max(width() - 2*m,0);
+    const int h = std::max(height() - 2*m,0);
+    // if (w < 1) return;
+    // if (h < 1) return;
 
-    int m = 2*m_margin; // inner margin
-    int dx = std::max(w - 2*m,0);
-    int dy = std::max(h - 2*m,0);
-    //m_pianoRoll->setGeometry(m,m,dx,dy);
+    auto& tracks = App::instance()->m_session.m_tracks;
+    de::session::Track* masterTrack = nullptr;
+
+    int x = m;
+    int y = m;
+    for (int i = 0; i < tracks.size(); ++i)
+    {
+        auto* track = tracks[i];
+        if (track->getTrackType() != de::session::Track::User)
+        {
+            if (track->getTrackType() == de::session::Track::Master)
+            {
+                masterTrack = track;
+            }
+            continue;
+        }
+
+        auto& mixer = track->m_mixer;
+
+        int d = (mixer.m_dispWidth * m_zoom) / 100;
+        mixer.m_rect = QRect(x,y,d,h);
+        x += d;
+    }
+
+    if (masterTrack)
+    {
+        auto& mixer = masterTrack->m_mixer;
+        int d = (mixer.m_dispWidth * m_zoom) / 100;
+        mixer.m_rect = QRect(m+w-d,y,d,h);
+    }
     update();
 }
 
@@ -63,6 +97,37 @@ void ArraMixer::paintEvent( QPaintEvent* event )
         dc.setPen(Qt::NoPen);
         dc.setBrush(QBrush(m_panelColor));
         dc.drawRoundedRect(QRect(m,m,dx,dy),m,m);
+    }
+
+    auto& tracks = App::instance()->m_session.m_tracks;
+    de::session::Track* masterTrack = nullptr;
+    for (int i = 0; i < tracks.size(); ++i)
+    {
+        auto* track = tracks[i];
+        if (track->getTrackType() != de::session::Track::User)
+        {
+            if (track->getTrackType() == de::session::Track::Master)
+            {
+                masterTrack = track;
+            }
+            continue;
+        }
+
+        auto& mixer = track->m_mixer;
+
+        dc.setPen(Qt::white);
+        dc.setBrush(QBrush(track->m_trackColor));
+        dc.drawRect(mixer.m_rect);
+
+    }
+
+    if (masterTrack)
+    {
+        auto& track = masterTrack;
+        auto& mixer = masterTrack->m_mixer;
+        dc.setPen(Qt::black);
+        dc.setBrush(QBrush(track->m_trackColor));
+        dc.drawRect(mixer.m_rect);
     }
 }
 

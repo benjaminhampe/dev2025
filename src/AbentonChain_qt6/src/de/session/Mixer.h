@@ -1,6 +1,8 @@
 #pragma once
 #include <de/audio/dsp/IDspChainElement.h>
-//#include <de/session/Track.h>
+#include <QRect>
+#include <QColor>
+#include <de/session/Track.h>
 
 namespace de {
 namespace session {
@@ -8,16 +10,12 @@ namespace session {
 class MixerItem
 {
 public:
-    de::audio::IDspChainElement* m_inputSignal;
-    int m_volume;
-    float m_fVolume;
+    Track* m_inputSignal;
     AlignedFloatVector m_L;
     AlignedFloatVector m_R;
 
     MixerItem()
         : m_inputSignal{ nullptr }
-        , m_volume{ 100 }
-        , m_fVolume{ 1.0f }
     {}
 
     void dsp_init( u64 frames, u32 channels, u32 sampleRate)
@@ -29,11 +27,10 @@ public:
 
     void dsp_read(f64 pts, u32 frames, u32 sampleRate)
     {
-        m_fVolume = 0.0001f * (m_volume * m_volume);
         m_L.resize(frames);
         m_R.resize(frames);
-        float* __restrict__ Lout = m_L.data();
-        float* __restrict__ Rout = m_R.data();
+        float* __restrict__ const Lout = m_L.data();
+        float* __restrict__ const Rout = m_R.data();
         DE_ASSUME_NO_OVERLAP(Lout, Rout, frames * sizeof(float));
         m_inputSignal->dsp_read( pts, frames, sampleRate, Lout, Rout );
     }
@@ -43,10 +40,12 @@ public:
 class Mixer : public de::audio::IDspChainElement
 // ===================================================================
 {
-    std::vector<MixerItem> m_items;
     AlignedFloatVector m_Laccum;
     AlignedFloatVector m_Raccum;
 public:
+    std::vector<MixerItem> m_items;
+public:
+
     Mixer();
     ~Mixer() override;
 
@@ -57,6 +56,8 @@ public:
     void dsp_read( f64 pts, u32 frames, u32 sampleRate,
                    f32* __restrict__ L,
                    f32* __restrict__ R) override;
+
+    void setTrack( Track* track, int i = 0 );
 
     void dsp_setInputSignal( IDspChainElement* inputSignal, int i = 0 ) override;
 

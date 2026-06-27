@@ -8,6 +8,7 @@ add_subdirectory(de-clara)
 
 # GUI
 # add_subdirectory(de-fltk-1.3.5)
+add_subdirectory(de-fltk-1.4.5)
 
 if (BENNI_USE_WX)
 	add_subdirectory(de-wx-3.1.5)
