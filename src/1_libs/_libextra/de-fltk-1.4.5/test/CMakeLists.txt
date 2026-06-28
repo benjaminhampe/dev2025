@@ -1,5 +1,5 @@
 add_subdirectory(fltk_OpenGL_WGL)
-add_subdirectory(fltk_OpenGL3test)
+add_subdirectory(fltk_OpenGL3)
 add_subdirectory(fltk_OpenGL4)
 add_subdirectory(fltube-2.1.2)
 add_subdirectory(fluid)

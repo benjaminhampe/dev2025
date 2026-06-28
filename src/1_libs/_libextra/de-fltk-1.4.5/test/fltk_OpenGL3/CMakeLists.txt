@@ -1,11 +1,11 @@
-set(APP_NAME fltk_OpenGL3test)
+set(APP_NAME fltk_OpenGL3)
 project(${APP_NAME})
 
 if (TARGET ${APP_NAME})
     message("${BoldRed}[benni] HEADER_GUARD: ${APP_NAME}${ColourReset}")
 else()
     set(APP_SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/src)
-    set(APP_SOURCES ${APP_SOURCE_DIR}/fltk_OpenGL3test.cpp)
+    set(APP_SOURCES ${APP_SOURCE_DIR}/fltk_OpenGL3.cpp)
 
     if (WIN32)
         enable_language(RC)
