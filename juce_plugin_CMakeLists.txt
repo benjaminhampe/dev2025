@@ -1,0 +1,274 @@
+cmake_minimum_required(VERSION 3.22)
+project(MyPlugin VERSION 1.0.0 LANGUAGES C CXX)
+
+# ============================================================
+# Shared vendor metadata (semantic, reused across plugins)
+# ============================================================
+
+set(JUCE_VENDOR_NAME        "MyCompany")
+set(JUCE_VENDOR_WEBSITE     "https://example.com")
+set(JUCE_VENDOR_EMAIL       "support@example.com")
+set(JUCE_VENDOR_COPYRIGHT   "© 2026 MyCompany")
+
+set(JUCE_BUNDLE_PREFIX      "com.mycompany")
+set(JUCE_VERSION            "1.0.0")
+set(JUCE_DESCRIPTION        "Audio plugin built with JUCE")
+
+# ============================================================
+# Force Clang on all platforms
+# ============================================================
+
+if (WIN32)
+    set(CMAKE_C_COMPILER clang.exe)
+    set(CMAKE_CXX_COMPILER clang++.exe)
+    set(CMAKE_LINKER lld.exe)
+    set(CMAKE_RC_COMPILER llvm-rc.exe)
+    add_compile_definitions(JUCE_MINGW_SUPPORT_ENABLED=1)
+elseif(APPLE)
+    set(CMAKE_C_COMPILER clang)
+    set(CMAKE_CXX_COMPILER clang++)
+elseif(UNIX)
+    set(CMAKE_C_COMPILER clang)
+    set(CMAKE_CXX_COMPILER clang++)
+endif()
+
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+# ============================================================
+# JUCE global configuration
+# ============================================================
+
+set(JUCE_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+set(JUCE_BUILD_EXTRAS OFF CACHE BOOL "" FORCE)
+set(JUCE_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+set(JUCE_ENABLE_MODULE_SOURCE_GROUPS OFF CACHE BOOL "" FORCE)
+set(JUCE_ENABLE_JUCEAIDE OFF CACHE BOOL "" FORCE)
+
+add_subdirectory(external/JUCE)
+
+# ============================================================
+# Explicit JUCE module selection (ALL modules)
+# ============================================================
+
+juce_add_modules(
+    juce_core
+    juce_events
+    juce_graphics
+    juce_gui_basics
+    juce_gui_extra
+    juce_audio_basics
+    juce_audio_devices
+    juce_audio_formats
+    juce_audio_processors
+    juce_audio_utils
+    juce_dsp
+    juce_cryptography
+    juce_data_structures
+    juce_opengl
+    juce_video
+    juce_product_unlocking
+)
+
+# ============================================================
+# FULL juce_add_plugin() CALL WITH ALL PARAMETERS
+# ============================================================
+
+juce_add_plugin(MyPlugin
+
+    COMPANY_NAME            "${JUCE_VENDOR_NAME}"
+    COMPANY_WEBSITE         "${JUCE_VENDOR_WEBSITE}"
+    COMPANY_EMAIL           "${JUCE_VENDOR_EMAIL}"
+    COMPANY_COPYRIGHT       "${JUCE_VENDOR_COPYRIGHT}"
+
+    PRODUCT_NAME            "MyPlugin"
+    PLUGIN_CODE             "MyPl"
+    VERSION                 "${JUCE_VERSION}"
+    DESCRIPTION             "${JUCE_DESCRIPTION}"
+
+    BUNDLE_IDENTIFIER       "${JUCE_BUNDLE_PREFIX}.myplugin"
+
+    FORMATS VST3 AU AUv3 AAX Standalone Unity
+
+    IS_SYNTH                TRUE
+    NEEDS_MIDI_INPUT        TRUE
+    NEEDS_MIDI_OUTPUT       FALSE
+    IS_MIDI_EFFECT          FALSE
+    EDITOR_WANTS_KEYBOARD_FOCUS TRUE
+    COPY_PLUGIN_AFTER_BUILD TRUE
+
+    AU_MAIN_TYPE            "kAudioUnitType_MusicDevice"
+    AU_V2_CATEGORY          "MusicEffect"
+    AU_EXPORT_PREFIX        "MyPluginAU"
+    AU_V3_BUNDLE_IDENTIFIER "${JUCE_BUNDLE_PREFIX}.myplugin.auv3"
+    AU_V3_PRODUCT_NAME      "MyPluginAUv3"
+
+    AAX_IDENTIFIER          "${JUCE_BUNDLE_PREFIX}.myplugin.aax"
+    AAX_CATEGORY            "AAX_Synth"
+    AAX_PLUGIN_ID           "12345678"
+    AAX_MANUFACTURER_ID     "ABCD"
+    AAX_PRODUCT_ID          "EFGH"
+    AAX_VERSION             "${JUCE_VERSION}"
+    AAX_COPYRIGHT           "${JUCE_VENDOR_COPYRIGHT}"
+
+    MICROPHONE_PERMISSION_ENABLED TRUE
+    BLUETOOTH_PERMISSION_ENABLED TRUE
+    CAMERA_PERMISSION_ENABLED TRUE
+
+    IOS_SCREEN_ORIENTATIONS
+        "UIInterfaceOrientationPortrait"
+        "UIInterfaceOrientationLandscapeLeft"
+        "UIInterfaceOrientationLandscapeRight"
+
+    IOS_BACKGROUND_AUDIO_ENABLED TRUE
+    IOS_MICROPHONE_PERMISSION_ENABLED TRUE
+    IOS_CAMERA_PERMISSION_ENABLED TRUE
+    IOS_BLUETOOTH_PERMISSION_ENABLED TRUE
+
+    UNITY_SCRIPTING_BACKEND "Mono"
+    UNITY_PLUGIN_NAME       "MyPluginUnity"
+
+    PLUGIN_CHANNEL_CONFIGURATIONS "1-1,2-2,2-0"
+
+    PLUGIN_IS_MIDI_EFFECT   FALSE
+    PLUGIN_HAS_SC_METER     TRUE
+    PLUGIN_HAS_SC_INPUT     TRUE
+
+    USE_STUDIO_ONE_COMPATIBLE_PARAMETERS TRUE
+    USE_PRESET_COMPATIBLE_PARAMETERS     TRUE
+    USE_PRESET_COMPATIBLE_PARAMETERS_VST3 TRUE
+    USE_PRESET_COMPATIBLE_PARAMETERS_AU   TRUE
+)
+
+# ============================================================
+# Plugin sources
+# ============================================================
+
+target_sources(MyPlugin PRIVATE
+    Source/PluginProcessor.cpp
+    Source/PluginEditor.cpp
+)
+
+# ============================================================
+# ALL JUCE target_compile_definitions (complete list)
+# ============================================================
+
+target_compile_definitions(MyPlugin PRIVATE
+
+    # Core
+    JUCE_STRICT_REFCOUNTEDPOINTER=1
+    JUCE_CHECK_MEMORY_LEAKS=0
+    JUCE_DONT_ASSERT_ON_GLSL_COMPILE_ERROR=1
+
+    # GUI
+    JUCE_USE_DIRECTWRITE=1
+    JUCE_USE_DIRECT2D=0
+    JUCE_USE_X11=1
+    JUCE_USE_SVG=1
+    JUCE_USE_FREETYPE=1
+
+    # Graphics
+    JUCE_DISABLE_COREGRAPHICS_FONT_SMOOTHING=0
+
+    # Web / Networking
+    JUCE_WEB_BROWSER=0
+    JUCE_USE_CURL=0
+
+    # Audio formats
+    JUCE_USE_FLAC=1
+    JUCE_USE_OGGVORBIS=1
+    JUCE_USE_MP3AUDIOFORMAT=1
+    JUCE_USE_LAME_AUDIO_FORMAT=0
+    JUCE_USE_WINDOWS_MEDIA_FORMAT=0
+
+    # DSP
+    JUCE_DSP_USE_INTEL_MKL=0
+    JUCE_DSP_USE_SHARED_FFTW=0
+    JUCE_DSP_USE_STATIC_FFTW=0
+    JUCE_DSP_ENABLE_SSE=1
+    JUCE_DSP_ENABLE_AVX=1
+
+    # OpenGL
+    JUCE_USE_OPENGL=1
+    JUCE_OPENGL3=1
+    JUCE_USE_OPENGL_FIXED_FUNCTION=0
+
+    # Video
+    JUCE_USE_CAMERA=0
+
+    # Plugin wrappers
+    JUCE_VST3_CAN_REPLACE_VST2=0
+    JUCE_FORCE_USE_LEGACY_PARAM_IDS=0
+    JUCE_DISABLE_AUDIOPROCESSOR_BEGIN_END_GESTURE_CHECKING=1
+
+    # Cryptography
+    JUCE_USE_OPENSSL=0
+
+    # Product unlocking
+    JUCE_ENABLE_REPAINT_DEBUGGING=0
+)
+
+# ============================================================
+# External libraries JUCE links to (complete list)
+# ============================================================
+
+# JUCE pulls these automatically IF the modules are enabled.
+# But you can explicitly link them if you want full control.
+
+target_link_libraries(MyPlugin PRIVATE
+
+    # Compression
+    zlib
+
+    # Fonts / Graphics
+    freetype
+
+    # Audio codecs
+    ogg
+    vorbis
+    vorbisfile
+    FLAC
+
+    # Optional MP3 (if enabled)
+    # mp3lame
+
+    # Optional OpenSSL (if enabled)
+    # ssl crypto
+)
+
+# ============================================================
+# Platform-specific linking
+# ============================================================
+
+if (WIN32)
+    target_link_options(MyPlugin PRIVATE -fuse-ld=lld)
+    target_link_libraries(MyPlugin PRIVATE
+        winmm
+        ws2_32
+        version
+        imm32
+        setupapi
+    )
+elseif(APPLE)
+    target_link_libraries(MyPlugin PRIVATE
+        "-framework Cocoa"
+        "-framework IOKit"
+        "-framework CoreAudio"
+        "-framework CoreVideo"
+        "-framework CoreFoundation"
+        "-framework CoreGraphics"
+        "-framework AVFoundation"
+    )
+elseif(UNIX)
+    target_link_libraries(MyPlugin PRIVATE
+        pthread
+        dl
+        X11
+        Xext
+        Xinerama
+        Xcursor
+        Xrandr
+        Xrender
+        freetype
+    )
+endif()

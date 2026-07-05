@@ -38,6 +38,8 @@ struct Preview
 
     void updatePoints( de::Recti pos, int n = 1024 );
 
+    void saveCurvePoints(const Curve & curve, std::string uri);
+
     void draw(NVGcontext* vg, de::Recti pos, int n = 1024 );
 
 protected:

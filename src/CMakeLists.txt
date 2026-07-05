@@ -1,6 +1,8 @@
 add_subdirectory(0_tools)
 add_subdirectory(1_libs)
 
+add_subdirectory(Polyline_fltk)
+
 add_subdirectory(win32_OpenGL_Overlay)
 add_subdirectory(win32_OpenGL_Overlay2)
 add_subdirectory(win32_OpenGL_Overlay3)

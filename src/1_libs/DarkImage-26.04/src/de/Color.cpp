@@ -157,11 +157,25 @@ uint32_t randomColorRGB( uint8_t minRGB, uint8_t maxRGB, uint8_t a )
     uint8_t b = minRGB + (dbRND() % range);
     return dbRGBA( r, g, b, a );
 }
+// ===================================================================
+uint32_t varyColor( uint32_t color, int variance )
+{
+    int32_t r = dbRGBA_R( color );
+    int32_t g = dbRGBA_G( color );
+    int32_t b = dbRGBA_B( color );
+    int32_t const a = dbRGBA_A( color );
 
+    r = glm::clamp( r - variance / 2 + ( rand() % variance ), 0, 255 );
+    g = glm::clamp( g - variance / 2 + ( rand() % variance ), 0, 255 );
+    b = glm::clamp( b - variance / 2 + ( rand() % variance ), 0, 255 );
+    return dbRGBA( r, g, b, a );
+}
+// ===================================================================
 void dbRandomize()
 {
     ::srand( static_cast<uint32_t>(dbTimeInMilliseconds()) );
 }
+// ===================================================================
 // static
 glm::vec4
 RainbowColor::computeFromWaveLength( double lambda, double gamma, float alpha )

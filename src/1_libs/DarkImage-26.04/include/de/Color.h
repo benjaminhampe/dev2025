@@ -81,6 +81,8 @@ uint32_t randomColorRGB( uint8_t a = 255 );
 
 uint32_t randomColorRGB( uint8_t minRGB, uint8_t maxRGB, uint8_t a = 255 );
 
+uint32_t varyColor( uint32_t color, int variance );
+
 // ===================================================================
 struct RainbowColor
 // ===================================================================

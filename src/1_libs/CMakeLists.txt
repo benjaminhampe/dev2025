@@ -8,7 +8,7 @@ add_subdirectory(_libassimp)
 add_subdirectory(_libcad)
 add_subdirectory(_libnetwork)
 add_subdirectory(_libdatabase)
-
+add_subdirectory(_libxtra)
 
 # add_subdirectory(DarkImage-25.04)
 # add_subdirectory(DarkCoverArt-25.04)
@@ -27,7 +27,7 @@ if (BENNI_USE_OPENCV)
 endif()
 
 if (BENNI_USE_QT)
-	add_subdirectory(de-QtAdvancedDockingSystem-4.4.1)
+    add_subdirectory(de-QtAdvancedDockingSystem-4.4.1)
 endif()
 
 

@@ -1,4 +1,5 @@
 add_subdirectory(Abenton_SineMachine5_vst2)
+add_subdirectory(Abenton_SineMachine5_vst3)
 add_subdirectory(Sine_wgl_vst3)
 add_subdirectory(Sine_fltk_vst3)
 

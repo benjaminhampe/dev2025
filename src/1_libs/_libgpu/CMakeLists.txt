@@ -35,6 +35,7 @@ add_subdirectory(de-glfw-3.4)
 # add_subdirectory(de-freeglut-3.6.0-static)
 
 add_subdirectory(de-imgui)
+# add_subdirectory(de-implot-0.17)
 
 # add_subdirectory(de-gles3) # AudioSynth-qt
 # add_subdirectory(de-glfw-3.3.2-gles3)

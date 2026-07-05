@@ -1,0 +1,44 @@
+Profil	    Filter & Encode Settings	Zeit für 2 h (Schätzung)	Zielgröße (Schätzung)
+Fast	    minterpolate=fps=60:mi_mode=mci:mc_mode=obmc:me_mode=unidir, preset veryfast, crf 20	~2–3 h	~2.0–2.5 GB
+Balanced	minterpolate=fps=60:mi_mode=mci:mc_mode=obmc:me_mode=bidir, preset medium, crf 18	~3–5 h	~2.5–3.5 GB
+Quality	    minterpolate=fps=60:mi_mode=mci:mc_mode=aobmc:me_mode=bidir, preset slow, crf 17	~5–8 h	~3.5–5.0 GB
+
+2. Konkrete Kommandos
+Fast (wenn du es heute noch fertig haben willst)
+bash
+
+ffmpeg -i input.mp4 \
+  -vf "minterpolate=fps=60:mi_mode=mci:mc_mode=obmc:me_mode=unidir" \
+  -c:v libx264 -preset veryfast -crf 20 \
+  -c:a copy \
+  output_60fps_fast.mp4
+
+    Zeit: ~2–3 h
+
+    Größe: ~2.0–2.5 GB
+
+Balanced (guter Kompromiss)
+bash
+
+ffmpeg -i input.mp4 \
+  -vf "minterpolate=fps=60:mi_mode=mci:mc_mode=obmc:me_mode=bidir" \
+  -c:v libx264 -preset medium -crf 18 \
+  -c:a copy \
+  output_60fps_balanced.mp4
+
+    Zeit: ~3–5 h
+
+    Größe: ~2.5–3.5 GB
+
+Quality (wenn dir Zeit egal ist)
+bash
+
+ffmpeg -i input.mp4 \
+  -vf "minterpolate=fps=60:mi_mode=mci:mc_mode=aobmc:me_mode=bidir" \
+  -c:v libx264 -preset slow -crf 17 \
+  -c:a copy \
+  output_60fps_quality.mp4
+
+    Zeit: ~5–8 h
+
+    Größe: ~3.5–5.0 GB

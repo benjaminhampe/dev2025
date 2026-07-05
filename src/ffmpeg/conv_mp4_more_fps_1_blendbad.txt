@@ -1,0 +1,1 @@
+ffmpeg -i input.mp4 -filter:v minterpolate=fps=60:mi_mode=blend output.mp4

@@ -1,10 +1,10 @@
 #include "SineEditor.h"
 #include "SinePlugin.h"
-
 #include <vector> // for iAttributes in CreateContext
-#include <de_opengl.h>
 
-
+#ifndef WIN32_MEAN_AND_LEAN
+#define WIN32_MEAN_AND_LEAN
+#endif
 #include <dwmapi.h>
 #include <tchar.h>
 #include <mmsystem.h> // For JOYCAPS
@@ -12,13 +12,10 @@
 // ===================================================================
 // INCLUDE: WGL
 // ===================================================================
-#ifndef WGL_WGLEXT_PROTOTYPES
-#define WGL_WGLEXT_PROTOTYPES
-#endif
-#include <GL/glew.h>
+#include <de_opengl.h>
 #include <GL/wglext.h>
-#include "../res/resource.h"
 #include "fonts/fonts_ShareTechMonoRegular_ttf.h"
+//#include "../res/resource.h"
 
 // 📊
 void Preview::init( const SynthCfg& cfg, int n )
@@ -67,9 +64,14 @@ void Preview::init( const SynthCfg& cfg, int n )
 
 void Preview::update( const SynthCfg & cfg )
 {
+    if (m_curves.empty())
+    {
+        DE_ERROR("No curves")
+        return;
+    }
     const auto & partials = cfg.m_partials.m_partials;
     const size_t nPartials = partials.size();
-    const size_t nSamples = m_curves.at(0).original.size();
+    const size_t nSamples = m_curves[0].original.size();
 
     // Fill colors and amplitudeSums:
     float Asum = 0.0f;
@@ -77,53 +79,65 @@ void Preview::update( const SynthCfg & cfg )
     {
         float A = partials.at(c).A();
         Asum += A;
-        m_curves.at(c).amplitude = A;
-        m_curves.at(c).amplitudeSum = Asum;
+        m_curves[c].amplitude = A;
+        m_curves[c].amplitudeSum = Asum;
     }
 
     // Scale:
     for (Curve & curve : m_curves)
     {
-        const float A = curve.amplitude;
+        const float* __restrict__ O = curve.original.data();
+              float* __restrict__ S = curve.scaled.data();
+        DE_ASSUME_NO_OVERLAP(S,O,nSamples * sizeof(float));
 
         for (size_t i = 0; i < nSamples; i++) // For all samples
         {
-            curve.scaled.at(i) = curve.original.at(i) * A;
+            S[i] = O[i] * curve.amplitude;
         }
     }
 
     // Accumulate:
-    std::copy(m_curves.at(0).scaled.begin(),   // src
-              m_curves.at(0).scaled.end(),     // src
-              m_curves.at(0).accum.begin());   // dst
+    std::copy(m_curves[0].scaled.begin(),   // src
+              m_curves[0].scaled.end(),     // src
+              m_curves[0].accum.begin());   // dst
 
     // Accumulate:
     for (size_t c = 1; c < nPartials; c++)
     {
+        const float* __restrict__ S1 = m_curves[c].scaled.data();
+        const float* __restrict__ A0 = m_curves[c-1].accum.data();
+              float* __restrict__ A1 = m_curves[c].accum.data();
+        DE_ASSUME_NO_OVERLAP(A0,A1,nSamples * sizeof(float));
+        DE_ASSUME_NO_OVERLAP(A0,S1,nSamples * sizeof(float));
+        DE_ASSUME_NO_OVERLAP(A1,S1,nSamples * sizeof(float));
+
         for (size_t i = 0; i < nSamples; i++) // For all samples
         {
-            m_curves.at(c).accum.at(i) = m_curves.at(c).scaled.at(i)
-                                       + m_curves.at(c-1).accum.at(i);
+            A1[i] = S1[i] + A0[i];
         }
     }
 
     // Normalize:
-    std::copy(m_curves.at(0).original.begin(),   // src
-              m_curves.at(0).original.end(),     // src
-              m_curves.at(0).normalized.begin());// dst
+    std::copy(m_curves[0].original.begin(),   // src
+              m_curves[0].original.end(),     // src
+              m_curves[0].normalized.begin());// dst
 
     // Normalize:
     for (size_t c = 1; c < nPartials; c++)
     {
-        Curve & curve = m_curves.at(c);
+        Curve & curve = m_curves[c];
 
         const float Asum = curve.amplitudeSum;
         if (Asum > 1.e-10f)
         {
             const float invA = 1.0f / Asum;
+            const float* __restrict__ A = curve.accum.data();
+                  float* __restrict__ N = curve.normalized.data();
+            DE_ASSUME_NO_OVERLAP(N,A,nSamples * sizeof(float));
+
             for (size_t i = 0; i < nSamples; i++) // For all samples
             {
-                curve.normalized.at(i) = curve.accum.at(i) * invA;
+                N[i] = A[i] * invA;
             }
         }
         else
@@ -138,6 +152,42 @@ void Preview::update( const SynthCfg & cfg )
     std::copy(m_curves.back().normalized.begin(),   // src
               m_curves.back().normalized.end(),     // src
               m_accum.normalized.begin());          // dst
+}
+
+void Preview::saveCurvePoints(const Curve & curve, std::string uri)
+{
+    const uint64_t n = curve.normalized.size();
+    const float fScaleX = 1.0f / float(n-1);
+    const float fScaleY = 1.0f;
+
+    std::vector<glm::vec2> save(n);
+
+    for (uint64_t i = 0; i < n; ++i)
+    {
+        const float x = fScaleX * i;
+        const float y = curve.normalized[i];
+        save[i] = glm::vec2(x, y);
+    }
+
+    std::ostringstream o;
+    o << n << "\n";
+    for (uint64_t i = 0; i < n; ++i)
+    {
+        o << save[i].x << " " << save[i].y << "\n";
+    }
+    o << "\n";
+
+    de::File file(uri, de::eFileMode::Write);
+    if (!file.is_open())
+    {
+        DE_ERROR("Cannot write ",uri)
+        return; // false;
+    }
+
+    const auto s = o.str();
+    file.write(s.data(),s.size());
+    DE_OK("Write file ",uri)
+    return; // false;
 }
 
 void Preview::updatePoints( de::Recti pos, int n )
@@ -169,20 +219,26 @@ void Preview::updatePoints( de::Recti pos, int n )
         const float sample_y = sy * y + oy;
         curve.points.at(i) = glm::vec2(sample_x, sample_y);
     }
+
+    // saveCurvePoints(curve,"SineMachine_accum.vec2");
 }
 
 
 void Preview::drawCurve(NVGcontext* vg, const Curve & curve, float strokeWidth)
 {
-    // Begin drawing
-    nvgBeginPath(vg);
-    nvgMoveTo(vg, curve.points.at(0).x, curve.points.at(0).y);
-    for (size_t i = 1; i < curve.points.size(); i++)
+    if (curve.points.size() < 2)
     {
-        nvgLineTo(vg, curve.points.at(i).x, curve.points.at(i).y);
+        DE_ERROR("Not enough points ", curve.points.size())
+        return;
     }
 
-    // Set line style
+    nvgBeginPath(vg);
+    nvgMoveTo(vg, curve.points[0].x, curve.points[0].y);
+    for (size_t i = 1; i < curve.points.size(); i++)
+    {
+        nvgLineTo(vg, curve.points[i].x, curve.points[i].y);
+    }
+
     nvgStrokeColor(vg, curve.color);
     nvgStrokeWidth(vg, strokeWidth); // Thick line to emphasize joins
     nvgLineJoin(vg, NVG_ROUND); // Options: NVG_MITER, NVG_ROUND, NVG_BEVEL
@@ -195,7 +251,7 @@ void Preview::draw(NVGcontext* vg, de::Recti pos, int n )
 
     for (int c = 0; c < m_curves.size(); c++)
     {
-        drawCurve(vg, m_curves.at(c), 5.0f);
+        drawCurve(vg, m_curves[c], 5.0f);
     }
 
     drawCurve(vg, m_accum, 3.0f);
