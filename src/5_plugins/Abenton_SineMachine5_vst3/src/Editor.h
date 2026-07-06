@@ -50,8 +50,8 @@ private:
     Steinberg::uint32              m_refCount;
     HWND                           m_parentHWND;
     HWND                           m_childHWND;
-    HDC                            m_hdc;
-    HGLRC                          m_glrc;
+    HDC                            m_hDC;
+    HGLRC                          m_hGL;
     Steinberg::IPlugFrame*         m_plugFrame;
     Steinberg::Vst::IEditController* m_controller;
 };

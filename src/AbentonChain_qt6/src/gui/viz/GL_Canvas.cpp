@@ -6,27 +6,28 @@
 GL_Canvas::GL_Canvas(QWidget *parent)
 // ===========================================================================
     #ifdef Q_OS_WIN
-    : GL_Window_WGL()
+    : GL_Window_WGL_async()
     #endif
     , m_driver{ nullptr }
     , m_renderTarget{ nullptr }
     // bools
-    , m_bFirstMouse{ true }
-    , m_bCameraFreeLook{ false }
-    , m_bMouseLeftPressed{ false }
-    , m_bMouseRightPressed{ false }
-    , m_bMouseMiddlePressed{ false }
-    , m_bReserved1{ false }
     , m_bRenderingEnabled{ false }
-    , m_bShowPerfOverlay{ false }
-    // integers
-    , m_mouseX{ 0 }
-    , m_mouseY{ 0 }
-    , m_lastMouseX{ 0 }
-    , m_lastMouseY{ 0 }
-    , m_mouseMoveX{ 0 }
-    , m_mouseMoveY{ 0 }
-    , m_fpsTimerId{ 0 }
+    , m_bShowPerfOverlay{ true }
+
+    // , m_bFirstMouse{ true }
+    // , m_bCameraFreeLook{ false }
+    // , m_bMouseLeftPressed{ false }
+    // , m_bMouseRightPressed{ false }
+    // , m_bMouseMiddlePressed{ false }
+    // , m_bReserved1{ false }
+    // // integers
+    // , m_mouseX{ 0 }
+    // , m_mouseY{ 0 }
+    // , m_lastMouseX{ 0 }
+    // , m_lastMouseY{ 0 }
+    // , m_mouseMoveX{ 0 }
+    // , m_mouseMoveY{ 0 }
+    // , m_fpsTimerId{ 0 }
 {
     // m_time_start = dbTimeInSeconds();
     // m_time_now = 0.0;
@@ -56,7 +57,7 @@ GL_Canvas::~GL_Canvas()
 
 void GL_Canvas::cleanupAll()
 {
-    stopFpsTimer();
+    // stopFpsTimer();
     m_bRenderingEnabled = false;
     if (m_driver)
     {
@@ -67,15 +68,16 @@ void GL_Canvas::cleanupAll()
 
 void GL_Canvas::setRenderingEnabled( bool bEnabled )
 {
+    DE_TRACE("")
     m_bRenderingEnabled = bEnabled;
-    if (bEnabled)
-    {
-        startFpsTimer();
-    }
-    else
-    {
-        stopFpsTimer();
-    }
+    // if (bEnabled)
+    // {
+    //     startFpsTimer();
+    // }
+    // else
+    // {
+    //     stopFpsTimer();
+    // }
 }
 
 void GL_Canvas::showPerfOverlay( bool bVisible )
@@ -90,6 +92,7 @@ void GL_Canvas::showFftMatrix( bool bVisible )
     requestUpdate();
 }
 
+/*
 void GL_Canvas::startFpsTimer()
 {
     if (m_fpsTimerId)
@@ -113,6 +116,7 @@ void GL_Canvas::stopFpsTimer()
     m_fpsTimerId = 0;
     // DE_OK("Stopped FPS update timer")
 }
+*/
 
 void GL_Canvas::initializeGL()
 {
@@ -301,6 +305,7 @@ void GL_Canvas::draw2DFftOverlay()
 //     }
 // }
 
+/*
 bool GL_Canvas::event(QEvent* e)
 {
     if (e->type() == QEvent::UpdateRequest)
@@ -316,8 +321,6 @@ bool GL_Canvas::event(QEvent* e)
 
     return GL_Window_WGL::event(e);
 }
-
-
 
 void
 GL_Canvas::mouseMoveEvent( QMouseEvent* event )
@@ -422,7 +425,7 @@ void GL_Canvas::mouseReleaseEvent( QMouseEvent* event )
 }
 
 
-/*
+
 bool GL_Canvas::gestureEvent(QGestureEvent *event)
 {
     // qCDebug(lcExample) << "gestureEvent():" << event;

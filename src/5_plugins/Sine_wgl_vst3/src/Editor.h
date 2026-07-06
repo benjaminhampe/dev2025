@@ -51,7 +51,7 @@ private:
     HWND                           m_parentHWND;
     HWND                           m_childHWND;
     HDC                            m_hdc;
-    HGLRC                          m_glrc;
+    HGLRC                          m_hGL;
     Steinberg::IPlugFrame*         m_plugFrame;
     Steinberg::Vst::IEditController* m_controller;
 };

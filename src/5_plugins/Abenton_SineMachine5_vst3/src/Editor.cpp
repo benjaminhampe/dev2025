@@ -1,39 +1,39 @@
 #include "Editor.h"
 
 Editor::Editor()
-: m_refCount(1)
-, m_parentHWND(nullptr)
-, m_childHWND(nullptr)
-, m_hdc(nullptr)
-, m_glrc(nullptr)
-, m_plugFrame(nullptr)
-, m_controller(nullptr)
+    : m_refCount(1)
+    , m_parentHWND(nullptr)
+    , m_childHWND(nullptr)
+    , m_hDC(nullptr)
+    , m_hGL(nullptr)
+    , m_plugFrame(nullptr)
+    , m_controller(nullptr)
 {
 }
 
 Editor::Editor(Steinberg::Vst::IEditController* controller)
-: m_refCount(1)
-, m_parentHWND(nullptr)
-, m_childHWND(nullptr)
-, m_hdc(nullptr)
-, m_glrc(nullptr)
-, m_plugFrame(nullptr)
-, m_controller(controller)
+    : m_refCount(1)
+    , m_parentHWND(nullptr)
+    , m_childHWND(nullptr)
+    , m_hDC(nullptr)
+    , m_hGL(nullptr)
+    , m_plugFrame(nullptr)
+    , m_controller(controller)
 {
 }
 
 Editor::~Editor()
 {
-    if (m_glrc)
+    if (m_hGL)
     {
         wglMakeCurrent(nullptr, nullptr);
-        wglDeleteContext(m_glrc);
-        m_glrc = nullptr;
+        wglDeleteContext(m_hGL);
+        m_hGL = nullptr;
     }
-    if (m_hdc && m_childHWND)
+    if (m_hDC && m_childHWND)
     {
-        ReleaseDC(m_childHWND, m_hdc);
-        m_hdc = nullptr;
+        ReleaseDC(m_childHWND, m_hDC);
+        m_hDC = nullptr;
     }
     if (m_childHWND)
     {
@@ -59,7 +59,7 @@ Steinberg::tresult PLUGIN_API Editor::attached(void* parentWindow,
 
     m_childHWND = CreateWindowExA(
         0,
-        "SineFLTK_EditorWindowClass",
+        "SineVST3_EditorWindowClass",
         "",
         WS_CHILD | WS_VISIBLE,
         0, 0, 400, 300,
@@ -71,39 +71,39 @@ Steinberg::tresult PLUGIN_API Editor::attached(void* parentWindow,
     if (!m_childHWND)
         return Steinberg::kResultFalse;
 
-    m_hdc = GetDC(m_childHWND);
-    if (!m_hdc)
+    m_hDC = GetDC(m_childHWND);
+    if (!m_hDC)
         return Steinberg::kResultFalse;
 
-    if (!setupPixelFormat(m_hdc))
+    if (!setupPixelFormat(m_hDC))
         return Steinberg::kResultFalse;
 
-    m_glrc = wglCreateContext(m_hdc);
-    if (!m_glrc)
+    m_hGL = wglCreateContext(m_hDC);
+    if (!m_hGL)
         return Steinberg::kResultFalse;
 
-    wglMakeCurrent(m_hdc, m_glrc);
+    wglMakeCurrent(m_hDC, m_hGL);
 
     glViewport(0, 0, 400, 300);
     glClearColor(0.1f, 0.1f, 0.2f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
-    SwapBuffers(m_hdc);
+    SwapBuffers(m_hDC);
 
     return Steinberg::kResultOk;
 }
 
 Steinberg::tresult PLUGIN_API Editor::removed()
 {
-    if (m_glrc)
+    if (m_hGL)
     {
         wglMakeCurrent(nullptr, nullptr);
-        wglDeleteContext(m_glrc);
-        m_glrc = nullptr;
+        wglDeleteContext(m_hGL);
+        m_hGL = nullptr;
     }
-    if (m_hdc && m_childHWND)
+    if (m_hDC && m_childHWND)
     {
-        ReleaseDC(m_childHWND, m_hdc);
-        m_hdc = nullptr;
+        ReleaseDC(m_childHWND, m_hDC);
+        m_hDC = nullptr;
     }
     if (m_childHWND)
     {
@@ -116,7 +116,7 @@ Steinberg::tresult PLUGIN_API Editor::removed()
 
 Steinberg::tresult PLUGIN_API Editor::onSize(Steinberg::ViewRect* newSize)
 {
-    if (!m_childHWND || !m_hdc || !m_glrc || !newSize)
+    if (!m_childHWND || !m_hDC || !m_hGL || !newSize)
         return Steinberg::kResultFalse;
 
     int w = newSize->right - newSize->left;
@@ -125,11 +125,11 @@ Steinberg::tresult PLUGIN_API Editor::onSize(Steinberg::ViewRect* newSize)
     SetWindowPos(m_childHWND, nullptr, 0, 0, w, h,
                  SWP_NOZORDER | SWP_NOACTIVATE);
 
-    wglMakeCurrent(m_hdc, m_glrc);
+    wglMakeCurrent(m_hDC, m_hGL);
     glViewport(0, 0, w, h);
     glClearColor(0.1f, 0.1f, 0.2f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
-    SwapBuffers(m_hdc);
+    SwapBuffers(m_hDC);
 
     return Steinberg::kResultOk;
 }
@@ -247,9 +247,9 @@ LRESULT CALLBACK Editor::WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lPar
         PAINTSTRUCT ps;
         BeginPaint(hWnd, &ps);
 
-        if (self->m_hdc && self->m_glrc)
+        if (self->m_hDC && self->m_hGL)
         {
-            wglMakeCurrent(self->m_hdc, self->m_glrc);
+            wglMakeCurrent(self->m_hDC, self->m_hGL);
             RECT rc;
             GetClientRect(hWnd, &rc);
             int w = rc.right - rc.left;
@@ -268,7 +268,7 @@ LRESULT CALLBACK Editor::WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lPar
             glVertex2f(0.0f, 0.5f);
             glEnd();
 
-            SwapBuffers(self->m_hdc);
+            SwapBuffers(self->m_hDC);
         }
 
         EndPaint(hWnd, &ps);
@@ -277,15 +277,15 @@ LRESULT CALLBACK Editor::WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lPar
 
     case WM_SIZE:
     {
-        if (self->m_hdc && self->m_glrc)
+        if (self->m_hDC && self->m_hGL)
         {
-            wglMakeCurrent(self->m_hdc, self->m_glrc);
+            wglMakeCurrent(self->m_hDC, self->m_hGL);
             int w = LOWORD(lParam);
             int h = HIWORD(lParam);
             glViewport(0, 0, w, h);
             glClearColor(0.1f, 0.1f, 0.2f, 1.0f);
             glClear(GL_COLOR_BUFFER_BIT);
-            SwapBuffers(self->m_hdc);
+            SwapBuffers(self->m_hDC);
         }
         return 0;
     }
@@ -308,7 +308,7 @@ void Editor::registerWindowClass()
     wc.style         = CS_OWNDC;
     wc.lpfnWndProc   = &Editor::WndProc;
     wc.hInstance     = GetModuleHandleA(nullptr);
-    wc.lpszClassName = "SineFLTK_EditorWindowClass";
+    wc.lpszClassName = "SineVST3_EditorWindowClass";
 
     RegisterClassA(&wc);
     registered = true;

@@ -9,8 +9,9 @@
 // Q_OS_UNIX	Any Unix-like OS (Linux, macOS, BSD…)
 
 #ifdef Q_OS_WIN
-#include <gui/viz/GL_Widget_WGL.h>
-#include <gui/viz/GL_Window_WGL.h>
+//#include <gui/viz/GL_Widget_WGL.h>
+//#include <gui/viz/GL_Window_WGL.h>
+#include <gui/viz/GL_Window_WGL_async.h>
 #endif
 #include <gui/viz/GL_Renderer.h>
 #include <QTimerEvent>
@@ -20,7 +21,7 @@
 #include <de/gpu/VideoDriver.h>
 
 // ===========================================================================
-class GL_Canvas : public GL_Window_WGL
+class GL_Canvas : public GL_Window_WGL_async
 // ===========================================================================
 {
     Q_OBJECT
@@ -28,22 +29,23 @@ private:
     de::gpu::VideoDriver* m_driver;
     de::gpu::IRenderTarget* m_renderTarget;
 
-    bool m_bFirstMouse;
-    bool m_bCameraFreeLook;
-    bool m_bMouseLeftPressed;
-    bool m_bMouseRightPressed;
-    bool m_bMouseMiddlePressed;
-    bool m_bReserved1;
     bool m_bRenderingEnabled;
     bool m_bShowPerfOverlay;
 
-    int m_mouseX;
-    int m_mouseY;
-    int m_lastMouseX;
-    int m_lastMouseY;
-    int m_mouseMoveX;
-    int m_mouseMoveY;
-    int m_fpsTimerId;
+    // bool m_bFirstMouse;
+    // bool m_bCameraFreeLook;
+    // bool m_bMouseLeftPressed;
+    // bool m_bMouseRightPressed;
+    // bool m_bMouseMiddlePressed;
+    // bool m_bReserved1;
+
+    // int m_mouseX;
+    // int m_mouseY;
+    // int m_lastMouseX;
+    // int m_lastMouseY;
+    // int m_mouseMoveX;
+    // int m_mouseMoveY;
+    // int m_fpsTimerId;
 
     // double m_time_now;
     // double m_time_start;
@@ -58,12 +60,13 @@ private:
 public:
     explicit GL_Canvas(QWidget *parent = nullptr);
     ~GL_Canvas() override;
+
     void cleanupAll();
     void setRenderingEnabled( bool bEnabled );
     void showPerfOverlay( bool bVisible );
     void showFftMatrix( bool bVisible );
-    void startFpsTimer();
-    void stopFpsTimer();
+    // void startFpsTimer();
+    // void stopFpsTimer();
     void draw2DFftOverlay();
     GL_Renderer* getRenderer() { return &m_renderer; }
 
@@ -71,11 +74,11 @@ protected:
     void initializeGL() override;
     void resizeGL(int w, int h) override;
     void paintGL() override;
-    bool event(QEvent* event) override;
-    void mousePressEvent(QMouseEvent* event) override;
-    void mouseReleaseEvent(QMouseEvent* event) override;
-    void mouseMoveEvent(QMouseEvent* event) override;
-    void wheelEvent(QWheelEvent* event) override;
+    //bool event(QEvent* event) override;
+    // void mousePressEvent(QMouseEvent* event) override;
+    // void mouseReleaseEvent(QMouseEvent* event) override;
+    // void mouseMoveEvent(QMouseEvent* event) override;
+    // void wheelEvent(QWheelEvent* event) override;
     // bool gestureEvent(QGestureEvent* event);
     // bool pinchTriggered(QPinchGesture* event);
     // bool swipeTriggered(QSwipeGesture* event);
