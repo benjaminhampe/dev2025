@@ -106,15 +106,10 @@ This is the normal MIDI event:
 This is a generic event struct that can contain:
 
     VstMidiEvent
-
     VstSysExEvent
-
     VstAudioEvent (rare, unused)
-
     VstVideoEvent (unused)
-
     VstEventType::kMidiType
-
     VstEventType::kSysExType
 
 🎹 ASCII Table: VST2 canDo() Capabilities Explained
@@ -138,36 +133,36 @@ VstInt32 Plugin::canDo(char* text)
     //  1 = yes,
     //  0 = don't know (neutral)
     // -1 = no (harsh),
-+---------------------------+-----------------------------+-----------------------------------------------------------+
-| VST2 canDo() String       | Category                    | What It Actually Means                                    |
-+---------------------------+-----------------------------+-----------------------------------------------------------+
-| receiveVstEvents          | MIDI/SysEx Input            | Receive ANY VstEvent (MIDI, SysEx, etc).                  |
-| receiveVstMidiEvent       | MIDI Input                  | Receive MIDI events (note on/off, CC, etc).               |
-| sendVstEvents             | Event Output                | Send VstEvent blocks (SysEx-capable).                     |
-| sendVstMidiEvent          | MIDI Output                 | Send MIDI events to host.                                 |
-| receiveVstTimeInfo        | Transport/Sync              | Receive tempo, PPQ, position, etc.                        |
-| midiProgramNames          | MIDI Programs               | Host may query MIDI program names.                        |
-| bypass                    | Host Bypass                 | Plugin supports host bypass.                              |
-| hasEditor                 | GUI                         | Plugin has a custom GUI editor window.                    |
-| conformsToWindowRules     | GUI                         | Plugin follows host windowing rules.                      |
-| noRealTime                | Processing                  | Plugin does NOT require real-time processing.             |
-| 1in1out                   | Audio I/O                   | Mono in → mono out.                                       |
-| 2in2out                   | Audio I/O (official)        | Stereo in → stereo out.                                   |
-| x2in2out                  | Audio I/O (extended)        | Same as 2in2out, used by some hosts for sidechain.        |
-| 1in2out                   | Audio I/O                   | Mono in → stereo out.                                     |
-| 2in1out                   | Audio I/O                   | Stereo in → mono out.                                     |
-| plugAsChannelInsert       | Host Routing                | Can be used as channel insert.                            |
-| plugAsSend                | Host Routing                | Can be used as send effect.                               |
-| mixDryWet                 | Host Mixing                 | Host can use dry/wet mixing.                              |
-| supportsReWire            | ReWire                      | Plugin supports ReWire (rare).                            |
-| multiChannel              | Audio I/O                   | Supports >2 channels (surround, etc).                     |
-| shellCategory             | Shell Plugins               | Plugin is part of a VST2 shell.                           |
-| offline                   | Offline Processing          | Plugin supports offline processing (Wavelab).             |
-| midiSingleNoteTuning      | MIDI Tuning                 | Supports single-note tuning messages.                     |
-| midiKeyBasedInstrumentCtl | MIDI Control                | Supports key-based instrument control.                    |
-| midiSendVstEvents         | MIDI Output                 | Alias for sendVstEvents (rare).                           |
-| midiSendVstMidiEvent      | MIDI Output                 | Alias for sendVstMidiEvent.                               |            |
-+---------------------------+-----------------------------+-----------------------------------------------------------+
+    +---------------------------+-----------------------------+-----------------------------------------------------------+
+    | VST2 canDo() String       | Category                    | What It Actually Means                                    |
+    +---------------------------+-----------------------------+-----------------------------------------------------------+
+    | receiveVstEvents          | MIDI/SysEx Input            | Receive ANY VstEvent (MIDI, SysEx, etc).                  |
+    | receiveVstMidiEvent       | MIDI Input                  | Receive MIDI events (note on/off, CC, etc).               |
+    | sendVstEvents             | Event Output                | Send VstEvent blocks (SysEx-capable).                     |
+    | sendVstMidiEvent          | MIDI Output                 | Send MIDI events to host.                                 |
+    | receiveVstTimeInfo        | Transport/Sync              | Receive tempo, PPQ, position, etc.                        |
+    | midiProgramNames          | MIDI Programs               | Host may query MIDI program names.                        |
+    | bypass                    | Host Bypass                 | Plugin supports host bypass.                              |
+    | hasEditor                 | GUI                         | Plugin has a custom GUI editor window.                    |
+    | conformsToWindowRules     | GUI                         | Plugin follows host windowing rules.                      |
+    | noRealTime                | Processing                  | Plugin does NOT require real-time processing.             |
+    | 1in1out                   | Audio I/O                   | Mono in → mono out.                                       |
+    | 2in2out                   | Audio I/O (official)        | Stereo in → stereo out.                                   |
+    | x2in2out                  | Audio I/O (extended)        | Same as 2in2out, used by some hosts for sidechain.        |
+    | 1in2out                   | Audio I/O                   | Mono in → stereo out.                                     |
+    | 2in1out                   | Audio I/O                   | Stereo in → mono out.                                     |
+    | plugAsChannelInsert       | Host Routing                | Can be used as channel insert.                            |
+    | plugAsSend                | Host Routing                | Can be used as send effect.                               |
+    | mixDryWet                 | Host Mixing                 | Host can use dry/wet mixing.                              |
+    | supportsReWire            | ReWire                      | Plugin supports ReWire (rare).                            |
+    | multiChannel              | Audio I/O                   | Supports >2 channels (surround, etc).                     |
+    | shellCategory             | Shell Plugins               | Plugin is part of a VST2 shell.                           |
+    | offline                   | Offline Processing          | Plugin supports offline processing (Wavelab).             |
+    | midiSingleNoteTuning      | MIDI Tuning                 | Supports single-note tuning messages.                     |
+    | midiKeyBasedInstrumentCtl | MIDI Control                | Supports key-based instrument control.                    |
+    | midiSendVstEvents         | MIDI Output                 | Alias for sendVstEvents (rare).                           |
+    | midiSendVstMidiEvent      | MIDI Output                 | Alias for sendVstMidiEvent.                               |            |
+    +---------------------------+-----------------------------+-----------------------------------------------------------+
 */
 
     if (!strcmp(text, "plugAsChannelInsert")) return 1;
@@ -194,24 +189,12 @@ VstInt32 Plugin::canDo(char* text)
     if (!strcmp(text, "midiProgramNames")) return 1;
     if (!strcmp(text, "conformsToWindowRules")) return 1;
 
-
-
-
-
     if (!strcmp(text, "mixDryWet")) return 1;
 
     return 0;
 }
 
-
-void
-Plugin::processDoubleReplacing (double** inputs, double** outputs, VstInt32 sampleFrames)
-{
-
-}
-
-void
-Plugin::processReplacing(float** inputs, float** outputs, VstInt32 sampleFrames)
+void Plugin::processReplacing(float** inputs, float** outputs, VstInt32 sampleFrames)
 {
     const uint32_t nChannelBytes = static_cast<uint32_t>(sampleFrames) * sizeof(float);
 
@@ -256,6 +239,11 @@ Plugin::processReplacing(float** inputs, float** outputs, VstInt32 sampleFrames)
     //</With-DSP>
 }
 
+void Plugin::processDoubleReplacing (double** inputs, double** outputs, VstInt32 sampleFrames)
+{
+
+}
+
 VstIntPtr
 Plugin::dispatcher(VstInt32 opCode, VstInt32 index, VstIntPtr value, void* ptr, float opt)
 {
@@ -287,120 +275,92 @@ Plugin::dispatcher(VstInt32 opCode, VstInt32 index, VstIntPtr value, void* ptr, 
         // case effOpen:
         //     DE_BENNI("effOpen")
         //     return 0;
-        case effClose:
-            DE_BENNI("effClose")
-            //delete this; // End lifecycle. We must delete ourselfs to prevent leaks.
-            m_bPluginOpen = false;
+        case effClose: DE_BENNI("effClose")
+            m_bPluginOpen = false; //delete this; // End lifecycle. We must delete ourselfs to prevent leaks.
             return 0;
-        case effEditOpen:
-            DE_BENNI("effEditOpen")
+        case effEditOpen: DE_BENNI("effEditOpen")
             m_editor.create(ptr);
             return 1;
-        case effEditClose:
-            DE_BENNI("effEditClose")
+        case effEditClose: DE_BENNI("effEditClose")
             m_editor.destroy();
             return 1;
-        case effEditGetRect:
-            DE_BENNI("effEditGetRect")
+        case effEditGetRect: DE_BENNI("effEditGetRect")
             *(ERect**)ptr = m_editor.getEditorRect();
             return 1;
-        case effSetBypass:
-            // with value = 1 (bypass on) or value = 0 (bypass off).
-            m_bBypassed = value > 0 ? true : false;
-            DE_BENNI("m_bBypassed = ",m_bBypassed)
+        case effSetBypass: DE_BENNI("effSetBypass = ",value)
+            m_bBypassed = value > 0 ? true : false; // with value = 1 (bypass on) or value = 0 (bypass off).
             //m_synth.setBypass( value > 0 ? true : false );
             return 1;
-        case effSetSampleRate:
-            //DE_BENNI("effSetSampleRate")
-            m_synth.setSampleRate(int32_t(opt));
+        case effSetSampleRate: DE_BENNI("effSetSampleRate = ",int(opt))
+            m_synth.setSampleRate(int(opt));
             return 1;
-        case effSetBlockSize:
-            //DE_BENNI("effSetBlockSize")
-            m_synth.setBlockSize(int32_t(value));
+        case effSetBlockSize: DE_BENNI("effSetBlockSize = ",int(value))
+            m_synth.setBlockSize(int(value));
             return 1;
-        case effMainsChanged:
-            if (value)
-            {
-                // Audio processing is starting
-                DE_BENNI("effMainsChanged = 1")
-            }
-            else
-            {
-                // Audio processing is stopping
-                DE_BENNI("effMainsChanged = 0")
-            }
+        case effMainsChanged: DE_BENNI("effMainsChanged = ",int(value))
             return 1;
-/*
-struct VstSpeakerArrangement {
-    VstInt32 type;       // e.g., kSpeakerArr51 for 5.1
-    VstInt32 numChannels;
-    VstSpeakerProperties speakers[kMaxSpeakers];
-};
+    /*
+        struct VstSpeakerArrangement
+        {
+            VstInt32 type; // e.g., kSpeakerArr51 for 5.1
+            VstInt32 numChannels;
+            VstSpeakerProperties speakers[kMaxSpeakers];
+        };
 
-VstSpeakerArrangement** arrangements = (VstSpeakerArrangement**)ptr;
-VstSpeakerArrangement* inputArrangement = arrangements[0];
-VstSpeakerArrangement* outputArrangement = arrangements[1];
+        VstSpeakerArrangement** arrangements = (VstSpeakerArrangement**)ptr;
+        VstSpeakerArrangement* inputArrangement = arrangements[0];
+        VstSpeakerArrangement* outputArrangement = arrangements[1];
 
-case effSetSpeakerArrangement: {
-    VstSpeakerArrangement** sa = (VstSpeakerArrangement**)ptr;
-    inputSpeakerArrangement = sa[0];   // may be nullptr
-    outputSpeakerArrangement = sa[1];  // may be nullptr
-    return 1;
-}
-*/
+        case effSetSpeakerArrangement:
+        {
+            VstSpeakerArrangement** sa = (VstSpeakerArrangement**)ptr;
+            inputSpeakerArrangement = sa[0];   // may be nullptr
+            outputSpeakerArrangement = sa[1];  // may be nullptr
+            return 1;
+        }
+    */
         default:
             return AudioEffectX::dispatcher(opCode, index, value, ptr, opt);
     }
 }
 
-
-
-void
-Plugin::setProgramName(char *name)
+void Plugin::setProgramName(char *name)
 {
     //vst_strncpy (m_programName, name, kVstMaxProgNameLen);
 }
 
-void
-Plugin::getProgramName(char *name)
+void Plugin::getProgramName(char *name)
 {
     vst_strncpy (name, "DefaultProg", kVstMaxProgNameLen);
 }
 
-bool
-Plugin::getEffectName(char* name)
+bool Plugin::getEffectName(char* name)
 {
     vst_strncpy(name, "SineMachine4", kVstMaxEffectNameLen);
     return true;
 }
 
-bool
-Plugin::getProductString(char* text)
+bool Plugin::getProductString(char* text)
 {
     vst_strncpy (text, "Abenton SineMachine4", kVstMaxProductStrLen);
     return true;
 }
 
-bool
-Plugin::getVendorString(char* text)
+bool Plugin::getVendorString(char* text)
 {
     vst_strncpy (text, "Abenton", kVstMaxVendorStrLen);
     return true;
 }
 
-void
-Plugin::open()
+void Plugin::open()
 {
     DE_DEBUG("")
 }
 
-void
-Plugin::close()
+void Plugin::close()
 {
     DE_DEBUG("close()")
 }
-
-
 
 VstInt32
 Plugin::setChunk (void* data, VstInt32 byteSize, bool isPreset)
@@ -511,8 +471,6 @@ void Plugin::getParameterLabel(VstInt32 index, char *text)
 #endif
 }
 
-
-
 VstInt32 Plugin::processEvents(VstEvents* events)
 {
     if (!events)
@@ -562,3 +520,178 @@ void Plugin::handleShortMidi(char bytes[4])
         // Add more cases as needed
     }
 }
+
+/*
+
+void Plugin::processReplacing(float** inputs, float** outputs, VstInt32 sampleFrames)
+{
+    float* outL = outputs[0];
+    float* outR = outputs[1];
+
+    for (int i = 0; i < sampleFrames; i++)
+    {
+        float sample = 0.0f;
+        float Asum = 0.0f;
+
+        for (Partial & partial : m_synth.m_partials)
+        {
+            float A = partial.A();
+            sample += A * sinf(partial.phase);
+            partial.phase += partial.phaseIncrement;
+            if (partial.phase > de::TWO_PI)
+            {
+                partial.phase -= de::TWO_PI;
+            }
+            Asum += A;
+        }
+
+        sample /= float(Asum);
+
+        outL[i] = outR[i] = sample;
+    }
+}
+
+void Plugin::resume()
+{
+    m_sampleRate = getSampleRate();  // fetch current rate from host
+    calcPhaseIncrements( m_partials, m_baseFrequency, m_sampleRate );
+}
+void Plugin::setSampleRate(float sampleRate)
+{
+    m_sampleRate = sampleRate;
+    calcPhaseIncrements( m_partials, m_baseFrequency, m_sampleRate );
+}
+
+VstInt32 Plugin::processEvents(VstEvents* events)
+{
+    for (VstInt32 i = 0; i < events->numEvents; ++i)
+    {
+        if (events->events[i]->type == kVstMidiType)
+        {
+            VstMidiEvent* midi = (VstMidiEvent*)events->events[i];
+            handleMidi(reinterpret_cast<unsigned char*>(midi->midiData));
+        }
+    }
+    return 1;
+}
+
+void Plugin::handleMidi(unsigned char* data)
+{
+    int status = data[0] & 0xF0;
+    int channel = data[0] & 0x0F;
+    int data1 = data[1] & 0x7F;
+    int data2 = data[2] & 0x7F;
+
+    switch (status) {
+    case 0x90:  // Note On
+        if (data2 > 0)
+            noteOn(channel, data1, data2);
+        else
+            noteOff(channel, data1, data2);  // velocity 0 = note off
+        break;
+    case 0x80:  // Note Off
+        noteOff(channel, data1, data2);
+        break;
+    case 0xB0:  // Control Change
+        controlChange(channel, data1, data2);
+        break;
+    case 0xE0:  // Pitch Bend
+        pitchBend(channel, ((data2 << 7) | data1) - 8192);
+        break;
+        // Add more cases as needed
+    }
+}
+
+void Plugin::noteOn(int channel, int note, int velocity)
+{
+    m_baseFrequency = 440.0 * pow(2.0, (note - 69) / 12.0);  // MIDI to Hz
+    // Optionally: trigger envelopes, voices, etc.
+    calcPhaseIncrements( m_partials, m_baseFrequency, m_sampleRate );
+}
+
+void Plugin::noteOff(int channel, int note, int velocity)
+{
+    // If you're using a simple monophonic synth:
+    if (note == currentNote)
+    {
+        m_baseFrequency = 0.0f;  // silence the oscillator
+        currentNote = -1;
+    }
+
+    // For polyphony, you'd deactivate the voice assigned to this note
+}
+
+void Plugin::controlChange(int channel, int controller, int value)
+{
+    switch (controller) {
+    case 1:  // Mod Wheel
+        modDepth = value / 127.0f;
+        break;
+    case 7:  // Volume
+        masterGain = value / 127.0f;
+        break;
+    case 74: // Filter cutoff (common mapping)
+        filterCutoff = value / 127.0f;
+        break;
+    default:
+        // Handle other CCs or ignore
+        break;
+    }
+}
+
+void Plugin::pitchBend(int channel, int bendValue)
+{
+    // Convert to semitone offset: ±2 semitones range
+    float bendSemis = (bendValue / 8192.0f) * 2.0f;
+
+    // Apply bend to current note
+    if (currentNote >= 0)
+    {
+        m_baseFrequency = 440.0f * pow(2.0, (currentNote - 69 + bendSemis) / 12.0);
+        calcPhaseIncrements( m_partials, m_baseFrequency, m_sampleRate );
+    }
+}
+
+void Synth::resume()
+{
+    m_sampleRate = getSampleRate();  // fetch current rate from host
+    calcPhaseIncrements( m_partials, m_baseFrequency, m_sampleRate );
+}
+
+
+void Synth::setParameter(VstInt32 index, float value)
+{
+    if (index < 0 || index >= int(m_partials.size()))
+    {
+        return;
+    }
+    m_partials[index].amplitude = value;
+}
+
+float Synth::getParameter(VstInt32 index)
+{
+    if (index < 0 || index >= int(m_partials.size()))
+    {
+        return 0.0f;
+    }
+    return m_partials[index].amplitude;
+}
+
+void Synth::open()
+{
+    std::thread guiThread(
+        [this] ()
+        {
+            m_editor->open();
+            m_editor->run();
+        }
+    );
+    guiThread.detach();
+}
+
+void Synth::close()
+{
+    m_editor->requestClose();
+}
+*/
+

@@ -3,7 +3,7 @@
 
 namespace de {
 namespace audio {
-    
+
 struct OSC_AdditiveSaw
 {
     double m_phase      = 0.0;   // [0,1)
@@ -12,7 +12,7 @@ struct OSC_AdditiveSaw
 
     void noteOn(double freq, double sampleRate, int nPartials)
     {
-        m_maxPartials = n;
+        m_maxPartials = nPartials;
         m_phaseInc = freq / sampleRate; // phase in [0,1)
     }
 
@@ -46,8 +46,5 @@ struct OSC_AdditiveSaw
     }
 };
 
-
 } // end namespace audio.
 } // end namespace de.
-
-

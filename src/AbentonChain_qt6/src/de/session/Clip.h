@@ -13,14 +13,14 @@ namespace session {
 struct ClipNote
 // ==============================================
 {
+    int64_t ppqNoteOn;
+    int64_t ppqNoteOff;
+    int velNoteOn;   // 0..127
+    int velNoteOff;   // 0..127
     uint32_t color;
     int16_t channel;   // 0..127
     int16_t midiNote;   // 0..127
-    int velNoteOn;   // 0..127
-    int velNoteOff;   // 0..127
-    int64_t ppqNoteOn;
-    int64_t ppqNoteOff;
-
+    float detuneCent;
 
     ClipNote() { reset(); }
 
@@ -36,13 +36,14 @@ struct ClipNote
 
     void reset()
     {
-        channel = 0;   // 0..127
-        midiNote = 0;   // 0..127
-        velNoteOn = 0;   // 0..127
-        velNoteOff = 0;   // 0..127
         ppqNoteOn = 0;
         ppqNoteOff = 0;
-        color = 0xFF2080CF;
+        velNoteOn = 0;   // 0..127
+        velNoteOff = 0;   // 0..127
+        color = de::randomColorRGB();
+        channel = 0;   // 0..127
+        midiNote = 0;   // 0..127
+        detuneCent = 0.0f;
     }
 };
 
@@ -81,7 +82,6 @@ struct Clip
     // int16_t m_loops;
     // int m_beatCount;
 
-
     // Array is build up from highest note to lowest, because we draw them that way.
     std::vector< ClipNote > m_notes;
 
@@ -109,10 +109,64 @@ struct Clip
     void finalize()
     {
     }
-    // void addNote( int midiNote, int velocity, double begInSec, double endInSec, int ch = 0 )
-    // {
-    //     m_notes.emplace_back( ch, midiNote, velocity, begInSec, endInSec );
-    // }
+
+    void noteOn(int64_t ppq,
+                int channel,
+                int midiNote,
+                int velocity,
+                float detuneCent = 0.0f,
+                std::optional<uint32_t> color = std::nullopt)
+    {
+        m_notes.emplace_back();
+        de::session::ClipNote& note = m_notes.back();
+        note.channel   = channel;
+        note.midiNote  = midiNote;
+        note.ppqNoteOn = ppq;
+        note.velNoteOn = velocity;
+        note.detuneCent = detuneCent;
+        if (color) note.color = *color;
+
+        m_noteRange.addPoint(midiNote);
+        m_ppqRange.addPoint(ppq);
+    }
+
+    void noteOff(int64_t ppq,
+                int channel,
+                int midiNote,
+                int velocity)
+    {
+        auto rit = std::find_if(m_notes.rbegin(), m_notes.rend(),
+            [channel,midiNote](const de::session::ClipNote& note)
+            {
+                return (note.midiNote == midiNote);
+                 // && (note.channel == channel);
+            });
+
+        if (rit == m_notes.rend())
+        {
+            DE_ERROR("No midiNote(",midiNote,")")
+            return;
+        }
+
+        auto it = std::prev(rit.base()); // it.base() - 1
+
+        de::session::ClipNote& l = *it;
+
+        if (l.midiNote != midiNote)
+        {
+            DE_ERROR("Mismatching l.midiNote(",l.midiNote,") != midiNote(",midiNote,")")
+            return;
+        }
+        if (l.channel != channel)
+        {
+            DE_WARN("Mismatching l.channel(",l.channel,") != channel(",channel,")")
+        }
+
+        l.ppqNoteOff = ppq;
+        l.velNoteOff = velocity;
+        m_ppqRange.addPoint(ppq);
+    }
+
 
 };
 

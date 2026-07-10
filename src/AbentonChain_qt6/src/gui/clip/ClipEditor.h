@@ -1,9 +1,13 @@
 ﻿#pragma once
 #include "PianoRoll.h"
 #include <QWidget>
+#include <QPushButton>
+#include <de/midi/IMidiMessageListener.h>
+#include <de/audio/plugin/details/BasePluginUtils.h>
 
 // ============================================================================
 class ClipEditor : public QWidget
+                 , public de::midi::IMidiMessageListener
 // ============================================================================
 {
     Q_OBJECT
@@ -28,13 +32,23 @@ protected:
     void mouseMoveEvent( QMouseEvent* event ) override;
     void wheelEvent( QWheelEvent* event ) override;
 */
+
+    void onMidiMessage(double pts, const de::midi::MidiMessage& msg) override;
+
+    void onShortMidiMessage(double pts, const de::midi::ShortMidiMessage& msg) override;
+
 protected:
     PianoRoll* m_pianoRoll{ nullptr };
-    de::session::Clip* m_clip;
+    de::session::Clip* m_clip{ nullptr };
 
     int m_zoom = 100;
     int m_margin = 8;
+    int m_btnSize;
 
     QColor m_windowColor;
     QColor m_panelColor;
+
+    QPushButton* m_btnRecord; // MidiRecorder
+
+    de::audio::PluginClock m_midiClock;
 };

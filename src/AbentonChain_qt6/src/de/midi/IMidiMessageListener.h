@@ -24,9 +24,9 @@ class IMidiMessageListener
 public:
     virtual ~IMidiMessageListener() = default;
 
-    virtual void onMidiMessage(f64 pts, const MidiMessage& msg) = 0;
+    virtual void onMidiMessage(double pts, const MidiMessage& msg) = 0;
 
-    virtual void onShortMidiMessage(f64 pts, const ShortMidiMessage& msg) = 0;
+    virtual void onShortMidiMessage(double pts, const ShortMidiMessage& msg) = 0;
 };
 
 } // end namespace midi.

@@ -1,7 +1,7 @@
 #pragma once
-#include <common/Common.h>
-#include <common/Envelope.h>
-#include <common/LFO.h>
+#include <de/Common.h>
+#include <de/audio/Envelope.h>
+#include <de/audio/LFO.h>
 
 // 📊
 struct PartialCfg
@@ -25,7 +25,7 @@ struct PartialCfg
     float lfoRate = 1.0f;
     float lfoMin = -1.0f;
     float lfoMax =  1.0f;
-    eFunction lfoFunc = eFunction::Disabled;
+    de::audio::eLFOFunction lfoFunc = de::audio::eLFOFunction::Disabled;
 
     // float fFrequency;       // For playing, for preview it's f = 1Hz * iPartial
     // float fPhase;           // For playing

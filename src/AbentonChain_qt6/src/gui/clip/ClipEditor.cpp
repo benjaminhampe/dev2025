@@ -1,16 +1,36 @@
 #include "ClipEditor.h"
 #include <App.h>
+#include <de_fontawesome.h>
+#include <QChar>
 
 ClipEditor::ClipEditor(QWidget* parent )
-   : QWidget( parent )
-   , m_clip{ nullptr }
+    : QWidget( parent )
+    , m_clip{ nullptr }
 {
-   setObjectName( "ClipEditor" );
-   setMouseTracking( true );
+    setObjectName( "ClipEditor" );
+    setMouseTracking( true );
 
-   m_pianoRoll = new PianoRoll(this);
+    m_pianoRoll = new PianoRoll(this);
+    m_btnRecord = new QPushButton(QChar(static_cast<ushort>(fa::circle)),this);
+    m_btnRecord->setMinimumSize(32,32);
+    m_btnRecord->setMaximumSize(64,64);
+    m_btnRecord->setCheckable(true);
+    m_btnRecord->setChecked(false);
 
-   applySkin();
+    App::instance()->getMidiCentral().registerListener(this);
+
+    applySkin();
+
+    connect(m_btnRecord, &QPushButton::toggled, this, [&](bool checked)
+        {
+            QChar c = QChar(static_cast<ushort>(checked ? fa::square : fa::circle));
+            m_btnRecord->setText(c);
+
+            if (checked)
+            {
+                m_midiClock.restart();
+            }
+        });
 }
 
 void ClipEditor::setClip(de::session::Clip* clip)
@@ -27,7 +47,8 @@ void ClipEditor::applySkin()
 {
     const auto& skin = App::instance()->getSkin();
     m_zoom = skin.zoom;
-    m_margin = (8* m_zoom)/100;
+    m_margin = (8 * m_zoom)/100;
+    m_btnSize = (48 * m_zoom)/100;
     m_windowColor = skin.windowColor;
     m_panelColor = skin.panelColor;
     updateLayout();
@@ -43,7 +64,8 @@ void ClipEditor::updateLayout()
     int m = 2*m_margin; // inner margin
     int dx = std::max(w - 2*m,0);
     int dy = std::max(h - 2*m,0);
-    m_pianoRoll->setGeometry(m,m,dx,dy);
+    m_btnRecord->setGeometry(m,m,m_btnSize,m_btnSize);
+    m_pianoRoll->setGeometry(m + m_btnSize,m,dx,dy);
     update();
 }
 
@@ -75,6 +97,112 @@ void ClipEditor::paintEvent( QPaintEvent* event )
         dc.setBrush(QBrush(m_panelColor));
         dc.drawRoundedRect(QRect(m,m,dx,dy),m,m);
     }
+}
+
+void ClipEditor::onMidiMessage(double pts, const de::midi::MidiMessage& msg)
+{
+
+}
+
+void ClipEditor::onShortMidiMessage(double pts, const de::midi::ShortMidiMessage& msg)
+{
+    if (!m_btnRecord->isChecked())
+    {
+        return;
+    }
+
+    if (!m_clip)
+    {
+        DE_WARN("No clip to record to")
+        return;
+    }
+
+    const int64_t ns = std::llround(1.0e9 * m_midiClock.now()); // Clock is restarted every callback call.
+
+    // HOPEFULLY that fixes missing NoteOff events:
+    // Pianos work ok without that, but monophonic synth are
+    // beasts on a higher level...
+    // const int deltaFrames = std::clamp( int(dt * m_sampleRate),
+    //                                     int(0),
+    //                                     int(m_blockSize) - 10);
+
+    const uint8_t command = msg.m_status & 0xF0;
+    const uint8_t channel = msg.m_status & 0x0F;
+
+    if (command == 0x90 && msg.m_data2 != 0) // ✔ Note On
+    {
+        int midiNote = static_cast<int16_t>(msg.m_data1 & 0x7F);
+        int velocity = static_cast<float>(msg.m_data2 & 0x7F);
+        m_clip->noteOn(ns,channel,midiNote,velocity);
+    }
+    else if (command == 0x80 ||
+            (command == 0x90 && msg.m_data2 == 0)) // ✔ Note Off
+    {
+        int midiNote = static_cast<int16_t>(msg.m_data1 & 0x7F);
+        int velocity = static_cast<float>(msg.m_data2 & 0x7F);
+        m_clip->noteOff(ns,channel,midiNote,velocity);
+    }
+    else if (command == 0xA0) // ✔ Polyphonic Aftertouch: kPolyPressureEvent
+    {
+        // e.type = Steinberg::Vst::Event::kPolyPressureEvent;
+        // e.polyPressure.channel  = channel;
+        // e.polyPressure.pitch    = static_cast<int16_t>(msg.m_data1 & 0x7F);
+        // e.polyPressure.pressure = static_cast<float>(msg.m_data2 & 0x7F) / 127.0f;   // normalize
+        // e.polyPressure.noteId   = -1; // unless you track note IDs
+        // return e;
+    }
+    else if (command == 0xB0) // ✔ CC Control Change
+    {
+        // e.type = Steinberg::Vst::Event::kLegacyMIDICCOutEvent;
+        // e.midiCCOut.channel     = channel;
+        // e.midiCCOut.controlNumber = msg.m_data1; // 64 = sustain on/off
+        // e.midiCCOut.value       = static_cast<int8_t>(msg.m_data2 & 0x7F); // [0-127]
+        // e.midiCCOut.value2      = static_cast<int8_t>(msg.m_data3 & 0x7F); // [0-127]
+        // return e;
+    }
+#if 0
+    else if (command == 0xC0) // ❌ 0xC0–0xCF — Program Change :: Legacy
+    {
+        return std::nullopt;
+    }
+    else if (command == 0xD0) // ❌ 0xD0–0xDF — Channel Pressure
+    {
+        return std::nullopt;
+    }
+    else if (command == 0xE0) // ❌ 0xE0–0xEF — Pitch Bend
+    {
+        return std::nullopt;
+    }
+    else if (command == 0xF0) // ❌ 0xF0–0xFF — System Messages
+    {
+        // SysEx should NOT be done with ShortMidiMessage here!
+        return std::nullopt;
+
+        // Status Meaning           How?        Sent continuously?
+        // F0     SysEx Start       kDataEvent  No
+        // F1     MTC QuarterFrame	No          No
+        // F2     Song Pos Pointer  No          No
+        // F3     Song Select       No          No
+        // F4     Undefined         No          No
+        // F5     Undefined         No          No
+        // F6     Tune Request      No          No
+        // F7     SysEx End         kDataEvent  No
+        // F8     Timing Clock      No          Yes (24 ticks per quarter note)
+        // F9     Undefined         No          No
+        // FA     Start             No          Once
+        // FB     Continue          No          Once
+        // FC     Stop              No          Once
+        // FD     Undefined         No          No
+        // FE     Active Sensing    No          Some devices send it every ~300ms
+        // FF     System Reset      No          Rare
+    }
+    else
+    {
+        DE_ERROR("Unsupported midi message ", msg.str())
+        return std::nullopt;
+    }
+#endif
+
 }
 
 #if 0

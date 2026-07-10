@@ -1,7 +1,7 @@
 #pragma once
 #include <Config.h>
-#include <common/Envelope.h>
-#include <common/DspUtil.h>
+#include <de/audio/Envelope.h>
+#include <de/audio/DspUtil.h>
 #include <de/audio/OSC_Saw.h>
 #include <de/audio/OSC_Additive.h>
 #include <de/audio/OSC_AnalogDrift.h>

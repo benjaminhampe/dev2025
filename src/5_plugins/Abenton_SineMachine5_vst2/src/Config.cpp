@@ -1,6 +1,5 @@
 #include "Config.h"
 
-
 size_t
 PartialsCfg::numPartials() const { return m_partials.size(); }
 

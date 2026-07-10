@@ -1,44 +1,8 @@
 #pragma once
-#include <de/audio/dsp/IDspChainElement.h>
+#include <de/audio/dsp/StereoAudioFifo.h>
 
 namespace de {
 namespace audio {
-
-struct AudioFifo {
-    std::vector<float> L, R;
-    size_t readPos = 0, writePos = 0, size = 0;
-
-    AudioFifo(size_t capacity) {
-        L.resize(capacity);
-        R.resize(capacity);
-        size = capacity;
-    }
-
-    size_t available() const {
-        return (writePos + size - readPos) % size;
-    }
-
-    size_t freeSpace() const {
-        return size - 1 - available();
-    }
-
-    void push(const float* inL, const float* inR, size_t n) {
-        for (size_t i = 0; i < n; ++i) {
-            L[writePos] = inL[i];
-            R[writePos] = inR[i];
-            writePos = (writePos + 1) % size;
-        }
-    }
-
-    void pop(float* outL, float* outR, size_t n) {
-        for (size_t i = 0; i < n; ++i) {
-            outL[i] = L[readPos];
-            outR[i] = R[readPos];
-            readPos = (readPos + 1) % size;
-        }
-    }
-};
-
 
 // ===================================================================
 class DspResampler : public IDspChainElement
@@ -59,7 +23,7 @@ class DspResampler : public IDspChainElement
     AlignedFloatVector m_L;
     AlignedFloatVector m_R;
 
-    AudioFifo m_fifo;
+    StereoAudioFifo m_fifo;
 public:
     DspResampler();
     ~DspResampler() override;
