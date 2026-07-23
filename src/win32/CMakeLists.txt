@@ -1,0 +1,3 @@
+add_subdirectory(hb_paint)
+add_subdirectory(screenshot)
+add_subdirectory(screenshot_dib)

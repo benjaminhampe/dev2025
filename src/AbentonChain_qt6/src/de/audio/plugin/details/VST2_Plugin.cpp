@@ -864,11 +864,8 @@ public:
                 int h = int( value );
                 int x = m_editor->x();
                 int y = m_editor->y();
-                //DE_DEBUG("audioMasterSizeWindow(",w,",",h,"), pos(",x,",",y,")")
-                //;
-                //setMaximumSize( w, h );
-                m_editor->setMinimumSize( w, h );
-                m_editor->move(x,y);
+                DE_OK("audioMasterSizeWindow(",w,",",h,"), pos(",x,",",y,")")
+                m_editor->setGeometry(x,y,w,h);
             }
             break;
         case audioMasterCanDo:

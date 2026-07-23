@@ -1,0 +1,264 @@
+Absolutely, Benjamin — here is the full AC‑3 (ac-3) atom parser PLUS the historical, technical, and ecosystem context you asked for.
+This is the complete picture: structure → parser → meaning → history → who uses it → why it exists.
+
+I’ll keep it crisp, technical, and demuxer‑grade.
+🧩 1. What AC‑3 (ac-3) is in MP4
+
+ac-3 is the Dolby Digital audio sample entry inside stsd.
+It always contains:
+
+    A base AudioSampleEntry (channelcount, samplerate, etc.)
+
+    A dac3 box → AC‑3 bitstream metadata
+
+    MP4 samples → raw AC‑3 syncframes
+
+AC‑3 in MP4 is standardized in ETSI TS 102 366 and ISO/IEC 14496‑15.
+🧬 2. Full ac-3 sample entry layout
+Code
+
+ac-3 {
+    uint8  reserved[6]
+    uint16 data_reference_index
+
+    // AudioSampleEntry
+    uint16 version
+    uint16 revision_level
+    uint32 vendor
+    uint16 channelcount
+    uint16 samplesize
+    uint16 compression_id
+    uint16 packet_size
+    uint32 samplerate_16_16   // 16.16 fixed-point
+
+    // Child boxes:
+    dac3 { ... }   <-- AC-3 config
+}
+
+🧩 3. Full dac3 box layout (AC‑3 Specific Box)
+
+The dac3 box is 3 bytes of packed bitfields:
+Code
+
+byte 0:
+    fscod   (2 bits)  sample rate code
+    bsid    (5 bits)  bitstream id
+    reserved(1 bit)
+
+byte 1:
+    bsmod   (3 bits)  bitstream mode
+    acmod   (3 bits)  audio coding mode (channel layout)
+    lfeon   (1 bit)   LFE channel present
+    reserved(1 bit)
+
+byte 2:
+    bit_rate_code (5 bits)
+    reserved      (3 bits)
+
+🧩 4. C++ structs
+cpp
+
+struct AC3SpecificBox {
+    uint8_t fscod;
+    uint8_t bsid;
+    uint8_t bsmod;
+    uint8_t acmod;
+    uint8_t lfeon;
+    uint8_t bit_rate_code;
+};
+
+struct AC3SampleEntry {
+    uint16_t data_reference_index;
+
+    uint16_t version;
+    uint16_t revision_level;
+    uint32_t vendor;
+    uint16_t channelcount;
+    uint16_t samplesize;
+    uint16_t compression_id;
+    uint16_t packet_size;
+    uint32_t samplerate;
+
+    AC3SpecificBox dac3;
+};
+
+🛠️ 5. Full parser for ac-3 sample entry
+cpp
+
+bool parse_ac3_sample_entry(FileReader& f, uint64_t entry_end, AC3SampleEntry& out)
+{
+    f.skip(6);
+    out.data_reference_index = f.read_u16();
+
+    out.version        = f.read_u16();
+    out.revision_level = f.read_u16();
+    out.vendor         = f.read_u32();
+    out.channelcount   = f.read_u16();
+    out.samplesize     = f.read_u16();
+    out.compression_id = f.read_u16();
+    out.packet_size    = f.read_u16();
+
+    uint32_t sr_16_16  = f.read_u32();
+    out.samplerate     = sr_16_16 >> 16;
+
+    while (f.tell() < entry_end) {
+        uint64_t box_start = f.tell();
+        uint32_t size = f.read_u32();
+        uint32_t type = f.read_u32();
+        uint64_t box_end = box_start + size;
+
+        if (type == FOURCC("dac3")) {
+            parse_dac3(f, box_end, out.dac3);
+        } else {
+            f.seek(box_end);
+        }
+    }
+
+    f.seek(entry_end);
+    return true;
+}
+
+🛠️ 6. Full parser for dac3
+cpp
+
+bool parse_dac3(FileReader& f, uint64_t box_end, AC3SpecificBox& out)
+{
+    uint8_t b0 = f.read_u8();
+    uint8_t b1 = f.read_u8();
+    uint8_t b2 = f.read_u8();
+
+    out.fscod = (b0 >> 6) & 0x03;
+    out.bsid  = (b0 >> 1) & 0x1F;
+
+    out.bsmod = (b1 >> 5) & 0x07;
+    out.acmod = (b1 >> 2) & 0x07;
+    out.lfeon = (b1 >> 1) & 0x01;
+
+    out.bit_rate_code = (b2 >> 3) & 0x1F;
+
+    f.seek(box_end);
+    return true;
+}
+
+🎧 7. How to interpret AC‑3 fields
+Sample rate (fscod)
+Code
+
+0 → 48 kHz
+1 → 44.1 kHz
+2 → 32 kHz
+3 → reserved
+
+Channel layout (acmod)
+Code
+
+0: dual mono
+1: C
+2: L,R
+3: L,C,R
+4: L,R,S
+5: L,C,R,S
+6: L,R,SL,SR
+7: L,C,R,SL,SR
+
+Add +1 channel if lfeon == 1.
+Bitrate (bit_rate_code)
+
+Maps to 32–640 kbps (standard AC‑3 table).
+🧠 8. How decoders use this
+
+    AC‑3 decoders (FFmpeg, liba52, hardware) ignore most of dac3  
+    because the AC‑3 syncframe already contains all metadata.
+
+    dac3 is mainly for:
+
+        MP4 demuxers
+
+        Hardware decoders
+
+        Stream validation
+
+Actual decoding uses the raw AC‑3 frames from MP4 samples.
+🏛️ 9. History & Origin of AC‑3
+Who created it?
+
+Dolby Laboratories, mid‑1990s.
+Why?
+
+To provide a high‑quality multichannel audio codec for:
+
+    DVD‑Video
+
+    Digital TV
+
+    Cinema
+
+    Later: Blu‑ray, streaming, broadcast
+
+What problem did it solve?
+
+Before AC‑3, multichannel audio was:
+
+    Analog (Dolby Pro Logic)
+
+    Low‑bitrate
+
+    Not discrete channels
+
+AC‑3 introduced:
+
+    Discrete 5.1 channels
+
+    Low bitrate (192–640 kbps)
+
+    High robustness
+
+    Wide hardware support
+
+It became the mandatory audio codec for:
+
+    DVD‑Video
+
+    ATSC digital TV (USA)
+
+    Many cable/satellite systems
+
+🌍 10. Who uses AC‑3 today and why
+Still widely used in:
+
+    Broadcast TV (ATSC, DVB)
+
+    Cable & satellite
+
+    Home theater systems
+
+    Soundbars
+
+    AV receivers
+
+    Blu‑ray players
+
+    Streaming services (as fallback or legacy tracks)
+
+Why it persists:
+
+    Massive installed hardware base
+
+    Licensing ecosystem
+
+    Guaranteed compatibility
+
+    Good quality at low bitrates
+
+    Mandatory in many broadcast standards
+
+Even though newer codecs exist (E‑AC‑3, Dolby Digital Plus, Dolby Atmos), AC‑3 remains the baseline.
+🔥 Want the next one?
+
+I can give you:
+
+    Full EC‑3 (ec-3) + dec3 parser
+
+    Complete MP4 → AC‑3 decode pipeline
+
+    AC‑3 syncframe parser

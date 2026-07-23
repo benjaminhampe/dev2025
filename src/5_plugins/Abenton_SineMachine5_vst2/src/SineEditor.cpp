@@ -1,38 +1,557 @@
 #include "SineEditor.h"
 #include "SinePlugin.h"
-#include <vector> // for iAttributes in CreateContext
-
-#ifndef WIN32_MEAN_AND_LEAN
-#define WIN32_MEAN_AND_LEAN
-#endif
-#include <dwmapi.h>
-#include <tchar.h>
-#include <mmsystem.h> // For JOYCAPS
-
-// ===================================================================
-// INCLUDE: WGL
-// ===================================================================
-#include <de_opengl.h>
-#include <GL/wglext.h>
 #include "fonts/fonts_ShareTechMonoRegular_ttf.h"
 //#include "../res/resource.h"
+//#include <vector> // for iAttributes in CreateContext
 
-// ------------------ Editor Implementation ------------------
+// ===================================================================
+// INCLUDE: OpenGL over GLEW (No platform specific pollution here :-)
+// ===================================================================
+#include <de_opengl.h>
 
+// ===================================================================
+// INCLUDE: Windows + WGL (Yes, platform specific symbol pollution here.)
+// ===================================================================
+#ifdef _WIN32
+    #ifndef WIN32_MEAN_AND_LEAN
+    #define WIN32_MEAN_AND_LEAN 1
+    #endif
+    #include <dwmapi.h>     // <- ugly platform specific symbols
+    #include <tchar.h>      // <- ugly platform specific symbols
+    #include <mmsystem.h>   // For JOYCAPS
+
+    LRESULT CALLBACK
+    WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
+
+    #include <GL/wglext.h>  // <- ugly platform specific symbols
+#endif
+
+// Private implementation data encapsulates ugly platform specific
+// Windows/Linux/Mac symbols to prevent pollution in the include header.
+// ======================================================
 class EditorImpl
+// ======================================================
 {
 public:
-    HWND hwnd = nullptr;
-    HDC hDC = nullptr;
-    HGLRC hGL = nullptr;
+#ifdef _WIN32
+    HWND hwnd = nullptr;    // <- ugly platform specific symbol
+    HDC hDC = nullptr;      // <- ugly platform specific symbol
+    HGLRC hGL = nullptr;    // <- ugly platform specific symbol
+    HKL m_KEYBOARD_INPUT_HKL = nullptr; // <- ugly platform specific symbol
+    uint32_t m_KEYBOARD_INPUT_CODEPAGE = 1252; // default: 1252 (Portuguese?)
+#endif
     bool fullscreen = false;
     bool focused = false;
-    int32_t m_screenWidth = 800;
-    int32_t m_screenHeight = 600;
-
-    HKL m_KEYBOARD_INPUT_HKL = nullptr;
-    uint32_t m_KEYBOARD_INPUT_CODEPAGE = 1252; // default: 1252 (Portuguese?)
+    int m_initialWidth = 1024;
+    int m_initialHeight = 768;
+    int m_zoom = 100;
+    // int m_screenWidth;
+    // int m_screenHeight;
 };
+
+// ======================================================
+Editor::Editor(Plugin* plugin)
+// ======================================================
+    : _d(new EditorImpl)
+    , m_plugin(plugin)
+    , m_vg(nullptr)
+    , m_mouseX(0)
+    , m_mouseY(0)
+    , m_paintEventEnabled(false)
+    , m_doPartialDawing(false)
+{
+    m_erect.left = 0;
+    m_erect.top = 0;
+    m_erect.right = 800;
+    m_erect.bottom = 600;
+}
+
+Editor::~Editor()
+{
+    delete _d;
+    _d = nullptr;
+}
+
+void Editor::toggleFullscreen()
+{
+    _d->fullscreen = !_d->fullscreen;
+    SetWindowLong(_d->hwnd, GWL_STYLE, _d->fullscreen ? WS_POPUP : WS_CHILD | WS_VISIBLE);
+    SetWindowPos(_d->hwnd, HWND_TOP, 0, 0, _d->fullscreen ? 1920 : 800, _d->fullscreen ? 1080 : 600, SWP_FRAMECHANGED);
+}
+
+bool Editor::create(void* parent)
+{
+    const int desktopW = GetSystemMetrics( SM_CXSCREEN );
+    const int desktopH = GetSystemMetrics( SM_CYSCREEN );
+
+    const int minW = 800;
+    const int minH = 600;
+    const int maxW = desktopW - 100;
+    const int maxH = desktopH - 100;
+    const int desW = (_d->m_initialWidth * _d->m_zoom) / 100;
+    const int desH = (_d->m_initialHeight * _d->m_zoom) / 100;
+
+    const int w = std::clamp(desW, minW, maxW);
+    const int h = std::clamp(desH, minH, maxH);
+
+    m_erect.left = 0;
+    m_erect.top = 0;
+    m_erect.right = w;
+    m_erect.bottom = h;
+
+    HWND parentHwnd = (HWND)parent;
+
+    static const wchar_t* lpszClassName = L"SineMachine5_EditorClass";
+    static bool reg = false;
+    if (!reg)
+    {
+        WNDCLASSW wc = {0};
+        wc.lpfnWndProc = WndProc;
+        wc.hInstance = GetModuleHandle(nullptr);
+        wc.lpszClassName = lpszClassName;
+        RegisterClassW(&wc);
+        reg = true;
+    }
+
+    _d->hwnd = CreateWindowExW(
+        WS_EX_CONTROLPARENT,
+        lpszClassName,
+        L"SineMachine5",
+        WS_CHILD | WS_VISIBLE | WS_TABSTOP, //  | WS_CLIPCHILDREN
+        0, 0, w, h,
+        parentHwnd,
+        nullptr,
+        GetModuleHandleW(nullptr),
+        this);
+
+    SetFocus( _d->hwnd );
+
+    _d->hDC = GetDC(_d->hwnd);
+    PIXELFORMATDESCRIPTOR pfd = {
+        sizeof(PIXELFORMATDESCRIPTOR),
+        1,
+        PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL | PFD_DOUBLEBUFFER,
+        PFD_TYPE_RGBA,
+        32 };
+
+    int pf = ChoosePixelFormat(_d->hDC, &pfd);
+    SetPixelFormat(_d->hDC, pf, &pfd);
+
+    _d->hGL = wglCreateContext(_d->hDC);
+    wglMakeCurrent(_d->hDC, _d->hGL);
+
+    glewExperimental = GL_TRUE;
+    glewInit();
+
+    glViewport(0, 0, w, h);
+    glClearColor(0.11f, 0.03f, 0.12f, 1.0f);
+
+    m_vg = nvgCreateGL3(NVG_ANTIALIAS | NVG_STENCIL_STROKES);
+
+    m_fontShareTechMonoRegular = nvgCreateFontMem(m_vg, "ShareTechMonoRegular",
+                                                  const_cast<unsigned char*>(fonts_ShareTechMonoRegular_ttf),
+                                                  fonts_ShareTechMonoRegular_ttf_len, 0);
+
+    updateLayout(w,h);
+
+    m_preview.init( m_plugin->getSynth().getConfig() );
+
+    m_paintEventEnabled = true;
+
+    // m_updateTimerId = m_window->startTimer(13);
+
+    m_bg1.init( m_vg );
+    return true;
+}
+
+void Editor::destroy()
+{
+    DE_DEBUG("")
+
+    m_paintEventEnabled = false;
+
+    Sleep(100);
+
+    if (m_vg)
+    {
+        wglMakeCurrent(_d->hDC, _d->hGL);
+        nvgDeleteGL3(m_vg);
+        m_vg = nullptr;
+    }
+
+    HGLRC current = wglGetCurrentContext();
+    if (current == _d->hGL)
+        wglMakeCurrent(nullptr, nullptr); // nur deinen Kontext entbinden
+
+    wglDeleteContext(_d->hGL);
+    _d->hGL = nullptr;
+
+    ReleaseDC(_d->hwnd, _d->hDC);
+    _d->hDC = nullptr;
+
+    DestroyWindow(_d->hwnd);
+    _d->hwnd = nullptr;
+}
+
+void Editor::timerEvent( const de::TimerEvent& event )
+{
+    // if (event.id == m_updateTimerId)
+    // {
+    //     if (m_window)
+    //     {
+    //         m_window->update();
+    //     }
+    // }
+}
+
+void Editor::zoomIn()
+{
+    _d->m_zoom += 25;
+    if (_d->m_zoom > 800) _d->m_zoom = 800;
+
+    const int desktopW = GetSystemMetrics( SM_CXSCREEN );
+    const int desktopH = GetSystemMetrics( SM_CYSCREEN );
+
+    const int minW = 800;
+    const int minH = 600;
+    const int maxW = desktopW - 100;
+    const int maxH = desktopH - 100;
+    const int desW = (_d->m_initialWidth * _d->m_zoom) / 100;
+    const int desH = (_d->m_initialHeight * _d->m_zoom) / 100;
+
+    const int w = std::clamp(desW, minW, maxW);
+    const int h = std::clamp(desH, minH, maxH);
+    resizeCommand(w,h);
+}
+void Editor::zoomOut()
+{
+    _d->m_zoom -= 25;
+    if (_d->m_zoom < 25) _d->m_zoom = 25;
+
+    const int desktopW = GetSystemMetrics( SM_CXSCREEN );
+    const int desktopH = GetSystemMetrics( SM_CYSCREEN );
+
+    const int minW = 400;
+    const int minH = 300;
+    const int maxW = desktopW - 100;
+    const int maxH = desktopH - 100;
+    const int desW = (_d->m_initialWidth * _d->m_zoom) / 100;
+    const int desH = (_d->m_initialHeight * _d->m_zoom) / 100;
+
+    const int w = std::clamp(desW, minW, maxW);
+    const int h = std::clamp(desH, minH, maxH);
+    resizeCommand(w,h);
+}
+
+
+bool Editor::resizeCommand(int newW, int newH)
+{
+    if (!m_plugin)
+        return false;
+
+    auto effect = m_plugin->getAeffect();
+    if (!effect || !effect->dispatcher)
+        return false;
+
+    // Ask host to resize
+    auto am = (audioMasterCallback)effect->resvd1;
+    if (am)
+        am(effect, audioMasterSizeWindow, newW, newH, nullptr, 0.0f);
+
+    // Resize native window immediately (host may ignore)
+#if _WIN32
+    if (_d->hwnd)
+    {
+        SetWindowPos(_d->hwnd, nullptr, 0, 0, newW, newH,
+                     SWP_NOMOVE | SWP_NOZORDER | SWP_NOACTIVATE);
+    }
+#elif MAC_COCOA
+    if (nsView)
+    {
+        [nsView setFrame:NSMakeRect(0, 0, newW, newH)];
+    }
+#endif
+
+    // Update internal layout
+    //onEditorResized(newW, newH);
+
+    return true;
+}
+void Editor::resizeEvent( const de::ResizeEvent& event )
+{
+    int32_t w = event.w;
+    int32_t h = event.h;
+    DE_OK("w(",w,"), h(",h,")")
+    m_erect.left = 0;
+    m_erect.top = 0;
+    m_erect.right = w;
+    m_erect.bottom = h;
+
+    glViewport(0, 0, w, h);
+
+    updateLayout(w,h);
+}
+
+void Editor::updateLayout(int32_t w, int32_t h)
+{
+    int p = 20;
+    int hHeader = 64; // PresetBar
+    int hFooter = 64; // Active SynthNote Display
+    int hBody = h - hHeader - hFooter;
+
+    int h1 = hBody / 2; // Preview + Main Buttons
+    int h2 = hBody - h1; // Partial editor + Volume ctrl
+    int hButtons = 64;
+    int hVolume = 64;
+    int hPreview = h1 - hButtons -p-p-p;
+    int hPartial = h2 - hVolume -p-p;
+    m_header.setRect(0,0,w,hHeader);
+
+    m_rFooter = de::Recti(0,h-1-hFooter,w,h-hHeader);
+    m_rPreview = de::Recti(p,hHeader+p, w-p-p, hPreview);
+    m_rButtons = de::Recti(p,hHeader+p+hPreview+p, w-p-p,hButtons);
+    m_rPartial = de::Recti(p,hHeader+p+hPreview+p+hButtons+p, w-p-p,hPartial);
+    m_rVolume = de::Recti(p,hHeader+p+hPreview+p+hButtons+p+hPartial+p, w-p-p,hVolume);
+}
+
+
+void Editor::paintEvent( const de::PaintEvent& event )
+{
+    // DE_BENNI("")
+    if (!m_paintEventEnabled)
+    {
+        DE_ERROR("No paint.")
+        return;
+    }
+
+    if (!m_vg)
+    {
+        DE_ERROR("No nanovg.")
+        return;
+    }
+
+    if (!m_plugin)
+    {
+        DE_ERROR("No plugin.")
+        return;
+    }
+
+    const int w = getScreenWidth();
+    const int h = getScreenHeight();
+
+    // DE_BENNI("w = ",w, ", h = ",h)
+
+    //int winW, winH;
+    //glfwGetFramebufferSize(m_window, &winW, &winH);
+    glViewport(0, 0, w, h);
+
+    //glClearColor(0.5f, 0.1f, 0.4f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+
+    nvgBeginFrame(m_vg, w, h, 1.0f);
+
+    m_bg1.draw(m_vg, de::Recti(0,0,w,h));
+
+    m_bg1.draw(m_vg, m_header.rc);
+
+    drawLineRect(m_vg, m_header.rc, nvgRGBA(255,0,255,255));
+    drawLineRect(m_vg, m_rFooter, nvgRGBA(0,0,0,255));
+    drawLineRect(m_vg, m_rPreview, nvgRGBA(255,128,0,255));
+    drawLineRect(m_vg, m_rButtons, nvgRGBA(255,200,100,255));
+    drawLineRect(m_vg, m_rPartial, nvgRGBA(255,100,100,255));
+    drawLineRect(m_vg, m_rVolume, nvgRGBA(100,100,255,255));
+
+    drawPreview();
+
+    // Draw Header
+    drawTextButton(m_vg, m_header.rcZoomOut, "-" );
+    drawTextButton(m_vg, m_header.rcZoomIn, "+" );
+
+    // nvgFontFace(m_vg, "ShareTechMonoRegular");
+    // nvgFontSize(m_vg, 24.0f);  // in pixels
+    // nvgTextAlign(m_vg, NVG_ALIGN_CENTER | NVG_ALIGN_MIDDLE);
+
+    // Draw mouse position as a small circle
+    nvgBeginPath(m_vg);
+    nvgCircle(m_vg, m_mouseX, m_mouseY, 5.0f);
+    nvgFillColor(m_vg, nvgRGBA(255, 100, 100, 255));
+    nvgFill(m_vg);
+
+    nvgEndFrame(m_vg);
+}
+
+void Editor::drawPreview()
+{
+    drawLineRect(m_vg, m_rPreview, nvgRGBA(255,128,0,255));
+
+    const auto & cfg = m_plugin->getSynth().getConfig();
+
+    m_preview.update( cfg );
+    m_preview.updatePoints( m_rPreview );
+    m_preview.draw( m_vg, m_rPreview );
+
+    // Draw overtone bars
+    const auto & partials = cfg.m_partials.m_partials;
+    for (int i = 0; i < partials.size(); ++i)
+    {
+        const auto & partial = partials.at(i);
+        float amp = partial.fAmplitude;
+        float barW = float(m_rPartial.w) / float(partials.size());
+        float barH = amp * m_rPartial.h;
+        float x = float(m_rPartial.x) + barW * i;
+        float y = float(m_rPartial.y) + float(m_rPartial.h) - barH;
+
+        nvgBeginPath(m_vg);
+        nvgRect(m_vg, x + 2, y, barW - 4, barH);
+        nvgFillColor(m_vg, partial.color);
+        nvgFill(m_vg);
+
+        // white text
+        nvgFontSize(m_vg, 20.0f);  // in pixels
+        nvgTextAlign(m_vg, NVG_ALIGN_CENTER | NVG_ALIGN_MIDDLE);
+        nvgFillColor(m_vg, nvgRGBA(0, 0, 0, 255));
+        nvgText(m_vg, x + barW/2.0f, y + 16, partial.str().c_str(), nullptr);
+    }
+}
+
+void Editor::doPartialDrawing()
+{
+    if (!m_doPartialDawing)
+    {
+        return;
+    }
+
+    if (!m_plugin)
+    {
+        DE_ERROR("No plugin")
+        return;
+    }
+
+    const auto & partials = m_plugin->getSynth().getConfig().m_partials.m_partials;
+
+    float scale = float(partials.size()) / float(m_rPartial.w);
+    int bar = (m_mouseX - m_rPartial.x) * scale;
+    if (bar >= 0 && bar < partials.size())
+    {
+        float t = (float(m_mouseY) - float(m_rPartial.y)) / float(m_rPartial.h);
+        float A = std::clamp(1.0f - t, 0.0f, 1.0f);
+        m_plugin->setParameter(bar, A);
+    }
+}
+
+void Editor::mousePressEvent( const de::MousePressEvent& event )
+{
+    const int mx = event.x;
+    const int my = event.y;
+    if (event.isLeft())
+    {
+        if (dbMouseOver(mx,my,m_header.rcZoomIn))
+        {
+            zoomIn();
+        }
+        else if (dbMouseOver(mx,my,m_header.rcZoomOut))
+        {
+            zoomOut();
+        }
+        else if (dbMouseOver(mx,my,m_rPartial))
+        {
+            m_doPartialDawing = true;
+            doPartialDrawing();
+        }
+    }
+}
+
+void Editor::mouseReleaseEvent( const de::MouseReleaseEvent& event )
+{
+    if (event.isLeft())
+    {
+        m_doPartialDawing = false;
+    }
+    doPartialDrawing();
+}
+
+void Editor::mouseMoveEvent( const de::MouseMoveEvent& event )
+{
+    m_mouseX = event.x;
+    m_mouseY = event.y;
+
+    doPartialDrawing();
+}
+
+void Editor::mouseWheelEvent( const de::MouseWheelEvent& event )
+{
+}
+
+void Editor::mouseDblClickEvent( const de::MouseDblClickEvent& event )
+{
+}
+
+void Editor::keyPressEvent(const de::KeyPressEvent& event)
+{
+    if (event.key == de::KEY_ESCAPE)
+    {
+        //glfwSetWindowShouldClose(window, true); // Close window on ESC
+    }
+
+    if (!m_plugin)
+    {
+        DE_ERROR("No plugin")
+        return;
+    }
+
+    if (event.key == de::KEY_1)
+    {
+        m_plugin->getSynth().getConfig().m_partials.makeRect();
+    }
+
+    if (event.key == de::KEY_2)
+    {
+        m_plugin->getSynth().getConfig().m_partials.makeSaw();
+    }
+
+    if (event.key == de::KEY_3)
+    {
+        m_plugin->getSynth().getConfig().m_partials.makeSawRev();
+    }
+
+    if (event.key == de::KEY_4)
+    {
+        m_plugin->getSynth().getConfig().m_partials.makeTriangle();
+    }
+}
+
+
+void Editor::keyReleaseEvent(const de::KeyReleaseEvent& event)
+{
+}
+
+/*
+void Editor::run()
+{
+    double timeInSecNow = glfwGetTime();
+    double timeLastFrameBufferUpdate = 0;
+    double timeLastWindowTitleUpdate = 0;
+    while (!glfwWindowShouldClose(m_window) && !shouldClose)
+    {
+        timeInSecNow = glfwGetTime();
+
+        if (timeInSecNow - timeLastFrameBufferUpdate >= 1./30.0)
+        {
+            draw();
+            timeLastFrameBufferUpdate = glfwGetTime();
+        }
+
+        glfwPollEvents();
+    }
+    close();
+}
+
+void Editor::requestClose()
+{
+    shouldClose = true;
+    glfwSetWindowShouldClose(m_window, GLFW_TRUE);
+}
+*/
 
 LRESULT CALLBACK
 WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
@@ -443,418 +962,3 @@ WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
     }
     return DefWindowProc(hwnd, msg, wParam, lParam);
 }
-
-void Editor::toggleFullscreen()
-{
-    _d->fullscreen = !_d->fullscreen;
-    SetWindowLong(_d->hwnd, GWL_STYLE, _d->fullscreen ? WS_POPUP : WS_CHILD | WS_VISIBLE);
-    SetWindowPos(_d->hwnd, HWND_TOP, 0, 0, _d->fullscreen ? 1920 : 800, _d->fullscreen ? 1080 : 600, SWP_FRAMECHANGED);
-}
-
-Editor::Editor(Plugin* plugin)
-    : m_plugin(plugin)
-    , _d(new EditorImpl)
-    , m_vg(nullptr)
-    // , m_updateTimerId(0)
-    , m_mouseX(0)
-    , m_mouseY(0)
-    , m_paintEventEnabled(false)
-    , m_doPartialDawing(false)
-{
-    m_erect.left = 0;
-    m_erect.top = 0;
-    m_erect.right = 800;
-    m_erect.bottom = 600;
-}
-
-Editor::~Editor()
-{
-    delete _d;
-    _d = nullptr;
-}
-
-bool
-Editor::create(void* parent)
-{
-    int desktopW = GetSystemMetrics( SM_CXSCREEN );
-    int desktopH = GetSystemMetrics( SM_CYSCREEN );
-
-    _d->m_screenWidth = desktopW / 2 - 100;
-    _d->m_screenHeight = desktopH - 300;
-
-    int w = _d->m_screenWidth;
-    int h = _d->m_screenHeight;
-
-    m_erect.left = 0;
-    m_erect.top = 0;
-    m_erect.right = w;
-    m_erect.bottom = h;
-
-    HWND parentHwnd = (HWND)parent;
-
-    static const wchar_t* lpszClassName = L"SineMachine5_EditorClass";
-    static bool reg = false;
-    if (!reg)
-    {
-        WNDCLASSW wc = {0};
-        wc.lpfnWndProc = WndProc;
-        wc.hInstance = GetModuleHandle(nullptr);
-        wc.lpszClassName = lpszClassName;
-        RegisterClassW(&wc);
-        reg = true;
-    }
-
-    _d->hwnd = CreateWindowExW(
-        WS_EX_CONTROLPARENT,
-        lpszClassName,
-        L"SineMachine5",
-        WS_CHILD | WS_VISIBLE | WS_TABSTOP, //  | WS_CLIPCHILDREN
-        0, 0, w, h,
-        parentHwnd,
-        nullptr,
-        GetModuleHandleW(nullptr),
-        this);
-
-    SetFocus( _d->hwnd );
-
-    _d->hDC = GetDC(_d->hwnd);
-    PIXELFORMATDESCRIPTOR pfd = {
-        sizeof(PIXELFORMATDESCRIPTOR),
-        1,
-        PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL | PFD_DOUBLEBUFFER,
-        PFD_TYPE_RGBA,
-        32 };
-
-    int pf = ChoosePixelFormat(_d->hDC, &pfd);
-    SetPixelFormat(_d->hDC, pf, &pfd);
-
-    _d->hGL = wglCreateContext(_d->hDC);
-    wglMakeCurrent(_d->hDC, _d->hGL);
-
-    glewExperimental = GL_TRUE;
-    glewInit();
-
-    glViewport(0, 0, w, h);
-    glClearColor(0.11f, 0.03f, 0.12f, 1.0f);
-
-    m_vg = nvgCreateGL3(NVG_ANTIALIAS | NVG_STENCIL_STROKES);
-
-    m_fontShareTechMonoRegular = nvgCreateFontMem(m_vg, "ShareTechMonoRegular",
-                                                  const_cast<unsigned char*>(fonts_ShareTechMonoRegular_ttf),
-                                                  fonts_ShareTechMonoRegular_ttf_len, 0);
-
-    updateLayout(w,h);
-
-    m_preview.init( m_plugin->getSynth().getConfig() );
-
-    m_paintEventEnabled = true;
-
-    // m_updateTimerId = m_window->startTimer(13);
-
-    return true;
-}
-
-void Editor::destroy()
-{
-    DE_DEBUG("")
-
-    m_paintEventEnabled = false;
-
-    Sleep(100);
-
-    if (m_vg)
-    {
-        wglMakeCurrent(_d->hDC, _d->hGL);
-        nvgDeleteGL3(m_vg);
-        m_vg = nullptr;
-    }
-
-    HGLRC current = wglGetCurrentContext();
-    if (current == _d->hGL)
-        wglMakeCurrent(nullptr, nullptr); // nur deinen Kontext entbinden
-
-    wglDeleteContext(_d->hGL);
-    _d->hGL = nullptr;
-
-    ReleaseDC(_d->hwnd, _d->hDC);
-    _d->hDC = nullptr;
-
-    DestroyWindow(_d->hwnd);
-    _d->hwnd = nullptr;
-}
-
-void Editor::timerEvent( const de::TimerEvent& event )
-{
-    // if (event.id == m_updateTimerId)
-    // {
-    //     if (m_window)
-    //     {
-    //         m_window->update();
-    //     }
-    // }
-}
-
-void Editor::resizeEvent( const de::ResizeEvent& event )
-{
-    int32_t w = event.w;
-    int32_t h = event.h;
-    DE_OK("w(",w,"), h(",h,")")
-
-    _d->m_screenWidth = w;
-    _d->m_screenHeight = h;
-
-    // if (m_window)
-    // {
-    //     de::Recti clientRect = m_window->getClientRect();
-    //     m_erect.left = clientRect.x;
-    //     m_erect.top = clientRect.y;
-    //     m_erect.right = clientRect.x + clientRect.w;
-    //     m_erect.bottom = clientRect.y + clientRect.h;
-    //     DE_OK("clientRect = {", clientRect.str(), "}")
-    // }
-    // else
-    // {
-    //     DE_OK("No clientRect")
-    // }
-
-    m_erect.left = 0;
-    m_erect.top = 0;
-    m_erect.right = w;
-    m_erect.bottom = h;
-
-    glViewport(0, 0, w, h);
-
-    updateLayout(w,h);
-}
-
-
-void Editor::paintEvent( const de::PaintEvent& event )
-{
-    // DE_BENNI("")
-    if (!m_paintEventEnabled)
-    {
-        DE_ERROR("No paint.")
-        return;
-    }
-
-    if (!m_vg)
-    {
-        DE_ERROR("No nanovg.")
-        return;
-    }
-
-    if (!m_plugin)
-    {
-        DE_ERROR("No plugin.")
-        return;
-    }
-
-    int32_t w = _d->m_screenWidth;
-    int32_t h = _d->m_screenHeight;
-
-    // DE_BENNI("w = ",w, ", h = ",h)
-
-    //int winW, winH;
-    //glfwGetFramebufferSize(m_window, &winW, &winH);
-    glViewport(0, 0, w, h);
-
-    //glClearColor(0.5f, 0.1f, 0.4f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-
-    nvgBeginFrame(m_vg, w, h, 1.0f);
-
-    nvgFontFace(m_vg, "ShareTechMonoRegular");
-    nvgFontSize(m_vg, 24.0f);  // in pixels
-    nvgTextAlign(m_vg, NVG_ALIGN_CENTER | NVG_ALIGN_MIDDLE);
-
-    drawLineRect(m_vg, m_rHeader, nvgRGBA(255,0,255,255));
-    drawLineRect(m_vg, m_rFooter, nvgRGBA(0,0,0,255));
-    drawLineRect(m_vg, m_rPreview, nvgRGBA(255,128,0,255));
-    drawLineRect(m_vg, m_rButtons, nvgRGBA(255,200,100,255));
-    drawLineRect(m_vg, m_rPartial, nvgRGBA(255,100,100,255));
-    drawLineRect(m_vg, m_rVolume, nvgRGBA(100,100,255,255));
-
-    const auto & cfg = m_plugin->getSynth().getConfig();
-
-    m_preview.update( cfg );
-    m_preview.updatePoints( m_rPreview );
-    m_preview.draw( m_vg, m_rPreview );
-
-    // Draw overtone bars
-    const auto & partials = cfg.m_partials.m_partials;
-    for (int i = 0; i < partials.size(); ++i)
-    {
-        const auto & partial = partials.at(i);
-        float amp = partial.fAmplitude;
-        float barW = float(m_rPartial.w) / float(partials.size());
-        float barH = amp * m_rPartial.h;
-        float x = float(m_rPartial.x) + barW * i;
-        float y = float(m_rPartial.y) + float(m_rPartial.h) - barH;
-
-        nvgBeginPath(m_vg);
-        nvgRect(m_vg, x + 2, y, barW - 4, barH);
-        nvgFillColor(m_vg, partial.color);
-        nvgFill(m_vg);
-
-        // white text
-        nvgFontSize(m_vg, 20.0f);  // in pixels
-        nvgTextAlign(m_vg, NVG_ALIGN_CENTER | NVG_ALIGN_MIDDLE);
-        nvgFillColor(m_vg, nvgRGBA(0, 0, 0, 255));
-        nvgText(m_vg, x + barW/2.0f, y + 16, partial.str().c_str(), nullptr);
-    }
-
-    // Draw mouse position as a small circle
-    nvgBeginPath(m_vg);
-    nvgCircle(m_vg, m_mouseX, m_mouseY, 5.0f);
-    nvgFillColor(m_vg, nvgRGBA(255, 100, 100, 255));
-    nvgFill(m_vg);
-
-    nvgEndFrame(m_vg);
-}
-
-void Editor::updateLayout(int32_t w, int32_t h)
-{
-    int p = 20;
-    int hHeader = 64; // PresetBar
-    int hFooter = 64; // Active SynthNote Display
-    int hBody = h - hHeader - hFooter;
-
-    int h1 = hBody / 2; // Preview + Main Buttons
-    int h2 = hBody - h1; // Partial editor + Volume ctrl
-    int hButtons = 64;
-    int hVolume = 64;
-    int hPreview = h1 - hButtons -p-p-p;
-    int hPartial = h2 - hVolume -p-p;
-    m_rHeader = de::Recti(0,0,w,hHeader);
-    m_rFooter = de::Recti(0,h-1-hFooter,w,h-hHeader);
-    m_rPreview = de::Recti(p,hHeader+p, w-p-p, hPreview);
-    m_rButtons = de::Recti(p,hHeader+p+hPreview+p, w-p-p,hButtons);
-    m_rPartial = de::Recti(p,hHeader+p+hPreview+p+hButtons+p, w-p-p,hPartial);
-    m_rVolume = de::Recti(p,hHeader+p+hPreview+p+hButtons+p+hPartial+p, w-p-p,hVolume);
-}
-
-void Editor::doPartialDrawing()
-{
-    if (!m_doPartialDawing)
-    {
-        return;
-    }
-
-    if (!m_plugin)
-    {
-        DE_ERROR("No plugin")
-        return;
-    }
-
-    const auto & partials = m_plugin->getSynth().getConfig().m_partials.m_partials;
-
-    float scale = float(partials.size()) / float(m_rPartial.w);
-    int bar = (m_mouseX - m_rPartial.x) * scale;
-    if (bar >= 0 && bar < partials.size())
-    {
-        float t = (float(m_mouseY) - float(m_rPartial.y)) / float(m_rPartial.h);
-        float A = std::clamp(1.0f - t, 0.0f, 1.0f);
-        m_plugin->setParameter(bar, A);
-    }
-}
-
-void Editor::mousePressEvent( const de::MousePressEvent& event )
-{
-    if (event.isLeft())
-    {
-        m_doPartialDawing = true;
-    }
-    doPartialDrawing();
-}
-
-void Editor::mouseReleaseEvent( const de::MouseReleaseEvent& event )
-{
-    if (event.isLeft())
-    {
-        m_doPartialDawing = false;
-    }
-    doPartialDrawing();
-}
-
-void Editor::mouseMoveEvent( const de::MouseMoveEvent& event )
-{
-    m_mouseX = event.x;
-    m_mouseY = event.y;
-
-    doPartialDrawing();
-}
-
-void Editor::mouseWheelEvent( const de::MouseWheelEvent& event )
-{
-}
-
-void Editor::mouseDblClickEvent( const de::MouseDblClickEvent& event )
-{
-}
-
-void Editor::keyPressEvent(const de::KeyPressEvent& event)
-{
-    if (event.key == de::KEY_ESCAPE)
-    {
-        //glfwSetWindowShouldClose(window, true); // Close window on ESC
-    }
-
-    if (!m_plugin)
-    {
-        DE_ERROR("No plugin")
-        return;
-    }
-
-    if (event.key == de::KEY_1)
-    {
-        m_plugin->getSynth().getConfig().m_partials.makeRect();
-    }
-
-    if (event.key == de::KEY_2)
-    {
-        m_plugin->getSynth().getConfig().m_partials.makeSaw();
-    }
-
-    if (event.key == de::KEY_3)
-    {
-        m_plugin->getSynth().getConfig().m_partials.makeSawRev();
-    }
-
-    if (event.key == de::KEY_4)
-    {
-        m_plugin->getSynth().getConfig().m_partials.makeTriangle();
-    }
-}
-
-
-void Editor::keyReleaseEvent(const de::KeyReleaseEvent& event)
-{
-}
-
-/*
-void Editor::run()
-{
-    double timeInSecNow = glfwGetTime();
-    double timeLastFrameBufferUpdate = 0;
-    double timeLastWindowTitleUpdate = 0;
-    while (!glfwWindowShouldClose(m_window) && !shouldClose)
-    {
-        timeInSecNow = glfwGetTime();
-
-        if (timeInSecNow - timeLastFrameBufferUpdate >= 1./30.0)
-        {
-            draw();
-            timeLastFrameBufferUpdate = glfwGetTime();
-        }
-
-        glfwPollEvents();
-    }
-    close();
-}
-
-void Editor::requestClose()
-{
-    shouldClose = true;
-    glfwSetWindowShouldClose(m_window, GLFW_TRUE);
-}
-*/

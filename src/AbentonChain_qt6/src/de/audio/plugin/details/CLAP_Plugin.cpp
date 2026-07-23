@@ -14,6 +14,30 @@ namespace de {
 namespace audio {
 namespace {
 
+/*
+🧩 Correct CLAP host lifecycle (audio thread relevant part)
+
+Every CLAP plugin must be driven in this order:
+
+    init()
+
+    create_instance()
+
+    activate(sample_rate, min_frames, max_frames) ← required before any audio calls
+
+    start_processing()
+
+    process() (audio thread)
+
+    stop_processing()
+
+    deactivate()
+
+    destroy()
+
+If you skip step 3, you get exactly the error you see.
+*/
+
 constexpr u64 GUARD = 256;
 
 // ---- WRITE SIDE ----
@@ -1276,6 +1300,30 @@ public:
         m_framePos = 0;
     }
 
+/*
+🧩 Correct CLAP host lifecycle (audio thread relevant part)
+
+Every CLAP plugin must be driven in this order:
+
+    init()
+
+    create_instance()
+
+    activate(sample_rate, min_frames, max_frames) ← required before any audio calls
+
+    start_processing()
+
+    process() (audio thread)
+
+    stop_processing()
+
+    deactivate()
+
+    destroy()
+
+If you skip step 3, you get exactly the error you see.
+*/
+
     void openPlugin( std::string uri )
     {
         if (m_bIsPluginOpen)
@@ -1431,7 +1479,6 @@ public:
             return;
         }
 
-
         m_numInputs = dumpInputs(m_plugin);
         m_numOutputs = dumpOutputs(m_plugin);
         enumerateParameters(m_paramList, m_plugin);
@@ -1466,7 +1513,7 @@ public:
         }
 */
 
-        dsp_init( 128, 2, 48000 );
+        dsp_init( 128, 2, 48000, true );
 /*
         DE_DEBUG("VST plugin = ", dbFileBase(m_uri))
         DE_DEBUG("VST plugin dir = ", m_directoryMultiByte)
@@ -1538,10 +1585,16 @@ public:
         m_inputSignal = nullptr;
     }
 
-    void dsp_init(u64 frames, u32 channels, u32 sampleRate)
+    void dsp_init(u64 frames, u32 channels, u32 sampleRate, bool bFirstCall = false)
     {
         m_buffers.m_L.resize(frames + GUARD);
         m_buffers.m_R.resize(frames + GUARD);
+
+        if ( !m_plugin )
+        {
+            DE_ERROR("No plugin")
+            return;
+        }
 
         bool bNeedRealloc = false;
         bool bNeedReconfig = false;
@@ -1550,29 +1603,25 @@ public:
         {
             bNeedRealloc = true;
             bNeedReconfig = true;
+            m_blockSize = frames;
         }
 
         if ( m_sampleRate != sampleRate )
         {
             bNeedReconfig = true;
-        }
-
-        if ( !m_plugin )
-        {
-            DE_ERROR("No plugin")
-            return;
+            m_sampleRate = sampleRate;
         }
 
         if ( bNeedReconfig )
         {
-            m_blockSize = frames;
-            m_sampleRate = sampleRate;
+            if (!bFirstCall)
+            {
+                // 1. Stop calling process()
+                m_plugin->stop_processing(m_plugin);
 
-            // 1. Stop calling process()
-            m_plugin->stop_processing(m_plugin);
-
-            // 2. Stop calling process()
-            m_plugin->deactivate(m_plugin);
+                // 2. Stop calling process()
+                m_plugin->deactivate(m_plugin);
+            }
 
             // Prepare input buffer + input channel heads ( planar = non-interleaved )
             // Prepare output buffer + output channel heads ( planar = non-interleaved )

@@ -106,7 +106,7 @@ void TrackWidget::updateLayout()
 {
     if (!m_track)
     {
-        DE_ERROR("No track")
+        // DE_ERROR("No track")
         return;
     }
 

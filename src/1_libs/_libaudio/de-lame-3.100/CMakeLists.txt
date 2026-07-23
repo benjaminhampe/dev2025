@@ -1,4 +1,4 @@
-set(LIB_NAME de_lame) # We dont like to clash with system libs.
+set(LIB_NAME de_lame_3100) # We dont like to clash with system libs.
 project(${LIB_NAME} C)
 
 if (TARGET ${LIB_NAME})
@@ -91,4 +91,4 @@ else()
 
 endif()
 
-# add_subdirectory(test)
+add_subdirectory(test)

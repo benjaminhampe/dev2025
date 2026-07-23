@@ -103,6 +103,49 @@ Font5x8::getTextSize( std::string const & msg ) const
     return TextSize( tx, ty );
 }
 
+
+Font5x8::TextSize
+Font5x8::getTextSize( std::wstring const & msg ) const
+{
+    // return getTextSize( msg, *this );
+
+    if ( msg.empty() ) return TextSize(0,0);
+
+    int32_t lineCount = 1;
+    int32_t lineWidth = 0;
+    int32_t lineWidthMax = 0;
+
+    for ( size_t i = 0; i < msg.size(); ++i )
+    {
+        uint32_t ch = msg[ i ];
+        if ( ch == L'\r' )  // Mac or Windows line breaks.
+        {
+            lineCount++;
+            lineWidthMax = std::max( lineWidthMax, lineWidth );
+            lineWidth = 0;
+            continue;
+        }
+        if ( ch == L'\n' )	// Mac or Windows line breaks.
+        {
+            lineCount++;
+            lineWidthMax = std::max( lineWidthMax, lineWidth );
+            lineWidth = 0;
+            continue;
+        }
+
+        lineWidth++;
+    }
+
+    lineWidthMax = std::max( lineWidthMax, lineWidth );
+
+    int tx = 5 * (quadWidth + quadSpacingX) * lineWidthMax
+             + (lineWidthMax-1) * glyphSpacingX;
+    int ty = 8 * (quadHeight + quadSpacingY) * lineCount
+             + (lineCount-1) * glyphSpacingY;
+
+    return TextSize( tx, ty );
+}
+
 void Font5x8::renderText(int x, int y, const std::string & msg, uint32_t color,
                             Align align, const FN_SET_PIXEL & setPixel ) const
 {

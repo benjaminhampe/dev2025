@@ -1,5 +1,5 @@
-#include "SineEditor.h"
-#include "SinePlugin.h"
+#include "Preview.h"
+//#include "SinePlugin.h"
 #include <vector> // for iAttributes in CreateContext
 
 #ifndef WIN32_MEAN_AND_LEAN

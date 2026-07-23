@@ -4468,6 +4468,31 @@ float Rectf::getDV() const { return h(); }
 
 } // end namespace de.
 
+// ========================================================================
+bool dbMouseOver( int mx, int my, int x1, int y1, int x2, int y2 )
+// ========================================================================
+{
+    if ( x1 > x2 ) std::swap( x1, x2 );
+    if ( y1 > y2 ) std::swap( y1, y2 );
+    if ( x2 - x1 < 1 ) return false;
+    if ( y2 - y1 < 1 ) return false;
+    if ( mx < x1 ) return false;
+    if ( my < y1 ) return false;
+    if ( mx > x2 ) return false;
+    if ( my > y2 ) return false;
+    return true;
+}
+
+// ========================================================================
+bool dbMouseOver( int mx, int my, const de::Recti& pos )
+// ========================================================================
+{
+    const int x1 = pos.x;
+    const int y1 = pos.y;
+    const int x2 = pos.x + pos.w - 1;
+    const int y2 = pos.y + pos.h - 1;
+    return dbMouseOver(mx,my,x1,y1,x2,y2);
+}
 
 
 std::string dbStrVal(float val, int digits)

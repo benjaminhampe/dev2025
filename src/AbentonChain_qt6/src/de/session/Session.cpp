@@ -234,6 +234,10 @@ bool Session::setActiveClip(int clipId)
             return false; // Nothing todo
         }
     }
+    else
+    {
+        DE_ERROR("No active clip in track ",track->getTrackName().toStdString())
+    }
 
     auto clip = track->getClip( clipId );
     if (!clip)
@@ -327,16 +331,24 @@ void Session::addTracks(const de::midi::file::MidiFile& midiFile)
 
             for (int n = 0; n < ch.m_notes.size(); ++n)
             {
-                auto note = ch.m_notes[n];
+                const auto& note = ch.m_notes[n];
+
+                if (note.m_midiNote < 0 || note.m_midiNote > 127)
+                {
+                    DE_ERROR("Invalid midiNote[",n,"] ", note.m_midiNote)
+                    continue;
+                }
+
                 ClipNote clipNote;
-                clipNote.color = channelColor;
-                clipNote.channel = note.m_channel;
+                //clipNote.channel = note.m_channel;
                 clipNote.midiNote = note.m_midiNote;
+                clipNote.color = channelColor;
                 clipNote.velNoteOn = note.m_velNoteOn;
                 clipNote.velNoteOff = note.m_velNoteOff;
                 clipNote.ppqNoteOn = note.m_ppqNoteOn;
                 clipNote.ppqNoteOff = note.m_ppqNoteOff;
-                clip->m_notes.emplace_back( std::move(clipNote) );
+
+                clip->m_notes[note.m_midiNote].emplace_back( std::move(clipNote) );
                 clip->m_noteRange.addPoint(note.m_midiNote);
                 clip->m_ppqRange.addPoint(note.m_ppqNoteOn);
                 clip->m_ppqRange.addPoint(note.m_ppqNoteOff);

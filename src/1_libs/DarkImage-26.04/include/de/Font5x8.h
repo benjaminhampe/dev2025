@@ -43,6 +43,9 @@ struct Font5x8 // Save/Load, cheap to copy. What settings the user can control.
     TextSize
     getTextSize( std::string const & msg ) const;
 
+    TextSize
+    getTextSize( std::wstring const & msg ) const;
+
     //static TextSize
     //getTextSize( std::string const & msg, Font5x8 const & font );
 
@@ -92,14 +95,14 @@ struct Font5x8Face // A font5x8 glyph atlas for one font5x8 description
 {
    typedef std::shared_ptr< Font5x8Face > SharedPtr;
    typedef std::map< uint32_t, Font5x8Glyph > GlyphCache;
-   
+
    Font5x8Face();
    ~Font5x8Face();
    //Font5x8::TextSize getTextSize( std::string const & msg ) const;
    bool hasGlyph( uint32_t unicode ) const;
    Font5x8Glyph & getGlyph( uint32_t unicode );
    void cacheString( std::string const & msg );
-      
+
    static void createGlyphCache( GlyphCache & cache );
    // void add2DText( SMeshBuffer & o, int x, int y, std::string const & msg, uint32_t color, Align align );
    //Font5x8 font;

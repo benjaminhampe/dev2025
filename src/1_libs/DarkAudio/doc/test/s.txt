@@ -1,0 +1,10 @@
+
+./test
+./test/CMakeLists.txt
+./test/extractCoverArt2
+./test/extractCoverArt2/CMakeLists.txt
+./test/extractCoverArt2/icon.ico
+./test/extractCoverArt2/icon.rc
+./test/extractCoverArt2/src
+./test/extractCoverArt2/src/main_extractCoverArt2.cpp
+./test/extractCoverArt2/src/main_extractCoverArt2_unicode.cpp

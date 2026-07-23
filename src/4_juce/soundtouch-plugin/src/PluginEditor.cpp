@@ -1,7 +1,5 @@
 #include "PluginEditor.h"
 
-#include "PluginEditor.h"
-
 SoundTouchEditor::SoundTouchEditor(SoundTouchProcessor& p)
     : AudioProcessorEditor(&p), processor(p)
 {

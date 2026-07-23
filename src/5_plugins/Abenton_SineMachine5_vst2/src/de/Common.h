@@ -7,14 +7,14 @@
 // #include <algorithm>
 // #include <thread>
 
-#include <pluginterfaces/vst2.x/audioeffectx.h>
-
 #ifndef NANOVG_GL3_IMPLEMENTATION
 #define NANOVG_GL3_IMPLEMENTATION
 #endif
 #include <nanovg.h>
 #include <nanovg_gl.h>
+#include <nanovg_gl_utils.h>
 
+// typedef NVGLUframebuffer NVGframebuffer;
 // #include <GLFW/glfw3.h> // Bad: GLFW uses TopLevelWindows, not well managable by Hosts.
 // #include <de_Approx_Math.h>
 // #include <de/approx_math.h>
@@ -22,11 +22,11 @@
 
 
 //🖌️ Drawing a Colored Rectangle Border
-inline void 
-drawLineRect( 
-    NVGcontext* vg, 
-    int x, int y, int w, int h, 
-    const NVGcolor& color, 
+inline void
+drawLineRect(
+    NVGcontext* vg,
+    int x, int y, int w, int h,
+    const NVGcolor& color,
     float strokeWidth = 4.0f )
 {
     nvgBeginPath(vg);                     // Start a new path
@@ -37,11 +37,11 @@ drawLineRect(
 }
 
 //🖌️ Drawing a Colored Rectangle Border
-inline void 
-drawLineRect( 
-    NVGcontext* vg, 
-    const de::Recti& pos, 
-    const NVGcolor& color, 
+inline void
+drawLineRect(
+    NVGcontext* vg,
+    const de::Recti& pos,
+    const NVGcolor& color,
     float strokeWidth = 4.0f )
 {
     drawLineRect(vg,pos.x,pos.y,pos.w,pos.h,color,strokeWidth);

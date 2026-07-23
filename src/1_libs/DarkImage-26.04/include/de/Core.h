@@ -1439,46 +1439,50 @@ struct Align
 
 } // end namespace de.
 
+// ========================================================================
+bool dbMouseOver( int mx, int my, int x1, int y1, int x2, int y2 );
+bool dbMouseOver( int mx, int my, const de::Recti& pos );
+// ========================================================================
 std::string dbStrVal(float val, int digits = 1);
 std::string dbStrVal(double val, int digits = 1);
-
+// ========================================================================
 std::string dbHex( uint8_t byte );
 std::string dbHex( uint16_t const color );
 std::string dbHex( uint32_t const color );
 std::string dbHex( uint64_t color );
 std::string dbHex( uint8_t const* beg, uint8_t const* end );
 std::string dbHex( uint8_t const* beg, uint8_t const* end, size_t nBytesPerRow );
-
+// ========================================================================
 std::string dbStrNanoSeconds(double nSeconds);
 std::string dbStrSeconds(double nSeconds);
 std::string dbStrBytes(uint64_t nBytes);
-
+// ========================================================================
 std::string de_mbstr(const std::wstring& w );
 std::string de_mbstr( wchar_t const w );
 std::wstring de_wstr(const std::string& mb );
-
+// ========================================================================
 de::Blob dbLoadBlob( const std::string& uri );
 bool dbLoadBlob( de::Blob & blob, const std::string& uri );
 bool dbSaveBlob( const de::Blob& blob, const std::string& uri );
-
+// ========================================================================
 std::wstring dbLoadText(const std::wstring& uri);
 std::string dbLoadText(const std::string& uri);
-
+// ========================================================================
 bool dbSaveText(const std::string& uri, const std::string& txt);
 bool dbSaveText(const std::wstring& uri, const std::wstring& txt);
-
+// ========================================================================
 bool dbExistFile(const std::string& uri);
 bool dbExistFile(const std::wstring& uri);
-
+// ========================================================================
 bool dbExistDirectory(const std::string& uri);
 bool dbExistDirectory(const std::wstring& uri);
-
+// ========================================================================
 void dbStrLowerCase(std::string& txt, const std::locale& loc = std::locale());
 void dbStrUpperCase(std::string& txt, const std::locale& loc = std::locale());
-
+// ========================================================================
 void dbStrLowerCase(std::wstring& txt);
 void dbStrUpperCase(std::wstring& txt);
-
+// ========================================================================
 std::string dbStrReplace(const std::string& txt,
                          const std::string& from,
                          const std::string& to,
@@ -1488,16 +1492,17 @@ std::wstring dbStrReplace(const std::wstring& txt,
                           const std::wstring& from,
                           const std::wstring& to,
                           size_t* nReplacements = nullptr );
-
+// ========================================================================
 bool dbStrBeginsWith( const std::string& txt, const std::string& query );
 bool dbStrBeginsWith( const std::wstring& txt, const std::wstring& query );
 bool dbStrBeginsWith( const std::string& txt, char c );
 bool dbStrBeginsWith( const std::wstring& txt, wchar_t c );
+// ========================================================================
 bool dbStrEndsWith( const std::string& txt, const std::string& query );
 bool dbStrEndsWith( const std::wstring& txt, const std::wstring& query );
 bool dbStrEndsWith( const std::string& txt, char c );
 bool dbStrEndsWith( const std::wstring& txt, wchar_t c );
-
+// ========================================================================
 typedef std::string DE_StringA;
 typedef std::vector< DE_StringA > DE_StringsA;
 typedef std::wstring DE_StringW;
@@ -1513,16 +1518,22 @@ DE_StringsA
 dbLoadTextLn(const std::wstring& uri);
 
 void dbRemoveFile( const std::string& uri );
+// ========================================================================
 int64_t dbFileSize( const std::string & uri );
 int64_t dbFileSize( const std::wstring & uri );
+// ========================================================================
 std::string dbFileName( const std::string& uri, const std::string& relativeToPath = "" );
 std::wstring dbFileName( const std::wstring& uri, const std::wstring& relativeToPath = L"" );
+// ========================================================================
 std::string dbFileBase( const std::string& uri );
 std::wstring dbFileBase( const std::wstring& uri );
+// ========================================================================
 std::string dbFileSuffix( const std::string& uri );
 std::wstring dbFileSuffix( const std::wstring& uri );
+// ========================================================================
 std::string dbFileDir( const std::string& uri );
 std::wstring dbFileDir( const std::wstring& uri );
+// ========================================================================
 std::string dbParentDir( const std::string& uri );
 std::wstring dbParentDir( const std::wstring& uri );
 

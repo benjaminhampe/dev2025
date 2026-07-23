@@ -12,3 +12,5 @@ add_subdirectory(de-lunasvg-3.5.0) # needs plutovg
 
 add_subdirectory(de-picojson-1.3.0)
 add_subdirectory(de-earcut-3.2.3) # needs picojson
+
+add_subdirectory(de-signalsmith) # My new timestretch?!

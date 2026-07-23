@@ -15,6 +15,9 @@ struct MidiTools
     static bool
     isBlackPianoKey( int semi );
 
+    static void
+    decompose(int midiNote, int & octave, int & semitone);
+
     //
     // VLQ - Variable-Length Quantity
     //

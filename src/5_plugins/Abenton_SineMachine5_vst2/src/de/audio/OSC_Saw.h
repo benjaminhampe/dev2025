@@ -9,16 +9,13 @@ struct OSC_Saw
     float m_freq = 220.0f;
     int m_sampleRate = 44100;
     float m_sampleRateInv = 1.0f / 44100.0f;
-    float m_volume = 100;
     int m_framePos = 0;
-    // bool m_bBypassed = false;
 
     void noteOn(float freq, int sampleRate, int volume = 100)
     {
         m_freq = freq;
         m_sampleRate = sampleRate;
         m_sampleRateInv = 1.0f / float(m_sampleRate); // 2 is for saw wave period
-        m_volume = 0.0001f * float(volume*volume);
         m_framePos = 0; // reset();
     }
 
@@ -44,8 +41,7 @@ struct OSC_Saw
 
         // Convert to saw [-1, +1]
         //float sample = (2.0f * phase) - 1.0f;
-        float sample = sinf(float(2.0 * M_PI) * phase);
-        return sample * m_volume;
+        return sinf(de::TWO_PI * phase);
     }
 
     //   |  /|   | ma = m_amp / (pulseWidth * m_period)

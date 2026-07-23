@@ -25,6 +25,9 @@
 bool
 isMouseOver(const QPoint &pos, const QRect &r);
 
+bool
+isMouseOver(const int mx, const int my, const QRect &r);
+
 QString
 qstr(const QRect &r);
 

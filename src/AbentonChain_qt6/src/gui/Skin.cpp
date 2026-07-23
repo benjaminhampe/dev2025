@@ -4,20 +4,23 @@
 // Utils
 // ------------------------------------------------------------
 bool
-isMouseOver(const QPoint &pos, const QRect &r)
+isMouseOver(const int mx, const int my, const QRect &r)
 {
-    if ( r.width() < 1 || r.height() < 1)
-    {
-        return false;
-    }
-    const int m = pos.x();
-    const int n = pos.y();
     const int x1 = r.x();
     const int y1 = r.y();
     const int x2 = r.x() + r.width() - 1;
     const int y2 = r.y() + r.height() - 1;
-    return (m >= x1) && (m <= x2)
-           && (n >= y1) && (n <= y2);
+    return dbMouseOver(mx,my,x1,y1,x2,y2);
+}
+
+bool
+isMouseOver(const QPoint &pos, const QRect &r)
+{
+    const int x1 = r.x();
+    const int y1 = r.y();
+    const int x2 = r.x() + r.width() - 1;
+    const int y2 = r.y() + r.height() - 1;
+    return dbMouseOver(pos.x(),pos.y(),x1,y1,x2,y2);
 }
 
 QString

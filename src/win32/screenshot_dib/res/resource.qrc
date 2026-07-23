@@ -1,0 +1,6 @@
+<!DOCTYPE RCC><RCC version="1.0">
+<qresource>
+   <file alias="winico">./my.ico</file>
+   <file alias="my/icons/svg/ShowAll.svg">./my/icons/svg/ShowAll.svg</file>
+</qresource>
+</RCC>

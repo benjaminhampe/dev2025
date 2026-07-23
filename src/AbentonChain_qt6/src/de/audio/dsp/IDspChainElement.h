@@ -131,8 +131,11 @@ struct AutomationQueue
 
     AutomationCurve& get(ParamID paramId)
     {
-        auto it = std::find_if(curves.begin(),curves.end(),[&](const AutomationCurve& curve)
-            { return curve.paramId == paramId; });
+        auto it = std::find_if(curves.begin(),curves.end(),
+            [&](const AutomationCurve& curve)
+            {
+                return curve.paramId == paramId;
+            });
 
         if (it == curves.end())
         {

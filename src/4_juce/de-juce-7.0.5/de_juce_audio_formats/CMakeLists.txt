@@ -58,7 +58,7 @@ else()
       ${LIB_SOURCE_DIR}/format/juce_AudioFormatWriter.cpp
       ${LIB_SOURCE_DIR}/format/juce_AudioSubsectionReader.cpp
       ${LIB_SOURCE_DIR}/format/juce_BufferingAudioFormatReader.cpp
-      ${LIB_SOURCE_DIR}/sampler/juce_Sampler.cpp     
+      ${LIB_SOURCE_DIR}/sampler/juce_Sampler.cpp
    )
 
    if (BUILD_SHARED)
@@ -86,14 +86,14 @@ else()
 
    target_link_libraries(${LIB_NAME} PUBLIC de_juce_audio_basics)
    # target_link_libraries(${LIB_NAME} PUBLIC de_juce_audio_processors) # ARAAudioSource
-   
+
    target_link_libraries(${LIB_NAME} PRIVATE de_ogg)
    target_link_libraries(${LIB_NAME} PRIVATE de_flac)
    target_link_libraries(${LIB_NAME} PRIVATE de_opus)
    target_link_libraries(${LIB_NAME} PRIVATE de_theora)
    target_link_libraries(${LIB_NAME} PRIVATE de_vorbis)
    target_link_libraries(${LIB_NAME} PRIVATE de_sndfile)
-   target_link_libraries(${LIB_NAME} PRIVATE de_lame)
+   target_link_libraries(${LIB_NAME} PRIVATE de_lame_3100)
 
 endif()
 

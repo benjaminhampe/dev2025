@@ -1,0 +1,112 @@
+// wav_to_flac.cpp
+#include <sndfile.h>
+#include <vector>
+#include <cstdio>
+#include <cstdlib>
+
+static int codec_of(int format)
+{
+    return format & SF_FORMAT_SUBMASK;
+}
+
+int main(int argc, char** argv)
+{
+    if (argc != 3) {
+        std::fprintf(stderr, "Usage: %s in.wav out.flac\n", argv[0]);
+        return 1;
+    }
+
+    const char* in_path  = argv[1];
+    const char* out_path = argv[2];
+
+    // --- Open input WAV ---
+    SF_INFO in_info{};
+    SNDFILE* in = sf_open(in_path, SFM_READ, &in_info);
+    if (!in) {
+        std::fprintf(stderr, "sf_open(in) failed: %s\n", sf_strerror(nullptr));
+        return 1;
+    }
+
+    // --- Derive FLAC format preserving bit depth ---
+    SF_INFO out_info{};
+    out_info.samplerate = in_info.samplerate;
+    out_info.channels   = in_info.channels;
+
+    const int in_codec = codec_of(in_info.format);
+    switch (in_codec) {
+        case SF_FORMAT_PCM_16:
+            out_info.format = SF_FORMAT_FLAC | SF_FORMAT_PCM_16;
+            break;
+        case SF_FORMAT_PCM_24:
+            out_info.format = SF_FORMAT_FLAC | SF_FORMAT_PCM_24;
+            break;
+        case SF_FORMAT_PCM_32:
+            out_info.format = SF_FORMAT_FLAC | SF_FORMAT_PCM_32;
+            break;
+        case SF_FORMAT_FLOAT:
+        case SF_FORMAT_DOUBLE:
+            // Not "bit depth" in the integer sense; keep as float.
+            out_info.format = SF_FORMAT_FLAC | SF_FORMAT_FLOAT;
+            break;
+        default:
+            std::fprintf(stderr, "Unsupported input codec for exact FLAC export.\n");
+            sf_close(in);
+            return 1;
+    }
+
+    if (!sf_format_check(&out_info)) {
+        std::fprintf(stderr, "Output FLAC format not supported.\n");
+        sf_close(in);
+        return 1;
+    }
+
+    // --- Open output FLAC ---
+    SNDFILE* out = sf_open(out_path, SFM_WRITE, &out_info);
+    if (!out) {
+        std::fprintf(stderr, "sf_open(out) failed: %s\n", sf_strerror(nullptr));
+        sf_close(in);
+        return 1;
+    }
+
+    // --- Convert in chunks ---
+    const sf_count_t frames_per_block = 4096;
+    const int channels = in_info.channels;
+
+    if (in_codec == SF_FORMAT_PCM_16 ||
+        in_codec == SF_FORMAT_PCM_24 ||
+        in_codec == SF_FORMAT_PCM_32)
+    {
+        std::vector<int> buf(frames_per_block * channels);
+
+        while (true) {
+            sf_count_t read = sf_readf_int(in, buf.data(), frames_per_block);
+            if (read <= 0)
+                break;
+
+            sf_count_t written = sf_writef_int(out, buf.data(), read);
+            if (written != read) {
+                std::fprintf(stderr, "sf_writef_int failed.\n");
+                break;
+            }
+        }
+    }
+    else { // FLOAT / DOUBLE → FLAC FLOAT
+        std::vector<float> buf(frames_per_block * channels);
+
+        while (true) {
+            sf_count_t read = sf_readf_float(in, buf.data(), frames_per_block);
+            if (read <= 0)
+                break;
+
+            sf_count_t written = sf_writef_float(out, buf.data(), read);
+            if (written != read) {
+                std::fprintf(stderr, "sf_writef_float failed.\n");
+                break;
+            }
+        }
+    }
+
+    sf_close(out);
+    sf_close(in);
+    return 0;
+}

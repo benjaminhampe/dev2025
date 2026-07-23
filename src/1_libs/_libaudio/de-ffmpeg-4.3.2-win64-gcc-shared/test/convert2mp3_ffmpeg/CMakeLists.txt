@@ -33,6 +33,6 @@ else()
     target_link_libraries(${APP_NAME} PRIVATE DarkImage_2604)
     # target_link_libraries(${APP_NAME} PRIVATE DarkAudio)    # Logger
     target_link_libraries(${APP_NAME} PRIVATE de_ffmpeg)      # AudioDecoder + VideoDecoder
-    target_link_libraries(${APP_NAME} PRIVATE de_lame)        # AudioEncoder MP3
+    target_link_libraries(${APP_NAME} PRIVATE de_lame_3100)        # AudioEncoder MP3
 
 endif()

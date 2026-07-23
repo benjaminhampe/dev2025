@@ -1,15 +1,26 @@
 #pragma once
-#include <QWidget>
+// #include <QWidget>
 #include <QImage>
-#include <QTimer>
+// #include <QTimer>
 #include <QPainter>
-#include <QPaintEvent>
-#include <QResizeEvent>
-#include <QMouseEvent>
-#include <QKeyEvent>
+// #include <QPaintEvent>
+// #include <QResizeEvent>
+// #include <QMouseEvent>
+// #include <QKeyEvent>
 //#include <de_glm.hpp>
 #include <DarkImage.h>
 
+void
+drawText(
+    de::Font5x8 font,
+    QPainter & dc,
+    int x,
+    int y,
+    QString const & msg,
+    QColor const & color,
+    de::Align::EAlign align );
+
+#if 0
 // A glyph is a 5x8 pixel image with black and white ( bool )
 struct QFont5x8Matrix
 {
@@ -144,3 +155,5 @@ drawText5x8( QPainter & dc, int x, int y, QString msg,
 {
    QFont5x8().drawText( dc, x, y, msg, textColor, textAlign );
 }
+
+#endif

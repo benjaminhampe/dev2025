@@ -39,8 +39,73 @@ DSP_ADD(float* __restrict__ pOut, const float* __restrict__ pIn, size_t n)
     }
 }
 
+// c1 = +1
+// c3 = -1/6
+// c5 = +1/120
+// c7 = -1/5040
+// sin(x) ≈ c1*x + c3*x^3 + c5*x^5 + c7*x^7
+inline float de_sin_5f(float x)
+{
+    constexpr static float c1 = float(1.0);         // +1
+    constexpr static float c3 = float(1.0/6.0);     // -1
+    constexpr static float c5 = float(1.0/120.0);   // +1
+  //constexpr static float c7 = float(1.0/5040.0);  // -1
+    const float x2 = x * x;
+    const float x4 = x2 * x2;
+  //const float x6 = x4 * x2;
+    return x * (c1 - c3*x2 + c5*x4);
+}
 
+// c1 = +1
+// c3 = -1/6
+// c5 = +1/120
+// c7 = -1/5040
+// sin(x) ≈ c1*x + c3*x^3 + c5*x^5 + c7*x^7
+inline double de_sin_5d(double x)
+{
+    constexpr static double c1 = 1.0;         // +1
+    constexpr static double c3 = 1.0/6.0;     // -1
+    constexpr static double c5 = 1.0/120.0;   // +1
+  //constexpr static double c7 = 1.0/5040.0;  // -1
+    const double x2 = x * x;
+    const double x4 = x2 * x2;
+  //const double x6 = x4 * x2;
+    return x * (c1 - c3*x2 + c5*x4);
+}
 
+// c1 = +1
+// c3 = -1/6
+// c5 = +1/120
+// c7 = -1/5040
+// sin(x) ≈ c1*x + c3*x^3 + c5*x^5 + c7*x^7
+inline float de_sin_7f(float x)
+{
+    constexpr static float c1 = float(1.0);         // +1
+    constexpr static float c3 = float(1.0/6.0);     // -1
+    constexpr static float c5 = float(1.0/120.0);   // +1
+    constexpr static float c7 = float(1.0/5040.0);  // -1
+    const float x2 = x * x;
+    const float x4 = x2 * x2;
+    const float x6 = x4 * x2;
+    return x * (c1 - c3*x2 + c5*x4 - c7*x6);
+}
+
+// c1 = +1
+// c3 = -1/6
+// c5 = +1/120
+// c7 = -1/5040
+// sin(x) ≈ c1*x + c3*x^3 + c5*x^5 + c7*x^7
+inline double de_sin_7d(double x)
+{
+    constexpr static double c1 = 1.0;         // +1
+    constexpr static double c3 = 1.0/6.0;     // -1
+    constexpr static double c5 = 1.0/120.0;   // +1
+    constexpr static double c7 = 1.0/5040.0;  // -1
+    const double x2 = x * x;
+    const double x4 = x2 * x2;
+    const double x6 = x4 * x2;
+    return x * (c1 - c3*x2 + c5*x4 - c7*x6);
+}
 
 #if 0
 

@@ -20,6 +20,13 @@ public:
     bool isMouseOverBeatGrid() const;
     int getKeyIndexFromMousePos() const;
 
+    static bool inRange(const int a, const int min, const int max)
+    {
+        if (a < min) return false;
+        if (a > max) return false;
+        return true;
+    }
+
     // The selected note
     struct SelNote
     {
@@ -34,10 +41,19 @@ public:
     //   int ticks2pixel( int ticks ) const;
     //   float pixel2sec( float px ) const;
     //   float sec2pixel( float ss ) const;
+
     // uses m_nanosPerPixel
-    int64_t pixel2time( int64_t px ) const;
+    double pix2sec( double px ) const
+    {
+       return m_secondsPerPixel * (px - m_skin.keyW);
+    }
+
     // uses m_pixelPerNanos
-    int64_t time2pixel( int64_t timeInNanoSec ) const;
+    double sec2pix( double seconds ) const
+    {
+       return (seconds * m_pixelsPerSecond) + m_skin.keyW;
+    }
+
     //signals:
     //   void noteOn( int channel, int midiNote, int velocity );
     //   void noteOff( int channel, int midiNote );
@@ -53,8 +69,13 @@ public slots:
 //     void startPlayTimer();
 protected:
 //  void timerEvent( QTimerEvent* event ) override;
-    void paintEvent( QPaintEvent* event ) override;
     void resizeEvent( QResizeEvent* event ) override;
+    void paintEvent( QPaintEvent* event ) override;
+
+    void drawPianoBar(QPainter & dc, QRect pos);
+    void drawTimeline(QPainter & dc, QRect pos);
+    void drawNotes(QPainter & dc, QRect pos);
+
     void hideEvent( QHideEvent* event ) override;
     void showEvent( QShowEvent* event ) override;
     void keyPressEvent( QKeyEvent* event ) override;
@@ -63,110 +84,80 @@ protected:
     void mouseReleaseEvent( QMouseEvent* event ) override;
     void mouseMoveEvent( QMouseEvent* event ) override;
     void wheelEvent( QWheelEvent* event ) override;
-    protected:
+protected:
     int m_playTimerId;
     int m_drawTimerId;
+    de::session::Clip* m_clip;
 
-    QColor m_panelColor = QColor(128,128,128);
-    QColor m_editColorWhite = QColor(255,255,255);
-    QColor m_editColorBlack = QColor(0,0,0);
+struct MySkin
+{
+    QColor panelColor;
+    QColor pianobarColor;
+    QColor timelineColor;
+    QColor bodyColor;
+    QColor gridColorX;
+    QColor gridColorY;
+    QColor yWhite;
+    QColor yBlack;
 
-    float m_bpm;
-    bool m_isPlaying;
-    int64_t m_timeStart;
-    int64_t m_time;
-    int64_t m_loopTime;
-    int64_t m_loopTimeRange;
-    int64_t m_loopTimeStart;
-    int64_t m_loopTimeEnd;
-    double m_nanosecondsPerPixel;
-    double m_pixelsPerNanosecond;
+    // Font5x8 for drawing
+    de::Font5x8 fontKey;
 
     // uses
-    int m_topHeight; // offset from top until start of PianoBar (keys)
-    int m_keyStart;  // visible y-axis start
-    int m_keyCount;  // visible y-axis count
-    int m_keyWidth;
-    int m_keyHeight;
+    int zoom;
+    float zoomX;
+    float zoomY;
 
-    int m_beatStart;
-    int m_beatCount;
-    int m_beatIndex;  // play index in beats
+    int pianobarW;
+    int timelineH;
+    int keyW;
+    int keyH;
 
-    int m_midiTicksPerBeat;
-    //   float m_pixelPerSec;
-    //   float m_pixelPerBeat;
+    QRect r_corner;
+    QRect r_pianobar;
+    QRect r_timeline;
+    QRect r_body;
+};
+
+    MySkin m_skin;
+
+    // View axis X = Time
+    int m_scrollX;
+    //int64_t m_xEnd;
+    //int64_t m_xNow;
+
+    // View axis Y = MidiNote/Key
+    int m_scrollY;
+    //int64_t m_yEnd;
+    //int64_t m_yNow;  // mouse over
+
+    double m_secondsPerPixel;
+    double m_pixelsPerSecond;
+
+    bool m_isPlaying;
+    bool m_isBeatSync;
+    float m_bpm;
+    int m_ppq;
+
+    int64_t m_beatBeg;
+    int64_t m_beatEnd;
+    int64_t m_beatNow;  // play index in beats
+
+    int64_t m_loopNow;
+    int64_t m_loopCount;
+    int64_t m_loopTimeBeg;
+    int64_t m_loopTimeEnd;
 
     // MouseInput
-    int m_mouseX;
-    int m_mouseY;
-    int m_detectedKeyIndex; // vip
+    // bool m_isOverPianoBar;  // semi vip
+    // bool m_isOverBeatGrid;  // semi vip
+    int m_mx;
+    int m_my;
+    int m_detectedMidiNote; // vip
     SelNote m_hoveredNote;
     SelNote m_selectedNote;
-    bool m_isOverPianoBar;  // semi vip
-    bool m_isOverBeatGrid;  // semi vip
     int m_dragMode;   // 0 = none, 1 = drawing, 2 = stretch keyHeight
     int m_dragStartX;       // common pos used by all click events
     int m_dragStartY;       // common pos used by all click events
-
-    // Font5x8 for drawing
-    QFont5x8 m_font5x8;
-
-    // Where the sequencer sends notes to.
-    //std::array< de::audio::IDspChainElement*, 8 > m_synths;
-
-    // Array is build up from highest note to lowest, because we draw them that way.
-    de::session::Clip* m_clip;
-
-
-    // What the sequencer stores, draws and sends to synths.
-    struct Note
-    {
-    int64_t timeBeg = 0; // in nanoseconds
-    int64_t timeEnd = 0; // in nanoseconds
-    int velocity = 90;   // 0..127
-    uint32_t color = 0xFF0000FF;
-    };
-
-    // We store 128 keys ( all musical midi semitones )
-    // Each key[0] to key[127] can have arbitrary number of notes.
-    // Notes should be auto-sorted and removed to reduce overlaps.
-    struct Key
-    {
-    int channel = 0;
-    int midiNote = 0;
-
-    // drawing
-    int oktave = 0; // Precomputed for easier drawing.
-    int semi = 0;
-    float freq = 0.0f;
-    bool isBlack = false; // black or white key. Precomputed for easier drawing.
-    // uint32_t color = 0xFFFFFFFF;
-    std::vector< Note > m_notes;
-
-    void reset( int note )
-    {
-    midiNote = note;
-    oktave = midiNote / 12;
-    semi = midiNote - 12 * oktave;
-    isBlack = de::midi::MidiTools::isBlackPianoKey( semi );
-    freq = 440.0f * powf( 2.0f, (midiNote - 69.0f) * (1.0f/12.0f) );
-    }
-    };
-
-    //   float m_bpm;
-    //   int64_t m_beatBeg;
-    //   int64_t m_beatEnd;
-    //   int64_t m_timeBeg;
-    //   int64_t m_timeEnd;
-    bool m_isBeatSync;
-    int16_t m_loops;
-    //   int m_beatCount;
-
-    //   int m_midiTicksPerBeat; // per quarter note
-
-    // Array is build up from highest note to lowest, because we draw them that way.
-    std::array< Key, 128 > m_keys;
-
 
 };

@@ -46,6 +46,15 @@ bool MidiTools::isBlackPianoKey( int semi )
     return false; // white piano key
 }
 
+// static
+// =======================================================================
+void MidiTools::decompose(int midiNote, int & octave, int & semitone)
+// =======================================================================
+{
+    octave = midiNote / 12;
+    semitone = midiNote - 12 * octave;
+}
+
 //
 // VLQ - Variable-Length Quantity
 //

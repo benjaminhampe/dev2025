@@ -4,19 +4,6 @@
 namespace de {
 
 // ========================================================================
-inline bool isMouseOver( int mx, int my, int x1, int y1, int x2, int y2 )
-// ========================================================================
-{
-    if ( x1 > x2 ) std::swap( x1, x2 );
-    if ( y1 > y2 ) std::swap( y1, y2 );
-    if ( mx < x1 ) return false;
-    if ( my < y1 ) return false;
-    if ( mx > x2 ) return false;
-    if ( my > y2 ) return false;
-    return true;
-}
-
-// ========================================================================
 enum class EventType
 // ========================================================================
 {

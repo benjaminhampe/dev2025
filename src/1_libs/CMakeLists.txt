@@ -1,3 +1,4 @@
+add_subdirectory(DarkAsyncSpawn)
 add_subdirectory(_libcommon)
 add_subdirectory(_libarchive)
 add_subdirectory(_libimage)
@@ -19,6 +20,7 @@ add_subdirectory(_libxtra)
 add_subdirectory(DarkImage-26.04)   # Abenton Live64 Instrument
 add_subdirectory(DarkGPU-26.04)     # Abenton Live64 Instrument
 add_subdirectory(DarkMP4)           # Abenton Live64 Instrument -> import YouTube AAC audio from MP4 files
+add_subdirectory(DarkSound)
 
 add_subdirectory(file2bin)
 

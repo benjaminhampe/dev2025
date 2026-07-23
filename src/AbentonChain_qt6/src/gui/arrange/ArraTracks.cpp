@@ -150,16 +150,24 @@ void ArraTracks::drawTrack(QPainter & dc,
     float zoom_y = 1.0f;
 
     dc.setPen(Qt::NoPen);
-    for (int i = 0; i < clip->m_notes.size(); ++i)
+
+    for (int midiNote = clip->m_noteRange.m_min;
+             midiNote <= clip->m_noteRange.m_max;
+             ++midiNote)
     {
-        const auto & note = clip->m_notes[i];
-        int x1 = r_track.x() + std::lroundf(zoom_x * note.ppqNoteOn);
-        int y1 = r_track.y() + r_track.height() - note.midiNote;
-        int x2 = r_track.x() + std::lroundf(zoom_x * note.ppqNoteOff);
-        int y2 = y1 - 1;
-        const QColor color = toQColor(note.color);
-        dc.setBrush(QBrush(color));
-        dc.drawRect(x1,y1,x2-x1,y2-y1);
+        const auto & notes = clip->m_notes.at(midiNote);
+        const int y1 = r_track.y() + r_track.height() - midiNote;
+        const int y2 = y1 - 1;
+
+        for (int i = 0; i < notes.size(); ++i)
+        {
+            const auto & note = notes[i];
+            int x1 = r_track.x() + std::lroundf(zoom_x * note.ppqNoteOn);
+            int x2 = r_track.x() + std::lroundf(zoom_x * note.ppqNoteOff);
+            const QColor color = toQColor(note.color);
+            dc.setBrush(QBrush(color));
+            dc.drawRect(x1,y1,x2-x1,y2-y1);
+        }
     }
 }
 
