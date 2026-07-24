@@ -2058,10 +2058,11 @@ FileSystem::loadBin( const std::string& uri, std::vector<uint8_t>& blob )
 bool
 FileSystem::existFile( const std::string& uri )
 {
-   if ( uri.empty() ) { return false; }
-   fs::file_status s = fs::status( uri );
-   bool ok = fs::exists( s ) && fs::is_regular_file( s );
-   return ok;
+    if ( uri.empty() ) { return false; }
+    fs::path p = fs::u8path(uri);
+    fs::file_status s = fs::status(p);
+    bool ok = fs::exists( s ) && fs::is_regular_file( s );
+    return ok;
 }
 
 bool

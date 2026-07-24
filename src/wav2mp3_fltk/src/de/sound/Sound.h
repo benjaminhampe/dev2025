@@ -14,71 +14,58 @@ public:
         ST_Unknown = 0, ST_S8, ST_S16, ST_S24, ST_S32, ST_F32, ST_F64
     };
 
-    uint64_t m_frameCount = 0;
-    uint32_t m_sampleRate = 0;
-    uint16_t m_sampleType = 0;
-    uint16_t m_channelCount = 0;
-    double m_duration = 0; // In seconds
-
-    TAlignedVector<float> m_samples; // Interleaved
-
+    int64_t m_frames = 0;
+    int32_t m_sampleRate = 0;
+    int16_t m_sampleType = 0;
+    int16_t m_channels = 0;
+    TAlignedVector<uint8_t> m_samples; // Interleaved
     std::string m_uri;
 
-    double duration() const
-    {
-        if (m_sampleRate < 1)
-        {
-            return 0.0;
-        }
+    bool empty() const;
 
-        return double(m_frameCount) / double(m_sampleRate);
-    }
+    double duration() const; // In [s] seconds.
 
-    std::string str() const
-    {
-        std::ostringstream o; o <<
-        dbStrSeconds(duration()) << ", "
-        << m_channelCount << "x "
-        << m_sampleRate << "Hz, "
-        //"dur(" << dbStrSeconds(durationInSec()) << ")"
-        //"ch(" << channelCount << "), "
-        //"sr(" << sampleRate << "Hz), "
-        "fc(" << m_frameCount << "), "
-        "st(" << getString((eSampleType)m_sampleType) << "), "
-        ;
-        return o.str();
-    }
+    int getBytesPerSample() const;
 
-    static std::string getString(eSampleType sampleType)
-    {
-        switch (sampleType)
-        {
-            case ST_S8: return "ST_S8";
-            case ST_S16: return "ST_S16";
-            case ST_S24: return "ST_S24";
-            case ST_S32: return "ST_S32";
-            case ST_F32: return "ST_F32";
-            case ST_F64: return "ST_F64";
-            default: return "ST_Unknown";
-        }
-    }
+    std::string str(bool bWithUri = false) const;
+
+    static std::string getSampleTypeStr(int sampleType);
+
+    int64_t read_frames_f32(float* __restrict__ dst, int64_t frameCount, int64_t frameIndex) const;
+
+    bool validate() const;
 
 public:
 /*
-    float maximum() const
-    {
-        float maxv = 0.0f;
-
-        auto p = reinterpret_cast<const float*>(samples.data());
-
-        for (size_t i = 0; i < frame_count * channels; ++i)
-        {
-            float s = *p++;
-            maxv = std::max(maxv, fabs(s));
-        }
-        return maxv;
-    }
+    float maximum() const;
 */
+
+};
+
+
+struct SoundSaveOptions
+{
+    int bitrate = 128; // in kB/s, mp3 needs more then opus
+    int quality = 0; // 0 = highest, 9 = lowest
+
+    bool bDebug = false;
+    bool bThrowOnFail = false;
+
+    std::atomic<bool>* bCancelFlag = nullptr;
+
+    std::function<void (int)>
+        onProgress = [](int percent){};
+
+    enum eLogLevel
+    {
+        Debug = 0,
+        Ok,
+        Warn,
+        Error
+    };
+
+    std::function<void (int,std::string)>
+        onLogger = [](int level, std::string msg){};
 
 };
 

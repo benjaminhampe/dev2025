@@ -16,16 +16,16 @@ bool load_sound_mp3_f32(Sound & sound, const std::string & uri )
 
     const uint64_t nFrames = drmp3_get_pcm_frame_count(&mp3);
     const uint32_t nChannels = mp3.channels;
-    const uint64_t nSamples = nFrames * nChannels;
     sound.m_uri = de::FileSystem::makeAbsolute(uri);
-    sound.m_frameCount = nFrames;
-    sound.m_channelCount = nChannels;
+    sound.m_frames = nFrames;
+    sound.m_channels = nChannels;
     sound.m_sampleRate = mp3.sampleRate;
     sound.m_sampleType = Sound::ST_F32;
-    sound.m_samples.resize( nSamples );
+    sound.m_samples.resize( nFrames * nChannels * sizeof(float) );
 
     float* __restrict__ dst = reinterpret_cast<float*>(sound.m_samples.data());
     drmp3_read_pcm_frames_f32(&mp3, nFrames, dst);
+
     drmp3_uninit(&mp3);
 
     if (nFrames == 0)

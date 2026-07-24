@@ -14,8 +14,6 @@ add_subdirectory(de-asiosdk-2.3)        # Steinberg ASIO driver, for RtAudio.
 add_subdirectory(de-rtaudio-5.1.0)      # AudioHardwareBackend
 add_subdirectory(de-rtaudio-6.0.1)      # AudioHardwareBackend
 add_subdirectory(de-rtmidi-2.1.1)       # MIDI messages
-add_subdirectory(de-soundtouch-1.9.2)   # Resampler + Pitch/Tempo change.
-add_subdirectory(de-soundtouch-2.4.1)
 
 add_subdirectory(de-dr_wav-0.14.1)
 add_subdirectory(de-dr_flac-0.13.2)
@@ -45,10 +43,15 @@ add_subdirectory(de-ffmpeg-4.3.2-win64-gcc-shared) # Import/Export MP4, AVI, MKV
 
 add_subdirectory(de-taglib-1.11.1)  # MP3 id3 metadata, extract CoverArt.
 
-add_subdirectory(de-resample)
-add_subdirectory(de-samplerate-0.2.2)
-add_subdirectory(de-speexdsp)
-add_subdirectory(de-rubberband-4.0.0)
+add_subdirectory(de-soxr-0.1.3)         # Resampler + also replaces lib-samplerate
+add_subdirectory(de-resample)           # Resampler
+add_subdirectory(de-samplerate-0.2.2)   # Resampler
+add_subdirectory(de-speexdsp)           # Resampler
+
+add_subdirectory(de-soundtouch-1.9.2)   # TimeStretch.
+add_subdirectory(de-soundtouch-2.4.1)   # TimeStretch.
+add_subdirectory(de-signalsmith)        # TimeStretch. New and best?! But complicated.
+add_subdirectory(de-rubberband-4.0.0)   # TimeStretch. Shitty license
 
 add_subdirectory(de-vst2sdk)            # Steinberg VSTi plugin importer.
 # add_subdirectory(de-vst3sdk-3.7.13)   # Steinberg VSTi plugin importer.
@@ -56,3 +59,5 @@ add_subdirectory(de-vst3sdk-3.8.0)      # Steinberg VSTi3 plugin importer.
 add_subdirectory(de-clap-1.2.7)			# CLAP audio plugin sdk
 add_subdirectory(de-clap-helpers)    	# CLAP audio plugin sdk
 add_subdirectory(de-lilv-v0.26.4)       # LV plugin sdk
+
+add_subdirectory(de-opusfile-0.12)

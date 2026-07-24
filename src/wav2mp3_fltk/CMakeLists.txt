@@ -42,16 +42,24 @@ else()
         # endif()
     endif()
 
+    target_link_libraries(${APP_NAME} PRIVATE DarkImage_2604)
     target_link_libraries(${APP_NAME} PRIVATE de_fltk_145)
     target_link_libraries(${APP_NAME} PRIVATE de_lame_3100)
     target_link_libraries(${APP_NAME} PRIVATE de_dr_wav)
+    target_link_libraries(${APP_NAME} PRIVATE de_sndfile)
+    target_link_libraries(${APP_NAME} PRIVATE de_opusfile)
+
+    target_link_libraries(${APP_NAME} PRIVATE de_soxr)
+    target_link_libraries(${APP_NAME} PRIVATE de_speexdsp)
+    target_link_libraries(${APP_NAME} PRIVATE de_resample)
+    target_link_libraries(${APP_NAME} PRIVATE de_signalsmith)
 
     # target_link_libraries(${APP_NAME} PRIVATE DarkSound)
     # target_link_libraries(${APP_NAME} PRIVATE DarkMP4)
     target_link_libraries(${APP_NAME} PRIVATE de_alac)      # MP4 ALAC
     target_link_libraries(${APP_NAME} PRIVATE de_faad2)     # MP4 AAC
     target_link_libraries(${APP_NAME} PRIVATE de_opus)      # MP4 opus
-    
+
     include(${CMAKE_SOURCE_DIR}/src/embed_static_runtime.cmake)
     # if (CMAKE_BUILD_TYPE STREQUAL "Release")
         # message(STATUS "Building in Release mode, strip symbols")

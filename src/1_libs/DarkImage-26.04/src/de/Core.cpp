@@ -2059,7 +2059,8 @@ bool
 FileSystem::existFile( const std::string& uri )
 {
    if ( uri.empty() ) { return false; }
-   fs::file_status s = fs::status( uri );
+   fs::path p = fs::u8path(uri);
+   fs::file_status s = fs::status(p);
    bool ok = fs::exists( s ) && fs::is_regular_file( s );
    return ok;
 }

@@ -205,9 +205,11 @@ bool load_sound_mp4_f32(Sound& sound, const std::string& uri)
 
     u32 callbacks = 0;
     aacDecoder.decodeAAC(file,asc,table,
-        [&](const float* pcm, size_t samples, uint32_t channels)
+        [&](const float* pcm, size_t samples)
         {
-            sound.m_samples.insert(sound.m_samples.end(), pcm, pcm + samples);
+            sound.m_samples.insert(
+                sound.m_samples.end(), pcm, pcm + samples
+                );
         }
 
         // [&](const std::vector<float>& pcm)
@@ -217,7 +219,6 @@ bool load_sound_mp4_f32(Sound& sound, const std::string& uri)
         //     callbacks++;
         // }
     );
-
 
     DE_BENNI("Got ", callbacks, " pcm callbacks with ", sound.m_samples.size(), " samples")
 

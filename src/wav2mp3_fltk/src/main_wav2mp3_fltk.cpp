@@ -18,10 +18,9 @@
 #include <chrono>
 #include <filesystem>
 
-#include <lame/lame.h>
 
-#define DR_WAV_IMPLEMENTATION
-#include "dr_wav.h"
+// #define DR_WAV_IMPLEMENTATION
+// #include "dr_wav.h"
 
 #ifdef _WIN32 // only for Window ICOn
     #ifndef WIN32_LEAN_AND_MEAN
@@ -100,7 +99,7 @@ struct UI {
     Fl_Input* outFile;
     Fl_Button* btnIn;
     Fl_Button* btnOut;
-    Fl_Choice* bitrate;
+    Fl_Choice* cbxBitrate;
     Fl_Choice* quality;
     Fl_Button* convert;
     Fl_Button* cancel;
@@ -119,7 +118,7 @@ struct UI {
 
     std::string in;
     std::string out;
-    int br; // bitrate
+    int bitrate; // bitrate
     int q;  // quality
 };
 
@@ -208,9 +207,9 @@ void darkmode_cb(Fl_Widget*, void*)
 // ---------------- helpers ----------------
 std::string make_mp3_name(const std::string& wav)
 {
-    std::filesystem::path p(wav);
+    std::filesystem::path p = std::filesystem::u8path(wav);
     p.replace_extension(".mp3");
-    return p.string();
+    return p.u8string();
 }
 
 void trim(std::string& s)
@@ -219,192 +218,107 @@ void trim(std::string& s)
         s.pop_back();
 }
 
+
 // ---------------- Fl::awake ----------------
 void convert_start_awake(void* data)
 {
-    log_success("Start conversion...");
+    log_success("Start conversion:");
 
-    auto s = dbStr("bitrate = ",ui.br, ", lameQualityPreset = ", ui.q);
+    auto s = dbStr("bitrate = ",ui.bitrate, ", lameQualityPreset = ", ui.q);
 
     log_debug(s.c_str());
 
-    ui.progress->value(0.0f);
-}
+    log_debug("Import inputFile...");
 
+    ui.progress->value(0);
+}
+// ---------------- Fl::awake ----------------
+void convert_resample_awake(void* data)
+{
+    log_debug("Resample inputFile...");
+}
+// ---------------- Fl::awake ----------------
+void convert_save_awake(void* data)
+{
+    log_debug("Export outputFile...");
+}
+// ---------------- Fl::awake ----------------
 void convert_progress_awake(void* data)
 {
-    float percent = *static_cast<float*>(data);
-    ui.progress->value(percent);
-    delete static_cast<float*>(data);
-
-    //auto s = dbStr("Conversion progess: ",percent * 100.0f);
-    //log_success(s.c_str());
+    int percent = *static_cast<int*>(data);
+    ui.progress->value(0.01f * percent);
+    delete static_cast<int*>(data);
 }
-
+// ---------------- Fl::awake ----------------
 void convert_finished_awake(void*)
 {
-    //fl_message("Fertig!");
     log_success("Finished conversion.");
-
-    // ui.progress->value(0.0f);
 }
 
 void convert_async()
 {
     Fl::awake(convert_start_awake, nullptr);
 
+    ui.cancelFlag = false;
+
     // New Async
     std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
-    const char* inWav = ui.in.c_str();
-    const char* outMp3 = ui.out.c_str();
-    const int bitrate = ui.br;
-    const int lameQuality = ui.q;
-
-    ui.cancelFlag = false;
-
-    drwav wav;
-    if (!drwav_init_file(&wav, inWav, nullptr))
+    de::Sound sound;
+    if (!dbLoadSound(sound,ui.in))
     {
-        log_error("Cannot read WAV input-input");
+        auto s = dbStr("Cannot read inputFile");
+        log_error(s.c_str());
         return;
     }
 
-    lame_t lame = lame_init();
-    lame_set_in_samplerate(lame, wav.sampleRate);
-    lame_set_num_channels(lame, wav.channels);
-    lame_set_brate(lame, bitrate);
-    lame_set_quality(lame, lameQuality);
-    lame_init_params(lame);
+    Fl::awake(convert_start_awake, nullptr);
 
-    FILE* out = fopen(outMp3, "wb");
-    if (!out)
+    de::SoundSaveOptions optSave;
+    optSave.bCancelFlag = &ui.cancelFlag;
+    optSave.bitrate = ui.bitrate;
+    optSave.quality = ui.q;
+    optSave.onProgress = [](int percent)
+            {
+                auto progress = new int;
+                *progress = percent;
+                Fl::awake(convert_progress_awake, progress);
+            };
+
+    if (!dbSaveSound(sound, ui.out, optSave))
     {
-        log_error("Cannot write MP3 output-file");
-        drwav_uninit(&wav);
-        lame_close(lame);
+        auto s = dbStr("Cannot save outputFile");
+        log_error(s.c_str());
         return;
     }
-
-    const size_t FRAMES = 1152 * 16;
-    const size_t SAMPLES = FRAMES * wav.channels;
-
-    // Single raw byte buffer
-    std::vector<uint8_t> raw(SAMPLES * wav.bitsPerSample / 8);
-
-    // MP3 output buffer
-    std::vector<unsigned char> mp3Buf(1.25 * SAMPLES + 7200);
-
-    bool isFloat = (wav.translatedFormatTag == DR_WAVE_FORMAT_IEEE_FLOAT);
-    bool isPCM16 = (wav.bitsPerSample == 16 && wav.translatedFormatTag == DR_WAVE_FORMAT_PCM);
-
-    std::size_t total = wav.totalPCMFrameCount;
-    std::size_t processed = 0;
-    //std::size_t CHUNK = 1152 * 16;
-
-    while (!ui.cancelFlag) {
-
-        // if (processed >= total)
-        //     break;
-
-        // old
-        size_t framesRead = drwav_read_pcm_frames(&wav, FRAMES, raw.data());
-        if (framesRead == 0)
-            break;
-
-        // new
-        processed += framesRead;
-        if (processed > total)
-            processed = total;
-
-        float percent = static_cast<float>(processed) / static_cast<float>(total);
-        Fl::awake(convert_progress_awake, new float(percent));
-
-        int bytes = 0;
-
-        if (isFloat) {
-            // Interpret raw bytes as float32
-            float* f = reinterpret_cast<float*>(raw.data());
-            bytes = lame_encode_buffer_interleaved_ieee_float(
-                lame,
-                f,
-                (int)framesRead,
-                mp3Buf.data(),
-                (int)mp3Buf.size()
-            );
-        }
-        else if (isPCM16) {
-            // Interpret raw bytes as int16_t
-            int16_t* s = reinterpret_cast<int16_t*>(raw.data());
-            bytes = lame_encode_buffer_interleaved(
-                lame,
-                s,
-                (int)framesRead,
-                mp3Buf.data(),
-                (int)mp3Buf.size()
-            );
-        }
-        else {
-            // Other formats: convert in-place into float32
-            float* f = reinterpret_cast<float*>(raw.data());
-            size_t samples = framesRead * wav.channels;
-
-            if (wav.bitsPerSample == 24)
-            {
-                // 24-bit → float
-                for (size_t i = 0; i < samples; i++)
-                {
-                    uint8_t* p = raw.data() + i * 3;
-                    int32_t v = (p[0] | (p[1] << 8) | (p[2] << 16));
-                    if (v & 0x800000) v |= ~0xFFFFFF;
-                    f[i] = (float)v / 8388607.0f;
-                }
-            }
-            else if (wav.bitsPerSample == 32 && wav.translatedFormatTag == DR_WAVE_FORMAT_PCM)
-            {
-                int32_t* p = reinterpret_cast<int32_t*>(raw.data());
-                for (size_t i = 0; i < samples; i++)
-                    f[i] = (float)p[i] / 2147483647.0f;
-            }
-            else
-            {
-                log_error("Unsupported WAV format");
-                fclose(out);
-                drwav_uninit(&wav);
-                lame_close(lame);
-                return;
-            }
-
-            bytes = lame_encode_buffer_interleaved_ieee_float(
-                lame,
-                f,
-                (int)framesRead,
-                mp3Buf.data(),
-                (int)mp3Buf.size()
-            );
-        }
-
-        if (bytes > 0)
-            fwrite(mp3Buf.data(), 1, bytes, out);
-
-        // New Async
-        std::this_thread::sleep_for(std::chrono::milliseconds(10));
-    }
-
-    Fl::awake(convert_progress_awake, new float(1.0f));
-
-    int flushBytes = lame_encode_flush(lame, mp3Buf.data(), (int)mp3Buf.size());
-    if (flushBytes > 0)
-        fwrite(mp3Buf.data(), 1, flushBytes, out);
-
-    fclose(out);
-    drwav_uninit(&wav);
-    lame_close(lame);
 
     // New Async
     Fl::awake(convert_finished_awake, nullptr);
 
     return;
+}
+
+
+// ---------------- callbacks ----------------
+void cancel_cb(Fl_Widget*, void*)
+{
+    ui.cancelFlag = true;
+}
+
+// ---------------- callbacks ----------------
+void convert_cb(Fl_Widget*, void*)
+{
+    ui.in = ui.inFile->value();
+    ui.out = ui.outFile->value();
+
+    int bitrate_map[] = {96,128,160,192,224,256,320};
+    int quality_map[] = {0,1,5,7,9};
+
+    ui.bitrate = bitrate_map[ui.cbxBitrate->value()];
+    ui.q  = quality_map[ui.quality->value()];
+
+    ui.worker = std::thread(convert_async);
+    ui.worker.detach();
 }
 
 // ---------------- Input field mit DnD ----------------
@@ -428,7 +342,7 @@ public:
 
             //
             std::string path = value();
-            trim(path);
+            //trim(path);
 
             ui.in = path;
 
@@ -489,33 +403,6 @@ void pick_output_cb(Fl_Widget*, void*)
     }
 }
 
-
-// ---------------- read values ----------------
-void read_values()
-{
-    ui.in = ui.inFile->value();
-    ui.out = ui.outFile->value();
-
-    int bitrate_map[] = {96,128,160,192,224,256,320};
-    int quality_map[] = {0,1,5,7,9};
-
-    ui.br = bitrate_map[ui.bitrate->value()];
-    ui.q  = quality_map[ui.quality->value()];
-}
-
-// ---------------- callbacks ----------------
-void convert_cb(Fl_Widget*, void*)
-{
-    read_values();
-    ui.worker = std::thread(convert_async);
-    ui.worker.detach();
-}
-
-void cancel_cb(Fl_Widget*, void*)
-{
-    ui.cancelFlag = true;
-}
-
 // ---------------- callbacks ----------------
 void compare_cb(Fl_Widget*, void*)
 {
@@ -539,28 +426,28 @@ void compare_cb(Fl_Widget*, void*)
 
     log_info("Files loaded.");
 
-    if (src.m_frameCount != dst.m_frameCount)
+    if (src.m_frames != dst.m_frames)
     {
-        auto a = src.m_frameCount;
-        auto b = dst.m_frameCount;
-        // auto s = dbStr("Diff found: src.m_frameCount(",a,") != dst.m_frameCount(",b,")");
+        auto a = src.m_frames;
+        auto b = dst.m_frames;
+        // auto s = dbStr("Diff found: src.m_frames(",a,") != dst.m_frames(",b,")");
         // log_error(s.c_str());
 
         if (a > b)
         {
-            auto s = dbStr("Diff src > dst frameCount(",a-b,")");
+            auto s = dbStr("Diff src > dst frames(",a-b,")");
             log_error(s.c_str());
         }
         else
         {
-            auto s = dbStr("Diff dst > src frameCount(",b-a,")");
+            auto s = dbStr("Diff dst > src frames(",b-a,")");
             log_error(s.c_str());
         }
     }
 
-    if (src.m_channelCount != dst.m_channelCount)
+    if (src.m_channels != dst.m_channels)
     {
-        auto s = dbStr("Diff found: src.m_channelCount(",src.m_channelCount,") != dst.m_channelCount(",dst.m_channelCount,")");
+        auto s = dbStr("Diff found: src.m_channels(",src.m_channels,") != dst.m_channels(",dst.m_channels,")");
         log_error(s.c_str());
     }
 
@@ -570,8 +457,8 @@ void compare_cb(Fl_Widget*, void*)
         log_error(s.c_str());
     }
 
-    uint64_t minFrames = std::min(src.m_frameCount,dst.m_frameCount);
-    uint32_t minChannels = std::min(src.m_channelCount,dst.m_channelCount);
+    uint64_t minFrames = std::min(src.m_frames,dst.m_frames);
+    uint32_t minChannels = std::min(src.m_channels,dst.m_channels);
     for (uint32_t c = 0; c < minChannels; ++c)
     {
         // src
@@ -580,13 +467,13 @@ void compare_cb(Fl_Widget*, void*)
         double src_e = 0.0; // Energy per sample
         for (uint64_t i = 0; i < minFrames; ++i)
         {
-            float sample = src.m_samples[i * src.m_channelCount + c];
+            float sample = src.m_samples[i * src.m_channels + c];
             src_s += sample;
             src_a += std::fabsf(sample);
             src_e += sample * sample;
         }
-        src_a /= double(src.m_frameCount);
-        src_e /= double(src.m_frameCount);
+        src_a /= double(src.m_frames);
+        src_e /= double(src.m_frames);
 
         // dst
         double dst_s = 0.0; // Vorzeichenbehaftete Summe
@@ -594,13 +481,13 @@ void compare_cb(Fl_Widget*, void*)
         double dst_e = 0.0; // Energy
         for (uint64_t i = 0; i < minFrames; ++i)
         {
-            float sample = dst.m_samples[i * dst.m_channelCount + c];
+            float sample = dst.m_samples[i * dst.m_channels + c];
             dst_s += sample;
             dst_a += std::fabsf(sample);
             dst_e += sample * sample;
         }
-        dst_a /= double(dst.m_frameCount);
-        dst_e /= double(dst.m_frameCount);
+        dst_a /= double(dst.m_frames);
+        dst_e /= double(dst.m_frames);
 
         double ds = 100.0 * dst_s / src_s;
         double da = 100.0 * dst_a / src_a;
@@ -619,8 +506,8 @@ void compare_cb(Fl_Widget*, void*)
         double delta_sum = 0.0; // Energy per sample
         for (uint64_t i = 0; i < minFrames; ++i)
         {
-            double a = src.m_samples[i * src.m_channelCount + c];
-            double b = dst.m_samples[i * src.m_channelCount + c];
+            double a = src.m_samples[i * src.m_channels + c];
+            double b = dst.m_samples[i * src.m_channels + c];
             double delta = std::fabs(b - a);
             delta_max = std::fmax(delta,delta_max);
             delta_sum += delta;
@@ -922,15 +809,15 @@ int main(int argc, char** argv)
     ui.btnOut  = new Fl_Button(520, 50, 60, 30, "...");
     ui.btnOut->callback(pick_output_cb);
 
-    ui.bitrate = new Fl_Choice(110, 90, 150, 30, "Bitrate:");
-    ui.bitrate->add("96 - Low");
-    ui.bitrate->add("128 - OK");
-    ui.bitrate->add("160 - Medium");
-    ui.bitrate->add("192 - Better");
-    ui.bitrate->add("224 - Good");
-    ui.bitrate->add("256 - Very Good");
-    ui.bitrate->add("320 - Highest");
-    ui.bitrate->value(1);
+    ui.cbxBitrate = new Fl_Choice(110, 90, 150, 30, "Bitrate:");
+    ui.cbxBitrate->add("96 - Low");
+    ui.cbxBitrate->add("128 - OK");
+    ui.cbxBitrate->add("160 - Medium");
+    ui.cbxBitrate->add("192 - Better");
+    ui.cbxBitrate->add("224 - Good");
+    ui.cbxBitrate->add("256 - Very Good");
+    ui.cbxBitrate->add("320 - Highest");
+    ui.cbxBitrate->value(1);
 
     ui.quality = new Fl_Choice(110, 130, 150, 30, "Quality:");
     ui.quality->add("0 - Best");
@@ -1004,6 +891,263 @@ int main(int argc, char** argv)
 
 
 /*
+
+void convert_async()
+{
+    Fl::awake(convert_start_awake, nullptr);
+
+    // New Async
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+
+    const char* inWav = ui.in.c_str();
+    const char* outMp3 = ui.out.c_str();
+    const int bitrate = ui.br;
+    const int lameQuality = ui.q;
+
+    ui.cancelFlag = false;
+
+    de::Sound sound;
+    if (!dbLoadSound(sound,ui.in))
+    {
+        auto s = dbStr("Cannot read inputFile");
+        log_error(s.c_str());
+        return;
+    }
+
+    lame_t lame = lame_init();
+    lame_set_in_samplerate(lame, sound.m_sampleRate);
+    lame_set_num_channels(lame, sound.m_channels);
+    lame_set_brate(lame, bitrate);
+    lame_set_quality(lame, lameQuality);
+    lame_init_params(lame);
+
+    FILE* out = fopen(outMp3, "wb");
+    if (!out)
+    {
+        log_error("Cannot write MP3 output-file");
+        lame_close(lame);
+        return;
+    }
+
+    const int64_t FRAMES = 1152 * 16;
+    const int64_t SAMPLES = FRAMES * sound.m_channels;
+
+    // Single raw byte buffer
+    de::TAlignedVector<uint8_t> chunk(SAMPLES * sound.getBytesPerSample());
+
+    // MP3 output buffer
+    de::TAlignedVector<uint8_t> mp3Buf(1.25 * SAMPLES + 7200);
+
+    std::size_t frameCount = sound.m_frames;
+    std::size_t frameIndex = 0;
+
+    while (!ui.cancelFlag)
+    {
+        float* __restrict__ chunkPtr = reinterpret_cast<float*>(chunk.data());
+        int64_t framesRead = sound.read_frames_f32(chunkPtr, FRAMES, frameIndex);
+        if (framesRead < 1)
+            break;
+
+        // new
+        frameIndex += framesRead;
+        if (frameIndex > frameCount)
+            frameIndex = frameCount;
+
+        float percent = static_cast<float>(frameIndex) / static_cast<float>(frameCount);
+        Fl::awake(convert_progress_awake, new float(percent));
+
+        int bytes = 0;
+
+        // Interpret raw bytes as float32
+        const float* __restrict__ src = reinterpret_cast<const float*>(chunk.data());
+        bytes = lame_encode_buffer_interleaved_ieee_float(
+            lame,
+            src,
+            (int)framesRead,
+            mp3Buf.data(),
+            (int)mp3Buf.size()
+        );
+
+        if (bytes > 0)
+            fwrite(mp3Buf.data(), 1, bytes, out);
+
+        // New Async
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    }
+
+    Fl::awake(convert_progress_awake, new float(1.0f));
+
+    int flushBytes = lame_encode_flush(lame, mp3Buf.data(), (int)mp3Buf.size());
+    if (flushBytes > 0)
+        fwrite(mp3Buf.data(), 1, flushBytes, out);
+
+    fclose(out);
+    lame_close(lame);
+
+    // New Async
+    Fl::awake(convert_finished_awake, nullptr);
+
+    return;
+}
+
+void convert_async()
+{
+    Fl::awake(convert_start_awake, nullptr);
+
+    // New Async
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+
+    const char* inWav = ui.in.c_str();
+    const char* outMp3 = ui.out.c_str();
+    const int bitrate = ui.br;
+    const int lameQuality = ui.q;
+
+    ui.cancelFlag = false;
+
+    drwav wav;
+    if (!drwav_init_file(&wav, inWav, nullptr))
+    {
+        log_error("Cannot read WAV input-input");
+        return;
+    }
+
+    lame_t lame = lame_init();
+    lame_set_in_samplerate(lame, wav.sampleRate);
+    lame_set_num_channels(lame, wav.channels);
+    lame_set_brate(lame, bitrate);
+    lame_set_quality(lame, lameQuality);
+    lame_init_params(lame);
+
+    FILE* out = fopen(outMp3, "wb");
+    if (!out)
+    {
+        log_error("Cannot write MP3 output-file");
+        drwav_uninit(&wav);
+        lame_close(lame);
+        return;
+    }
+
+    const size_t FRAMES = 1152 * 16;
+    const size_t SAMPLES = FRAMES * wav.channels;
+
+    // Single raw byte buffer
+    std::vector<uint8_t> raw(SAMPLES * wav.bitsPerSample / 8);
+
+    // MP3 output buffer
+    std::vector<unsigned char> mp3Buf(1.25 * SAMPLES + 7200);
+
+    bool isFloat = (wav.translatedFormatTag == DR_WAVE_FORMAT_IEEE_FLOAT);
+    bool isPCM16 = (wav.bitsPerSample == 16 && wav.translatedFormatTag == DR_WAVE_FORMAT_PCM);
+
+    std::size_t total = wav.totalPCMFrameCount;
+    std::size_t processed = 0;
+    //std::size_t CHUNK = 1152 * 16;
+
+    while (!ui.cancelFlag) {
+
+        // if (processed >= total)
+        //     break;
+
+        // old
+        size_t framesRead = drwav_read_pcm_frames(&wav, FRAMES, raw.data());
+        if (framesRead == 0)
+            break;
+
+        // new
+        processed += framesRead;
+        if (processed > total)
+            processed = total;
+
+        float percent = static_cast<float>(processed) / static_cast<float>(total);
+        Fl::awake(convert_progress_awake, new float(percent));
+
+        int bytes = 0;
+
+        if (isFloat) {
+            // Interpret raw bytes as float32
+            float* f = reinterpret_cast<float*>(raw.data());
+            bytes = lame_encode_buffer_interleaved_ieee_float(
+                lame,
+                f,
+                (int)framesRead,
+                mp3Buf.data(),
+                (int)mp3Buf.size()
+            );
+        }
+        else if (isPCM16) {
+            // Interpret raw bytes as int16_t
+            int16_t* s = reinterpret_cast<int16_t*>(raw.data());
+            bytes = lame_encode_buffer_interleaved(
+                lame,
+                s,
+                (int)framesRead,
+                mp3Buf.data(),
+                (int)mp3Buf.size()
+            );
+        }
+        else {
+            // Other formats: convert in-place into float32
+            float* f = reinterpret_cast<float*>(raw.data());
+            size_t samples = framesRead * wav.channels;
+
+            if (wav.bitsPerSample == 24)
+            {
+                // 24-bit → float
+                for (size_t i = 0; i < samples; i++)
+                {
+                    uint8_t* p = raw.data() + i * 3;
+                    int32_t v = (p[0] | (p[1] << 8) | (p[2] << 16));
+                    if (v & 0x800000) v |= ~0xFFFFFF;
+                    f[i] = (float)v / 8388607.0f;
+                }
+            }
+            else if (wav.bitsPerSample == 32 && wav.translatedFormatTag == DR_WAVE_FORMAT_PCM)
+            {
+                int32_t* p = reinterpret_cast<int32_t*>(raw.data());
+                for (size_t i = 0; i < samples; i++)
+                    f[i] = (float)p[i] / 2147483647.0f;
+            }
+            else
+            {
+                log_error("Unsupported WAV format");
+                fclose(out);
+                drwav_uninit(&wav);
+                lame_close(lame);
+                return;
+            }
+
+            bytes = lame_encode_buffer_interleaved_ieee_float(
+                lame,
+                f,
+                (int)framesRead,
+                mp3Buf.data(),
+                (int)mp3Buf.size()
+            );
+        }
+
+        if (bytes > 0)
+            fwrite(mp3Buf.data(), 1, bytes, out);
+
+        // New Async
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    }
+
+    Fl::awake(convert_progress_awake, new float(1.0f));
+
+    int flushBytes = lame_encode_flush(lame, mp3Buf.data(), (int)mp3Buf.size());
+    if (flushBytes > 0)
+        fwrite(mp3Buf.data(), 1, flushBytes, out);
+
+    fclose(out);
+    drwav_uninit(&wav);
+    lame_close(lame);
+
+    // New Async
+    Fl::awake(convert_finished_awake, nullptr);
+
+    return;
+}
+
 void convert_async()
 {
     const char* inWav = ui.in.c_str();

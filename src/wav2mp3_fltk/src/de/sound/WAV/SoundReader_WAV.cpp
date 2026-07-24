@@ -86,8 +86,8 @@ bool load_sound_wav_f32(Sound & sound, const std::string & uri )
     const u64 nFrames = data.subchunk2_size / fmt.block_align;
     const u64 nSamples = nFrames * fmt.num_channels;
     sound.m_uri = de::FileSystem::makeAbsolute(uri);
-    sound.m_channelCount = fmt.num_channels;
-    sound.m_frameCount = nFrames;
+    sound.m_channels = fmt.num_channels;
+    sound.m_frames = nFrames;
     sound.m_sampleRate = fmt.sample_rate;
     sound.m_samples.resize( nSamples * sizeof(float) );
 
