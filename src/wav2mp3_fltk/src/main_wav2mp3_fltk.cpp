@@ -791,6 +791,49 @@ public:
 // ---------------- main ----------------
 int main(int argc, char** argv)
 {
+    // =============================================================
+    // Test 1:
+    // =============================================================
+    de::Sound snd1;
+    dbLoadSound(snd1,"C:/_media/Music/wav/piano-space.wav");
+    dbSaveSound(snd1,"C:/_media/Music/wav/piano-space_test1.mp3");
+
+    // =============================================================
+    // Test 2:
+    // =============================================================
+    de::Sound snd2;
+    dbCopySound(snd1,snd2,snd1.m_frames);
+    dbSaveSound(snd2,"C:/_media/Music/wav/piano-space_test2_copy.mp3");
+
+    // =============================================================
+    // Test 3:
+    // =============================================================
+    de::Sound snd3;
+    de::Sound snd4;
+    dbDeinterleaveSound(snd2,snd3);
+    dbSaveSound(snd3,"C:/_media/Music/wav/piano-space_test3_1.planar.mp3");
+    dbInterleaveSound(snd3,snd4);
+    dbSaveSound(snd4,"C:/_media/Music/wav/piano-space_test3_2.interleaved.mp3");
+
+    // =============================================================
+    // Test 4:
+    // =============================================================
+    de::Sound snd5;
+    de::Sound snd6;
+    dbConvertSound(snd1,snd5,de::SampleType::F64);
+    dbSaveSound(snd5,"C:/_media/Music/wav/piano-space_test4_convertF64.mp3");
+    dbConvertSound(snd5,snd6,de::SampleType::F32);
+    dbSaveSound(snd6,"C:/_media/Music/wav/piano-space_test4_convertF32.mp3");
+
+    // =============================================================
+    // Test 5:
+    // =============================================================
+    de::Sound snd7;
+    dbResampleSound(snd1,snd7,48000);
+    dbSaveSound(snd7,"C:/_media/Music/wav/piano-space_test5_resample_48Hz_r8brain.mp3");
+
+    // =============================================================
+
     Fl::scheme("none");
     //Fl::scheme("gtk+");
     //Fl::scheme("plastic");

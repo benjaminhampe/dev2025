@@ -159,19 +159,19 @@ struct Utils
         return result;
     }
 
-    static Sound::eSampleType
+    static SampleType
     getSampleTypeFromFormat( int format )
     {
-        Sound::eSampleType result = Sound::ST_Unknown;
+        SampleType result = SampleType::Unknown;
         switch ( format )
         {
-            case SF_FORMAT_PCM_S8: result = Sound::ST_S8; break;
-            case SF_FORMAT_PCM_16: result = Sound::ST_S16; break;
-            case SF_FORMAT_PCM_24: result = Sound::ST_S24; break;
-            case SF_FORMAT_PCM_32: result = Sound::ST_S32; break; /* Signed 32 bit data */
-            //case SF_FORMAT_PCM_U8: result = Sound::ST_U8; break;
-            case SF_FORMAT_FLOAT: result = Sound::ST_F32; break;
-            case SF_FORMAT_DOUBLE: result = Sound::ST_F64; break;
+            case SF_FORMAT_PCM_S8: result = SampleType::S8; break;
+            case SF_FORMAT_PCM_16: result = SampleType::S16; break;
+            case SF_FORMAT_PCM_24: result = SampleType::S24; break;
+            case SF_FORMAT_PCM_32: result = SampleType::S32; break; /* Signed 32 bit data */
+            case SF_FORMAT_PCM_U8: result = SampleType::U8; break;
+            case SF_FORMAT_FLOAT: result = SampleType::F32; break;
+            case SF_FORMAT_DOUBLE: result = SampleType::F64; break;
             //        case SF_FORMAT_ULAW: result = EST_ULAW_8; break;
             //        case SF_FORMAT_ALAW: result = EST_ALAW_8; break;
             //        case SF_FORMAT_IMA_ADPCM: result = EST_S16; break;

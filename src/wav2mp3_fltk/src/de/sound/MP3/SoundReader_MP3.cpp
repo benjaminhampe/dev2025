@@ -20,7 +20,7 @@ bool load_sound_mp3_f32(Sound & sound, const std::string & uri )
     sound.m_frames = nFrames;
     sound.m_channels = nChannels;
     sound.m_sampleRate = mp3.sampleRate;
-    sound.m_sampleType = Sound::ST_F32;
+    sound.m_sampleType = SampleType::F32;
     sound.m_samples.resize( nFrames * nChannels * sizeof(float) );
 
     float* __restrict__ dst = reinterpret_cast<float*>(sound.m_samples.data());

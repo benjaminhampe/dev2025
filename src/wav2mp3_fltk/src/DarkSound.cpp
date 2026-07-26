@@ -1,4 +1,5 @@
 #include <DarkSound.h>
+#include <de/sound/SoundUtil.h>
 #include <de/sound/MP3/SoundReader_MP3.h>
 #include <de/sound/MP4/SoundReader_MP4.h>
 #include <de/sound/SND/SoundReader_SND.h>
@@ -6,6 +7,9 @@
 //#include <de/sound/WAV/SoundReader_WAV.h>
 //#include <de/sound/FLAC/SoundReader_FLAC.h>
 #include <de/sound/MP3/SoundWriter_MP3.h>
+
+
+#include <de/resample/Resampler_r8brain.h>
 
 namespace {
 
@@ -121,6 +125,10 @@ dbSaveSound(
     {
         ok = de::sound::save_sound_mp3_f32(sound, uri, options);
     }
+    // else if (suffix == "wav")
+    // {
+    //     ok = de::sound::save_sound_wav_f32(sound, uri );
+    // }
     // else if ((suffix == "mp4") || (suffix == "m4a"))
     // {
     //     ok = de::sound::load_sound_mp4_f32(sound, uri );
@@ -133,10 +141,7 @@ dbSaveSound(
     // {
     //     ok = de::sound::load_sound_snd_f32(sound, uri );
     // }
-    // else if (suffix == "wav")
-    // {
-    //     ok = de::sound::load_sound_wav_f32(sound, uri );
-    // }
+
     else
     {
         DE_ERROR("Unsupported encoder for ",uri)
@@ -162,3 +167,46 @@ dbSaveSound(
     //DE_OK("dat.frames() = ",sound.m_samples.size() / sound.m_fileInfo.channelCount)
     return true;
 }
+
+
+bool dbResampleSound(
+        const de::Sound & src,
+        de::Sound & dst,
+        int32_t sampleRate,
+        int32_t quality)
+{
+    de::sound::Resampler_r8brain resampler;
+    return resampler.resample(src,dst,sampleRate);
+}
+
+int64_t dbCopySound(
+        const de::Sound& src,
+        de::Sound& dst,
+        int64_t srcFrameCount,
+        int64_t srcFrameStart)
+{
+    return de::sound::SoundUtil::copy(src, dst, srcFrameCount, srcFrameStart);
+}
+
+int64_t dbDeinterleaveSound(
+        const de::Sound & src,
+        de::Sound & dst)
+{
+    return de::sound::SoundUtil::deinterleave(src,dst);
+}
+
+int64_t dbInterleaveSound(
+        const de::Sound & src,
+        de::Sound & dst)
+{
+    return de::sound::SoundUtil::interleave(src,dst);
+}
+
+int64_t dbConvertSound(
+        const de::Sound & src,
+        de::Sound & dst,
+        de::SampleType dstType)
+{
+    return de::sound::SoundUtil::convert(src,dst,dstType);
+}
+

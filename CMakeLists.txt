@@ -514,7 +514,7 @@ if (BENNI_USE_SSE2)
 endif()
 # <INIT>
 
-project(AbentonChain_Qt6_mingw64_1706_llvm)
+project(dev2025)
 
 # set(CMAKE_ASM_NASM_COMPILER "C:/sdk/nasm/nasm.exe" CACHE FILEPATH "Path to NASM executable")
 # enable_language(ASM_NASM)

@@ -25,7 +25,7 @@ bool load_sound_opus_f32(Sound & sound, const std::string & uri )
         return false;
     }
 
-    sound.m_sampleType = Sound::ST_F32;
+    sound.m_sampleType = SampleType::F32;
     sound.m_sampleRate = 48000;
     sound.m_channels = op_channel_count(of, -1);
     sound.m_samples.clear();

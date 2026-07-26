@@ -84,16 +84,16 @@ better_runtime_error_impl( std::thread::id threadId,
 // DarkTimer (uses std::chrono)
 // ===========================================================================
 
-int64_t dbTimeInNanoseconds();
-int64_t dbTimeInMicroseconds();
-int32_t dbTimeInMilliseconds();
-double  dbTimeInSeconds();
+int64_t dbTimeInNanoseconds() noexcept;
+int64_t dbTimeInMicroseconds() noexcept;
+int32_t dbTimeInMilliseconds() noexcept;
+double  dbTimeInSeconds() noexcept;
 
 // ===========================================================================
 // DarkRandom
 // ===========================================================================
-void    dbRandomize();
-int32_t dbRND();
+void    dbRandomize() noexcept;
+int32_t dbRND() noexcept;
 
 /// Since ANSI standard exists only 50yrs (1970!) its to few time for MS to implement it.
 /// cmd.exe is not an ANSI console. AND
@@ -104,20 +104,13 @@ int32_t dbRND();
 /// On Android good luck, but i heard its a Linux ripoff aswell.
 
 /// @brief Write ANSI terminal/console color reset marker.
-inline std::string
-dbResetTerminalColors() { return "\033[0m"; }
+std::string
+dbResetTerminalColors() noexcept;
 
 /// @brief Write ANSI terminal/console color RGB marker. Foreground + Background colors.
-inline std::string
-dbSetTerminalColors( uint8_t fr, uint8_t fg, uint8_t fb,
-                     uint8_t br, uint8_t bg, uint8_t bb )
-{
-   // The (int) casts are necessary to print decimals and not secret control message hex bytes.
-   std::ostringstream o; o <<
-   "\033[38;2;" << int(fr) << ";" << int(fg) << ";" << int(fb) << "m"
-   "\033[48;2;" << int(br) << ";" << int(bg) << ";" << int(bb) << "m";
-   return o.str();
-}
+std::string
+dbSetTerminalColors(uint8_t fr, uint8_t fg, uint8_t fb,
+                    uint8_t br, uint8_t bg, uint8_t bb) noexcept;
 
 // ===========================================================================
 // ===   LogMacros
@@ -145,7 +138,7 @@ dbLogMessage(  int logLevel, // 0=Trace, 1=Debug, 2=Ok, 3=Benni, 4=Info, 5=Warn,
                const std::string& file, // = "DeineMutter.cpp",
                int line, // = 666,
                const std::string& func, // = "knatscheln",
-               std::thread::id threadId = std::this_thread::get_id() );
+                  std::thread::id threadId = std::this_thread::get_id() ) noexcept;
 
 // Legacy -> nop
 #ifndef DE_CREATE_LOGGER

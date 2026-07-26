@@ -19,7 +19,7 @@ bool resample_speex_f32(Sound & sound, int32_t outRate)
         return false;
     }
 
-    if (sound.m_sampleType != Sound::ST_F32)
+    if (sound.m_sampleType != SampleType::F32)
     {
         DE_ERROR("Bad sampleType, must be ST_F32, ",sound.str())
         return false;

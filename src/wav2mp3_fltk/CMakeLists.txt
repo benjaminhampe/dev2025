@@ -49,10 +49,11 @@ else()
     target_link_libraries(${APP_NAME} PRIVATE de_sndfile)
     target_link_libraries(${APP_NAME} PRIVATE de_opusfile)
 
-    target_link_libraries(${APP_NAME} PRIVATE de_soxr)
+    # target_link_libraries(${APP_NAME} PRIVATE de_soxr) # This shit code is pure Hell, linker error _soxr_rdft. That shit fn does not exist but is used.
     target_link_libraries(${APP_NAME} PRIVATE de_speexdsp)
     target_link_libraries(${APP_NAME} PRIVATE de_resample)
     target_link_libraries(${APP_NAME} PRIVATE de_signalsmith)
+    target_link_libraries(${APP_NAME} PRIVATE de_r8brain)
 
     # target_link_libraries(${APP_NAME} PRIVATE DarkSound)
     # target_link_libraries(${APP_NAME} PRIVATE DarkMP4)

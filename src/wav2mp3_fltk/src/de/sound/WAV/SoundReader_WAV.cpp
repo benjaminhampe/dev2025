@@ -99,7 +99,7 @@ bool load_sound_wav_f32(Sound & sound, const std::string & uri )
         // Integer PCM
         if (fmt.bits_per_sample == 16)
         {
-            sound.m_sampleType = Sound::ST_S16; // | Sound::ST_Interleaved;
+            sound.m_sampleType = SampleType::S16; // | Sound::ST_Interleaved;
 
             // Read file in native format:
             std::vector< int16_t > src(nSamples);
@@ -113,7 +113,7 @@ bool load_sound_wav_f32(Sound & sound, const std::string & uri )
         }
         else if (fmt.bits_per_sample == 24)
         {
-            sound.m_sampleType = Sound::ST_S24; // | Sound::ST_Interleaved;
+            sound.m_sampleType = SampleType::S24; // | Sound::ST_Interleaved;
 
             // Read file in native format:
             uint8_t b[3];
@@ -127,7 +127,7 @@ bool load_sound_wav_f32(Sound & sound, const std::string & uri )
         }
         else if (fmt.bits_per_sample == 32)
         {
-            sound.m_sampleType = Sound::ST_S32; // | AudioFile::ST_Interleaved;
+            sound.m_sampleType = SampleType::S32; // | AudioFile::ST_Interleaved;
 
             // Read file in native format:
             std::vector< int32_t > src(nSamples);
@@ -148,7 +148,7 @@ bool load_sound_wav_f32(Sound & sound, const std::string & uri )
     }
     else if (fmt.audio_format == 3)
     {
-        sound.m_sampleType = Sound::ST_F32; // | AudioFile::ST_Interleaved;
+        sound.m_sampleType = SampleType::F32; // | AudioFile::ST_Interleaved;
 
         // Read native float:
         fread(dst, sizeof(float), nSamples, f);

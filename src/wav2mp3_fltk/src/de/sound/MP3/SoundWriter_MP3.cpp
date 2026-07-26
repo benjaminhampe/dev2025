@@ -11,6 +11,12 @@ save_sound_mp3_f32(
     const std::string& uri,
     const SoundSaveOptions& options)
 {
+    if (sound.m_sampleType != SampleType::F32)
+    {
+        DE_ERROR("Only F32 supported (yet) ", uri)
+        return false;
+    }
+
     options.onProgress(1);
     //Fl::awake(convert_start_awake, nullptr);
 
@@ -44,7 +50,7 @@ save_sound_mp3_f32(
     const int64_t SAMPLES = FRAMES * sound.m_channels;
 
     // Single raw byte buffer
-    de::TAlignedVector<uint8_t> chunk(SAMPLES * sound.getBytesPerSample());
+    de::TAlignedVector<uint8_t> chunk(SAMPLES * sound.bytesPerSample());
 
     // MP3 output buffer
     de::TAlignedVector<uint8_t> mp3Buf(1.25 * SAMPLES + 7200);

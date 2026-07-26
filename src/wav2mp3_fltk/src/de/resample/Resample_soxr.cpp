@@ -1,5 +1,6 @@
 #include "Resample_soxr.h"
 
+#if 0
 #include <soxr.h>
 
 namespace de {
@@ -91,7 +92,7 @@ bool resample_soxr_f32(Sound & sound, int32_t outRate)
 } // end namespace sound.
 } // end namespace de.
 
-
+#endif
 
 #if 0
 void resample_soxr_to_16k(const std::vector<float> & in, uint32_t in_rate, std::vector<float> & out)

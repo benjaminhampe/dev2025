@@ -59,13 +59,13 @@ public:
         // 1 AAC-Frame = 1024 PCM-Samples pro Kanal (AAC-LC)
         uint64_t totalPcmSamples = sample_count * 1024ull;
 
-        sound.m_sampleType  = Sound::ST_F32;
+        sound.m_sampleType  = SampleType::F32;
         sound.m_sampleRate  = static_cast<uint32_t>(sampleRate);
         sound.m_channels    = static_cast<uint32_t>(channels);
         sound.m_frames      = totalPcmSamples; // PCM-Samples (interleaved)
-        sound.m_duration    = double(totalPcmSamples) *
-                                1'000'000'000.0 /
-                                double(sampleRate);
+        // sound.m_duration    = double(totalPcmSamples) *
+        //                         1'000'000'000.0 /
+        //                         double(sampleRate);
 
         return true;
     }

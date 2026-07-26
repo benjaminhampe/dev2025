@@ -1,6 +1,5 @@
 #pragma once
-#include <de/Core.h>
-#include <de/AlignedMemory.h>
+#include <de/sound/SampleTypeConverter.h>
 
 namespace de {
 
@@ -9,31 +8,62 @@ class Sound
 // ===========================================================================
 {
 public:
-    enum eSampleType
-    {
-        ST_Unknown = 0, ST_S8, ST_S16, ST_S24, ST_S32, ST_F32, ST_F64
-    };
-
     int64_t m_frames = 0;
     int32_t m_sampleRate = 0;
-    int16_t m_sampleType = 0;
     int16_t m_channels = 0;
+    SampleType m_sampleType = SampleType::Unknown;
+    uint8_t m_flags = 0; // 0 = interleaved, 1 = planar
     TAlignedVector<uint8_t> m_samples; // Interleaved
     std::string m_uri;
 
-    bool empty() const;
+    bool empty() const noexcept;
 
-    double duration() const; // In [s] seconds.
+    void clear() noexcept;
 
-    int getBytesPerSample() const;
+    double duration() const noexcept; // In [s] seconds.
+
+    const uint8_t* data() const noexcept { return m_samples.data(); }
+
+    uint8_t* data() noexcept { return m_samples.data(); }
+
+    int64_t size() const noexcept { return m_samples.size(); }
+
+    int64_t byteCount() const noexcept;
+
+    int64_t sampleCount() const noexcept;
+
+    int32_t bytesPerSample() const noexcept;
+
+    int64_t memoryConsumption() const noexcept;
+
+    SampleType sampleType() const noexcept;
+
+    std::string sampleTypeStr() const;
 
     std::string str(bool bWithUri = false) const;
 
-    static std::string getSampleTypeStr(int sampleType);
+    int64_t read_frames(void* __restrict__ dst, int64_t frameCount, int64_t frameStart) const;
+
+    int64_t read_frames_convert(SampleType dstType, void* __restrict__ dst, int64_t frameCount, int64_t frameStart) const;
 
     int64_t read_frames_f32(float* __restrict__ dst, int64_t frameCount, int64_t frameIndex) const;
 
     bool validate() const;
+
+    void allocFrames( int64_t frames );
+
+    bool append(const Sound& other);
+
+    static void deinterleave(
+            int32_t srcChannels,
+            SampleType srcType,
+            const TAlignedVector<uint8_t>& srcSamples,
+            TAlignedVector<uint8_t>& tmpSamples,
+            SampleType dstType,
+            TAlignedVector<uint8_t>& dstSamples,
+            int64_t frameCount,
+            int64_t frameStart = 0);
+
 
 public:
 /*
@@ -47,6 +77,8 @@ struct SoundSaveOptions
 {
     int bitrate = 128; // in kB/s, mp3 needs more then opus
     int quality = 0; // 0 = highest, 9 = lowest
+
+    SampleType sampleType = SampleType::Unknown; // Force an output format.
 
     bool bDebug = false;
     bool bThrowOnFail = false;

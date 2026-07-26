@@ -38,7 +38,7 @@ bool load_sound_snd_f32(Sound & sound, const std::string & uri )
              "Channels(",info.channels,"), "
              "Frames(",info.frames,")")
 
-    sound.m_sampleType = Sound::ST_F32;
+    sound.m_sampleType = SampleType::F32;
     sound.m_sampleRate = info.samplerate;
     sound.m_frames = info.frames;
     sound.m_channels = info.channels;

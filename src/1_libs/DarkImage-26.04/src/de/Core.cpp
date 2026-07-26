@@ -27,42 +27,94 @@
     #include <cctype>
 #endif
 
-int64_t dbTimeInNanoseconds()
+int64_t dbTimeInNanoseconds() noexcept
 {
     typedef std::chrono::steady_clock Clock_t; // high_resolution_clock Clock_t;
     auto dur = Clock_t::now() - Clock_t::time_point(); // now - epoch = dur
     return std::chrono::duration_cast< std::chrono::nanoseconds >( dur ).count();
 }
 
-int64_t dbTimeInMicroseconds()
+int64_t dbTimeInMicroseconds() noexcept
 {
     return dbTimeInNanoseconds() / 1000;
 }
 
-int32_t dbTimeInMilliseconds()
+int32_t dbTimeInMilliseconds() noexcept
 {
     return static_cast<int32_t>( dbTimeInNanoseconds() / 1000000 );
 }
 
-double dbTimeInSeconds()
+double dbTimeInSeconds() noexcept
 {
     return static_cast<double>( dbTimeInNanoseconds() ) * 1e-9;
 }
 
-void dbRandomize()
+void dbRandomize() noexcept
 {
     ::srand( static_cast<uint32_t>(dbTimeInMilliseconds()) );
 }
 
-int32_t dbRND()
+int32_t dbRND() noexcept
 {
     return ::rand();
 }
 
+/// @brief Write ANSI terminal/console color reset marker.
+std::string
+dbResetTerminalColors() noexcept
+{
+    return "\033[0m";
+}
+
+/// @brief Write ANSI terminal/console color RGB marker. Foreground + Background colors.
+std::string
+dbSetTerminalColors( uint8_t fr, uint8_t fg, uint8_t fb,
+                     uint8_t br, uint8_t bg, uint8_t bb ) noexcept
+{
+    // The (int) casts are necessary to print decimals and not secret control message hex bytes.
+    std::ostringstream o; o <<
+    "\033[38;2;" << int(fr) << ";" << int(fg) << ";" << int(fb) << "m"
+    "\033[48;2;" << int(br) << ";" << int(bg) << ";" << int(bb) << "m";
+    return o.str();
+}
+
+// ===========================================================================
+/*
+void dbLogMessage(int logLevel,
+                  const char* msg,
+                  const char* file,
+                  int line,
+                  const char* func,
+                  std::thread::id threadId) noexcept
+{
+    static double g_lineCount = 0;
+    g_lineCount++;
+
+    static double t0 = dbTimeInSeconds();
+    double t = dbTimeInSeconds() - t0;
+
+    char buf[2048]; // fixed buffer
+    int pos = 0;
+
+    pos += snprintf(buf + pos, sizeof(buf) - pos,
+                    "%f [%zu] [%s] %s:%d %s() :: %s\n",
+                    t,
+                    (size_t)threadId,
+                    logLevelToString(logLevel),
+                    file,
+                    line,
+                    func,
+                    msg);
+
+    fwrite(buf, 1, pos, stdout);
+    fflush(stdout);
+}
+*/
+
 // ===========================================================================
 void dbLogMessage( int logLevel, const std::string& msg,
         const std::string& file, int line, const std::string& func,
-        std::thread::id threadId )
+        std::thread::id threadId ) noexcept
 // ===========================================================================
 {
     static double g_lineCount = 0;
@@ -348,12 +400,12 @@ StringUtil::to_wstr(const std::string& utf8)
         return std::wstring();
 
     int nChars = MultiByteToWideChar(CP_UTF8, 0,
-        utf8.c_str(), (int)utf8.size(), nullptr, 0);
+        utf8.data(), (int)utf8.size(), nullptr, 0);
 
     std::wstring utf16(nChars, 0);
 
     MultiByteToWideChar(CP_UTF8, 0,
-        utf8.c_str(), (int)utf8.size(), &utf16[0], nChars);
+        utf8.data(), (int)utf8.size(), &utf16[0], nChars);
 
     return utf16;
 }

@@ -3,7 +3,8 @@ add_subdirectory(de-kissfft-131.1.0)    # FFT
 add_subdirectory(de-kissfft-cpp)        # FFT
 add_subdirectory(de-fftw3-3.3.10-static)    # FFT
 add_subdirectory(de-fftw3f-3.3.10-static)   # FFT
-add_subdirectory(de-pffft)              # FFT - Introduced by Rack2
+add_subdirectory(de-pffft-7.1)              # FFT - Introduced by Rack2
+add_subdirectory(de-pffftd-7.1)             # FFT double
 add_subdirectory(de-tinyexpr) # Introduced by Rack2
 
 add_subdirectory(de-celt-0.11)
@@ -43,10 +44,11 @@ add_subdirectory(de-ffmpeg-4.3.2-win64-gcc-shared) # Import/Export MP4, AVI, MKV
 
 add_subdirectory(de-taglib-1.11.1)  # MP3 id3 metadata, extract CoverArt.
 
-add_subdirectory(de-soxr-0.1.3)         # Resampler + also replaces lib-samplerate
-add_subdirectory(de-resample)           # Resampler
+# add_subdirectory(de-soxr-0.1.3)         # Resampler + also replaces lib-samplerate
+add_subdirectory(de-resample-1.8)           # Resampler
 add_subdirectory(de-samplerate-0.2.2)   # Resampler
 add_subdirectory(de-speexdsp)           # Resampler
+add_subdirectory(de-r8brain-7.1)
 
 add_subdirectory(de-soundtouch-1.9.2)   # TimeStretch.
 add_subdirectory(de-soundtouch-2.4.1)   # TimeStretch.
