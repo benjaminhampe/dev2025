@@ -191,7 +191,7 @@ bool load_sound_mp4_f32(Sound& sound, const std::string& uri)
 
     const file::mp4::aac::AscInfo & asc = libSupport.esds->m_esd.decConfig.decSpecific.m_asc;
 
-    File file(uri);
+    File file(uri, eFileMode::Read);
     if (!file.is_open())
     {
         DE_ERROR("File not open")
@@ -207,9 +207,9 @@ bool load_sound_mp4_f32(Sound& sound, const std::string& uri)
     aacDecoder.decodeAAC(file,asc,table,
         [&](const float* pcm, size_t samples)
         {
-            sound.m_samples.insert(
-                sound.m_samples.end(), pcm, pcm + samples
-                );
+            const uint8_t* __restrict__ beg = reinterpret_cast<const uint8_t*>(pcm);
+            const uint8_t* __restrict__ end = beg + (samples * sizeof(float));
+            sound.m_samples.insert(sound.m_samples.end(), beg, end);
         }
 
         // [&](const std::vector<float>& pcm)

@@ -78,17 +78,14 @@ save_sound_ogg_vorbis(
     const std::string& uri,
     const SoundSaveOptions& options)
 {
-    if (sound.m_sampleType != SampleType::F32)
+    auto srcType = sound.m_sampleType;
+    auto dstType = SampleType::F32;
+    auto converter = SampleTypeConverter::getConverter(srcType,dstType);
+    if (!converter)
     {
-        DE_ERROR("Supports only F32. Sound(",sound.str(),"), uri(",uri,")")
+        DE_ERROR("No converter to F32, ", sound.str(), ", uri = ", uri)
         return false;
     }
-
-    // DE_DEBUG("sound = ",sound.str())
-
-    // auto fMaximum = SoundUtil::maximum( sound );
-
-    // DE_DEBUG("fMaximum = ",fMaximum)
 
     File file(uri, eFileMode::Write);
     if (!file.is_open())
@@ -105,10 +102,10 @@ save_sound_ogg_vorbis(
 
     options.onProgress(2);
 
-    if (vorbis_encode_init_vbr(&vi, sound.m_channels, sound.m_sampleRate, 0.7f))
+    if (vorbis_encode_init_vbr(&vi, sound.m_channels, sound.m_sampleRate, 0.4f))
     {
         vorbis_info_clear(&vi);
-        std::fprintf(stderr, "vorbis_encode_init_vbr failed\n");
+        DE_ERROR("vorbis_encode_init_vbr failed")
         return false;
     }
 
@@ -146,22 +143,26 @@ save_sound_ogg_vorbis(
     options.onProgress(5);
 
     // PCM → Vorbis
+    int64_t cFrames = 4096;
+    int64_t cSamples = cFrames * sound.m_channels;
+    TAlignedVector<float> chunkBuf(cSamples);
 
     int64_t pos = 0;
     while (pos < sound.m_frames)
     {
-        int64_t chunk = std::min<int64_t>(4096*sound.m_channels, sound.m_frames - pos);
-        DE_DEBUG("chunk = ",chunk, ", pos = ",pos)
-        float** __restrict__ buffer = vorbis_analysis_buffer(&vd, (int)chunk);
+        int64_t desired = std::min<int64_t>(cFrames, sound.m_frames - pos);
+        // DE_DEBUG("chunk = ",chunk, ", pos = ",pos)
+        int64_t chunk = sound.read_frames(converter,chunkBuf.data(),desired,pos);
 
-        const float* __restrict__ pSrc =
-            reinterpret_cast<const float*>(sound.m_samples.data());
+        const float* __restrict__ pSrc = chunkBuf.data();
+        float** __restrict__ pAnalysis = vorbis_analysis_buffer(&vd, chunk * sound.m_channels); //
 
-        for (int64_t i = 0; i < chunk; ++i)
+        for (int32_t c = 0; c < sound.m_channels; ++c)
         {
-            for (int32_t c = 0; c < sound.m_channels; ++c)
+            float* __restrict__ pDst = pAnalysis[c];
+            for (int64_t i = 0; i < chunk; ++i)
             {
-                buffer[c][i] = pSrc[(pos + i) * sound.m_channels + c];
+                pDst[i] = pSrc[i * sound.m_channels + c];
             }
         }
 
@@ -206,20 +207,20 @@ save_sound_ogg_vorbis(
 
     while (vorbis_analysis_blockout(&vd, &vb) == 1)
     {
-        DE_DEBUG("endchunk")
+        // DE_DEBUG("endchunk")
         vorbis_analysis(&vb, nullptr);
         vorbis_bitrate_addblock(&vb);
 
         ogg_packet op;
         while (vorbis_bitrate_flushpacket(&vd, &op))
         {
-            DE_DEBUG("endflush")
+            // DE_DEBUG("endflush")
             op.granulepos = vd.granulepos;          // auch hier granulepos setzen
             ogg_stream_packetin(&os, &op);
 
             while (ogg_stream_pageout(&os, &og))
             {
-                DE_DEBUG("endwrite")
+                // DE_DEBUG("endwrite")
                 file.write(og.header, og.header_len);
                 file.write(og.body, og.body_len);
             }

@@ -53,7 +53,7 @@ save_sound_wav(
 
     auto w32 = [&](uint32_t v){ file.write(&v, 4); };
     auto w16 = [&](uint16_t v){ file.write(&v, 2); };
-    auto w8  = [&](uint8_t  v){ file.write(&v, 1); };
+    //auto w8  = [&](uint8_t  v){ file.write(&v, 1); };
 
     // RIFF header
     file.write("RIFF", 4);

@@ -8,6 +8,42 @@ namespace sound {
 struct SoundUtil
 // ===========================================================================
 {
+    static void
+    byteSwap16_inplace(void* __restrict__ p, int64_t nElements);
+
+    static void
+    byteSwap24_inplace(void* __restrict__ p, int64_t nElements);
+
+    static void
+    byteSwap32_inplace(void* __restrict__ p, int64_t nElements);
+
+    static void
+    byteSwap64_inplace(void* __restrict__ p, int64_t nElements);
+
+    static void
+    byteSwap16(
+        const void* __restrict__ src,
+        void* __restrict__ dst,
+        int64_t nElements);
+
+    static void
+    byteSwap24(
+        const void* __restrict__ src,
+        void* __restrict__ dst,
+        int64_t nElements);
+
+    static void
+    byteSwap32(
+        const void* __restrict__ src,
+        void* __restrict__ dst,
+        int64_t nElements);
+
+    static void
+    byteSwap64(
+        const void* __restrict__ src,
+        void* __restrict__ dst,
+        int64_t nElements);
+
     //🔥
     static int64_t
     copy( const Sound& src, Sound& dst, int64_t frameCount, int64_t srcFrameStart = 0);

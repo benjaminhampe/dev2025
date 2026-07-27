@@ -1,14 +1,36 @@
 #include <de/sound/OPUS/SoundWriter_OPUS.h>
 
+#include <opus/opus.h>
+#include <ogg/ogg.h>
+
 namespace de {
 namespace sound {
-namespace {
 
-} // end namespace.
+// namespace {
+// } // end namespace.
 
-bool save_sound_opus_f32(Sound & sound, const std::string & uri )
+bool
+save_sound_opus_f32(
+    const Sound& sound,
+    const std::string& uri,
+    const SoundSaveOptions& options)
 {
+    if (!sound.empty())
+    {
+        DE_ERROR("Got empty sound: ", uri)
+        return false;
+    }
 
+    if (sound.m_sampleRate != 48000)
+    {
+        DE_WARN("Opus wants 48000 sound data, resample first. ", uri)
+    }
+
+    if (sound.m_sampleType != SampleType::F32)
+    {
+        DE_ERROR("Opus wants ST_F32 sampleType, convert first. ", uri)
+        return false;
+    }
 
     return false;
 }
@@ -20,8 +42,7 @@ bool save_sound_opus_f32(Sound & sound, const std::string & uri )
 
 
 // opus_ogg_encoder.cpp
-#include <opus/opus.h>
-#include <ogg/ogg.h>
+
 
 #include <cstdio>
 #include <cstdint>

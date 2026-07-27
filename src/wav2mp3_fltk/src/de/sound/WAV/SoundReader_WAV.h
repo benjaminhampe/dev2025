@@ -4,7 +4,7 @@
 namespace de {
 namespace sound {
 
-bool load_sound_wav_f32(Sound & ret, const std::string & url );
+bool load_sound_wav(Sound& sound, const std::string& uri);
 
 } // end namespace sound.
 } // end namespace de.

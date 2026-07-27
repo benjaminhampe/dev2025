@@ -137,17 +137,19 @@ bool Sound::append(const Sound& other)
     return true;
 }
 
-std::string Sound::str(bool bWithUri) const
+std::string Sound::str(bool bWithFileName, bool bWithDir) const
 {
     std::ostringstream o;
     o << dbStrSeconds(duration()) << ","
-    " " << m_channels << "x"
     " " << m_sampleRate << "Hz,"
-    " fc(" << m_frames << "),"
-    " st(" << sampleTypeStr() << ")";
-    if (bWithUri)
+    " " << m_channels << " x " << m_frames << " x " << sampleTypeStr();
+    if (bWithFileName)
     {
-        o << ", uri(" << m_uri << ")";
+        o << ", file(" << dbFileName(m_uri) << ")";
+    }
+    if (bWithFileName)
+    {
+        o << ", dir(" << dbFileDir(m_uri) << ")";
     }
     return o.str();
 }
@@ -199,6 +201,56 @@ int64_t Sound::read_frames(void* __restrict__ dst, int64_t frameCount, int64_t f
     return maxFrames;
 }
 
+int64_t Sound::read_frames(
+    SampleTypeConverter::Converter_t converter,
+    void* __restrict__ dst,
+    int64_t frameCount,
+    int64_t frameStart) const
+{
+    const int64_t avail = m_frames - frameStart;
+    if (avail < 1)
+    {
+        return 0; // Nothing todo...
+    }
+
+    const int64_t maxFrames = std::min(avail, frameCount);
+    if (maxFrames < 1)
+    {
+        return 0; // Nothing todo...
+    }
+
+    const int32_t bpp = bytesPerSample();
+    const int64_t byteCount = maxFrames * m_channels * bpp;
+    const int64_t byteIndex = frameStart * m_channels * bpp;
+
+    // <debug>
+    if (byteCount < 1)
+    {
+        DE_ERROR("Got byteCount(",byteCount,")")
+        return 0;
+    }
+
+    if (byteIndex >= m_samples.size())
+    {
+        DE_ERROR("byteIndex(",byteIndex,") > m_samples(",m_samples.size(),")")
+        return 0;
+    }
+
+    if (byteIndex + byteCount > m_samples.size())
+    {
+        DE_ERROR("byteIndex(",byteIndex,") + byteCount(",byteCount,") > m_samples(",m_samples.size(),")")
+        return 0;
+    }
+    // </debug>
+
+    const uint8_t* __restrict__ src = m_samples.data() + byteIndex;
+
+    converter(src, dst, maxFrames * m_channels);
+
+    return maxFrames;
+}
+
+/*
 int64_t Sound::read_frames_convert(SampleType dstType, void* __restrict__ dst, int64_t frameCount, int64_t frameStart) const
 {
     const int64_t avail = m_frames - frameStart;
@@ -224,7 +276,6 @@ int64_t Sound::read_frames_convert(SampleType dstType, void* __restrict__ dst, i
     const int64_t byteCount = maxFrames * m_channels * bpp;
     const int64_t byteIndex = frameStart * m_channels * bpp;
 
-#if 0
     // <debug>
     if (byteCount < 1)
     {
@@ -244,7 +295,6 @@ int64_t Sound::read_frames_convert(SampleType dstType, void* __restrict__ dst, i
         return 0;
     }
     // </debug>
-#endif
 
     const uint8_t* __restrict__ src = m_samples.data() + byteIndex;
 
@@ -300,6 +350,7 @@ int64_t Sound::read_frames_f32(float* __restrict__ dst, int64_t frameCount, int6
 
     return maxFrames;
 }
+*/
 
 } // end namespace de.
 

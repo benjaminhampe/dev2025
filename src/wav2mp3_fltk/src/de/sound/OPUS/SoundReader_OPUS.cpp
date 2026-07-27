@@ -8,23 +8,6 @@ namespace sound {
 bool
 load_sound_opus_f32(Sound & sound, const std::string & uri)
 {
-    if (!sound.empty())
-    {
-        DE_ERROR("Got empty sound: ", uri)
-        return false;
-    }
-
-    if (sound.m_sampleRate != 48000)
-    {
-        DE_WARN("Opus wants 48000 sound data, resample first. ", uri)
-    }
-
-    if (sound.m_sampleType != SampleType::F32)
-    {
-        DE_ERROR("Opus wants ST_F32 sampleType, convert first. ", uri)
-        return false;
-    }
-
     int err = 0;
     OggOpusFile* of = op_open_file(uri.c_str(), &err);
     if (!of)

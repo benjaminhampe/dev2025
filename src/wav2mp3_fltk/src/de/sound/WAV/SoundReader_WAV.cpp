@@ -31,31 +31,46 @@ struct WavDataChunk {
 
 } // end namespace.
 
-bool load_sound_wav_f32(Sound & sound, const std::string & uri )
+/*
+    Summary table (sample types WAV can contain)
+    Sample Type	Supported in WAV?	Notes
+    U8	Yes	Standard PCM
+    S8	Yes	Less common
+    S12	Yes	Rare, but valid
+    S16	Yes	CD standard
+    S24	Yes	Studio standard
+    S32	Yes	Integer PCM
+    F32	Yes	DAW standard
+    F64	Yes	High precision
+    A‑law	Yes	Telephony
+    µ‑law	Yes	Telephony
+    MS ADPCM	Yes	Compressed
+    IMA ADPCM	Yes	Compressed
+*/
+
+bool load_sound_wav(Sound& sound, const std::string& uri)
 {
-    FILE * f = fopen(uri.c_str(), "rb");
-    if (!f)
+    File file(uri, eFileMode::Read);
+    if (!file.is_open())
     {
-        DE_ERROR("Not opened.")
+        DE_ERROR("Cannot read WAV. ",uri)
         return false;
     }
 
     WavRiffHeader riff;
-    if (fread(&riff, sizeof(riff), 1, f) != 1 ||
-        strncmp(riff.chunk_id, "RIFF", 4) != 0 ||
+    file.read(&riff, sizeof(riff));
+    if (strncmp(riff.chunk_id, "RIFF", 4) != 0 ||
         strncmp(riff.format, "WAVE", 4) != 0)
     {
         DE_ERROR("Malformed header.")
-        fclose(f);
         return false;
     }
 
     WavFmtChunk fmt;
-    if (fread(&fmt, sizeof(fmt), 1, f) != 1 ||
-        strncmp(fmt.subchunk1_id, "fmt ", 4) != 0)
+    file.read(&fmt, sizeof(fmt));
+    if (strncmp(fmt.subchunk1_id, "fmt ", 4) != 0)
     {
         DE_ERROR("Malformed fmt-Chunk.")
-        fclose(f);
         return false;
     }
 
@@ -63,7 +78,6 @@ bool load_sound_wav_f32(Sound & sound, const std::string & uri )
     if (fmt.audio_format != 1 && fmt.audio_format != 3)
     {
         DE_ERROR("Unsupported format (only PCM oder Float).")
-        fclose(f);
         return false;
     }
 
@@ -71,91 +85,76 @@ bool load_sound_wav_f32(Sound & sound, const std::string & uri )
     WavDataChunk data;
     while (true)
     {
-        if (fread(&data, sizeof(data), 1, f) != 1) {
+        auto ret = file.read(&data, sizeof(data));
+        if (ret != sizeof(data))
+        {
             DE_ERROR("No data-Chunk")
-            fclose(f);
             return false;
         }
         if (strncmp(data.subchunk2_id, "data", 4) == 0)
             break;
 
         // Unbekannter Chunk → überspringen
-        fseek(f, data.subchunk2_size, SEEK_CUR);
+        file.seek(data.subchunk2_size, eSeekMode::Cur);
     }
 
-    const u64 nFrames = data.subchunk2_size / fmt.block_align;
-    const u64 nSamples = nFrames * fmt.num_channels;
-    sound.m_uri = de::FileSystem::makeAbsolute(uri);
+    const int64_t nFrames = data.subchunk2_size / fmt.block_align;
+    const int64_t nSamples = nFrames * int(fmt.num_channels);
+    sound.m_uri = uri;
     sound.m_channels = fmt.num_channels;
     sound.m_frames = nFrames;
     sound.m_sampleRate = fmt.sample_rate;
-    sound.m_samples.resize( nSamples * sizeof(float) );
+    sound.m_sampleType = SampleType::Unknown;
 
-    float* __restrict__ dst = reinterpret_cast<float*>( sound.m_samples.data() );
+    const int bits = fmt.bits_per_sample;
 
-    // PCM → float konvertieren
+    // Integer PCM
     if (fmt.audio_format == 1)
     {
-        // Integer PCM
-        if (fmt.bits_per_sample == 16)
+        if (bits == 8)
         {
-            sound.m_sampleType = SampleType::S16; // | Sound::ST_Interleaved;
-
-            // Read file in native format:
-            std::vector< int16_t > src(nSamples);
-            fread(src.data(), sizeof(int16_t), nSamples, f);
-
-            // Convert to float:
-            for (size_t i = 0; i < nSamples; i++)
-            {
-                dst[i] = src[i] / 32768.0f;
-            }
+            sound.m_sampleType = SampleType::U8;
         }
-        else if (fmt.bits_per_sample == 24)
+        else if (bits == 16)
         {
-            sound.m_sampleType = SampleType::S24; // | Sound::ST_Interleaved;
-
-            // Read file in native format:
-            uint8_t b[3];
-            for (size_t i = 0; i < nSamples; i++)
-            {
-                fread(b, 1, 3, f);
-                int32_t v = (b[0] | (b[1] << 8) | (b[2] << 16));
-                if (v & 0x800000) v |= 0xFF000000;
-                dst[i] = float(v) / 8388608.0f;
-            }
+            sound.m_sampleType = SampleType::S16;
         }
-        else if (fmt.bits_per_sample == 32)
+        else if (bits == 24)
         {
-            sound.m_sampleType = SampleType::S32; // | AudioFile::ST_Interleaved;
-
-            // Read file in native format:
-            std::vector< int32_t > src(nSamples);
-            fread(src.data(), sizeof(int32_t), nSamples, f);
-
-            // Convert to float:
-            for (size_t i = 0; i < nSamples; i++)
-            {
-                dst[i] = src[i] / 2147483648.0f;
-            }
+            sound.m_sampleType = SampleType::S24;
+        }
+        else if (bits == 32)
+        {
+            sound.m_sampleType = SampleType::S32;
         }
         else
         {
-            DE_ERROR("Unsupported PCM-Bit-depth ", fmt.bits_per_sample)
-            fclose(f);
+            DE_ERROR("Unsupported WAV integer PCM ", bits)
             return false;
         }
     }
+    // Float PCM
     else if (fmt.audio_format == 3)
     {
-        sound.m_sampleType = SampleType::F32; // | AudioFile::ST_Interleaved;
-
-        // Read native float:
-        fread(dst, sizeof(float), nSamples, f);
+        if (bits == 32)
+        {
+            sound.m_sampleType = SampleType::F32;
+        }
+        else if (bits == 64)
+        {
+            sound.m_sampleType = SampleType::F64;
+        }
+        else
+        {
+            DE_ERROR("Unsupported WAV float PCM ", bits)
+            return false;
+        }
     }
 
-    fclose(f);
-
+    const int64_t nBytes = nSamples * bits / 8;
+    sound.m_samples.resize(nBytes);
+    uint8_t* __restrict__ pBytes = sound.m_samples.data();
+    file.read(pBytes,nBytes);
     return true;
 }
 

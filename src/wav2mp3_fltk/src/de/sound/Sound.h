@@ -40,13 +40,22 @@ public:
 
     std::string sampleTypeStr() const;
 
-    std::string str(bool bWithUri = false) const;
+    std::string str(bool bWithFileName = false, bool bWithDir = false) const;
 
-    int64_t read_frames(void* __restrict__ dst, int64_t frameCount, int64_t frameStart) const;
+    int64_t read_frames(
+            void* __restrict__ dst,
+            int64_t frameCount,
+            int64_t frameStart = 0) const;
 
-    int64_t read_frames_convert(SampleType dstType, void* __restrict__ dst, int64_t frameCount, int64_t frameStart) const;
+    int64_t read_frames(
+            SampleTypeConverter::Converter_t converter,
+            void* __restrict__ dst,
+            int64_t frameCount,
+            int64_t frameStart = 0) const;
 
-    int64_t read_frames_f32(float* __restrict__ dst, int64_t frameCount, int64_t frameIndex) const;
+    // int64_t read_frames_convert(SampleType dstType, void* __restrict__ dst, int64_t frameCount, int64_t frameStart) const;
+
+    // int64_t read_frames_f32(float* __restrict__ dst, int64_t frameCount, int64_t frameIndex) const;
 
     bool validate() const;
 

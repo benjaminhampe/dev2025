@@ -18,7 +18,8 @@ public:
         S24,
         S32,
         S8,
-        U8
+        U8,
+        // S12, // WAV spec supports that! Not me
     };
 
     uint8_t m_sampleType;
@@ -34,12 +35,14 @@ public:
     {
         switch (sampleType)
         {
-            case S8: return "ST_S8";
-            case S16: return "ST_S16";
-            case S24: return "ST_S24";
-            case S32: return "ST_S32";
-            case F32: return "ST_F32";
-            case F64: return "ST_F64";
+            case U8: return "U8";
+            case S8: return "S8";
+            // case S12: return "S12";
+            case S16: return "S16";
+            case S24: return "S24";
+            case S32: return "S32";
+            case F32: return "F32";
+            case F64: return "F64";
             default: return "Unknown";
         }
     }

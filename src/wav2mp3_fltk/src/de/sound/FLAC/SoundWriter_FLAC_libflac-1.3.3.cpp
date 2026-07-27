@@ -2,6 +2,10 @@
 
 #include <FLAC/stream_encoder.h>
 
+#ifdef _WIN32
+#include <FLAC/share/windows_unicode_filenames.h>
+#endif
+
 namespace de {
 namespace sound {
 
@@ -118,7 +122,6 @@ bool convertToFLACPCM(const Sound& snd, TAlignedVector<FLAC__int32>& output_samp
     output_samples.resize(totalSamples);
 
     const uint8_t* __restrict__ pSrc = snd.m_samples.data();
-
     FLAC__int32* __restrict__ pDst = output_samples.data();
 
     ConverterFn converter = selectConverter(snd.m_sampleType);
@@ -156,10 +159,14 @@ save_sound_flac(
     TAlignedVector<FLAC__int32> pcm;
     convertToFLACPCM(snd, pcm);
 
+    #ifdef _WIN32
+        flac_internal_set_utf8_filenames(1);
+    #endif
+
     FLAC__StreamEncoder* enc = FLAC__stream_encoder_new();
     if (!enc)
     {
-        DE_ERROR("Failed to open FLAC encoder, ",uri)
+        DE_ERROR("Failed to open FLAC encoder. ",uri)
         return false;
     }
 
@@ -169,7 +176,7 @@ save_sound_flac(
 
     if (FLAC__stream_encoder_init_file(enc, uri.c_str(), nullptr, nullptr) != FLAC__STREAM_ENCODER_INIT_STATUS_OK)
     {
-        std::fprintf(stderr, "Failed to init FLAC encoder\n");
+        DE_ERROR("Failed to init FLAC encoder. ",uri)
         FLAC__stream_encoder_delete(enc);
         return 1;
     }

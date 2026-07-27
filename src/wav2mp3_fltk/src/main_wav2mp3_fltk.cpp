@@ -827,16 +827,16 @@ int main(int argc, char** argv)
     // =============================================================
     de::Sound snd5;
     de::Sound snd6;
-    dbConvertSound(snd1,snd5,de::SampleType::F64);
-    dbSaveSound(snd5,"C:/_media/Music/wav/piano-space_test4_convertF64.mp3");
-    dbConvertSound(snd5,snd6,de::SampleType::F32);
-    dbSaveSound(snd6,"C:/_media/Music/wav/piano-space_test4_convertF32.mp3");
+    dbConvertSound(snd1,snd5,de::SampleType::F32);
+    dbSaveSound(snd5,"C:/_media/Music/wav/piano-space_test4_convertF32.mp3");
+    dbConvertSound(snd5,snd6,de::SampleType::F64);
+    dbSaveSound(snd6,"C:/_media/Music/wav/piano-space_test4_convertF64.mp3");
 
     // =============================================================
     // Test 5:
     // =============================================================
     de::Sound snd7;
-    dbResampleSound(snd1,snd7,48000);
+    dbResampleSound(snd5,snd7,48000);
     dbSaveSound(snd7,"C:/_media/Music/wav/piano-space_test5_resample_48Hz_r8brain.mp3");
 
     // =============================================================

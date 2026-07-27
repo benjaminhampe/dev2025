@@ -4,7 +4,8 @@
 namespace de {
 namespace sound {
 
-bool load_sound_aiff_f32(Sound & ret, const std::string & url );
+bool
+load_sound_aiff(Sound& ret, const std::string& url);
 
 } // end namespace sound.
 } // end namespace de.

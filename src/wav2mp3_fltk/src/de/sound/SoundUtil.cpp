@@ -4,12 +4,170 @@ namespace de {
 namespace sound {
 
 // static
-int64_t
-SoundUtil::copy(
-    const Sound& src,
-    Sound& dst,
-    int64_t frameCount,
-    int64_t frameStart)
+void SoundUtil::byteSwap16_inplace(void* __restrict__ p, int64_t nElements)
+{
+    uint8_t b[2];
+
+    const uint8_t* __restrict__ pSrc = reinterpret_cast<const uint8_t*>(p);
+          uint8_t* __restrict__ pDst = reinterpret_cast<uint8_t*>(p);
+
+    for (int64_t i = 0; i < nElements; ++i)
+    {
+        b[0] = pSrc[0];
+        b[1] = pSrc[1];
+        pDst[0] = b[1];
+        pDst[1] = b[0];
+        pSrc += 2;
+        pDst += 2;
+    }
+}
+
+// static
+void SoundUtil::byteSwap24_inplace(void* __restrict__ p, int64_t nElements)
+{
+    uint8_t b[3];
+
+    const uint8_t* __restrict__ pSrc = reinterpret_cast<const uint8_t*>(p);
+          uint8_t* __restrict__ pDst = reinterpret_cast<uint8_t*>(p);
+
+    for (int64_t i = 0; i < nElements; ++i)
+    {
+        b[0] = pSrc[0];
+        b[1] = pSrc[1];
+        b[2] = pSrc[2];
+        pDst[0] = b[2];
+        pDst[1] = b[1];
+        pDst[2] = b[0];
+        pSrc += 3;
+        pDst += 3;
+    }
+}
+
+// static
+void SoundUtil::byteSwap32_inplace(void* __restrict__ p, int64_t nElements)
+{
+    uint8_t b[4];
+
+    const uint8_t* __restrict__ pSrc = reinterpret_cast<const uint8_t*>(p);
+          uint8_t* __restrict__ pDst = reinterpret_cast<uint8_t*>(p);
+
+    for (int64_t i = 0; i < nElements; ++i)
+    {
+        b[0] = pSrc[0];
+        b[1] = pSrc[1];
+        b[2] = pSrc[2];
+        b[3] = pSrc[3];
+        pDst[0] = b[3];
+        pDst[1] = b[2];
+        pDst[2] = b[1];
+        pDst[3] = b[0];
+        pSrc += 4;
+        pDst += 4;
+    }
+}
+
+// static
+void SoundUtil::byteSwap64_inplace(void* __restrict__ p, int64_t nElements)
+{
+    uint8_t b[8];
+
+    const uint8_t* __restrict__ pSrc = reinterpret_cast<const uint8_t*>(p);
+          uint8_t* __restrict__ pDst = reinterpret_cast<uint8_t*>(p);
+
+    for (int64_t i = 0; i < nElements; ++i)
+    {
+        b[0] = pSrc[0];
+        b[1] = pSrc[1];
+        b[2] = pSrc[2];
+        b[3] = pSrc[3];
+        b[4] = pSrc[4];
+        b[5] = pSrc[5];
+        b[6] = pSrc[6];
+        b[7] = pSrc[7];
+        pDst[0] = b[7];
+        pDst[1] = b[6];
+        pDst[2] = b[5];
+        pDst[3] = b[4];
+        pDst[4] = b[3];
+        pDst[5] = b[2];
+        pDst[6] = b[1];
+        pDst[7] = b[0];
+        pSrc += 8;
+        pDst += 8;
+    }
+}
+
+// static
+void SoundUtil::byteSwap16(const void* __restrict__ src, void* __restrict__ dst, int64_t nElements)
+{
+    const uint8_t* __restrict__ pSrc = reinterpret_cast<const uint8_t*>(src);
+          uint8_t* __restrict__ pDst = reinterpret_cast<uint8_t*>(dst);
+
+    for (int64_t i = 0; i < nElements; ++i)
+    {
+        pDst[0] = pSrc[1];
+        pDst[1] = pSrc[0];
+        pSrc += 2;
+        pDst += 2;
+    }
+}
+
+// static
+void SoundUtil::byteSwap24(const void* __restrict__ src, void* __restrict__ dst, int64_t nElements)
+{
+    const uint8_t* __restrict__ pSrc = reinterpret_cast<const uint8_t*>(src);
+          uint8_t* __restrict__ pDst = reinterpret_cast<uint8_t*>(dst);
+
+    for (int64_t i = 0; i < nElements; ++i)
+    {
+        pDst[0] = pSrc[2];
+        pDst[1] = pSrc[1];
+        pDst[2] = pSrc[0];
+        pSrc += 3;
+        pDst += 3;
+    }
+}
+
+// static
+void SoundUtil::byteSwap32(const void* __restrict__ src, void* __restrict__ dst, int64_t nElements)
+{
+    const uint8_t* __restrict__ pSrc = reinterpret_cast<const uint8_t*>(src);
+          uint8_t* __restrict__ pDst = reinterpret_cast<uint8_t*>(dst);
+
+    for (int64_t i = 0; i < nElements; ++i)
+    {
+        pDst[0] = pSrc[3];
+        pDst[1] = pSrc[2];
+        pDst[2] = pSrc[1];
+        pDst[3] = pSrc[0];
+        pSrc += 4;
+        pDst += 4;
+    }
+}
+
+// static
+void SoundUtil::byteSwap64(const void* __restrict__ src, void* __restrict__ dst, int64_t nElements)
+{
+    const uint8_t* __restrict__ pSrc = reinterpret_cast<const uint8_t*>(src);
+          uint8_t* __restrict__ pDst = reinterpret_cast<uint8_t*>(dst);
+
+    for (int64_t i = 0; i < nElements; ++i)
+    {
+        pDst[0] = pSrc[7];
+        pDst[1] = pSrc[6];
+        pDst[2] = pSrc[5];
+        pDst[3] = pSrc[4];
+        pDst[4] = pSrc[3];
+        pDst[5] = pSrc[2];
+        pDst[6] = pSrc[1];
+        pDst[7] = pSrc[0];
+        pSrc += 8;
+        pDst += 8;
+    }
+}
+
+// static
+int64_t SoundUtil::copy( const Sound& src, Sound& dst, int64_t frameCount, int64_t frameStart)
 {
     const int64_t avail = src.m_frames - frameStart;
     if (avail < 1)

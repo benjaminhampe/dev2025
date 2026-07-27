@@ -11,22 +11,26 @@ save_sound_mp3_f32(
     const std::string& uri,
     const SoundSaveOptions& options)
 {
-    if (sound.m_sampleType != SampleType::F32)
+    auto srcType = sound.m_sampleType;
+    auto dstType = SampleType::F32;
+    auto converter = SampleTypeConverter::getConverter(srcType,dstType);
+    if (!converter)
     {
-        DE_ERROR("Only F32 supported (yet) ", uri)
+        DE_ERROR("No converter to F32, ", sound.str(), ", uri = ", uri)
         return false;
     }
+
+    // if (sound.m_sampleType != SampleType::F32)
+    // {
+    //     DE_ERROR("Only F32 supported (yet) ", uri)
+    //     return false;
+    // }
 
     options.onProgress(1);
     //Fl::awake(convert_start_awake, nullptr);
 
     // New Async
     //std::this_thread::sleep_for(std::chrono::milliseconds(10));
-
-    // const char* inWav = ui.in.c_str();
-    // const char* outMp3 = ui.out.c_str();
-    // const int bitrate = ui.br;
-    // const int lameQuality = ui.q;
 
     // ui.cancelFlag = false;
 
@@ -40,8 +44,7 @@ save_sound_mp3_f32(
     File file(uri,eFileMode::Write);
     if (!file.is_open())
     {
-        DE_ERROR("Cannot write MP3 output-file ", uri)
-        //log_error("Cannot write MP3 output-file");
+        DE_ERROR("Cannot write MP3 ", uri)
         lame_close(ctx);
         return false;
     }
@@ -50,7 +53,7 @@ save_sound_mp3_f32(
     const int64_t SAMPLES = FRAMES * sound.m_channels;
 
     // Single raw byte buffer
-    de::TAlignedVector<uint8_t> chunk(SAMPLES * sound.bytesPerSample());
+    de::TAlignedVector<float> chunk(SAMPLES);
 
     // MP3 output buffer
     de::TAlignedVector<uint8_t> mp3Buf(1.25 * SAMPLES + 7200);
@@ -62,8 +65,7 @@ save_sound_mp3_f32(
 
     while (!bCancelFlag)
     {
-        float* __restrict__ chunkPtr = reinterpret_cast<float*>(chunk.data());
-        int64_t framesRead = sound.read_frames_f32(chunkPtr, FRAMES, frameIndex);
+        int64_t framesRead = sound.read_frames(converter, chunk.data(), FRAMES, frameIndex);
         if (framesRead < 1)
             break;
 
@@ -79,10 +81,9 @@ save_sound_mp3_f32(
         int bytes = 0;
 
         // Interpret raw bytes as float32
-        const float* __restrict__ src = reinterpret_cast<const float*>(chunk.data());
         bytes = lame_encode_buffer_interleaved_ieee_float(
             ctx,
-            src,
+            chunk.data(),
             (int)framesRead,
             mp3Buf.data(),
             (int)mp3Buf.size()

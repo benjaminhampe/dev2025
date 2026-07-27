@@ -1,10 +1,10 @@
 #include <DarkSound.h>
 #include <de/sound/SoundUtil.h>
+#include <de/sound/WAV/SoundReader_WAV.h>
 #include <de/sound/MP3/SoundReader_MP3.h>
 #include <de/sound/MP4/SoundReader_MP4.h>
 #include <de/sound/SND/SoundReader_SND.h>
 #include <de/sound/OPUS/SoundReader_OPUS.h>
-//#include <de/sound/WAV/SoundReader_WAV.h>
 //#include <de/sound/FLAC/SoundReader_FLAC.h>
 
 #include <de/sound/MP3/SoundWriter_MP3.h>
@@ -67,24 +67,24 @@ bool dbLoadSound( de::Sound & sound, const std::string& uri )
     auto suffix = dbFileSuffix(uri);
     if (suffix == "mp3")
     {
-        ok = de::sound::load_sound_mp3_f32(sound, uri );
+        ok = de::sound::load_sound_mp3_f32(sound, uri);
+    }
+    else if (suffix == "wav")
+    {
+        ok = de::sound::load_sound_wav(sound, uri);
     }
     else if ((suffix == "mp4") || (suffix == "m4a"))
     {
-        ok = de::sound::load_sound_mp4_f32(sound, uri );
+        ok = de::sound::load_sound_mp4_f32(sound, uri);
     }
     else if (suffix == "opus")
     {
-        ok = de::sound::load_sound_opus_f32(sound, uri );
+        ok = de::sound::load_sound_opus_f32(sound, uri);
     }
     else if (supportedByLibSNDFILE(suffix))
     {
-        ok = de::sound::load_sound_snd_f32(sound, uri );
+        ok = de::sound::load_sound_snd_f32(sound, uri);
     }
-    // else if (suffix == "wav")
-    // {
-    //     ok = de::sound::load_sound_wav_f32(sound, uri );
-    // }
     else
     {
         DE_ERROR("Unsupported decoder for ",uri)
@@ -103,7 +103,7 @@ bool dbLoadSound( de::Sound & sound, const std::string& uri )
 
     perf.stop();
 
-    DE_OK("[Needed] ",perf.ms(), " ms, Sound(",sound.str(),")")
+    DE_OK("[Load] ",perf.ms(), " ms, Sound(",sound.str(true),")")
 
     sound.validate();
     //DE_OK("dat.size() = ",sound.m_samples.size())
@@ -119,6 +119,8 @@ dbSaveSound(
     const std::string& uri,
     const de::SoundSaveOptions& options)
 {
+    // DE_BENNI("Sound(",sound.str(true),") uri = ", uri)
+
     de::PerformanceTimer perf;
     perf.start();
 
@@ -185,7 +187,7 @@ dbSaveSound(
 
     perf.stop();
 
-    DE_OK("[Needed] ",perf.ms(), " ms, Sound(",sound.str(),")")
+    DE_OK("[Save] ",perf.ms(), " ms, Sound(",sound.str(),"), uri(",uri,")")
 
     // sound.validate();
     //DE_OK("dat.size() = ",sound.m_samples.size())
