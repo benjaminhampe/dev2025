@@ -10,7 +10,7 @@ namespace sound {
 struct Utils
 {
     static int
-    getSndFormatFromFileExt(const std::string & ext)
+    getSndTypeFromFileExt(const std::string & ext)
     {
         if (ext.empty())
         {
@@ -50,10 +50,9 @@ struct Utils
     }
 
     static std::string
-    getFormatStr(int format)
+    getSndTypeStr(int format)
     {
-        int ext = format & 0x0FFF0000;
-        switch(ext)
+        switch( format & SF_FORMAT_TYPEMASK )
         {
         case SF_FORMAT_WAV: return "WAV";
         case SF_FORMAT_OGG: return "OGG";
@@ -79,15 +78,15 @@ struct Utils
         case SF_FORMAT_WVE: return "WVE";
         case SF_FORMAT_MPC2K: return "MPC2K";
         case SF_FORMAT_RF64: return "RF64";
-        default: return dbStr("SF_FORMAT_UNKNOWN with ",format);
+        default:
+            return dbStr("SF_FORMAT_UNKNOWN with ",format & SF_FORMAT_TYPEMASK);
         }
     }
 
     static std::string
-    getSampleTypeStr(int format)
+    getSndSampleTypeStr(int format)
     {
-        int subtype = format & SF_FORMAT_SUBMASK;
-        switch (subtype)
+        switch ( format & SF_FORMAT_SUBMASK )
         {
             case SF_FORMAT_PCM_S8: return "PCM_S8";
             case SF_FORMAT_PCM_16: return "PCM_16";
@@ -116,74 +115,84 @@ struct Utils
             case SF_FORMAT_ALAC_20: return "ALAC_20";
             case SF_FORMAT_ALAC_24: return "ALAC_24";
             case SF_FORMAT_ALAC_32: return "ALAC_32";
-            default: return dbStr("SF_SUBTYPE_UNKNOWN_",subtype);
+            default: return dbStr("SF_SUBTYPE_UNKNOWN_",format & SF_FORMAT_SUBMASK);
         }
     }
 
     static std::string
-    getEndianessStr(int format)
+    getSndEndianStr(int format)
     {
-        int endian = format & SF_FORMAT_ENDMASK;
-        switch (endian)
+        switch ( format & SF_FORMAT_ENDMASK )
         {
             case SF_ENDIAN_FILE: return "ENDIAN_FILE";
             case SF_ENDIAN_LITTLE: return "ENDIAN_LITTLE";
             case SF_ENDIAN_BIG:  return "ENDIAN_BIG";
             case SF_ENDIAN_CPU: return "ENDIAN_CPU";
-            default: return dbStr("ENDIAN_UNKNOWN_",endian);
+            default: return dbStr("ENDIAN_UNKNOWN_",format & SF_FORMAT_ENDMASK);
         }
     }
 
     static uint32_t
-    getBitsPerSampleFromSndFormat(int format )
+    getBitsPerSample(int format )
     {
-        uint32_t result = 0;
-        switch ( format )
+        switch ( format & SF_FORMAT_SUBMASK )
         {
-            case SF_FORMAT_PCM_S8: result = 8; break;
-            case SF_FORMAT_PCM_16: result = 16; break;
-            case SF_FORMAT_PCM_24: result = 24; break;
-            case SF_FORMAT_PCM_32: result = 32; break; /* Signed 32 bit data */
-            case SF_FORMAT_PCM_U8: result = 8; break;
-            case SF_FORMAT_FLOAT: result = 32; break;
-            case SF_FORMAT_DOUBLE: result = 64; break;
-            case SF_FORMAT_ULAW: result = 8; break;
-            case SF_FORMAT_ALAW: result = 8; break;
-            case SF_FORMAT_IMA_ADPCM: result = 16; break;
-            case SF_FORMAT_MS_ADPCM: result = 16; break;
+            case SF_FORMAT_PCM_S8: return 8;
+            case SF_FORMAT_PCM_16: return 16;
+            case SF_FORMAT_PCM_24: return 24;
+            case SF_FORMAT_PCM_32: return 32; /* Signed 32 bit data */
+            case SF_FORMAT_PCM_U8: return 8;
+            case SF_FORMAT_FLOAT: return 32;
+            case SF_FORMAT_DOUBLE: return 64;
+            case SF_FORMAT_ULAW: return 8;
+            case SF_FORMAT_ALAW: return 8;
+            case SF_FORMAT_IMA_ADPCM: return 16;
+            case SF_FORMAT_MS_ADPCM: return 16;
             default:
-                DE_ERROR("Unsupported SNDFILE format ",format)
-                break;
+                DE_ERROR("Unsupported SNDFILE format ",format & SF_FORMAT_SUBMASK)
+                return 0;
         }
-
-        return result;
     }
 
     static SampleType
-    getSampleTypeFromFormat( int format )
+    getSampleType( int format )
     {
-        SampleType result = SampleType::Unknown;
-        switch ( format )
+        switch ( format & SF_FORMAT_SUBMASK )
         {
-            case SF_FORMAT_PCM_S8: result = SampleType::S8; break;
-            case SF_FORMAT_PCM_16: result = SampleType::S16; break;
-            case SF_FORMAT_PCM_24: result = SampleType::S24; break;
-            case SF_FORMAT_PCM_32: result = SampleType::S32; break; /* Signed 32 bit data */
-            case SF_FORMAT_PCM_U8: result = SampleType::U8; break;
-            case SF_FORMAT_FLOAT: result = SampleType::F32; break;
-            case SF_FORMAT_DOUBLE: result = SampleType::F64; break;
-            //        case SF_FORMAT_ULAW: result = EST_ULAW_8; break;
-            //        case SF_FORMAT_ALAW: result = EST_ALAW_8; break;
-            //        case SF_FORMAT_IMA_ADPCM: result = EST_S16; break;
-            //        case SF_FORMAT_MS_ADPCM: result = EST_S16; break;
+            case SF_FORMAT_PCM_S8: return SampleType::S8;
+            case SF_FORMAT_PCM_16: return SampleType::S16;
+            case SF_FORMAT_PCM_24: return SampleType::S24;
+            case SF_FORMAT_PCM_32: return SampleType::S32; /* Signed 32 bit data */
+            case SF_FORMAT_PCM_U8: return SampleType::U8;
+            case SF_FORMAT_FLOAT: return SampleType::F32;
+            case SF_FORMAT_DOUBLE: return SampleType::F64;
+            //        case SF_FORMAT_ULAW: return EST_ULAW_8;
+            //        case SF_FORMAT_ALAW: return EST_ALAW_8;
+            //        case SF_FORMAT_IMA_ADPCM: return EST_S16;
+            //        case SF_FORMAT_MS_ADPCM: return EST_S16;
             default:
-                DE_ERROR("Unsupported SNDFILE format ",format)
-                break;
+                DE_ERROR("Unsupported SNDFILE format ",format & SF_FORMAT_SUBMASK)
+                return SampleType::Unknown;
         }
-
-        return result;
     }
 
+    static int
+    getSndSampleType( SampleType sampleType )
+    {
+        switch ( sampleType )
+        {
+            case SampleType::U8: return SF_FORMAT_PCM_U8;
+            case SampleType::S8: return SF_FORMAT_PCM_S8;
+            case SampleType::S16: return SF_FORMAT_PCM_16;
+            case SampleType::S24: return SF_FORMAT_PCM_24;
+            case SampleType::S32: return SF_FORMAT_PCM_32;
+            case SampleType::F32: return SF_FORMAT_FLOAT;
+            case SampleType::F64: return SF_FORMAT_DOUBLE;
+            default:
+                DE_ERROR("Unsupported SampleType ",sampleType.str())
+                return 0;
+        }
+    }
 };
 
 

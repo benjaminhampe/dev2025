@@ -6,8 +6,11 @@
 #include <de/sound/OPUS/SoundReader_OPUS.h>
 //#include <de/sound/WAV/SoundReader_WAV.h>
 //#include <de/sound/FLAC/SoundReader_FLAC.h>
-#include <de/sound/MP3/SoundWriter_MP3.h>
 
+#include <de/sound/MP3/SoundWriter_MP3.h>
+#include <de/sound/WAV/SoundWriter_WAV.h>
+#include <de/sound/SND/SoundWriter_SND.h>
+#include <de/sound/FLAC/SoundWriter_FLAC_libflac-1.3.3.h>
 
 #include <de/resample/Resampler_r8brain.h>
 
@@ -125,10 +128,18 @@ dbSaveSound(
     {
         ok = de::sound::save_sound_mp3_f32(sound, uri, options);
     }
-    // else if (suffix == "wav")
-    // {
-    //     ok = de::sound::save_sound_wav_f32(sound, uri );
-    // }
+    else if (suffix == "wav")
+    {
+        ok = de::sound::save_sound_wav(sound, uri, options);
+    }
+    else if (suffix == "flac")
+    {
+        ok = de::sound::save_sound_flac(sound, uri, options);
+    }
+    else if (suffix == "ogg")
+    {
+        ok = de::sound::save_sound_snd_ogg_vorbis(sound, uri, options);
+    }
     // else if ((suffix == "mp4") || (suffix == "m4a"))
     // {
     //     ok = de::sound::load_sound_mp4_f32(sound, uri );
@@ -141,10 +152,9 @@ dbSaveSound(
     // {
     //     ok = de::sound::load_sound_snd_f32(sound, uri );
     // }
-
     else
     {
-        DE_ERROR("Unsupported encoder for ",uri)
+        DE_ERROR("Unsupported exporter for ",uri)
     }
 
     if (!ok)

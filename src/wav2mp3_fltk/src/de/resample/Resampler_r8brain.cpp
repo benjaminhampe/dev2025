@@ -101,7 +101,7 @@ struct Resampler_r8brain::Impl
                 {
                     m_outBuffer1.m_flags = 1; // Planar flag.
                     m_outBuffer1.m_sampleType = SampleType::F64;
-                    m_outBuffer1.m_sampleRate = src.m_sampleRate;
+                    m_outBuffer1.m_sampleRate = dstRate;
                     m_outBuffer1.m_channels = m_channels;
                     m_outBuffer1.allocFrames( outFrames );
                     //m_outBuffer1.resize( outFrames * m_channels * sizeof(double) );

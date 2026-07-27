@@ -7,10 +7,10 @@ namespace sound {
 bool load_sound_snd_f32(Sound & sound, const std::string & uri )
 {
     auto ext = dbFileSuffix( uri );
-    int fmt = Utils::getSndFormatFromFileExt( ext );
+    int fmt = Utils::getSndTypeFromFileExt( ext );
     if (fmt < 0)
     {
-        DE_ERROR("Unsupported SNDFILE format, uri = ", uri)
+        DE_ERROR("Unsupported SNDFILE type, uri = ", uri)
         return false;
     }
 
@@ -30,9 +30,9 @@ bool load_sound_snd_f32(Sound & sound, const std::string & uri )
              "Uri(", uri,")")
     DE_DEBUG("SNDFILE "
              "Fmt(",info.format,"), "
-             "Ext(",Utils::getFormatStr(info.format),"), "
-             "SampleType(",Utils::getSampleTypeStr(info.format),"), "
-             "Endian(",Utils::getEndianessStr(info.format),")")
+             "Type(",Utils::getSndTypeStr(info.format),"), "
+             "SampleType(",Utils::getSndSampleTypeStr(info.format),"), "
+             "Endian(",Utils::getSndEndianStr(info.format),")")
     DE_DEBUG("SNDFILE "
              "SampleRate(",info.samplerate,"), "
              "Channels(",info.channels,"), "

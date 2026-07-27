@@ -5,13 +5,7 @@ namespace de {
 namespace sound {
 
 bool
-save_sound_snd_ogg_vorbis(
-    const Sound& sound,
-    const std::string& uri,
-    const SoundSaveOptions& options);
-
-bool
-save_sound_snd_wav(
+save_sound_wav(
     const Sound& sound,
     const std::string& uri,
     const SoundSaveOptions& options);

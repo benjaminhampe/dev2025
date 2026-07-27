@@ -29,10 +29,45 @@ namespace {
 SampleTypeConverter::Converter_t
 SampleTypeConverter::getConverter( const SampleType& src, const SampleType& dst )
 {
-    if ( src == SampleType::S16 )
+    if ( src == SampleType::U8 )
     {
+             if ( dst == SampleType::U8 )  { return convert_U8_to_U8; }
+     // else if ( dst == SampleType::S8 )  { return convert_U8_to_S8; }
+     // else if ( dst == SampleType::S16 ) { return convert_U8_to_S16; }
+     // else if ( dst == SampleType::S24 ) { return convert_U8_to_S24; }
+     // else if ( dst == SampleType::S32 ) { return convert_U8_to_S32; }
+     // else if ( dst == SampleType::F32 ) { return convert_U8_to_F32; }
+     // else if ( dst == SampleType::F64 ) { return convert_U8_to_F64; }
+        else
+        {
+            auto s = dbStr("No converter from(",src.str(),") _to_ (",dst.str(),")");
+            DE_ERROR(s)
+            return nullptr;
+        }
+    }
+    else if ( src == SampleType::S8 )
+    {
+             if ( dst == SampleType::U8 )  { return convert_S8_to_U8; }
+        else if ( dst == SampleType::S8 )  { return convert_S8_to_S8; }
+     // else if ( dst == SampleType::S16 ) { return convert_S8_to_S16; }
+     // else if ( dst == SampleType::S24 ) { return convert_S8_to_S24; }
+     // else if ( dst == SampleType::S32 ) { return convert_S8_to_S32; }
+     // else if ( dst == SampleType::F32 ) { return convert_S8_to_F32; }
+     // else if ( dst == SampleType::F64 ) { return convert_S8_to_F64; }
+        else
+        {
+            auto s = dbStr("No converter from(",src.str(),") _to_ (",dst.str(),")");
+            DE_ERROR(s)
+            return nullptr;
+        }
+    }
+    else if ( src == SampleType::S16 )
+    {
+     // else if ( dst == SampleType::U8 )  { return convert_S16_to_U8; }
+     // else if ( dst == SampleType::S8 )  { return convert_S16_to_S8; }
              if ( dst == SampleType::S16 ) { return convert_S16_to_S16; }
      // else if ( dst == SampleType::S24 ) { return convert_S16_to_S24; }
+     // else if ( dst == SampleType::S32 ) { return convert_S16_to_S32; }
         else if ( dst == SampleType::F32 ) { return convert_S16_to_F32; }
      // else if ( dst == SampleType::F64 ) { return convert_S16_to_F64; }
         else
@@ -44,8 +79,11 @@ SampleTypeConverter::getConverter( const SampleType& src, const SampleType& dst 
     }
     else if ( src == SampleType::S24 )
     {
-             if ( dst == SampleType::S24 ) { return convert_S24_to_S24; }
+     // else if ( dst == SampleType::U8 )  { return convert_S24_to_U8; }
+     // else if ( dst == SampleType::S8 )  { return convert_S24_to_S8; }
      // else if ( dst == SampleType::S16 ) { return convert_S24_to_S16; }
+             if ( dst == SampleType::S24 ) { return convert_S24_to_S24; }
+     // else if ( dst == SampleType::S32 ) { return convert_S24_to_S32; }
         else if ( dst == SampleType::F32 ) { return convert_S24_to_F32; }
      // else if ( dst == SampleType::F64 ) { return convert_S24_to_F64; }
         else
@@ -55,10 +93,29 @@ SampleTypeConverter::getConverter( const SampleType& src, const SampleType& dst 
             return nullptr;
         }
     }
+    else if ( src == SampleType::S32 )
+    {
+     // else if ( dst == SampleType::U8 )  { return convert_S32_to_U8; }
+     // else if ( dst == SampleType::S8 )  { return convert_S32_to_S8; }
+     // else if ( dst == SampleType::S16 ) { return convert_S32_to_S16; }
+     // else if ( dst == SampleType::S24 ) { return convert_S32_to_S24; }
+             if ( dst == SampleType::S32 ) { return convert_S32_to_S32; }
+     // else if ( dst == SampleType::F32 ) { return convert_S32_to_F32; }
+     // else if ( dst == SampleType::F64 ) { return convert_S32_to_F64; }
+        else
+        {
+            auto s = dbStr("No converter from(",src.str(),") _to_ (",dst.str(),")");
+            DE_ERROR(s)
+            return nullptr;
+        }
+    }
     else if ( src == SampleType::F32 )
     {
+     // else if ( dst == SampleType::U8 )  { return convert_F32_to_U8; }
+     // else if ( dst == SampleType::S8 )  { return convert_F32_to_S8; }
              if ( dst == SampleType::S16 ) { return convert_F32_to_S16; }
         else if ( dst == SampleType::S24 ) { return convert_F32_to_S24; }
+     // else if ( dst == SampleType::S32 ) { return convert_F32_to_S32; }
         else if ( dst == SampleType::F32 ) { return convert_F32_to_F32; }
         else if ( dst == SampleType::F64 ) { return convert_F32_to_F64; }
         else
@@ -70,6 +127,11 @@ SampleTypeConverter::getConverter( const SampleType& src, const SampleType& dst 
     }
     else if ( src == SampleType::F64 )
     {
+     // else if ( dst == SampleType::U8 )  { return convert_F64_to_U8; }
+     // else if ( dst == SampleType::S8 )  { return convert_F64_to_S8; }
+     // else if ( dst == SampleType::S16 ) { return convert_F64_to_S16; }
+     // else if ( dst == SampleType::S24 ) { return convert_F64_to_S24; }
+     // else if ( dst == SampleType::S32 ) { return convert_F64_to_S32; }
              if ( dst == SampleType::F32 ) { return convert_F64_to_F32; }
         else if ( dst == SampleType::F64 ) { return convert_F64_to_F64; }
         else
@@ -723,6 +785,80 @@ void SampleTypeConverter::convert_S24_to_F32( const void* __restrict__ src, void
 #endif
 }
 
+// int8_t range: −128…127
+
+// FLAC PCM_U8 range: 0…255
+
+// Silence in PCM_U8 = 128
+
+// void convert_int8_to_uint8(const int8_t* in, uint8_t* out, size_t n)
+// {
+//     for (size_t i = 0; i < n; ++i) out[i] = uint8_t(int(in[i]) + 128);
+// }
+
+// static
+void SampleTypeConverter::convert_S8_to_U8( const void* __restrict__ src, void* __restrict__ dst, int64_t nSamples )
+{
+    const int8_t* __restrict__ in = reinterpret_cast<const int8_t*>(src);
+    uint8_t*     __restrict__ out = reinterpret_cast<uint8_t*>(dst);
+
+    // ============================================================
+    // Scalar fallback
+    // ============================================================
+    for (int64_t i = 0; i < nSamples; ++i)
+    {
+        out[i] = uint8_t(int_fast16_t(in[i]) + 128);
+    }
+}
+
+// #include <emmintrin.h>
+
+// static
+void SampleTypeConverter::convert_S8_to_U8_sse( const void* __restrict__ src, void* __restrict__ dst, int64_t nSamples )
+{
+    const int8_t* __restrict__ in = reinterpret_cast<const int8_t*>(src);
+    uint8_t*     __restrict__ out = reinterpret_cast<uint8_t*>(dst);
+
+    const __m128i add128 = _mm_set1_epi8(char(128));
+
+    int64_t i = 0;
+    for (; i + 16 <= nSamples; i += 16)
+    {
+        __m128i v = _mm_loadu_si128((const __m128i*)(in + i));
+        v = _mm_add_epi8(v, add128);
+        _mm_storeu_si128((__m128i*)(out + i), v);
+    }
+
+    // tail
+    for (; i < nSamples; ++i)
+    {
+        out[i] = uint8_t(int_fast16_t(in[i]) + 128);
+    }
+}
+
+// #include <immintrin.h>
+
+// static
+void SampleTypeConverter::convert_S8_to_U8_avx( const void* __restrict__ src, void* __restrict__ dst, int64_t nSamples )
+{
+    const int8_t* __restrict__ in = reinterpret_cast<const int8_t*>(src);
+    uint8_t*     __restrict__ out = reinterpret_cast<uint8_t*>(dst);
+
+    const __m256i add128 = _mm256_set1_epi8(char(128));
+
+    size_t i = 0;
+    for (; i + 32 <= nSamples; i += 32)
+    {
+        __m256i v = _mm256_loadu_si256((const __m256i*)(in + i));
+        v = _mm256_add_epi8(v, add128);
+        _mm256_storeu_si256((__m256i*)(out + i), v);
+    }
+
+    for (; i < nSamples; ++i)
+    {
+        out[i] = uint8_t(int_fast16_t(in[i]) + 128);
+    }
+}
 
 } // end namespace de.
 
