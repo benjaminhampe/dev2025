@@ -49,6 +49,8 @@ else()
     target_link_libraries(${APP_NAME} PRIVATE de_sndfile)
     target_link_libraries(${APP_NAME} PRIVATE de_opusfile)
     target_link_libraries(${APP_NAME} PRIVATE de_flac)
+    target_link_libraries(${APP_NAME} PRIVATE de_ogg)
+    target_link_libraries(${APP_NAME} PRIVATE de_vorbis)
 
     # target_link_libraries(${APP_NAME} PRIVATE de_soxr) # This shit code is pure Hell, linker error _soxr_rdft. That shit fn does not exist but is used.
     target_link_libraries(${APP_NAME} PRIVATE de_speexdsp)

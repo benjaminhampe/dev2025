@@ -71,26 +71,27 @@ save_sound_snd_ogg_vorbis(
         return false;
     }
 
-    if (sound.m_sampleType != SampleType::F32)
-    {
-        DE_WARN("Only native support for ST_F32, ",uri)
-        DE_WARN("Need converter, ",sound.str())
-        return false;
-    }
+    // if (sound.m_sampleType != SampleType::F32)
+    // {
+    //     DE_WARN("Only native support for ST_F32, ",uri)
+    //     DE_WARN("Need converter, ",sound.str())
+    //     return false;
+    // }
 
     SF_INFO header;
     ::memset( &header, 0, sizeof(SF_INFO) );
-    header.frames = sf_count_t( sound.m_frames );
+    //header.frames = sf_count_t( sound.m_frames );
     header.channels = int( sound.m_channels );
     header.samplerate = int( sound.m_sampleRate );
-    header.format = SF_ENDIAN_CPU | SF_FORMAT_OGG | SF_FORMAT_FLOAT;
-    header.sections = 0;
-    header.seekable = 1;
+    header.format = SF_FORMAT_OGG | SF_FORMAT_VORBIS; // SF_ENDIAN_CPU | | SF_FORMAT_FLOAT;
+    //header.sections = 0;
+    //header.seekable = 1;
 
     SNDFILE* file = sf_open( uri.c_str(), SFM_WRITE, &header );
     if ( !file )
     {
-        DE_ERROR("Cant open wav 16bit stereo")
+        DE_ERROR("Cannot sf_open, ",uri)
+        DE_ERROR(sf_strerror(nullptr));
         return false;
     }
 
@@ -101,7 +102,7 @@ save_sound_snd_ogg_vorbis(
     if (sound.m_sampleType == SampleType::F32)
     {
         auto p = reinterpret_cast<const float*>(sound.m_samples.data());
-        sf_write_float(file, p, sound.sampleCount());
+        int64_t frameWritten = sf_write_float(file, p, sound.m_frames);
     }
     else
     {
@@ -111,8 +112,9 @@ save_sound_snd_ogg_vorbis(
             DE_ERROR("Conversion failed. ", uri)
             return false;
         }
-        auto p = reinterpret_cast<const uint8_t*>(s2.m_samples.data());
-        sf_write_raw(file, p, s2.sampleCount());
+        options.onProgress(20);
+        auto p = reinterpret_cast<const float*>(s2.m_samples.data());
+        int64_t frameWritten = sf_write_float(file, p, s2.m_frames);
     }
 
     options.onProgress(100);

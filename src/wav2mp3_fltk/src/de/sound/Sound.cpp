@@ -225,7 +225,7 @@ int64_t Sound::read_frames_convert(SampleType dstType, void* __restrict__ dst, i
     const int64_t byteIndex = frameStart * m_channels * bpp;
 
 #if 0
-// <debug>
+    // <debug>
     if (byteCount < 1)
     {
         DE_ERROR("Got byteCount(",byteCount,")")
@@ -243,7 +243,7 @@ int64_t Sound::read_frames_convert(SampleType dstType, void* __restrict__ dst, i
         DE_ERROR("byteIndex(",byteIndex,") + byteCount(",byteCount,") > m_samples(",m_samples.size(),")")
         return 0;
     }
-// </debug>
+    // </debug>
 #endif
 
     const uint8_t* __restrict__ src = m_samples.data() + byteIndex;
@@ -300,6 +300,20 @@ int64_t Sound::read_frames_f32(float* __restrict__ dst, int64_t frameCount, int6
 
     return maxFrames;
 }
+
+} // end namespace de.
+
+
+/*
+    static void deinterleave(
+            int32_t srcChannels,
+            SampleType srcType,
+            const TAlignedVector<uint8_t>& srcSamples,
+            TAlignedVector<uint8_t>& tmpSamples,
+            SampleType dstType,
+            TAlignedVector<uint8_t>& dstSamples,
+            int64_t frameCount,
+            int64_t frameStart = 0);
 
 
 void Sound::deinterleave(
@@ -380,21 +394,4 @@ void Sound::deinterleave(
     }
 }
 
-/*
-float Sound::maximum() const
-{
-    float maxv = 0.0f;
-
-    auto p = reinterpret_cast<const float*>(samples.data());
-
-    for (size_t i = 0; i < frame_count * channels; ++i)
-    {
-        float s = *p++;
-        maxv = std::max(maxv, fabs(s));
-    }
-    return maxv;
-}
 */
-
-} // end namespace de.
-

@@ -8,35 +8,33 @@ namespace sound {
 struct SoundUtil
 // ===========================================================================
 {
+    //🔥
     static int64_t
     copy( const Sound& src, Sound& dst, int64_t frameCount, int64_t srcFrameStart = 0);
 
+    //🔥
     static int64_t
     convert( const Sound& src, Sound& dst, SampleType dstType);
 
-    //🔥Deinterleave (interleaved → planar)
+    //🔥Make planar, L|R|L|R -> L|L|R|R
     static int64_t
     deinterleave( const Sound& src, Sound& dst );
 
-    //🔥Interleave (planar → interleaved)
+    //🔥Make interleaved, L|L|R|R -> L|R|L|R
     static int64_t
     interleave( const Sound& src, Sound& dst );
 
-    static void
-    deinterleaveConvert(
-        int32_t srcChannels,
-        SampleType srcType,
-        const TAlignedVector<uint8_t>& srcSamples,
-        TAlignedVector<uint8_t>& tmpSamples,
-        SampleType dstType,
-        TAlignedVector<uint8_t>& dstSamples,
-        int64_t maxFrameCount,
-        int64_t srcFrameStart = 0);
+    //🔥Determine most negative of all samples
+    static float
+    mostNegative( const Sound& sound );
 
-/*
-    float maximum() const;
-*/
+    //🔥Determine most positive of all samples
+    static float
+    mostPositive( const Sound& sound );
 
+    //🔥Determine absolute biggest sample value
+    static float
+    maximum( const Sound& sound );
 };
 
 } // end namespace sound.

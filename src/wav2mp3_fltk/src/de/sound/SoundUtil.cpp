@@ -232,6 +232,84 @@ SoundUtil::interleave( const Sound& src, Sound& dst )
     return src.m_frames;
 }
 
+float SoundUtil::mostNegative( const Sound& sound )
+{
+    if (sound.m_sampleType != SampleType::F32)
+    {
+        DE_ERROR("Not F32")
+        return 0.0;
+    }
+
+    float m = 0.0f;
+
+    auto p = reinterpret_cast<const float*>(sound.m_samples.data());
+
+    for (size_t i = 0; i < sound.sampleCount(); ++i)
+    {
+        float v = *p++;
+        if (v < 0.0f) m = std::fmaxf(-v, m);
+    }
+    return m;
+}
+
+float SoundUtil::mostPositive( const Sound& sound )
+{
+    if (sound.m_sampleType != SampleType::F32)
+    {
+        DE_ERROR("Not F32")
+        return 0.0;
+    }
+
+    float m = 0.0f;
+
+    auto p = reinterpret_cast<const float*>(sound.m_samples.data());
+
+    for (size_t i = 0; i < sound.sampleCount(); ++i)
+    {
+        float v = *p++;
+        if (v > 0.0f) m = std::fmaxf(v, m);
+    }
+    return m;
+}
+
+float SoundUtil::maximum( const Sound& sound )
+{
+    if (sound.m_sampleType != SampleType::F32)
+    {
+        DE_ERROR("Not F32")
+        return 0.0;
+    }
+
+    float m = 0.0f;
+
+    auto p = reinterpret_cast<const float*>(sound.m_samples.data());
+
+    for (size_t i = 0; i < sound.sampleCount(); ++i)
+    {
+        float v = *p++;
+        m = std::fmaxf( std::fabsf(v), m);
+    }
+    return m;
+}
+
+} // end namespace sound.
+} // end namespace de.
+
+
+
+/*
+
+static void
+deinterleaveConvert(
+    int32_t srcChannels,
+    SampleType srcType,
+    const TAlignedVector<uint8_t>& srcSamples,
+    TAlignedVector<uint8_t>& tmpSamples,
+    SampleType dstType,
+    TAlignedVector<uint8_t>& dstSamples,
+    int64_t maxFrameCount,
+    int64_t srcFrameStart = 0);
+
 // static
 void
 SoundUtil::deinterleaveConvert(
@@ -312,22 +390,4 @@ SoundUtil::deinterleaveConvert(
     }
 }
 
-/*
-float Sound::maximum() const
-{
-    float maxv = 0.0f;
-
-    auto p = reinterpret_cast<const float*>(samples.data());
-
-    for (size_t i = 0; i < frame_count * channels; ++i)
-    {
-        float s = *p++;
-        maxv = std::max(maxv, fabs(s));
-    }
-    return maxv;
-}
 */
-
-} // end namespace sound.
-} // end namespace de.
-

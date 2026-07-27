@@ -1,22 +1,30 @@
 #include <de/sound/OPUS/SoundReader_OPUS.h>
 
-// opus_load.cpp
 #include <opusfile.h>
-//#include <stdexcept>
-
-/*
-struct OpusAudio {
-    int channels = 0;
-    int sampleRate = 48000; // Opus always 48k
-    std::vector<float> pcm; // interleaved float
-};
-*/
 
 namespace de {
 namespace sound {
 
-bool load_sound_opus_f32(Sound & sound, const std::string & uri )
+bool
+load_sound_opus_f32(Sound & sound, const std::string & uri)
 {
+    if (!sound.empty())
+    {
+        DE_ERROR("Got empty sound: ", uri)
+        return false;
+    }
+
+    if (sound.m_sampleRate != 48000)
+    {
+        DE_WARN("Opus wants 48000 sound data, resample first. ", uri)
+    }
+
+    if (sound.m_sampleType != SampleType::F32)
+    {
+        DE_ERROR("Opus wants ST_F32 sampleType, convert first. ", uri)
+        return false;
+    }
+
     int err = 0;
     OggOpusFile* of = op_open_file(uri.c_str(), &err);
     if (!of)
@@ -32,40 +40,38 @@ bool load_sound_opus_f32(Sound & sound, const std::string & uri )
 
     if (op_seekable(of))
     {
-        DE_BENNI("OPUS seekable = 1")
         int li = op_current_link(of);
-        const OpusHead *head=op_head(of,li);
-        const OpusTags *tags;
-        int             binary_suffix_len;
-        int             ci;
-        // fprintf(stderr,"  Channels: %i\n",head->channel_count);
+        //const OpusHead* head = op_head(of,li);
+        //const OpusTags* tags;
+        //int             ci;
+        //int             binary_suffix_len;
         int64_t duration = op_pcm_total(of,li);
-        DE_BENNI("OPUS duration = ",duration)
-        DE_BENNI("OPUS duration = ",dbStrSeconds(double(duration)/48000.0))
         int64_t size = op_raw_total(of,li);
-        DE_BENNI("OPUS size = ",size)
+        DE_BENNI("OPUS seekable(1), "
+                 "duration(",dbStrSeconds(double(duration)/48000.0),"), "
+                 "size(",size,").")
     }
     else
     {
-        DE_BENNI("OPUS seekable = 0")
+        DE_BENNI("OPUS seekable(0).")
     }
 
     constexpr int BLOCK = 4096;
     TAlignedVector<float> buf(BLOCK * sound.m_channels + 1024);
 
-    int64_t iIteration = 0;
+    //int64_t iIteration = 0;
     int64_t frameCount = 0;
     while (true)
     {
-        int ret = op_read_float(of, buf.data(), BLOCK * sound.m_channels, nullptr);
         //DE_TRACE("frameCount(",frameCount,"), chunk = ",ret)
+        int ret = op_read_float(of, buf.data(), BLOCK * sound.m_channels, nullptr);
         if (ret == 0)
         {
             break; // EOF
         }
         else if (ret < 0)
         {
-            DE_ERROR("op_read_float failed: ",ret, ", frameCount(",frameCount,")")
+            DE_ERROR("op_read_float(",ret,"), frameCount(",frameCount,").")
             break;
         }
         else
@@ -86,58 +92,3 @@ bool load_sound_opus_f32(Sound & sound, const std::string & uri )
 
 } // end namespace sound.
 } // end namespace de.
-
-
-#if 0
-bool load_sound_snd_f32(Sound & sound, const std::string & uri )
-{
-    auto ext = dbFileSuffix( uri );
-    int fmt = Utils::getSndFormatFromFileExt( ext );
-    if (fmt < 0)
-    {
-        DE_ERROR("Unsupported SNDFILE format, uri = ", uri)
-        return false;
-    }
-
-    SF_INFO info{};
-    info.format = 0;
-
-    SNDFILE* file = sf_open(uri.c_str(), SFM_READ, &info);
-    if ( !file )
-    {
-        DE_ERROR("Cant open uri ", uri )
-        return false;
-    }
-
-    DE_DEBUG("SNDFILE "
-             "Seekable(",info.seekable,"), "
-             "Sections(",info.sections,"), "
-             "Uri(", uri,")")
-    DE_DEBUG("SNDFILE "
-             "Fmt(",info.format,"), "
-             "Ext(",Utils::getFormatStr(info.format),"), "
-             "SampleType(",Utils::getSampleTypeStr(info.format),"), "
-             "Endian(",Utils::getEndianessStr(info.format),")")
-    DE_DEBUG("SNDFILE "
-             "SampleRate(",info.samplerate,"), "
-             "Channels(",info.channels,"), "
-             "Frames(",info.frames,")")
-
-    sound.m_sampleType = Sound::ST_F32;
-    sound.m_sampleRate = info.samplerate;
-    sound.m_frames = info.frames;
-    sound.m_channels = info.channels;
-    sound.m_samples.resize(sound.m_frames * sound.m_channels);
-
-    sf_count_t gotten = sf_readf_float(file, sound.m_samples.data(), sound.m_frames);
-    sf_close(file);
-
-    if (gotten != sound.m_frames)
-    {
-        DE_ERROR("Gotten(",gotten,") != sound.m_frameCount(",sound.m_frames,")")
-    }
-
-    return true;
-}
-
-#endif

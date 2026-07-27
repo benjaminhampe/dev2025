@@ -54,17 +54,6 @@ public:
 
     bool append(const Sound& other);
 
-    static void deinterleave(
-            int32_t srcChannels,
-            SampleType srcType,
-            const TAlignedVector<uint8_t>& srcSamples,
-            TAlignedVector<uint8_t>& tmpSamples,
-            SampleType dstType,
-            TAlignedVector<uint8_t>& dstSamples,
-            int64_t frameCount,
-            int64_t frameStart = 0);
-
-
 public:
 /*
     float maximum() const;

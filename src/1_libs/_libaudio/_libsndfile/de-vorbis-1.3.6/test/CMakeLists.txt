@@ -1,1 +1,1 @@
-# add_subdirectory(test_vorbis)
+add_subdirectory(test_vorbis)

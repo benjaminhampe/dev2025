@@ -11,6 +11,7 @@
 #include <de/sound/WAV/SoundWriter_WAV.h>
 #include <de/sound/SND/SoundWriter_SND.h>
 #include <de/sound/FLAC/SoundWriter_FLAC_libflac-1.3.3.h>
+#include <de/sound/OGG/SoundWriter_OGG_Vorbis.h>
 
 #include <de/resample/Resampler_r8brain.h>
 
@@ -123,6 +124,20 @@ dbSaveSound(
 
     bool ok = false;
 
+    auto saveDirectory = dbFileDir(uri);
+    if (!dbExistDirectory(saveDirectory))
+    {
+        de::FileSystem::createDirectory(saveDirectory);
+        if (dbExistDirectory(saveDirectory))
+        {
+            DE_OK("Create save directory ",saveDirectory)
+        }
+        else
+        {
+            DE_ERROR("Cannot create save directory ",saveDirectory)
+        }
+    }
+
     auto suffix = dbFileSuffix(uri);
     if (suffix == "mp3")
     {
@@ -138,7 +153,7 @@ dbSaveSound(
     }
     else if (suffix == "ogg")
     {
-        ok = de::sound::save_sound_snd_ogg_vorbis(sound, uri, options);
+        ok = de::sound::save_sound_ogg_vorbis(sound, uri, options);
     }
     // else if ((suffix == "mp4") || (suffix == "m4a"))
     // {

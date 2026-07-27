@@ -798,6 +798,13 @@ int main(int argc, char** argv)
     dbLoadSound(snd1,"C:/_media/Music/wav/piano-space.wav");
     dbSaveSound(snd1,"C:/_media/Music/wav/piano-space_test1.mp3");
 
+    auto saveBase = dbStr("C:/_media/Music/test/piano-space_",snd1.m_sampleRate);
+    dbSaveSound(snd1,saveBase + ".mp3");
+    dbSaveSound(snd1,saveBase + ".wav");
+    dbSaveSound(snd1,saveBase + ".flac");
+    dbSaveSound(snd1,saveBase + ".vorbis.ogg");
+    dbSaveSound(snd1,saveBase + ".opus");
+
     // =============================================================
     // Test 2:
     // =============================================================

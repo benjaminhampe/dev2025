@@ -1,5 +1,5 @@
-set(LIB_NAME de_vorbis) # We dont like to clash with system libs.
-project(${LIB_NAME}-dev C)
+set(LIB_NAME de_vorbis)
+project(${LIB_NAME})
 
 if (TARGET ${LIB_NAME})
     message("${BoldYellow}[benni] HEADER_GUARD: ${LIB_NAME}${ColourReset}")
@@ -10,14 +10,13 @@ else()
     # set(VORBIS_VERSION_PATCH "0")
     # set(VORBIS_LIBRARY_VERSION "6.16.0")
 
-    set(VORBIS_HEADER_DIR ${CMAKE_CURRENT_LIST_DIR}/include/vorbis)
-    set(VORBIS_SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/src)
+    set(VORBIS_HEADER_DIR ${CMAKE_CURRENT_LIST_DIR}/include)
     set(VORBIS_HEADERS
-        ${VORBIS_HEADER_DIR}/codec.h
-        ${VORBIS_HEADER_DIR}/vorbisfile.h
-        ${VORBIS_HEADER_DIR}/vorbisenc.h
+        ${VORBIS_HEADER_DIR}/vorbis/codec.h
+        ${VORBIS_HEADER_DIR}/vorbis/vorbisfile.h
+        ${VORBIS_HEADER_DIR}/vorbis/vorbisenc.h
     )
-
+    set(VORBIS_SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/src)
     set(VORBIS_SOURCES
         ${VORBIS_SOURCE_DIR}/vq/bookutil.c
         ${VORBIS_SOURCE_DIR}/vq/bookutil.h
@@ -119,7 +118,8 @@ else()
 
     target_sources(${LIB_NAME} PUBLIC ${VORBIS_HEADERS} PRIVATE ${VORBIS_SOURCES})
 
-    target_include_directories(${LIB_NAME} PUBLIC ${VORBIS_HEADER_DIR}/..)
+    target_include_directories(${LIB_NAME} PUBLIC ${VORBIS_HEADER_DIR})
+    target_include_directories(${LIB_NAME} PUBLIC ${VORBIS_HEADER_DIR}/vorbis)
     target_include_directories(${LIB_NAME} PRIVATE ${VORBIS_SOURCE_DIR})
 
     if (MSVC)
@@ -127,18 +127,19 @@ else()
         # if (MINGW)
         #     target_compile_options(${LIB_NAME} PRIVATE -Wno-maybe-uninitialized)
         # endif()
-        target_compile_options(${LIB_NAME} PRIVATE 
-            -Wno-implicit-fallthrough
-            -Wno-unused-parameter
-            -Wno-unused-variable
-            -Wno-unused-but-set-variable
-        )
+        # target_compile_options(${LIB_NAME} PRIVATE 
+            # -Wno-implicit-fallthrough
+            # -Wno-unused-parameter
+            # -Wno-unused-variable
+            # -Wno-unused-but-set-variable
+        # )
     endif()
     
     target_compile_definitions(${LIB_NAME} PUBLIC HAVE_VORBIS=1)
+    target_compile_definitions(${LIB_NAME} PUBLIC HAVE_LIBVORBIS=1)
 
     target_link_libraries(${LIB_NAME} PUBLIC de_ogg)
 
 endif()
 
-# add_subdirectory(test)
+add_subdirectory(test)
