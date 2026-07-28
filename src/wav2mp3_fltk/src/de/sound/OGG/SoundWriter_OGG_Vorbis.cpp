@@ -142,6 +142,8 @@ save_sound_ogg_vorbis(
 
     options.onProgress(5);
 
+    bool eos = false;
+
     // PCM → Vorbis
     int64_t cFrames = 4096;
     int64_t cSamples = cFrames * sound.m_channels;
@@ -171,8 +173,6 @@ save_sound_ogg_vorbis(
             }
         }
 
-        pos += chunk;
-
         vorbis_analysis_wrote(&vd, (int)chunk);
 
         // Encoding
@@ -184,23 +184,35 @@ save_sound_ogg_vorbis(
             ogg_packet op;
             while (vorbis_bitrate_flushpacket(&vd, &op))
             {
-                op.granulepos = vd.granulepos;      // WICHTIG: granulepos setzen
+                //op.granulepos = vd.granulepos;      // WICHTIG: granulepos setzen
                 ogg_stream_packetin(&os, &op);
 
-                while (ogg_stream_pageout(&os, &og))
+                while (!eos)
                 {
+                    int ok = ogg_stream_pageout(&os, &og);
+                    if (ok == 0)
+                    {
+                        break;
+                    }
                     file.write(og.header, og.header_len);
                     file.write(og.body, og.body_len);
+
+                    if (ogg_page_eos(&og))
+                    {
+                        eos = true;
+                    }
                 }
             }
         }
 
-        // // *** FEHLTE VORHER: letzte unvollständige Page schreiben ***
-        // while (ogg_stream_flush(&os, &og))
-        // {
-        //     file.write(og.header, og.header_len);
-        //     file.write(og.body, og.body_len);
-        // }
+        pos += chunk;
+
+        // *** FEHLTE VORHER: letzte unvollständige Page schreiben ***
+        while (ogg_stream_flush(&os, &og))
+        {
+            file.write(og.header, og.header_len);
+            file.write(og.body, og.body_len);
+        }
 
         options.onProgress(85.0 * double(pos) / double(sound.m_frames));
     }
@@ -223,11 +235,21 @@ save_sound_ogg_vorbis(
             op.granulepos = vd.granulepos;          // auch hier granulepos setzen
             ogg_stream_packetin(&os, &op);
 
-            while (ogg_stream_pageout(&os, &og))
+            while (!eos)
             {
+                int ok = ogg_stream_pageout(&os, &og);
+                if (ok == 0)
+                {
+                    break;
+                }
                 // DE_DEBUG("endwrite")
                 file.write(og.header, og.header_len);
                 file.write(og.body, og.body_len);
+
+                if (ogg_page_eos(&og))
+                {
+                    eos = true;
+                }
             }
         }
     }

@@ -19,11 +19,11 @@ static int wav_format_code(SampleType t)
 
 bool
 save_sound_wav(
-    const Sound& snd,
+    const Sound& sound,
     const std::string& uri,
     const SoundSaveOptions& options)
 {
-    if (snd.empty())
+    if (sound.empty())
     {
         DE_WARN("Got empty sound. ",uri)
         return false;
@@ -34,13 +34,13 @@ save_sound_wav(
         DE_WARN("This exporter ignores a conversions demand from user (yet). ",uri)
     }
 
-    const uint32_t sampleRate   = snd.m_sampleRate;
-    const uint16_t channels     = snd.m_channels;
-    const uint16_t bits         = snd.bytesPerSample() * 8;
+    const uint32_t sampleRate   = sound.m_sampleRate;
+    const uint16_t channels     = sound.m_channels;
+    const uint16_t bits         = sound.bytesPerSample() * 8;
     const uint16_t blockAlign   = (bits / 8) * channels;
     const uint32_t byteRate     = sampleRate * blockAlign;
-    const uint32_t dataSize     = (uint32_t)snd.m_samples.size();
-    const uint16_t formatCode   = wav_format_code(snd.m_sampleType);
+    const uint32_t dataSize     = (uint32_t)sound.m_samples.size();
+    const uint16_t formatCode   = wav_format_code(sound.m_sampleType);
 
     File file(uri, eFileMode::Write);
     if (!file.is_open())
@@ -74,13 +74,37 @@ save_sound_wav(
     file.write("data", 4);
     w32(dataSize);
 
-    options.onProgress(10);
+    options.onProgress(1); // 1%
 
-    // raw PCM bytes (already interleaved)
-    file.write(snd.m_samples.data(), snd.m_samples.size());
+    // Write PCM chunk-wise to circumvent 32 bit api design disadvantages.
+    // fwrite returns int, despite writing
+
+    const int32_t bps = sound.bytesPerSample();
+    const int64_t bpf = sound.m_channels * bps;
+    const int64_t chunkFrames = (int64_t(1) << 28) / bpf; // 256MB per chunk
+
+    int64_t pos = 0; // in [frames]
+    while (pos < sound.m_frames)
+    {
+        auto availFrames = std::min<int64_t>(chunkFrames,sound.m_frames - pos);
+        if (availFrames < 1)
+        {
+            break; // EOF
+        }
+
+        auto bytesToWrite = availFrames * bpf;
+
+        const uint8_t* pSrc =
+            reinterpret_cast<const uint8_t*>(sound.m_samples.data())
+                + (pos * bpf);
+
+        int32_t bytesWritten = file.write(pSrc, bytesToWrite);
+        pos += (bytesWritten / bpf);
+
+        options.onProgress(98.0 * double(pos) / double(sound.m_frames-1));
+    }
 
     options.onProgress(100);
-
     return true;
 }
 

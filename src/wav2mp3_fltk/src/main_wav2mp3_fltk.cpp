@@ -54,6 +54,9 @@ struct UI {
     std::string out;
     int bitrate; // bitrate
     int q;  // quality
+
+    de::Sound m_srcSound;
+    de::Sound m_dstSound;
 };
 
 UI ui;
@@ -93,17 +96,9 @@ void apply_dark_theme(Fl_Group* g)
     for (int i = 0; i < g->children(); ++i)
     {
         Fl_Widget* w = g->child(i);
-
-        // Hintergrund
-        w->color(fl_rgb_color(45,45,45));
-
-        // Text
-        w->labelcolor(fl_rgb_color(230,230,230));
-        //w->textcolor(fl_rgb_color(230,230,230));
-
-        // Auswahl
-        w->selection_color(fl_rgb_color(80,80,160));
-        //w->selection_text_color(fl_rgb_color(255,255,255));
+        w->color(fl_rgb_color(45,45,45)); // Hintergrund
+        w->labelcolor(fl_rgb_color(230,230,230)); // Text
+        w->selection_color(fl_rgb_color(80,80,160)); // Auswahl
 
         // Buttons etwas heller
         if (dynamic_cast<Fl_Button*>(w))
@@ -122,21 +117,18 @@ void darkmode_cb(Fl_Widget*, void*)
 
     if (bDarkMode)
     {
-        //Fl::scheme("gtk+");
         Fl::background(30,30,30);
         Fl::foreground(220,220,220);
         //apply_dark_theme(Fl::first_window());
     }
     else
     {
-        //Fl::scheme("plastic");
         Fl::background(240,240,240);
         Fl::foreground(0,0,0);
     }
 
     Fl::redraw();
 }
-
 
 // ---------------- helpers ----------------
 std::string make_mp3_name(const std::string& wav)
@@ -721,80 +713,34 @@ public:
     }
 };
 
-
-// ---------------- main ----------------
+// =============================================================
 int main(int argc, char** argv)
+// =============================================================
 {
-#if 0
-    // =============================================================
-    // Test 1:
-    // =============================================================
-    de::Sound snd1;
-    dbLoadSound(snd1,"C:/_media/Music/wav/piano-space.wav");
-    dbSaveSound(snd1,"C:/_media/Music/wav/piano-space_test1.mp3");
-
-    auto saveBase = dbStr("C:/_media/Music/test/piano-space_",snd1.m_sampleRate);
-    dbSaveSound(snd1,saveBase + ".mp3");
-    dbSaveSound(snd1,saveBase + ".wav");
-    dbSaveSound(snd1,saveBase + ".flac");
-    dbSaveSound(snd1,saveBase + ".vorbis.ogg");
-    dbSaveSound(snd1,saveBase + ".opus");
-
-    // =============================================================
-    // Test 2:
-    // =============================================================
-    de::Sound snd2;
-    dbCopySound(snd1,snd2,snd1.m_frames);
-    dbSaveSound(snd2,"C:/_media/Music/wav/piano-space_test2_copy.mp3");
-
-    // =============================================================
-    // Test 3:
-    // =============================================================
-    de::Sound snd3;
-    de::Sound snd4;
-    dbDeinterleaveSound(snd2,snd3);
-    dbSaveSound(snd3,"C:/_media/Music/wav/piano-space_test3_1.planar.mp3");
-    dbInterleaveSound(snd3,snd4);
-    dbSaveSound(snd4,"C:/_media/Music/wav/piano-space_test3_2.interleaved.mp3");
-
-    // =============================================================
-    // Test 4:
-    // =============================================================
-    de::Sound snd5;
-    de::Sound snd6;
-    dbConvertSound(snd1,snd5,de::SampleType::F32);
-    dbSaveSound(snd5,"C:/_media/Music/wav/piano-space_test4_convertF32.mp3");
-    dbConvertSound(snd5,snd6,de::SampleType::F64);
-    dbSaveSound(snd6,"C:/_media/Music/wav/piano-space_test4_convertF64.mp3");
-
-    // =============================================================
-    // Test 5:
-    // =============================================================
-    de::Sound snd7;
-    dbResampleSound(snd5,snd7,48000);
-    dbSaveSound(snd7,"C:/_media/Music/wav/piano-space_test5_resample_48Hz_r8brain.mp3");
-#endif
-    // =============================================================
-
-    Fl::scheme("none");
     //Fl::scheme("gtk+");
     //Fl::scheme("plastic");
     //Fl::scheme("gleam");
     //Fl::scheme("oxy");
+    Fl::scheme("none");
 
-    Fl_Window* win = new Fl_Window(600, 600, "WAV to MP3 | benjaminhampe@gmx.de | fltk-1.4.5 + lame-3.100 + dr.wav + dr.mp3");
-    //win->resizable();
+    auto win = new Fl_Window(600, 600, "WAV to MP3 | benjaminhampe@gmx.de | fltk-1.4.5 + lame-3.100 + dr.wav + dr.mp3");
     win->begin();
 
-    ui.inFile = new InputField(110, 10, 400, 30, "Inputfile:");
-    ui.btnIn  = new Fl_Button(520, 10, 60, 30, "...");
+    int d = 10;
+    int y = d;
+    int b = 30;
+    int k = 0;
+    ui.inFile = new InputField(110, y, 400, b, "Inputfile:");
+    ui.btnIn  = new Fl_Button(520, y, 60, b, "...");
     ui.btnIn->callback(pick_input_cb);
+    y += b + d;
 
-    ui.outFile = new Fl_Input(110, 50, 400, 30, "Outputfile:");
-    ui.btnOut  = new Fl_Button(520, 50, 60, 30, "...");
+    ui.outFile = new Fl_Input(110, y, 400, b, "Outputfile:");
+    ui.btnOut  = new Fl_Button(520, y, 60, b, "...");
     ui.btnOut->callback(pick_output_cb);
+    y += b + d;
 
-    ui.cbxBitrate = new Fl_Choice(110, 90, 150, 30, "Bitrate:");
+    ui.cbxBitrate = new Fl_Choice(110, y, 150, b, "Bitrate:");
     ui.cbxBitrate->add("96 - Low");
     ui.cbxBitrate->add("128 - OK");
     ui.cbxBitrate->add("160 - Medium");
@@ -803,37 +749,42 @@ int main(int argc, char** argv)
     ui.cbxBitrate->add("256 - Very Good");
     ui.cbxBitrate->add("320 - Highest");
     ui.cbxBitrate->value(1);
+    y += b + d;
 
-    ui.quality = new Fl_Choice(110, 130, 150, 30, "Quality:");
+    ui.quality = new Fl_Choice(110, y, 150, b, "Quality:");
     ui.quality->add("0 - Best");
     ui.quality->add("1 - High");
     ui.quality->add("5 - Default");
     ui.quality->add("7 - Fast");
     ui.quality->add("9 - Fastest");
     ui.quality->value(0);
+    y += b + d;
 
-    ui.convert = new Fl_Button(110, 170, 150, 30, "Convert now");
+    ui.convert = new Fl_Button(110, y, 150, b, "Convert now");
     ui.convert->callback(convert_cb);
     ui.convert->deactivate();
-
-    ui.cancel = new Fl_Button(270, 170, 150, 30, "Cancel");
+    ui.cancel = new Fl_Button(270, y, 150, b, "Cancel");
     ui.cancel->callback(cancel_cb);
 
-    ui.darkToggle = new Fl_Button(430, 170, 150, 30, "Dark Mode");
+    ui.darkToggle = new Fl_Button(430, y, 150, b, "Dark Mode");
     ui.darkToggle->callback(darkmode_cb);
+    y += b + d;
 
-    ui.progress = new XP_Progress(110, 210, 300, 30);
+    ui.progress = new XP_Progress(110, y, 400, b);
     ui.progress->minimum(0);
     ui.progress->maximum(1);
     ui.progress->value(0);
+    y += b + d;
 
-    ui.btnCompare = new Fl_Button(110, 250, 200, 30, "Compare files");
+    ui.btnCompare = new Fl_Button(110, y, 200, b, "Compare files");
     ui.btnCompare->callback(compare_cb);
+    y += b + d;
 
     ui.logbuf   = new Fl_Text_Buffer();
     ui.stylebuf = new Fl_Text_Buffer();
 
-    ui.logbox = new Fl_Text_Display(10, 290, 580, 300);
+    int dy = 600 - d - y;
+    ui.logbox = new Fl_Text_Display(10, y, 580, dy);
     ui.logbox->buffer(ui.logbuf);
 
     // Style table: jeder char in stylebuf → Style-Index
@@ -856,12 +807,13 @@ int main(int argc, char** argv)
     win->resizable(win);   // oder ein Child-Widget
     win->end();
 
-#ifdef _WIN32
+    #ifdef _WIN32
     HICON hIcon = LoadIcon(GetModuleHandle(NULL), MAKEINTRESOURCE(aaaa));
     win->icon((char*)hIcon);
-#endif
-
+    #else
     // win->icon((char*)LoadIcon(NULL, IDI_APPLICATION));
+    #endif
+
     win->show(argc, argv);
 
     // log_debug("Test: log_debug()");
