@@ -232,13 +232,13 @@ int64_t Sound::read_frames(
 
     if (byteIndex >= m_samples.size())
     {
-        DE_ERROR("byteIndex(",byteIndex,") > m_samples(",m_samples.size(),")")
+        //DE_ERROR("byteIndex(",byteIndex,") > m_samples(",m_samples.size(),")")
         return 0;
     }
 
     if (byteIndex + byteCount > m_samples.size())
     {
-        DE_ERROR("byteIndex(",byteIndex,") + byteCount(",byteCount,") > m_samples(",m_samples.size(),")")
+        //DE_ERROR("byteIndex(",byteIndex,") + byteCount(",byteCount,") > m_samples(",m_samples.size(),")")
         return 0;
     }
     // </debug>

@@ -12,6 +12,7 @@
 #include <FL/Fl_Text_Buffer.H>
 
 #include <WaveformWidget_fltk.h>
+#include <GL_WaveformWidget_fltk.h>
 
 #include <string>
 #include <thread>
@@ -88,7 +89,7 @@ struct UI {
     Fl_Button* btnLoad;
     Fl_Input* inFile;
     Fl_Button* btnIn;
-    WaveformWidget* inWavf;
+    GL_WaveformWidget* inWavf;
     Fl_Button* zoomIn;
     Fl_Button* zoomOut;
 
@@ -878,6 +879,7 @@ public:
 int main(int argc, char** argv)
 // =============================================================
 {
+    Fl::use_high_res_GL(1);
     //Fl::scheme("gtk+");
     //Fl::scheme("plastic");
     //Fl::scheme("gleam");
@@ -900,7 +902,7 @@ int main(int argc, char** argv)
     y += b + d;
 
     int c = 128;
-    ui.inWavf = new WaveformWidget(10, y, 530, c);
+    ui.inWavf = new GL_WaveformWidget(10, y, 530, c);
     ui.inWavf->tooltip("Waveform display: scroll, zoom, select region");
     ui.zoomIn  = new Fl_Button(550, y,      40, (c-d)/2, "+");
     ui.zoomIn->tooltip("Zoom in");

@@ -11,7 +11,8 @@ bool load_sound_mp3_f32(
     const de::SoundLoadOptions& options )
 {
     drmp3 mp3;
-    if (!drmp3_init_file(&mp3, uri.c_str(), nullptr))
+    auto wuri = de_wstr(uri);
+    if (!drmp3_init_file_w(&mp3, wuri.c_str(), nullptr))
     {
         DE_ERROR("No MP3 file opened. ",uri)
         return false;

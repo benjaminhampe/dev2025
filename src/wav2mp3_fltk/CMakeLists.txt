@@ -43,6 +43,7 @@ else()
     endif()
 
     target_link_libraries(${APP_NAME} PRIVATE DarkImage_2604)
+    target_link_libraries(${APP_NAME} PRIVATE de_glew)
     target_link_libraries(${APP_NAME} PRIVATE de_fltk_145)
     target_link_libraries(${APP_NAME} PRIVATE de_lame_3100)
     target_link_libraries(${APP_NAME} PRIVATE de_dr_wav)
