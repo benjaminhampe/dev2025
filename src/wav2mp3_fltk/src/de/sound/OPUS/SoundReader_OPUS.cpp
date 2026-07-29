@@ -6,7 +6,10 @@ namespace de {
 namespace sound {
 
 bool
-load_sound_opus_f32(Sound & sound, const std::string & uri)
+load_sound_opus_f32(
+    Sound & sound,
+    const std::string & uri,
+    const de::SoundLoadOptions& options)
 {
     int err = 0;
     OggOpusFile* of = op_open_file(uri.c_str(), &err);

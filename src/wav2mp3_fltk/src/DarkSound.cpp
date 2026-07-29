@@ -57,7 +57,10 @@ bool supportedByLibSNDFILE(const std::string & ext)
 
 } // end namespace.
 
-bool dbLoadSound( de::Sound & sound, const std::string& uri )
+bool dbLoadSound(
+    de::Sound & sound,
+    const std::string& uri,
+    const de::SoundLoadOptions& options )
 {
     de::PerformanceTimer perf;
     perf.start();
@@ -67,23 +70,23 @@ bool dbLoadSound( de::Sound & sound, const std::string& uri )
     auto suffix = dbFileSuffix(uri);
     if (suffix == "mp3")
     {
-        ok = de::sound::load_sound_mp3_f32(sound, uri);
+        ok = de::sound::load_sound_mp3_f32(sound, uri, options);
     }
     else if (suffix == "wav")
     {
-        ok = de::sound::load_sound_wav(sound, uri);
+        ok = de::sound::load_sound_wav(sound, uri, options);
     }
     else if ((suffix == "mp4") || (suffix == "m4a"))
     {
-        ok = de::sound::load_sound_mp4_f32(sound, uri);
+        ok = de::sound::load_sound_mp4_f32(sound, uri, options);
     }
     else if (suffix == "opus")
     {
-        ok = de::sound::load_sound_opus_f32(sound, uri);
+        ok = de::sound::load_sound_opus_f32(sound, uri, options);
     }
     else if (supportedByLibSNDFILE(suffix))
     {
-        ok = de::sound::load_sound_snd_f32(sound, uri);
+        ok = de::sound::load_sound_snd_f32(sound, uri, options);
     }
     else
     {
@@ -100,6 +103,8 @@ bool dbLoadSound( de::Sound & sound, const std::string& uri )
     // DE_OK(dbFileName(sound.m_uri))
     // DE_OK(dbFileDir(sound.m_uri))
     // DE_OK("//==================================")
+
+    sound.m_uri = de::FileSystem::makeAbsolute(uri);
 
     perf.stop();
 

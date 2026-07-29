@@ -20,7 +20,11 @@
 namespace de {
 namespace sound {
 
-bool load_sound_mp4_f32(Sound& sound, const std::string& uri)
+bool
+load_sound_mp4_f32(
+    Sound& sound,
+    const std::string& uri,
+    const de::SoundLoadOptions& options)
 {
     DE_BENNI("Parse ",uri)
 
@@ -198,6 +202,7 @@ bool load_sound_mp4_f32(Sound& sound, const std::string& uri)
         return false;
     }
 
+    sound.m_uri = uri;
     AAC_Decoder aacDecoder;
     aacDecoder.readFileInfo(sound, asc, table.size());
 

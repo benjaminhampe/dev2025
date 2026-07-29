@@ -4,7 +4,10 @@
 namespace de {
 namespace sound {
 
-bool load_sound_snd_f32(Sound & sound, const std::string & uri )
+bool load_sound_snd_f32(
+    Sound & sound,
+    const std::string & uri,
+    const de::SoundLoadOptions& options )
 {
     auto ext = dbFileSuffix( uri );
     int fmt = Utils::getSndTypeFromFileExt( ext );

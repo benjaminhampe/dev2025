@@ -11,6 +11,8 @@
 #include <FL/Fl_Text_Display.H>
 #include <FL/Fl_Text_Buffer.H>
 
+#include <WaveformWidget_fltk.h>
+
 #include <string>
 #include <thread>
 #include <atomic>
@@ -26,12 +28,72 @@
 #endif
 
 #include <DarkSound.h>
+#include <DarkImage.h>
+
+// =============================================================
+class ImageWidget : public Fl_Widget
+// =============================================================
+{
+    de::Image m_img;
+public:
+    ImageWidget(int X,int Y,int W,int H)
+        : Fl_Widget(X,Y,W,H)
+    {
+        renderImage(W,H);
+    }
+
+    void renderImage(int w, int h)
+    {
+        if (w < 1 || h < 1)
+            return;
+        m_img = de::Image(w,h);
+        m_img.fill(dbRGBA(55,55,0));
+
+        int d = std::max(1, std::min(w,h) - 2);
+        int x = (w - d)/2;
+        int y = (h - d)/2;
+        de::Recti pos(x,y,d,d);
+        de::ImagePainter::drawCircle(m_img,pos,dbRGBA(255,0,0));
+    }
+
+    void draw() override
+    {
+        if (w() < 1 || h() < 1)
+        {
+            DE_WARN("Null")
+            return;
+        }
+
+        fl_draw_image(m_img.data(), x(), y(), m_img.w(), m_img.h(), 4);
+    }
+
+    void resize(int X, int Y, int W, int H) override
+    {
+        //DE_DEBUG("Resize(",X,",",Y,",",W,",",H,")")
+
+        Fl_Widget::resize(X, Y, W, H);
+
+        // Reagiere hier auf neue Größe
+        // z.B. internen Buffer neu anlegen
+
+        renderImage(W,H);
+
+        // Wenn du sofort neu zeichnen willst:
+        redraw();
+    }
+};
 
 // ---------------- UI ----------------
 struct UI {
+    Fl_Button* btnLoad;
     Fl_Input* inFile;
-    Fl_Input* outFile;
     Fl_Button* btnIn;
+    WaveformWidget* inWavf;
+    Fl_Button* zoomIn;
+    Fl_Button* zoomOut;
+
+    ImageWidget* img1;
+    Fl_Input* outFile;
     Fl_Button* btnOut;
     Fl_Choice* cbxBitrate;
     Fl_Choice* quality;
@@ -47,6 +109,7 @@ struct UI {
     Fl_Text_Buffer*  logbuf;
     Fl_Text_Buffer*  stylebuf;
 
+    std::atomic<bool> reloadFile{true};
     std::atomic<bool> cancelFlag{false};
     std::thread worker;
 
@@ -55,8 +118,8 @@ struct UI {
     int bitrate; // bitrate
     int q;  // quality
 
-    de::Sound m_srcSound;
-    de::Sound m_dstSound;
+    de::Sound soundIn;
+    de::Sound soundOut;
 };
 
 UI ui;
@@ -183,6 +246,30 @@ void convert_finished_awake(void*)
 
 void convert_async()
 {
+    std::string srcUri = ui.in;
+    std::string dstUri = ui.out;
+
+    if (ui.soundIn.empty())
+    {
+        DE_ERROR("No file loaded to export")
+        // de::SoundLoadOptions optLoad;
+        // optLoad.bCancelFlag = &ui.cancelFlag;
+        // optLoad.onProgress = [](int percent)
+        //     {
+        //         auto progress = new int;
+        //         *progress = percent;
+        //         Fl::awake(convert_progress_awake, progress);
+        //     };
+
+        // if (!dbLoadSound(ui.soundIn,srcUri,optLoad))
+        // {
+        //     auto s = dbStr("Cannot Load ",srcUri);
+        //     log_error(s.c_str());
+        //     return;
+        // }
+        return;
+    }
+
     Fl::awake(convert_start_awake, nullptr);
 
     ui.cancelFlag = false;
@@ -190,13 +277,6 @@ void convert_async()
     // New Async
     std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
-    de::Sound sound;
-    if (!dbLoadSound(sound,ui.in))
-    {
-        auto s = dbStr("Cannot read inputFile");
-        log_error(s.c_str());
-        return;
-    }
 
     Fl::awake(convert_start_awake, nullptr);
 
@@ -211,7 +291,7 @@ void convert_async()
                 Fl::awake(convert_progress_awake, progress);
             };
 
-    if (!dbSaveSound(sound, ui.out, optSave))
+    if (!dbSaveSound(ui.soundIn, ui.out, optSave))
     {
         auto s = dbStr("Cannot save outputFile");
         log_error(s.c_str());
@@ -247,48 +327,74 @@ void convert_cb(Fl_Widget*, void*)
     ui.worker.detach();
 }
 
-// ---------------- Input field mit DnD ----------------
-class InputField : public Fl_Input
+// ---------------- Fl::awake ----------------
+void load_async_start_awake(void* data)
 {
-public:
-    InputField(int X, int Y, int W, int H, const char* L = 0)
-        : Fl_Input(X, Y, W, H, L) {}
+    auto s = dbStr("LoadAsync: Start... uri = ",ui.in);
+    log_success(s.c_str());
 
-    int handle(int event) override
+    ui.progress->value(0);
+}
+void load_async_progress_awake(void* data)
+{
+    int percent = *static_cast<int*>(data);
+    ui.progress->value(0.01f * percent);
+    delete static_cast<int*>(data);
+}
+void load_async_finish_awake(void*)
+{
+    auto s = dbStr("LoadAsync: Finished. uri = ",ui.in, ", sound ",ui.soundIn.str());
+    log_success(s.c_str());
+
+    ui.inWavf->setSound(&ui.soundIn);
+}
+
+void load_async()
+{
+    std::string uri = ui.in;
+
+    Fl::awake(load_async_start_awake, nullptr);
+
+    ui.cancelFlag = false;
+
+    // New Async
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+
+    de::SoundSaveOptions optLoad;
+    optLoad.bCancelFlag = &ui.cancelFlag;
+    optLoad.onProgress = [](int percent)
+            {
+                auto progress = new int;
+                *progress = percent;
+                Fl::awake(load_async_progress_awake, progress);
+            };
+
+    if (!dbLoadSound(ui.soundIn,uri))
     {
-        // FLTK schreibt beim Drop den Text selbst ins Input,
-        // wir reagieren nur auf FL_PASTE.
-        if (event == FL_PASTE)
-        {
-            // Clear
-            value("");
-
-            // Handle paste
-            int r = Fl_Input::handle(event); // Text wird gesetzt
-
-            //
-            std::string path = value();
-            //trim(path);
-
-            ui.in = path;
-
-            if (dbExistFile(path))
-            {
-                ui.convert->activate();
-                ui.out = make_mp3_name(path);
-                ui.outFile->value(ui.out.c_str());
-            }
-            else
-            {
-                DE_ERROR("InputFile does not exist, ", path)
-            }
-
-
-            return r;
-        }
-        return Fl_Input::handle(event);
+        auto s = dbStr("Cannot load ",uri);
+        log_error(s.c_str());
+        return;
     }
-};
+
+    Fl::awake(load_async_finish_awake, nullptr);
+
+    return;
+}
+
+// ---------------- file pickers ----------------
+void load_async_cb(Fl_Widget*, void*)
+{
+    ui.in = ui.inFile->value();
+
+    if (!dbExistFile(ui.in))
+    {
+        fl_alert("You must choose an existing file first");
+        return;
+    }
+
+    ui.worker = std::thread(load_async);
+    ui.worker.detach();
+}
 
 // ---------------- file pickers ----------------
 void pick_input_cb(Fl_Widget*, void*)
@@ -296,11 +402,20 @@ void pick_input_cb(Fl_Widget*, void*)
     Fl_Native_File_Chooser dlg;
     dlg.type(Fl_Native_File_Chooser::BROWSE_FILE);
     dlg.filter("All files\t*.*\n"
+               "Audio Files\t*.{wav,flac,mp3,mp4,m4a,opus,ogg,vorbis,aif,aiff}\n"
                "WAV\t*.wav\n"
+               "FLAC\t*.flac\n"
                "MP3\t*.mp3\n"
-               "M4A\t*.m4a\n"
-               "MP4\t*.mp4\n"
-               "FLAC\t*.flac\n");
+               // "M4A\t*.m4a\n"
+               "MP4\t*.{mp4,m4a}\n"
+               // "MP4\t*.mp4\n"
+               // "MP4\t*.m4a\n"
+               "OPUS\t*.opus\n"
+               "OGG-Vorbis\t*.{ogg,vorbis}\n"
+               // "OGG-Vorbis\t*.ogg\n"
+               // "OGG-Vorbis\t*.vorbis\n"
+                "AIFF\t*.{aif,aiff}\n"
+               );
     dlg.filter_value(0);   // 0 = All files
     if (dlg.show() == 0) {
         ui.in = dlg.filename();
@@ -445,6 +560,50 @@ void compare_cb(Fl_Widget*, void*)
 
     log_success("Finished compare.");
 }
+
+
+// ---------------- Input field mit DnD ----------------
+class InputField : public Fl_Input
+{
+public:
+    InputField(int X, int Y, int W, int H, const char* L = 0)
+        : Fl_Input(X, Y, W, H, L) {}
+
+    int handle(int event) override
+    {
+        // FLTK schreibt beim Drop den Text selbst ins Input,
+        // wir reagieren nur auf FL_PASTE.
+        if (event == FL_PASTE)
+        {
+            // Clear
+            value("");
+
+            // Handle paste
+            int r = Fl_Input::handle(event); // Text wird gesetzt
+
+            //
+            std::string path = value();
+            //trim(path);
+
+            ui.in = path;
+
+            if (dbExistFile(path))
+            {
+                ui.convert->activate();
+                ui.out = make_mp3_name(path);
+                ui.outFile->value(ui.out.c_str());
+            }
+            else
+            {
+                DE_ERROR("InputFile does not exist, ", path)
+            }
+
+
+            return r;
+        }
+        return Fl_Input::handle(event);
+    }
+};
 /*
 class XP_Progress : public Fl_Progress {
 public:
@@ -713,6 +872,8 @@ public:
     }
 };
 
+
+
 // =============================================================
 int main(int argc, char** argv)
 // =============================================================
@@ -730,11 +891,32 @@ int main(int argc, char** argv)
     int y = d;
     int b = 30;
     int k = 0;
+    ui.btnLoad  = new Fl_Button(10, y, 50, b, "Load");
+    ui.btnLoad->tooltip("Loads file to preview and cut it");
+    ui.btnLoad->callback(load_async_cb);
     ui.inFile = new InputField(110, y, 400, b, "Inputfile:");
     ui.btnIn  = new Fl_Button(520, y, 60, b, "...");
     ui.btnIn->callback(pick_input_cb);
     y += b + d;
 
+    int c = 128;
+    ui.inWavf = new WaveformWidget(10, y, 530, c);
+    ui.inWavf->tooltip("Waveform display: scroll, zoom, select region");
+    ui.zoomIn  = new Fl_Button(550, y,      40, (c-d)/2, "+");
+    ui.zoomIn->tooltip("Zoom in");
+    ui.zoomIn->callback([](Fl_Widget*, void* ud)
+    {
+        ((WaveformWidget*)ud)->setZoom(((WaveformWidget*)ud)->getZoom() * 1.2f);
+    }, ui.inWavf);
+    ui.zoomOut = new Fl_Button(550, y + c/2, 40, (c-d)/2, "-");
+    ui.zoomOut->tooltip("Zoom out");
+    ui.zoomOut->callback([](Fl_Widget*, void* ud)
+    {
+        ((WaveformWidget*)ud)->setZoom(((WaveformWidget*)ud)->getZoom() * 0.8f);
+    }, ui.inWavf);
+    y += c + d;
+
+    ui.img1 = new ImageWidget(10, y, 40, b);
     ui.outFile = new Fl_Input(110, y, 400, b, "Outputfile:");
     ui.btnOut  = new Fl_Button(520, y, 60, b, "...");
     ui.btnOut->callback(pick_output_cb);
@@ -815,6 +997,12 @@ int main(int argc, char** argv)
     #endif
 
     win->show(argc, argv);
+
+    // Fl::set_font(FL_HELVETICA, "Noto Emoji");
+    // Fl::set_font(FL_FREE_FONT, "Noto Emoji");
+    // my_widget->labelfont(FL_FREE_FONT);
+    // my_widget->labelsize(20);
+    // my_widget->label("🔥 Feuer!");
 
     // log_debug("Test: log_debug()");
     // log_error("Test: log_error()");

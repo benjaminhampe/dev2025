@@ -706,10 +706,10 @@ struct FileSystem
     parentDir( const std::wstring& uri );
 
     static std::string
-    makeAbsolute( std::string uri, std::string baseDir = "" );
+    makeAbsolute( const std::string& uri, const std::string& baseDir = "" );
 
     static std::wstring
-    makeAbsolute( std::wstring uri, std::wstring baseDir = L"" );
+    makeAbsolute( const std::wstring& uri, const std::wstring& baseDir = L"" );
 
     static std::string
     makeWinPath( const std::string & uri );
@@ -731,6 +731,9 @@ struct FileSystem
 
     static void
     removeFile( const std::string& uri );
+
+    static void
+    removeFile( const std::wstring& uri );
 
     static bool
     copyFile( std::string src, std::string dst );

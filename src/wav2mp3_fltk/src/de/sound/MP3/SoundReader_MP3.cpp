@@ -5,7 +5,10 @@
 namespace de {
 namespace sound {
 
-bool load_sound_mp3_f32(Sound & sound, const std::string & uri )
+bool load_sound_mp3_f32(
+    Sound & sound,
+    const std::string & uri,
+    const de::SoundLoadOptions& options )
 {
     drmp3 mp3;
     if (!drmp3_init_file(&mp3, uri.c_str(), nullptr))

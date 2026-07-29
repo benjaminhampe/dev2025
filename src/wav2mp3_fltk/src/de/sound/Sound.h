@@ -3,9 +3,9 @@
 
 namespace de {
 
-// ===========================================================================
+// =================================================================
 class Sound
-// ===========================================================================
+// =================================================================
 {
 public:
     int64_t m_frames = 0;
@@ -70,8 +70,40 @@ public:
 
 };
 
+// =================================================================
+struct SoundLoadOptions
+// =================================================================
+{
+    SampleType sampleType = SampleType::Unknown; // Force an output format.
 
+    bool bDebug = false;
+    bool bThrowOnFail = false;
+
+    std::atomic<bool>* bCancelFlag = nullptr;
+
+    std::function<void (int)>
+        onProgress = [](int percent){};
+
+    // 0 = OK/Success
+    std::function<void (int)>
+        onFinish = [](int errorCode){};
+
+    enum eLogLevel
+    {
+        Debug = 0,
+        Ok,
+        Warn,
+        Error
+    };
+
+    std::function<void (int,std::string)>
+        onLogger = [](int level, std::string msg){};
+
+};
+
+// =================================================================
 struct SoundSaveOptions
+// =================================================================
 {
     int bitrate = 128; // in kB/s, mp3 needs more then opus
     int quality = 0; // 0 = highest, 9 = lowest

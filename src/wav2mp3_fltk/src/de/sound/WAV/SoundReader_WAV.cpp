@@ -48,7 +48,11 @@ struct WavDataChunk {
     IMA ADPCM	Yes	Compressed
 */
 
-bool load_sound_wav(Sound& sound, const std::string& uri)
+bool
+load_sound_wav(
+    Sound& sound,
+    const std::string& uri,
+    const de::SoundLoadOptions& options)
 {
     File file(uri, eFileMode::Read);
     if (!file.is_open())

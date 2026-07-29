@@ -1827,35 +1827,25 @@ std::string
 FileSystem::loadStr( const std::string& uri )
 {
     //DE_PERF_MARKER
-    std::ifstream fin( uri.c_str() );
-    std::stringstream s;
+    std::ifstream fin( uri );
+    std::ostringstream o;
     if ( fin.is_open() )
     {
-        s << fin.rdbuf();
+        o << fin.rdbuf();
     }
-    else
-    {
-        s << "Not a file " << uri;
-    }
-
-    return s.str();
+    return o.str();
 }
 std::wstring
 FileSystem::loadStrW( const std::wstring& uri )
 {
     //DE_PERF_MARKER
-    std::wifstream file( uri.c_str() );
-    std::wostringstream wos;
+    std::wifstream file( uri );
+    std::wostringstream o;
     if ( file.is_open() )
     {
-        wos << file.rdbuf();
+        o << file.rdbuf();
     }
-    else
-    {
-        wos << "Not a file " << uri;
-    }
-
-    return wos.str();
+    return o.str();
 }
 
 bool
@@ -2111,8 +2101,8 @@ bool
 FileSystem::existFile( const std::string& uri )
 {
    if ( uri.empty() ) { return false; }
-   fs::path p = fs::u8path(uri);
-   fs::file_status s = fs::status(p);
+   auto p = fs::u8path( uri );
+   auto s = fs::status( p );
    bool ok = fs::exists( s ) && fs::is_regular_file( s );
    return ok;
 }
@@ -2130,7 +2120,8 @@ bool
 FileSystem::existDirectory( const std::string& uri )
 {
    if ( uri.empty() ) return false;
-   fs::file_status s = fs::status( uri );
+   auto p = fs::u8path( uri );
+   auto s = fs::status( p );
    bool ok = fs::exists( s ) && fs::is_directory( s );
    return ok;
 }
@@ -2148,20 +2139,28 @@ FileSystem::existDirectory( const std::wstring& uri )
 int64_t
 FileSystem::fileSize( const std::string & uri )
 {
-    return int64_t( fs::file_size( uri ) );
+    auto p = fs::u8path( uri );
+    return int64_t( fs::file_size( p ) );
 }
 
 // static
 int64_t
 FileSystem::fileSize( const std::wstring & uri )
 {
-    return int64_t( fs::file_size( uri ) );
+    auto p = fs::path( uri );
+    return int64_t( fs::file_size( p ) );
 }
 
 // static
 std::string
 FileSystem::fileName( const std::string& uri, const std::string& relativeToPath )
 {
+#if 1
+    auto a = de_wstr( uri );
+    auto b = de_wstr( relativeToPath );
+    auto c = fileName( a, b );
+    return de_mbstr( c );
+#else
     if ( relativeToPath.empty() )
     {
         auto p1 = fs::path( uri ).filename().string();
@@ -2179,6 +2178,7 @@ FileSystem::fileName( const std::string& uri, const std::string& relativeToPath 
         fflush(stdout);
         return p3;
     }
+#endif
 }
 
 // static
@@ -2208,7 +2208,7 @@ FileSystem::fileName( const std::wstring& uri, const std::wstring& relativeToPat
 std::string
 FileSystem::fileBase( const std::string& uri )
 {
-   return fs::path( uri ).stem().string();
+   return fs::u8path( uri ).stem().u8string();
 }
 
 std::wstring
@@ -2221,24 +2221,28 @@ FileSystem::fileBase( const std::wstring& uri )
 std::string
 FileSystem::fileSuffix( const std::string& uri )
 {
-   if ( uri.empty() )
-   {
-      return {};
-   }
+#if 1
+    return de_mbstr( fileSuffix( de_wstr( uri ) ) );
+#else
+    if ( uri.empty() )
+    {
+        return {};
+    }
 
-   std::string ext = fs::path( uri ).extension().string();
-   if ( ext.empty() )
-   {
-      return {};
-   }
+    std::string ext = fs::u8path( uri ).extension().u8string();
+    if ( ext.empty() )
+    {
+        return {};
+    }
 
-   if (ext[0] == '.')
-   {
-      ext.erase( 0, 1 );
-   }
+    if (ext[0] == '.')
+    {
+        ext.erase( 0, 1 );
+    }
 
-   StringUtil::lowerCase( ext );
-   return ext;
+    StringUtil::lowerCase( ext );
+    return ext;
+#endif
 }
 
 std::wstring
@@ -2268,6 +2272,10 @@ FileSystem::fileSuffix( const std::wstring& uri )
 std::string
 FileSystem::fileDir( const std::string& uri )
 {
+#if 1
+    //return de_mbstr( fileDir(fs::u8path( uri ).wstring()) );
+    return de_mbstr( fileDir( de_wstr( uri ) ) );
+#else
     fs::path p( uri );
     if ( p.is_relative() )
     {
@@ -2289,6 +2297,7 @@ FileSystem::fileDir( const std::string& uri )
         tmp = tmp.substr( 0, tmp.size() - 1 );
     }
     return tmp;
+#endif
 }
 
 std::wstring
@@ -2308,6 +2317,9 @@ FileSystem::fileDir( const std::wstring& uri )
         }
     }
 
+#if 1
+    return makePosixPath(p.wstring());
+#else
     std::wstring tmp = p.wstring();
     tmp = StringUtil::replace( tmp, L"\\", L"/" );
     if ( StringUtil::endsWith( tmp, L"/" ) )
@@ -2315,53 +2327,52 @@ FileSystem::fileDir( const std::wstring& uri )
         tmp = tmp.substr( 0, tmp.size() - 1 );
     }
     return tmp;
+#endif
 }
 
 // static
 std::string
 FileSystem::parentDir( const std::string& uri )
 {
-    // fs::path dirPath = "/home/benjamin/projects/clouds/";
     fs::path parent = fs::path(uri).parent_path();
-
-    return parent.string();
+    return parent.u8string();
 }
 
 // static
 std::wstring
 FileSystem::parentDir( const std::wstring& uri )
 {
-    // fs::path dirPath = "/home/benjamin/projects/clouds/";
     fs::path parent = fs::path(uri).parent_path();
-
     return parent.wstring();
 }
 
 // static
 std::string
-FileSystem::makeAbsolute( std::string uri, std::string baseDir )
+FileSystem::makeAbsolute( const std::string& uri, const std::string& baseDir )
 {
-    std::string retVal = uri;
+    std::string o = uri;
     try
     {
-        const auto p2 = fs::canonical( fs::absolute( uri ) );
-        retVal = p2.string();
+        const auto p1 = fs::u8path( uri );
+        const auto p2 = fs::canonical( fs::absolute( p1 ) );
+        o = p2.u8string();
     }
     catch ( std::exception & e )
     {
         // DE_DEBUG("exception what(",e.what(),"), uri = ",uri )
     }
 
-    return retVal;
+    return o;
 }
 
 // static
 std::wstring
-FileSystem::makeAbsolute( std::wstring uri, std::wstring baseDir )
+FileSystem::makeAbsolute( const std::wstring& uri, const std::wstring& baseDir )
 {
     try
     {
-        const auto p2 = fs::canonical( fs::absolute( uri ) );
+        const auto p1 = fs::path( uri );
+        const auto p2 = fs::canonical( fs::absolute( p1 ) );
         return p2.wstring();
     }
     catch ( std::exception & e )
@@ -2375,6 +2386,11 @@ FileSystem::makeAbsolute( std::wstring uri, std::wstring baseDir )
 std::string
 FileSystem::makeWinPath( const std::string & uri )
 {
+#if 1
+    fs::path p1 = fs::u8path( uri );
+    fs::path p2( makeWinPath( p1.wstring() ) );
+    return p2.u8string();
+#else
     auto tmp = uri;
 
     if (tmp.empty()) return tmp;
@@ -2397,6 +2413,7 @@ FileSystem::makeWinPath( const std::string & uri )
     }
 
     return tmp;
+#endif
 }
 
 //static
@@ -2431,6 +2448,11 @@ FileSystem::makeWinPath( const std::wstring & uri )
 std::string
 FileSystem::makePosixPath( const std::string & uri )
 {
+#if 1
+    fs::path p1 = fs::u8path( uri );
+    fs::path p2( makePosixPath( p1.wstring() ) );
+    return p2.u8string();
+#else
     auto tmp = uri;
 
     if (tmp.empty()) return tmp;
@@ -2453,6 +2475,7 @@ FileSystem::makePosixPath( const std::string & uri )
     }
 
     return tmp;
+#endif
 }
 
 //static
@@ -2487,48 +2510,46 @@ FileSystem::makePosixPath( const std::wstring & uri )
 void
 FileSystem::createDirectory( const std::string& uri )
 {
-   if ( uri.empty() ) return;
+    if ( uri.empty() ) return;
 
-   fs::path p( uri );
+    auto p = fs::u8path( uri );
+    auto s = fs::status( p );
 
-   fs::file_status s = fs::status( p );
+    if ( fs::exists( s ) && fs::is_directory( s ) )
+    {
+        // std::cout << "[Warn] " << __func__ << "( uri:" << uri << ") :: Dir already exists." << std::endl;
+        return;
+    }
 
-   if ( fs::exists( s ) && fs::is_directory( s ) )
-   {
-      // std::cout << "[Warn] " << __func__ << "( uri:" << uri << ") :: Dir already exists." << std::endl;
-      return;
-   }
-
-   std::error_code e;
-   fs::create_directories( p, e );
-   if ( e )
-   {
-      DE_ERROR("( uri:",uri,") :: Got error ",e.message())
-   }
+    std::error_code e;
+    fs::create_directories( p, e );
+    if ( e )
+    {
+        DE_ERROR("( uri:",uri,") :: Got error ",e.message())
+    }
 }
 
 // static
 void
 FileSystem::createDirectory( const std::wstring& uri )
 {
-   if ( uri.empty() ) return;
+    if ( uri.empty() ) return;
 
-   fs::path p( uri );
+    auto p = fs::path( uri );
+    auto s = fs::status( p );
 
-   fs::file_status s = fs::status( p );
+    if ( fs::exists( s ) && fs::is_directory( s ) )
+    {
+        // std::cout << "[Warn] " << __func__ << "( uri:" << uri << ") :: Dir already exists." << std::endl;
+        return;
+    }
 
-   if ( fs::exists( s ) && fs::is_directory( s ) )
-   {
-      // std::cout << "[Warn] " << __func__ << "( uri:" << uri << ") :: Dir already exists." << std::endl;
-      return;
-   }
-
-   std::error_code e;
-   fs::create_directories( p, e );
-   if ( e )
-   {
-      DE_ERROR("( uri:",de_mbstr(uri),") :: Got error ",e.message())
-   }
+    std::error_code e;
+    fs::create_directories( p, e );
+    if ( e )
+    {
+        DE_ERROR("( uri:",de_mbstr(uri),") :: Got error ",e.message())
+    }
 }
 
 
@@ -2536,89 +2557,104 @@ FileSystem::createDirectory( const std::wstring& uri )
 void
 FileSystem::removeFile( const std::string& uri )
 {
-   std::error_code e;
-   fs::remove( uri, e );
-   if ( e )
-   {
-      DE_ERROR("Cant remove file(",uri,") :: ",e.message())
-   }
+    auto p = fs::u8path( uri );
+    std::error_code e;
+    fs::remove(p, e);
+    if ( e )
+    {
+        DE_ERROR("Cant remove file(",uri,") :: ",e.message())
+    }
+}
+
+// static
+void
+FileSystem::removeFile( const std::wstring& uri )
+{
+    auto p = fs::path( uri );
+    std::error_code e;
+    fs::remove(p, e);
+    if ( e )
+    {
+        DE_ERROR("Cant remove file(",de_mbstr(uri),") :: ",e.message())
+    }
 }
 
 // static
 bool
 FileSystem::copyFile( std::string src, std::string dst )
 {
-   DE_DEBUG("src(",src,"), dst(",dst,")")
+    DE_DEBUG("src(",src,"), dst(",dst,")")
 
-   if ( src.empty() )
-   {
-      return false;
-   }
-   if ( dst.empty() )
-   {
-      return false;
-   }
+    if ( src.empty() )
+    {
+        return false;
+    }
+    if ( dst.empty() )
+    {
+        return false;
+    }
 
-   makeWinPath(src);
+    makeWinPath(src);
 
-   DE_DEBUG("makeWinPath(src) = ",src)
+    DE_DEBUG("makeWinPath(src) = ",src)
 
-   FileSystem::makeAbsolute(src);
+    FileSystem::makeAbsolute(src);
 
-   DE_DEBUG("makeAbsolute(src) = ",src)
+    DE_DEBUG("makeAbsolute(src) = ",src)
 
-   makeWinPath(dst);
+    makeWinPath(dst);
 
-   DE_DEBUG("makeWinPath(dst) = ",dst)
+    DE_DEBUG("makeWinPath(dst) = ",dst)
 
-   fs::path p0( src );
-   fs::file_status s0 = fs::status( p0 );
-   if ( !fs::exists( s0 ) )
-   {
-      DE_ERROR("File not exist! src(",src,"), dst(",dst,")")
-      return false;
-   }
-   else
-   {
-      DE_INFO("File src exist (",src,")")
-   }
-   if ( !fs::is_regular_file( s0 ) )
-   {
-      DE_ERROR("File not a regular file! src(",src,"), dst(",dst,")")
-      return false;
-   }
-   else
-   {
-      DE_INFO("File src is regular (",src,")")
-   }
+    auto p0 = fs::u8path( src );
+    auto s0 = fs::status( p0 );
+    if ( !fs::exists( s0 ) )
+    {
+        DE_ERROR("File not exist! src(",src,"), dst(",dst,")")
+        return false;
+    }
+    else
+    {
+        DE_INFO("File src exist (",src,")")
+    }
 
-   fs::path p1( dst );
-//   fs::path p1 = dst.parent_path();
-//   std::error_code e;
-//   fs::create_directories( p_dir, e );
-//   if ( e )
-//   {
-//      std::cout << "[Error] " << __func__ << "( uri:" << uri << ") :: Got error " << e.message() << std::endl;
-//   }
+    if ( !fs::is_regular_file( s0 ) )
+    {
+        DE_ERROR("File not a regular file! src(",src,"), dst(",dst,")")
+        return false;
+    }
+    else
+    {
+        DE_INFO("File src is regular (",src,")")
+    }
 
-   if ( fs::exists( p1 ) )
-   {
-      removeFile( p1.string() );
-   }
+    auto p1 = fs::u8path( dst );
+    //   fs::path p1 = dst.parent_path();
+    //   std::error_code e;
+    //   fs::create_directories( p_dir, e );
+    //   if ( e )
+    //   {
+    //      std::cout << "[Error] " << __func__ << "( uri:" << uri << ") :: Got error " << e.message() << std::endl;
+    //   }
 
-   fs::copy_file( p0, p1 ); //, fs::copy_options::recursive );
-   if ( fs::exists( p1 ) )
-   {
-      DE_DEBUG("Copied file(",src," -> ",dst,")")
-      return true;
-   }
-   else
-   {
-      DE_ERROR("Cant copy file(",src,",",dst,")")
-      return false;
-   }
+    if ( fs::exists( p1 ) )
+    {
+        removeFile( p1.wstring() );
+    }
 
-   return true;
+    fs::copy_file( p0, p1 ); //, fs::copy_options::recursive );
+    if ( fs::exists( p1 ) )
+    {
+        DE_DEBUG("Copied file(",src," -> ",dst,")")
+        return true;
+    }
+    else
+    {
+        DE_ERROR("Cant copy file(",src,",",dst,")")
+        return false;
+    }
+
+    return true;
 }
 
 //static
@@ -2651,7 +2687,7 @@ FileSystem::createUniqueFileName( const std::string& userPrefix )
 bool
 FileSystem::isAbsolute( const std::string & uri )
 {
-    return fs::path( uri ).is_absolute();
+    return fs::u8path( uri ).is_absolute();
 }
 
 //static
@@ -2754,21 +2790,22 @@ FileSystem::entries(std::string baseDir,
     if ( recursive )
     {
         DE_WARN("scan recursive!")
-        fs::recursive_directory_iterator it( baseDir );
+        fs::recursive_directory_iterator it( fs::u8path(baseDir) );
         while ( it != fs::recursive_directory_iterator() )
         {
-            fs::path p = it->path();
-            std::string fileName = FileSystem::makeAbsolute( p.string() );
-            StringUtil::replace( fileName, "\\", "/" ); // make posix path
+            const fs::path p = it->path();
+            const std::wstring f1 = FileSystem::makeAbsolute( p.wstring() );
+            const std::wstring f2 = FileSystem::makePosixPath( f1 );
+            const std::string uri = de_mbstr(f2);
 
             if ( withDirs && fs::is_directory( p ) )
             {
-                onFileName( fileName );
+                onFileName( uri );
             }
 
             if ( withFiles && fs::is_regular_file( p ) )
             {
-                onFileName( fileName );
+                onFileName( uri );
             }
 
             std::error_code ec;
@@ -2782,21 +2819,22 @@ FileSystem::entries(std::string baseDir,
     }
     else
     {
-        fs::directory_iterator it( baseDir );
+        fs::directory_iterator it( fs::u8path(baseDir) );
         while ( it != fs::directory_iterator() )
         {
-            fs::path p = it->path();
-            std::string fileName = FileSystem::makeAbsolute( p.string() );
-            StringUtil::replace( fileName, "\\", "/" ); // make posix path
+            const fs::path p = it->path();
+            const std::wstring f1 = FileSystem::makeAbsolute( p.wstring() );
+            const std::wstring f2 = FileSystem::makePosixPath( f1 );
+            const std::string uri = de_mbstr(f2);
 
             if ( withDirs && fs::is_directory( p ) )
             {
-                onFileName( fileName );
+                onFileName( uri );
             }
 
             if ( withFiles && fs::is_regular_file( p ) )
             {
-                onFileName( fileName );
+                onFileName( uri );
             }
 
             std::error_code ec;
@@ -2845,18 +2883,18 @@ FileSystem::entries(std::wstring baseDir,
         fs::recursive_directory_iterator it( baseDir );
         while ( it != fs::recursive_directory_iterator() )
         {
-            fs::path p = it->path();
-            std::wstring fileName = FileSystem::makeAbsolute( p.wstring() );
-            StringUtil::replace( fileName, L"\\", L"/" ); // make posix path
+            const fs::path p = it->path();
+            const std::wstring f1 = FileSystem::makeAbsolute( p.wstring() );
+            const std::wstring uri = FileSystem::makePosixPath( f1 );
 
             if ( withDirs && fs::is_directory( p ) )
             {
-                onFileName( fileName );
+                onFileName( uri );
             }
 
             if ( withFiles && fs::is_regular_file( p ) )
             {
-                onFileName( fileName );
+                onFileName( uri );
             }
 
             std::error_code ec;
@@ -2873,18 +2911,18 @@ FileSystem::entries(std::wstring baseDir,
         fs::directory_iterator it( baseDir );
         while ( it != fs::directory_iterator() )
         {
-            fs::path p = it->path();
-            std::wstring fileName = FileSystem::makeAbsolute( p.wstring() );
-            StringUtil::replace( fileName, L"\\", L"/" ); // make posix path
+            const fs::path p = it->path();
+            const std::wstring f1 = FileSystem::makeAbsolute( p.wstring() );
+            const std::wstring uri = FileSystem::makePosixPath( f1 );
 
             if ( withDirs && fs::is_directory( p ) )
             {
-                onFileName( fileName );
+                onFileName( uri );
             }
 
             if ( withFiles && fs::is_regular_file( p ) )
             {
-                onFileName( fileName );
+                onFileName( uri );
             }
 
             std::error_code ec;
