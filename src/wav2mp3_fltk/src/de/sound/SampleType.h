@@ -24,12 +24,12 @@ public:
 
     uint8_t m_sampleType;
 
-    SampleType() : m_sampleType(Unknown) {}
-    SampleType(eSampleType sampleType) : m_sampleType(sampleType) {}
+    SampleType() noexcept : m_sampleType(Unknown) {}
+    SampleType(eSampleType sampleType) noexcept : m_sampleType(sampleType) {}
     std::string str() const noexcept { return getString(m_sampleType); }
     operator int32_t() const noexcept { return m_sampleType; }
-    int32_t bitsPerSample() const { return getBitsPerSample(m_sampleType); }
-    int32_t bytesPerSample() const { return getBytesPerSample(m_sampleType); }
+    int32_t bitsPerSample() const noexcept { return getBitsPerSample(m_sampleType); }
+    int32_t bytesPerSample() const noexcept { return getBytesPerSample(m_sampleType); }
 
     static std::string getString(int sampleType) noexcept
     {

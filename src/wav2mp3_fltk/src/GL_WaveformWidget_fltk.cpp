@@ -31,6 +31,13 @@ void GL_WaveformWidget::setSound(de::Sound* snd)
     redraw();
 }
 
+void GL_WaveformWidget::setZoomStart(double pc)
+{
+    if (!m_sound) return;
+    m_zoomFrameStart = std::llround(pc * m_zoom * m_sound->m_frames);
+    redraw();
+}
+
 void GL_WaveformWidget::setZoom(double z)
 {
     m_zoom = std::clamp<double>(z, 0.000001, 1000000.0);
@@ -46,7 +53,7 @@ void GL_WaveformWidget::draw()
 {
     if (!valid())
     {
-        DE_BENNI("Initialize OpenGL")
+        //DE_BENNI("Initialize OpenGL")
         //ensureDesktopOpenGL();
     }
 
@@ -81,10 +88,6 @@ void GL_WaveformWidget::draw()
     const int64_t zoomFrameCount = std::llround(double(m_sound->m_frames) * m_zoom);
     const int64_t visFrames = std::min(zoomFrameCount, 1000ll * w);
 
-    // --- Waveform ---
-    // const int midY = y() + rulerHeight + (h-16-rulerHeight)/2;
-    // const int amp = (h-16-rulerHeight)/2 - 4;
-
     const double majorSec = 1.0;   // 1 second
     const double minorSec = 0.1;   // 100 ms
 
@@ -95,7 +98,6 @@ void GL_WaveformWidget::draw()
     // ticks
     const int64_t firstMajor = ((m_zoomFrameStart + majorFrames - 1) / majorFrames) * majorFrames;
     const int64_t firstMinor = ((m_zoomFrameStart + minorFrames - 1) / minorFrames) * minorFrames;
-
 
     // Ruler background
     {
@@ -144,20 +146,6 @@ void GL_WaveformWidget::draw()
         glVertex2f(x2,y2);
     }
     glEnd();
-
-/*
-    for (int64_t f = firstMajor; f < endFrame; f += majorFrames)
-    {
-        int px = x() + (int)((f - startFrame) / framesPerPixel);
-
-        double sec = double(f) / sr;
-        char buf[32];
-        snprintf(buf, sizeof(buf), "%.2f", sec);
-
-        fl_color(FL_WHITE);
-        fl_draw(buf, px + 2, rulerY + rulerHeight - 5);
-    }
-*/
 
     // Draw Middle Line
     glColor4f(1.f, 1.f, 1.f, 1.0f);
@@ -212,18 +200,14 @@ void GL_WaveformWidget::draw()
     // --- Cut region ---
     if (m_selecting || (m_loopFrameStart >= 0 && m_loopFrameEnd > m_loopFrameStart))
     {
-        // int sx = x() + (int)((m_startFrame - startFrame) / framesPerPixel);
-        // int ex = x() + (int)((m_endFrame   - startFrame) / framesPerPixel);
-        // fl_rect(sx, y()+rulerHeight, ex - sx, h()-16-rulerHeight);
-        const int sx = x() + std::llround(double(m_loopFrameStart - m_zoomFrameStart) * ppf);
-        const int ex = x() + std::llround(double(m_loopFrameEnd   - m_zoomFrameStart) * ppf);
-        const int x1 = sx;
+        const int sx = std::llround(double(m_loopFrameStart - m_zoomFrameStart) * ppf);
+        const int ex = std::llround(double(m_loopFrameEnd   - m_zoomFrameStart) * ppf);
+        const int x1 = x() + sx;
+        const int x2 = x() + (ex - sx);
         const int y1 = y() + rulerHeight;
-        const int x2 = ex - sx;
-        const int y2 = h - 16 - rulerHeight;
-
+        const int y2 = y() + h - rulerHeight;
+        glColor4f(1.f, 0.f, 0.f, 0.2f);
         glBegin(GL_QUADS);
-        glColor4f(1.f, 0.f, 1.f, 0.2f);
         glVertex2f(x1,y1);
         glVertex2f(x2,y1);
         glVertex2f(x2,y2);
@@ -232,6 +216,20 @@ void GL_WaveformWidget::draw()
     }
 
     Fl_Gl_Window::draw();
+
+    /*
+    for (int64_t f = firstMajor; f < endFrame; f += majorFrames)
+    {
+        int px = x() + (int)((f - startFrame) / framesPerPixel);
+
+        double sec = double(f) / sr;
+        char buf[32];
+        snprintf(buf, sizeof(buf), "%.2f", sec);
+
+        fl_color(FL_WHITE);
+        fl_draw(buf, px + 2, rulerY + rulerHeight - 5);
+    }
+    */
 }
 
 int GL_WaveformWidget::handle(int e)

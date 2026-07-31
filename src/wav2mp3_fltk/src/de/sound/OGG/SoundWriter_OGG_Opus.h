@@ -5,7 +5,7 @@ namespace de {
 namespace sound {
 
 bool
-save_sound_opus_f32(
+save_sound_ogg_opus(
     const Sound& sound,
     const std::string& url,
     const SoundSaveOptions& options);

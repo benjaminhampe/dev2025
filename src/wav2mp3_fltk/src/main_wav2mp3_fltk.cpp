@@ -92,6 +92,7 @@ struct UI {
     GL_WaveformWidget* inWavf;
     Fl_Button* zoomIn;
     Fl_Button* zoomOut;
+    Fl_Scrollbar* scrollBar;
 
     ImageWidget* img1;
     Fl_Input* outFile;
@@ -124,6 +125,15 @@ struct UI {
 };
 
 UI ui;
+
+// Style table: jeder char in stylebuf → Style-Index
+static const Fl_Text_Display::Style_Table_Entry g_logStyles[] = {
+    { FL_BLACK, FL_COURIER, 14 },       // 'A' = info
+    { FL_RED,   FL_COURIER_BOLD, 14 },  // 'B' = error
+    { FL_BLUE,  FL_COURIER, 14 },       // 'C' = debug
+    { FL_MAGENTA,FL_COURIER, 14 },       // 'D' = warn
+    { FL_DARK_GREEN, FL_COURIER_BOLD, 14 },  // 'E' = success
+};
 
 void log_common(const char* msg, char style)
 {
@@ -344,8 +354,11 @@ void load_async_progress_awake(void* data)
 }
 void load_async_finish_awake(void*)
 {
-    auto s = dbStr("LoadAsync: Finished. uri = ",ui.in, ", sound ",ui.soundIn.str());
-    log_success(s.c_str());
+    auto s1 = dbStr("Load finished = ",ui.in);
+    log_success(s1.c_str());
+
+    auto s2 = dbStr("Sound = ",ui.soundIn.str());
+    log_debug(s2.c_str());
 
     ui.inWavf->setSound(&ui.soundIn);
 }
@@ -393,6 +406,7 @@ void load_async_cb(Fl_Widget*, void*)
         return;
     }
 
+    ui.soundIn.clear();
     ui.worker = std::thread(load_async);
     ui.worker.detach();
 }
@@ -873,6 +887,12 @@ public:
     }
 };
 
+void hscroll_cb(Fl_Widget* w, void* data)
+{
+    auto scrollBar = (Fl_Scrollbar*)w;
+
+    ui.inWavf->setZoomStart( scrollBar->value() );
+}
 
 
 // =============================================================
@@ -889,7 +909,7 @@ int main(int argc, char** argv)
     auto win = new Fl_Window(600, 600, "WAV to MP3 | benjaminhampe@gmx.de | fltk-1.4.5 + lame-3.100 + dr.wav + dr.mp3");
     win->begin();
 
-    int d = 10;
+    int d = 5;
     int y = d;
     int b = 30;
     int k = 0;
@@ -917,6 +937,13 @@ int main(int argc, char** argv)
         ((WaveformWidget*)ud)->setZoom(((WaveformWidget*)ud)->getZoom() * 0.8f);
     }, ui.inWavf);
     y += c + d;
+
+    ui.scrollBar = new Fl_Scrollbar(10, y, 580, b);
+    ui.scrollBar->type(FL_HORIZONTAL);
+    ui.scrollBar->bounds(0, 1);
+    ui.scrollBar->value(0);
+    ui.scrollBar->callback(hscroll_cb, nullptr);
+    y += b + d;
 
     ui.img1 = new ImageWidget(10, y, 40, b);
     ui.outFile = new Fl_Input(110, y, 400, b, "Outputfile:");
@@ -970,20 +997,10 @@ int main(int argc, char** argv)
     int dy = 600 - d - y;
     ui.logbox = new Fl_Text_Display(10, y, 580, dy);
     ui.logbox->buffer(ui.logbuf);
-
-    // Style table: jeder char in stylebuf → Style-Index
-    Fl_Text_Display::Style_Table_Entry styles[] = {
-        { FL_BLACK, FL_COURIER, 14 },       // 'A' = info
-        { FL_RED,   FL_COURIER_BOLD, 14 },  // 'B' = error
-        { FL_BLUE,  FL_COURIER, 14 },       // 'C' = debug
-        { FL_MAGENTA,FL_COURIER, 14 },       // 'D' = warn
-        { FL_DARK_GREEN, FL_COURIER_BOLD, 14 },  // 'E' = success
-    };
-
     ui.logbox->highlight_data(
         ui.stylebuf,
-        styles,
-        sizeof(styles)/sizeof(styles[0]),
+        g_logStyles,
+        sizeof(g_logStyles)/sizeof(g_logStyles[0]),
         'A',   // Default style
         nullptr, nullptr
     );

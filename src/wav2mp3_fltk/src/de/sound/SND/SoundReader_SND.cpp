@@ -4,10 +4,10 @@
 namespace de {
 namespace sound {
 
-bool load_sound_snd_f32(
+bool load_sound_sndfile(
     Sound & sound,
     const std::string & uri,
-    const de::SoundLoadOptions& options )
+    const SoundLoadOptions& options )
 {
     auto ext = dbFileSuffix( uri );
     int fmt = Utils::getSndTypeFromFileExt( ext );
@@ -20,7 +20,13 @@ bool load_sound_snd_f32(
     SF_INFO info{};
     info.format = 0;
 
-    SNDFILE* file = sf_open(uri.c_str(), SFM_READ, &info);
+#ifdef _WIN32
+    auto wuri = de_wstr(uri);
+    SNDFILE* file = sf_wchar_open(wuri.c_str(), SFM_READ, &info);
+#else
+    SNDFILE* file = sf_open(wuri.c_str(), SFM_READ, &info);
+#endif
+
     if ( !file )
     {
         DE_ERROR("Cant open uri ", uri )

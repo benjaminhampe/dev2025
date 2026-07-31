@@ -5,10 +5,10 @@ namespace de {
 namespace sound {
 
 bool
-load_sound_opus_f32(
-    Sound & ret,
-    const std::string & url,
-    const de::SoundLoadOptions& options );
+load_sound_ogg_vorbis(
+    Sound & sound,
+    const std::string & uri,
+    const SoundLoadOptions& options );
 
 } // end namespace sound.
 } // end namespace de.

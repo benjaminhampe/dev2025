@@ -1,4 +1,4 @@
-#include <de/sound/OPUS/SoundWriter_OPUS.h>
+#include <de/sound/OGG/SoundWriter_OGG_Opus.h>
 
 #include <opus/opus.h>
 #include <ogg/ogg.h>
@@ -10,7 +10,7 @@ namespace sound {
 // } // end namespace.
 
 bool
-save_sound_opus_f32(
+save_sound_ogg_opus(
     const Sound& sound,
     const std::string& uri,
     const SoundSaveOptions& options)

@@ -6,6 +6,7 @@ add_subdirectory(Sine_fltk_vst3)
 if (BENNI_USE_JUCE)
     # add_subdirectory(Product_001_Abenton_Gain_juce)
     add_subdirectory(Abenton_NeonMono_juce)
+    # add_subdirectory(Abenton_PluckString_juce) # Compile Errors
     add_subdirectory(Abenton_Spektrum3d_juce)
     # add_subdirectory(Abenton_Gain_juce)
     add_subdirectory(Abenton_DarthVaderVoice_juce)

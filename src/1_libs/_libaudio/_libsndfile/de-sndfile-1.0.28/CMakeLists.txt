@@ -139,12 +139,14 @@ else()
 
     if (WIN32)
         target_compile_definitions(${LIB_NAME} PRIVATE USE_WINDOWS_API=1 )
+        target_compile_definitions(${LIB_NAME} PRIVATE OS_IS_WIN32=1)
     else()
         target_compile_definitions(${LIB_NAME} PRIVATE USE_WINDOWS_API=0 )
+        target_compile_definitions(${LIB_NAME} PRIVATE OS_IS_WIN32=0)
     endif()
 
     target_sources(${LIB_NAME} PUBLIC ${SND_HEADERS} PRIVATE ${SND_SOURCES})
-    
+
     target_include_directories(${LIB_NAME} PUBLIC ${SND_HEADER_DIR})
     target_include_directories(${LIB_NAME} PRIVATE ${SND_SOURCE_DIR})
 
@@ -152,13 +154,13 @@ else()
     target_compile_definitions(${LIB_NAME} PUBLIC HAVE_EXTERNAL_XIPH_LIBS=1 )
 
     if (MSVC)
-	else()
+    else()
         target_compile_options(${LIB_NAME} PRIVATE -Wno-implicit-fallthrough)
         target_compile_options(${LIB_NAME} PRIVATE -Wno-expansion-to-defined)
         target_compile_options(${LIB_NAME} PRIVATE -Wno-unused-but-set-parameter)
         target_link_libraries(${LIB_NAME} PUBLIC m)
     endif()
-    
+
     target_link_libraries(${LIB_NAME} PUBLIC de_ogg)
     target_link_libraries(${LIB_NAME} PUBLIC de_flac)
     target_link_libraries(${LIB_NAME} PUBLIC de_opus)

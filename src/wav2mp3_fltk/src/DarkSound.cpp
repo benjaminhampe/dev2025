@@ -4,14 +4,15 @@
 #include <de/sound/MP3/SoundReader_MP3.h>
 #include <de/sound/MP4/SoundReader_MP4.h>
 #include <de/sound/SND/SoundReader_SND.h>
-#include <de/sound/OPUS/SoundReader_OPUS.h>
+#include <de/sound/OGG/SoundReader_OGG.h>
+//#include <de/sound/OPUS/SoundReader_OPUS.h>
 //#include <de/sound/FLAC/SoundReader_FLAC.h>
 
 #include <de/sound/MP3/SoundWriter_MP3.h>
 #include <de/sound/WAV/SoundWriter_WAV.h>
 #include <de/sound/SND/SoundWriter_SND.h>
+#include <de/sound/OGG/SoundWriter_OGG.h>
 #include <de/sound/FLAC/SoundWriter_FLAC_libflac-1.3.3.h>
-#include <de/sound/OGG/SoundWriter_OGG_Vorbis.h>
 
 #include <de/resample/Resampler_r8brain.h>
 
@@ -65,12 +66,14 @@ bool dbLoadSound(
     de::PerformanceTimer perf;
     perf.start();
 
+    sound.clear();
+
     bool ok = false;
 
     auto suffix = dbFileSuffix(uri);
     if (suffix == "mp3")
     {
-        ok = de::sound::load_sound_mp3_f32(sound, uri, options);
+        ok = de::sound::load_sound_mp3(sound, uri, options);
     }
     else if (suffix == "wav")
     {
@@ -78,15 +81,25 @@ bool dbLoadSound(
     }
     else if ((suffix == "mp4") || (suffix == "m4a"))
     {
-        ok = de::sound::load_sound_mp4_f32(sound, uri, options);
+        ok = de::sound::load_sound_mp4(sound, uri, options);
     }
-    else if (suffix == "opus")
+    else if (suffix == "ogg" ||
+             suffix == "oga" ||
+             suffix == "ogv" ||
+             suffix == "ogx" ||
+             suffix == "opus" ||
+             suffix == "vorbis")
     {
-        ok = de::sound::load_sound_opus_f32(sound, uri, options);
+        ok = de::sound::load_sound_ogg(sound, uri, options);
+        //ok = de::sound::load_sound_sndfile(sound, uri, options);
     }
+    // else if (suffix == "opus")
+    // {
+    //     ok = de::sound::load_sound_opus(sound, uri, options);
+    // }
     else if (supportedByLibSNDFILE(suffix))
     {
-        ok = de::sound::load_sound_snd_f32(sound, uri, options);
+        ok = de::sound::load_sound_sndfile(sound, uri, options);
     }
     else
     {
@@ -148,7 +161,7 @@ dbSaveSound(
     auto suffix = dbFileSuffix(uri);
     if (suffix == "mp3")
     {
-        ok = de::sound::save_sound_mp3_f32(sound, uri, options);
+        ok = de::sound::save_sound_mp3(sound, uri, options);
     }
     else if (suffix == "wav")
     {
@@ -158,9 +171,15 @@ dbSaveSound(
     {
         ok = de::sound::save_sound_flac(sound, uri, options);
     }
-    else if (suffix == "ogg")
+    else if (suffix == "ogg" ||
+             suffix == "oga" ||
+             suffix == "ogv" ||
+             suffix == "ogx" ||
+             suffix == "opus" ||
+             suffix == "vorbis")
     {
-        ok = de::sound::save_sound_ogg_vorbis(sound, uri, options);
+        ok = de::sound::save_sound_ogg(sound, uri, options);
+        //ok = de::sound::save_sound_ogg_vorbis(sound, uri, options);
     }
     // else if ((suffix == "mp4") || (suffix == "m4a"))
     // {

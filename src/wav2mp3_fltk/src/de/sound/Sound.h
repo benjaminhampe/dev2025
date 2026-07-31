@@ -19,6 +19,7 @@ public:
     bool empty() const noexcept;
 
     void clear() noexcept;
+    void shrink_to_fit() noexcept;
 
     double duration() const noexcept; // In [s] seconds.
 

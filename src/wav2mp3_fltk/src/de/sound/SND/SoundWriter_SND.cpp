@@ -59,7 +59,7 @@ struct AutoCloser
 */
 
 bool
-save_sound_snd_ogg_vorbis(
+save_sound_sndfile_ogg_vorbis(
     const Sound& sound,
     const std::string& uri,
     const SoundSaveOptions& options)
@@ -123,7 +123,7 @@ save_sound_snd_ogg_vorbis(
 }
 
 bool
-save_sound_snd_wav(
+save_sound_sndfile_wav(
     const Sound& sound,
     const std::string& uri,
     const SoundSaveOptions& options)

@@ -29,8 +29,11 @@ private:
 public:
     GL_WaveformWidget(int X, int Y, int W, int H);
     void setSound(de::Sound* snd);
+
+    void setZoomStart(double pc);
     void setZoom(double z);
     double getZoom() const;
+
     int64_t startFrame() const;
     int64_t endFrame()   const;
 

@@ -21,10 +21,10 @@ namespace de {
 namespace sound {
 
 bool
-load_sound_mp4_f32(
+load_sound_mp4(
     Sound& sound,
     const std::string& uri,
-    const de::SoundLoadOptions& options)
+    const SoundLoadOptions& options)
 {
     DE_BENNI("Parse ",uri)
 

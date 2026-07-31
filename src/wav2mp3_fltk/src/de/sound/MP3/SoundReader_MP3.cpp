@@ -5,10 +5,10 @@
 namespace de {
 namespace sound {
 
-bool load_sound_mp3_f32(
+bool load_sound_mp3(
     Sound & sound,
     const std::string & uri,
-    const de::SoundLoadOptions& options )
+    const SoundLoadOptions& options )
 {
     drmp3 mp3;
     auto wuri = de_wstr(uri);

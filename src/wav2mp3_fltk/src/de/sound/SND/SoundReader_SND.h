@@ -4,10 +4,10 @@
 namespace de {
 namespace sound {
 
-bool load_sound_snd_f32(
+bool load_sound_sndfile(
     Sound & ret,
     const std::string & url,
-    const de::SoundLoadOptions& options );
+    const SoundLoadOptions& options );
 
 } // end namespace sound.
 } // end namespace de.

@@ -21,6 +21,12 @@ void Sound::clear() noexcept
     m_samples.clear();
 }
 
+void Sound::shrink_to_fit() noexcept
+{
+    clear();
+    m_samples.shrink_to_fit();
+}
+
 double Sound::duration() const noexcept // In [s] seconds.
 {
     if (m_sampleRate < 1)
@@ -66,10 +72,13 @@ int64_t Sound::memoryConsumption() const noexcept
 
 bool Sound::validate() const
 {
-    const int64_t expected = byteCount();
-    if ( expected != m_samples.size() )
+    const int64_t header = byteCount();
+    const int64_t memory = m_samples.size();
+    const int64_t delta = header - memory;
+    const int64_t pc = 100.0 * double(delta) / double(memory);
+    if ( delta != 0 )
     {
-        DE_ERROR("expected(",expected,") != m_samples(",m_samples.size(),")")
+        DE_ERROR("header(",header,") != memory(",memory,"), delta(",delta,"), percent(",pc,")")
         return false;
     }
     return true;
@@ -129,10 +138,10 @@ bool Sound::append(const Sound& other)
     }
 
     m_frames += other.m_frames;
-    m_samples.insert(
-        m_samples.end(),
-        other.m_samples.data(),
-        other.m_samples.data() + other.m_samples.size());
+
+    const uint8_t* beg = other.m_samples.data();
+    const uint8_t* end = beg + other.byteCount();
+    m_samples.insert( m_samples.end(), beg, end );
 
     return true;
 }
