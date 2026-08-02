@@ -115,13 +115,14 @@ struct UI {
     std::atomic<bool> cancelFlag{false};
     std::thread worker;
 
-    std::string in;
-    std::string out;
     int bitrate; // bitrate
     int q;  // quality
 
     de::Sound soundIn;
     de::Sound soundOut;
+
+    std::string getSrcUri() const { return inFile->value(); }
+    std::string getDstUri() const { return outFile->value(); }
 };
 
 UI ui;
@@ -149,23 +150,51 @@ void log_common(const char* msg, char style)
     ui.logbox->scroll(ui.logbuf->length(), 0);
 }
 
-void log_info(const char* msg) { log_common(msg,'A'); }
-void log_error(const char* msg) { log_common(msg,'B'); }
-void log_debug(const char* msg) { log_common(msg,'C'); }
-void log_warn(const char* msg) { log_common(msg,'D'); }
-void log_success(const char* msg) { log_common(msg,'E'); }
+inline void log_info(const char* msg) { log_common(msg,'A'); }
+inline void log_error(const char* msg) { log_common(msg,'B'); }
+inline void log_debug(const char* msg) { log_common(msg,'C'); }
+inline void log_warn(const char* msg) { log_common(msg,'D'); }
+inline void log_success(const char* msg) { log_common(msg,'E'); }
 
-// ---------------- Fl::awake ----------------
-/*
-void log_success_awake(void* data)
+struct LogAsync
 {
-    auto msg = static_cast<const char*>(data);
-    log_success(msg);
-    free(data);
-}
-*/
+    int logLevel = de::LogLevel::Info;
+    char* msg = nullptr;
+    ~LogAsync() { if (msg) { delete msg; } }
+};
 
-void apply_dark_theme(Fl_Group* g)
+static void log_common_awake(void* data)
+{
+    auto logAsync = (LogAsync*)data;
+    switch(logAsync->logLevel)
+    {
+        case de::LogLevel::Error: log_common(logAsync->msg,'B'); break;
+        case de::LogLevel::Debug: log_common(logAsync->msg,'C'); break;
+        case de::LogLevel::Warn: log_common(logAsync->msg,'D'); break;
+        case de::LogLevel::Ok: log_common(logAsync->msg,'E'); break;
+        default: log_common(logAsync->msg,'A'); break;
+    }
+    delete logAsync;
+}
+
+static void async_log_common(const std::string& text, int logLevel)
+{
+    if (text.empty()) return;
+    auto logAsync = new LogAsync;
+    logAsync->logLevel = logLevel;
+    logAsync->msg = new char[text.size()+1];
+    std::memcpy(logAsync->msg, text.c_str(), text.size());
+    logAsync->msg[text.size()] = '\0';
+    Fl::awake(log_common_awake, logAsync);
+}
+
+inline void async_log_debug(const std::string& msg) { async_log_common(msg,de::LogLevel::Debug); }
+inline void async_log_info(const std::string& msg) { async_log_common(msg,de::LogLevel::Info); }
+inline void async_log_warn(const std::string& msg) { async_log_common(msg,de::LogLevel::Warn); }
+inline void async_log_error(const std::string& msg) { async_log_common(msg,de::LogLevel::Error); }
+inline void async_log_ok(const std::string& msg) { async_log_common(msg,de::LogLevel::Ok); }
+
+static void apply_dark_theme(Fl_Group* g)
 {
     for (int i = 0; i < g->children(); ++i)
     {
@@ -184,7 +213,7 @@ void apply_dark_theme(Fl_Group* g)
     }
 }
 
-void darkmode_cb(Fl_Widget*, void*)
+static void darkmode_cb(Fl_Widget*, void*)
 {
     static bool bDarkMode = false;
     bDarkMode = !bDarkMode;
@@ -205,129 +234,81 @@ void darkmode_cb(Fl_Widget*, void*)
 }
 
 // ---------------- helpers ----------------
-std::string make_mp3_name(const std::string& wav)
+static std::string make_mp3_name(const std::string& wav)
 {
     std::filesystem::path p = std::filesystem::u8path(wav);
     p.replace_extension(".mp3");
     return p.u8string();
 }
 
-void trim(std::string& s)
+// ---------------- helpers ----------------
+static void trim(std::string& s)
 {
-    while (!s.empty() && (s.back()=='\r' || s.back()=='\n' || s.back()==' ' || s.back()=='\t'))
+    while (!s.empty() && (s.back()=='\r' ||
+                          s.back()=='\n' ||
+                          s.back()=='\t' ||
+                          s.back()==' '))
+    {
         s.pop_back();
+    }
 }
 
-
-// ---------------- Fl::awake ----------------
-void convert_start_awake(void* data)
+// ---------------- callbacks ----------------
+static void cancel_cb(Fl_Widget*, void*)
 {
-    log_success("Start conversion:");
-
-    auto s = dbStr("bitrate = ",ui.bitrate, ", lameQualityPreset = ", ui.q);
-
-    log_debug(s.c_str());
-
-    log_debug("Import inputFile...");
-
-    ui.progress->value(0);
+    ui.cancelFlag = true;
 }
-// ---------------- Fl::awake ----------------
-void convert_resample_awake(void* data)
-{
-    log_debug("Resample inputFile...");
-}
-// ---------------- Fl::awake ----------------
-void convert_save_awake(void* data)
-{
-    log_debug("Export outputFile...");
-}
-// ---------------- Fl::awake ----------------
-void convert_progress_awake(void* data)
+
+static void progress_awake(void* data)
 {
     int percent = *static_cast<int*>(data);
     ui.progress->value(0.01f * percent);
     delete static_cast<int*>(data);
 }
-// ---------------- Fl::awake ----------------
-void convert_finished_awake(void*)
+
+static void async_progress(int pc)
 {
-    log_success("Finished conversion.");
+    auto progress = new int;
+    *progress = pc;
+    Fl::awake(progress_awake, progress);
 }
 
+// ---------------- Fl::awake ----------------
 void convert_async()
 {
-    std::string srcUri = ui.in;
-    std::string dstUri = ui.out;
+    ui.cancelFlag = false;
+    std::string srcUri = ui.getSrcUri();
+    std::string dstUri = ui.getDstUri();
 
     if (ui.soundIn.empty())
     {
-        DE_ERROR("No file loaded to export")
-        // de::SoundLoadOptions optLoad;
-        // optLoad.bCancelFlag = &ui.cancelFlag;
-        // optLoad.onProgress = [](int percent)
-        //     {
-        //         auto progress = new int;
-        //         *progress = percent;
-        //         Fl::awake(convert_progress_awake, progress);
-        //     };
-
-        // if (!dbLoadSound(ui.soundIn,srcUri,optLoad))
-        // {
-        //     auto s = dbStr("Cannot Load ",srcUri);
-        //     log_error(s.c_str());
-        //     return;
-        // }
+        log_error("You must load an audio file first");
         return;
     }
 
-    Fl::awake(convert_start_awake, nullptr);
-
-    ui.cancelFlag = false;
-
-    // New Async
-    std::this_thread::sleep_for(std::chrono::milliseconds(10));
-
-
-    Fl::awake(convert_start_awake, nullptr);
+    auto s1 = dbStr("Convert Start: bitrate = ",ui.bitrate,", lameQualityPreset = ",ui.q);
+    async_log_ok(s1);
+    async_progress(0);
 
     de::SoundSaveOptions optSave;
     optSave.bCancelFlag = &ui.cancelFlag;
     optSave.bitrate = ui.bitrate;
     optSave.quality = ui.q;
-    optSave.onProgress = [](int percent)
-            {
-                auto progress = new int;
-                *progress = percent;
-                Fl::awake(convert_progress_awake, progress);
-            };
+    optSave.onProgress = [](int pc) { async_progress(pc); };
 
-    if (!dbSaveSound(ui.soundIn, ui.out, optSave))
+    if (!dbSaveSound(ui.soundIn, dstUri, optSave))
     {
-        auto s = dbStr("Cannot save outputFile");
-        log_error(s.c_str());
+        auto s2 = dbStr("Cannot save outputFile");
+        async_log_error(s2);
         return;
     }
 
-    // New Async
-    Fl::awake(convert_finished_awake, nullptr);
-
-    return;
+    auto s3 = dbStr("Convert Finished: ",dstUri);
+    async_log_ok(s3);
 }
 
-
-// ---------------- callbacks ----------------
-void cancel_cb(Fl_Widget*, void*)
-{
-    ui.cancelFlag = true;
-}
-
-// ---------------- callbacks ----------------
 void convert_cb(Fl_Widget*, void*)
 {
-    ui.in = ui.inFile->value();
-    ui.out = ui.outFile->value();
-
     int bitrate_map[] = {96,128,160,192,224,256,320};
     int quality_map[] = {0,1,5,7,9};
 
@@ -339,68 +320,40 @@ void convert_cb(Fl_Widget*, void*)
 }
 
 // ---------------- Fl::awake ----------------
-void load_async_start_awake(void* data)
-{
-    auto s = dbStr("LoadAsync: Start... uri = ",ui.in);
-    log_success(s.c_str());
-
-    ui.progress->value(0);
-}
-void load_async_progress_awake(void* data)
-{
-    int percent = *static_cast<int*>(data);
-    ui.progress->value(0.01f * percent);
-    delete static_cast<int*>(data);
-}
 void load_async_finish_awake(void*)
 {
-    auto s1 = dbStr("Load finished = ",ui.in);
-    log_success(s1.c_str());
-
-    auto s2 = dbStr("Sound = ",ui.soundIn.str());
-    log_debug(s2.c_str());
-
     ui.inWavf->setSound(&ui.soundIn);
 }
-
 void load_async()
 {
-    std::string uri = ui.in;
-
-    Fl::awake(load_async_start_awake, nullptr);
-
     ui.cancelFlag = false;
 
-    // New Async
-    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    std::string uri = ui.getSrcUri();
+    async_log_ok(dbStr("Load Start: ",uri));
+    async_progress(0);
 
-    de::SoundSaveOptions optLoad;
+    de::SoundLoadOptions optLoad;
     optLoad.bCancelFlag = &ui.cancelFlag;
-    optLoad.onProgress = [](int percent)
-            {
-                auto progress = new int;
-                *progress = percent;
-                Fl::awake(load_async_progress_awake, progress);
-            };
+    optLoad.onProgress = [](int pc) { async_progress(pc); };
 
-    if (!dbLoadSound(ui.soundIn,uri))
+    if (!dbLoadSound(ui.soundIn,uri,optLoad))
     {
-        auto s = dbStr("Cannot load ",uri);
-        log_error(s.c_str());
+        async_log_error(dbStr("Cannot load ",uri));
         return;
     }
 
-    Fl::awake(load_async_finish_awake, nullptr);
+    async_log_ok(dbStr("Load finished = ",uri));
+    async_log_debug(dbStr("Sound = ",ui.soundIn.str()));
 
-    return;
+    Fl::awake(load_async_finish_awake, nullptr);
 }
 
 // ---------------- file pickers ----------------
 void load_async_cb(Fl_Widget*, void*)
 {
-    ui.in = ui.inFile->value();
+    std::string uri = ui.getSrcUri();
 
-    if (!dbExistFile(ui.in))
+    if (!dbExistFile(uri))
     {
         fl_alert("You must choose an existing file first");
         return;
@@ -411,156 +364,277 @@ void load_async_cb(Fl_Widget*, void*)
     ui.worker.detach();
 }
 
+static auto g_FileFilter =
+    "All Files\t*.*\n"
+    "Common Audio\t*.{wav,flac,mp3,mp4,m4a,opus,ogg,vorbis,aif,aiff}\n"
+    "WAV\t*.{wav,rf64,pcm,riff}\n"
+    "FLAC\t*.flac\n"
+    "MP3\t*.mp3\n"
+    "MP4\t*.{mp4,m4a}\n"
+    "OGG-Opus\t*.opus\n"
+    "OGG-Vorbis\t*.{ogg,ogx,oga,ogv,vorbis}\n"
+    "OGG-Speex\t*.{spx}\n"
+    "AIFF\t*.{aif,aiff}\n";
+
 // ---------------- file pickers ----------------
 void pick_input_cb(Fl_Widget*, void*)
 {
     Fl_Native_File_Chooser dlg;
     dlg.type(Fl_Native_File_Chooser::BROWSE_FILE);
-    dlg.filter("All files\t*.*\n"
-               "Audio Files\t*.{wav,flac,mp3,mp4,m4a,opus,ogg,vorbis,aif,aiff}\n"
-               "WAV\t*.wav\n"
-               "FLAC\t*.flac\n"
-               "MP3\t*.mp3\n"
-               // "M4A\t*.m4a\n"
-               "MP4\t*.{mp4,m4a}\n"
-               // "MP4\t*.mp4\n"
-               // "MP4\t*.m4a\n"
-               "OPUS\t*.opus\n"
-               "OGG-Vorbis\t*.{ogg,vorbis}\n"
-               // "OGG-Vorbis\t*.ogg\n"
-               // "OGG-Vorbis\t*.vorbis\n"
-                "AIFF\t*.{aif,aiff}\n"
-               );
+    dlg.filter(g_FileFilter);
     dlg.filter_value(0);   // 0 = All files
-    if (dlg.show() == 0) {
-        ui.in = dlg.filename();
-        ui.inFile->value(ui.in.c_str());
-        ui.convert->activate();
 
-        ui.out = make_mp3_name(ui.in);
-        ui.outFile->value(ui.out.c_str());
+    auto uri = ui.getSrcUri();
+    auto dir = dbFileDir(uri);
+    if (dbExistDirectory(dir))
+    {
+        dlg.directory(dir.c_str());
+    }
+
+    if (dlg.show() == 0)
+    {
+        uri = dlg.filename();
+        ui.inFile->value(uri.c_str());
+        uri = make_mp3_name(uri);
+        ui.outFile->value(uri.c_str());
+
+        // TODO: Rework when button is activated.
+        ui.convert->activate();
     }
 }
 
 void pick_output_cb(Fl_Widget*, void*)
 {
-    Fl_Native_File_Chooser fc;
-    fc.type(Fl_Native_File_Chooser::BROWSE_SAVE_FILE);
-    fc.filter("MP3\t*.mp3");
+    Fl_Native_File_Chooser dlg;
+    dlg.type(Fl_Native_File_Chooser::BROWSE_SAVE_FILE);
+    dlg.filter(g_FileFilter);
+    dlg.filter_value(0);   // 0 = All files
 
-    if (!ui.in.empty()) {
-        std::filesystem::path p(ui.in);
-        fc.directory(p.parent_path().string().c_str());   // ⭐ funktioniert
+    auto uri = ui.getSrcUri();
+    if (!uri.empty())
+    {
+        auto dir = dbFileDir(uri);
+        dlg.directory(dir.c_str());
     }
 
-    if (fc.show() == 0) {
-        ui.out = fc.filename();
-        ui.outFile->value(ui.out.c_str());
+    if (dlg.show() == 0)
+    {
+        uri = dlg.filename();
+        ui.outFile->value(uri.c_str());
     }
 }
 
-// ---------------- callbacks ----------------
-void compare_cb(Fl_Widget*, void*)
+// ---------------- Fl::awake ----------------
+void compare_async_start_awake(void* data)
 {
-    log_success("Start compare...");
+    ui.progress->value(0);
+}
 
-    de::Sound src;
-    if (!dbLoadSound(src,ui.in))
+// ---------------- callbacks ----------------
+void compare_async()
+{
+    async_log_ok("Compare Start: ");
+
+    std::string src_uri = ui.getSrcUri();
+    std::string dst_uri = ui.getDstUri();
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+
+    // Load input
+    async_log_debug(dbStr("Src: ", src_uri));
+    if (ui.soundIn.empty() || ui.soundIn.m_uri != src_uri)
     {
-        log_error("Cannot load src file");
-        log_error("Abort compare...");
-        return;
-    }
+        auto s = dbStr("Compare: Load src file: ", src_uri);
+        async_log_debug(s);
 
-    de::Sound dst;
-    if (!dbLoadSound(dst,ui.out))
+        if (!dbExistFile(src_uri))
+        {
+            auto s = dbStr("Compare Failed. No such src file. ", src_uri);
+            async_log_error(s);
+            return;
+        }
+
+        de::SoundLoadOptions optLoad;
+        optLoad.bCancelFlag = &ui.cancelFlag;
+        optLoad.onProgress = [](int pc) { async_progress(pc); };
+
+        if (!dbLoadSound(ui.soundIn,src_uri,optLoad))
+        {
+            auto s = dbStr("Compare Failed. Can't load src file. ", src_uri);
+            async_log_error(s);
+            return;
+        }
+
+        if (ui.soundIn.empty())
+        {
+            auto s = dbStr("Compare Failed. Loaded src file is empty. ", src_uri);
+            async_log_error(s);
+            return;
+        }
+    }
+    async_log_debug(dbStr("Src: ", ui.soundIn.str()));
+
+    // Load output
+    async_log_debug(dbStr("Dst: ", dst_uri));
+    if (ui.soundOut.empty() || ui.soundOut.m_uri != dst_uri)
     {
-        log_error("Cannot load dst file");
-        log_error("Abort compare...");
-        return;
+        auto s = dbStr("Compare: Load dst file: ", dst_uri);
+        if (!dbExistFile(dst_uri))
+        {
+            auto s = dbStr("Compare Failed. No such dst file. ", dst_uri);
+            async_log_error(s);
+            return;
+        }
+
+        ui.cancelFlag = false;
+        de::SoundLoadOptions optLoad;
+        optLoad.bCancelFlag = &ui.cancelFlag;
+        optLoad.onProgress = [](int pc) { async_progress(pc); };
+
+        if (!dbLoadSound(ui.soundOut,dst_uri,optLoad))
+        {
+            auto s = dbStr("Compare Failed. Can't load dst file. ", dst_uri);
+            async_log_error(s);
+            return;
+        }
+
+        if (ui.soundOut.empty())
+        {
+            auto s = dbStr("Compare Failed. Loaded dst file is empty. ", dst_uri);
+            async_log_error(s);
+            return;
+        }
     }
+    async_log_debug(dbStr("Dst: ", ui.soundOut.str()));
 
-    log_info("Files loaded.");
+    // Comparing....
+    async_log_info("Comparing...");
 
+    const auto & src = ui.soundIn;
+    const auto & dst = ui.soundOut;
     if (src.m_frames != dst.m_frames)
     {
         auto a = src.m_frames;
         auto b = dst.m_frames;
-        // auto s = dbStr("Diff found: src.m_frames(",a,") != dst.m_frames(",b,")");
-        // log_error(s.c_str());
-
         if (a > b)
         {
-            auto s = dbStr("Diff src > dst frames(",a-b,")");
-            log_error(s.c_str());
+            auto d = a-b;
+            auto r = 100.0 * double(d) / double(a);
+            auto s = dbStr("Differing FrameCount (src > dst), delta(",d,"), percent(",r,")");
+            async_log_error(s);
         }
         else
         {
-            auto s = dbStr("Diff dst > src frames(",b-a,")");
-            log_error(s.c_str());
+            auto d = a-b;
+            auto r = 100.0 * double(d) / double(a);
+            auto s = dbStr("Differing FrameCount (dst > src), delta(",d,"), percent(",r,")");
+            async_log_error(s);
         }
+    }
+
+    if (src.m_channels < 1)
+    {
+        async_log_error("No src channels.");
+        return;
+    }
+
+    if (dst.m_channels < 1)
+    {
+        async_log_error("No dst channels.");
+        return;
     }
 
     if (src.m_channels != dst.m_channels)
     {
-        auto s = dbStr("Diff found: src.m_channels(",src.m_channels,") != dst.m_channels(",dst.m_channels,")");
-        log_error(s.c_str());
+        auto s = dbStr("Differing Channels: src(",src.m_channels,") != dst(",dst.m_channels,")");
+        async_log_error(s);
     }
 
     if (src.m_sampleRate != dst.m_sampleRate)
     {
-        auto s = dbStr("Diff found: src.m_sampleRate(",src.m_sampleRate,") != dst.m_sampleRate(",dst.m_sampleRate,")");
-        log_error(s.c_str());
+        auto s = dbStr("Differing SampleRate: src(",src.m_sampleRate,"Hz) != dst(",dst.m_sampleRate,"Hz)");
+        async_log_error(s);
     }
 
     uint64_t minFrames = std::min(src.m_frames,dst.m_frames);
     uint32_t minChannels = std::min(src.m_channels,dst.m_channels);
-    for (uint32_t c = 0; c < minChannels; ++c)
+
+    auto srcConv = de::SampleTypeConverter::getConverter(src.m_sampleType, de::SampleType::F32);
+    if (!srcConv)
+    {
+        auto s = dbStr("No converter for src from ",src.m_sampleType.str()," to F32.");
+        async_log_error(s);
+        return;
+    }
+    auto dstConv = de::SampleTypeConverter::getConverter(dst.m_sampleType, de::SampleType::F32);
+    if (!dstConv)
+    {
+        auto s = dbStr("No converter for dst from ",dst.m_sampleType.str()," to F32.");
+        async_log_error(s);
+        return;
+    }
+
+    de::TAlignedVector<float> srcBuf(src.m_channels);
+    de::TAlignedVector<float> dstBuf(src.m_channels);
+
+    for (int32_t c = 0; c < minChannels; ++c)
     {
         // src
-        double src_s = 0.0; // Vorzeichenbehaftete Summe
-        double src_a = 0.0; // Absolute Summe
-        double src_e = 0.0; // Energy per sample
-        for (uint64_t i = 0; i < minFrames; ++i)
+        double src_min = 0.0; // Minimum
+        double src_max = 0.0; // Maximum
+        double src_acc = 0.0; // Absolute Summe
+        double src_esu = 0.0; // Energy sum
+        double src_eps = 0.0; // Energy per sample
+        for (int64_t i = 0; i < minFrames; ++i)
         {
-            float sample = src.m_samples[i * src.m_channels + c];
-            src_s += sample;
-            src_a += std::fabsf(sample);
-            src_e += sample * sample;
+            src.read_frames(srcConv, srcBuf.data(), 1, i);
+            float v = srcBuf[ c ];
+            src_min = std::fminf(src_min,v);
+            src_max = std::fmaxf(src_max,v);
+            src_acc += std::fabsf(v);
+            src_esu += v * v;
         }
-        src_a /= double(src.m_frames);
-        src_e /= double(src.m_frames);
+        src_eps = src_acc / double(src.m_frames);
 
         // dst
-        double dst_s = 0.0; // Vorzeichenbehaftete Summe
-        double dst_a = 0.0; // Absolute Summe
-        double dst_e = 0.0; // Energy
-        for (uint64_t i = 0; i < minFrames; ++i)
+        double dst_min = 0.0; // Minimum
+        double dst_max = 0.0; // Maximum
+        double dst_acc = 0.0; // Absolute Summe
+        double dst_esu = 0.0; // Energy sum
+        double dst_eps = 0.0; // Energy per sample
+        for (int64_t i = 0; i < minFrames; ++i)
         {
-            float sample = dst.m_samples[i * dst.m_channels + c];
-            dst_s += sample;
-            dst_a += std::fabsf(sample);
-            dst_e += sample * sample;
+            dst.read_frames(dstConv, dstBuf.data(), 1, i);
+            float v = dstBuf[ c ];
+            dst_min = std::fminf(dst_min,v);
+            dst_max = std::fmaxf(dst_max,v);
+            dst_acc += std::fabsf(v);
+            dst_esu += v * v;
         }
-        dst_a /= double(dst.m_frames);
-        dst_e /= double(dst.m_frames);
+        dst_eps = dst_acc / double(dst.m_frames);
 
-        double ds = 100.0 * dst_s / src_s;
-        double da = 100.0 * dst_a / src_a;
-        double de = 100.0 * dst_e / src_e;
+        double d_min = 100.0 * dst_min / src_min;
+        double d_max = 100.0 * dst_max / src_max;
+        double d_acc = 100.0 * dst_acc / src_acc;
+        double d_esu = 100.0 * dst_esu / src_esu;
+        double d_eps = 100.0 * dst_eps / src_eps;
 
-        auto s1 = dbStr("Channel[",c,"] src_s(",src_s,", dst_s(",dst_s,"), diff(",ds,"%)");
-        auto s2 = dbStr("Channel[",c,"] src_a(",src_a,", dst_a(",dst_a,"), diff(",da,"%)");
-        auto s3 = dbStr("Channel[",c,"] src_e(",src_e,", dst_e(",dst_e,"), diff(",de,"%)");
+        auto s1 = dbStr("Channel[",c,"].Min       src(",src_min,", dst(",dst_min,"), diff(",d_min,"%)");
+        auto s2 = dbStr("Channel[",c,"].Max       src(",src_max,", dst(",dst_max,"), diff(",d_max,"%)");
+        auto s3 = dbStr("Channel[",c,"].AbsAccum  src(",src_acc,", dst(",dst_acc,"), diff(",d_acc,"%)");
+        auto s4 = dbStr("Channel[",c,"].E_Sum     src(",src_esu,", dst(",dst_esu,"), diff(",d_esu,"%)");
+        auto s5 = dbStr("Channel[",c,"].E_PerSamp src(",src_eps,", dst(",dst_eps,"), diff(",d_eps,"%)");
 
-        log_info(s1.c_str());
-        log_info(s2.c_str());
-        log_info(s3.c_str());
-
+        async_log_info(s1);
+        async_log_info(s2);
+        async_log_info(s3);
+        async_log_info(s4);
+        async_log_info(s5);
+/*
         // delta:
         double delta_max = 0.0; // Absolute Summe
         double delta_sum = 0.0; // Energy per sample
-        for (uint64_t i = 0; i < minFrames; ++i)
+        for (int64_t i = 0; i < minFrames; ++i)
         {
             double a = src.m_samples[i * src.m_channels + c];
             double b = dst.m_samples[i * src.m_channels + c];
@@ -570,15 +644,25 @@ void compare_cb(Fl_Widget*, void*)
         }
 
         auto s4 = dbStr("Channel[",c,"] delta_max(",delta_max,"), delta_sum(",delta_sum,")");
-        log_info(s4.c_str());
+        async_log_info(s4);
+*/
     }
 
     log_success("Finished compare.");
 }
 
 
-// ---------------- Input field mit DnD ----------------
+// ---------------- callbacks ----------------
+void compare_cb(Fl_Widget*, void*)
+{
+    ui.cancelFlag = false;
+    ui.worker = std::thread(compare_async);
+    ui.worker.detach();
+}
+
+// =============================================================
 class InputField : public Fl_Input
+// =============================================================
 {
 public:
     InputField(int X, int Y, int W, int H, const char* L = 0)
@@ -597,199 +681,28 @@ public:
             int r = Fl_Input::handle(event); // Text wird gesetzt
 
             //
-            std::string path = value();
-            //trim(path);
+            std::string uri = value();
 
-            ui.in = path;
-
-            if (dbExistFile(path))
+            if (dbExistFile(uri))
             {
                 ui.convert->activate();
-                ui.out = make_mp3_name(path);
-                ui.outFile->value(ui.out.c_str());
+                auto dst = make_mp3_name(uri);
+                ui.outFile->value(dst.c_str());
             }
             else
             {
-                DE_ERROR("InputFile does not exist, ", path)
+                DE_ERROR("InputFile does not exist, ", uri)
             }
-
-
             return r;
         }
         return Fl_Input::handle(event);
     }
 };
-/*
-class XP_Progress : public Fl_Progress {
-public:
-    XP_Progress(int X, int Y, int W, int H, const char* L = 0)
-        : Fl_Progress(X, Y, W, H, L)
-    {
-        box(FL_FLAT_BOX);
-        color(fl_rgb_color(200, 200, 200));   // trough background
-        selection_color(fl_rgb_color(0, 120, 215)); // XP blue
-        labelcolor(FL_WHITE);
-    }
 
-    void draw() override
-    {
-        // Draw trough background
-        fl_push_clip(x(), y(), w(), h());
-        fl_color(color());
-        fl_rectf(x(), y(), w(), h());
-
-        // Border
-        fl_color(fl_rgb_color(160,160,160));
-        fl_rect(x(), y(), w(), h());
-
-        // Progress fraction
-        float frac = 0.0f;
-        if (maximum() > minimum())
-            frac = (value() - minimum()) / (maximum() - minimum());
-
-        int pw = int(frac * w());
-
-        if (pw > 0)
-        {
-            // Base XP blue
-            fl_color(selection_color());
-            fl_rectf(x(), y(), pw, h());
-
-            // Glossy highlight (top half)
-            fl_color(fl_rgb_color(0, 180, 255));
-            fl_rectf(x(), y(), pw, h() / 2);
-
-            // XP stripes
-            fl_color(fl_rgb_color(0, 100, 200));
-            for (int sx = x(); sx < x() + pw; sx += 12)
-                fl_rectf(sx, y(), 6, h());
-        }
-
-        // Draw label (percentage)
-        char buf[64];
-        snprintf(buf, sizeof(buf), "%d%%", int(frac * 100));
-
-        fl_color(labelcolor());
-        fl_font(FL_HELVETICA_BOLD, 12);
-        fl_draw(buf, x(), y(), w(), h(), FL_ALIGN_CENTER);
-
-        fl_pop_clip();
-    }
-};
-
-class XP_Progress : public Fl_Progress {
-public:
-    XP_Progress(int X, int Y, int W, int H, const char* L = 0)
-        : Fl_Progress(X, Y, W, H, L)
-    {
-        box(FL_FLAT_BOX);
-        color(fl_rgb_color(200, 200, 200));   // trough background
-        selection_color(fl_rgb_color(0, 120, 215)); // XP blue-ish
-        labelcolor(FL_WHITE);
-    }
-
-    void draw() override
-    {
-        // Draw trough
-        fl_color(color());
-        fl_rectf(x(), y(), w(), h());
-
-        // Border
-        fl_color(fl_rgb_color(160,160,160));
-        fl_rect(x(), y(), w(), h());
-
-        // Progress width
-        float frac = (maximum() > minimum())
-            ? (value() - minimum()) / (maximum() - minimum())
-            : 0.0f;
-
-        int pw = int(frac * w());
-
-        if (pw > 0)
-        {
-            // XP blue base
-            fl_color(selection_color());
-            fl_rectf(x(), y(), pw, h());
-
-            // Glossy highlight (top half)
-            fl_color(fl_rgb_color(0, 180, 255));
-            fl_rectf(x(), y(), pw, h() / 2);
-
-            // XP stripes
-            fl_color(fl_rgb_color(0, 100, 200));
-            for (int sx = x(); sx < x() + pw; sx += 12)
-                fl_rectf(sx, y(), 6, h());
-        }
-
-        // Draw label (percentage)
-        char buf[64];
-        snprintf(buf, sizeof(buf), "%d%%", int(frac * 100));
-
-        fl_color(labelcolor());
-        fl_font(FL_HELVETICA_BOLD, 12);
-        fl_draw(buf, x(), y(), w(), h(), FL_ALIGN_CENTER);
-    }
-};
-
-class XP_Green_Progress : public Fl_Progress {
-public:
-    XP_Green_Progress(int X, int Y, int W, int H, const char* L = 0)
-        : Fl_Progress(X, Y, W, H, L)
-    {
-        box(FL_FLAT_BOX);
-        color(fl_rgb_color(200, 200, 200));        // trough background
-        selection_color(fl_rgb_color(0, 180, 0));  // XP green base
-        labelcolor(FL_WHITE);
-    }
-
-    void draw() override
-    {
-        fl_push_clip(x(), y(), w(), h());
-
-        // Draw trough
-        fl_color(color());
-        fl_rectf(x(), y(), w(), h());
-
-        // Border
-        fl_color(fl_rgb_color(160,160,160));
-        fl_rect(x(), y(), w(), h());
-
-        // Progress fraction
-        float frac = 0.0f;
-        if (maximum() > minimum())
-            frac = (value() - minimum()) / (maximum() - minimum());
-
-        int pw = int(frac * w());
-
-        if (pw > 0)
-        {
-            // Base XP green
-            fl_color(selection_color());
-            fl_rectf(x(), y(), pw, h());
-
-            // Glossy highlight (top half)
-            fl_color(fl_rgb_color(0, 220, 0));
-            fl_rectf(x(), y(), pw, h() / 2);
-
-            // XP stripes (dark green)
-            fl_color(fl_rgb_color(0, 140, 0));
-            for (int sx = x(); sx < x() + pw; sx += 12)
-                fl_rectf(sx, y(), 6, h());
-        }
-
-        // Draw label (percentage)
-        char buf[64];
-        snprintf(buf, sizeof(buf), "%d%%", int(frac * 100));
-
-        fl_color(labelcolor());
-        fl_font(FL_HELVETICA_BOLD, 12);
-        fl_draw(buf, x(), y(), w(), h(), FL_ALIGN_CENTER);
-
-        fl_pop_clip();
-    }
-};
-*/
-class XP_Progress : public Fl_Progress {
+// =============================================================
+class XP_Progress : public Fl_Progress
+// =============================================================
+{
 public:
     XP_Progress(int X, int Y, int W, int H, const char* L = 0)
         : Fl_Progress(X, Y, W, H, L)

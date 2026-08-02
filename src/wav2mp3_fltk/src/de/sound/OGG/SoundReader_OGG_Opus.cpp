@@ -61,8 +61,6 @@ bool load_sound_ogg_opus(
     const std::string& uri,
     const SoundLoadOptions& options)
 {
-    sound.m_uri = uri;
-
     int fd = file64_open(uri.c_str(), eFileMode::Read);
     if (fd < 0)
     {
@@ -90,29 +88,28 @@ bool load_sound_ogg_opus(
         return false;
     }
 
+    sound.m_uri = uri;
     sound.m_sampleType = SampleType::F32;
     sound.m_sampleRate = head->input_sample_rate;
     sound.m_channels   = head->channel_count;
     sound.m_flags      = 0;
+    sound.m_frames     = 0;
+    sound.m_samples.clear();
 
-    ogg_int64_t totalFrames = op_pcm_total(of, -1);
-    sound.m_frames = (totalFrames > 0 ? totalFrames : 0);
-
-    // if (sound.m_frames > 0)
-    // {
-    //     size_t bytes = sound.m_frames * sound.m_channels * sizeof(float);
-    //     sound.m_samples.resize(bytes);
-    // }
+    const int64_t n = op_pcm_total(of, -1);
+    if (n > 0)
+    {
+        sound.m_frames = n;
+        sound.m_samples.reserve(n * sound.m_channels * long(sizeof(float)));
+    }
 
     // float* dst = reinterpret_cast<float*>(sound.m_samples.data());
     int64_t framesRead = 0;
-
-    std::vector<float> buf(4096 * sound.m_channels);
+    TAlignedVector<float> buf(4096 * sound.m_channels);
 
     while (true)
     {
         int ret = op_read_float(of, buf.data(), (int)buf.size(), nullptr);
-
         if (ret == 0)
             break;      // EOF
         if (ret < 0)

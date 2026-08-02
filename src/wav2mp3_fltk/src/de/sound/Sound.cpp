@@ -151,7 +151,10 @@ std::string Sound::str(bool bWithFileName, bool bWithDir) const
     std::ostringstream o;
     o << dbStrSeconds(duration()) << ","
     " " << m_sampleRate << "Hz,"
-    " " << m_channels << " x " << m_frames << " x " << sampleTypeStr();
+    " " << m_channels << " x"
+    " " << sampleTypeStr() << " x"
+    " " << m_frames << ", "
+    " mem(" << dbStrBytes(memoryConsumption()) << ")";
     if (bWithFileName)
     {
         o << ", file(" << dbFileName(m_uri) << ")";

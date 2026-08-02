@@ -54,13 +54,13 @@
 /* add ieee754_float32_t type */
 /* #undef HAVE_IEEE754_FLOAT32_T */
 #ifndef HAVE_IEEE754_FLOAT32_T
-	typedef float ieee754_float32_t;
+    typedef float ieee754_float32_t;
 #endif
 
 /* add ieee754_float64_t type */
 /* #undef HAVE_IEEE754_FLOAT64_T */
 #ifndef HAVE_IEEE754_FLOAT64_T
-	typedef double ieee754_float64_t;
+    typedef double ieee754_float64_t;
 #endif
 
 /* system has 80 bit floats */
@@ -69,33 +69,33 @@
 /* add ieee854_float80_t type */
 /* #undef HAVE_IEEE854_FLOAT80_T */
 #ifndef HAVE_IEEE854_FLOAT80_T
-	typedef long double ieee854_float80_t;
+    typedef long double ieee854_float80_t;
 #endif
 
 /* add int16_t type */
 #define HAVE_INT16_T 1
 #ifndef HAVE_INT16_T
-	typedef short int16_t;
+    typedef short int16_t;
 #endif
 
 /* add int32_t type */
 #define HAVE_INT32_T 1
 #ifndef HAVE_INT32_T
 #define A_INT32_T int
-	typedef A_INT32_T int32_t;
+    typedef A_INT32_T int32_t;
 #endif
 
 /* add int64_t type */
 #define HAVE_INT64_T 1
 #ifndef HAVE_INT64_T
 #define A_INT64_T long
-	typedef A_INT64_T int64_t;
+    typedef A_INT64_T int64_t;
 #endif
 
 /* add int8_t type */
 #define HAVE_INT8_T 1
 #ifndef HAVE_INT8_T
-	typedef char int8_t;
+    typedef char int8_t;
 #endif
 
 /* Define to 1 if you have the <inttypes.h> header file. */
@@ -103,9 +103,6 @@
 
 /* Define to 1 if you have the <limits.h> header file. */
 #define HAVE_LIMITS_H 1
-
-/* have nasm */
-/* #undef HAVE_NASM */
 
 /* Define to 1 if you have the <unistd.h> header file. */
 #define HAVE_UNISTD_H 1
@@ -129,23 +126,23 @@
 #define STDC_HEADERS 1
 
 /* IEEE754 compatible machine */
-#define TAKEHIRO_IEEE754_HACK 1
+// #define TAKEHIRO_IEEE754_HACK 1
 
 /* Define to 1 if you can safely include both <sys/time.h> and <time.h>. */
 #define TIME_WITH_SYS_TIME 1
 
 /* faster log implementation with less but enough precission */
-#define USE_FAST_LOG 1
+// #define USE_FAST_LOG 1
 
 // WIN32
 #if defined(WIN32) ||defined(_WIN32)
 
-   #undef HAVE_MPGLIB
+   // #undef HAVE_MPGLIB
 
 // LINUX
 #else
    /* Needs hip_ allow to compute a more accurate replaygain value */
-   #define DECODE_ON_THE_FLY 1
+   // #define DECODE_ON_THE_FLY 1
 
    /* Define to 1 if you have the <ncurses/termcap.h> header file. */
    /* #undef HAVE_NCURSES_TERMCAP_H */
@@ -157,7 +154,7 @@
    #define HAVE_SYS_SOUNDCARD_H 1
 
    /* build with mpglib support */
-   #define HAVE_MPGLIB 1
+   // #define HAVE_MPGLIB 1
 
    /* have termcap */
    #define HAVE_TERMCAP 1
@@ -166,7 +163,7 @@
    #define HAVE_TERMCAP_H 1
 
    /* Define as const if the declaration of iconv() needs const. */
-   #define ICONV_CONST 
+   #define ICONV_CONST
 
    /* Define to the sub-directory where libtool stores uninstalled libraries. */
    #define LT_OBJDIR ".libs/"
@@ -215,27 +212,27 @@
 /* add uint16_t type */
 #define HAVE_UINT16_T 1
 #ifndef HAVE_UINT16_T
-	typedef unsigned short uint16_t;
+    typedef unsigned short uint16_t;
 #endif
 
 /* add uint32_t type */
 #define HAVE_UINT32_T 1
 #ifndef HAVE_UINT32_T
 #define A_UINT32_T unsigned int
-	typedef A_UINT32_T uint32_t;
+    typedef A_UINT32_T uint32_t;
 #endif
 
 /* add uint64_t type */
 #define HAVE_UINT64_T 1
 #ifndef HAVE_UINT64_T
 #define A_UINT64_T unsigned long
-	typedef A_UINT64_T uint64_t;
+    typedef A_UINT64_T uint64_t;
 #endif
 
 /* add uint8_t type */
 #define HAVE_UINT8_T 1
 #ifndef HAVE_UINT8_T
-	typedef unsigned char uint8_t;
+    typedef unsigned char uint8_t;
 #endif
 
 /* Name of package */
@@ -295,9 +292,9 @@
 /* If using the C implementation of alloca, define if you know the
    direction of stack growth for your system; otherwise it will be
    automatically deduced at runtime.
-	STACK_DIRECTION > 0 => grows toward higher addresses
-	STACK_DIRECTION < 0 => grows toward lower addresses
-	STACK_DIRECTION = 0 => direction of growth unknown */
+    STACK_DIRECTION > 0 => grows toward higher addresses
+    STACK_DIRECTION < 0 => grows toward lower addresses
+    STACK_DIRECTION = 0 => direction of growth unknown */
 /* #undef STACK_DIRECTION */
 
 /* Version number of package */
@@ -362,9 +359,6 @@
 
 /* we're on DEC Alpha */
 /* #undef __DECALPHA__ */
-
-/* work around a glibc bug */
-/* #undef __NO_MATH_INLINES */
 
 /* Define to empty if `const' does not conform to ANSI C. */
 /* #undef const */

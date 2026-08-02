@@ -65,14 +65,11 @@ static ov_callbacks VorbisIO_callbacks = {
 
 } // end namespace.
 
-bool
-load_sound_ogg_vorbis(
+bool load_sound_ogg_vorbis(
     Sound & sound,
     const std::string & uri,
     const SoundLoadOptions& options)
 {
-    sound.m_uri = uri;
-
     int fd = file64_open(uri.c_str(), eFileMode::Read);
     if (fd < 0)
     {
@@ -91,27 +88,89 @@ load_sound_ogg_vorbis(
         return false;
     }
 
-    vorbis_info* info = ov_info(&vf, -1);
-    sound.m_sampleRate = info->rate;
-    sound.m_channels   = info->channels;
-    sound.m_sampleType = SampleType::F32;
-    sound.m_flags      = 0; // interleaved
-
-    // Total PCM frames (may be -1 for streaming)
-    const ogg_int64_t totalFrames = ov_pcm_total(&vf, -1);
-    sound.m_frames = (totalFrames > 0 ? totalFrames : 0);
-
-    // Pre-allocate if totalFrames known
-    if (sound.m_frames > 0)
+    const vorbis_info* head = ov_info(&vf, -1);
+    if (!head)
     {
-        const int64_t bytes = sound.m_frames * sound.m_channels * sizeof(float);
-        sound.m_samples.resize(bytes);
+        VorbisIO_close(&vio);
+        DE_ERROR("ov_info failed. ", uri)
+        return false;
     }
 
-    float** pcm = nullptr;
-    long framesRead = 0;
+    sound.m_uri = uri;
+    sound.m_sampleType = SampleType::F32;
+    sound.m_sampleRate = head->rate;
+    sound.m_channels   = head->channels;
+    sound.m_flags      = 0; // interleaved
+    sound.m_frames     = 0;
+    sound.m_samples.clear();
 
-    // Decode loop
+    const int64_t n = ov_pcm_total(&vf, -1);
+    if (n > 0)
+    {
+        sound.m_frames = n;
+        sound.m_samples.reserve(n * sound.m_channels * long(sizeof(float)));
+    }
+
+    int64_t framesRead = 0;
+    float** pcm = nullptr;
+
+    while (true)
+    {
+        long ret = ov_read_float(&vf, &pcm, 4096, nullptr);
+        if (ret == 0)
+            break;      // EOF
+        if (ret < 0)
+        {
+            DE_ERROR("ov_read_float failed with ",ret)
+            break;
+        }
+
+        // Interleave float PCM
+        const size_t oldSize = sound.m_samples.size();
+        const size_t addBytes = ret * sound.m_channels * sizeof(float);
+        sound.m_samples.resize(oldSize + addBytes);
+
+        float* dst = reinterpret_cast<float*>(&sound.m_samples[oldSize]);
+
+        for (long i = 0; i < ret; ++i)
+        {
+            for (int ch = 0; ch < sound.m_channels; ++ch)
+            {
+                *dst++ = pcm[ch][i];
+            }
+        }
+
+        framesRead += ret;
+    }
+    /*
+    while (true)
+    {
+        long ret = ov_read_float(&vf, &pcm, 4096, nullptr);
+        if (ret == 0)
+            break;      // EOF
+        if (ret < 0)
+        {
+            DE_ERROR("ov_read_float failed with ",ret)
+            break;
+        }
+
+        auto beg = reinterpret_cast<const uint8_t*>(pcm);
+        auto end = beg + (int64_t(ret) * sound.m_channels * sizeof(float));
+        sound.m_samples.insert( sound.m_samples.end(), beg, end);
+        framesRead += ret;
+    }
+    */
+    sound.m_frames = framesRead;
+
+    ov_clear(&vf);
+    return true;
+}
+
+} // end namespace sound.
+} // end namespace de.
+
+
+/*
     while (true)
     {
         long n = ov_read_float(&vf, &pcm, 4096, nullptr);
@@ -135,18 +194,7 @@ load_sound_ogg_vorbis(
 
         framesRead += n;
     }
-
-    // If totalFrames was unknown, set it now
-    sound.m_frames = framesRead;
-
-    ov_clear(&vf);
-    return true;
-}
-
-} // end namespace sound.
-} // end namespace de.
-
-
+*/
 /*
 
 #include <cstdio>

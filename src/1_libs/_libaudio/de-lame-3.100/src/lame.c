@@ -105,7 +105,7 @@ static void
 lame_init_params_ppflt(lame_internal_flags * gfc)
 {
     SessionConfig_t *const cfg = &gfc->cfg;
-    
+
     /***************************************************************/
     /* compute info needed for polyphase filter (filter type==0, default) */
     /***************************************************************/
@@ -545,11 +545,11 @@ lame_init_params(lame_global_flags * gfp)
     lame_internal_flags *gfc;
     SessionConfig_t *cfg;
 
-    if (!is_lame_global_flags_valid(gfp)) 
+    if (!is_lame_global_flags_valid(gfp))
         return -1;
 
     gfc = gfp->internal_flags;
-    if (gfc == 0) 
+    if (gfc == 0)
         return -1;
 
     if (is_lame_internal_flags_valid(gfc))
@@ -1230,7 +1230,7 @@ lame_init_params(lame_global_flags * gfp)
         cfg->adjust_sfb21_db += cfg->adjust_treble_db;
     }
 
-    /* Setting up the PCM input data transform matrix, to apply 
+    /* Setting up the PCM input data transform matrix, to apply
      * user defined re-scaling, and or two-to-one channel downmix.
      */
     {
@@ -1676,7 +1676,7 @@ calcNeeded(SessionConfig_t const * cfg)
     mf_needed = Max(mf_needed, 512 + pcm_samples_per_frame - 32);
 
     assert(MFSIZE >= mf_needed);
-    
+
     return mf_needed;
 }
 
@@ -1766,13 +1766,13 @@ lame_encode_buffer_sample_t(lame_internal_flags * gfc,
         /* update mfbuf[] counters */
         esv->mf_size += n_out;
         assert(esv->mf_size <= MFSIZE);
-        
+
         /* lame_encode_flush may have set gfc->mf_sample_to_encode to 0
          * so we have to reinitialize it here when that happened.
          */
         if (esv->mf_samples_to_encode < 1) {
             esv->mf_samples_to_encode = ENCDELAY + POSTDELAY;
-        }        
+        }
         esv->mf_samples_to_encode += n_out;
 
 
@@ -1810,7 +1810,7 @@ lame_encode_buffer_sample_t(lame_internal_flags * gfc,
     return mp3size;
 }
 
-enum PCMSampleType 
+enum PCMSampleType
 {   pcm_short_type
 ,   pcm_int_type
 ,   pcm_long_type
@@ -1819,7 +1819,7 @@ enum PCMSampleType
 };
 
 static void
-lame_copy_inbuffer(lame_internal_flags* gfc, 
+lame_copy_inbuffer(lame_internal_flags* gfc,
                    void const* l, void const* r, int nsamples,
                    enum PCMSampleType pcm_type, int jump, FLOAT s)
 {
@@ -1852,7 +1852,7 @@ lame_copy_inbuffer(lame_internal_flags* gfc,
     } \
 }
     switch ( pcm_type ) {
-    case pcm_short_type: 
+    case pcm_short_type:
         COPY_AND_TRANSFORM(short int);
         break;
     case pcm_int_type:
@@ -2116,7 +2116,7 @@ lame_encode_flush(lame_global_flags * gfp, unsigned char *mp3buffer, int mp3buff
     }
     cfg = &gfc->cfg;
     esv = &gfc->sv_enc;
-    
+
     /* Was flush already called? */
     if (esv->mf_samples_to_encode < 1) {
         return 0;
@@ -2139,7 +2139,7 @@ lame_encode_flush(lame_global_flags * gfp, unsigned char *mp3buffer, int mp3buff
     if (end_padding < 576)
         end_padding += pcm_samples_per_frame;
     gfc->ov_enc.encoder_padding = end_padding;
-    
+
     frames_left = (samples_to_encode + end_padding) / pcm_samples_per_frame;
     while (frames_left > 0 && imp3 >= 0) {
         int const frame_num = gfc->ov_enc.frame_number;
@@ -2212,7 +2212,7 @@ lame_encode_flush(lame_global_flags * gfp, unsigned char *mp3buffer, int mp3buff
         }
         mp3count += imp3;
     }
-#if 0
+#if 1
     {
         int const ed = gfc->ov_enc.encoder_delay;
         int const ep = gfc->ov_enc.encoder_padding;
