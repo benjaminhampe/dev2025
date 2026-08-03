@@ -34,13 +34,23 @@ save_sound_wav(
         DE_WARN("This exporter ignores a conversions demand from user (yet). ",uri)
     }
 
+    auto srcType = sound.m_sampleType;
+    auto dstType = (options.sampleType != SampleType::Unknown) ? options.sampleType : sound.m_sampleType;
+    auto converter = SampleTypeConverter::getConverter(srcType,dstType);
+    if (!converter)
+    {
+        DE_ERROR("No converter ",srcType.str()," -> ",dstType.str(),". ", uri)
+        return false;
+    }
+
+    const uint64_t frames       = sound.m_frames;
     const uint32_t sampleRate   = sound.m_sampleRate;
     const uint16_t channels     = sound.m_channels;
-    const uint16_t bits         = sound.bytesPerSample() * 8;
+    const uint16_t bits         = dstType.bitsPerSample();
     const uint16_t blockAlign   = (bits / 8) * channels;
     const uint32_t byteRate     = sampleRate * blockAlign;
-    const uint32_t dataSize     = (uint32_t)sound.m_samples.size();
-    const uint16_t formatCode   = wav_format_code(sound.m_sampleType);
+    const uint32_t dataSize     = (uint32_t)frames * channels * dstType.bytesPerSample();
+    const uint16_t formatCode   = wav_format_code(dstType);
 
     File file(uri, eFileMode::Write);
     if (!file.is_open())
@@ -76,13 +86,15 @@ save_sound_wav(
 
     options.onProgress(1); // 1%
 
-    // Write PCM chunk-wise to circumvent 32 bit api design disadvantages.
-    // fwrite returns int, despite writing
-
-    const int32_t bps = sound.bytesPerSample();
+    // Chunk
+    const int32_t bps = dstType.bytesPerSample();
     const int64_t bpf = sound.m_channels * bps;
-    const int64_t chunkFrames = (int64_t(1) << 28) / bpf; // 256MB per chunk
+    const int64_t chunkFrames = 4096;
+    const int64_t chunkSamples = chunkFrames * sound.m_channels;
+    const int64_t chunkBytes = chunkSamples * bps;
+    de::TAlignedVector<uint8_t> chunkBuf(chunkBytes, 0x00);
 
+    // Loop
     int64_t pos = 0; // in [frames]
     while (pos < sound.m_frames)
     {
@@ -92,18 +104,24 @@ save_sound_wav(
             break; // EOF
         }
 
-        auto bytesToWrite = availFrames * bpf;
+        int64_t converted = sound.read_frames(
+            converter,
+            chunkBuf.data(),
+            availFrames,
+            pos);
 
-        const uint8_t* pSrc =
-            reinterpret_cast<const uint8_t*>(sound.m_samples.data())
-                + (pos * bpf);
+        if (converted < 1)
+            break;
 
-        int32_t bytesWritten = file.write(pSrc, bytesToWrite);
+        const uint8_t* __restrict__ pSrc = reinterpret_cast<const uint8_t*>(chunkBuf.data());
+        const int64_t bytesToWrite = converted * bpf;
+        const int32_t bytesWritten = file.write(pSrc, bytesToWrite);
         pos += (bytesWritten / bpf);
 
-        options.onProgress(98.0 * double(pos) / double(sound.m_frames-1));
+        options.onProgress(1 + (98.0 * double(pos) / double(sound.m_frames)));
     }
 
+    // Finish
     options.onProgress(100);
     return true;
 }
@@ -111,107 +129,3 @@ save_sound_wav(
 
 } // end namespace sound.
 } // end namespace de.
-
-
-/*
-
-
-void writeWav(const Sound& snd, const std::string& path)
-{
-    const uint32_t sampleRate   = snd.m_sampleRate;
-    const uint16_t channels     = snd.m_channels;
-    const uint16_t bits         = snd.bytesPerSample() * 8;
-    const uint16_t blockAlign   = (bits / 8) * channels;
-    const uint32_t byteRate     = sampleRate * blockAlign;
-    const uint32_t dataSize     = (uint32_t)snd.m_samples.size();
-    const uint16_t formatCode   = wav_format_code(snd.m_sampleType);
-
-    FILE* f = std::fopen(path.c_str(), "wb");
-    if (!f) throw std::runtime_error("Cannot open WAV file for writing");
-
-    auto w32 = [&](uint32_t v){ std::fwrite(&v, 4, 1, f); };
-    auto w16 = [&](uint16_t v){ std::fwrite(&v, 2, 1, f); };
-    auto w8  = [&](uint8_t  v){ std::fwrite(&v, 1, 1, f); };
-
-    // RIFF header
-    std::fwrite("RIFF", 4, 1, f);
-    w32(36 + dataSize);          // fileSize - 8
-    std::fwrite("WAVE", 4, 1, f);
-
-    // fmt chunk
-    std::fwrite("fmt ", 4, 1, f);
-    w32(16);                     // PCM fmt chunk size
-    w16(formatCode);             // PCM=1, IEEE float=3
-    w16(channels);
-    w32(sampleRate);
-    w32(byteRate);
-    w16(blockAlign);
-    w16(bits);
-
-    // data chunk
-    std::fwrite("data", 4, 1, f);
-    w32(dataSize);
-
-    // raw PCM bytes (already interleaved)
-    std::fwrite(snd.m_samples.data(), 1, snd.m_samples.size(), f);
-
-    std::fclose(f);
-}
-
-template <typename T>
-void write_wav(
-    const std::string& path,
-    const T* samples,
-    uint32_t frames,
-    uint16_t channels,
-    uint32_t sampleRate,
-    SampleType type)
-{
-    const int bps = bytes_per_sample(type);
-    const uint32_t byteRate = sampleRate * channels * bps;
-    const uint16_t blockAlign = channels * bps;
-    const uint32_t dataSize = frames * blockAlign;
-
-    FILE* f = std::fopen(path.c_str(), "wb");
-    if (!f) throw std::runtime_error("cannot open file");
-
-    auto w32 = [&](uint32_t v){ std::fwrite(&v, 4, 1, f); };
-    auto w16 = [&](uint16_t v){ std::fwrite(&v, 2, 1, f); };
-    auto w8  = [&](uint8_t  v){ std::fwrite(&v, 1, 1, f); };
-
-    // RIFF header
-    std::fwrite("RIFF", 4, 1, f);
-    w32(36 + dataSize);              // file size - 8
-    std::fwrite("WAVE", 4, 1, f);
-
-    // fmt chunk
-    std::fwrite("fmt ", 4, 1, f);
-    w32(16);                         // PCM fmt chunk size
-    w16(wav_format_code(type));      // format code
-    w16(channels);
-    w32(sampleRate);
-    w32(byteRate);
-    w16(blockAlign);
-    w16(bps * 8);                    // bits per sample
-
-    // data chunk
-    std::fwrite("data", 4, 1, f);
-    w32(dataSize);
-
-    // Write samples
-    if (type == SampleType::S24) {
-        // pack 24-bit little endian
-        for (uint32_t i = 0; i < frames * channels; i++) {
-            int32_t v = samples[i];
-            w8((v >> 0) & 0xFF);
-            w8((v >> 8) & 0xFF);
-            w8((v >> 16) & 0xFF);
-        }
-    } else {
-        // raw little-endian write
-        std::fwrite(samples, bps, frames * channels, f);
-    }
-
-    std::fclose(f);
-}
-*/

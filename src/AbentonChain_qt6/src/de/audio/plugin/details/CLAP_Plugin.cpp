@@ -983,7 +983,7 @@ struct CLAP_OutputEventQueue
     {
         if (m_counter > 0)
         {
-            DE_DEBUG("Got ",m_counter," output events")
+            //DE_DEBUG("Got ",m_counter," output events")
             m_counter = 0;
         }
         m_events.clear();

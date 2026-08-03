@@ -14,7 +14,7 @@ class GL_WaveformWidget : public Fl_Gl_Window
 private:
     de::Sound* m_sound = nullptr;
     de::SoundAccessorF32 m_accessor;
-    Fl_Scrollbar* m_scroll = nullptr;
+    //Fl_Scrollbar* m_scroll = nullptr;
 
     double m_zoom = 1.0;
     int64_t m_zoomFrameStart = 0;
@@ -48,10 +48,11 @@ protected:
     void draw() override;
     int handle(int e) override;
 private:
-
-    static void scroll_cb(Fl_Widget*, void* userdata);
+#ifdef USE_EXTERNAL_SCROLLBAR
+    //static void scroll_cb(Fl_Widget*, void* userdata);
     // --- 64-bit safe scroll range ---
-    void update_scroll_range();
+    //void update_scroll_range();
+#endif
     // --- 64-bit safe pixel→frame ---
     int64_t pixelToFrame(int px);
 };

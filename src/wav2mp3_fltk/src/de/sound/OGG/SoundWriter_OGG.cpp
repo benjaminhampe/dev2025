@@ -11,6 +11,21 @@ save_sound_ogg(
     const std::string & uri,
     const SoundSaveOptions& options)
 {
+    auto ext = dbFileSuffix(uri);
+    if (ext == "ogg")
+    {
+        return save_sound_ogg_vorbis(sound, uri, options);
+    }
+    else if (ext == "opus")
+    {
+        return save_sound_ogg_opus(sound, uri, options);
+    }
+    else
+    {
+        DE_ERROR("Unsupported format. ",uri)
+        return false;
+    }
+
     /*
 
     switch (codec)
@@ -54,7 +69,7 @@ save_sound_ogg(
             return false;
     }
     */
-    
+
     return false;
 }
 

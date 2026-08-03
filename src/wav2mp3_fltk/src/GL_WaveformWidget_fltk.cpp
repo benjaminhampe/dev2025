@@ -8,18 +8,21 @@ GL_WaveformWidget::GL_WaveformWidget(int X, int Y, int W, int H)
     , m_sound(nullptr)
 {
     mode(FL_RGB8 | FL_DOUBLE | FL_OPENGL3);
-    m_scroll = new Fl_Scrollbar(X, Y + H - 16, W, 16);
-    m_scroll->type(FL_HORIZONTAL);
-    m_scroll->callback(scroll_cb, this);
+
+#ifdef USE_EXTERNAL_SCROLLBAR
+    // m_scroll = new Fl_Scrollbar(X, Y + H - 16, W, 16);
+    // m_scroll->type(FL_HORIZONTAL);
+    // m_scroll->callback(scroll_cb, this);
     update_scroll_range();
+#endif
 }
 
 // static
-void GL_WaveformWidget::scroll_cb(Fl_Widget*, void* userdata)
-{
-    auto* self = static_cast<GL_WaveformWidget*>(userdata);
-    self->redraw();
-}
+// void GL_WaveformWidget::scroll_cb(Fl_Widget*, void* userdata)
+// {
+//     auto* self = static_cast<GL_WaveformWidget*>(userdata);
+//     self->redraw();
+// }
 
 void GL_WaveformWidget::setSound(de::Sound* snd)
 {
@@ -27,7 +30,9 @@ void GL_WaveformWidget::setSound(de::Sound* snd)
     m_accessor.setSound( m_sound );
     m_zoom = 1.0;
     m_zoomFrameStart = 0;
+#ifdef USE_EXTERNAL_SCROLLBAR
     update_scroll_range();
+#endif
     redraw();
 }
 
@@ -57,10 +62,10 @@ void GL_WaveformWidget::draw()
         //ensureDesktopOpenGL();
     }
 
-    int w = pixel_w();
-    int h = pixel_h();
+    int w = this->pixel_w(); //pixel_w();
+    int h = this->pixel_h(); //pixel_h();
 
-    glViewport(x(),y(),w,h);
+    glViewport(0,0,w,h);
     glClearColor(0,0,0.5,1);
     glClear(GL_COLOR_BUFFER_BIT);
 
@@ -103,10 +108,10 @@ void GL_WaveformWidget::draw()
     {
         glColor4f(.4f, .4f, .4f, 1.0f);
         glBegin(GL_QUADS);
-        int x1 = x();
-        int y1 = y();
-        int x2 = x1 + w;
-        int y2 = y1 + rulerHeight;
+        int x1 = 0;
+        int y1 = 0;
+        int x2 = w;
+        int y2 = rulerHeight;
         glVertex2f(x1,y1);
         glVertex2f(x2,y1);
         glVertex2f(x2,y2);
@@ -120,11 +125,11 @@ void GL_WaveformWidget::draw()
 
     for (int64_t i = firstMajor; i < endFrame; i += majorFrames)
     {
-        int32_t px = x() + std::lroundf((i - m_zoomFrameStart) * ppf);
+        int32_t px = std::lroundf((i - m_zoomFrameStart) * ppf);
         int x1 = px;
-        int y1 = y();
+        int y1 = 0;
         int x2 = px;
-        int y2 = y() + h;
+        int y2 = h;
         glVertex2f(x1,y1);
         glVertex2f(x2,y2);
     }
@@ -136,22 +141,21 @@ void GL_WaveformWidget::draw()
 
     for (int64_t i = firstMinor; i < endFrame; i += minorFrames)
     {
-        int32_t px = x() + std::lroundf((i - m_zoomFrameStart) * ppf);
-
+        int32_t px = std::lroundf((i - m_zoomFrameStart) * ppf);
         int x1 = px;
-        int y1 = y() + rulerHeight;
+        int y1 = rulerHeight;
         int x2 = px;
-        int y2 = y() + h;
+        int y2 = h;
         glVertex2f(x1,y1);
         glVertex2f(x2,y2);
     }
     glEnd();
 
     // Draw Middle Line
-    glColor4f(1.f, 1.f, 1.f, 1.0f);
+    glColor4f(1.f, 1.f, 0.f, 1.0f);
     glBegin(GL_LINES);
     int x1 = 0;
-    int y1 = y() + (h - rulerHeight)/2;
+    int y1 = rulerHeight + (h - rulerHeight)/2;
     int x2 = w;
     int y2 = y1;
     glVertex2f(x1,y1);
@@ -163,10 +167,10 @@ void GL_WaveformWidget::draw()
     {
         const int waveformH = h - rulerHeight;
         const int waveformM = waveformH * 0.5f;
-        const int waveformY = y() + rulerHeight + waveformM;
+        const int waveformY = rulerHeight + waveformM;
 
         float s1 = m_accessor.getSamplef(m_zoomFrameStart); // [-1,1]
-        float x1 = x();
+        float x1 = 0;
         float y1 = waveformY - float(s1 * waveformM);
 
         float alpha = std::clamp(ppf,0.01,1.0);
@@ -177,7 +181,7 @@ void GL_WaveformWidget::draw()
         for (int64_t i = 1; i < visFrames; ++i)
         {
             float s2 = m_accessor.getSamplef(m_zoomFrameStart + std::llround(fpp * i)); // [-1,1]
-            float x2 = float(x()) + (float(i) * float(ppf));
+            float x2 = (float(i) * float(ppf));
             float y2 = waveformY - float(s2 * waveformM);
 
             glVertex2f(x1,y1);
@@ -202,10 +206,10 @@ void GL_WaveformWidget::draw()
     {
         const int sx = std::llround(double(m_loopFrameStart - m_zoomFrameStart) * ppf);
         const int ex = std::llround(double(m_loopFrameEnd   - m_zoomFrameStart) * ppf);
-        const int x1 = x() + sx;
-        const int x2 = x() + (ex - sx);
-        const int y1 = y() + rulerHeight;
-        const int y2 = y() + h - rulerHeight;
+        const int x1 = sx;
+        const int x2 = (ex - sx);
+        const int y1 = rulerHeight;
+        const int y2 = h - rulerHeight;
         glColor4f(1.f, 0.f, 0.f, 0.2f);
         glBegin(GL_QUADS);
         glVertex2f(x1,y1);
@@ -240,6 +244,13 @@ int GL_WaveformWidget::handle(int e)
     switch (e)
     {
         case FL_PUSH:
+        {
+            const int mx = Fl::event_x();
+            const int my = Fl::event_y();
+            if (!dbMouseOver(mx,my,x(),y(),x()+w()-1,y()+h()-1))
+            {
+                break;
+            }
             if (Fl::event_button() == FL_LEFT_MOUSE)
             {
                 m_selecting = true;
@@ -248,8 +259,15 @@ int GL_WaveformWidget::handle(int e)
                 redraw();
             }
             return 1;
-
+        }
         case FL_DRAG:
+        {
+            const int mx = Fl::event_x();
+            const int my = Fl::event_y();
+            if (!dbMouseOver(mx,my,x(),y(),x()+w()-1,y()+h()-1))
+            {
+                break;
+            }
             if (m_selecting)
             {
                 m_loopFrameEnd = pixelToFrame(Fl::event_x());
@@ -257,8 +275,15 @@ int GL_WaveformWidget::handle(int e)
                 redraw();
             }
             return 1;
-
+        }
         case FL_RELEASE:
+        {
+            const int mx = Fl::event_x();
+            const int my = Fl::event_y();
+            if (!dbMouseOver(mx,my,x(),y(),x()+w()-1,y()+h()-1))
+            {
+                break;
+            }
             if (m_selecting)
             {
                 m_selecting = false;
@@ -267,10 +292,15 @@ int GL_WaveformWidget::handle(int e)
                 redraw();
             }
             return 1;
-
+        }
         case FL_MOUSEWHEEL:
         {
             const int mx = Fl::event_x();
+            const int my = Fl::event_y();
+            if (!dbMouseOver(mx,my,x(),y(),x()+w()-1,y()+h()-1))
+            {
+                break;
+            }
             //const double oldZoom = m_zoom;
             const int64_t oldFrameStart = m_zoomFrameStart;
             //const int64_t oldFrameCount = m_sound->m_frames * m_zoom;
@@ -291,8 +321,10 @@ int GL_WaveformWidget::handle(int e)
             const int64_t newFrameCount = std::llround( m_zoom * double(m_sound->m_frames) );
             const int64_t maxFrameIndex = std::max( 0ll, m_sound->m_frames - newFrameCount );
             const int64_t newFrameStart = std::clamp( std::llround(t * double(newFrameCount)), 0ll, maxFrameIndex);
+#ifdef USE_EXTERNAL_SCROLLBAR
             const double t2 = std::clamp( double(newFrameStart) / double(m_sound->m_frames), 0.0, 1.0);
             m_scroll->value(t2);
+#endif
             redraw();
             return 1;
         }
@@ -303,6 +335,7 @@ int GL_WaveformWidget::handle(int e)
 }
 
 // --- 64-bit safe scroll range ---
+#ifdef USE_EXTERNAL_SCROLLBAR
 void GL_WaveformWidget::update_scroll_range()
 {
     if (!m_sound) return;
@@ -311,6 +344,7 @@ void GL_WaveformWidget::update_scroll_range()
     m_scroll->bounds(0.0, 1.0);
     m_scroll->value(d);
 }
+#endif
 
 // --- 64-bit safe pixel→frame ---
 int64_t GL_WaveformWidget::pixelToFrame(int px)
@@ -329,7 +363,8 @@ int64_t GL_WaveformWidget::pixelToFrame(int px)
 
     const double t = std::clamp<double>(double(px - x()) / double(pixel_w()), 0.0, 1.0);
 
-    int64_t frame = m_zoomFrameStart + std::llround( t * double(m_sound->m_frames) * m_zoom );
+    int64_t frame = m_zoomFrameStart
+                  + std::llround( t * double(m_sound->m_frames) * m_zoom );
 
     return std::clamp(frame, 0ll, m_sound->m_frames - 1);
 }

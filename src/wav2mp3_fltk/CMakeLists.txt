@@ -36,10 +36,11 @@ else()
     else()
         # target_link_options(${APP_NAME} PRIVATE -mwindows)
 
-        # if (WIN32)
+        if (WIN32)
+            # target_link_libraries(${APP_NAME} PRIVATE shcore) # for DPI‑Awareness
             # target_link_libraries(${APP_NAME} PRIVATE shlwapi) # for PathRemoveFileSpecW
             # target_link_libraries(${APP_NAME} PRIVATE dbghelp) # for SymInitialize, SymFromAddr
-        # endif()
+        endif()
     endif()
 
     target_link_libraries(${APP_NAME} PRIVATE DarkImage_2604)

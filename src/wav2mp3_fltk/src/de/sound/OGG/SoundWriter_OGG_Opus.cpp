@@ -6,8 +6,8 @@
 namespace de {
 namespace sound {
 
-// namespace {
-// } // end namespace.
+namespace {
+} // end namespace.
 
 bool
 save_sound_ogg_opus(
@@ -15,7 +15,704 @@ save_sound_ogg_opus(
     const std::string& uri,
     const SoundSaveOptions& options)
 {
-    if (!sound.empty())
+    if (sound.empty())
+    {
+        DE_ERROR("Got empty sound: ", uri)
+        return false;
+    }
+
+    if (sound.m_sampleRate != 48000)
+    {
+        DE_WARN("Opus wants 48000 Hz, resample first. ", uri)
+    }
+
+    SampleType srcType = sound.m_sampleType;
+    SampleType dstType = SampleType::F32;
+    auto converter = SampleTypeConverter::getConverter(srcType, dstType);
+    if (!converter)
+    {
+        DE_ERROR("No converter ", srcType.str(), " -> ", dstType.str(), ". ", uri)
+        return false;
+    }
+
+    File file(uri, eFileMode::Write);
+    if (!file.is_open())
+    {
+        DE_ERROR("Cannot open output file, ", uri)
+        return false;
+    }
+
+    options.onProgress(1);
+
+    int err = 0;
+    OpusEncoder* enc = opus_encoder_create(
+        48000,
+        sound.m_channels,
+        OPUS_APPLICATION_AUDIO,
+        &err);
+    if (!enc || err != OPUS_OK)
+    {
+        DE_ERROR("opus_encoder_create failed, err = ", err)
+        return false;
+    }
+
+    opus_encoder_ctl(enc, OPUS_SET_BITRATE(options.bitrate * 1000));
+    opus_encoder_ctl(enc, OPUS_SET_VBR(1));
+
+    int preskip = 0;
+    opus_encoder_ctl(enc, OPUS_GET_LOOKAHEAD(&preskip));
+
+    ogg_stream_state os;
+    ogg_stream_init(&os, 12345);
+
+    // --- OpusHead ---
+    {
+        unsigned char head[19];
+        ::memcpy(head, "OpusHead", 8);
+        head[8]  = 1;
+        head[9]  = static_cast<unsigned char>(sound.m_channels);
+        *reinterpret_cast<uint16_t*>(head + 10) = static_cast<uint16_t>(preskip);
+        *reinterpret_cast<uint32_t*>(head + 12) = 48000;
+        *reinterpret_cast<uint16_t*>(head + 16) = 0;
+        head[18] = 0;
+
+        ogg_packet header{};
+        header.packet     = head;
+        header.bytes      = sizeof(head);
+        header.b_o_s      = 1;
+        header.e_o_s      = 0;
+        header.granulepos = 0;
+        header.packetno   = 0;
+
+        ogg_stream_packetin(&os, &header);
+
+        ogg_page og;
+        while (ogg_stream_flush(&os, &og))
+        {
+            file.write(og.header, og.header_len);
+            file.write(og.body, og.body_len);
+        }
+    }
+
+    // --- OpusTags ---
+    {
+        const char* vendor  = "Abenton";
+        const char* comment = "ENCODER=SoundWriter_OGG_Opus";
+
+        std::string tags;
+        tags.append("OpusTags", 8);
+
+        uint32_t vendor_len = static_cast<uint32_t>(::strlen(vendor));
+        tags.append(reinterpret_cast<const char*>(&vendor_len), 4);
+        tags.append(vendor, vendor_len);
+
+        uint32_t comment_count = 1;
+        tags.append(reinterpret_cast<const char*>(&comment_count), 4);
+
+        uint32_t comment_len = static_cast<uint32_t>(::strlen(comment));
+        tags.append(reinterpret_cast<const char*>(&comment_len), 4);
+        tags.append(comment, comment_len);
+
+        ogg_packet tagpkt{};
+        tagpkt.packet     = reinterpret_cast<unsigned char*>(tags.data());
+        tagpkt.bytes      = static_cast<long>(tags.size());
+        tagpkt.b_o_s      = 0;
+        tagpkt.e_o_s      = 0;
+        tagpkt.granulepos = 0;
+        tagpkt.packetno   = 1;
+
+        ogg_stream_packetin(&os, &tagpkt);
+
+        ogg_page og;
+        while (ogg_stream_flush(&os, &og))
+        {
+            file.write(og.header, og.header_len);
+            file.write(og.body, og.body_len);
+        }
+    }
+
+    options.onProgress(5);
+
+    // --- Audio data (Vorbis-style Ogg handling) ---
+    constexpr int FRAME = 960; // 20 ms @ 48 kHz
+    int64_t cFrames  = FRAME;
+    int64_t cSamples = cFrames * sound.m_channels;
+    TAlignedVector<float>   chunkBuf(cSamples);
+    TAlignedVector<uint8_t> out(8192);
+
+    bool    eos          = false;
+    int64_t pos          = 0;                 // samples per channel
+    int64_t totalFrames  = sound.m_frames;    // samples per channel
+    int64_t granulepos   = 0;                 // samples per channel
+    int     packetno     = 2;
+    ogg_page og;
+
+    while (pos < totalFrames)
+    {
+        int64_t desired = std::min<int64_t>(cFrames, totalFrames - pos);
+
+        int64_t converted = sound.read_frames(
+            converter,
+            chunkBuf.data(),
+            desired,
+            pos);
+
+        if (converted < 1)
+        {
+            break;
+        }
+
+        // pad last frame to FRAME for Opus
+        int opusFrames = static_cast<int>(converted);
+        if (opusFrames < FRAME)
+        {
+            ::memset(chunkBuf.data() + opusFrames * sound.m_channels,
+                     0,
+                     (FRAME - opusFrames) * sound.m_channels * sizeof(float));
+            opusFrames = FRAME;
+        }
+
+        int ret = opus_encode_float(
+            enc,
+            chunkBuf.data(),
+            opusFrames,
+            out.data(),
+            static_cast<opus_int32>(out.size()));
+
+        if (ret < 0)
+        {
+            DE_ERROR("opus_encode_float failed, ret = ", ret)
+            break;
+        }
+
+        pos        += converted;
+        granulepos += converted;
+
+        ogg_packet op{};
+        op.packet     = out.data();
+        op.bytes      = ret;
+        op.b_o_s      = 0;
+        op.e_o_s      = (pos >= totalFrames);
+        op.granulepos = granulepos;
+        op.packetno   = packetno++;
+
+        ogg_stream_packetin(&os, &op);
+
+        while (!eos)
+        {
+            int ok = ogg_stream_pageout(&os, &og);
+            if (ok == 0)
+            {
+                break;
+            }
+            file.write(og.header, og.header_len);
+            file.write(og.body, og.body_len);
+
+            if (ogg_page_eos(&og))
+            {
+                eos = true;
+            }
+        }
+
+        // flush incomplete page like Vorbis
+        while (ogg_stream_flush(&os, &og))
+        {
+            file.write(og.header, og.header_len);
+            file.write(og.body, og.body_len);
+        }
+
+        options.onProgress(85.0 * double(pos) / double(totalFrames));
+    }
+
+    options.onProgress(95);
+
+    // final flush
+    while (ogg_stream_flush(&os, &og))
+    {
+        file.write(og.header, og.header_len);
+        file.write(og.body, og.body_len);
+    }
+
+    ogg_stream_clear(&os);
+    opus_encoder_destroy(enc);
+
+    options.onProgress(100);
+
+    return true;
+}
+
+
+bool
+save_sound_ogg_opus_v2(
+    const Sound& sound,
+    const std::string& uri,
+    const SoundSaveOptions& options)
+{
+    if (sound.empty())
+    {
+        DE_ERROR("Got empty sound: ", uri)
+        return false;
+    }
+
+    if (sound.m_sampleRate != 48000)
+    {
+        DE_WARN("Opus wants 48000 Hz, resample first. ", uri)
+    }
+
+    SampleType srcType = sound.m_sampleType;
+    SampleType dstType = SampleType::F32;
+    auto converter = SampleTypeConverter::getConverter(srcType, dstType);
+    if (!converter)
+    {
+        DE_ERROR("No converter ", srcType.str(), " -> ", dstType.str(), ". ", uri)
+        return false;
+    }
+
+    File file(uri, eFileMode::Write);
+    if (!file.is_open())
+    {
+        DE_ERROR("Cannot open output file, ", uri)
+        return false;
+    }
+
+    options.onProgress(1);
+
+    int err = 0;
+    OpusEncoder* enc = opus_encoder_create(
+        48000,
+        sound.m_channels,
+        OPUS_APPLICATION_AUDIO,
+        &err);
+    if (!enc || err != OPUS_OK)
+    {
+        DE_ERROR("opus_encoder_create failed, err = ", err)
+        return false;
+    }
+
+    opus_encoder_ctl(enc, OPUS_SET_BITRATE(options.bitrate));
+    opus_encoder_ctl(enc, OPUS_SET_VBR(1));
+
+    int preskip = 0;
+    opus_encoder_ctl(enc, OPUS_GET_LOOKAHEAD(&preskip));
+
+    ogg_stream_state os;
+    ogg_stream_init(&os, 12345);
+
+    // --- OpusHead ---
+    {
+        unsigned char head[19];
+        ::memcpy(head, "OpusHead", 8);
+        head[8]  = 1;
+        head[9]  = static_cast<unsigned char>(sound.m_channels);
+        *reinterpret_cast<uint16_t*>(head + 10) = static_cast<uint16_t>(preskip);
+        *reinterpret_cast<uint32_t*>(head + 12) = 48000;
+        *reinterpret_cast<uint16_t*>(head + 16) = 0;
+        head[18] = 0;
+
+        ogg_packet pkt{};
+        pkt.packet     = head;
+        pkt.bytes      = sizeof(head);
+        pkt.b_o_s      = 1;
+        pkt.e_o_s      = 0;
+        pkt.granulepos = 0;
+        pkt.packetno   = 0;
+
+        ogg_stream_packetin(&os, &pkt);
+
+        ogg_page page;
+        while (ogg_stream_flush(&os, &page))
+        {
+            file.write(page.header, page.header_len);
+            file.write(page.body, page.body_len);
+        }
+    }
+
+    // --- OpusTags ---
+    {
+        const char* vendor  = "Abenton";
+        const char* comment = "ENCODER=SoundWriter_OGG_Opus";
+
+        std::string tags;
+        tags.append("OpusTags", 8);
+
+        uint32_t vendor_len = static_cast<uint32_t>(::strlen(vendor));
+        tags.append(reinterpret_cast<const char*>(&vendor_len), 4);
+        tags.append(vendor, vendor_len);
+
+        uint32_t comment_count = 1;
+        tags.append(reinterpret_cast<const char*>(&comment_count), 4);
+
+        uint32_t comment_len = static_cast<uint32_t>(::strlen(comment));
+        tags.append(reinterpret_cast<const char*>(&comment_len), 4);
+        tags.append(comment, comment_len);
+
+        ogg_packet pkt{};
+        pkt.packet     = reinterpret_cast<unsigned char*>(tags.data());
+        pkt.bytes      = static_cast<long>(tags.size());
+        pkt.b_o_s      = 0;
+        pkt.e_o_s      = 0;
+        pkt.granulepos = 0;
+        pkt.packetno   = 1;
+
+        ogg_stream_packetin(&os, &pkt);
+
+        ogg_page page;
+        while (ogg_stream_flush(&os, &page))
+        {
+            file.write(page.header, page.header_len);
+            file.write(page.body, page.body_len);
+        }
+    }
+
+    // --- Audio data ---
+    constexpr int FRAME = 960; // 20 ms @ 48 kHz
+    TAlignedVector<float>   chunkBuf(FRAME * sound.m_channels, 0.0f);
+    TAlignedVector<uint8_t> out(8192, 0x00);
+
+    int      packetno    = 2;
+    ogg_page page{};
+    int64_t  pos         = 0;              // samples per channel
+    int64_t  totalFrames = sound.m_frames; // samples per channel
+
+    while (pos + FRAME <= totalFrames)
+    {
+        int64_t todo = FRAME;
+
+        int64_t got = sound.read_frames(
+            converter,
+            chunkBuf.data(),
+            todo,
+            pos);
+
+        if (got != todo)
+            break;
+
+        int ret = opus_encode_float(
+            enc,
+            chunkBuf.data(),
+            FRAME,
+            out.data(),
+            static_cast<opus_int32>(out.size()));
+
+        if (ret < 0)
+        {
+            DE_ERROR("opus_encode_float failed, ret = ", ret)
+            break;
+        }
+
+        pos += FRAME;
+
+        ogg_packet pkt{};
+        pkt.packet     = out.data();
+        pkt.bytes      = ret;
+        pkt.b_o_s      = 0;
+        pkt.e_o_s      = 0;
+        pkt.granulepos = pos;
+        pkt.packetno   = packetno++;
+
+        ogg_stream_packetin(&os, &pkt);
+
+        while (ogg_stream_pageout(&os, &page))
+        {
+            file.write(page.header, page.header_len);
+            file.write(page.body, page.body_len);
+        }
+
+        options.onProgress(1 + (98.0 * double(pos) / double(totalFrames)));
+    }
+
+    // last partial frame (pad to FRAME, mark e_o_s)
+    if (pos < totalFrames)
+    {
+        int64_t remaining = totalFrames - pos;
+        int64_t todo      = std::min<int64_t>(remaining, FRAME);
+
+        int64_t got = sound.read_frames(
+            converter,
+            chunkBuf.data(),
+            todo,
+            pos);
+
+        if (got > 0)
+        {
+            if (got < FRAME)
+            {
+                ::memset(chunkBuf.data() + got * sound.m_channels,
+                         0,
+                         (FRAME - got) * sound.m_channels * sizeof(float));
+            }
+
+            int ret = opus_encode_float(
+                enc,
+                chunkBuf.data(),
+                FRAME,
+                out.data(),
+                static_cast<opus_int32>(out.size()));
+
+            if (ret >= 0)
+            {
+                pos += got;
+
+                ogg_packet pkt{};
+                pkt.packet     = out.data();
+                pkt.bytes      = ret;
+                pkt.b_o_s      = 0;
+                pkt.e_o_s      = 1;
+                pkt.granulepos = pos;
+                pkt.packetno   = packetno++;
+
+                ogg_stream_packetin(&os, &pkt);
+
+                while (ogg_stream_pageout(&os, &page))
+                {
+                    file.write(page.header, page.header_len);
+                    file.write(page.body, page.body_len);
+                }
+            }
+        }
+    }
+
+    // final flush
+    while (ogg_stream_flush(&os, &page))
+    {
+        file.write(page.header, page.header_len);
+        file.write(page.body, page.body_len);
+    }
+
+    ogg_stream_clear(&os);
+    opus_encoder_destroy(enc);
+
+    options.onProgress(100);
+
+    return true;
+}
+
+
+bool
+save_sound_ogg_opus_v1(
+    const Sound& sound,
+    const std::string& uri,
+    const SoundSaveOptions& options)
+{
+    if (sound.empty())
+    {
+        DE_ERROR("Got empty sound: ", uri)
+        return false;
+    }
+
+    if (sound.m_sampleRate != 48000)
+    {
+        DE_WARN("Opus wants 48000 Hz, resample first. ", uri)
+    }
+
+    SampleType srcType = sound.m_sampleType;
+    SampleType dstType = SampleType::F32;
+    auto converter = SampleTypeConverter::getConverter(srcType, dstType);
+    if (!converter)
+    {
+        DE_ERROR("No converter ", srcType.str(), " -> ", dstType.str(), ". ", uri)
+        return false;
+    }
+
+    DE_BENNI("Converter ", srcType.str(), " -> ", dstType.str(), ". ", uri)
+
+    File file(uri, eFileMode::Write);
+    if (!file.is_open())
+    {
+        DE_ERROR("Cannot open output file, ", uri)
+        return false;
+    }
+
+    options.onProgress(1);
+
+    int err = 0;
+    OpusEncoder* enc = opus_encoder_create(
+        48000,
+        sound.m_channels,
+        OPUS_APPLICATION_AUDIO,
+        &err);
+    if (!enc || err != OPUS_OK)
+    {
+        DE_ERROR("opus_encoder_create failed, err = ", err)
+        return false;
+    }
+
+    opus_encoder_ctl(enc, OPUS_SET_BITRATE(options.bitrate));
+    opus_encoder_ctl(enc, OPUS_SET_VBR(1)); // or options.vbr
+
+    int preskip = 0;
+    opus_encoder_ctl(enc, OPUS_GET_LOOKAHEAD(&preskip));
+
+    ogg_stream_state os;
+    ogg_stream_init(&os, 12345); // deterministic stream id
+
+    // --- OpusHead ---
+    {
+        unsigned char head[19];
+        ::memcpy(head, "OpusHead", 8);
+        head[8]  = 1; // version
+        head[9]  = static_cast<unsigned char>(sound.m_channels);
+        *reinterpret_cast<uint16_t*>(head + 10) = static_cast<uint16_t>(preskip);
+        *reinterpret_cast<uint32_t*>(head + 12) = 48000;
+        *reinterpret_cast<uint16_t*>(head + 16) = 0; // gain
+        head[18] = 0; // channel mapping family (0 = mono/stereo)
+
+        ogg_packet pkt{};
+        pkt.packet     = head;
+        pkt.bytes      = sizeof(head);
+        pkt.b_o_s      = 1;
+        pkt.e_o_s      = 0;
+        pkt.granulepos = 0;
+        pkt.packetno   = 0;
+
+        ogg_stream_packetin(&os, &pkt);
+
+        ogg_page page;
+        while (ogg_stream_flush(&os, &page))
+        {
+            file.write(page.header, page.header_len);
+            file.write(page.body, page.body_len);
+        }
+    }
+
+    // --- OpusTags ---
+    {
+        const char* vendor  = "Abenton";
+        const char* comment = "ENCODER=SoundWriter_OGG_Opus";
+
+        std::string tags;
+        tags.append("OpusTags", 8);
+
+        uint32_t vendor_len = static_cast<uint32_t>(::strlen(vendor));
+        tags.append(reinterpret_cast<const char*>(&vendor_len), 4);
+        tags.append(vendor, vendor_len);
+
+        uint32_t comment_count = 1;
+        tags.append(reinterpret_cast<const char*>(&comment_count), 4);
+
+        uint32_t comment_len = static_cast<uint32_t>(::strlen(comment));
+        tags.append(reinterpret_cast<const char*>(&comment_len), 4);
+        tags.append(comment, comment_len);
+
+        ogg_packet pkt{};
+        pkt.packet     = reinterpret_cast<unsigned char*>(tags.data());
+        pkt.bytes      = static_cast<long>(tags.size());
+        pkt.b_o_s      = 0;
+        pkt.e_o_s      = 0;
+        pkt.granulepos = 0;
+        pkt.packetno   = 1;
+
+        ogg_stream_packetin(&os, &pkt);
+
+        ogg_page page;
+        while (ogg_stream_flush(&os, &page))
+        {
+            file.write(page.header, page.header_len);
+            file.write(page.body, page.body_len);
+        }
+    }
+
+    // --- Audio data ---
+    constexpr int FRAME = 960; // 20 ms @ 48 kHz
+    TAlignedVector<float>   chunkBuf(FRAME * sound.m_channels, 0.0f);
+    TAlignedVector<uint8_t> out(8192, 0x00);
+
+    int      packetno    = 2;
+    ogg_page page{};
+    bool     bCancelFlag = false;
+    int64_t  availFrames = sound.m_frames;
+    int64_t  pos         = 0; // samples per channel
+
+    while (!bCancelFlag && availFrames > 0)
+    {
+        int64_t queryFrames = std::min<int64_t>(FRAME, availFrames);
+
+        int64_t todo = sound.read_frames(
+            converter,
+            chunkBuf.data(),
+            queryFrames,
+            pos);
+
+        if (todo <= 0)
+            break;
+
+        availFrames -= todo;
+
+        // Opus wants frame sizes in {120,240,480,960,1920,2880}
+        int opusFrames = static_cast<int>(todo);
+        if (opusFrames != 120 && opusFrames != 240 &&
+            opusFrames != 480 && opusFrames != 960 &&
+            opusFrames != 1920 && opusFrames != 2880)
+        {
+            // pad last frame to 960 if shorter
+            if (opusFrames < FRAME)
+            {
+                ::memset(chunkBuf.data() + opusFrames * sound.m_channels,
+                         0,
+                         (FRAME - opusFrames) * sound.m_channels * sizeof(float));
+                opusFrames = FRAME;
+            }
+        }
+
+        int ret = opus_encode_float(
+            enc,
+            chunkBuf.data(),
+            opusFrames,
+            out.data(),
+            static_cast<opus_int32>(out.size()));
+
+        if (ret < 0)
+        {
+            DE_ERROR("opus_encode_float failed, ret = ", ret)
+            break;
+        }
+
+        int64_t frameEnd = pos + todo;
+
+        ogg_packet pkt{};
+        pkt.packet     = out.data();
+        pkt.bytes      = ret;
+        pkt.b_o_s      = 0;
+        pkt.e_o_s      = (frameEnd >= sound.m_frames);
+        pkt.granulepos = frameEnd; // samples per channel at 48 kHz
+        pkt.packetno   = packetno++;
+
+        ogg_stream_packetin(&os, &pkt);
+
+        while (ogg_stream_pageout(&os, &page))
+        {
+            file.write(page.header, page.header_len);
+            file.write(page.body, page.body_len);
+        }
+
+        pos = frameEnd;
+
+        options.onProgress(1 + (98.0 * double(pos) / double(sound.m_frames)));
+    }
+
+    // final flush (including e_o_s page)
+    while (ogg_stream_flush(&os, &page))
+    {
+        file.write(page.header, page.header_len);
+        file.write(page.body, page.body_len);
+    }
+
+    ogg_stream_clear(&os);
+    opus_encoder_destroy(enc);
+
+    options.onProgress(100);
+
+    return true;
+}
+
+#if 0
+bool
+save_sound_ogg_opus_v0(
+    const Sound& sound,
+    const std::string& uri,
+    const SoundSaveOptions& options)
+{
+    if (sound.empty())
     {
         DE_ERROR("Got empty sound: ", uri)
         return false;
@@ -26,14 +723,196 @@ save_sound_ogg_opus(
         DE_WARN("Opus wants 48000 sound data, resample first. ", uri)
     }
 
-    if (sound.m_sampleType != SampleType::F32)
+    SampleType srcType = sound.m_sampleType;
+    SampleType dstType = SampleType::F32;
+    auto converter = SampleTypeConverter::getConverter(srcType,dstType);
+    if (!converter)
     {
-        DE_ERROR("Opus wants ST_F32 sampleType, convert first. ", uri)
+        DE_ERROR("No converter ",srcType.str()," -> ",dstType.str(),". ", uri)
         return false;
     }
 
-    return false;
+    DE_BENNI("Converter ",srcType.str()," -> ",dstType.str(),". ", uri)
+
+
+    File file(uri, eFileMode::Write);
+    if (!file.is_open())
+    {
+        DE_ERROR("Cannot open output file, ",uri)
+        return false;
+    }
+
+    options.onProgress(1);
+
+    int err = 0;
+    OpusEncoder* enc = opus_encoder_create(48000, sound.m_channels, OPUS_APPLICATION_AUDIO, &err);
+    if (!enc)
+    {
+        DE_ERROR("opus_encoder_create failed")
+        return false;
+    }
+
+    opus_encoder_ctl(enc, OPUS_SET_BITRATE(options.bitrate)); // Average Bitrate, not a max.
+    opus_encoder_ctl(enc, OPUS_SET_VBR(1)); // options.vbr
+
+    ogg_stream_state os;
+    ogg_stream_init(&os, 12345); // deterministic stream id
+
+    // --- Write OpusHead ---
+    {
+        unsigned char head[19];
+        memcpy(head, "OpusHead", 8);
+        head[8] = 1;               // version
+        head[9] = sound.m_channels;
+        *reinterpret_cast<uint16_t*>(head + 10) = 312; // pre-skip
+        *reinterpret_cast<uint32_t*>(head + 12) = 48000;
+        *reinterpret_cast<uint16_t*>(head + 16) = 0;   // gain
+        head[18] = 0;              // channel mapping
+
+        ogg_packet pkt{};
+        pkt.packet = head;
+        pkt.bytes = sizeof(head);
+        pkt.b_o_s = 1;
+        pkt.e_o_s = 0;
+        pkt.granulepos = 0;
+        pkt.packetno = 0;
+
+        ogg_stream_packetin(&os, &pkt);
+
+        ogg_page page;
+        while (ogg_stream_flush(&os, &page))
+        {
+            file.write(page.header, page.header_len);
+            file.write(page.body, page.body_len);
+        }
+    }
+
+    // --- Write OpusTags ---
+    {
+        // "OpusTags"
+        // vendor_length (LE uint32)
+        // vendor_string (vendor_length bytes)
+        // user_comment_list_length (LE uint32)
+        // comments...
+
+        const char* vendor = "Abenton";
+#if 0
+        std::string tags = "OpusTags";
+        tags.push_back(0);
+        tags.push_back(0);
+        tags.push_back(0);
+        tags.push_back(0); // vendor length
+        tags.append(vendor);
+        tags.append("\x01\x00\x00\x00"); // 1 tag
+        tags.append("ENCODER=SoundWriter_OGG_Opus");
+#else
+        std::string tags;
+        tags.append("OpusTags", 8);
+
+        uint32_t vendor_len = strlen(vendor);
+        tags.append(reinterpret_cast<char*>(&vendor_len), 4);
+        tags.append(vendor, vendor_len);
+
+        uint32_t comment_count = 1;
+        tags.append(reinterpret_cast<char*>(&comment_count), 4);
+
+        const char* comment = "ENCODER=SoundWriter_OGG_Opus";
+        uint32_t comment_len = strlen(comment);
+        tags.append(reinterpret_cast<char*>(&comment_len), 4);
+        tags.append(comment, comment_len);
+#endif
+        ogg_packet pkt{};
+        pkt.packet = (unsigned char*)tags.data();
+        pkt.bytes = tags.size();
+        pkt.b_o_s = 0;
+        pkt.e_o_s = 0;
+        pkt.granulepos = 0;
+        pkt.packetno = 1;
+
+        ogg_stream_packetin(&os, &pkt);
+
+        ogg_page page;
+        while (ogg_stream_flush(&os, &page))
+        {
+            file.write(page.header, page.header_len);
+            file.write(page.body, page.body_len);
+        }
+    }
+
+    constexpr int FRAME = 960; // 20ms @ 48k
+    //const int chunkFrames = 960; // 20ms @ 48k
+    //const int chunkSamples = FRAME * sound.m_channels;
+    TAlignedVector<float> chunkBuf(FRAME * sound.m_channels, 0.0f);
+
+    // --- Encode PCM frames ---
+    TAlignedVector<uint8_t> out(4096 * sound.m_channels, 0x00);
+
+    int packetno = 2;
+    ogg_page page;
+
+    bool bCancelFlag = false;
+    int64_t availFrames = sound.m_frames;
+    int64_t pos = 0;
+
+    while (!bCancelFlag && availFrames > 0)
+    {
+        int64_t queryFrames = std::min<int64_t>(FRAME, availFrames);
+
+        int64_t todo = sound.read_frames(
+                                converter,
+                                chunkBuf.data(),
+                                queryFrames,
+                                pos);
+
+        availFrames -= todo;
+
+        if (todo < 1)
+            break;
+
+        int ret = opus_encode_float(enc,
+                                    chunkBuf.data(),
+                                    todo,
+                                    out.data(),
+                                    out.size());
+        if (ret < 0)
+        {
+            DE_ERROR("opus_encode_float failed, ret = ", ret)
+            break;
+        }
+
+        ogg_packet pkt{};
+        pkt.packet = out.data();
+        pkt.bytes = ret;
+        pkt.b_o_s = 0;
+        pkt.e_o_s = (pos + todo >= sound.m_frames);
+        //Opus granulepos = total PCM samples per channel at 48 kHz
+#if 0
+        pkt.granulepos = (pos + todo) * sound.m_channels;
+#else
+        pkt.granulepos = pos + todo;   // NOT multiplied by channels
+#endif
+        pkt.packetno = packetno++;
+
+        ogg_stream_packetin(&os, &pkt);
+
+        while (ogg_stream_pageout(&os, &page))
+        {
+            file.write(page.header, page.header_len);
+            file.write(page.body, page.body_len);
+        }
+
+        pos += todo;
+
+        options.onProgress(1 + (98.0 * double(pos) / double(sound.m_frames)));
+    }
+
+    ogg_stream_clear(&os);
+    opus_encoder_destroy(enc);
+    options.onProgress(100);
+
+    return true;
 }
+#endif
 
 } // end namespace sound.
 } // end namespace de.
@@ -48,6 +927,7 @@ save_sound_ogg_opus(
 #include <cstdint>
 #include <cstring>
 #include <string>
+
 
 // -------------------------------------------------------------
 // Hilfsfunktionen: Ogg-Seiten schreiben

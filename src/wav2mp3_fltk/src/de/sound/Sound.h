@@ -106,8 +106,9 @@ struct SoundLoadOptions
 struct SoundSaveOptions
 // =================================================================
 {
-    int bitrate = 128; // in kB/s, mp3 needs more then opus
+    int bitrate = 128; // in kilobit/s, mp3 needs more then opus
     int quality = 0; // 0 = highest, 9 = lowest
+    int vbr = 0;    // 0 = disabled, 1 = enabled
 
     SampleType sampleType = SampleType::Unknown; // Force an output format.
 

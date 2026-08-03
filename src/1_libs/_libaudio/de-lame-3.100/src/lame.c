@@ -2212,7 +2212,7 @@ lame_encode_flush(lame_global_flags * gfp, unsigned char *mp3buffer, int mp3buff
         }
         mp3count += imp3;
     }
-#if 1
+#if 0
     {
         int const ed = gfc->ov_enc.encoder_delay;
         int const ep = gfc->ov_enc.encoder_padding;

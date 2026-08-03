@@ -24,12 +24,39 @@
     #ifndef WIN32_LEAN_AND_MEAN
     #define WIN32_LEAN_AND_MEAN
     #endif
+    // #define _WIN32_WINNT  0x0A00   // Windows 8 API freischalten
+    // #define WINVER        0x0A00
+    // #define _WIN32_WINNT  0x0602   // Windows 8 API freischalten
+    // #define WINVER        0x0602
     #include <windows.h>            // only for Window ICOn
     #include "../res/resource.h"    // only for Window ICOn
+    // #include <shellscalingapi.h>    // Für SetProcessDpiAwarenessContext()
+    // #include <winuser.h>
+    // #include <dwmapi.h>
 #endif
 
 #include <DarkSound.h>
 #include <DarkImage.h>
+
+// ---------------- helpers ----------------
+static std::string make_mp3_name(const std::string& wav)
+{
+    std::filesystem::path p = std::filesystem::u8path(wav);
+    p.replace_extension(".mp3");
+    return p.u8string();
+}
+
+// ---------------- helpers ----------------
+static void trim(std::string& s)
+{
+    while (!s.empty() && (s.back()=='\r' ||
+                          s.back()=='\n' ||
+                          s.back()=='\t' ||
+                          s.back()==' '))
+    {
+        s.pop_back();
+    }
+}
 
 // =============================================================
 class ImageWidget : public Fl_Widget
@@ -84,70 +111,661 @@ public:
     }
 };
 
-// ---------------- UI ----------------
-struct UI {
-    Fl_Button* btnLoad;
-    Fl_Input* inFile;
-    Fl_Button* btnIn;
-    GL_WaveformWidget* inWavf;
-    Fl_Button* zoomIn;
-    Fl_Button* zoomOut;
-    Fl_Scrollbar* scrollBar;
-
-    ImageWidget* img1;
-    Fl_Input* outFile;
-    Fl_Button* btnOut;
-    Fl_Choice* cbxBitrate;
-    Fl_Choice* quality;
-    Fl_Button* convert;
-    Fl_Button* cancel;
-    Fl_Button* darkToggle;
-    Fl_Progress* progress;
-
-    // Fl_Input* inFile;
-    Fl_Button* btnCompare;
+class UI_LogBox : public Fl_Group
+{
+public:
+    //int m_spacing = 5;
 
     Fl_Text_Display* logbox;
     Fl_Text_Buffer*  logbuf;
     Fl_Text_Buffer*  stylebuf;
 
+    UI_LogBox(int X, int Y, int W, int H, int spacing)
+        : Fl_Group(X, Y, W, H)
+        //, m_spacing(spacing)
+    {
+        begin();
+
+
+        logbuf   = new Fl_Text_Buffer();
+        stylebuf = new Fl_Text_Buffer();
+
+        logbox = new Fl_Text_Display(0,0,W,H);
+
+        logbox->buffer(logbuf);
+
+        // Style table: jeder char in stylebuf → Style-Index
+        static const Fl_Text_Display::Style_Table_Entry g_logStyles[] = {
+            { FL_BLACK, FL_COURIER, 14 },       // 'A' = info
+            { FL_RED,   FL_COURIER_BOLD, 14 },  // 'B' = error
+            { FL_BLUE,  FL_COURIER, 14 },       // 'C' = debug
+            { FL_MAGENTA,FL_COURIER, 14 },       // 'D' = warn
+            { FL_DARK_GREEN, FL_COURIER_BOLD, 14 },  // 'E' = success
+        };
+        logbox->highlight_data(
+            stylebuf,
+            g_logStyles,
+            sizeof(g_logStyles)/sizeof(g_logStyles[0]),
+            'A',   // Default style
+            nullptr, nullptr
+        );
+
+        end(); // wichtig
+    }
+
+    void resize(int X, int Y, int W, int H) override
+    {
+        Fl_Group::resize(X,Y,W,H);
+
+        logbox->resize(X,Y,W,H);
+    }
+};
+
+// =============================================================
+class UI_FileInputField : public Fl_Input
+// =============================================================
+{
+public:
+    Fl_Button* btnConvert = nullptr;
+    Fl_Input* edtOutput = nullptr;
+
+    UI_FileInputField(int X, int Y, int W, int H, const char* L = 0)
+        : Fl_Input(X, Y, W, H, L) {}
+
+    void setConvertButton(Fl_Button* btn)
+    {
+        btnConvert = btn;
+    }
+
+    void setOutputLineEdit(Fl_Input* edt)
+    {
+        edtOutput = edt;
+    }
+
+    int handle(int event) override
+    {
+        // FLTK schreibt beim Drop den Text selbst ins Input,
+        // wir reagieren nur auf FL_PASTE.
+        if (event == FL_PASTE)
+        {
+            // Clear
+            value("");
+
+            // Handle paste
+            int r = Fl_Input::handle(event); // Text wird gesetzt
+
+            //
+            std::string uri = value();
+
+            if (dbExistFile(uri))
+            {
+                btnConvert->activate();
+                auto dst = make_mp3_name(uri);
+                edtOutput->value(dst.c_str());
+            }
+            else
+            {
+                DE_ERROR("InputFile does not exist, ", uri)
+            }
+            return r;
+        }
+        return Fl_Input::handle(event);
+    }
+};
+
+class UI_FileInput : public Fl_Group
+{
+public:
+    int m_spacing = 5;
+    Fl_Button* btnLoad;
+    Fl_Box* lblLoad;
+    UI_FileInputField* edtUri;
+    Fl_Button* btnChoose;
+
+    UI_FileInput(int X, int Y, int W, int H, int spacing)
+        : Fl_Group(X, Y, W, H)
+        , m_spacing(spacing)
+    {
+        begin();
+
+        float zoom = Fl::screen_scale(0);
+        int s = m_spacing * zoom;
+        int w1 = 50 * zoom;
+        int w2 = 60 * zoom;
+        int w3 = 400 * zoom;
+        int w4 = 60 * zoom;
+
+        int x = X;
+        int y = Y;
+        btnLoad  = new Fl_Button(x, y, w1, H, "Load");
+        x += w1 + s;
+        lblLoad  = new Fl_Box(x, y, w2, H, "Inputfile:");
+        btnLoad->tooltip("Loads file to preview and cut it");
+        x += w2 + s;
+        edtUri = new UI_FileInputField(x, y, w3, H, "");
+        x += w3 + s;
+        btnChoose  = new Fl_Button(x, y, w4, H, "...");
+
+        end(); // wichtig
+    }
+
+    void resize(int X, int Y, int W, int H) override
+    {
+        Fl_Group::resize(X, Y, W, H);
+
+        float zoom = Fl::screen_scale(0);
+        int s = m_spacing * zoom;
+        int w1 = 50 * zoom;
+        int w2 = 60 * zoom;
+        int w3 = 400 * zoom;
+        int w4 = 60 * zoom;
+
+        int x = X;
+        int y = Y;
+        btnLoad->resize(x, y, w1, H);    x += w1 + s;
+        lblLoad->resize(x, y, w2, H);    x += w2 + s;
+        edtUri->resize(x, y, w3, H);     x += w3 + s;
+        btnChoose->resize(x, y, w4, H);
+    }
+};
+
+
+class UI_FileOutput : public Fl_Group
+{
+public:
+    int m_spacing = 5;
+
+    Fl_Button* btnConvert = nullptr;
+    //ImageWidget* img1;
+    Fl_Box* lblOutput;
+    Fl_Input* edtUri;
+    Fl_Button* btnChoose;
+
+    UI_FileOutput(int X, int Y, int W, int H, int spacing)
+        : Fl_Group(X, Y, W, H)
+        , m_spacing(spacing)
+    {
+        begin();
+
+        float zoom = Fl::screen_scale(0);
+        int s = m_spacing * zoom;
+        int w1 = 60 * zoom;
+        int w2 = 60 * zoom;
+        int w4 = 60 * zoom;
+        int w3 = W - w1-w2-w4 - s*3;
+        int x = X;
+        int y = Y;
+
+        btnConvert = new Fl_Button(x,y,w1,H, "Convert"); x += w1 + s;
+        //ui.img1 = new ImageWidget(x,y,40,H);
+        lblOutput = new Fl_Box(x,y,w2,H,"Outputfile:"); x += w2 + s;
+        edtUri = new Fl_Input(x,y,w3,H,""); x += w3 + s;
+        btnChoose = new Fl_Button(x,y,w4,H,"...");
+
+        end(); // wichtig
+    }
+
+    void resize(int X, int Y, int W, int H) override
+    {
+        Fl_Group::resize(X, Y, W, H);
+
+        float zoom = Fl::screen_scale(0);
+        int s = m_spacing * zoom;
+        int w1 = 60 * zoom;
+        int w2 = 60 * zoom;
+        int w4 = 60 * zoom;
+        int w3 = W - w1-w2-w4 - s*3;
+        int x = X;
+        int y = Y;
+        btnConvert->resize(x,y,w1,H); x += w1 + s;
+        //ui.img1->resize(x,y,40,H);
+        lblOutput->resize(x,y,w2,H); x += w2 + s;
+        edtUri->resize(x,y,w3,H); x += w3 + s;
+        btnChoose->resize(x,y,w4,H);
+    }
+};
+
+
+class UI_Waveform : public Fl_Group
+{
+public:
+    int m_spacing = 5;
+    GL_WaveformWidget* waveform;
+    // Fl_Button* zoomIn;
+    // Fl_Button* zoomOut;
+    Fl_Scrollbar* scrollBar;
+
+    void setSound(de::Sound* snd)
+    {
+        waveform->setSound(snd);
+        redraw();
+    }
+
+    void setZoomStart(double pc)
+    {
+        waveform->setZoomStart(pc);
+        redraw();
+    }
+
+    UI_Waveform(int X, int Y, int W, int H, int spacing)
+        : Fl_Group(X, Y, W, H)
+        , m_spacing(spacing)
+    {
+        begin();
+
+        float zoom = Fl::screen_scale(0);
+        int s = m_spacing * zoom;
+        int h2 = 32 * zoom;
+        int h1 = H - h2;
+
+        int x = X;
+        int y = Y;
+        waveform = new GL_WaveformWidget(x,y,W-2*s,h1); y += h1;
+        waveform->tooltip("Waveform display: scroll, zoom, select region");
+        // ui.zoomIn  = new Fl_Button(550, y,      40, (c-d)/2, "+");
+        // ui.zoomIn->tooltip("Zoom in");
+        // ui.zoomIn->callback([](Fl_Widget*, void* ud)
+        // {
+        //     ((WaveformWidget*)ud)->setZoom(((WaveformWidget*)ud)->getZoom() * 1.2f);
+        // }, ui.inWavf);
+        // ui.zoomOut = new Fl_Button(550, y + c/2, 40, (c-d)/2, "-");
+        // ui.zoomOut->tooltip("Zoom out");
+        // ui.zoomOut->callback([](Fl_Widget*, void* ud)
+        // {
+        //     ((WaveformWidget*)ud)->setZoom(((WaveformWidget*)ud)->getZoom() * 0.8f);
+        // }, ui.inWavf);
+        scrollBar = new Fl_Scrollbar(x,y,W-2*s,h2);
+        scrollBar->type(FL_HORIZONTAL);
+        scrollBar->bounds(0, 1);
+        scrollBar->value(0);
+        //scrollBar->callback(hscroll_cb, nullptr);
+
+        end(); // wichtig
+    }
+
+    void resize(int X, int Y, int W, int H) override
+    {
+        Fl_Group::resize(X, Y, W, H);
+
+        int x = X;
+        int y = Y;
+
+        float zoom = Fl::screen_scale(0);
+        int s = m_spacing * zoom;
+        int h2 = 32 * zoom;
+        int h1 = H - h2;
+
+        waveform->resize(x,y,W-2*s,h1); y += h1;
+        scrollBar->resize(x,y,W-2*s,h2);
+    }
+};
+
+
+class UI_Resampler : public Fl_Group
+{
+public:
+    int m_spacing = 5;
+    Fl_Button* start = nullptr;
+    Fl_Choice* rate = nullptr;
+    Fl_Choice* algo = nullptr;
+
+    UI_Resampler(int X, int Y, int W, int H, int spacing)
+        : Fl_Group(X, Y, W, H)
+        , m_spacing(spacing)
+    {
+        begin();
+
+        float zoom = Fl::screen_scale(0);
+        int s = m_spacing * zoom;
+        int w1 = (100 - m_spacing) * zoom;
+        int w4 = W - w1 - 3*s;
+        int w2 = w4/2;
+        int w3 = w4/2;
+        int x = X;
+        int y = Y;
+        start = new Fl_Check_Button(x, y, w1, H,"Resample"); x += w1 + s;
+        rate = new Fl_Choice(x,y,w2,H); x += w2 + s;
+        algo = new Fl_Choice(x,y,w3,H);
+
+        rate->add("4000 Hz");
+        rate->add("8000 Hz");
+        rate->add("16000 Hz");
+        rate->add("22050 Hz");
+        rate->add("32000 Hz");
+        rate->add("44100 Hz");
+        rate->add("48000 Hz");
+        rate->add("64000 Hz");
+        rate->add("88200 Hz");
+        rate->add("96000 Hz");
+        rate->add("128000 Hz");
+        rate->add("192000 Hz");
+        rate->value(6);
+
+        algo->add("r8brain");
+        algo->value(0);
+
+        end(); // wichtig
+
+        DE_DEBUG("panel", this->x(), ",", this->y(), ",", this->w(), ",", this->h())
+        //DE_DEBUG("label", label->x(), ",", label->y(), ",", label->w(), ",", label->h())
+        DE_DEBUG("start", start->x(), ",", start->y(), ",", start->w(), ",", start->h())
+        DE_DEBUG("rate", rate->x(), ",", rate->y(), ",", rate->w(), ",", rate->h())
+        DE_DEBUG("algo", algo->x(), ",", algo->y(), ",", algo->w(), ",", algo->h())
+
+    }
+
+    void resize(int X, int Y, int W, int H) override
+    {
+        Fl_Group::resize(X, Y, W, H);
+
+        float zoom = Fl::screen_scale(0);
+        int s = m_spacing * zoom;
+        int w1 = (100 - m_spacing) * zoom;
+        int w4 = W - w1 - 3*s;
+        int w2 = w4/2;
+        int w3 = w4/2;
+        int x = X;
+        int y = Y;
+        start->resize(x,y,w1,H); x += w1 + s;
+        rate->resize(x,y,w2,H); x += w2 + s;
+        algo->resize(x,y,w3,H);
+    }
+};
+
+class UI_Encoder : public Fl_Group
+{
+public:
+    int m_spacing = 5;
+    Fl_Choice* encoder = nullptr;
+    Fl_Box* lblBitrate = nullptr;
+    Fl_Choice* bitrate = nullptr;
+    Fl_Box* lblQuality = nullptr;
+    Fl_Choice* quality = nullptr;
+    Fl_Check_Button* vbr = nullptr;
+
+    UI_Encoder(int X, int Y, int W, int H, int spacing)
+        : Fl_Group(X, Y, W, H)
+        , m_spacing(spacing)
+    {
+        begin();
+
+        float zoom = Fl::screen_scale(0);
+        int s = m_spacing * zoom;
+        int w1 = (100 - m_spacing) * zoom;
+        int w2 = (100 - m_spacing) * zoom;
+        int w3 = (100 - m_spacing) * zoom;
+        int w4 = (100 - m_spacing) * zoom;
+        int w5 = (100 - m_spacing) * zoom;
+        int w6 = (100 - m_spacing) * zoom;
+
+        int x = X;
+        int y = Y;
+        encoder = new Fl_Choice(x,y,w1,H,""); x += w1 + s;
+        lblBitrate = new Fl_Box(x,y,w2,H,"Bitrate:"); x += w2 + s;
+        bitrate = new Fl_Choice(x,y,w3,H,""); x += w3 + s;
+        lblQuality = new Fl_Box(x,y,w4,H,"Quality:"); x += w4 + s;
+        quality = new Fl_Choice(x,y,w5,H,""); x += w5 + s;
+        vbr = new Fl_Check_Button(x,y,w6,H,"VBR (Variable Bitrate):");
+
+        bitrate->add("8 - Speech Very Low");
+        bitrate->add("16 - Speech Low");
+        bitrate->add("24 - Speech Medium");
+        bitrate->add("32 - Speech Good");
+        bitrate->add("48 - Very Low");
+        bitrate->add("64 - Lower");
+        bitrate->add("96 - Low");
+        bitrate->add("128 - OK");
+        bitrate->add("160 - Medium");
+        bitrate->add("192 - Better");
+        bitrate->add("224 - Good");
+        bitrate->add("256 - Very Good");
+        bitrate->add("320 - Highest");
+        bitrate->value(7);
+
+        quality->add("0 - Best");
+        quality->add("1 - High");
+        quality->add("5 - Default");
+        quality->add("7 - Fast");
+        quality->add("9 - Fastest");
+        quality->value(0);
+
+        end();
+    }
+
+    void resize(int X, int Y, int W, int H) override
+    {
+        Fl_Group::resize(X, Y, W, H);
+
+        float zoom = Fl::screen_scale(0);
+        int s = m_spacing * zoom;
+        int w1 = (100 - m_spacing) * zoom;
+        int w2 = (100 - m_spacing) * zoom;
+        int w3 = (100 - m_spacing) * zoom;
+        int w4 = (100 - m_spacing) * zoom;
+        int w5 = (100 - m_spacing) * zoom;
+        int w6 = (100 - m_spacing) * zoom;
+
+        int x = X;
+        int y = Y;
+        encoder->resize(x,y,w1,H); x += w1 + s;
+        lblBitrate->resize(x,y,w2,H); x += w2 + s;
+        bitrate->resize(x,y,w3,H); x += w3 + s;
+        lblQuality->resize(x,y,w4,H); x += w4 + s;
+        quality->resize(x,y,w5,H); x += w5 + s;
+        vbr->resize(x,y,w6,H);
+    }
+
+    int getBitrate()
+    {
+        static int bitrate_map[] = {8,16,24,32,48,64,96,128,160,192,224,256,320};
+        return bitrate_map[bitrate->value()];
+    }
+
+    int getQuality()
+    {
+        int quality_map[] = {0,1,5,7,9};
+        return quality_map[quality->value()];
+    }
+};
+
+
+
+// =============================================================
+class XP_Progress : public Fl_Progress
+// =============================================================
+{
+public:
+    XP_Progress(int X, int Y, int W, int H, const char* L = 0)
+        : Fl_Progress(X, Y, W, H, L)
+    {
+        box(FL_NO_BOX);  // wir zeichnen alles selbst
+        color(fl_rgb_color(200, 200, 200));        // XP trough
+        selection_color(fl_rgb_color(0, 180, 0));  // XP green
+        labelcolor(FL_WHITE);
+    }
+
+    void draw_round_rect(int X, int Y, int W, int H, int r, Fl_Color c)
+    {
+        fl_color(c);
+        fl_begin_polygon();
+
+        // top-left arc
+        fl_arc(X, Y, 2*r, 2*r, 90, 180);
+
+        // left side
+        fl_vertex(X, Y + r);
+        fl_vertex(X, Y + H - r);
+
+        // bottom-left arc
+        fl_arc(X, Y + H - 2*r, 2*r, 2*r, 180, 270);
+
+        // bottom side
+        fl_vertex(X + r, Y + H);
+        fl_vertex(X + W - r, Y + H);
+
+        // bottom-right arc
+        fl_arc(X + W - 2*r, Y + H - 2*r, 2*r, 2*r, 270, 360);
+
+        // right side
+        fl_vertex(X + W, Y + H - r);
+        fl_vertex(X + W, Y + r);
+
+        // top-right arc
+        fl_arc(X + W - 2*r, Y, 2*r, 2*r, 0, 90);
+
+        // top side
+        fl_vertex(X + W - r, Y);
+        fl_vertex(X + r, Y);
+
+        fl_end_polygon();
+    }
+
+    void draw() override
+    {
+        fl_push_clip(x(), y(), w(), h());
+
+        int r = 3; // XP typical corner radius
+
+        // Trough (rounded)
+        draw_round_rect(x(), y(), w(), h(), r, color());
+
+        // Border
+        fl_color(fl_rgb_color(160,160,160));
+        fl_begin_loop();
+        fl_arc(x(), y(), 2*r, 2*r, 90, 180);
+        fl_arc(x(), y() + h() - 2*r, 2*r, 2*r, 180, 270);
+        fl_arc(x() + w() - 2*r, y() + h() - 2*r, 2*r, 2*r, 270, 360);
+        fl_arc(x() + w() - 2*r, y(), 2*r, 2*r, 0, 90);
+        fl_end_loop();
+
+        // Progress fraction
+        float frac = (maximum() > minimum())
+            ? (value() - minimum()) / (maximum() - minimum())
+            : 0.0f;
+
+        int pw = int(frac * w());
+
+        if (pw > 0)
+        {
+            // Base XP green
+            draw_round_rect(x(), y(), pw, h(), r, selection_color());
+
+            // Glossy highlight (top half)
+            draw_round_rect(x(), y(), pw, h()/2, r, fl_rgb_color(0, 220, 0));
+
+            // XP stripes
+            fl_color(fl_rgb_color(0, 140, 0));
+            for (int sx = x(); sx < x() + pw; sx += 12)
+                fl_rectf(sx, y(), 6, h());
+        }
+
+        // Label (percentage)
+        char buf[64];
+        snprintf(buf, sizeof(buf), "%d%%", int(frac * 100));
+
+        fl_color(labelcolor());
+        fl_font(FL_HELVETICA_BOLD, 12);
+        fl_draw(buf, x(), y(), w(), h(), FL_ALIGN_CENTER);
+
+        fl_pop_clip();
+    }
+};
+
+class UI_Progress : public Fl_Group
+{
+public:
+    int m_spacing = 5;
+    Fl_Button* btnCompare;
+    Fl_Progress* progress;
+    Fl_Button* btnCancel;
+    Fl_Button* btnDarkMode;
+
+    UI_Progress(int X, int Y, int W, int H, int spacing)
+        : Fl_Group(X, Y, W, H)
+        , m_spacing(spacing)
+    {
+        begin();
+
+        float zoom = Fl::screen_scale(0);
+        int s = m_spacing * zoom;
+        int w1 = (150 - m_spacing) * zoom;
+        int w3 = (100 - m_spacing) * zoom;
+        int w4 = (120 - m_spacing) * zoom;
+        int w2 = W - w1 - w3 - w4 - 3*s;
+        int x = X;
+        int y = Y;
+        btnCompare = new Fl_Button(x,y,w1,H,"Compare in/out"); x += w1 + s;
+        progress = new XP_Progress(x,y,w2,H); x += w2 + s;
+        btnCancel = new Fl_Button(x,y,w3,H,"Cancel"); x += w3 + s;
+        btnDarkMode = new Fl_Button(x,y,w4,H,"DarkMode");
+
+        progress->minimum(0);
+        progress->maximum(1);
+        progress->value(0);
+
+        end();
+    }
+
+    void resize(int X, int Y, int W, int H) override
+    {
+        Fl_Group::resize(X, Y, W, H);
+
+        float zoom = Fl::screen_scale(0);
+        int s = m_spacing * zoom;
+        int w1 = (150 - m_spacing) * zoom;
+        int w3 = (100 - m_spacing) * zoom;
+        int w4 = (120 - m_spacing) * zoom;
+        int w2 = W - w1 - w3 - w4 - 3*s;
+
+        int x = X;
+        int y = Y;
+        btnCompare->resize(x,y,w1,H); x += w1 + s;
+        progress->resize(x,y,w2,H); x += w2 + s;
+        btnCancel->resize(x,y,w3,H); x += w3 + s;
+        btnDarkMode->resize(x,y,w4,H);
+    }
+};
+
+// ---------------- UI ----------------
+struct UI
+{
+    UI_FileInput* inFile;
+    UI_Waveform* waveform;
+    UI_Resampler* resampler;
+    UI_Encoder* encoder;
+    UI_FileOutput* outFile;
+    UI_Progress* progress;
+    UI_LogBox* logbox;
+
     std::atomic<bool> reloadFile{true};
     std::atomic<bool> cancelFlag{false};
     std::thread worker;
 
-    int bitrate; // bitrate
-    int q;  // quality
+    int bitrate; // bitrate in kbit, e.g. 128, not 128000
+    int quality; // quality 0..9
 
     de::Sound soundIn;
     de::Sound soundOut;
 
-    std::string getSrcUri() const { return inFile->value(); }
-    std::string getDstUri() const { return outFile->value(); }
+    std::string getSrcUri() const { return inFile->edtUri->value(); }
+    std::string getDstUri() const { return outFile->edtUri->value(); }
 };
 
 UI ui;
 
-// Style table: jeder char in stylebuf → Style-Index
-static const Fl_Text_Display::Style_Table_Entry g_logStyles[] = {
-    { FL_BLACK, FL_COURIER, 14 },       // 'A' = info
-    { FL_RED,   FL_COURIER_BOLD, 14 },  // 'B' = error
-    { FL_BLUE,  FL_COURIER, 14 },       // 'C' = debug
-    { FL_MAGENTA,FL_COURIER, 14 },       // 'D' = warn
-    { FL_DARK_GREEN, FL_COURIER_BOLD, 14 },  // 'E' = success
-};
 
 void log_common(const char* msg, char style)
 {
     // Text anhängen
-    ui.logbuf->append(msg);
-    ui.logbuf->append("\n");
+    ui.logbox->logbuf->append(msg);
+    ui.logbox->logbuf->append("\n");
 
     // Style anhängen (gleiche Länge)
     int len = strlen(msg) + 1;
     std::string s(len, style);
-    ui.stylebuf->append(s.c_str());
+    ui.logbox->stylebuf->append(s.c_str());
 
-    ui.logbox->scroll(ui.logbuf->length(), 0);
+    ui.logbox->logbox->scroll(ui.logbox->logbuf->length(), 0);
 }
 
 inline void log_info(const char* msg) { log_common(msg,'A'); }
@@ -233,25 +851,7 @@ static void darkmode_cb(Fl_Widget*, void*)
     Fl::redraw();
 }
 
-// ---------------- helpers ----------------
-static std::string make_mp3_name(const std::string& wav)
-{
-    std::filesystem::path p = std::filesystem::u8path(wav);
-    p.replace_extension(".mp3");
-    return p.u8string();
-}
 
-// ---------------- helpers ----------------
-static void trim(std::string& s)
-{
-    while (!s.empty() && (s.back()=='\r' ||
-                          s.back()=='\n' ||
-                          s.back()=='\t' ||
-                          s.back()==' '))
-    {
-        s.pop_back();
-    }
-}
 
 // ---------------- callbacks ----------------
 static void cancel_cb(Fl_Widget*, void*)
@@ -262,7 +862,7 @@ static void cancel_cb(Fl_Widget*, void*)
 static void progress_awake(void* data)
 {
     int percent = *static_cast<int*>(data);
-    ui.progress->value(0.01f * percent);
+    ui.progress->progress->value(0.01f * percent);
     delete static_cast<int*>(data);
 }
 
@@ -286,14 +886,14 @@ void convert_async()
         return;
     }
 
-    auto s1 = dbStr("Convert Start: bitrate = ",ui.bitrate,", lameQualityPreset = ",ui.q);
+    auto s1 = dbStr("Convert Start: bitrate = ",ui.bitrate,", lameQualityPreset = ",ui.quality);
     async_log_ok(s1);
     async_progress(0);
 
     de::SoundSaveOptions optSave;
     optSave.bCancelFlag = &ui.cancelFlag;
     optSave.bitrate = ui.bitrate;
-    optSave.quality = ui.q;
+    optSave.quality = ui.quality;
     optSave.onProgress = [](int pc) { async_progress(pc); };
 
     if (!dbSaveSound(ui.soundIn, dstUri, optSave))
@@ -305,15 +905,22 @@ void convert_async()
 
     auto s3 = dbStr("Convert Finished: ",dstUri);
     async_log_ok(s3);
+
+    async_progress(100);
 }
 
 void convert_cb(Fl_Widget*, void*)
 {
-    int bitrate_map[] = {96,128,160,192,224,256,320};
-    int quality_map[] = {0,1,5,7,9};
+    std::string src_uri = ui.getSrcUri();
+    std::string dst_uri = ui.getDstUri();
+    if (src_uri == dst_uri)
+    {
+        DE_ERROR("Src and Dst fileNames must differ! Abort")
+        return;
+    }
 
-    ui.bitrate = bitrate_map[ui.cbxBitrate->value()];
-    ui.q  = quality_map[ui.quality->value()];
+    ui.bitrate = ui.encoder->getBitrate();
+    ui.quality  = ui.encoder->getQuality();
 
     ui.worker = std::thread(convert_async);
     ui.worker.detach();
@@ -322,7 +929,9 @@ void convert_cb(Fl_Widget*, void*)
 // ---------------- Fl::awake ----------------
 void load_async_finish_awake(void*)
 {
-    ui.inWavf->setSound(&ui.soundIn);
+    ui.waveform->setSound(&ui.soundIn);
+
+    ui.progress->progress->value(0);
 }
 void load_async()
 {
@@ -394,12 +1003,12 @@ void pick_input_cb(Fl_Widget*, void*)
     if (dlg.show() == 0)
     {
         uri = dlg.filename();
-        ui.inFile->value(uri.c_str());
+        ui.inFile->edtUri->value(uri.c_str());
         uri = make_mp3_name(uri);
-        ui.outFile->value(uri.c_str());
+        ui.outFile->edtUri->value(uri.c_str());
 
         // TODO: Rework when button is activated.
-        ui.convert->activate();
+        ui.outFile->btnConvert->activate();
     }
 }
 
@@ -420,19 +1029,14 @@ void pick_output_cb(Fl_Widget*, void*)
     if (dlg.show() == 0)
     {
         uri = dlg.filename();
-        ui.outFile->value(uri.c_str());
+        ui.outFile->edtUri->value(uri.c_str());
     }
-}
-
-// ---------------- Fl::awake ----------------
-void compare_async_start_awake(void* data)
-{
-    ui.progress->value(0);
 }
 
 // ---------------- callbacks ----------------
 void compare_async()
 {
+    async_progress(1);
     async_log_ok("Compare Start: ");
 
     std::string src_uri = ui.getSrcUri();
@@ -660,266 +1264,185 @@ void compare_cb(Fl_Widget*, void*)
     ui.worker.detach();
 }
 
-// =============================================================
-class InputField : public Fl_Input
-// =============================================================
-{
-public:
-    InputField(int X, int Y, int W, int H, const char* L = 0)
-        : Fl_Input(X, Y, W, H, L) {}
 
-    int handle(int event) override
-    {
-        // FLTK schreibt beim Drop den Text selbst ins Input,
-        // wir reagieren nur auf FL_PASTE.
-        if (event == FL_PASTE)
-        {
-            // Clear
-            value("");
-
-            // Handle paste
-            int r = Fl_Input::handle(event); // Text wird gesetzt
-
-            //
-            std::string uri = value();
-
-            if (dbExistFile(uri))
-            {
-                ui.convert->activate();
-                auto dst = make_mp3_name(uri);
-                ui.outFile->value(dst.c_str());
-            }
-            else
-            {
-                DE_ERROR("InputFile does not exist, ", uri)
-            }
-            return r;
-        }
-        return Fl_Input::handle(event);
-    }
-};
-
-// =============================================================
-class XP_Progress : public Fl_Progress
-// =============================================================
-{
-public:
-    XP_Progress(int X, int Y, int W, int H, const char* L = 0)
-        : Fl_Progress(X, Y, W, H, L)
-    {
-        box(FL_NO_BOX);  // wir zeichnen alles selbst
-        color(fl_rgb_color(200, 200, 200));        // XP trough
-        selection_color(fl_rgb_color(0, 180, 0));  // XP green
-        labelcolor(FL_WHITE);
-    }
-
-    void draw_round_rect(int X, int Y, int W, int H, int r, Fl_Color c)
-    {
-        fl_color(c);
-        fl_begin_polygon();
-
-        // top-left arc
-        fl_arc(X, Y, 2*r, 2*r, 90, 180);
-
-        // left side
-        fl_vertex(X, Y + r);
-        fl_vertex(X, Y + H - r);
-
-        // bottom-left arc
-        fl_arc(X, Y + H - 2*r, 2*r, 2*r, 180, 270);
-
-        // bottom side
-        fl_vertex(X + r, Y + H);
-        fl_vertex(X + W - r, Y + H);
-
-        // bottom-right arc
-        fl_arc(X + W - 2*r, Y + H - 2*r, 2*r, 2*r, 270, 360);
-
-        // right side
-        fl_vertex(X + W, Y + H - r);
-        fl_vertex(X + W, Y + r);
-
-        // top-right arc
-        fl_arc(X + W - 2*r, Y, 2*r, 2*r, 0, 90);
-
-        // top side
-        fl_vertex(X + W - r, Y);
-        fl_vertex(X + r, Y);
-
-        fl_end_polygon();
-    }
-
-    void draw() override
-    {
-        fl_push_clip(x(), y(), w(), h());
-
-        int r = 3; // XP typical corner radius
-
-        // Trough (rounded)
-        draw_round_rect(x(), y(), w(), h(), r, color());
-
-        // Border
-        fl_color(fl_rgb_color(160,160,160));
-        fl_begin_loop();
-        fl_arc(x(), y(), 2*r, 2*r, 90, 180);
-        fl_arc(x(), y() + h() - 2*r, 2*r, 2*r, 180, 270);
-        fl_arc(x() + w() - 2*r, y() + h() - 2*r, 2*r, 2*r, 270, 360);
-        fl_arc(x() + w() - 2*r, y(), 2*r, 2*r, 0, 90);
-        fl_end_loop();
-
-        // Progress fraction
-        float frac = (maximum() > minimum())
-            ? (value() - minimum()) / (maximum() - minimum())
-            : 0.0f;
-
-        int pw = int(frac * w());
-
-        if (pw > 0)
-        {
-            // Base XP green
-            draw_round_rect(x(), y(), pw, h(), r, selection_color());
-
-            // Glossy highlight (top half)
-            draw_round_rect(x(), y(), pw, h()/2, r, fl_rgb_color(0, 220, 0));
-
-            // XP stripes
-            fl_color(fl_rgb_color(0, 140, 0));
-            for (int sx = x(); sx < x() + pw; sx += 12)
-                fl_rectf(sx, y(), 6, h());
-        }
-
-        // Label (percentage)
-        char buf[64];
-        snprintf(buf, sizeof(buf), "%d%%", int(frac * 100));
-
-        fl_color(labelcolor());
-        fl_font(FL_HELVETICA_BOLD, 12);
-        fl_draw(buf, x(), y(), w(), h(), FL_ALIGN_CENTER);
-
-        fl_pop_clip();
-    }
-};
 
 void hscroll_cb(Fl_Widget* w, void* data)
 {
     auto scrollBar = (Fl_Scrollbar*)w;
 
-    ui.inWavf->setZoomStart( scrollBar->value() );
+    ui.waveform->setZoomStart( scrollBar->value() );
 }
 
+class DynamicLayout : public Fl_Group {
+public:
+    DynamicLayout(int X, int Y, int W, int H)
+        : Fl_Group(X, Y, W, H)
+    {
+        end(); // wichtig
+    }
+
+    void resize(int X, int Y, int W, int H) override {
+        Fl_Group::resize(X, Y, W, H);
+
+        // Layout-Regeln
+        child(0)->resize(10, 10, W - 20, 30);
+        child(1)->resize(10, 50, W - 20, 30);
+        child(2)->resize(10, 90, W - 20, H - 100);
+    }
+};
+
+void apply_global_font(Fl_Group* g) {
+    for (int i = 0; i < g->children(); ++i) {
+        Fl_Widget* w = g->child(i);
+        w->labelfont(FL_HELVETICA);
+        w->labelsize(14);
+        if (auto* sub = dynamic_cast<Fl_Group*>(w))
+            apply_global_font(sub);
+    }
+}
+
+
+class MainWindow : public Fl_Window
+{
+public:
+    MainWindow(int W, int H, const char* title)
+        : Fl_Window(W, H, title)
+    {
+        begin();
+        //resizable(win);
+        // Fl_Box* dummy = new Fl_Box(0,0,1,1);
+        // win->resizable(dummy);
+
+        const float zoom = Fl::screen_scale(0);
+        const int d = 5 * zoom;
+        const int h1 = 30 * zoom;
+        const int h2 = 128 * zoom;
+        const int h3 = H - 5*(h1+d) - (h2+d) - 2*d;
+        int x = d;
+        int y = d;
+
+        ui.inFile = new UI_FileInput(x,y,W-2*d,h1,d); y += h1 + d;
+        ui.waveform = new UI_Waveform(x,y,W-2*d,h2,d); y += h2 + d;
+        ui.outFile = new UI_FileOutput(x,y,W-2*d,h1,d); y += h1 + d;
+        ui.progress = new UI_Progress(x,y,W-2*d,h1,d); y += h1 + d;
+        ui.encoder = new UI_Encoder(x,y,W-2*d,h1,d); y += h1 + d;
+        ui.resampler = new UI_Resampler(x,y,W-2*d,h1,d); y += h1 + d;
+        ui.logbox = new UI_LogBox(x,y,W-2*d,h3,d);
+
+        // Connect
+        ui.inFile->btnLoad->callback(load_async_cb);
+        ui.inFile->btnChoose->callback(pick_input_cb);
+        ui.inFile->edtUri->setOutputLineEdit(ui.outFile->edtUri);
+        ui.inFile->edtUri->setConvertButton(ui.outFile->btnConvert);
+
+        // Connect
+        ui.outFile->btnConvert->callback(convert_cb);
+        ui.outFile->btnConvert->deactivate();
+        ui.outFile->btnChoose->callback(pick_output_cb);
+
+        // Connect
+        ui.progress->btnCompare->callback(compare_cb);
+        ui.progress->btnCancel->callback(cancel_cb);
+        ui.progress->btnDarkMode->callback(darkmode_cb);
+
+        //win->resizable(win);   // oder ein Child-Widget
+        //win->resizable(nullptr);
+        end();
+    }
+
+    void resize(int X, int Y, int W, int H) override
+    {
+        Fl_Window::resize(X, Y, W, H);
+
+        const float zoom = Fl::screen_scale(0);
+        const int d = 5 * zoom;
+        const int h1 = 30 * zoom;
+        const int h2 = 128 * zoom;
+        const int h3 = H - 5*(h1+d) - (h2+d) - 2*d;
+        int x = d;
+        int y = d;
+
+        ui.inFile->resize(x,y,W-2*d,h1); y += h1 + d;
+        ui.waveform->resize(x,y,W-2*d,h2); y += h2 + d;
+        ui.outFile->resize(x,y,W-2*d,h1); y += h1 + d;
+        ui.progress->resize(x,y,W-2*d,h1); y += h1 + d;
+        ui.encoder->resize(x,y,W-2*d,h1); y += h1 + d;
+        ui.resampler->resize(x,y,W-2*d,h1); y += h1 + d;
+        ui.logbox->resize(x,y,W-2*d,h3);
+    }
+};
+
+static int global_handler(int event)
+{
+    if (event == FL_MOUSEWHEEL) {
+        Fl_Window* win = Fl::first_window();
+        if (!win)
+        {
+            DE_WARN("No first window")
+            return 0;
+        }
+
+        int mx = Fl::event_x_root();
+        int my = Fl::event_y_root();
+
+        int x = win->x();
+        int y = win->y();
+        int w = win->w();
+        int h = win->h();
+
+
+        // Titlebar height (approx; OS-dependent)
+        int title_h = 30; // you can refine this per OS
+
+        bool over_title = dbMouseOver(mx,my,x,y,x+w-1,y+title_h-1);
+
+        if (over_title)
+        {
+            float zoom = Fl::screen_scale(0);
+
+            if (Fl::event_dy() > 0) // Zoom out
+            {
+                zoom = std::clamp<double>(zoom - 0.10, 0.5, 2.5);
+            }
+            else if (Fl::event_dy() < 0) // Zoom In
+            {
+                zoom = std::clamp<double>(zoom + 0.10, 0.5, 2.5);
+            }
+
+            Fl::screen_scale(0,zoom);
+
+            DE_WARN("Zoom(",zoom,"), Mouse(",mx,",",my,"), Window(",x,",",y,",",w,",",h,")")
+            return 1; // swallow event
+        }
+    }
+    return 0;
+}
 
 // =============================================================
 int main(int argc, char** argv)
 // =============================================================
 {
-    Fl::use_high_res_GL(1);
+    DE_DEBUG("Fl::screen_scaling_supported() = ",Fl::screen_scaling_supported())
+    DE_DEBUG("Fl::screen_scale(0) = ",Fl::screen_scale(0))
+    DE_DEBUG("Fl::use_high_res_GL() = ",Fl::use_high_res_GL())
+
+    Fl::use_high_res_GL(0);
+    Fl::screen_scale(0, 1.5f);
+    Fl::visual(FL_RGB);
+    //Fl::set_font(FL_HELVETICA, "DejaVu Sans");
+    Fl::set_font(FL_HELVETICA, "Noto Sans");
     //Fl::scheme("gtk+");
     //Fl::scheme("plastic");
     //Fl::scheme("gleam");
     //Fl::scheme("oxy");
     Fl::scheme("none");
 
-    auto win = new Fl_Window(600, 600, "WAV to MP3 | benjaminhampe@gmx.de | fltk-1.4.5 + lame-3.100 + dr.wav + dr.mp3");
-    win->begin();
+    Fl::add_handler(global_handler);
 
-    int d = 5;
-    int y = d;
-    int b = 30;
-    int k = 0;
-    ui.btnLoad  = new Fl_Button(10, y, 50, b, "Load");
-    ui.btnLoad->tooltip("Loads file to preview and cut it");
-    ui.btnLoad->callback(load_async_cb);
-    ui.inFile = new InputField(110, y, 400, b, "Inputfile:");
-    ui.btnIn  = new Fl_Button(520, y, 60, b, "...");
-    ui.btnIn->callback(pick_input_cb);
-    y += b + d;
-
-    int c = 128;
-    ui.inWavf = new GL_WaveformWidget(10, y, 530, c);
-    ui.inWavf->tooltip("Waveform display: scroll, zoom, select region");
-    ui.zoomIn  = new Fl_Button(550, y,      40, (c-d)/2, "+");
-    ui.zoomIn->tooltip("Zoom in");
-    ui.zoomIn->callback([](Fl_Widget*, void* ud)
-    {
-        ((WaveformWidget*)ud)->setZoom(((WaveformWidget*)ud)->getZoom() * 1.2f);
-    }, ui.inWavf);
-    ui.zoomOut = new Fl_Button(550, y + c/2, 40, (c-d)/2, "-");
-    ui.zoomOut->tooltip("Zoom out");
-    ui.zoomOut->callback([](Fl_Widget*, void* ud)
-    {
-        ((WaveformWidget*)ud)->setZoom(((WaveformWidget*)ud)->getZoom() * 0.8f);
-    }, ui.inWavf);
-    y += c + d;
-
-    ui.scrollBar = new Fl_Scrollbar(10, y, 580, b);
-    ui.scrollBar->type(FL_HORIZONTAL);
-    ui.scrollBar->bounds(0, 1);
-    ui.scrollBar->value(0);
-    ui.scrollBar->callback(hscroll_cb, nullptr);
-    y += b + d;
-
-    ui.img1 = new ImageWidget(10, y, 40, b);
-    ui.outFile = new Fl_Input(110, y, 400, b, "Outputfile:");
-    ui.btnOut  = new Fl_Button(520, y, 60, b, "...");
-    ui.btnOut->callback(pick_output_cb);
-    y += b + d;
-
-    ui.cbxBitrate = new Fl_Choice(110, y, 150, b, "Bitrate:");
-    ui.cbxBitrate->add("96 - Low");
-    ui.cbxBitrate->add("128 - OK");
-    ui.cbxBitrate->add("160 - Medium");
-    ui.cbxBitrate->add("192 - Better");
-    ui.cbxBitrate->add("224 - Good");
-    ui.cbxBitrate->add("256 - Very Good");
-    ui.cbxBitrate->add("320 - Highest");
-    ui.cbxBitrate->value(1);
-    y += b + d;
-
-    ui.quality = new Fl_Choice(110, y, 150, b, "Quality:");
-    ui.quality->add("0 - Best");
-    ui.quality->add("1 - High");
-    ui.quality->add("5 - Default");
-    ui.quality->add("7 - Fast");
-    ui.quality->add("9 - Fastest");
-    ui.quality->value(0);
-    y += b + d;
-
-    ui.convert = new Fl_Button(110, y, 150, b, "Convert now");
-    ui.convert->callback(convert_cb);
-    ui.convert->deactivate();
-    ui.cancel = new Fl_Button(270, y, 150, b, "Cancel");
-    ui.cancel->callback(cancel_cb);
-
-    ui.darkToggle = new Fl_Button(430, y, 150, b, "Dark Mode");
-    ui.darkToggle->callback(darkmode_cb);
-    y += b + d;
-
-    ui.progress = new XP_Progress(110, y, 400, b);
-    ui.progress->minimum(0);
-    ui.progress->maximum(1);
-    ui.progress->value(0);
-    y += b + d;
-
-    ui.btnCompare = new Fl_Button(110, y, 200, b, "Compare files");
-    ui.btnCompare->callback(compare_cb);
-    y += b + d;
-
-    ui.logbuf   = new Fl_Text_Buffer();
-    ui.stylebuf = new Fl_Text_Buffer();
-
-    int dy = 600 - d - y;
-    ui.logbox = new Fl_Text_Display(10, y, 580, dy);
-    ui.logbox->buffer(ui.logbuf);
-    ui.logbox->highlight_data(
-        ui.stylebuf,
-        g_logStyles,
-        sizeof(g_logStyles)/sizeof(g_logStyles[0]),
-        'A',   // Default style
-        nullptr, nullptr
-    );
-
-    win->resizable(win);   // oder ein Child-Widget
-    win->end();
+    const int w = 600;
+    const int h = 600;
+    auto win = new MainWindow(w, h, "AudioConverter | benjaminhampe@gmx.de | MP4 MP3 FLAC WAV OGG OPUS");
+    win->resizable(win);
 
     #ifdef _WIN32
     HICON hIcon = LoadIcon(GetModuleHandle(NULL), MAKEINTRESOURCE(aaaa));
@@ -930,6 +1453,10 @@ int main(int argc, char** argv)
 
     win->show(argc, argv);
 
+    // ui.resampler.panel->resize(ui.resampler.rect.x,
+    //                            ui.resampler.rect.y,
+    //                            ui.resampler.rect.w,
+    //                            ui.resampler.rect.h);
     // Fl::set_font(FL_HELVETICA, "Noto Emoji");
     // Fl::set_font(FL_FREE_FONT, "Noto Emoji");
     // my_widget->labelfont(FL_FREE_FONT);
@@ -941,6 +1468,14 @@ int main(int argc, char** argv)
     // log_info("Test: log_info()");
     // log_warn("Test: log_warn()");
     // log_success("Test: log_success()");
+
+// #ifdef _WIN32
+// SetProcessDPIAware(); // echte Pixel, keine Skalierung
+// #endif
+
+// #ifdef _WIN32
+// SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_UNAWARE);
+// #endif
 
     return Fl::run();
 }

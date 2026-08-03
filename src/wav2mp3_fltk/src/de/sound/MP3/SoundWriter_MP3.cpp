@@ -75,7 +75,7 @@ save_sound_mp3(
     {
         lame_set_VBR(ctx, vbr_off);
         lame_set_brate(ctx, options.bitrate);
-        lame_set_quality(ctx, 2); // options.quality); // 0-best, 9-worst
+        lame_set_quality(ctx, options.bitrate); // options.quality); // 0-best, 9-worst
     }
 
     lame_set_disable_reservoir(ctx, 1); //bit reservoir has to be disabled for seamless streaming
@@ -153,11 +153,11 @@ save_sound_mp3(
             }
         }
 
-        DE_BENNI("i(",i,"), "
-                 "frameIndex(",frameIndex,"), "
-                 "framesCount(",sound.m_frames,"), "
-                 "converted(",converted,"), "
-                 "encoded(",encoded,")")
+        // DE_BENNI("i(",i,"), "
+        //          "frameIndex(",frameIndex,"), "
+        //          "framesCount(",sound.m_frames,"), "
+        //          "converted(",converted,"), "
+        //          "encoded(",encoded,")")
 
         i++;
     }
@@ -165,11 +165,7 @@ save_sound_mp3(
     options.onProgress(99);
 
     // 🔥 Flush
-    const int encoded = lame_encode_flush(
-                        ctx,
-                        encodeBuf.data(),
-                        static_cast<int>(encodeBuf.size())
-                    );
+    const int encoded = lame_encode_flush( ctx, encodeBuf.data(), static_cast<int>(encodeBuf.size()) );
     if (encoded > 0)
     {
         if (encoded > encodeBuf.size())
@@ -194,6 +190,7 @@ save_sound_mp3(
     // }
 
     lame_close(ctx);
+
     options.onProgress(100);
     return true;
 }
