@@ -6,7 +6,7 @@ if (TARGET ${APP_NAME})
 else()
     set(APP_SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/src)
     set(APP_SOURCES 
-        ${APP_SOURCE_DIR}/main.cpp
+        ${APP_SOURCE_DIR}/main_mp4_to_html.cpp
         ${APP_SOURCE_DIR}/DebugHtml.h
     )
     

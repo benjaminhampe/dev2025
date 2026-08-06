@@ -1147,14 +1147,14 @@ void SMeshLoad3DSFile::composeObject( de::Binary & file, std::string const & nam
 
          S3DVertex vtx;
          //glm::vec3 vec;
-         vtx.color = dbRGBA( mat->Kd );
+         vtx.color = dbRGBv4( mat->Kd );
          if (mat->MaterialType == 1) // video::EMT_TRANSPARENT_VERTEX_ALPHA
          {
-            auto r = dbRGBA_R( vtx.color );
-            auto g = dbRGBA_G( vtx.color );
-            auto b = dbRGBA_B( vtx.color );
+            auto r = dbRGB_R( vtx.color );
+            auto g = dbRGB_G( vtx.color );
+            auto b = dbRGB_B( vtx.color );
             auto a = std::clamp( (int)(255.0f*mat->Opacity), 0, 255 );
-            vtx.color = dbRGBA( r,g,b,a );
+            vtx.color = dbRGB( r,g,b,a );
          }
          vtx.normal = glm::vec3(0,0,0);
 

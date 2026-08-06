@@ -377,7 +377,7 @@ ImageReaderICO::load( Image & img, const uint8_t* p, size_t n, const std::string
                   uint8_t g = *p++;
                   uint8_t r = *p++;
                   uint8_t a = *p++;
-                  bmp.setPixel( x,h-1-y, dbRGBA( r,g,b,a ) );
+                  bmp.setPixel( x,h-1-y, dbRGB( r,g,b,a ) );
                   n++;
 
                }

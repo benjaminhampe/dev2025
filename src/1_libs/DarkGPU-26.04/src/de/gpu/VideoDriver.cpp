@@ -1114,7 +1114,7 @@ void VideoDriver::draw2DPerfOverlay()
     const int my = getIrrlichtDevice() ? getIrrlichtDevice()->getMouseY() : -1;
     const int p = 10;
 
-    uint32_t bgColor = dbRGBA(0,0,0,200);
+    uint32_t bgColor = dbRGB(0,0,0,200);
     int x = w - 1 - p;
     int y = p;
     Align align = Align::TopRight;
@@ -1125,18 +1125,18 @@ void VideoDriver::draw2DPerfOverlay()
 
     int ln5 = font5.getTextSize("W").height + p;
     auto s5 = dbStr("FPS ",int(getFPS()));
-    draw2DText( x,y, s5, dbRGBA(255,255,100), align, font5, bgColor, 1 ); y += ln5;
+    draw2DText( x,y, s5, dbRGB(255,255,100), align, font5, bgColor, 1 ); y += ln5;
     // auto s6 = dbStr("T ",int(getCpuThreadCount()));
     // auto s6 = dbStr("MHz ",int(getMHz()));
-    // draw2DText( x,y, s5, dbRGBA(255,255,100), align, font5, bgColor, 1 ); y += ln5;
+    // draw2DText( x,y, s5, dbRGB(255,255,100), align, font5, bgColor, 1 ); y += ln5;
 
     int ln4 = font4.getTextSize("W").height + p;
     auto s1 = dbStr("Time ",StringUtil::seconds(getTime()),")");
     auto s2 = dbStr("Screen(",w,",",h,")");
     auto s3 = dbStr("Mouse(",mx,",",my,")");
-    draw2DText( x,y, s1, dbRGBA(255,200,100), align, font4, bgColor, 1 ); y += ln4;
-    draw2DText( x,y, s2, dbRGBA(255,155,100), align, font4, bgColor, 1 ); y += ln4;
-    draw2DText( x,y, s3, dbRGBA(255,100,100), align, font4, bgColor, 1 ); y += ln4;
+    draw2DText( x,y, s1, dbRGB(255,200,100), align, font4, bgColor, 1 ); y += ln4;
+    draw2DText( x,y, s2, dbRGB(255,155,100), align, font4, bgColor, 1 ); y += ln4;
+    draw2DText( x,y, s3, dbRGB(255,100,100), align, font4, bgColor, 1 ); y += ln4;
 
     auto camera = getCamera();
     if (camera)
@@ -1155,14 +1155,14 @@ void VideoDriver::draw2DPerfOverlay()
         auto s8 = dbStr("Camera-Far(",camera->getFarValue(),")");
 
         int ln3 = font3.getTextSize("W").height + p;
-        draw2DText( x,y, s1, dbRGBA(  0,200,  0), align, font3, bgColor, 1 ); y += ln3;
-        draw2DText( x,y, s2, dbRGBA(100,200,100), align, font3, bgColor, 1 ); y += ln3;
-        //draw2DText( x,y, s3, dbRGBA(125,215,125), align, font3, bgColor, 1 ); y += ln3;
-        //draw2DText( x,y, s4, dbRGBA(145,225,145), align, font3, bgColor, 1 ); y += ln3;
-        //draw2DText( x,y, s5, dbRGBA(  0,200,  0), align, font3, bgColor, 1 ); y += ln3;
-        draw2DText( x,y, s6, dbRGBA(125,215,125), align, font3, bgColor, 1 ); y += ln3;
-        draw2DText( x,y, s7, dbRGBA(145,225,145), align, font3, bgColor, 1 ); y += ln3;
-        draw2DText( x,y, s8, dbRGBA(100,200,100), align, font3, bgColor, 1 ); y += ln3;
+        draw2DText( x,y, s1, dbRGB(  0,200,  0), align, font3, bgColor, 1 ); y += ln3;
+        draw2DText( x,y, s2, dbRGB(100,200,100), align, font3, bgColor, 1 ); y += ln3;
+        //draw2DText( x,y, s3, dbRGB(125,215,125), align, font3, bgColor, 1 ); y += ln3;
+        //draw2DText( x,y, s4, dbRGB(145,225,145), align, font3, bgColor, 1 ); y += ln3;
+        //draw2DText( x,y, s5, dbRGB(  0,200,  0), align, font3, bgColor, 1 ); y += ln3;
+        draw2DText( x,y, s6, dbRGB(125,215,125), align, font3, bgColor, 1 ); y += ln3;
+        draw2DText( x,y, s7, dbRGB(145,225,145), align, font3, bgColor, 1 ); y += ln3;
+        draw2DText( x,y, s8, dbRGB(100,200,100), align, font3, bgColor, 1 ); y += ln3;
 
     }
 

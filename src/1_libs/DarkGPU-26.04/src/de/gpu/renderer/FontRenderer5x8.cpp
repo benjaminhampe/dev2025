@@ -187,7 +187,7 @@ FontRenderer5x8::draw2DText( int x, int y, std::string const & msg, uint32_t col
     }
 
     // Draw background rect
-    if (dbRGBA_A(bgColor) > 0)
+    if (dbRGB_A(bgColor) > 0)
     {
         bbox_x1 -= padding;
         bbox_y1 -= padding;

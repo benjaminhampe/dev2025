@@ -166,6 +166,7 @@ std::string Sound::str(bool bWithFileName, bool bWithDir) const
     return o.str();
 }
 
+#if 0
 int64_t Sound::read_frames(void* __restrict__ dst, int64_t frameCount, int64_t frameStart) const
 {
     const int64_t avail = m_frames - frameStart;
@@ -212,6 +213,7 @@ int64_t Sound::read_frames(void* __restrict__ dst, int64_t frameCount, int64_t f
 
     return maxFrames;
 }
+#endif
 
 int64_t Sound::read_frames(
     SampleTypeConverter::Converter_t converter,
@@ -263,7 +265,11 @@ int64_t Sound::read_frames(
 }
 
 /*
-int64_t Sound::read_frames_convert(SampleType dstType, void* __restrict__ dst, int64_t frameCount, int64_t frameStart) const
+int64_t Sound::read_loop_frames(
+    SampleTypeConverter::Converter_t converter,
+    void* __restrict__ dst,
+    int64_t frameCount,
+    int64_t frameStart) const
 {
     const int64_t avail = m_frames - frameStart;
     if (avail < 1)
@@ -275,13 +281,6 @@ int64_t Sound::read_frames_convert(SampleType dstType, void* __restrict__ dst, i
     if (maxFrames < 1)
     {
         return 0; // Nothing todo...
-    }
-
-    auto converter = SampleTypeConverter::getConverter(m_sampleType,dstType);
-    if (!converter)
-    {
-        DE_ERROR("No converter")
-        return 0;
     }
 
     const int32_t bpp = bytesPerSample();
@@ -297,13 +296,13 @@ int64_t Sound::read_frames_convert(SampleType dstType, void* __restrict__ dst, i
 
     if (byteIndex >= m_samples.size())
     {
-        DE_ERROR("byteIndex(",byteIndex,") > m_samples(",m_samples.size(),")")
+        //DE_ERROR("byteIndex(",byteIndex,") > m_samples(",m_samples.size(),")")
         return 0;
     }
 
-    if (byteIndex + byteCount >= m_samples.size())
+    if (byteIndex + byteCount > m_samples.size())
     {
-        DE_ERROR("byteIndex(",byteIndex,") + byteCount(",byteCount,") > m_samples(",m_samples.size(),")")
+        //DE_ERROR("byteIndex(",byteIndex,") + byteCount(",byteCount,") > m_samples(",m_samples.size(),")")
         return 0;
     }
     // </debug>
@@ -314,147 +313,7 @@ int64_t Sound::read_frames_convert(SampleType dstType, void* __restrict__ dst, i
 
     return maxFrames;
 }
-
-int64_t Sound::read_frames_f32(float* __restrict__ dst, int64_t frameCount, int64_t frameIndex) const
-{
-    const int64_t avail = m_frames - frameIndex;
-    if (avail < 1)
-    {
-        return 0; // Nothing todo...
-    }
-
-    const int64_t maxFrames = std::min(avail,frameCount);
-    if (maxFrames < 1)
-    {
-        return 0; // Nothing todo...
-    }
-
-    const int64_t byteCount = maxFrames * m_channels * sizeof(float);
-    const int64_t byteIndex = frameIndex * m_channels * sizeof(float);
-
-#if 0
-// <debug>
-    if (byteCount < 1)
-    {
-        DE_ERROR("Got byteCount(",byteCount,")")
-        return 0;
-    }
-
-    if (byteIndex >= m_samples.size())
-    {
-        DE_ERROR("byteIndex(",byteIndex,") > m_samples(",m_samples.size(),")")
-        return 0;
-    }
-
-    if (byteIndex + byteCount >= m_samples.size())
-    {
-        DE_ERROR("byteIndex(",byteIndex,") + byteCount(",byteCount,") > m_samples(",m_samples.size(),")")
-        return 0;
-    }
-// </debug>
-#endif
-
-    const uint8_t* __restrict__ src = m_samples.data() + byteIndex;
-
-    DE_ASSUME_NO_OVERLAP(src, dst, byteCount);
-
-    std::memcpy(dst,src,byteCount);
-
-    return maxFrames;
-}
 */
 
 } // end namespace de.
 
-
-/*
-    static void deinterleave(
-            int32_t srcChannels,
-            SampleType srcType,
-            const TAlignedVector<uint8_t>& srcSamples,
-            TAlignedVector<uint8_t>& tmpSamples,
-            SampleType dstType,
-            TAlignedVector<uint8_t>& dstSamples,
-            int64_t frameCount,
-            int64_t frameStart = 0);
-
-
-void Sound::deinterleave(
-        int32_t channels,
-        SampleType srcType,
-        const TAlignedVector<uint8_t>& srcSamples,
-        TAlignedVector<uint8_t>& tmpSamples,
-        SampleType dstType,
-        TAlignedVector<uint8_t>& dstSamples,
-        int64_t frameCount,
-        int64_t frameStart)
-{
-    auto converter = SampleTypeConverter::getConverter(srcType,dstType);
-    if (!converter)
-    {
-        return;
-    }
-
-    const int32_t dstBPP = SampleType::getBytesPerSample(dstType);
-    const int64_t dstByteCount = frameCount * channels * dstBPP;
-    if (dstByteCount < 1)
-    {
-        DE_WARN("Nothing todo")
-        return;
-    }
-
-    tmpSamples.resize(dstByteCount);
-    dstSamples.resize(dstByteCount);
-
-    // ConvertOnce: src -> tmp (still interleaved)
-    {
-        const int32_t srcBPP = SampleType::getBytesPerSample(srcType);
-        const int64_t srcByteStart = frameStart * channels * srcBPP;
-        const int64_t srcByteCount = frameCount * channels * srcBPP;
-        if (srcByteStart >= srcSamples.size())
-        {
-            DE_WARN("EOB")
-            return;
-        }
-
-        if (srcByteStart + srcByteCount > srcSamples.size())
-        {
-            DE_WARN("EOB II")
-            return;
-        }
-
-        const uint8_t* __restrict__ pSrc = srcSamples.data() + srcByteStart;
-
-        uint8_t* __restrict__ pDst = tmpSamples.data();
-
-        const int64_t sampleCount = frameCount * channels;
-
-        converter(pSrc,pDst,sampleCount);
-    }
-
-    // Deinterleave: tmp -> dst
-    const int64_t dstBytesPerChannel = frameCount * dstBPP;
-    const int32_t dstStride = channels * dstBPP;
-
-    // ForEach(channel):
-    for (int32_t ch = 0; ch < channels; ++ch)
-    {
-        // Move to first sample of tmpBuffer of current channel
-        const uint8_t* __restrict__ pSrc =
-            tmpSamples.data() + dstBPP * ch;
-
-        // Move to first sample of dstBuffer of current channel
-        uint8_t* __restrict__ pDst =
-            dstSamples.data() + dstBytesPerChannel * ch;
-
-        // ForEach(frame) in current channel
-        for (int64_t i = 0; i < frameCount; ++i)
-        {
-            std::memcpy(pDst, pSrc, dstBPP); // Copy Sample
-            pSrc += dstStride;  // Advance to next interleaved sample of same channel
-            pDst += dstBPP;     // Advance to next planar sample of same channel
-        }
-    }
-}
-
-*/

@@ -87,7 +87,7 @@ ImageReaderTGA::parseColorTable( std::vector< uint32_t > & palette, tga::TGAHead
         if ( header.cm_entrySize == 8 )
         {
             uint8_t r = file.readU8();
-            palette.emplace_back( dbRGBA(r,r,r) );
+            palette.emplace_back( dbRGB(r,r,r) );
         }
         else if ( header.cm_entrySize == 16 )
         {
@@ -97,7 +97,7 @@ ImageReaderTGA::parseColorTable( std::vector< uint32_t > & palette, tga::TGAHead
             uint8_t r = (((rgb555 & 0x7C00) >> 10) * 0xFF) / 0x1F;
             uint8_t g = (((rgb555 & 0x03E0) >> 5) * 0xFF) / 0x1F;
             uint8_t b = ( (rgb555 & 0x001F)       * 0xFF) / 0x1F;
-            palette.emplace_back( dbRGBA(r,g,b) );
+            palette.emplace_back( dbRGB(r,g,b) );
         }
         else if ( header.cm_entrySize == 24 )
         {
@@ -106,7 +106,7 @@ ImageReaderTGA::parseColorTable( std::vector< uint32_t > & palette, tga::TGAHead
             uint8_t b = file.readU8();
             uint8_t g = file.readU8();
             uint8_t r = file.readU8();
-            palette.emplace_back( dbRGBA(r,g,b) );
+            palette.emplace_back( dbRGB(r,g,b) );
         }
         else if ( header.cm_entrySize == 32 )
         {
@@ -116,7 +116,7 @@ ImageReaderTGA::parseColorTable( std::vector< uint32_t > & palette, tga::TGAHead
             uint8_t g = file.readU8();
             uint8_t r = file.readU8();
             uint8_t a = file.readU8();
-            palette.emplace_back( dbRGBA(r,g,b,a) );
+            palette.emplace_back( dbRGB(r,g,b,a) );
         }
         else
         {
@@ -186,7 +186,7 @@ ImageReaderTGA::load( Image & img, const uint8_t* p, size_t n, const std::string
                     for ( uint32_t x = 0; x < m_w; ++x )
                     {
                         uint8_t r = bytes[ i++ ];
-                        img.setPixel( x,y, dbRGBA( r,r,r ) );
+                        img.setPixel( x,y, dbRGB( r,r,r ) );
                     }
                 }
             }
@@ -266,7 +266,7 @@ ImageReaderTGA::load( Image & img, const uint8_t* p, size_t n, const std::string
                     uint8_t b = bytes[ i++ ];
                     uint8_t g = bytes[ i++ ];
                     uint8_t r = bytes[ i++ ];
-                    img.setPixel( x,y, dbRGBA( r,g,b ) );
+                    img.setPixel( x,y, dbRGB( r,g,b ) );
                 }
             }
             return true;
@@ -283,7 +283,7 @@ ImageReaderTGA::load( Image & img, const uint8_t* p, size_t n, const std::string
                     uint8_t g = bytes[ i++ ];
                     uint8_t r = bytes[ i++ ];
                     uint8_t a = bytes[ i++ ];
-                    img.setPixel( x,y, dbRGBA( r,g,b,a ) );
+                    img.setPixel( x,y, dbRGB( r,g,b,a ) );
                 }
             }
             return true;
@@ -372,7 +372,7 @@ ImageReaderTGA::load( Image & img, const uint8_t* p, size_t n, const std::string
                 {
                     a = bytes[ i++ ];
                 }
-                img.setPixel( x,y, dbRGBA( r,g,b,a ) );
+                img.setPixel( x,y, dbRGB( r,g,b,a ) );
             }
         }
     }

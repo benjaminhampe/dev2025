@@ -2,76 +2,91 @@
 #include <de/Core.h>
 
 // ===================================================================
-constexpr uint32_t dbRGBA( uint8_t r, uint8_t g, uint8_t b, uint8_t a = 255 )
+inline uint8_t dbClampBytef( const float f )
+// ===================================================================
+{
+    return static_cast<uint8_t>(
+            std::clamp<int32_t>( std::lround( f ), 0, 255 ) );
+}
+
+// ===================================================================
+constexpr uint32_t dbRGB( uint8_t r, uint8_t g, uint8_t b, uint8_t a = 255 )
 // ===================================================================
 {
    return ( uint32_t( a ) << 24 ) | ( uint32_t( b ) << 16 )
         | ( uint32_t( g ) << 8 ) | uint32_t( r );
 }
 // ===================================================================
-constexpr uint8_t dbRGBA_R( uint32_t color ) { return color & 0x000000ff; }
-constexpr uint8_t dbRGBA_G( uint32_t color ) { return ( color >> 8 ) & 0x000000ff; }
-constexpr uint8_t dbRGBA_B( uint32_t color ) { return ( color >> 16 ) & 0x000000ff; }
-constexpr uint8_t dbRGBA_A( uint32_t color ) { return ( color >> 24 ) & 0x000000ff; }
+constexpr uint8_t dbRGB_R( uint32_t color ) { return color & 0xFF; }
+constexpr uint8_t dbRGB_G( uint32_t color ) { return ( color >> 8 ) & 0xFF; }
+constexpr uint8_t dbRGB_B( uint32_t color ) { return ( color >> 16 ) & 0xFF; }
+constexpr uint8_t dbRGB_A( uint32_t color ) { return ( color >> 24 ) & 0xFF; }
 
 // ===================================================================
-constexpr void dbRGBA_setR( uint32_t & color, uint8_t r ) { color = (color & 0xFFFFFF00) | (uint32_t(r) & 0xFF); }
-constexpr void dbRGBA_setG( uint32_t & color, uint8_t g ) { color = (color & 0xFFFF00FF) | ((uint32_t(g) & 0xFF) << 8); }
-constexpr void dbRGBA_setB( uint32_t & color, uint8_t b ) { color = (color & 0xFF00FFFF) | ((uint32_t(b) & 0xFF) << 16); }
-constexpr void dbRGBA_setA( uint32_t & color, uint8_t a ) { color = (color & 0x00FFFFFF) | ((uint32_t(a) & 0xFF) << 24); }
+constexpr float dbRGB_Rf( uint32_t color ) { return static_cast<float>(  color         & 0xFF); }
+constexpr float dbRGB_Gf( uint32_t color ) { return static_cast<float>(( color >> 8 )  & 0xFF); }
+constexpr float dbRGB_Bf( uint32_t color ) { return static_cast<float>(( color >> 16 ) & 0xFF); }
+constexpr float dbRGB_Af( uint32_t color ) { return static_cast<float>(( color >> 24 ) & 0xFF); }
 
-inline glm::vec4
-dbRGBAf( uint32_t const color )
+// ===================================================================
+constexpr void dbRGB_setR( uint32_t & color, uint8_t r ) { color = (color & 0xFFFFFF00) | (uint32_t(r) & 0xFF); }
+constexpr void dbRGB_setG( uint32_t & color, uint8_t g ) { color = (color & 0xFFFF00FF) | ((uint32_t(g) & 0xFF) << 8); }
+constexpr void dbRGB_setB( uint32_t & color, uint8_t b ) { color = (color & 0xFF00FFFF) | ((uint32_t(b) & 0xFF) << 16); }
+constexpr void dbRGB_setA( uint32_t & color, uint8_t a ) { color = (color & 0x00FFFFFF) | ((uint32_t(a) & 0xFF) << 24); }
+
+inline glm::vec3
+dbRGBfv3( const uint32_t color )
 {
-    float r = float(dbRGBA_R( color )) / 255.0f;
-    float g = float(dbRGBA_G( color )) / 255.0f;
-    float b = float(dbRGBA_B( color )) / 255.0f;
-    float a = float(dbRGBA_A( color )) / 255.0f;
-    return glm::vec4(r,g,b,a);
+    const auto r = dbRGB_R( color );
+    const auto g = dbRGB_G( color );
+    const auto b = dbRGB_B( color );
+    return glm::vec4(r,g,b,1) / 255.0f;
 }
 
 inline glm::vec4
-dbRGBAf( uint8_t r, uint8_t g, uint8_t b, uint8_t a = 255  )
+dbRGBfv4( const uint32_t color )
+{
+    const auto r = dbRGB_R( color );
+    const auto g = dbRGB_G( color );
+    const auto b = dbRGB_B( color );
+    const auto a = dbRGB_A( color );
+    return glm::vec4(r,g,b,a) / 255.0f;
+}
+
+inline glm::vec4
+dbRGBfv4( const uint8_t r, const uint8_t g, const uint8_t b, const uint8_t a = 255 )
 {
     return glm::vec4(r,g,b,a) / 255.0f;
 }
 
-inline uint8_t
-dbClampBytef( const float f )
-{
-    return static_cast<uint8_t>(
-        std::clamp( std::lround( f ), long(0), long(255) )
-        );
-}
-
 inline uint32_t
-dbRGB( glm::vec3 const& color )
+dbRGBv3( glm::vec3 const& color )
 {
     uint8_t r = dbClampBytef(color.r * 255.0f);
     uint8_t g = dbClampBytef(color.g * 255.0f);
     uint8_t b = dbClampBytef(color.b * 255.0f);
-    return dbRGBA(r,g,b);
+    return dbRGB(r,g,b);
 }
 
 inline uint32_t
-dbRGBA( glm::vec4 const& color )
+dbRGBv4( glm::vec4 const& color )
 {
     uint8_t r = dbClampBytef(color.r * 255.0f);
     uint8_t g = dbClampBytef(color.g * 255.0f);
     uint8_t b = dbClampBytef(color.b * 255.0f);
     uint8_t a = dbClampBytef(color.a * 255.0f);
-    return dbRGBA(r,g,b,a);
+    return dbRGB(r,g,b,a);
 }
 
 namespace de {
 
-uint32_t blendColor( const uint32_t bg, const uint32_t fg );
+uint32_t blendColor( const uint32_t src, const uint32_t dst );
 
-glm::vec4 blendColor( const glm::vec4& bg, const glm::vec4& fg );
+glm::vec4 blendColor( const glm::vec4& src, const glm::vec4& dst );
 
 uint32_t parseColor( const std::string & line );
 
-uint32_t lerpColor( const uint32_t bg, const uint32_t fg, const float t );
+uint32_t lerpColor( const uint32_t src, const uint32_t dst, const float t );
 
 uint32_t lightenColor( uint32_t color, int offset );
 
@@ -231,8 +246,8 @@ struct ColorHSL
         float const l = Luminance * 0.01f;
         if ( Saturation <= 0.000001f ) // is_zero = grey
         {
-        uint8_t r = uint8_t( std::clamp( int(255.0f * l), 0, 255 ) );
-        return dbRGBA( r, r, r, alpha );
+            uint8_t r = dbClampBytef(255.0f * l);
+            return dbRGB( r, r, r, alpha );
         }
 
         float rm2;
@@ -245,13 +260,13 @@ struct ColorHSL
             rm2 = l + (1 - l) * (Saturation*0.01f);
         }
 
-        float const rm1 = 2.0f * l - rm2;
-        float const h = Hue / 360.0f;
-        uint8_t r = uint8_t( std::clamp( int(255.f * toRGB1(rm1, rm2, h + 1.f/3.f)), 0, 255 ) );
-        uint8_t g = uint8_t( std::clamp( int(255.f * toRGB1(rm1, rm2, h)), 0, 255 ) );
-        uint8_t b = uint8_t( std::clamp( int(255.f * toRGB1(rm1, rm2, h - 1.f/3.f)), 0, 255 ) );
+        const float rm1 = 2.0f * l - rm2;
+        const float h = Hue / 360.0f;
+        uint8_t r = dbClampBytef(255.f * toRGB1(rm1, rm2, h + 1.f/3.f));
+        uint8_t g = dbClampBytef(255.f * toRGB1(rm1, rm2, h));
+        uint8_t b = dbClampBytef(255.f * toRGB1(rm1, rm2, h - 1.f/3.f));
 
-        return dbRGBA(r,g,b,alpha);
+        return dbRGB(r,g,b,alpha);
     }
 
     /*

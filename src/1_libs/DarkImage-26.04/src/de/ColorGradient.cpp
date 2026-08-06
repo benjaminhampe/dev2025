@@ -41,7 +41,7 @@ bool dbLoadColorGradient(de::LinearColorGradient& cg, const std::string& uri)
         xmlStop->QueryIntAttribute("b", &b);
         xmlStop->QueryIntAttribute("a", &a);
 
-        cg.m_stops.emplace_back(t, dbRGBA(r,g,b,a));
+        cg.m_stops.emplace_back(t, dbRGB(r,g,b,a));
     }
 
     return true;
@@ -61,10 +61,10 @@ bool dbSaveLinearColorGradient(const de::LinearColorGradient& cg, const std::str
         auto xmlStop = doc.NewElement("Stop");
         xmlStop->SetAttribute("i", int(i));
         xmlStop->SetAttribute("t", s.m_t);
-        xmlStop->SetAttribute("r", int(dbRGBA_R(s.m_color)));
-        xmlStop->SetAttribute("g", int(dbRGBA_G(s.m_color)));
-        xmlStop->SetAttribute("b", int(dbRGBA_B(s.m_color)));
-        xmlStop->SetAttribute("a", int(dbRGBA_A(s.m_color)));
+        xmlStop->SetAttribute("r", int(dbRGB_R(s.m_color)));
+        xmlStop->SetAttribute("g", int(dbRGB_G(s.m_color)));
+        xmlStop->SetAttribute("b", int(dbRGB_B(s.m_color)));
+        xmlStop->SetAttribute("a", int(dbRGB_A(s.m_color)));
         xmlTag->InsertEndChild(xmlStop);
         i++;
     }
@@ -114,14 +114,15 @@ LinearColorGradient::lerpColor128( uint32_t A, uint32_t B, float t )
    //
    // computed color = A + t*AB = A + t*(B-A)
    //
-   float const startR = float(dbRGBA_R( A )) / 255.0f;
-   float const startG = float(dbRGBA_G( A )) / 255.0f;
-   float const startB = float(dbRGBA_B( A )) / 255.0f;
-   float const startA = float(dbRGBA_A( A )) / 255.0f;
-   float const deltaR = (float(dbRGBA_R( B )) / 255.0f) - startR;
-   float const deltaG = (float(dbRGBA_G( B )) / 255.0f) - startG;
-   float const deltaB = (float(dbRGBA_B( B )) / 255.0f) - startB;
-   float const deltaA = (float(dbRGBA_A( B )) / 255.0f) - startA;
+
+   float const startR = float(dbRGB_R( A )) / 255.0f;
+   float const startG = float(dbRGB_G( A )) / 255.0f;
+   float const startB = float(dbRGB_B( A )) / 255.0f;
+   float const startA = float(dbRGB_A( A )) / 255.0f;
+   float const deltaR = (float(dbRGB_R( B )) / 255.0f) - startR;
+   float const deltaG = (float(dbRGB_G( B )) / 255.0f) - startG;
+   float const deltaB = (float(dbRGB_B( B )) / 255.0f) - startB;
+   float const deltaA = (float(dbRGB_A( B )) / 255.0f) - startA;
    float const r = std::clamp( startR + t * deltaR, 0.0f, 1.0f );
    float const g = std::clamp( startG + t * deltaG, 0.0f, 1.0f );
    float const b = std::clamp( startB + t * deltaB, 0.0f, 1.0f );
@@ -247,7 +248,7 @@ LinearColorGradient::hasTransparentColor() const
 {
    for ( ColorStop const & cs : m_stops )
    {
-      if ( dbRGBA_A( cs.m_color ) < 255 ) return true;
+      if ( dbRGB_A( cs.m_color ) < 255 ) return true;
    }
    return false;
 }
@@ -263,7 +264,7 @@ LinearColorGradient::getColor128( float t ) const
    }
    if ( m_stops.size() < 2 )
    {
-       return toRGBAf( m_stops.back().m_color );
+       return toRGBf( m_stops.back().m_color );
    }
    else if ( m_stops.size() < 3 )
    {
@@ -278,7 +279,7 @@ LinearColorGradient::getColor128( float t ) const
       {
          if ( std::abs( t - m_stops[ i ].m_t ) <= 1.0e-6f ) // dbEquals
          {
-            return toRGBAf( m_stops[ i ].m_color );
+            return toRGBf( m_stops[ i ].m_color );
          }
          else if ( m_stops[ i ].m_t > t )
          {
@@ -289,7 +290,7 @@ LinearColorGradient::getColor128( float t ) const
 
       if ( found < 0 )
       {
-         return toRGBAf( m_stops[ m_stops.size()-1 ].m_color );
+         return toRGBf( m_stops[ m_stops.size()-1 ].m_color );
       }
 
       // interpolate between prev and next neighbor color
@@ -305,7 +306,7 @@ LinearColorGradient::getColor128( float t ) const
 uint32_t
 LinearColorGradient::getColor32( float t ) const
 {
-   return toRGBA( getColor128( t ) );
+   return toRGB( getColor128( t ) );
 }
 
 //LinearColorGradient&

@@ -261,7 +261,7 @@ void GL_Canvas::draw2DFftOverlay()
     const int h = height();
     const int p = 10;
 
-    uint32_t bgColor = dbRGBA(0,0,0,200);
+    uint32_t bgColor = dbRGB(0,0,0,200);
     de::Align a = de::Align::TopRight;
     de::Font5x8 font5(6,6,0,0,1,1);
     de::Font5x8 font4(4,4,0,0,1,1);
@@ -284,16 +284,16 @@ void GL_Canvas::draw2DFftOverlay()
     int ln = font4.getTextSize("W").height + p;
     int x = w - 1 - p;
     int y = h - 1 - 10*ln;
-    m_driver->draw2DText( x,y, s0, dbRGBA(255,255,100), a, font4, bgColor, 1 ); y += ln;
-    m_driver->draw2DText( x,y, s1, dbRGBA(255,200,100), a, font4, bgColor, 1 ); y += ln;
-    m_driver->draw2DText( x,y, s2, dbRGBA(255,155,100), a, font4, bgColor, 1 ); y += ln;
-    m_driver->draw2DText( x,y, s3, dbRGBA(255,100,100), a, font4, bgColor, 1 ); y += ln;
-    m_driver->draw2DText( x,y, s4, dbRGBA(255, 55,100), a, font4, bgColor, 1 ); y += ln;
-    m_driver->draw2DText( x,y, s5, dbRGBA(155,100,100), a, font4, bgColor, 1 ); y += ln;
-    m_driver->draw2DText( x,y, s6, dbRGBA( 55,100,100), a, font4, bgColor, 1 ); y += ln;
-    m_driver->draw2DText( x,y, s7, dbRGBA( 55,155,100), a, font4, bgColor, 1 ); y += ln;
-    m_driver->draw2DText( x,y, s8, dbRGBA( 55,200,100), a, font4, bgColor, 1 ); y += ln;
-    m_driver->draw2DText( x,y, s9, dbRGBA( 55,100,200), a, font4, bgColor, 1 ); // y += ln;
+    m_driver->draw2DText( x,y, s0, dbRGB(255,255,100), a, font4, bgColor, 1 ); y += ln;
+    m_driver->draw2DText( x,y, s1, dbRGB(255,200,100), a, font4, bgColor, 1 ); y += ln;
+    m_driver->draw2DText( x,y, s2, dbRGB(255,155,100), a, font4, bgColor, 1 ); y += ln;
+    m_driver->draw2DText( x,y, s3, dbRGB(255,100,100), a, font4, bgColor, 1 ); y += ln;
+    m_driver->draw2DText( x,y, s4, dbRGB(255, 55,100), a, font4, bgColor, 1 ); y += ln;
+    m_driver->draw2DText( x,y, s5, dbRGB(155,100,100), a, font4, bgColor, 1 ); y += ln;
+    m_driver->draw2DText( x,y, s6, dbRGB( 55,100,100), a, font4, bgColor, 1 ); y += ln;
+    m_driver->draw2DText( x,y, s7, dbRGB( 55,155,100), a, font4, bgColor, 1 ); y += ln;
+    m_driver->draw2DText( x,y, s8, dbRGB( 55,200,100), a, font4, bgColor, 1 ); y += ln;
+    m_driver->draw2DText( x,y, s9, dbRGB( 55,100,200), a, font4, bgColor, 1 ); // y += ln;
 }
 
 // void GL_Canvas::timerEvent(QTimerEvent* event)

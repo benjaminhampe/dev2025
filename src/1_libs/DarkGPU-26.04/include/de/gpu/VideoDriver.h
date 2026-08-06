@@ -417,9 +417,9 @@ struct PerfTracer
         curves[ name ].data.emplace_back();
         curves[ name ].data.back().tStart = tStart;
 
-        if ( dbRGBA_A(curves[ name ].color) < 1 )
+        if ( dbRGB_A(curves[ name ].color) < 1 )
         {
-            if ( dbRGBA_A(color) > 0 )
+            if ( dbRGB_A(color) > 0 )
             {
                 curves[ name ].color = color;
             }
@@ -639,20 +639,20 @@ struct VideoDriver
     // Draw Unicode String: (default for FontTTF unicode freetype2 ttf files)
     void        draw2DText( int x, int y, const std::wstring& msg,
                             const uint32_t color = 0xFFFFFFFF, const Align align = Align::Default,
-                            const Font5x8 & font = Font5x8(), uint32_t bgColor = dbRGBA(0,0,0,200), int padding = 1);
+                            const Font5x8 & font = Font5x8(), uint32_t bgColor = dbRGB(0,0,0,200), int padding = 1);
 
     void        draw2DText( int x, int y, const std::wstring& msg,
                             const uint32_t color = 0xFFFFFFFF, const Align align = Align::Default,
-                            const Font & font = Font("Arial",16), uint32_t bgColor = dbRGBA(0,0,0,200), int padding = 1);
+                            const Font & font = Font("Arial",16), uint32_t bgColor = dbRGB(0,0,0,200), int padding = 1);
 
     // Draw Multibyte String: (default for Font5x8, since there are so few glyphs we use 7/8 bit char* text)
     void        draw2DText( int x, int y, const std::string& msg,
                             const uint32_t color = 0xFFFFFFFF, const Align align = Align::Default,
-                            const Font5x8 & font = Font5x8(), uint32_t bgColor = dbRGBA(0,0,0,200), int padding = 1);
+                            const Font5x8 & font = Font5x8(), uint32_t bgColor = dbRGB(0,0,0,200), int padding = 1);
 
     void        draw2DText( int x, int y, const std::string& msg,
                             const uint32_t color = 0xFFFFFFFF, const Align align = Align::Default,
-                            const Font & font = Font("Arial",16), uint32_t bgColor = dbRGBA(0,0,0,200), int padding = 1);
+                            const Font & font = Font("Arial",16), uint32_t bgColor = dbRGB(0,0,0,200), int padding = 1);
 
     void draw2DPerfOverlay();
 

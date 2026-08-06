@@ -623,7 +623,7 @@ struct Clear
 
     bool operator!=( Clear const & o ) const { return !( o == *this ); }
     void setColor( glm::vec4 const & rgba ) { color = rgba; }
-    void setColor( uint32_t rgba ) { color = dbRGBAf( rgba ); }
+    void setColor( uint32_t rgba ) { color = dbRGBfv4( rgba ); }
     void setDepth( float depthValue = 1.0f ) { depth = depthValue; }
     void setStencil( uint8_t stencilValue = 0 ) { stencil = stencilValue; }
 

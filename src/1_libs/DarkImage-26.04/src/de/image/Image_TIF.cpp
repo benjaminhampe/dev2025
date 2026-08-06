@@ -368,8 +368,8 @@ ImageReaderTIF::load( Image & img, const uint8_t* p, size_t n, const std::string
                     uint8_t cc = *src++;
                     int r1 = int(float(cc & 0X0F) * float(255.0/15.0));
                     int r2 = int(float((cc >> 4) & 0X0F)* float(255.0/15.0));
-                    *dst++ = dbRGBA(r1,r1,r1);
-                    *dst++ = dbRGBA(r2,r2,r2);
+                    *dst++ = dbRGB(r1,r1,r1);
+                    *dst++ = dbRGB(r2,r2,r2);
                 }
             }
         }
@@ -402,7 +402,7 @@ ImageReaderTIF::load( Image & img, const uint8_t* p, size_t n, const std::string
                     for ( uint32_t x = 0; x < w; ++x )
                     {
                         uint8_t r = *src++;
-                        *dst = dbRGBA( r,r,r );
+                        *dst = dbRGB( r,r,r );
                     }
                 }
             }
@@ -434,7 +434,7 @@ ImageReaderTIF::load( Image & img, const uint8_t* p, size_t n, const std::string
                         uint8_t r = *src++;
                         uint8_t g = *src++;
                         uint8_t b = *src++;
-                        *dst = dbRGBA( r,g,b );
+                        *dst = dbRGB( r,g,b );
                     }
                 }
             }
@@ -467,7 +467,7 @@ ImageReaderTIF::load( Image & img, const uint8_t* p, size_t n, const std::string
                         uint8_t g = *src++;
                         uint8_t b = *src++;
                         uint8_t a = *src++;
-                        *dst = dbRGBA( r,g,b,a );
+                        *dst = dbRGB( r,g,b,a );
                     }
                 }
             }

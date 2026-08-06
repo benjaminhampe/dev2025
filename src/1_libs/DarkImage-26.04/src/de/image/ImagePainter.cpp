@@ -65,11 +65,11 @@ ImagePainter::brighten( Image & img, float factor )
         for ( int32_t x = 0; x < img.w(); ++x )
         {
             uint32_t color = img.getPixel( x,y );
-            uint8_t r = dbClampBytef( factor * float( dbRGBA_R( color ) ) );
-            uint8_t g = dbClampBytef( factor * float( dbRGBA_G( color ) ) );
-            uint8_t b = dbClampBytef( factor * float( dbRGBA_B( color ) ) );
-            uint8_t a = dbRGBA_A( color );
-            img.setPixel( x,y, dbRGBA( r,g,b,a ) );
+            uint8_t r = dbClampBytef( factor * float( dbRGB_R( color ) ) );
+            uint8_t g = dbClampBytef( factor * float( dbRGB_G( color ) ) );
+            uint8_t b = dbClampBytef( factor * float( dbRGB_B( color ) ) );
+            uint8_t a = dbRGB_A( color );
+            img.setPixel( x,y, dbRGB( r,g,b,a ) );
         }
     }
 }
@@ -92,9 +92,9 @@ ImagePainter::computeSaturation( Image const & img, uint32_t & color_min, uint32
       for ( int32_t x = 0; x < img.w(); ++x )
       {
          uint32_t color = img.getPixel( x,y );
-         uint8_t r = dbRGBA_R( color );
-         uint8_t g = dbRGBA_G( color );
-         uint8_t b = dbRGBA_B( color );
+         uint8_t r = dbRGB_R( color );
+         uint8_t g = dbRGB_G( color );
+         uint8_t b = dbRGB_B( color );
          //uint8_t a = RGBA_A( color );
          min_r = std::min( min_r, r );
          min_g = std::min( min_g, g );
@@ -107,57 +107,62 @@ ImagePainter::computeSaturation( Image const & img, uint32_t & color_min, uint32
       }
    }
 
-   color_min = dbRGBA( min_r, min_g, min_b, 255 );
-   color_max = dbRGBA( max_r, max_g, max_b, 255 );
+   color_min = dbRGB( min_r, min_g, min_b, 255 );
+   color_max = dbRGB( max_r, max_g, max_b, 255 );
 }
 
 
 void
 ImagePainter::autoSaturate( Image & img )
 {
-   uint32_t color_min, color_max;
+    uint32_t color_min, color_max;
 
-   computeSaturation( img, color_min, color_max );
+    computeSaturation( img, color_min, color_max );
 
-   // uint32_t color_delta = color_max - color_min;
+    // uint32_t color_delta = color_max - color_min;
 
-   int r1 = dbRGBA_R( color_min );
-   int g1 = dbRGBA_G( color_min );
-   int b1 = dbRGBA_B( color_min );
-   //int sA = RGBA_A( color_min );
+    const int r1 = dbRGB_R( color_min );
+    const int g1 = dbRGB_G( color_min );
+    const int b1 = dbRGB_B( color_min );
 
-   int r2 = dbRGBA_R( color_max );
-   int g2 = dbRGBA_G( color_max );
-   int b2 = dbRGBA_B( color_max );
-   //int dA = RGBA_A( color_delta );
+    const int r2 = dbRGB_R( color_max );
+    const int g2 = dbRGB_G( color_max );
+    const int b2 = dbRGB_B( color_max );
 
-   for ( int32_t y = 0; y < img.h(); ++y )
-   {
-      for ( int32_t x = 0; x < img.w(); ++x )
-      {
-         uint32_t color = img.getPixel( x,y );
-         int r = std::clamp( (255 * (int32_t(dbRGBA_R( color )) - r1)) / (r2-r1), 0, 255 );
-         int g = std::clamp( (255 * (int32_t(dbRGBA_G( color )) - g1)) / (g2-g1), 0, 255 );
-         int b = std::clamp( (255 * (int32_t(dbRGBA_B( color )) - b1)) / (b2-b1), 0, 255 );
-         uint8_t a = dbRGBA_A( color );
-         img.setPixel( x,y, dbRGBA( r,g,b,a ) );
-      }
-   }
+    const int dR = r2-r1;
+    const int dG = g2-g1;
+    const int dB = b2-b1;
+
+    const float sR = (dR > 0) ? (255.0f / float(dR)) : 1.0f;
+    const float sG = (dG > 0) ? (255.0f / float(dG)) : 1.0f;
+    const float sB = (dB > 0) ? (255.0f / float(dB)) : 1.0f;
+
+    for ( int32_t y = 0; y < img.h(); ++y ) {
+    for ( int32_t x = 0; x < img.w(); ++x ) {
+        const uint32_t color = img.getPixel( x,y );
+        const int32_t iR = dbRGB_R( color );
+        const int32_t iG = dbRGB_G( color );
+        const int32_t iB = dbRGB_B( color );
+        const uint8_t a = dbRGB_A( color );
+        const uint8_t r = std::clamp( r1 + std::lround( sR * (iR - r1) ), 0l, 255l );
+        const uint8_t g = std::clamp( g1 + std::lround( sG * (iG - g1) ), 0l, 255l );
+        const uint8_t b = std::clamp( b1 + std::lround( sB * (iB - b1) ), 0l, 255l );
+        img.setPixel( x,y, dbRGB( r,g,b,a ) );
+    }
+    }
 }
 
 void
 ImagePainter::replaceColor( Image & img, uint32_t search_color, uint32_t replace_color )
 {
-   for ( int32_t y = 0; y < img.h(); ++y )
-   {
-      for ( int32_t x = 0; x < img.w(); ++x )
-      {
-         if ( img.getPixel( x,y ) == search_color )
-         {
+    for ( int32_t y = 0; y < img.h(); ++y ) {
+    for ( int32_t x = 0; x < img.w(); ++x ) {
+        if ( img.getPixel( x,y ) == search_color )
+        {
             img.setPixel( x,y, replace_color );
-         }
-      }
-   }
+        }
+    }
+    }
 }
 
 void
@@ -181,17 +186,13 @@ ImagePainter::setPixel( Image & img, int32_t x, int32_t y, uint32_t color, bool 
 void
 ImagePainter::drawImage( Image & img, Image const & src, int32_t x, int32_t y, bool blend )
 {
-   for ( int j = 0; j < src.h(); ++j )
-   {
+    for ( int j = 0; j < src.h(); ++j )
+    {
         for ( int i = 0; i < src.w(); ++i )
-      {
-         setPixel( img,
-                     x + i,
-                     y + j,
-                     src.getPixel( i, j ),
-                     blend );
-      }
-   }
+        {
+            setPixel( img, x + i, y + j, src.getPixel( i, j ), blend );
+        }
+    }
 }
 
 void
@@ -408,10 +409,10 @@ ImagePainter::drawRect( Image & img,
       return;
    }
 
-   glm::vec4 A = dbRGBAf( colorA );
-   glm::vec4 B = dbRGBAf( colorB );
-   glm::vec4 C = dbRGBAf( colorC );
-   glm::vec4 D = dbRGBAf( colorD );
+   glm::vec4 A = dbRGBfv4( colorA );
+   glm::vec4 B = dbRGBfv4( colorB );
+   glm::vec4 C = dbRGBfv4( colorC );
+   glm::vec4 D = dbRGBfv4( colorD );
 
    for ( int32_t j = 0; j < h; ++j )
    {
@@ -429,7 +430,7 @@ ImagePainter::drawRect( Image & img,
             float g = C.g + (1.0f-u) * ( B.g - C.g ) + v * ( D.g - C.g );
             float b = C.b + (1.0f-u) * ( B.b - C.b ) + v * ( D.b - C.b );
             float a = C.a + (1.0f-u) * ( B.a - C.a ) + v * ( D.a - C.a );
-            color = dbRGBA( glm::vec4( r,g,b,a ) );
+            color = dbRGBv4( glm::vec4( r,g,b,a ) );
          }
          // Unteres Dreieck ADC
          else
@@ -438,7 +439,7 @@ ImagePainter::drawRect( Image & img,
             float g = A.g + u * ( D.g - A.g ) + (1.0f-v) * ( B.g - A.g );
             float b = A.b + u * ( D.b - A.b ) + (1.0f-v) * ( B.b - A.b );
             float a = A.a + u * ( D.a - A.a ) + (1.0f-v) * ( B.a - A.a );
-            color = dbRGBA( glm::vec4( r,g,b,a ) );
+            color = dbRGBv4( glm::vec4( r,g,b,a ) );
          }
 
          img.setPixel( i+x1,j+y1, color, blend );
@@ -1184,7 +1185,7 @@ ImageScaler::resizeNearest( Image const & src, int w, int h, uint32_t colorKey )
          int32_t u = int32_t( float( x ) * zoomXinv ); // interpolate pos of current pixel in img to nearest of src
          int32_t v = int32_t( float( y ) * zoomYinv ); // interpolate pos of current pixel in img to nearest of src
          uint32_t color = src.getPixel( u, v, colorKey );
-         dbRGBA_setA( color, 255 );
+         dbRGB_setA( color, 255 );
          dst.setPixel( x, y, color, false );
       }
    }
@@ -1407,24 +1408,24 @@ ImageScaler::getBilinearPixel( Image const & src, float fx, float fy, uint32_t c
    uint32_t const cB = src.getPixel( ii, j,  colorKey );
    uint32_t const cC = src.getPixel( ii, jj, colorKey );
    uint32_t const cD = src.getPixel( i,  jj, colorKey );
-   const float rA = (float)dbRGBA_R( cA );
-   const float rB = (float)dbRGBA_R( cB );
-   const float rC = (float)dbRGBA_R( cC );
-   const float rD = (float)dbRGBA_R( cD );
-   const float gA = (float)dbRGBA_G( cA );
-   const float gB = (float)dbRGBA_G( cB );
-   const float gC = (float)dbRGBA_G( cC );
-   const float gD = (float)dbRGBA_G( cD );
-   const float bA = (float)dbRGBA_B( cA );
-   const float bB = (float)dbRGBA_B( cB );
-   const float bC = (float)dbRGBA_B( cC );
-   const float bD = (float)dbRGBA_B( cD );
+   const float rA = (float)dbRGB_R( cA );
+   const float rB = (float)dbRGB_R( cB );
+   const float rC = (float)dbRGB_R( cC );
+   const float rD = (float)dbRGB_R( cD );
+   const float gA = (float)dbRGB_G( cA );
+   const float gB = (float)dbRGB_G( cB );
+   const float gC = (float)dbRGB_G( cC );
+   const float gD = (float)dbRGB_G( cD );
+   const float bA = (float)dbRGB_B( cA );
+   const float bB = (float)dbRGB_B( cB );
+   const float bC = (float)dbRGB_B( cC );
+   const float bD = (float)dbRGB_B( cD );
    const float e = (1.0f-x);
    const float f = (1.0f-y);
    const float fr = (rA*e*f) + (rB*x*f) + (rC*x*y) + (rD*e*y);
    const float fg = (gA*e*f) + (gB*x*f) + (gC*x*y) + (gD*e*y);
    const float fb = (bA*e*f) + (bB*x*f) + (bC*x*y) + (bD*e*y);
-   return dbRGBA( int( fr ), int( fg ), int( fb ), 255);
+   return dbRGB( int( fr ), int( fg ), int( fb ), 255);
 }
 
 
@@ -1491,51 +1492,51 @@ ImageScaler::getBicubicPixel( Image const & src, float fx, float fy, uint32_t* c
    int32_t iR(0), iG(0), iB(0), iA(0);
 
     auto toByte = [] ( float v ) { return std::clamp( int32_t( std::lround( v ) ), 0, 255 ); };
-	
+
 //   if (planes & ECP_ALPHA)
 //   {
       float fa =
-      Fx1*Fy1*dbRGBA_A( C0 ) + Fx2*Fy1*dbRGBA_A( C1 ) + Fx3*Fy1*dbRGBA_A( C2 ) + Fx4*Fy1*dbRGBA_A( C3 ) +
-      Fx1*Fy2*dbRGBA_A( C4 ) + Fx2*Fy2*dbRGBA_A( C5 ) + Fx3*Fy2*dbRGBA_A( C6 ) + Fx4*Fy2*dbRGBA_A( C7 ) +
-      Fx1*Fy3*dbRGBA_A( C8 ) + Fx2*Fy3*dbRGBA_A( C9 ) + Fx3*Fy3*dbRGBA_A( CA ) + Fx4*Fy3*dbRGBA_A( CB ) +
-      Fx1*Fy4*dbRGBA_A( CC ) + Fx2*Fy4*dbRGBA_A( CD ) + Fx3*Fy4*dbRGBA_A( CE ) + Fx4*Fy4*dbRGBA_A( CF );
+      Fx1*Fy1*dbRGB_A( C0 ) + Fx2*Fy1*dbRGB_A( C1 ) + Fx3*Fy1*dbRGB_A( C2 ) + Fx4*Fy1*dbRGB_A( C3 ) +
+      Fx1*Fy2*dbRGB_A( C4 ) + Fx2*Fy2*dbRGB_A( C5 ) + Fx3*Fy2*dbRGB_A( C6 ) + Fx4*Fy2*dbRGB_A( C7 ) +
+      Fx1*Fy3*dbRGB_A( C8 ) + Fx2*Fy3*dbRGB_A( C9 ) + Fx3*Fy3*dbRGB_A( CA ) + Fx4*Fy3*dbRGB_A( CB ) +
+      Fx1*Fy4*dbRGB_A( CC ) + Fx2*Fy4*dbRGB_A( CD ) + Fx3*Fy4*dbRGB_A( CE ) + Fx4*Fy4*dbRGB_A( CF );
       iA = toByte( fa );
 //   }
 
-		
+
 
 //   if (planes & ECP_RED)
 //   {
       float fr =
-      Fx1*Fy1*dbRGBA_R( C0 ) + Fx2*Fy1*dbRGBA_R( C1 ) + Fx3*Fy1*dbRGBA_R( C2 ) + Fx4*Fy1*dbRGBA_R( C3 ) +
-      Fx1*Fy2*dbRGBA_R( C4 ) + Fx2*Fy2*dbRGBA_R( C5 ) + Fx3*Fy2*dbRGBA_R( C6 ) + Fx4*Fy2*dbRGBA_R( C7 ) +
-      Fx1*Fy3*dbRGBA_R( C8 ) + Fx2*Fy3*dbRGBA_R( C9 ) + Fx3*Fy3*dbRGBA_R( CA ) + Fx4*Fy3*dbRGBA_R( CB ) +
-      Fx1*Fy4*dbRGBA_R( CC ) + Fx2*Fy4*dbRGBA_R( CD ) + Fx3*Fy4*dbRGBA_R( CE ) + Fx4*Fy4*dbRGBA_R( CF );
+      Fx1*Fy1*dbRGB_R( C0 ) + Fx2*Fy1*dbRGB_R( C1 ) + Fx3*Fy1*dbRGB_R( C2 ) + Fx4*Fy1*dbRGB_R( C3 ) +
+      Fx1*Fy2*dbRGB_R( C4 ) + Fx2*Fy2*dbRGB_R( C5 ) + Fx3*Fy2*dbRGB_R( C6 ) + Fx4*Fy2*dbRGB_R( C7 ) +
+      Fx1*Fy3*dbRGB_R( C8 ) + Fx2*Fy3*dbRGB_R( C9 ) + Fx3*Fy3*dbRGB_R( CA ) + Fx4*Fy3*dbRGB_R( CB ) +
+      Fx1*Fy4*dbRGB_R( CC ) + Fx2*Fy4*dbRGB_R( CD ) + Fx3*Fy4*dbRGB_R( CE ) + Fx4*Fy4*dbRGB_R( CF );
       iR = toByte( fr );
 //   }
 
 //   if (planes & ECP_GREEN)
 //   {
       float fg =
-      Fx1*Fy1*dbRGBA_G( C0 ) + Fx2*Fy1*dbRGBA_G( C1 ) + Fx3*Fy1*dbRGBA_G( C2 ) + Fx4*Fy1*dbRGBA_G( C3 ) +
-      Fx1*Fy2*dbRGBA_G( C4 ) + Fx2*Fy2*dbRGBA_G( C5 ) + Fx3*Fy2*dbRGBA_G( C6 ) + Fx4*Fy2*dbRGBA_G( C7 ) +
-      Fx1*Fy3*dbRGBA_G( C8 ) + Fx2*Fy3*dbRGBA_G( C9 ) + Fx3*Fy3*dbRGBA_G( CA ) + Fx4*Fy3*dbRGBA_G( CB ) +
-      Fx1*Fy4*dbRGBA_G( CC ) + Fx2*Fy4*dbRGBA_G( CD ) + Fx3*Fy4*dbRGBA_G( CE ) + Fx4*Fy4*dbRGBA_G( CF );
+      Fx1*Fy1*dbRGB_G( C0 ) + Fx2*Fy1*dbRGB_G( C1 ) + Fx3*Fy1*dbRGB_G( C2 ) + Fx4*Fy1*dbRGB_G( C3 ) +
+      Fx1*Fy2*dbRGB_G( C4 ) + Fx2*Fy2*dbRGB_G( C5 ) + Fx3*Fy2*dbRGB_G( C6 ) + Fx4*Fy2*dbRGB_G( C7 ) +
+      Fx1*Fy3*dbRGB_G( C8 ) + Fx2*Fy3*dbRGB_G( C9 ) + Fx3*Fy3*dbRGB_G( CA ) + Fx4*Fy3*dbRGB_G( CB ) +
+      Fx1*Fy4*dbRGB_G( CC ) + Fx2*Fy4*dbRGB_G( CD ) + Fx3*Fy4*dbRGB_G( CE ) + Fx4*Fy4*dbRGB_G( CF );
       iG = toByte( fg );
 //   }
 
 //   if (planes & ECP_BLUE)
 //   {
       float fb =
-      Fx1*Fy1*dbRGBA_B( C0 ) + Fx2*Fy1*dbRGBA_B( C1 ) + Fx3*Fy1*dbRGBA_B( C2 ) + Fx4*Fy1*dbRGBA_B( C3 ) +
-      Fx1*Fy2*dbRGBA_B( C4 ) + Fx2*Fy2*dbRGBA_B( C5 ) + Fx3*Fy2*dbRGBA_B( C6 ) + Fx4*Fy2*dbRGBA_B( C7 ) +
-      Fx1*Fy3*dbRGBA_B( C8 ) + Fx2*Fy3*dbRGBA_B( C9 ) + Fx3*Fy3*dbRGBA_B( CA ) + Fx4*Fy3*dbRGBA_B( CB ) +
-      Fx1*Fy4*dbRGBA_B( CC ) + Fx2*Fy4*dbRGBA_B( CD ) + Fx3*Fy4*dbRGBA_B( CE ) + Fx4*Fy4*dbRGBA_B( CF );
+      Fx1*Fy1*dbRGB_B( C0 ) + Fx2*Fy1*dbRGB_B( C1 ) + Fx3*Fy1*dbRGB_B( C2 ) + Fx4*Fy1*dbRGB_B( C3 ) +
+      Fx1*Fy2*dbRGB_B( C4 ) + Fx2*Fy2*dbRGB_B( C5 ) + Fx3*Fy2*dbRGB_B( C6 ) + Fx4*Fy2*dbRGB_B( C7 ) +
+      Fx1*Fy3*dbRGB_B( C8 ) + Fx2*Fy3*dbRGB_B( C9 ) + Fx3*Fy3*dbRGB_B( CA ) + Fx4*Fy3*dbRGB_B( CB ) +
+      Fx1*Fy4*dbRGB_B( CC ) + Fx2*Fy4*dbRGB_B( CD ) + Fx3*Fy4*dbRGB_B( CE ) + Fx4*Fy4*dbRGB_B( CF );
       iB = toByte( fb );
 //   }
 
    // final color
-   return dbRGBA( iR,iG,iB,iA );
+   return dbRGB( iR,iG,iB,iA );
 }
 
 

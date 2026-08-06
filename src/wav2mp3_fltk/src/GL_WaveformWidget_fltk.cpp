@@ -1,20 +1,30 @@
 #include "GL_WaveformWidget_fltk.h"
 
-//#include <de_opengl.h>
-#include <FL/gl.h> // for gl_texture_reset()
+#ifdef USE_BENNI_GL
+    //#include <de_opengl.h>
+    #include <FL/gl.h> // for gl_texture_reset()
+#endif
 
 GL_WaveformWidget::GL_WaveformWidget(int X, int Y, int W, int H)
+    #ifdef USE_BENNI_GL
     : Fl_Gl_Window(X, Y, W, H)
+    #else
+    : Fl_Widget(X, Y, W, H)
+    #endif
     , m_sound(nullptr)
 {
+    #ifdef USE_BENNI_GL
     mode(FL_RGB8 | FL_DOUBLE | FL_OPENGL3);
+    #else
+    m_img = de::Image(W,H);
+    #endif
 
-#ifdef USE_EXTERNAL_SCROLLBAR
+    #ifdef USE_EXTERNAL_SCROLLBAR
     // m_scroll = new Fl_Scrollbar(X, Y + H - 16, W, 16);
     // m_scroll->type(FL_HORIZONTAL);
     // m_scroll->callback(scroll_cb, this);
     update_scroll_range();
-#endif
+    #endif
 }
 
 // static
@@ -27,9 +37,36 @@ GL_WaveformWidget::GL_WaveformWidget(int X, int Y, int W, int H)
 void GL_WaveformWidget::setSound(de::Sound* snd)
 {
     m_sound = snd;
-    m_accessor.setSound( m_sound );
+    m_converter = nullptr;
     m_zoom = 1.0;
-    m_zoomFrameStart = 0;
+    m_zoomBeg = 0;
+    m_zoomEnd = 0;
+    m_loopBeg = -1;
+    m_loopEnd = -1;
+    //m_accessor.setSound( m_sound );
+
+    if (!m_sound)
+    {
+        DE_ERROR("No sound")
+    }
+    else
+    {
+        m_sampleBuf.resize(m_sound->channels());
+
+        auto srcType = m_sound->sampleType();
+        auto dstType = de::SampleType::F32;
+        m_converter = de::SampleTypeConverter::getConverter(srcType,dstType);
+        if (!m_converter)
+        {
+            DE_ERROR("No converter")
+        }
+
+        m_zoomEnd = m_sound->frames();
+        //m_loopEnd = m_sound->frames();
+        m_bImageDirty = true;
+        redraw();
+    }
+
 #ifdef USE_EXTERNAL_SCROLLBAR
     update_scroll_range();
 #endif
@@ -39,31 +76,55 @@ void GL_WaveformWidget::setSound(de::Sound* snd)
 void GL_WaveformWidget::setZoomStart(double pc)
 {
     if (!m_sound) return;
-    m_zoomFrameStart = std::llround(pc * m_zoom * m_sound->m_frames);
+    m_zoomBeg = std::llround(pc * m_zoom * m_sound->m_frames);
     redraw();
 }
 
 void GL_WaveformWidget::setZoom(double z)
 {
-    m_zoom = std::clamp<double>(z, 0.000001, 1000000.0);
+    m_zoom = std::clamp<double>(z, 0.000001, 10.0);
     redraw();
 }
 
-double GL_WaveformWidget::getZoom() const { return m_zoom; }
-
-int64_t GL_WaveformWidget::startFrame() const { return m_loopFrameStart; }
-int64_t GL_WaveformWidget::endFrame()   const { return m_loopFrameEnd; }
+void GL_WaveformWidget::resize(int X, int Y, int W, int H)
+{
+    Fl_Widget::resize(X, Y, W, H);
+    m_bImageDirty = true;
+    redraw();
+}
 
 void GL_WaveformWidget::draw()
 {
-    if (!valid())
+    if (!m_sound)
     {
-        //DE_BENNI("Initialize OpenGL")
-        //ensureDesktopOpenGL();
+        return;
     }
 
+#ifdef USE_BENNI_GL
     int w = this->pixel_w(); //pixel_w();
     int h = this->pixel_h(); //pixel_h();
+#else
+    int w = this->w();
+    int h = this->h();
+#endif
+    const int rulerHeight = 32;
+    const double sr = m_sound->m_sampleRate;
+
+    const double fpp = getFramesPerPixel();
+    const double ppf = 1.0f / fpp;
+
+    const int64_t visFrames = std::min(zoomDelta(), 1000ll * w);
+
+    const double majorSec = 1.0;   // 1 second
+    const double minorSec = 0.1;   // 100 ms
+
+    const int64_t majorFrames = (int64_t)(majorSec * sr);
+    const int64_t minorFrames = (int64_t)(minorSec * sr);
+    // ticks
+    const int64_t firstMajor = ((m_zoomBeg + majorFrames - 1) / majorFrames) * majorFrames;
+    const int64_t firstMinor = ((m_zoomBeg + minorFrames - 1) / minorFrames) * minorFrames;
+
+#ifdef USE_BENNI_GL
 
     glViewport(0,0,w,h);
     glClearColor(0,0,0.5,1);
@@ -76,33 +137,8 @@ void GL_WaveformWidget::draw()
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
 
-    if (!m_sound)
-    {
-        return;
-    }
-
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-    const int rulerHeight = 32;
-    const double sr = m_sound->m_sampleRate;
-
-    const double fpp = getFramesPerPixel();
-    const double ppf = 1.0f / fpp;
-
-    const int64_t zoomFrameCount = std::llround(double(m_sound->m_frames) * m_zoom);
-    const int64_t visFrames = std::min(zoomFrameCount, 1000ll * w);
-
-    const double majorSec = 1.0;   // 1 second
-    const double minorSec = 0.1;   // 100 ms
-
-    const int64_t majorFrames = (int64_t)(majorSec * sr);
-    const int64_t minorFrames = (int64_t)(minorSec * sr);
-    const int64_t endFrame = m_zoomFrameStart + std::llround(fpp * double(w));
-
-    // ticks
-    const int64_t firstMajor = ((m_zoomFrameStart + majorFrames - 1) / majorFrames) * majorFrames;
-    const int64_t firstMinor = ((m_zoomFrameStart + minorFrames - 1) / minorFrames) * minorFrames;
 
     // Ruler background
     {
@@ -123,9 +159,9 @@ void GL_WaveformWidget::draw()
     glColor4f(.6f, .6f, .6f, .4f);
     glBegin(GL_LINES);
 
-    for (int64_t i = firstMajor; i < endFrame; i += majorFrames)
+    for (int64_t i = firstMajor; i < m_zoomEnd; i += majorFrames)
     {
-        int32_t px = std::lroundf((i - m_zoomFrameStart) * ppf);
+        int32_t px = std::lroundf((i - m_zoomBeg) * ppf);
         int x1 = px;
         int y1 = 0;
         int x2 = px;
@@ -139,9 +175,9 @@ void GL_WaveformWidget::draw()
     glColor4f(.7f, .7f, .7f, .6f);
     glBegin(GL_LINES);
 
-    for (int64_t i = firstMinor; i < endFrame; i += minorFrames)
+    for (int64_t i = firstMinor; i < m_zoomEnd; i += minorFrames)
     {
-        int32_t px = std::lroundf((i - m_zoomFrameStart) * ppf);
+        int32_t px = std::lroundf((i - m_zoomBeg) * ppf);
         int x1 = px;
         int y1 = rulerHeight;
         int x2 = px;
@@ -150,6 +186,7 @@ void GL_WaveformWidget::draw()
         glVertex2f(x2,y2);
     }
     glEnd();
+
 
     // Draw Middle Line
     glColor4f(1.f, 1.f, 0.f, 1.0f);
@@ -169,7 +206,14 @@ void GL_WaveformWidget::draw()
         const int waveformM = waveformH * 0.5f;
         const int waveformY = rulerHeight + waveformM;
 
-        float s1 = m_accessor.getSamplef(m_zoomFrameStart); // [-1,1]
+        m_sound->read_frames(
+                    m_converter,
+                    m_sampleBuf.data(),
+                    1,
+                    m_zoomBeg); // [-1,1]
+
+        float s1 = m_sampleBuf[0];
+        //float s1 = m_accessor.getSamplef(m_zoomFrameStart); // [-1,1]
         float x1 = 0;
         float y1 = waveformY - float(s1 * waveformM);
 
@@ -178,10 +222,20 @@ void GL_WaveformWidget::draw()
         glColor4f(1.f, 1.f, 1.f,alpha);
         glBegin(GL_LINES);
 
+        float df = double(zoomDelta())/double(visFrames);
+        float dx = double(w)/double(zoomDelta() > 0 ? zoomDelta() : 1);
+
         for (int64_t i = 1; i < visFrames; ++i)
         {
-            float s2 = m_accessor.getSamplef(m_zoomFrameStart + std::llround(fpp * i)); // [-1,1]
-            float x2 = (float(i) * float(ppf));
+            m_sound->read_frames(
+                    m_converter,
+                    m_sampleBuf.data(),
+                    1,
+                    m_zoomBeg + std::llround(df * i)); // [-1,1]
+
+            float s2 = m_sampleBuf[0];
+            //float s2 = m_accessor.getSamplef(m_zoomFrameStart + std::llround(fpp * i)); // [-1,1]
+            float x2 = dx * i;
             float y2 = waveformY - float(s2 * waveformM);
 
             glVertex2f(x1,y1);
@@ -195,17 +249,59 @@ void GL_WaveformWidget::draw()
         DE_BENNI("w(",w,"), h(",h,"), "
          "zoom(",m_zoom,"), "
          "fpp(",fpp,"), "
-         "start(",m_zoomFrameStart,"), "
-         "count(",zoomFrameCount,"), "
+         "start(",m_zoomBeg,"), "
+         "count(",zoomDelta(),"), "
          "vis(",visFrames,"), "
          "alpha(",alpha,")")
     }
 
-    // --- Cut region ---
-    if (m_selecting || (m_loopFrameStart >= 0 && m_loopFrameEnd > m_loopFrameStart))
+    // --- Cut begin ---
+    if (m_loopBeg > -1)
     {
-        const int sx = std::llround(double(m_loopFrameStart - m_zoomFrameStart) * ppf);
-        const int ex = std::llround(double(m_loopFrameEnd   - m_zoomFrameStart) * ppf);
+        const int x1 = std::lround(double(m_loopBeg - m_zoomBeg) * ppf);
+        const int y1 = 0;
+        const int x2 = x1;
+        const int y2 = h;
+        glColor4f(0.f, 1.f, 0.f, 0.9f);
+        glBegin(GL_LINES);
+        glVertex2f(x1,y1);
+        glVertex2f(x2,y2);
+        glEnd();
+    }
+
+    // --- Cut begin ---
+    if (m_loopEnd > -1)
+    {
+        const int x1 = std::lround(double(m_loopEnd - m_zoomBeg) * ppf);
+        const int y1 = 0;
+        const int x2 = x1;
+        const int y2 = h;
+        glColor4f(1.f, 0.f, 0.f, 0.9f);
+        glBegin(GL_LINES);
+        glVertex2f(x1,y1);
+        glVertex2f(x2,y2);
+        glEnd();
+    }
+
+    // --- Mouse Cursor ---
+    if (m_mouseFrame > -1)
+    {
+        const int x1 = std::lround(double(m_mouseFrame - m_zoomBeg) * ppf);
+        const int y1 = 0;
+        const int x2 = x1;
+        const int y2 = h;
+        glColor4f(1.f, 0.5f, 0.f, 0.9f);
+        glBegin(GL_LINES);
+        glVertex2f(x1,y1);
+        glVertex2f(x2,y2);
+        glEnd();
+    }
+
+    // --- Cut region ---
+    if (m_selecting || (m_loopBeg >= 0 && m_loopEnd > m_loopBeg))
+    {
+        const int sx = std::llround(double(m_loopBeg - m_zoomFrameStart) * ppf);
+        const int ex = std::llround(double(m_loopEnd   - m_zoomFrameStart) * ppf);
         const int x1 = sx;
         const int x2 = (ex - sx);
         const int y1 = rulerHeight;
@@ -220,6 +316,16 @@ void GL_WaveformWidget::draw()
     }
 
     Fl_Gl_Window::draw();
+#else
+
+    updateImage();
+
+    fl_draw_image(m_img.data(), x(), y(), m_img.w(), m_img.h(), 4);
+
+    // Fl_Widget::draw();
+#endif
+
+
 
     /*
     for (int64_t f = firstMajor; f < endFrame; f += majorFrames)
@@ -234,15 +340,78 @@ void GL_WaveformWidget::draw()
         fl_draw(buf, px + 2, rulerY + rulerHeight - 5);
     }
     */
+
+}
+
+void GL_WaveformWidget::updateImage()
+{
+    if (m_bImageDirty || w() != m_img.w() || h() != m_img.h())
+    {
+        if (w() != m_img.w() || h() != m_img.h())
+        {
+            m_img.resize(w(),h());
+            DE_INFO("ImageResize(",w(),",",h(),")")
+        }
+
+        de::sound::Sound2Image::draw(
+            *m_sound,
+            0,
+            m_zoomBeg,
+            m_zoomEnd,
+            m_img,
+            de::Recti(0,0,w(),h()),
+            dbRGB(255,255,255),
+            dbRGB(55,55,155));
+
+        m_bImageDirty = false;
+    }
 }
 
 int GL_WaveformWidget::handle(int e)
 {
     if (!m_sound)
+    {
+        #ifdef USE_BENNI_GL
         return Fl_Gl_Window::handle(e);
+        #else
+        return Fl_Widget::handle(e);
+        #endif
+    }
 
     switch (e)
     {
+        case FL_ENTER:
+        {
+            m_bHovered = true;
+            redraw();
+            return 1; // Enable mouse move tracking
+        }
+        case FL_LEAVE:
+        {
+            m_bHovered = false;
+            m_mouseFrame = -1;
+            redraw();
+            return 0;
+        }
+        case FL_MOVE:
+        {
+            const int mx = Fl::event_x();
+            const int my = Fl::event_y();
+            m_mouseFrame = pixelToFrame(mx);
+
+            const double t = double(m_mouseFrame - m_zoomBeg) / double(zoomDelta());
+
+            DE_OK("mouse(",mx,",",my,"), "
+                  "t(",t,"), "
+                  "frame(",m_mouseFrame,"), "
+                  "zoom(",m_zoom,"), "
+                  "beg(",m_zoomBeg,"), "
+                  "end(",m_zoomEnd,")"
+                  )
+
+            redraw();
+            return 0;
+        }
         case FL_PUSH:
         {
             const int mx = Fl::event_x();
@@ -253,11 +422,19 @@ int GL_WaveformWidget::handle(int e)
             }
             if (Fl::event_button() == FL_LEFT_MOUSE)
             {
-                m_selecting = true;
-                m_loopFrameStart = pixelToFrame(Fl::event_x());
-                m_loopFrameEnd   = m_loopFrameStart;
+                //m_selecting = true;
+                m_loopBeg = pixelToFrame(Fl::event_x());
+                //m_loopEnd   = m_loopFrameStart;
                 redraw();
             }
+            else if (Fl::event_button() == FL_RIGHT_MOUSE)
+            {
+                //m_selecting = true;
+                m_loopEnd = pixelToFrame(Fl::event_x());
+                //m_loopEnd   = m_loopFrameStart;
+                redraw();
+            }
+
             return 1;
         }
         case FL_DRAG:
@@ -268,12 +445,14 @@ int GL_WaveformWidget::handle(int e)
             {
                 break;
             }
+            /*
             if (m_selecting)
             {
                 m_loopFrameEnd = pixelToFrame(Fl::event_x());
                 if (m_loopFrameEnd < 0) m_loopFrameEnd = 0;
                 redraw();
             }
+            */
             return 1;
         }
         case FL_RELEASE:
@@ -284,6 +463,7 @@ int GL_WaveformWidget::handle(int e)
             {
                 break;
             }
+            /*
             if (m_selecting)
             {
                 m_selecting = false;
@@ -291,6 +471,7 @@ int GL_WaveformWidget::handle(int e)
                     std::swap(m_loopFrameStart, m_loopFrameEnd);
                 redraw();
             }
+            */
             return 1;
         }
         case FL_MOUSEWHEEL:
@@ -301,37 +482,59 @@ int GL_WaveformWidget::handle(int e)
             {
                 break;
             }
-            //const double oldZoom = m_zoom;
-            const int64_t oldFrameStart = m_zoomFrameStart;
-            //const int64_t oldFrameCount = m_sound->m_frames * m_zoom;
-            const int64_t frameUnderCursor = pixelToFrame(mx);
 
-            const double t = std::clamp( double(frameUnderCursor - oldFrameStart) / double(m_sound->m_frames), 0.0, 1.0);
+            const int64_t mouseFrame = pixelToFrame(mx);
+            const double t = double(mouseFrame - m_zoomBeg) / double(zoomDelta());
+
+            DE_OK("mouse(",mx,",",my,"), "
+                  "t(",t,"), "
+                  "frame(",mouseFrame,"), "
+                  "zoom(",m_zoom,"), "
+                  "beg(",m_zoomBeg,"), "
+                  "end(",m_zoomEnd,")"
+                  )
+
+            const int64_t oldBeg = m_zoomBeg;
 
             // Zoom factor per wheel step
             if (Fl::event_dy() > 0) // Zoom out
             {
                 m_zoom = std::clamp<double>(m_zoom * 1.15, 0.000001, 1000000.0);
+                m_zoomBeg = std::clamp<int64_t>(1.15 * m_zoomBeg, 0, m_sound->frames());
+                m_zoomEnd = std::clamp<int64_t>(1.15 * m_zoomEnd, 0, m_sound->frames());
             }
             else if (Fl::event_dy() < 0) // Zoom In
             {
                 m_zoom = std::clamp<double>(m_zoom / 1.15, 0.000001, 1000000.0);
+                m_zoomBeg = std::clamp<int64_t>(double(m_zoomBeg)/1.15, 0, m_sound->frames());
+                m_zoomEnd = std::clamp<int64_t>(double(m_zoomEnd)/1.15, 0, m_sound->frames());
             }
 
-            const int64_t newFrameCount = std::llround( m_zoom * double(m_sound->m_frames) );
-            const int64_t maxFrameIndex = std::max( 0ll, m_sound->m_frames - newFrameCount );
-            const int64_t newFrameStart = std::clamp( std::llround(t * double(newFrameCount)), 0ll, maxFrameIndex);
+            //const double oldZoom = m_zoom;
+
+            //const int64_t oldFrameCount = m_sound->m_frames * m_zoom;
+#if 0
+            const int64_t newFrames = std::llround( m_zoom * double(m_sound->m_frames) );
+            const int64_t maxBeg = std::max( 0ll, m_sound->m_frames - newFrameCount );
+            const int64_t newEnd = std::clamp( std::llround(t * double(newFrameCount)), 0ll, maxFrameIndex);
 #ifdef USE_EXTERNAL_SCROLLBAR
             const double t2 = std::clamp( double(newFrameStart) / double(m_sound->m_frames), 0.0, 1.0);
             m_scroll->value(t2);
 #endif
+#endif
+            m_bImageDirty = true;
             redraw();
             return 1;
         }
     default:
         break;
     }
+
+    #ifdef USE_BENNI_GL
     return Fl_Gl_Window::handle(e);
+    #else
+    return Fl_Widget::handle(e);
+    #endif
 }
 
 // --- 64-bit safe scroll range ---
@@ -361,10 +564,12 @@ int64_t GL_WaveformWidget::pixelToFrame(int px)
         return 0;
     }
 
-    const double t = std::clamp<double>(double(px - x()) / double(pixel_w()), 0.0, 1.0);
+#ifdef USE_BENNI_GL
+    const double t = std::clamp(double(px) / double(pixel_w()), 0.0, 1.0);
+#else
+    const double t = std::clamp(double(px) / double(w()), 0.0, 1.0);
+#endif
+    int64_t frame = m_zoomBeg + std::llround( t * zoomDelta() );
 
-    int64_t frame = m_zoomFrameStart
-                  + std::llround( t * double(m_sound->m_frames) * m_zoom );
-
-    return std::clamp(frame, 0ll, m_sound->m_frames - 1);
+    return std::clamp(frame, 0ll, m_sound->m_frames);
 }

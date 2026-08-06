@@ -268,7 +268,7 @@ void Renderer::draw2DFftOverlay()
     const int h = m_driver->getScreenHeight();
     const int p = 10;
 
-    uint32_t bgColor = dbRGBA(0,0,0,200);
+    uint32_t bgColor = dbRGB(0,0,0,200);
     de::Align a = de::Align::TopRight;
     de::Font5x8 font5(6,6,0,0,1,1);
     de::Font5x8 font4(4,4,0,0,1,1);
@@ -287,12 +287,12 @@ void Renderer::draw2DFftOverlay()
     int ln = font4.getTextSize("W").height + p;
     int x = w - 1 - p;
     int y = h - 1 - 10*ln;
-    m_driver->draw2DText( x,y, s0, dbRGBA(255,255,100), a, font4, bgColor, 1 ); y += ln;
-    m_driver->draw2DText( x,y, s1, dbRGBA(255,200,100), a, font4, bgColor, 1 ); y += ln;
-    m_driver->draw2DText( x,y, s2, dbRGBA(255,155,100), a, font4, bgColor, 1 ); y += ln;
-    m_driver->draw2DText( x,y, s3, dbRGBA(255,100,100), a, font4, bgColor, 1 ); y += ln;
-    m_driver->draw2DText( x,y, s4, dbRGBA(255, 55,100), a, font4, bgColor, 1 ); y += ln;
-    m_driver->draw2DText( x,y, s5, dbRGBA(155,100,100), a, font4, bgColor, 1 );
+    m_driver->draw2DText( x,y, s0, dbRGB(255,255,100), a, font4, bgColor, 1 ); y += ln;
+    m_driver->draw2DText( x,y, s1, dbRGB(255,200,100), a, font4, bgColor, 1 ); y += ln;
+    m_driver->draw2DText( x,y, s2, dbRGB(255,155,100), a, font4, bgColor, 1 ); y += ln;
+    m_driver->draw2DText( x,y, s3, dbRGB(255,100,100), a, font4, bgColor, 1 ); y += ln;
+    m_driver->draw2DText( x,y, s4, dbRGB(255, 55,100), a, font4, bgColor, 1 ); y += ln;
+    m_driver->draw2DText( x,y, s5, dbRGB(155,100,100), a, font4, bgColor, 1 );
     // y += ln;
 }
 
@@ -741,27 +741,27 @@ void Renderer::draw3DLineStripR()
     // dbSaveImage(img,"rainbow_1k.wal");
 
 #if 0
-    m_wav_colorGradient.addStop( 0, dbRGBA(0,0,0) );
-    m_wav_colorGradient.addStop( 0.1f, dbRGBA(255,255,255) );
-    m_wav_colorGradient.addStop( 0.3f, dbRGBA(90,90,100) );
-    m_wav_colorGradient.addStop( 0.2f, dbRGBA(0,0,255) );
-    m_wav_colorGradient.addStop( 0.6f, dbRGBA(0,200,0) );
-    m_wav_colorGradient.addStop( 0.8f, dbRGBA(255,155,0) );
-    m_wav_colorGradient.addStop( 0.9f, dbRGBA(255,255,0) );
-    m_wav_colorGradient.addStop( 1.0f, dbRGBA(255,0,0) );
-    m_wav_colorGradient.addStop( 1.1f, dbRGBA(255,255,255) );
-    m_wav_colorGradient.addStop( 1.2f, dbRGBA(255,0,255) );
-    m_wav_colorGradient.addStop( 1.3f, dbRGBA(0,0,255) );
-    m_wav_colorGradient.addStop( 1.5f, dbRGBA(0,0,155) );
-    m_wav_colorGradient.addStop( 2.5f, dbRGBA(205,105,5) );
+    m_wav_colorGradient.addStop( 0, dbRGB(0,0,0) );
+    m_wav_colorGradient.addStop( 0.1f, dbRGB(255,255,255) );
+    m_wav_colorGradient.addStop( 0.3f, dbRGB(90,90,100) );
+    m_wav_colorGradient.addStop( 0.2f, dbRGB(0,0,255) );
+    m_wav_colorGradient.addStop( 0.6f, dbRGB(0,200,0) );
+    m_wav_colorGradient.addStop( 0.8f, dbRGB(255,155,0) );
+    m_wav_colorGradient.addStop( 0.9f, dbRGB(255,255,0) );
+    m_wav_colorGradient.addStop( 1.0f, dbRGB(255,0,0) );
+    m_wav_colorGradient.addStop( 1.1f, dbRGB(255,255,255) );
+    m_wav_colorGradient.addStop( 1.2f, dbRGB(255,0,255) );
+    m_wav_colorGradient.addStop( 1.3f, dbRGB(0,0,255) );
+    m_wav_colorGradient.addStop( 1.5f, dbRGB(0,0,155) );
+    m_wav_colorGradient.addStop( 2.5f, dbRGB(205,105,5) );
 
-    m_fft_colorGradient.addStop( 0, dbRGBA(0,0,0) );
-    m_fft_colorGradient.addStop( 0.45, dbRGBA(125,125,125) );
-    m_fft_colorGradient.addStop( 0.5, dbRGBA(0,0,255) );
-    m_fft_colorGradient.addStop( 0.6, dbRGBA(0,200,0) );
-    m_fft_colorGradient.addStop( 0.8, dbRGBA(255,255,0) );
-    m_fft_colorGradient.addStop( 1.0, dbRGBA(255,0,0) );
-    m_fft_colorGradient.addStop( 1.1, dbRGBA(255,0,255) );
+    m_fft_colorGradient.addStop( 0, dbRGB(0,0,0) );
+    m_fft_colorGradient.addStop( 0.45, dbRGB(125,125,125) );
+    m_fft_colorGradient.addStop( 0.5, dbRGB(0,0,255) );
+    m_fft_colorGradient.addStop( 0.6, dbRGB(0,200,0) );
+    m_fft_colorGradient.addStop( 0.8, dbRGB(255,255,0) );
+    m_fft_colorGradient.addStop( 1.0, dbRGB(255,0,0) );
+    m_fft_colorGradient.addStop( 1.1, dbRGB(255,0,255) );
 
     dbSaveLinearColorGradient(m_wav_colorGradient,"VHS_wav_colorGradient.lcg");
     dbSaveLinearColorGradient(m_wav_colorGradient,"VHS_fft_colorGradient.lcg");

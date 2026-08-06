@@ -530,7 +530,7 @@ void PixelFormatConverter::convert_RGB_24_to_RGBA_32( void const * src, void* ds
         uint8_t r = *pSrc++;
         uint8_t g = *pSrc++;
         uint8_t b = *pSrc++;
-        *pDst++ = dbRGBA(r,g,b);
+        *pDst++ = dbRGB(r,g,b);
     }
 }
 
@@ -1061,7 +1061,7 @@ Image::setPixel( int32_t x, int32_t y, uint32_t color, bool blend )
 
     if ( blend )
     {
-        color = blendColor( getPixel( x,y), color );
+        color = blendColor( color, getPixel(x,y) );
     }
 
     if ( m_bytesPerPixel >= 4 )
@@ -1071,18 +1071,18 @@ Image::setPixel( int32_t x, int32_t y, uint32_t color, bool blend )
     }
     else if ( m_bytesPerPixel == 3 )
     {
-        *(m_data.data() + byteOffset+0) = dbRGBA_R( color );
-        *(m_data.data() + byteOffset+1) = dbRGBA_G( color );
-        *(m_data.data() + byteOffset+2) = dbRGBA_B( color );
+        *(m_data.data() + byteOffset+0) = dbRGB_R( color );
+        *(m_data.data() + byteOffset+1) = dbRGB_G( color );
+        *(m_data.data() + byteOffset+2) = dbRGB_B( color );
     }
     else if ( m_bytesPerPixel == 2 )
     {
-        *(m_data.data() + byteOffset+0) = dbRGBA_R( color );
-        *(m_data.data() + byteOffset+1) = dbRGBA_G( color );
+        *(m_data.data() + byteOffset+0) = dbRGB_R( color );
+        *(m_data.data() + byteOffset+1) = dbRGB_G( color );
     }
     else if ( m_bytesPerPixel == 1 )
     {
-        *(m_data.data() + byteOffset+0) = dbRGBA_R( color );
+        *(m_data.data() + byteOffset+0) = dbRGB_R( color );
     }
     else // if ( m_BytesPerPixel == 1 )
     {
@@ -1125,7 +1125,7 @@ Image::setPixel4f( int32_t x, int32_t y, glm::vec4 color, bool blend )
 
     if ( blend )
     {
-        color = blendColor( getPixel4f(x,y), color );
+        color = blendColor( color, getPixel4f(x,y) );
     }
 
     float* pDst = reinterpret_cast< float* >( m_data.data() + byteOffset );
@@ -1296,18 +1296,18 @@ Image::getPixel( int32_t x, int32_t y, uint32_t colorKey ) const
         uint8_t r = *(m_data.data() + byteOffset);
         uint8_t g = *(m_data.data() + byteOffset + 1);
         uint8_t b = *(m_data.data() + byteOffset + 2);
-        return dbRGBA( r,g,b );
+        return dbRGB( r,g,b );
     }
     else if ( m_bytesPerPixel == 2 )
     {
         uint8_t r = *(m_data.data() + byteOffset);
         uint8_t g = *(m_data.data() + byteOffset + 1);
-        return dbRGBA( r,g,0 );
+        return dbRGB( r,g,0 );
     }
     else if ( m_bytesPerPixel == 1 )
     {
         uint8_t r = *(m_data.data() + byteOffset);
-        return dbRGBA( r,r,r );
+        return dbRGB( r,r,r );
     }
     else // if ( m_BytesPerPixel > 4 )
     {
@@ -1357,9 +1357,9 @@ Image::fill( const glm::vec4& color )
     /*
     else if (m_pixelFormat == PixelFormat::R8G8B8)
     {
-        uint8_t r = dbRGBA_R(color);
-        uint8_t g = dbRGBA_G(color);
-        uint8_t b = dbRGBA_B(color);
+        uint8_t r = dbRGB_R(color);
+        uint8_t g = dbRGB_G(color);
+        uint8_t b = dbRGB_B(color);
         uint8_t * pixels = writePtr< uint8_t >();
         for ( size_t i = 0; i < uint64_t( m_Width ) * size_t( m_Height ); ++i )
         {
@@ -1395,9 +1395,9 @@ Image::fill( uint32_t color )
 /*
     else if (m_pixelFormat == PixelFormat::R8G8B8)
     {
-        uint8_t r = dbRGBA_R(color);
-        uint8_t g = dbRGBA_G(color);
-        uint8_t b = dbRGBA_B(color);
+        uint8_t r = dbRGB_R(color);
+        uint8_t g = dbRGB_G(color);
+        uint8_t b = dbRGB_B(color);
         uint8_t * pixels = writePtr< uint8_t >();
         for ( size_t i = 0; i < uint64_t( m_Width ) * size_t( m_Height ); ++i )
         {
@@ -1625,7 +1625,7 @@ Image::switchRB()
       for ( int32_t x = 0; x < w(); ++x )
       {
          uint32_t c = getPixel( x, y );
-         setPixel( x, y, dbRGBA( dbRGBA_B( c ), dbRGBA_G( c ), dbRGBA_R( c ), dbRGBA_A( c ) ) );
+         setPixel( x, y, dbRGB( dbRGB_B( c ), dbRGB_G( c ), dbRGB_R( c ), dbRGB_A( c ) ) );
       }
    }
 }
@@ -1755,15 +1755,15 @@ inline void repairBadAlpha( Image & img )
         for ( int x = 0; x < img.w(); ++x )
         {
             const u32 color = img.getPixel(x,y);
-            const uint8_t r = dbRGBA_R(color);
-            const uint8_t g = dbRGBA_G(color);
-            const uint8_t b = dbRGBA_B(color);
-            uint8_t a = dbRGBA_A(color);
+            const uint8_t r = dbRGB_R(color);
+            const uint8_t g = dbRGB_G(color);
+            const uint8_t b = dbRGB_B(color);
+            uint8_t a = dbRGB_A(color);
             if (r > 0 || g > 0 || b > 0)
             {
                 a = 255;
             }
-            img.setPixel(x,y,dbRGBA(r,g,b,a));
+            img.setPixel(x,y,dbRGB(r,g,b,a));
         }
     }
 }
@@ -1776,10 +1776,10 @@ inline void repairBadAlpha( Image & img )
         for ( int x = 0; x < img.w(); ++x )
         {
             const u32 color = img.getPixel(x,y);
-            uint8_t r = dbRGBA_R(color);
-            uint8_t g = dbRGBA_G(color);
-            uint8_t b = dbRGBA_B(color);
-            uint8_t a = dbRGBA_A(color);
+            uint8_t r = dbRGB_R(color);
+            uint8_t g = dbRGB_G(color);
+            uint8_t b = dbRGB_B(color);
+            uint8_t a = dbRGB_A(color);
             if (a < 10)
             {
                 r = 0;
@@ -1791,7 +1791,7 @@ inline void repairBadAlpha( Image & img )
             {
                 a = 255;
             }
-            img.setPixel(x,y,dbRGBA(r,g,b,a));
+            img.setPixel(x,y,dbRGB(r,g,b,a));
         }
     }
 }
@@ -2546,10 +2546,10 @@ dbConvertFloatHeightmapToRGBA( de::Image const & src, de::Image & dst )
     auto color_converter = [&] ( float height )
     {
         uint32_t color = uint32_t( height + fmin );
-        uint8_t r = dbRGBA_R( color );
-        uint8_t g = dbRGBA_G( color );
-        uint8_t b = dbRGBA_B( color );
-        return dbRGBA( r,g,b );
+        uint8_t r = dbRGB_R( color );
+        uint8_t g = dbRGB_G( color );
+        uint8_t b = dbRGB_B( color );
+        return dbRGB( r,g,b );
     };
 
     for ( int32_t y = 0; y < h; ++y )

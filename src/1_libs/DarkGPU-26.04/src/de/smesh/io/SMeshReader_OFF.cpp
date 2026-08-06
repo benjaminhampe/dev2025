@@ -73,9 +73,9 @@ std::string
 SMeshBufferOFF::toString( uint32_t color, std::string prefix )
 {
    std::ostringstream s; s << prefix << " "
-   << float( dbRGBA_R(color) )/255.f << " "
-   << float( dbRGBA_G(color) )/255.f << " "
-   << float( dbRGBA_B(color) )/255.f << "\n";
+   << float( dbRGB_R(color) )/255.f << " "
+   << float( dbRGB_G(color) )/255.f << " "
+   << float( dbRGB_B(color) )/255.f << "\n";
    return s.str();
 }
 

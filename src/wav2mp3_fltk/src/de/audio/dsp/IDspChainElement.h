@@ -1,5 +1,5 @@
 #pragma once
-#include <DarkImage.h>
+#include <de/sound/Sound.h>
 
 namespace de {
 namespace audio {
@@ -207,24 +207,26 @@ struct DspReadParams // 64 bytes
 };
 
 // ============================
-struct IDspChainElement
+struct IDspElement
 // ============================
 {
-    virtual ~IDspChainElement() {}
+    virtual ~IDspElement() {}
 
     virtual std::string dsp_name() const = 0;
 
-    virtual void dsp_init(u64 frames, u32 channels, u32 sampleRate) = 0;
+    virtual void dsp_init(int64_t frames, int32_t channels, int32_t sampleRate) = 0;
 
-    virtual void dsp_read(f64 pts, u32 frames, u32 sampleRate,
+    // virtual void dsp_read(int64_t pts, Sound & dst) = 0;
+
+    virtual int64_t dsp_read(int64_t pts, int64_t frames, int32_t sampleRate,
                           f32* __restrict__ L,
                           f32* __restrict__ R ) = 0;
 
-    virtual u32 dsp_getInputSignalCount() const = 0;
+    virtual int32_t dsp_getInputSignalCount() const = 0;
 
-    virtual IDspChainElement* dsp_getInputSignal(int i = 0) = 0;
+    virtual IDspElement* dsp_getInputSignal(int32_t i = 0) = 0;
 
-    virtual void dsp_setInputSignal(IDspChainElement* input, int i = 0) = 0;
+    virtual void dsp_setInputSignal(IDspElement* input, int32_t i = 0) = 0;
 
     virtual void dsp_clearInputSignals() = 0;
 };

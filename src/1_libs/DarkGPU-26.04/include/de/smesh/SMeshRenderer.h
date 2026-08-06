@@ -60,7 +60,7 @@ struct SMaterialRenderer
       light.pos = pos;
       light.maxdist = maxdist;
       light.dir = dir;
-      light.color = glm::vec3( dbRGBAf( color ) );
+      light.color = dbRGBfv3( color );
       //light.mesh.setPrimitiveType( PrimitiveType::Triangles );
       //light.mesh.setLighting( 0 );
       //SMeshSphere::add( light.mesh, light.siz, light.pos, color, 12, 12 );

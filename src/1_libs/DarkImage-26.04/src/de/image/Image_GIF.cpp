@@ -257,7 +257,7 @@ ImageReaderGIF::load( Image & img, std::string const & uri )
                     {
                         int index = scanline[ x ];
                         GifColorType gifColor = colorMap->Colors[ index ];
-                        uint32_t color = dbRGBA( gifColor.Red, gifColor.Green, gifColor.Blue );
+                        uint32_t color = dbRGB( gifColor.Red, gifColor.Green, gifColor.Blue );
                         if ( index == file->SBackGroundColor )
                         {
                             color = 0x00000000;

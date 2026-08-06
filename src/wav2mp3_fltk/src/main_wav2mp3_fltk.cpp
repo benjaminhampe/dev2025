@@ -11,7 +11,7 @@
 #include <FL/Fl_Text_Display.H>
 #include <FL/Fl_Text_Buffer.H>
 
-#include <WaveformWidget_fltk.h>
+// #include <WaveformWidget_fltk.h>
 #include <GL_WaveformWidget_fltk.h>
 
 #include <string>
@@ -75,13 +75,13 @@ public:
         if (w < 1 || h < 1)
             return;
         m_img = de::Image(w,h);
-        m_img.fill(dbRGBA(55,55,0));
+        m_img.fill(dbRGB(55,55,0));
 
         int d = std::max(1, std::min(w,h) - 2);
         int x = (w - d)/2;
         int y = (h - d)/2;
         de::Recti pos(x,y,d,d);
-        de::ImagePainter::drawCircle(m_img,pos,dbRGBA(255,0,0));
+        de::ImagePainter::drawCircle(m_img,pos,dbRGB(255,0,0));
     }
 
     void draw() override
@@ -1431,13 +1431,19 @@ int main(int argc, char** argv)
     Fl::visual(FL_RGB);
     //Fl::set_font(FL_HELVETICA, "DejaVu Sans");
     Fl::set_font(FL_HELVETICA, "Noto Sans");
+    // Fl::set_font(FL_HELVETICA, "Noto Emoji");
+    // Fl::set_font(FL_FREE_FONT, "Noto Emoji");
+    // my_widget->labelfont(FL_FREE_FONT);
+    // my_widget->labelsize(20);
+    // my_widget->label("🔥 Feuer!");
+
     //Fl::scheme("gtk+");
     //Fl::scheme("plastic");
     //Fl::scheme("gleam");
     //Fl::scheme("oxy");
     Fl::scheme("none");
 
-    Fl::add_handler(global_handler);
+    Fl::add_handler(global_handler); // Zoom +/- on TitleBar MouseWheel Scrolling
 
     const int w = 600;
     const int h = 600;
@@ -1452,16 +1458,6 @@ int main(int argc, char** argv)
     #endif
 
     win->show(argc, argv);
-
-    // ui.resampler.panel->resize(ui.resampler.rect.x,
-    //                            ui.resampler.rect.y,
-    //                            ui.resampler.rect.w,
-    //                            ui.resampler.rect.h);
-    // Fl::set_font(FL_HELVETICA, "Noto Emoji");
-    // Fl::set_font(FL_FREE_FONT, "Noto Emoji");
-    // my_widget->labelfont(FL_FREE_FONT);
-    // my_widget->labelsize(20);
-    // my_widget->label("🔥 Feuer!");
 
     // log_debug("Test: log_debug()");
     // log_error("Test: log_error()");

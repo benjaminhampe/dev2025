@@ -6,7 +6,7 @@ namespace image {
 #if defined(DE_IMAGE_READER_BMP_ENABLED) || defined(DE_IMAGE_WRITER_BMP_ENABLED)
 
 namespace bmp {
-	
+
 #pragma pack( push )
 #pragma pack( 1 )
 
@@ -98,9 +98,9 @@ void convert8BitTo24Bit( uint8_t const * in,
             out[x+2] = palette[ (in[0] << 2 ) + 2];
 #else
             uint32_t color = palette[ in[0] ];
-            out[x+0] = dbRGBA_B( color ); // palette[ (in[0] << 2 ) + 2];   // b -> r
-            out[x+1] = dbRGBA_G( color ); // palette[ (in[0] << 2 ) + 1];   // g -> g
-            out[x+2] = dbRGBA_R( color ); // palette[ (in[0] << 2 ) + 0];   // r -> b
+            out[x+0] = dbRGB_B( color ); // palette[ (in[0] << 2 ) + 2];   // b -> r
+            out[x+1] = dbRGB_G( color ); // palette[ (in[0] << 2 ) + 1];   // g -> g
+            out[x+2] = dbRGB_R( color ); // palette[ (in[0] << 2 ) + 0];   // r -> b
 #endif
          }
          else

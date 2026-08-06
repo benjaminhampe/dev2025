@@ -37,23 +37,24 @@ struct LinearColorGradient
     std::vector< ColorStop > m_stops;
 
     static glm::vec4
-    toRGBAf( uint32_t const color )
+    toRGBf( const uint32_t color )
     {
-        float r = float(dbRGBA_R( color )) / 255.0f;
-        float g = float(dbRGBA_G( color )) / 255.0f;
-        float b = float(dbRGBA_B( color )) / 255.0f;
-        float a = float(dbRGBA_A( color )) / 255.0f;
-        return glm::vec4(r,g,b,a);
+        const uint8_t r = dbRGB_R( color );
+        const uint8_t g = dbRGB_G( color );
+        const uint8_t b = dbRGB_B( color );
+        const uint8_t a = dbRGB_A( color );
+        return glm::vec4(r,g,b,a) / 255.0f;
     }
 
     static uint32_t
-    toRGBA( glm::vec4 const& color )
+    toRGB( const glm::vec4& color )
     {
-        uint8_t r = static_cast<uint8_t>(std::clamp(color.r * 255.0f, 0.0f, 255.0f));
-        uint8_t g = static_cast<uint8_t>(std::clamp(color.g * 255.0f, 0.0f, 255.0f));
-        uint8_t b = static_cast<uint8_t>(std::clamp(color.b * 255.0f, 0.0f, 255.0f));
-        uint8_t a = static_cast<uint8_t>(std::clamp(color.a * 255.0f, 0.0f, 255.0f));
-        return dbRGBA(r,g,b,a);
+        const glm::vec4 fColor = color * 255.0f;
+        const uint8_t r = dbClampBytef(fColor.r);
+        const uint8_t g = dbClampBytef(fColor.g);
+        const uint8_t b = dbClampBytef(fColor.b);
+        const uint8_t a = dbClampBytef(fColor.a);
+        return dbRGB(r,g,b,a);
     }
 
     static glm::vec4

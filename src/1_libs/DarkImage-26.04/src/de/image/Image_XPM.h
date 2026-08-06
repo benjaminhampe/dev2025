@@ -32,10 +32,10 @@ struct Utils
         }
         else
         {
-            uint8_t r = dbRGBA_R(color);
-            uint8_t g = dbRGBA_G(color);
-            uint8_t b = dbRGBA_B(color);
-            uint8_t a = dbRGBA_A(color);
+            uint8_t r = dbRGB_R(color);
+            uint8_t g = dbRGB_G(color);
+            uint8_t b = dbRGB_B(color);
+            uint8_t a = dbRGB_A(color);
             s += '#';
             s += StringUtil::hex( r );
             s += StringUtil::hex( g );
@@ -55,9 +55,9 @@ struct Utils
         }
         else
         {
-            uint8_t r = dbRGBA_R(color);
-            uint8_t g = dbRGBA_G(color);
-            uint8_t b = dbRGBA_B(color);
+            uint8_t r = dbRGB_R(color);
+            uint8_t g = dbRGB_G(color);
+            uint8_t b = dbRGB_B(color);
             s += '#';
             s += StringUtil::hex( r );
             s += StringUtil::hex( g );

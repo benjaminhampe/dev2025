@@ -11,13 +11,49 @@
 namespace de {
 namespace audio {
 
+#if 0
 // ============================================================
-class PhaseVocoderDspElement final : public IDspChainElement
+class PhaseVocoderDspElement final : public IDspElement
 // ============================================================
 {
 public:
-    using Sample  = float;
-    using Complex = std::complex<float>;
+    using T = float;
+    using Complex = std::complex<T>;
+
+    IDspElement* m_inputSignal = nullptr;
+    Sound m_readBuffer;
+
+    int m_channels      = 0;
+    int m_sampleRate    = 0;
+    int m_blockSamples  = 0;
+    int m_intervalSamples = 0;
+    int m_bandCount     = 0;
+
+    float m_surplusInputSamples = 0.0f;
+    int   m_prevInputIndex      = 0;
+    int   m_intervalCounter     = 0;
+
+    signalsmith::delay::MultiBuffer<T> m_inputHistory;
+    signalsmith::delay::MultiBuffer<T> m_summedOutput;
+
+    std::vector<T>  m_blockBuffers;
+    std::vector<T>  m_window;
+
+    signalsmith::fft::ModifiedRealFFT<T> m_fft{1};
+    float m_scalingFactor = 1.0f;
+    std::vector<T>  m_fftBuffer;
+
+    std::vector<Complex> m_channelSpectra;
+    std::vector<Complex> m_prevInputSpectra;
+    std::vector<Complex> m_prevOutputSpectra;
+    std::vector<Complex> m_outputRotations;
+    std::vector<Complex> m_prevInputRotations;
+    std::vector<Complex> m_prevOutputRotations;
+
+    std::vector<std::vector<T>> m_inPlanar;
+    std::vector<std::vector<T>> m_outPlanar;
+
+public:
 
     // ============================================================
     // Parameter (alle dynamisch veränderbar)
@@ -52,19 +88,33 @@ public:
     std::string dsp_name() const override { return "PhaseVocoderDspElement"; }
 
     // ============================================================
+    // Input handling
+    // ============================================================
+    int32_t dsp_getInputSignalCount() const override { return 1; }
+    IDspElement* dsp_getInputSignal(int i = 0) override { return m_inputSignal; }
+    void dsp_setInputSignal(IDspElement* in, int i = 0) override { m_inputSignal = in; }
+    void dsp_clearInputSignals() override { m_inputSignal = nullptr; }
+
+    // ============================================================
     // dsp_init — wird EINMAL aufgerufen
     // ============================================================
-    void dsp_init(uint64_t frames, uint32_t channels, uint32_t sampleRate) override
+    void dsp_init(int64_t frames, int32_t channels, int32_t sampleRate) override
     {
-        m_channels   = int(channels);
-        m_sampleRate = int(sampleRate);
+        m_channels   = channels;
+        m_sampleRate = sampleRate;
+
+        m_readBuffer.m_sampleType = SampleType::F32;
+        m_readBuffer.m_sampleRate = sampleRate;
+        m_readBuffer.m_channels = sampleRate;
+        m_readBuffer.m_flags = Sound::Interleaved;
+        m_readBuffer.allocFrames(frames);
 
         // Initiale Blockgrößen berechnen
         updateBlockParameters();
 
         // MultiBuffer initialisieren (darf später wachsen)
-        m_inputHistory = signalsmith::delay::MultiBuffer<Sample>(m_channels, m_blockSamples + 4096);
-        m_summedOutput = signalsmith::delay::MultiBuffer<Sample>(m_channels, m_blockSamples);
+        m_inputHistory = signalsmith::delay::MultiBuffer<T>(m_channels, m_blockSamples + 4096);
+        m_summedOutput = signalsmith::delay::MultiBuffer<T>(m_channels, m_blockSamples);
 
         // Fenster initial berechnen
         updateWindow();
@@ -78,7 +128,8 @@ public:
         // Planar-IO-Buffers initial anlegen
         m_inPlanar.resize(m_channels);
         m_outPlanar.resize(m_channels);
-        for (int c = 0; c < m_channels; ++c) {
+        for (int c = 0; c < m_channels; ++c)
+        {
             m_inPlanar[c].resize(m_blockSamples * 4);
             m_outPlanar[c].resize(m_blockSamples * 4);
         }
@@ -87,14 +138,12 @@ public:
     // ============================================================
     // dsp_read — HIER PASSIERT ALLES
     // ============================================================
-    void dsp_read(double pts, uint32_t frames, uint32_t sampleRate,
-                  float* __restrict__ L,
-                  float* __restrict__ R) override
+    void dsp_read(int64_t pts, Sound & dst) override
     {
-        IDspChainElement* input = m_inputs[0];
-        if (!input) {
-            std::memset(L, 0, sizeof(float)*frames);
-            if (R) std::memset(R, 0, sizeof(float)*frames);
+        IDspElement* input = m_inputSignal;
+        if (!input)
+        {
+            std::memset(dst.data(), 0, dst.byteCount());
             return;
         }
 
@@ -111,17 +160,12 @@ public:
             // Hier müsste man theoretisch History/Phasen löschen,
             // weil sich die Blockgröße geändert hat.
             //
-            // ABER DU WILLST ES NICHT.
-            //
-            // Ich dokumentiere nur:
-            //
             // - prevInputSpectra müsste neu initialisiert werden
             // - prevOutputSpectra müsste neu initialisiert werden
             // - outputRotations müsste neu initialisiert werden
             // - summedOutput müsste geleert werden
             // - inputHistory müsste geleert werden
             //
-            // Du entscheidest später selbst, was du davon tust.
             // ============================================================
 
             allocateSpectralBuffers(); // wächst dynamisch
@@ -130,16 +174,15 @@ public:
         // ============================================================
         // 2) Input-Samples berechnen
         // ============================================================
-        const int outputSamples = int(frames);
+        const int outputSamples = int(dst.frames());
         const float invTime = 1.0f / (timeFactor * freqFactor);
         const int inputSamples = int(std::ceil(outputSamples * invTime - m_surplusInputSamples));
 
         // Planar-Buffergröße sicherstellen
-        for (int c = 0; c < m_channels; ++c) {
-            if (int(m_inPlanar[c].size()) < inputSamples)
-                m_inPlanar[c].resize(inputSamples);
-            if (int(m_outPlanar[c].size()) < outputSamples)
-                m_outPlanar[c].resize(outputSamples);
+        for (int c = 0; c < m_channels; ++c)
+        {
+            m_inPlanar[c].resize(inputSamples);
+            m_outPlanar[c].resize(outputSamples);
         }
 
         // ============================================================
@@ -322,13 +365,7 @@ public:
         }
     }
 
-    // ============================================================
-    // Input handling
-    // ============================================================
-    uint32_t dsp_getInputSignalCount() const override { return 1; }
-    IDspChainElement* dsp_getInputSignal(int i = 0) override { return m_inputs[i]; }
-    void dsp_setInputSignal(IDspChainElement* in, int i = 0) override { m_inputs[i] = in; }
-    void dsp_clearInputSignals() override { m_inputs[0] = nullptr; }
+
 
 private:
     // ============================================================
@@ -408,40 +445,10 @@ private:
         }
     }
 
-private:
-    IDspChainElement* m_inputs[1] = { nullptr };
 
-    int m_channels      = 0;
-    int m_sampleRate    = 0;
-    int m_blockSamples  = 0;
-    int m_intervalSamples = 0;
-    int m_bandCount     = 0;
-
-    float m_surplusInputSamples = 0.0f;
-    int   m_prevInputIndex      = 0;
-    int   m_intervalCounter     = 0;
-
-    signalsmith::delay::MultiBuffer<Sample> m_inputHistory;
-    signalsmith::delay::MultiBuffer<Sample> m_summedOutput;
-
-    std::vector<Sample>  m_blockBuffers;
-    std::vector<Sample>  m_window;
-
-    signalsmith::fft::ModifiedRealFFT<Sample> m_fft{1};
-    float m_scalingFactor = 1.0f;
-    std::vector<Sample>  m_fftBuffer;
-
-    std::vector<Complex> m_channelSpectra;
-    std::vector<Complex> m_prevInputSpectra;
-    std::vector<Complex> m_prevOutputSpectra;
-    std::vector<Complex> m_outputRotations;
-    std::vector<Complex> m_prevInputRotations;
-    std::vector<Complex> m_prevOutputRotations;
-
-    std::vector<std::vector<Sample>> m_inPlanar;
-    std::vector<std::vector<Sample>> m_outPlanar;
 };
 
+#endif
 
 } // end namespace audio.
 } // end namespace de.

@@ -198,20 +198,20 @@ void Envelope::test1()
     // AttackPhase:
     env.triggerNoteOn(0.5f);
     int w = env.m_baseAttackFrames; // 400
-    draw(env,w,img,de::Recti(x,y,2*w,h),dbRGBA(255,0,0)); x += 2*w;
+    draw(env,w,img,de::Recti(x,y,2*w,h),dbRGB(255,0,0)); x += 2*w;
 
     // DecayPhase:
     w = env.m_baseDecayFrames; // 600
-    draw(env,w,img,de::Recti(x,y,2*w,h),dbRGBA(0,200,0)); x += 2*w;
+    draw(env,w,img,de::Recti(x,y,2*w,h),dbRGB(0,200,0)); x += 2*w;
 
     // SustainPhase:
     w = 100; // 200
-    draw(env,w,img,de::Recti(x,y,2*w,h),dbRGBA(255,200,0)); x += 2*w;
+    draw(env,w,img,de::Recti(x,y,2*w,h),dbRGB(255,200,0)); x += 2*w;
 
     // ReleasePhase:
     // env.triggerNoteOff(0.5f);
     w = env.m_baseReleaseFrames; //  1000
-    draw(env,w,img,de::Recti(x,y,2*w,h),dbRGBA(0,0,255)); x += 2*w;
+    draw(env,w,img,de::Recti(x,y,2*w,h),dbRGB(0,0,255)); x += 2*w;
 
     //dbSaveImage(img,"Abenton_SineMachine5_Test1.bmp");
     //dbSaveImage(img,"Abenton_SineMachine5_Test1.png");
@@ -239,20 +239,20 @@ void Envelope::test2()
     // AttackPhase:
     env.triggerNoteOn(0.5f);
     int w = env.m_baseAttackFrames; // 400
-    draw(env,w,img,de::Recti(x,y,2*w,h),dbRGBA(255,0,0)); x += 2*w;
+    draw(env,w,img,de::Recti(x,y,2*w,h),dbRGB(255,0,0)); x += 2*w;
 
     // DecayPhase:
     w = env.m_baseDecayFrames; // 600
-    draw(env,w,img,de::Recti(x,y,2*w,h),dbRGBA(0,200,0)); x += 2*w;
+    draw(env,w,img,de::Recti(x,y,2*w,h),dbRGB(0,200,0)); x += 2*w;
 
     // SustainPhase:
     w = 100; // 200
-    draw(env,w,img,de::Recti(x,y,2*w,h),dbRGBA(255,200,0)); x += 2*w;
+    draw(env,w,img,de::Recti(x,y,2*w,h),dbRGB(255,200,0)); x += 2*w;
 
     // ReleasePhase:
     env.triggerNoteOff(0.5f);
     w = env.m_baseReleaseFrames; //  1000
-    draw(env,w,img,de::Recti(x,y,2*w,h),dbRGBA(0,0,255)); x += 2*w;
+    draw(env,w,img,de::Recti(x,y,2*w,h),dbRGB(0,0,255)); x += 2*w;
 
     //dbSaveImage(img,"Abenton_SineMachine5_Test2.bmp");
     //dbSaveImage(img,"Abenton_SineMachine5_Test2.png");

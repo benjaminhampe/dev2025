@@ -2,19 +2,163 @@
 
 namespace de {
 
+/*
+Src = the fragment you are currently drawing
+→ in your CPU function: fg
+
+Dst = the pixel already in the framebuffer
+→ in your CPU function: bg
+
+Final.r = Src.r * SrcFactor + Dst.r * DstFactor
+Final.g = Src.g * SrcFactor + Dst.g * DstFactor
+Final.b = Src.b * SrcFactor + Dst.b * DstFactor
+Final.a = Src.a * SrcFactor + Dst.a * DstFactor
+*/
+
+#if 0
+
+// glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+uint32_t blendColor(uint32_t src, uint32_t dst)
+{
+    const float src_a = dbRGB_Af(src) / 255.0f;
+    const float r = (dbRGB_Rf(src) * src_a + dbRGB_Rf(dst)); //  * (1.0f - a)
+    const float g = (dbRGB_Gf(src) * src_a + dbRGB_Gf(dst)); //  * (1.0f - a)
+    const float b = (dbRGB_Bf(src) * src_a + dbRGB_Bf(dst)); //  * (1.0f - a)
+
+    return dbRGB(
+        dbClampBytef(r),
+        dbClampBytef(g),
+        dbClampBytef(b),
+        255
+    );
+}
+
+#else
+
+// glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+// ===================================================================
+uint32_t blendColor(uint32_t src, uint32_t dst)
+// ===================================================================
+{
+    const float src_a = dbRGB_Af(src) / 255.0f;
+    const float dst_a = 1.0f - src_a;
+    const float r = (dbRGB_Rf(src) * src_a + dbRGB_Rf(dst) * dst_a);
+    const float g = (dbRGB_Gf(src) * src_a + dbRGB_Gf(dst) * dst_a);
+    const float b = (dbRGB_Bf(src) * src_a + dbRGB_Bf(dst) * dst_a);
+
+    return dbRGB(
+        dbClampBytef(r),
+        dbClampBytef(g),
+        dbClampBytef(b),
+        255
+    );
+}
+
+// ===================================================================
+glm::vec4 blendColor( const glm::vec4& src, const glm::vec4& dst )
+// ===================================================================
+{
+    const float r = dst.r + src.a * (src.r - dst.r);
+    const float g = dst.g + src.a * (src.g - dst.g);
+    const float b = dst.b + src.a * (src.b - dst.b);
+    const float a = std::clamp( src.a + src.a, 0.0f, 1.0f );
+    return glm::vec4(r,g,b,a);
+}
+
+#endif
+
+#if 0
+uint32_t blendColor(uint32_t bg, uint32_t fg)
+{
+    float a1 = float(dbRGB_A(bg)) / 255.0f;
+    float a2 = float(dbRGB_A(fg)) / 255.0f;
+
+    float outA = a2 + a1 * (1.0f - a2);
+
+    float r = (dbRGB_R(fg) * a2 + dbRGB_R(bg) * (1.0f - a2));
+    float g = (dbRGB_G(fg) * a2 + dbRGB_G(bg) * (1.0f - a2));
+    float b = (dbRGB_B(fg) * a2 + dbRGB_B(bg) * (1.0f - a2));
+
+    return dbRGB(
+        int(std::lround(r)),
+        int(std::lround(g)),
+        int(std::lround(b)),
+        int(std::lround(outA * 255.0f))
+    );
+}
+
+#else
+
+//glEnable(GL_BLEND);
+//glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+
+
+
+#endif
+/*
+uint32_t blendColor(uint32_t bg, uint32_t fg)
+{
+    float a = float(dbRGB_A(fg)) / 255.0f;
+    float r = (dbRGB_R(fg) * a + dbRGB_R(bg));
+    float g = (dbRGB_G(fg) * a + dbRGB_G(bg));
+    float b = (dbRGB_B(fg) * a + dbRGB_B(bg));
+
+    return dbRGB(
+        uint8_t(std::clamp( int(std::lround(r)), 0, 255 )),
+        uint8_t(std::clamp( int(std::lround(g)), 0, 255 )),
+        uint8_t(std::clamp( int(std::lround(b)), 0, 255 )),
+        255
+    );
+}
+
+
+uint32_t blendColor(uint32_t bg, uint32_t fg)
+{
+    float a = float(dbRGB_A(fg)) / 255.0f;
+    float r = (dbRGB_R(fg) * a + dbRGB_R(bg) * (1.0f - a));
+    float g = (dbRGB_G(fg) * a + dbRGB_G(bg) * (1.0f - a));
+    float b = (dbRGB_B(fg) * a + dbRGB_B(bg) * (1.0f - a));
+
+    return dbRGB(
+        uint8_t(std::clamp( int(std::lround(r)), 0, 255 )),
+        uint8_t(std::clamp( int(std::lround(g)), 0, 255 )),
+        uint8_t(std::clamp( int(std::lround(b)), 0, 255 )),
+        255
+    );
+}
+
+uint32_t blendColor(uint32_t bg, uint32_t fg)
+{
+    float a1 = float(dbRGB_A(bg)) / 255.0f;
+    float a2 = float(dbRGB_A(fg)) / 255.0f;
+
+    float outA = a2 + a1 * (1.0f - a2);
+
+    float r = (dbRGB_R(fg) * a2 + dbRGB_R(bg) * (1.0f - a2));
+    float g = (dbRGB_G(fg) * a2 + dbRGB_G(bg) * (1.0f - a2));
+    float b = (dbRGB_B(fg) * a2 + dbRGB_B(bg) * (1.0f - a2));
+
+    return dbRGB(
+        int(std::lround(r)),
+        int(std::lround(g)),
+        int(std::lround(b)),
+        int(std::lround(outA * 255.0f))
+    );
+}
+
 // ===================================================================
 uint32_t blendColor( const uint32_t bg, const uint32_t fg )
 // ===================================================================
 {
     // blend(0x10000000,0x10FFFFFF) = 0x207F7F7F
-    const int32_t r1 = dbRGBA_R( bg );
-    const int32_t g1 = dbRGBA_G( bg );
-    const int32_t b1 = dbRGBA_B( bg );
-    const int32_t a1 = dbRGBA_A( bg );
-    const int32_t r2 = dbRGBA_R( fg );
-    const int32_t g2 = dbRGBA_G( fg );
-    const int32_t b2 = dbRGBA_B( fg );
-    const int32_t a2 = dbRGBA_A( fg );
+    const int32_t r1 = dbRGB_R( bg );
+    const int32_t g1 = dbRGB_G( bg );
+    const int32_t b1 = dbRGB_B( bg );
+    const int32_t a1 = dbRGB_A( bg );
+    const int32_t r2 = dbRGB_R( fg );
+    const int32_t g2 = dbRGB_G( fg );
+    const int32_t b2 = dbRGB_B( fg );
+    const int32_t a2 = dbRGB_A( fg );
     const float v = float( a2 ) / 255.0f;
     //float u = 1.0f - v; //RGBA_Af( fg );
     //   int32_t a_sum = a1 + a2;
@@ -30,7 +174,7 @@ uint32_t blendColor( const uint32_t bg, const uint32_t fg )
     const int32_t g = std::clamp( int(std::lround( g1 + v * (g2-g1) )), 0, 255 );
     const int32_t b = std::clamp( int(std::lround( b1 + v * (b2-b1) )), 0, 255 );
     const int32_t a = std::clamp( a1 + a2, 0, 255 );
-    return dbRGBA( r, g, b, a );
+    return dbRGB( r, g, b, a );
 
     // Final.rgb = fg.rgb * ( fg.a ) + ( 1-f.a) * bg.rgb
     //   float const u = RGBA_Af( fg );
@@ -47,18 +191,9 @@ uint32_t blendColor( const uint32_t bg, const uint32_t fg )
     //   float const t = RGBA_Af( fg );
     //   return lerpColor( bg, fg, t );
 }
+*/
 
-// ===================================================================
-glm::vec4 blendColor( const glm::vec4& bg, const glm::vec4& fg )
-// ===================================================================
-{
-    const float v = fg.a;
-    const float r = bg.r + v * (fg.r - bg.r);
-    const float g = bg.g + v * (fg.g - bg.g);
-    const float b = bg.b + v * (fg.b - bg.b);
-    const float a = std::clamp( bg.a + fg.a, 0.0f, 1.0f );
-    return glm::vec4(r,g,b,a);
-}
+
 
 // ===================================================================
 uint32_t parseColor( const std::string& line )
@@ -73,7 +208,7 @@ uint32_t parseColor( const std::string& line )
     {
         int r = 0, g = 0, b = 0;
         sscanf( line.c_str(), "#%02x%02x%02x)", &r, &g, &b );
-        return dbRGBA( r & 0xFF, g & 0xFF, b & 0xFF );
+        return dbRGB( r & 0xFF, g & 0xFF, b & 0xFF );
     }
     else if ( line[0] == 'r' &&
              line[1] == 'g' &&
@@ -83,13 +218,13 @@ uint32_t parseColor( const std::string& line )
         {
             int r = 0, g = 0, b = 0, a = 0;
             sscanf( line.c_str(), "rgba(%i,%i,%i,%i)", &r, &g, &b, &a );
-            return dbRGBA( r & 0xFF, g & 0xFF, b & 0xFF, a & 0xFF );
+            return dbRGB( r & 0xFF, g & 0xFF, b & 0xFF, a & 0xFF );
         }
         else
         {
             int r = 0, g = 0, b = 0;
             sscanf( line.c_str(), "rgb(%i,%i,%i)", &r, &g, &b );
-            return dbRGBA( r & 0xFF, g & 0xFF, b & 0xFF );
+            return dbRGB( r & 0xFF, g & 0xFF, b & 0xFF );
         }
     }
     else
@@ -99,45 +234,53 @@ uint32_t parseColor( const std::string& line )
 }
 
 // ===================================================================
-uint32_t lerpColor( const uint32_t bg, const uint32_t fg, const float t )
+uint32_t lerpColor( const uint32_t src, const uint32_t dst, const float t )
 {
-    const int32_t r1 = dbRGBA_R( bg );
-    const int32_t g1 = dbRGBA_G( bg );
-    const int32_t b1 = dbRGBA_B( bg );
-    const int32_t a1 = dbRGBA_A( bg );
-    const int32_t dr = int32_t( dbRGBA_R( fg ) ) - r1;
-    const int32_t dg = int32_t( dbRGBA_G( fg ) ) - g1;
-    const int32_t db = int32_t( dbRGBA_B( fg ) ) - b1;
-    const int32_t da = int32_t( dbRGBA_A( fg ) ) - a1;
-    const auto r = uint8_t( std::clamp( int(std::lround( t * dr + float( r1 ) )), 0, 255 ) );
-    const auto g = uint8_t( std::clamp( int(std::lround( t * dg + float( g1 ) )), 0, 255 ) );
-    const auto b = uint8_t( std::clamp( int(std::lround( t * db + float( b1 ) )), 0, 255 ) );
-    const auto a = uint8_t( std::clamp( int(std::lround( t * da + float( a1 ) )), 0, 255 ) );
-    return dbRGBA( r, g, b, a );
+    const int32_t r1 = dbRGB_R( src );
+    const int32_t g1 = dbRGB_G( src );
+    const int32_t b1 = dbRGB_B( src );
+    const int32_t a1 = dbRGB_A( src );
+
+    const int32_t r2 = dbRGB_R( dst );
+    const int32_t g2 = dbRGB_G( dst );
+    const int32_t b2 = dbRGB_B( dst );
+    const int32_t a2 = dbRGB_A( dst );
+
+    const int32_t dR = r2 - r1;
+    const int32_t dG = g2 - g1;
+    const int32_t dB = b2 - b1;
+    const int32_t dA = a2 - a1;
+
+    const auto r = static_cast<uint8_t>( std::clamp<int32_t>( r1 + std::lround( t * dR ), 0, 255 ) );
+    const auto g = static_cast<uint8_t>( std::clamp<int32_t>( g1 + std::lround( t * dG ), 0, 255 ) );
+    const auto b = static_cast<uint8_t>( std::clamp<int32_t>( b1 + std::lround( t * dB ), 0, 255 ) );
+    const auto a = static_cast<uint8_t>( std::clamp<int32_t>( a1 + std::lround( t * dA ), 0, 255 ) );
+
+    return dbRGB( r, g, b, a );
 }
 
 // ===================================================================
 uint32_t lightenColor( uint32_t color, int offset )
 {
-    int32_t r = dbRGBA_R( color );
-    int32_t g = dbRGBA_G( color );
-    int32_t b = dbRGBA_B( color );
+    int32_t r = dbRGB_R( color );
+    int32_t g = dbRGB_G( color );
+    int32_t b = dbRGB_B( color );
     r = std::clamp< int >( r + offset, 0, 255 );
     g = std::clamp< int >( g + offset, 0, 255 );
     b = std::clamp< int >( b + offset, 0, 255 );
-    return dbRGBA( r, g, b, dbRGBA_A( color ) );
+    return dbRGB( r, g, b, dbRGB_A( color ) );
 }
 
 // ===================================================================
 uint32_t darkenColor( uint32_t color, int offset )
 {
-    int32_t r = dbRGBA_R( color );
-    int32_t g = dbRGBA_G( color );
-    int32_t b = dbRGBA_B( color );
+    int32_t r = dbRGB_R( color );
+    int32_t g = dbRGB_G( color );
+    int32_t b = dbRGB_B( color );
     r = std::clamp< int >( r - offset, 0, 255 );
     g = std::clamp< int >( g - offset, 0, 255 );
     b = std::clamp< int >( b - offset, 0, 255 );
-    return dbRGBA( r, g, b, dbRGBA_A( color ) );
+    return dbRGB( r, g, b, dbRGB_A( color ) );
 }
 
 // ===================================================================
@@ -146,7 +289,7 @@ uint32_t randomColorRGB( uint8_t a )
     uint8_t r = dbRND() % 256;
     uint8_t g = dbRND() % 256;
     uint8_t b = dbRND() % 256;
-    return dbRGBA( r, g, b, a );
+    return dbRGB( r, g, b, a );
 }
 // ===================================================================
 uint32_t randomColorRGB( uint8_t minRGB, uint8_t maxRGB, uint8_t a )
@@ -155,20 +298,20 @@ uint32_t randomColorRGB( uint8_t minRGB, uint8_t maxRGB, uint8_t a )
     uint8_t r = minRGB + (dbRND() % range);
     uint8_t g = minRGB + (dbRND() % range);
     uint8_t b = minRGB + (dbRND() % range);
-    return dbRGBA( r, g, b, a );
+    return dbRGB( r, g, b, a );
 }
 // ===================================================================
 uint32_t varyColor( uint32_t color, int variance )
 {
-    int32_t r = dbRGBA_R( color );
-    int32_t g = dbRGBA_G( color );
-    int32_t b = dbRGBA_B( color );
-    int32_t const a = dbRGBA_A( color );
+    int32_t r = dbRGB_R( color );
+    int32_t g = dbRGB_G( color );
+    int32_t b = dbRGB_B( color );
+    int32_t const a = dbRGB_A( color );
 
     r = glm::clamp( r - variance / 2 + ( rand() % variance ), 0, 255 );
     g = glm::clamp( g - variance / 2 + ( rand() % variance ), 0, 255 );
     b = glm::clamp( b - variance / 2 + ( rand() % variance ), 0, 255 );
-    return dbRGBA( r, g, b, a );
+    return dbRGB( r, g, b, a );
 }
 // ===================================================================
 void dbRandomize()
@@ -247,7 +390,7 @@ RainbowColor::computeColor32( float t, float gamma, float alpha )
     int32_t g = glm::clamp( int32_t( c.g * 255.0f ), 0, 255 );
     int32_t b = glm::clamp( int32_t( c.b * 255.0f ), 0, 255 );
     //int32_t a = glm::clamp( int32_t( c.a * 255.0f ), 0, 255 );
-    return dbRGBA( r, g, b, 255 );
+    return dbRGB( r, g, b, 255 );
 }
 
 #if 0

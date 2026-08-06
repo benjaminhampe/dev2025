@@ -72,10 +72,10 @@ addAlphaChannel( Image & img )
         for ( int x = 0; x < w; ++x )
         {
             const u32 color = img.getPixel(x,y);
-            const uint8_t r = dbRGBA_R(color);
-            const uint8_t g = dbRGBA_G(color);
-            const uint8_t b = dbRGBA_B(color);
-            tmp.setPixel( x,y, dbRGBA(r,g,b,255) );
+            const uint8_t r = dbRGB_R(color);
+            const uint8_t g = dbRGB_G(color);
+            const uint8_t b = dbRGB_B(color);
+            tmp.setPixel( x,y, dbRGB(r,g,b,255) );
         }
     }
 
@@ -107,10 +107,10 @@ genNormalMap( Image const & heightMap )
    {
       for ( int32_t x = 0; x < w-1; ++x )
       {
-         int iA = dbRGBA_R(heightMap.getPixel( x,y ));
-         int iB = dbRGBA_R(heightMap.getPixel( x,y+1 ));
-         //int iC = dbRGBA_R(heightMap.getPixel( x+1,y+1 ));
-         int iD = dbRGBA_R(heightMap.getPixel( x+1,y ));
+         int iA = dbRGB_R(heightMap.getPixel( x,y ));
+         int iB = dbRGB_R(heightMap.getPixel( x,y+1 ));
+         //int iC = dbRGB_R(heightMap.getPixel( x+1,y+1 ));
+         int iD = dbRGB_R(heightMap.getPixel( x+1,y ));
          float dx = float(iD - iA)/255.0f;
          float dy = float(iB - iA)/255.0f;
          float dz = 1.0f;
@@ -118,7 +118,7 @@ genNormalMap( Image const & heightMap )
          uint8_t nx = uint8_t(de_clampi( 255.0f * n.x, 0, 255 ));
          uint8_t ny = uint8_t(de_clampi( 255.0f * n.y, 0, 255 ));
          uint8_t nz = uint8_t(de_clampi( 255.0f * n.z, 0, 255 ));
-         normalMap.setPixel( x,y, dbRGBA(nx,ny,nz,255) );
+         normalMap.setPixel( x,y, dbRGB(nx,ny,nz,255) );
       }
    }
 
@@ -138,11 +138,11 @@ convertToGrayscale( Image & img )
       for ( int32_t x = 0; x < w; ++x )
       {
          uint32_t color = img.getPixel( x,y );
-         int r = dbRGBA_R(color);
-         int g = dbRGBA_G(color);
-         int b = dbRGBA_B(color);
+         int r = dbRGB_R(color);
+         int g = dbRGB_G(color);
+         int b = dbRGB_B(color);
          uint8_t grey = uint8_t( (r + 2*g + b)/4 );
-         img.setPixel( x,y, dbRGBA(grey,grey,grey,255) );
+         img.setPixel( x,y, dbRGB(grey,grey,grey,255) );
       }
    }
 }
@@ -166,10 +166,10 @@ computeMinMaxColor( Image const & img, uint32_t & minColor, uint32_t & maxColor 
       for ( int32_t x = 0; x < w; ++x )
       {
          uint32_t color = img.getPixel( x,y );
-         uint8_t r = dbRGBA_R(color);
-         uint8_t g = dbRGBA_G(color);
-         uint8_t b = dbRGBA_B(color);
-         uint8_t a = dbRGBA_A(color);
+         uint8_t r = dbRGB_R(color);
+         uint8_t g = dbRGB_G(color);
+         uint8_t b = dbRGB_B(color);
+         uint8_t a = dbRGB_A(color);
          minR = std::min(minR,r);
          maxR = std::max(maxR,r);
          minG = std::min(minG,g);
@@ -180,8 +180,8 @@ computeMinMaxColor( Image const & img, uint32_t & minColor, uint32_t & maxColor 
          maxA = std::max(maxA,a);
       }
    }
-   minColor = dbRGBA(minR,minG,minB,minA);
-   maxColor = dbRGBA(maxR,maxG,maxB,maxA);
+   minColor = dbRGB(minR,minG,minB,minA);
+   maxColor = dbRGB(maxR,maxG,maxB,maxA);
 }
 
 
@@ -198,14 +198,14 @@ saturateImage( Image & img )
    uint32_t minColor = 0;
    uint32_t maxColor = 0;
    computeMinMaxColor( img, minColor, maxColor );
-   int const minR = dbRGBA_R(minColor);
-   int const minG = dbRGBA_G(minColor);
-   int const minB = dbRGBA_B(minColor);
-   int const maxR = dbRGBA_R(maxColor);
-   int const maxG = dbRGBA_G(maxColor);
-   int const maxB = dbRGBA_B(maxColor);
-   //int const minA = dbRGBA_A(minColor);
-   //int const maxA = dbRGBA_A(maxColor);
+   int const minR = dbRGB_R(minColor);
+   int const minG = dbRGB_G(minColor);
+   int const minB = dbRGB_B(minColor);
+   int const maxR = dbRGB_R(maxColor);
+   int const maxG = dbRGB_G(maxColor);
+   int const maxB = dbRGB_B(maxColor);
+   //int const minA = dbRGB_A(minColor);
+   //int const maxA = dbRGB_A(maxColor);
 
    int const dR = maxR - minR;
    int const dG = maxG - minG;
@@ -220,16 +220,16 @@ saturateImage( Image & img )
       for ( int32_t x = 0; x < w; ++x )
       {
          uint32_t color = img.getPixel( x,y );
-         int r = dbRGBA_R(color);
-         int g = dbRGBA_G(color);
-         int b = dbRGBA_B(color);
-         int a = dbRGBA_A(color);
+         int r = dbRGB_R(color);
+         int g = dbRGB_G(color);
+         int b = dbRGB_B(color);
+         int a = dbRGB_A(color);
 
          uint8_t finalR = uint8_t(de_clampi( float(r - minR) * fR, 0, 255));
          uint8_t finalG = uint8_t(de_clampi( float(g - minG) * fG, 0, 255));
          uint8_t finalB = uint8_t(de_clampi( float(b - minB) * fB, 0, 255));
          //uint8_t finalA = uint8_t(de_clampi( de_fma(mA,a,nA), 0, 255));
-         img.setPixel( x,y, dbRGBA(finalR,finalG,finalB,a) );
+         img.setPixel( x,y, dbRGB(finalR,finalG,finalB,a) );
       }
    }
 }
@@ -248,7 +248,7 @@ saturateRedChannel( Image & img )
       for ( int32_t x = 0; x < w; ++x )
       {
          uint32_t color = img.getPixel( x,y );
-         int r = dbRGBA_R(color);
+         int r = dbRGB_R(color);
          minR = std::min(minR,r);
          maxR = std::max(maxR,r);
       }
@@ -261,9 +261,9 @@ saturateRedChannel( Image & img )
       for ( int32_t x = 0; x < w; ++x )
       {
          uint32_t color = img.getPixel( x,y );
-         uint8_t r = dbRGBA_R(color);
+         uint8_t r = dbRGB_R(color);
          uint8_t finalR = uint8_t(std::clamp( int(float(r - minR) * fR), 0, 255));
-         img.setPixel( x,y, dbRGBA( finalR,finalR,finalR,255 ) );
+         img.setPixel( x,y, dbRGB( finalR,finalR,finalR,255 ) );
       }
    }
 }
@@ -283,7 +283,7 @@ saturateAlphaChannel( Image & img )
       for ( int32_t x = 0; x < w; ++x )
       {
          uint32_t color = img.getPixel( x,y );
-         uint8_t a = dbRGBA_A(color);
+         uint8_t a = dbRGB_A(color);
          minValue = std::min(minValue,a);
          maxValue = std::max(maxValue,a);
       }
@@ -297,9 +297,9 @@ saturateAlphaChannel( Image & img )
       for ( int32_t x = 0; x < w; ++x )
       {
          uint32_t color = img.getPixel( x,y );
-         uint8_t a = dbRGBA_A(color);
+         uint8_t a = dbRGB_A(color);
          uint8_t b = std::clamp( int(m * float(a) + n), 0, 255);
-         dbRGBA_setA( color, b );
+         dbRGB_setA( color, b );
          img.setPixel( x,y, color );
       }
    }
@@ -321,11 +321,11 @@ scaleAlphaChannel( Image & img, float scale )
       for ( int i = 0; i < w; i++ )
       {
          uint32_t color = img.getPixel(i,j);
-         uint8_t r = uint8_t(std::clamp( int( float(dbRGBA_R(color)) * scale ), 0, 255));
-         uint8_t g = uint8_t(std::clamp( int( float(dbRGBA_G(color)) * scale ), 0, 255));
-         uint8_t b = uint8_t(std::clamp( int( float(dbRGBA_B(color)) * scale ), 0, 255));
-         uint8_t a = uint8_t(std::clamp( int( float(dbRGBA_A(color)) * scale ), 0, 255));
-         img.setPixel( i,j, dbRGBA(r,g,b,a) );
+         uint8_t r = dbClampBytef(float(dbRGB_R(color)) * scale );
+         uint8_t g = dbClampBytef(float(dbRGB_G(color)) * scale );
+         uint8_t b = dbClampBytef(float(dbRGB_B(color)) * scale );
+         uint8_t a = dbClampBytef(float(dbRGB_A(color)) * scale );
+         img.setPixel( i,j, dbRGB(r,g,b,a) );
       }
    }
 }
@@ -378,9 +378,9 @@ correct2DNormals( Image & img, float amplitude )
       for ( int32_t x = 0; x < w; ++x )
       {
          uint32_t color = img.getPixel( x,y );
-         uint8_t r = dbRGBA_R(color);
-         uint8_t g = dbRGBA_G(color);
-         img.setPixel( x,y, dbRGBA(r,g,255,255) );
+         uint8_t r = dbRGB_R(color);
+         uint8_t g = dbRGB_G(color);
+         img.setPixel( x,y, dbRGB(r,g,255,255) );
       }
    }
 }
@@ -399,11 +399,11 @@ fuseImages_NormalMap_plus_BumpMap( Image const & normals, Image const & heights 
       for ( int i = 0; i < w; i++ )
       {
          uint32_t normal = normals.getPixel(i,j);
-         uint8_t r = dbRGBA_R(normal);
-         uint8_t g = dbRGBA_G(normal);
-         uint8_t b = dbRGBA_B(normal);
-         uint8_t a = dbRGBA_R(heights.getPixel(i,j));
-         img.setPixel( i,j, dbRGBA(r,g,b,a) );
+         uint8_t r = dbRGB_R(normal);
+         uint8_t g = dbRGB_G(normal);
+         uint8_t b = dbRGB_B(normal);
+         uint8_t a = dbRGB_R(heights.getPixel(i,j));
+         img.setPixel( i,j, dbRGB(r,g,b,a) );
       }
    }
    return img;

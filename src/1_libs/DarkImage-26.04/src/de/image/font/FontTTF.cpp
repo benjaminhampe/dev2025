@@ -625,17 +625,17 @@ FontTTF::drawGlyph( Image & img, int x, int y, uint32_t unicode, uint32_t color 
 
    // DE_DEBUG("Glyph[", char(unicode),"] = bmp_w(", bmp_w, "), bmp_h(", bmp_h, ")" )
 
-   int32_t r = dbRGBA_R( color );
-   int32_t g = dbRGBA_G( color );
-   int32_t b = dbRGBA_B( color );
+   int32_t r = dbRGB_R( color );
+   int32_t g = dbRGB_G( color );
+   int32_t b = dbRGB_B( color );
 
    for ( int32_t j = 0; j < h; ++j )
    {
       for ( int32_t i = 0; i < w; ++i )
       {
-         int32_t a = dbRGBA_R( glyph.getPixel( i,j ) );
+         int32_t a = dbRGB_R( glyph.getPixel( i,j ) );
 
-         img.setPixel( x + i, y + j, dbRGBA( r,g,b,a ), true );
+         img.setPixel( x + i, y + j, dbRGB( r,g,b,a ), true );
       }
    }
 }
@@ -828,17 +828,17 @@ FontTTF::drawText( Image & img, int x, int y, const std::wstring& msg,
             ImagePainter::drawOutlineRect( img, x1, y1, x2, y2, 0xFFFF6FFF );
          #endif
 
-            int32_t r = dbRGBA_R( color );
-            int32_t g = dbRGBA_G( color );
-            int32_t b = dbRGBA_B( color );
+            int32_t r = dbRGB_R( color );
+            int32_t g = dbRGB_G( color );
+            int32_t b = dbRGB_B( color );
 
             for ( int32_t j = 0; j < bmp_h; ++j )
             {
                for ( int32_t i = 0; i < bmp_w; ++i )
                {
-                  int32_t a = dbRGBA_R( glyph.getPixel( i,j ) );
+                  int32_t a = dbRGB_R( glyph.getPixel( i,j ) );
 
-                  img.setPixel( bmp_x + i, bmp_y + j, dbRGBA( r,g,b,a ), true );
+                  img.setPixel( bmp_x + i, bmp_y + j, dbRGB( r,g,b,a ), true );
                }
             }
          }
@@ -880,7 +880,7 @@ FontTTF_Utils::drawFtBitmap( Image & dst, int dst_x, int dst_y, FT_Bitmap const 
    // uint8_t g = rand() % 256;
    // uint8_t b = rand() % 256;
 
-   uint32_t bgColor = 0x00000000; // dbRGBA(r,g,b); // 0x00000000; // for debug tex-coords into atlas i used 0xFF404040
+   uint32_t bgColor = 0x00000000; // dbRGB(r,g,b); // 0x00000000; // for debug tex-coords into atlas i used 0xFF404040
 
    switch ( bmp.pixel_mode )
    {
@@ -899,7 +899,7 @@ FontTTF_Utils::drawFtBitmap( Image & dst, int dst_x, int dst_y, FT_Bitmap const 
                int a = std::clamp( int( f * float( byte ) ), 0, 255 );
                if ( a > 0 )
                {
-                  dst.setPixel( dst_x + x, dst_y + y, dbRGBA( a,a,a,a ) );
+                  dst.setPixel( dst_x + x, dst_y + y, dbRGB( a,a,a,a ) );
                }
                else
                {
@@ -959,7 +959,7 @@ FontTTF_Utils::drawFtBitmap( Image & dst, int dst_x, int dst_y, FT_Bitmap const 
                int a = std::clamp( int( f * float( byte ) ), 0, 255 );
                if ( a > 0 )
                {
-                  dst.setPixel( dst_x + x, dst_y + y, dbRGBA( a,a,a,a ) );
+                  dst.setPixel( dst_x + x, dst_y + y, dbRGB( a,a,a,a ) );
                }
                else
                {

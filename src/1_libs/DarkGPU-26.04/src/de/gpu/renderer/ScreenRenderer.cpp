@@ -121,13 +121,13 @@ ScreenRenderer::draw2DLine( int x1, int y1, int x2, int y2,
     m.setBlend( Blend::disabled() );
     if (c1 == c2)
     {
-        const auto a1 = dbRGBA_A(c1) < 255;
+        const auto a1 = dbRGB_A(c1) < 255;
         if (a1) { m.setBlend( Blend::alphaBlend() ); }
     }
     else
     {
-        const auto a1 = dbRGBA_A(c1) < 255;
-        const auto a2 = dbRGBA_A(c2) < 255;
+        const auto a1 = dbRGB_A(c1) < 255;
+        const auto a2 = dbRGB_A(c2) < 255;
         if (a1 || a2) { m.setBlend( Blend::alphaBlend() ); }
     }
 

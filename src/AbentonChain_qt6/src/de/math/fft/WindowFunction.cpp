@@ -48,7 +48,7 @@ std::string lineStripToSVG(const std::vector<float>& lineStrip,
     //                std::lround(.05f * h),
     //                std::lround(0.9f * w)+1,
     //                std::lround(0.9f * h)+1);
-    // ImagePainter::drawRect(img,r,dbRGBA(238,238,238));
+    // ImagePainter::drawRect(img,r,dbRGB(238,238,238));
 
     float x1 = .05f * w;
     float x2 = .95f * w;
@@ -196,7 +196,7 @@ void WindowFunction::drawImage( eFunc func, Image & img, uint32_t penColor )
                    std::lround(.05f * h),
                    std::lround(0.9f * w)+1,
                    std::lround(0.9f * h)+1);
-    ImagePainter::drawRect(img,r,dbRGBA(238,238,238));
+    ImagePainter::drawRect(img,r,dbRGB(238,238,238));
 
     // Draw LineStrip:
     long x1 = std::lround(v_in[0]);
@@ -220,15 +220,15 @@ void WindowFunction::testImg()
         img.fill(0xFFFFFFFF);
 
         auto f = (eFunc)i;
-        auto c = dbRGBA(0,0,0);
-        if (i==0) c = dbRGBA(255,0,0);
-        else if (i==1) c = dbRGBA(255,128,0);
-        else if (i==2) c = dbRGBA(0,200,0);
-        else if (i==3) c = dbRGBA(0,0,200);
-        else if (i==4) c = dbRGBA(200,0,200);
-        else if (i==5) c = dbRGBA(200,200,100);
-        else if (i==6) c = dbRGBA(55,100,55);
-        else if (i==7) c = dbRGBA(100,0,200);
+        auto c = dbRGB(0,0,0);
+        if (i==0) c = dbRGB(255,0,0);
+        else if (i==1) c = dbRGB(255,128,0);
+        else if (i==2) c = dbRGB(0,200,0);
+        else if (i==3) c = dbRGB(0,0,200);
+        else if (i==4) c = dbRGB(200,0,200);
+        else if (i==5) c = dbRGB(200,200,100);
+        else if (i==6) c = dbRGB(55,100,55);
+        else if (i==7) c = dbRGB(100,0,200);
         drawImage(f, img, c);
 
         std::string uri = "WindowFunction_";

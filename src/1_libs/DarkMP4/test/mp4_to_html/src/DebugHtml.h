@@ -3,7 +3,7 @@
 
 inline uint32_t randomHtmlColor()
 {
-    return dbRGBA( rand()%200, rand()%200, rand()%200 );
+    return dbRGB( rand()%200, rand()%200, rand()%200 );
 }
 
 // =======================================================================
@@ -155,9 +155,9 @@ struct DebugHtml : public de::file::mp4::IParserListener
         {
         auto const & token = m_tokens[ i ];
 
-        int r = dbRGBA_R( token.m_fg );
-        int g = dbRGBA_G( token.m_fg );
-        int b = dbRGBA_B( token.m_fg );
+        int r = dbRGB_R( token.m_fg );
+        int g = dbRGB_G( token.m_fg );
+        int b = dbRGB_B( token.m_fg );
         auto css = de::StringUtil::join( "color:rgb(",r,",",g,",",b,");" );
 
         if ( token.m_original != token.m_parsed )

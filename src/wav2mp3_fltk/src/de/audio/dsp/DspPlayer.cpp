@@ -1,4 +1,4 @@
-#include <de/sound/SoundAccessorF32.h>
+#include <de/audio/dsp/DspPlayer.h>
 
 namespace de {
 

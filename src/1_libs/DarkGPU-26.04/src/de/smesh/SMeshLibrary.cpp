@@ -1441,7 +1441,7 @@ addRoundRectOutline( SMeshBuffer & o, Recti const & pos, float zIndex,
       o.vertices[ i ].pos.z = zIndex;
       float u = o.vertices[ i ].tex.x;
       uint8_t r = static_cast<uint8_t>( std::clamp( int(std::lround( 255.0f * u / uMax )), 0, 255 ) );
-      uint32_t color = dbRGBA( r,r,r );
+      uint32_t color = dbRGB( r,r,r );
       o.vertices[ i ].color = color;
    }
 }
