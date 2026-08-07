@@ -17,6 +17,11 @@ class GL_WaveformWidget :
 #endif
 // =============================================================
 {
+public:
+    // zoomBeg, zoomEnd, maxFrames
+    typedef std::function<void(int64_t,int64_t,int64_t)> FN_onZoom;
+    FN_onZoom onZoom = [](int64_t,int64_t,int64_t) {};
+
 private:
     de::Sound* m_sound = nullptr;
     de::SampleTypeConverter::Converter_t m_converter = nullptr;
@@ -24,7 +29,10 @@ private:
     //de::SoundAccessorF32 m_accessor;
     //Fl_Scrollbar* m_scroll = nullptr;
 
-    double m_zoom = 1.0;
+    int m_mx = 0;
+    int m_my = 0;
+
+    // double m_zoom = 1.0;
     int64_t m_zoomBeg = 0;
     int64_t m_zoomEnd = 0;
     // int64_t m_zoomFrameCount = 0;
@@ -35,7 +43,7 @@ private:
 
     int64_t m_mouseFrame = -1;
 
-    bool m_selecting = false;
+    bool m_bDarkMode = false;
 
     bool m_bHovered = false; // Enter/Leave
 
@@ -51,9 +59,22 @@ public:
     GL_WaveformWidget(int X, int Y, int W, int H);
     void setSound(de::Sound* snd);
 
-    void setZoomStart(double pc);
-    void setZoom(double z);
-    double zoom() const { return m_zoom; }
+    void setDarkMode(bool bDarkMode)
+    {
+        m_bDarkMode = bDarkMode;
+        m_bImageDirty = true;
+        redraw();
+    }
+
+    double zoom() const
+    {
+        if (!m_sound) return 1.0;
+        const auto n = m_sound->frames();
+        if (n < 1) return 1.0;
+        return double(m_zoomEnd - m_zoomBeg) / double(n);
+    }
+
+    void setZoomFromScrollBar(double pc);
 
     int64_t zoomBeg() const { return m_zoomBeg; }
     int64_t zoomEnd() const { return m_zoomEnd; }
@@ -89,6 +110,7 @@ private:
     //void update_scroll_range();
 #endif
     // --- 64-bit safe pixel→frame ---
-    int64_t pixelToFrame(int px);
+    int64_t pixelToFrame(int32_t px);
+    int32_t frameToPixel(int64_t frame);
 };
 

@@ -1061,7 +1061,7 @@ Image::setPixel( int32_t x, int32_t y, uint32_t color, bool blend )
 
     if ( blend )
     {
-        color = blendColor( color, getPixel(x,y) );
+        color = m_blendFunc( color, getPixel(x,y) );
     }
 
     if ( m_bytesPerPixel >= 4 )
@@ -1125,7 +1125,7 @@ Image::setPixel4f( int32_t x, int32_t y, glm::vec4 color, bool blend )
 
     if ( blend )
     {
-        color = blendColor( color, getPixel4f(x,y) );
+        color = blendColor_v4( color, getPixel4f(x,y) );
     }
 
     float* pDst = reinterpret_cast< float* >( m_data.data() + byteOffset );

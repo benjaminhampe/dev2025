@@ -9,48 +9,6 @@ namespace de {
 // namespace audio {
 // namespace math {
 
-    // π
-    constexpr float TWO_PI = float( 2.0 * M_PI );
-    constexpr double TWO_PI64 = 2.0 * M_PI;
-
-    inline bool isPowerOfTwo(uint32_t x)
-    {
-        return x && !(x & (x - 1));
-    }
-
-    inline uint32_t nextPowerOf2(uint32_t v)
-    {
-        if (v == 0) return 1;   // handle edge case
-
-        v--;
-        v |= v >> 1;
-        v |= v >> 2;
-        v |= v >> 4;
-        v |= v >> 8;
-        v |= v >> 16;
-        v++;
-        return v;
-    }
-
-    inline float clampf(float x, float lo, float hi)
-    {
-        return fminf(fmaxf(x, lo), hi);
-    }
-
-    inline double clampd(double x, double lo, double hi)
-    {
-        return fmin(fmax(x, lo), hi);
-    }
-
-    inline float absf(float x)
-    {
-        uint32_t bits;
-        memcpy(&bits, &x, sizeof(bits));
-        bits &= 0x7fffffff;
-        memcpy(&x, &bits, sizeof(x));
-        return x;
-    }
-
     // #include <xmmintrin.h>
 
     // inline float clampf_sse(float x, float lo, float hi)

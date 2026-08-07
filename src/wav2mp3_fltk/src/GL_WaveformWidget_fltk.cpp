@@ -38,7 +38,6 @@ void GL_WaveformWidget::setSound(de::Sound* snd)
 {
     m_sound = snd;
     m_converter = nullptr;
-    m_zoom = 1.0;
     m_zoomBeg = 0;
     m_zoomEnd = 0;
     m_loopBeg = -1;
@@ -73,19 +72,6 @@ void GL_WaveformWidget::setSound(de::Sound* snd)
     redraw();
 }
 
-void GL_WaveformWidget::setZoomStart(double pc)
-{
-    if (!m_sound) return;
-    m_zoomBeg = std::llround(pc * m_zoom * m_sound->m_frames);
-    redraw();
-}
-
-void GL_WaveformWidget::setZoom(double z)
-{
-    m_zoom = std::clamp<double>(z, 0.000001, 10.0);
-    redraw();
-}
-
 void GL_WaveformWidget::resize(int X, int Y, int W, int H)
 {
     Fl_Widget::resize(X, Y, W, H);
@@ -113,7 +99,7 @@ void GL_WaveformWidget::draw()
     const double fpp = getFramesPerPixel();
     const double ppf = 1.0f / fpp;
 
-    const int64_t visFrames = std::min(zoomDelta(), 1000ll * w);
+    const int64_t visFrames = std::min(zoomDelta(), 100ll * w);
 
     const double majorSec = 1.0;   // 1 second
     const double minorSec = 0.1;   // 100 ms
@@ -322,6 +308,29 @@ void GL_WaveformWidget::draw()
 
     fl_draw_image(m_img.data(), x(), y(), m_img.w(), m_img.h(), 4);
 
+    // {
+    //     fl_color(FL_DARK_YELLOW);
+    //     fl_line(m_mx,y(),m_mx,y()+h);
+    // }
+
+    {
+        int x1 = frameToPixel(m_loopBeg);
+        fl_color(FL_GREEN);
+        fl_line(x1 + 2,y(),x1 + 2,y()+h);
+    }
+
+    {
+        int x1 = frameToPixel(m_loopEnd);
+        fl_color(FL_RED);
+        fl_line(x1 + 2,y(),x1 + 2,y()+h);
+    }
+
+    {
+        int x1 = frameToPixel(m_mouseFrame);
+        fl_color(FL_YELLOW);
+        fl_line(x1 + 2,y(),x1 + 2,y()+h);
+    }
+
     // Fl_Widget::draw();
 #endif
 
@@ -350,7 +359,7 @@ void GL_WaveformWidget::updateImage()
         if (w() != m_img.w() || h() != m_img.h())
         {
             m_img.resize(w(),h());
-            DE_INFO("ImageResize(",w(),",",h(),")")
+            // DE_INFO("ImageResize(",w(),",",h(),")")
         }
 
         de::sound::Sound2Image::draw(
@@ -360,8 +369,11 @@ void GL_WaveformWidget::updateImage()
             m_zoomEnd,
             m_img,
             de::Recti(0,0,w(),h()),
-            dbRGB(255,255,255),
-            dbRGB(55,55,155));
+            m_bDarkMode ? dbRGB(255,128,55) : dbRGB(255,255,255),
+            m_bDarkMode ? dbRGB(0,0,0) : dbRGB(68,68,168)
+            // m_bDarkMode ? dbRGB(255,255,255) : dbRGB(0,0,0),
+            // m_bDarkMode ? dbRGB(0,0,0) : dbRGB(255,255,255)
+        );
 
         m_bImageDirty = false;
     }
@@ -395,19 +407,19 @@ int GL_WaveformWidget::handle(int e)
         }
         case FL_MOVE:
         {
-            const int mx = Fl::event_x();
-            const int my = Fl::event_y();
-            m_mouseFrame = pixelToFrame(mx);
+            m_mx = Fl::event_x();
+            m_my = Fl::event_y();
+            m_mouseFrame = pixelToFrame(m_mx);
 
-            const double t = double(m_mouseFrame - m_zoomBeg) / double(zoomDelta());
+            // const double t = double(m_mouseFrame - m_zoomBeg) / double(zoomDelta());
 
-            DE_OK("mouse(",mx,",",my,"), "
-                  "t(",t,"), "
-                  "frame(",m_mouseFrame,"), "
-                  "zoom(",m_zoom,"), "
-                  "beg(",m_zoomBeg,"), "
-                  "end(",m_zoomEnd,")"
-                  )
+            // DE_OK("mouse(",m_mx,",",m_my,"), "
+            //       "t(",t,"), "
+            //       "frame(",m_mouseFrame,"), "
+            //       "zoom(",m_zoom,"), "
+            //       "beg(",m_zoomBeg,"), "
+            //       "end(",m_zoomEnd,")"
+            //       )
 
             redraw();
             return 0;
@@ -478,38 +490,55 @@ int GL_WaveformWidget::handle(int e)
         {
             const int mx = Fl::event_x();
             const int my = Fl::event_y();
-            if (!dbMouseOver(mx,my,x(),y(),x()+w()-1,y()+h()-1))
+            const auto r = de::Recti(x(),y(),w(),h());
+
+            if (!dbMouseOver(mx,my,r))
             {
                 break;
             }
 
+            const double t = double(mx - x()) / double(w());
+
             const int64_t mouseFrame = pixelToFrame(mx);
-            const double t = double(mouseFrame - m_zoomBeg) / double(zoomDelta());
-
-            DE_OK("mouse(",mx,",",my,"), "
-                  "t(",t,"), "
-                  "frame(",mouseFrame,"), "
-                  "zoom(",m_zoom,"), "
-                  "beg(",m_zoomBeg,"), "
-                  "end(",m_zoomEnd,")"
-                  )
-
-            const int64_t oldBeg = m_zoomBeg;
 
             // Zoom factor per wheel step
+            int64_t newDelta = zoomDelta();
             if (Fl::event_dy() > 0) // Zoom out
             {
-                m_zoom = std::clamp<double>(m_zoom * 1.15, 0.000001, 1000000.0);
-                m_zoomBeg = std::clamp<int64_t>(1.15 * m_zoomBeg, 0, m_sound->frames());
-                m_zoomEnd = std::clamp<int64_t>(1.15 * m_zoomEnd, 0, m_sound->frames());
+                //m_zoom = std::clamp<double>(m_zoom * 1.15, 0.000001, 1000000.0);
+                newDelta = std::clamp<int64_t>(double(newDelta) * 1.15, 10, m_sound->frames());
+                //m_zoomBeg = std::clamp<int64_t>(double(m_zoomBeg) * 1.15, 0, m_sound->frames());
+                //m_zoomEnd = std::clamp<int64_t>(double(m_zoomEnd) * 1.15 , 0, m_sound->frames());
             }
             else if (Fl::event_dy() < 0) // Zoom In
             {
-                m_zoom = std::clamp<double>(m_zoom / 1.15, 0.000001, 1000000.0);
-                m_zoomBeg = std::clamp<int64_t>(double(m_zoomBeg)/1.15, 0, m_sound->frames());
-                m_zoomEnd = std::clamp<int64_t>(double(m_zoomEnd)/1.15, 0, m_sound->frames());
+                //m_zoom = std::clamp<double>(m_zoom / 1.15, 0.000001, 1000000.0);
+                newDelta = std::clamp<int64_t>(double(newDelta) / 1.15, 10, m_sound->frames());
+                //m_zoomBeg = std::clamp<int64_t>(double(m_zoomBeg)/1.15, 0, m_sound->frames());
+                //m_zoomEnd = std::clamp<int64_t>(double(m_zoomEnd)/1.15, 0, m_sound->frames());
             }
 
+            int64_t newBeg = mouseFrame - (double(newDelta) * (t));
+            int64_t newEnd = mouseFrame + (double(newDelta) * (1.0 - t));
+
+            newBeg = std::clamp(newBeg, 0ll, m_sound->frames() - 10);
+            newEnd = std::clamp(newEnd, 10ll, m_sound->frames());
+
+            m_zoomBeg = newBeg;
+            m_zoomEnd = newEnd;
+
+            onZoom( m_zoomBeg, m_zoomEnd, m_sound->frames() );
+
+#if 0
+            DE_OK("mouse(",mx,",",my,"), "
+                  "r(",r.str(),"), "
+                  "t(",t,"), "
+                  "frame(",mouseFrame,"), "
+                  "zoom(",zoom(),"), "
+                  "beg(",m_zoomBeg,"), "
+                  "end(",m_zoomEnd,")"
+                  )
+#endif
             //const double oldZoom = m_zoom;
 
             //const int64_t oldFrameCount = m_sound->m_frames * m_zoom;
@@ -537,6 +566,28 @@ int GL_WaveformWidget::handle(int e)
     #endif
 }
 
+
+void GL_WaveformWidget::setZoomFromScrollBar(double pc)
+{
+    if (!m_sound) return;
+
+    int64_t nMax = m_sound->frames();
+    int64_t nZoom = zoomDelta();
+
+    int64_t newBeg = pc * nMax;
+    int64_t newEnd = newBeg + nZoom;
+
+    newBeg = std::clamp(newBeg, 0ll, m_sound->frames() - nZoom);
+    newEnd = std::clamp(newEnd, nZoom, m_sound->frames());
+
+    m_zoomBeg = newBeg;
+    m_zoomEnd = newEnd;
+
+    m_bImageDirty = true;
+    redraw();
+}
+
+
 // --- 64-bit safe scroll range ---
 #ifdef USE_EXTERNAL_SCROLLBAR
 void GL_WaveformWidget::update_scroll_range()
@@ -549,27 +600,37 @@ void GL_WaveformWidget::update_scroll_range()
 }
 #endif
 
-// --- 64-bit safe pixel→frame ---
+// --- 64-bit safe pixel → frame ---
 int64_t GL_WaveformWidget::pixelToFrame(int px)
 {
-    if (!m_sound)
-    {
-        DE_ERROR("No sound")
-        return 0;
-    }
+    if (!m_sound) { DE_ERROR("No sound") return 0; }
 
-    if (m_sound->m_frames < 2)
-    {
-        DE_ERROR("No m_sound->m_frames >= 2")
-        return 0;
-    }
+    if (m_sound->m_frames < 2) { DE_ERROR("Empty sound") return 0; }
 
 #ifdef USE_BENNI_GL
     const double t = std::clamp(double(px) / double(pixel_w()), 0.0, 1.0);
 #else
-    const double t = std::clamp(double(px) / double(w()), 0.0, 1.0);
+    const double t = std::clamp(double(px - x()) / double(w()), 0.0, 1.0);
 #endif
     int64_t frame = m_zoomBeg + std::llround( t * zoomDelta() );
 
     return std::clamp(frame, 0ll, m_sound->m_frames);
+}
+
+
+// --- 64-bit safe frame → pixel ---
+int32_t GL_WaveformWidget::frameToPixel(int64_t frame)
+{
+    if (!m_sound) { DE_ERROR("No sound") return 0; }
+
+    if (m_sound->m_frames < 2) { DE_ERROR("Empty sound") return 0; }
+
+    const double t = std::clamp(double(frame - m_zoomBeg) / double(zoomDelta()), 0.0, 1.0);
+
+#ifdef USE_BENNI_GL
+    const int32_t px = std::lround( t * pixel_w() );
+#else
+    const int32_t px = std::lround( t * w() );
+#endif
+    return x() + px;
 }

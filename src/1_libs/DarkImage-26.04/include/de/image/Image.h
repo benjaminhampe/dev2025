@@ -207,6 +207,9 @@ struct Image
     uint8_t* getPixels( int32_t x, int32_t y );
     uint8_t const* getPixels( int32_t x, int32_t y ) const { return getPixels(x,y); }
 
+    typedef uint32_t (*FN_BlendFunc)(uint32_t, uint32_t);
+    void setBlendFunc(FN_BlendFunc blendFunc){ m_blendFunc = blendFunc; }
+
     void setPixel( int32_t x, int32_t y, uint32_t color, bool blend = false );
     uint32_t getPixel( int32_t x, int32_t y, uint32_t colorKey = 0x00000000 ) const;
 
@@ -252,6 +255,7 @@ private:
     PixelFormat m_pixelFormat; // ColorBits A + R + G + B, if any
     bool m_debug;
     double m_pts;
+    FN_BlendFunc m_blendFunc = &blendColor;
     Blob m_data;
     std::string m_uri;
 };

@@ -1,5 +1,5 @@
-#include "FL/fl_draw.H"
 #include <FL/Fl.H>
+#include <FL/Fl_Widget.H>
 #include <FL/Fl_Window.H>
 #include <FL/Fl_Input.H>
 #include <FL/Fl_Button.H>
@@ -7,7 +7,7 @@
 #include <FL/Fl_Progress.H>
 #include <FL/Fl_Native_File_Chooser.H>
 #include <FL/fl_ask.H>
-
+#include <FL/fl_draw.H>
 #include <FL/Fl_Text_Display.H>
 #include <FL/Fl_Text_Buffer.H>
 
@@ -19,6 +19,8 @@
 #include <atomic>
 #include <chrono>
 #include <filesystem>
+#include <functional>
+#include <algorithm>
 
 #ifdef _WIN32 // only for Window ICOn
     #ifndef WIN32_LEAN_AND_MEAN
@@ -58,13 +60,133 @@ static void trim(std::string& s)
     }
 }
 
+
+class Fl_HScrollBarLite : public Fl_Widget
+{
+public:
+    bool m_bDarkMode = false;
+/*
+
+    Fl_HScrollBarLite* sb = new Fl_HScrollBarLite(10, 10, 300, 20);
+
+    sb->set_slider_pos(0.0);
+    sb->set_slider_size(0.1);
+
+    sb->onChange = [&](double pos) { printf("Slider moved: %f\n", pos); };
+*/
+    // Normalized [0..1] slider position and width
+    double sliderPos  = 0.0;   // left edge
+    double sliderSize = 0.2;   // width
+
+    // Callback when sliderPos changes
+    std::function<void(double)> onChange;
+
+    Fl_HScrollBarLite(int X, int Y, int W, int H)
+        : Fl_Widget(X, Y, W, H) {}
+
+    void setDarkMode(bool bDarkMode)
+    {
+        m_bDarkMode = bDarkMode;
+        redraw();
+    }
+
+    // --- Getters / Setters ---
+    void set_slider_pos(double p) {
+        sliderPos = clamp01(p);
+        redraw();
+        if (onChange) onChange(sliderPos);
+    }
+
+    void set_slider_size(double s) {
+        sliderSize = clamp01(s);
+        redraw();
+    }
+
+    double get_slider_pos()  const { return sliderPos; }
+    double get_slider_size() const { return sliderSize; }
+
+    // --- Drawing ---
+    void draw() override
+    {
+        fl_push_clip(x(), y(), w(), h());
+
+        // Background
+        fl_color(FL_GRAY); // m_bDarkMode ? FL_BLACK : FL_GRAY // fl_color(FL_DARK3);
+        fl_rectf(x(), y(), w(), h());
+
+        // Border
+        // fl_color(m_bDarkMode ? FL_WHITE : FL_BLACK);
+        // fl_rect(x(), y(), w(), h());
+
+        // Slider geometry in pixels
+        int sx = x() + int(sliderPos * w());
+        int sw = std::lroundf(sliderSize * w());
+
+        // Slider
+        if (sw < w())
+        {
+            fl_color(m_bDarkMode ? FL_LIGHT2 : FL_WHITE);
+            fl_rectf(sx, y() + 1, sw, h() - 2);
+        }
+        // fl_color(FL_BLACK);
+        // fl_rect(x(), y(), w(), h());
+
+
+
+        fl_pop_clip();
+    }
+
+    // --- Event handling ---
+    int handle(int event) override
+    {
+        switch (event)
+        {
+        case FL_PUSH:
+        case FL_DRAG:
+        {
+            double mx = Fl::event_x();
+            double local = (mx - x()) / double(w());
+
+            // Center slider under mouse
+            double newPos = local - sliderSize * 0.5;
+            #if 1
+            newPos = std::max(0.0, std::min(newPos, 1.0 - sliderSize));
+            #else
+            newPos = clamp01(newPos);
+            #endif
+            if (newPos != sliderPos)
+            {
+                sliderPos = newPos;
+                redraw();
+                if (onChange) onChange(sliderPos);
+            }
+            return 1;
+        }
+        case FL_RELEASE:
+            return 1;
+        }
+        return 0;
+    }
+
+    // --- Resize handling ---
+    void resize(int X, int Y, int W, int H) override {
+        Fl_Widget::resize(X, Y, W, H);
+        redraw();
+    }
+
+private:
+    static double clamp01(double v) {
+        return std::max(0.0, std::min(1.0, v));
+    }
+};
 // =============================================================
 class ImageWidget : public Fl_Widget
-// =============================================================
 {
     de::Image m_img;
 public:
+    // =============================================================
     ImageWidget(int X,int Y,int W,int H)
+    // =============================================================
         : Fl_Widget(X,Y,W,H)
     {
         renderImage(W,H);
@@ -110,7 +232,7 @@ public:
         redraw();
     }
 };
-
+// =============================================================
 class UI_LogBox : public Fl_Group
 {
 public:
@@ -160,10 +282,8 @@ public:
         logbox->resize(X,Y,W,H);
     }
 };
-
 // =============================================================
 class UI_FileInputField : public Fl_Input
-// =============================================================
 {
 public:
     Fl_Button* btnConvert = nullptr;
@@ -212,7 +332,7 @@ public:
         return Fl_Input::handle(event);
     }
 };
-
+// =============================================================
 class UI_FileInput : public Fl_Group
 {
 public:
@@ -268,8 +388,7 @@ public:
         btnChoose->resize(x, y, w4, H);
     }
 };
-
-
+// =============================================================
 class UI_FileOutput : public Fl_Group
 {
 public:
@@ -324,16 +443,14 @@ public:
         btnChoose->resize(x,y,w4,H);
     }
 };
-
-
+// =============================================================
 class UI_Waveform : public Fl_Group
 {
 public:
-    int m_spacing = 5;
-    GL_WaveformWidget* waveform;
-    // Fl_Button* zoomIn;
-    // Fl_Button* zoomOut;
-    Fl_Scrollbar* scrollBar;
+    GL_WaveformWidget* waveform = nullptr;
+    Fl_HScrollBarLite* scrollBar = nullptr;
+    // Fl_Button* zoomIn = nullptr;
+    // Fl_Button* zoomOut = nullptr;
 
     void setSound(de::Sound* snd)
     {
@@ -341,26 +458,24 @@ public:
         redraw();
     }
 
-    void setZoomStart(double pc)
+    void setDarkMode(bool bDarkMode)
     {
-        waveform->setZoomStart(pc);
-        redraw();
+        waveform->setDarkMode(bDarkMode);
+        scrollBar->setDarkMode(bDarkMode);
     }
 
-    UI_Waveform(int X, int Y, int W, int H, int spacing)
+    UI_Waveform(int X, int Y, int W, int H)
         : Fl_Group(X, Y, W, H)
-        , m_spacing(spacing)
     {
         begin();
 
         float zoom = Fl::screen_scale(0);
-        int s = m_spacing * zoom;
-        int h2 = 32 * zoom;
-        int h1 = H - h2;
+        int h2 = zoom * 24;
+        int h1 = H - h2 - 5;
 
         int x = X;
         int y = Y;
-        waveform = new GL_WaveformWidget(x,y,W-2*s,h1); y += h1;
+        waveform = new GL_WaveformWidget(x,y,W,h1); y += h1 + 5;
         waveform->tooltip("Waveform display: scroll, zoom, select region");
         // ui.zoomIn  = new Fl_Button(550, y,      40, (c-d)/2, "+");
         // ui.zoomIn->tooltip("Zoom in");
@@ -374,10 +489,15 @@ public:
         // {
         //     ((WaveformWidget*)ud)->setZoom(((WaveformWidget*)ud)->getZoom() * 0.8f);
         // }, ui.inWavf);
-        scrollBar = new Fl_Scrollbar(x,y,W-2*s,h2);
+        scrollBar = new Fl_HScrollBarLite(x,y,W,h2);
         scrollBar->type(FL_HORIZONTAL);
-        scrollBar->bounds(0, 1);
-        scrollBar->value(0);
+        scrollBar->set_slider_pos(0);
+        scrollBar->set_slider_size(1);
+        // scrollBar->bounds(0.0, 1.0);
+        // scrollBar->step(1.0e-9);
+        // scrollBar->precision(9);
+        // scrollBar->value(0.0);
+        // scrollBar->slider_size(1.0);
         //scrollBar->callback(hscroll_cb, nullptr);
 
         end(); // wichtig
@@ -391,16 +511,15 @@ public:
         int y = Y;
 
         float zoom = Fl::screen_scale(0);
-        int s = m_spacing * zoom;
-        int h2 = 32 * zoom;
-        int h1 = H - h2;
+        //int s = m_spacing * zoom;
+        int h2 = zoom * 24;
+        int h1 = H - h2 - 5;
 
-        waveform->resize(x,y,W-2*s,h1); y += h1;
-        scrollBar->resize(x,y,W-2*s,h2);
+        waveform->resize(x,y,W,h1); y += h1 + 5;
+        scrollBar->resize(x,y,W,h2);
     }
 };
-
-
+// =============================================================
 class UI_Resampler : public Fl_Group
 {
 public:
@@ -471,7 +590,7 @@ public:
         algo->resize(x,y,w3,H);
     }
 };
-
+// =============================================================
 class UI_Encoder : public Fl_Group
 {
 public:
@@ -567,12 +686,8 @@ public:
         return quality_map[quality->value()];
     }
 };
-
-
-
 // =============================================================
 class XP_Progress : public Fl_Progress
-// =============================================================
 {
 public:
     XP_Progress(int X, int Y, int W, int H, const char* L = 0)
@@ -670,7 +785,7 @@ public:
         fl_pop_clip();
     }
 };
-
+// =============================================================
 class UI_Progress : public Fl_Group
 {
 public:
@@ -725,7 +840,6 @@ public:
         btnDarkMode->resize(x,y,w4,H);
     }
 };
-
 // ---------------- UI ----------------
 struct UI
 {
@@ -752,7 +866,6 @@ struct UI
 };
 
 UI ui;
-
 
 void log_common(const char* msg, char style)
 {
@@ -848,6 +961,7 @@ static void darkmode_cb(Fl_Widget*, void*)
         Fl::foreground(0,0,0);
     }
 
+    ui.waveform->setDarkMode(bDarkMode);
     Fl::redraw();
 }
 
@@ -1264,15 +1378,16 @@ void compare_cb(Fl_Widget*, void*)
     ui.worker.detach();
 }
 
-
-
+/*
 void hscroll_cb(Fl_Widget* w, void* data)
 {
     auto scrollBar = (Fl_Scrollbar*)w;
 
-    ui.waveform->setZoomStart( scrollBar->value() );
-}
+    // ui.waveform->setZoomStart( scrollBar->value() );
 
+    ui.waveform->waveform->setZoomFromScrollBar( scrollBar->value() );
+}
+*/
 class DynamicLayout : public Fl_Group {
 public:
     DynamicLayout(int X, int Y, int W, int H)
@@ -1322,7 +1437,7 @@ public:
         int y = d;
 
         ui.inFile = new UI_FileInput(x,y,W-2*d,h1,d); y += h1 + d;
-        ui.waveform = new UI_Waveform(x,y,W-2*d,h2,d); y += h2 + d;
+        ui.waveform = new UI_Waveform(x,y,W-2*d,h2); y += h2 + d;
         ui.outFile = new UI_FileOutput(x,y,W-2*d,h1,d); y += h1 + d;
         ui.progress = new UI_Progress(x,y,W-2*d,h1,d); y += h1 + d;
         ui.encoder = new UI_Encoder(x,y,W-2*d,h1,d); y += h1 + d;
@@ -1344,6 +1459,31 @@ public:
         ui.progress->btnCompare->callback(compare_cb);
         ui.progress->btnCancel->callback(cancel_cb);
         ui.progress->btnDarkMode->callback(darkmode_cb);
+
+        ui.waveform->waveform->onZoom =
+            [&](int64_t zoomBeg, int64_t zoomEnd, int64_t frameCount)
+            {
+                double t1 = double(zoomBeg) / double(frameCount);
+                double t2 = double(zoomEnd - zoomBeg) / double(frameCount);
+                ui.waveform->scrollBar->set_slider_pos(t1);
+                ui.waveform->scrollBar->set_slider_size(std::max(0.001,t2));
+                //ui.waveform->scrollBar->value(t1);
+                //ui.waveform->scrollBar->slider_size(std::max(0.001,t2));
+            };
+
+        //ui.waveform->scrollBar->callback(hscroll_cb,nullptr);
+
+        ui.waveform->scrollBar->onChange = [&] (double value)
+        {
+            // auto scrollBar = (Fl_Scrollbar*)w;
+
+            // auto scrollBar = ui.waveform->scrollBar;
+
+            // ui.waveform->setZoomStart( scrollBar->value() );
+
+            ui.waveform->waveform->setZoomFromScrollBar( value );
+
+        };
 
         //win->resizable(win);   // oder ein Child-Widget
         //win->resizable(nullptr);

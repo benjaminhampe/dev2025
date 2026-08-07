@@ -15,29 +15,11 @@ Final.b = Src.b * SrcFactor + Dst.b * DstFactor
 Final.a = Src.a * SrcFactor + Dst.a * DstFactor
 */
 
-#if 0
-
-// glBlendFunc(GL_SRC_ALPHA, GL_ONE);
-uint32_t blendColor(uint32_t src, uint32_t dst)
-{
-    const float src_a = dbRGB_Af(src) / 255.0f;
-    const float r = (dbRGB_Rf(src) * src_a + dbRGB_Rf(dst)); //  * (1.0f - a)
-    const float g = (dbRGB_Gf(src) * src_a + dbRGB_Gf(dst)); //  * (1.0f - a)
-    const float b = (dbRGB_Bf(src) * src_a + dbRGB_Bf(dst)); //  * (1.0f - a)
-
-    return dbRGB(
-        dbClampBytef(r),
-        dbClampBytef(g),
-        dbClampBytef(b),
-        255
-    );
-}
-
-#else
-
 // glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+// glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_FALSE);  // don't write alpha
+
 // ===================================================================
-uint32_t blendColor(uint32_t src, uint32_t dst)
+uint32_t blendColor_NoAlphaWrite(const uint32_t src, const uint32_t dst)
 // ===================================================================
 {
     const float src_a = dbRGB_Af(src) / 255.0f;
@@ -54,98 +36,63 @@ uint32_t blendColor(uint32_t src, uint32_t dst)
     );
 }
 
+// glBlendFunc(GL_SRC_ALPHA, GL_ONE);
 // ===================================================================
-glm::vec4 blendColor( const glm::vec4& src, const glm::vec4& dst )
+uint32_t blendColorAdd_NoAlphaWrite(const uint32_t src, const uint32_t dst)
+// ===================================================================
+{
+    const float src_a = dbRGB_Af(src) / 255.0f;
+    const float r = (dbRGB_Rf(src) * src_a + dbRGB_Rf(dst));
+    const float g = (dbRGB_Gf(src) * src_a + dbRGB_Gf(dst));
+    const float b = (dbRGB_Bf(src) * src_a + dbRGB_Bf(dst));
+
+    return dbRGB(
+        dbClampBytef(r),
+        dbClampBytef(g),
+        dbClampBytef(b),
+        255
+    );
+}
+
+// It’s the classic “SourceOver” Porter–Duff operator
+// glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+// glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA,
+//                     GL_ONE,       GL_ONE_MINUS_SRC_ALPHA);
+// ===================================================================
+uint32_t blendColor(const uint32_t src, const uint32_t dst)
+// ===================================================================
+{
+    float a1 = float(dbRGB_A(dst)) / 255.0f;
+    float a2 = float(dbRGB_A(src)) / 255.0f;
+
+    float outA = a2 + a1 * (1.0f - a2);
+
+    float r = (dbRGB_R(src) * a2 + dbRGB_R(dst) * (1.0f - a2));
+    float g = (dbRGB_G(src) * a2 + dbRGB_G(dst) * (1.0f - a2));
+    float b = (dbRGB_B(src) * a2 + dbRGB_B(dst) * (1.0f - a2));
+
+    return dbRGB(
+        int(std::lround(r)),
+        int(std::lround(g)),
+        int(std::lround(b)),
+        int(std::lround(outA * 255.0f))
+    );
+}
+
+// ===================================================================
+glm::vec4 blendColor_v4( const glm::vec4& src, const glm::vec4& dst )
 // ===================================================================
 {
     const float r = dst.r + src.a * (src.r - dst.r);
     const float g = dst.g + src.a * (src.g - dst.g);
     const float b = dst.b + src.a * (src.b - dst.b);
-    const float a = std::clamp( src.a + src.a, 0.0f, 1.0f );
+    const float a = dbClampf( src.a + src.a, 0.0f, 1.0f );
     return glm::vec4(r,g,b,a);
 }
 
-#endif
-
-#if 0
-uint32_t blendColor(uint32_t bg, uint32_t fg)
-{
-    float a1 = float(dbRGB_A(bg)) / 255.0f;
-    float a2 = float(dbRGB_A(fg)) / 255.0f;
-
-    float outA = a2 + a1 * (1.0f - a2);
-
-    float r = (dbRGB_R(fg) * a2 + dbRGB_R(bg) * (1.0f - a2));
-    float g = (dbRGB_G(fg) * a2 + dbRGB_G(bg) * (1.0f - a2));
-    float b = (dbRGB_B(fg) * a2 + dbRGB_B(bg) * (1.0f - a2));
-
-    return dbRGB(
-        int(std::lround(r)),
-        int(std::lround(g)),
-        int(std::lround(b)),
-        int(std::lround(outA * 255.0f))
-    );
-}
-
-#else
-
-//glEnable(GL_BLEND);
-//glBlendFunc(GL_SRC_ALPHA, GL_ONE);
 
 
-
-#endif
 /*
-uint32_t blendColor(uint32_t bg, uint32_t fg)
-{
-    float a = float(dbRGB_A(fg)) / 255.0f;
-    float r = (dbRGB_R(fg) * a + dbRGB_R(bg));
-    float g = (dbRGB_G(fg) * a + dbRGB_G(bg));
-    float b = (dbRGB_B(fg) * a + dbRGB_B(bg));
-
-    return dbRGB(
-        uint8_t(std::clamp( int(std::lround(r)), 0, 255 )),
-        uint8_t(std::clamp( int(std::lround(g)), 0, 255 )),
-        uint8_t(std::clamp( int(std::lround(b)), 0, 255 )),
-        255
-    );
-}
-
-
-uint32_t blendColor(uint32_t bg, uint32_t fg)
-{
-    float a = float(dbRGB_A(fg)) / 255.0f;
-    float r = (dbRGB_R(fg) * a + dbRGB_R(bg) * (1.0f - a));
-    float g = (dbRGB_G(fg) * a + dbRGB_G(bg) * (1.0f - a));
-    float b = (dbRGB_B(fg) * a + dbRGB_B(bg) * (1.0f - a));
-
-    return dbRGB(
-        uint8_t(std::clamp( int(std::lround(r)), 0, 255 )),
-        uint8_t(std::clamp( int(std::lround(g)), 0, 255 )),
-        uint8_t(std::clamp( int(std::lround(b)), 0, 255 )),
-        255
-    );
-}
-
-uint32_t blendColor(uint32_t bg, uint32_t fg)
-{
-    float a1 = float(dbRGB_A(bg)) / 255.0f;
-    float a2 = float(dbRGB_A(fg)) / 255.0f;
-
-    float outA = a2 + a1 * (1.0f - a2);
-
-    float r = (dbRGB_R(fg) * a2 + dbRGB_R(bg) * (1.0f - a2));
-    float g = (dbRGB_G(fg) * a2 + dbRGB_G(bg) * (1.0f - a2));
-    float b = (dbRGB_B(fg) * a2 + dbRGB_B(bg) * (1.0f - a2));
-
-    return dbRGB(
-        int(std::lround(r)),
-        int(std::lround(g)),
-        int(std::lround(b)),
-        int(std::lround(outA * 255.0f))
-    );
-}
-
 // ===================================================================
 uint32_t blendColor( const uint32_t bg, const uint32_t fg )
 // ===================================================================

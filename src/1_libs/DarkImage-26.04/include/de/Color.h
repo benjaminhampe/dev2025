@@ -80,9 +80,24 @@ dbRGBv4( glm::vec4 const& color )
 
 namespace de {
 
+// -> Non linear :: Resulting alpha is always 255.
+// glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+// glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_FALSE);  // don't write alpha
+uint32_t blendColor_NoAlphaWrite( const uint32_t src, const uint32_t dst );
+
+// -> Linear blend :: (good for 100 lines at same px with alpha = 0.01 -> predictable brightness)
+// glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+// glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_FALSE);  // don't write alpha
+uint32_t blendColorAdd_NoAlphaWrite( const uint32_t src, const uint32_t dst );
+
+// -> Non linear :: Classic “SourceOver” Porter–Duff operator
+// glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+// glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA,
+//                     GL_ONE,       GL_ONE_MINUS_SRC_ALPHA);
 uint32_t blendColor( const uint32_t src, const uint32_t dst );
 
-glm::vec4 blendColor( const glm::vec4& src, const glm::vec4& dst );
+// More a lerpColor based on alpha values.
+glm::vec4 blendColor_v4( const glm::vec4& src, const glm::vec4& dst );
 
 uint32_t parseColor( const std::string & line );
 

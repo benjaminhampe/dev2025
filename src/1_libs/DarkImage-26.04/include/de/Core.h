@@ -286,8 +286,47 @@ typedef float f32;
 typedef double f64;
 typedef long double f80;
 
+// π
+constexpr float TWO_PI = float( 2.0 * M_PI );
+constexpr double TWO_PI64 = 2.0 * M_PI;
 
+inline bool isPowerOfTwo(uint32_t x)
+{
+    return x && !(x & (x - 1));
+}
 
+inline uint32_t nextPowerOf2(uint32_t v)
+{
+    if (v == 0) return 1;   // handle edge case
+
+    v--;
+    v |= v >> 1;
+    v |= v >> 2;
+    v |= v >> 4;
+    v |= v >> 8;
+    v |= v >> 16;
+    v++;
+    return v;
+}
+
+inline float clampf(float x, float lo, float hi)
+{
+    return fminf(fmaxf(x, lo), hi);
+}
+
+inline double clampd(double x, double lo, double hi)
+{
+    return fmin(fmax(x, lo), hi);
+}
+
+inline float absf(float x)
+{
+    uint32_t bits;
+    memcpy(&bits, &x, sizeof(bits));
+    bits &= 0x7fffffff;
+    memcpy(&x, &bits, sizeof(x));
+    return x;
+}
 
 // ===========================================================================
 struct PerfMarker
@@ -1434,6 +1473,321 @@ struct Align
 };
 
 } // end namespace de.
+
+// bool dbIsPowerOfTwo(uint32_t x);
+
+// uint32_t dbNextPowerOf2(uint32_t v);
+
+//==============================================================================
+/*
+DE_FORCE_INLINE bool dbIsPowerOfTwo(uint32_t k) noexcept
+{
+    if (k < 2) return false;
+    return 0 == (k & (k - 1));
+}
+*/
+DE_FORCE_INLINE bool dbIsPowerOfTwo(uint8_t x) noexcept
+{
+    return x && !(x & (x - 1));
+}
+
+DE_FORCE_INLINE bool dbIsPowerOfTwo(uint16_t x) noexcept
+{
+    return x && !(x & (x - 1));
+}
+
+DE_FORCE_INLINE bool dbIsPowerOfTwo(uint32_t x) noexcept
+{
+    return x && !(x & (x - 1));
+}
+
+DE_FORCE_INLINE bool dbIsPowerOfTwo(uint64_t x) noexcept
+{
+    return x && !(x & (x - 1));
+}
+
+/*
+DE_FORCE_INLINE uint32_t dbNextPowerOf2(uint32_t v) noexcept
+{
+    if (v == 0) return 2;   // handle edge case
+
+    v--;
+    v |= v >> 1;
+    v |= v >> 2;
+    v |= v >> 4;
+    v |= v >> 8;
+    v |= v >> 16;
+    v++;
+    return v;
+}
+*/
+
+// Returns the smallest PowerOf2 greater or equal than the given integral value.
+
+DE_FORCE_INLINE uint16_t dbNextPowerOf2_16(uint16_t k) noexcept
+{
+    if (k < 2) return 2;
+    --k;
+    k |= (k >> 1);
+    k |= (k >> 2);
+    k |= (k >> 4);
+    k |= (k >> 8);
+    return k + 1;
+}
+
+DE_FORCE_INLINE uint32_t dbNextPowerOf2( uint16_t k ) noexcept
+{
+   if (k < 2) return 2;
+   --k;
+   k |= (k >> 1);
+   k |= (k >> 2);
+   k |= (k >> 4);
+   k |= (k >> 8);
+   return k + 1;
+}
+
+// Returns the smallest PowerOf2 greater or equal than the given integral value.
+DE_FORCE_INLINE uint32_t dbNextPowerOf2( uint32_t k ) noexcept
+{
+   if (k < 2) return 2;
+   --k;
+   k |= (k >> 1);
+   k |= (k >> 2);
+   k |= (k >> 4);
+   k |= (k >> 8);
+   k |= (k >> 16);
+   return k + 1;
+}
+
+DE_FORCE_INLINE uint32_t dbNextPowerOf2_noverflow( uint32_t k ) noexcept
+{
+   if (k < 2) return 2;
+   if (k >= 0x80000000u) return 0x80000000u;
+   --k;
+   k |= (k >> 1);
+   k |= (k >> 2);
+   k |= (k >> 4);
+   k |= (k >> 8);
+   k |= (k >> 16);
+   return k + 1;
+}
+
+DE_FORCE_INLINE uint32_t dbNextPowerOf2_branchless(uint32_t k) noexcept
+{
+    uint32_t isSmall = (k < 2);
+    uint32_t x = k - 1;
+
+    x |= (x >> 1);
+    x |= (x >> 2);
+    x |= (x >> 4);
+    x |= (x >> 8);
+    x |= (x >> 16);
+
+    uint32_t next = x + 1;
+
+    // If k < 2, return 2; otherwise return next.
+    return (isSmall * 2) | ((~isSmall) & next);
+}
+
+// Returns the smallest PowerOf2 greater or equal than the given integral value.
+DE_FORCE_INLINE uint64_t dbNextPowerOf2( uint64_t k ) noexcept
+{
+   if (k < 2) return 2;
+   --k;
+   k |= (k >> 1);
+   k |= (k >> 2);
+   k |= (k >> 4);
+   k |= (k >> 8);
+   k |= (k >> 16);
+   k |= (k >> 32);
+   return k + 1;
+}
+
+DE_FORCE_INLINE de::s32 dbClampi( de::s32 v, de::s32 vmin, de::s32 vmax )
+{
+    return std::clamp<de::s32>( v, vmin, vmax );
+}
+
+DE_FORCE_INLINE de::f32 dbClampf(de::f32 x, de::f32 lo, de::f32 hi)
+{
+    return fminf(fmaxf(x, lo), hi);
+}
+
+DE_FORCE_INLINE de::f64 dbClampd(de::f64 x, de::f64 lo, de::f64 hi)
+{
+    return fmin(fmax(x, lo), hi);
+}
+
+DE_FORCE_INLINE de::f32 dbAbsf(de::f32 x)
+{
+    de::u32 bits;
+    memcpy(&bits, &x, sizeof(bits));
+    bits &= 0x7fffffff;
+    memcpy(&x, &bits, sizeof(x));
+    return x;
+}
+
+DE_FORCE_INLINE de::f64 dbAbsd(de::f64 x)
+{
+    de::u64 bits;
+    memcpy(&bits, &x, sizeof(bits));
+    bits &= 0x7fffffffffffffff;
+    memcpy(&x, &bits, sizeof(x));
+    return x;
+}
+
+// Round:
+DE_FORCE_INLINE de::f32 dbRound( de::f32 v ) { return std::roundf( v ); }
+DE_FORCE_INLINE de::f64 dbRound( de::f64 v ) { return std::round( v ); }
+DE_FORCE_INLINE de::f80 dbRound( de::f80 v ) { return std::roundl( v ); }
+
+// Round32:
+DE_FORCE_INLINE int32_t dbRound32( de::f32 v ) { return std::lroundf( v ); }
+DE_FORCE_INLINE int32_t dbRound32( de::f64 v ) { return std::lround( v ); }
+DE_FORCE_INLINE int32_t dbRound32( de::f80 v ) { return std::lroundl( v ); }
+
+// Round64:
+DE_FORCE_INLINE int64_t dbRound64( de::f32 v ) { return std::llroundf( v ); }
+DE_FORCE_INLINE int64_t dbRound64( de::f64 v ) { return std::llround( v ); }
+DE_FORCE_INLINE int64_t dbRound64( de::f80 v ) { return std::llroundl( v ); }
+
+// SafeModulo with negative numbers
+DE_FORCE_INLINE int32_t dbSafeMod( int32_t a, int32_t b )
+{
+   if ( a == 0 || b == 0 ) { return 0; }
+   return std::abs( a ) % std::abs( b );
+}
+
+// Min():
+DE_FORCE_INLINE de::u8  dbMin( de::u8  a, de::u8  b ) { return std::min<de::u8> (a,b); }
+DE_FORCE_INLINE de::s8  dbMin( de::s8  a, de::s8  b ) { return std::min<de::s8> (a,b); }
+DE_FORCE_INLINE de::u16 dbMin( de::u16 a, de::u16 b ) { return std::min<de::u16>(a,b); }
+DE_FORCE_INLINE de::s16 dbMin( de::s16 a, de::s16 b ) { return std::min<de::s16>(a,b); }
+DE_FORCE_INLINE de::u32 dbMin( de::u32 a, de::u32 b ) { return std::min<de::u32>(a,b); }
+DE_FORCE_INLINE de::s32 dbMin( de::s32 a, de::s32 b ) { return std::min<de::s32>(a,b); }
+DE_FORCE_INLINE de::u64 dbMin( de::u64 a, de::u64 b ) { return std::min<de::u64>(a,b); }
+DE_FORCE_INLINE de::s64 dbMin( de::s64 a, de::s64 b ) { return std::min<de::s64>(a,b); }
+DE_FORCE_INLINE de::f32 dbMin( de::f32 a, de::f32 b ) { return std::fminf(a,b); }
+DE_FORCE_INLINE de::f64 dbMin( de::f64 a, de::f64 b ) { return std::fmin(a,b); }
+DE_FORCE_INLINE de::f80 dbMin( de::f80 a, de::f80 b ) { return std::fminl(a,b); }
+
+// Max():
+DE_FORCE_INLINE de::u8  dbMax( de::u8  a, de::u8  b ) { return std::max<de::u8> (a,b); }
+DE_FORCE_INLINE de::s8  dbMax( de::s8  a, de::s8  b ) { return std::max<de::s8> (a,b); }
+DE_FORCE_INLINE de::u16 dbMax( de::u16 a, de::u16 b ) { return std::max<de::u16>(a,b); }
+DE_FORCE_INLINE de::s16 dbMax( de::s16 a, de::s16 b ) { return std::max<de::s16>(a,b); }
+DE_FORCE_INLINE de::u32 dbMax( de::u32 a, de::u32 b ) { return std::max<de::u32>(a,b); }
+DE_FORCE_INLINE de::s32 dbMax( de::s32 a, de::s32 b ) { return std::max<de::s32>(a,b); }
+DE_FORCE_INLINE de::u64 dbMax( de::u64 a, de::u64 b ) { return std::max<de::u64>(a,b); }
+DE_FORCE_INLINE de::s64 dbMax( de::s64 a, de::s64 b ) { return std::max<de::s64>(a,b); }
+DE_FORCE_INLINE de::f32 dbMax( de::f32 a, de::f32 b ) { return std::fmaxf(a,b); }
+DE_FORCE_INLINE de::f64 dbMax( de::f64 a, de::f64 b ) { return std::fmax(a,b); }
+DE_FORCE_INLINE de::f80 dbMax( de::f80 a, de::f80 b ) { return std::fmaxl(a,b); }
+
+// Abs():
+DE_FORCE_INLINE de::u8  dbAbs( de::u8  v ) { return v; }
+DE_FORCE_INLINE de::s8  dbAbs( de::s8  v ) { return std::abs(v); }
+DE_FORCE_INLINE de::u16 dbAbs( de::u16 v ) { return v; }
+DE_FORCE_INLINE de::s16 dbAbs( de::s16 v ) { return std::abs(v); }
+DE_FORCE_INLINE de::u32 dbAbs( de::u32 v ) { return v; }
+DE_FORCE_INLINE de::s32 dbAbs( de::s32 v ) { return std::abs(v); }
+DE_FORCE_INLINE de::u64 dbAbs( de::u64 v ) { return v; }
+DE_FORCE_INLINE de::s64 dbAbs( de::s64 v ) { return std::abs(v); }
+DE_FORCE_INLINE de::f32 dbAbs( de::f32 v ) { return std::fabsf( v ); }
+DE_FORCE_INLINE de::f64 dbAbs( de::f64 v ) { return std::fabs( v ); }
+DE_FORCE_INLINE de::f80 dbAbs( de::f80 v ) { return std::fabsl( v ); }
+
+// Sin():
+DE_FORCE_INLINE de::f32 dbSin( de::f32 v ) { return ::sinf( v ); }
+DE_FORCE_INLINE de::f64 dbSin( de::f64 v ) { return ::sin( v ); }
+DE_FORCE_INLINE de::f80 dbSin( de::f80 v ) { return ::sinl( v ); }
+
+// Cos():
+DE_FORCE_INLINE de::f32 dbCos( de::f32 v ) { return ::cosf( v ); }
+DE_FORCE_INLINE de::f64 dbCos( de::f64 v ) { return ::cos( v ); }
+DE_FORCE_INLINE de::f80 dbCos( de::f80 v ) { return ::cosl( v ); }
+
+// Atan2():
+DE_FORCE_INLINE de::f32 dbAtan2( de::f32 a, de::f32 b ) { return ::atan2f( a,b ); }
+DE_FORCE_INLINE de::f64 dbAtan2( de::f64 a, de::f64 b ) { return ::atan2( a,b ); }
+DE_FORCE_INLINE de::f80 dbAtan2( de::f80 a, de::f80 b ) { return ::atan2l( a,b ); }
+
+// Arcsin():
+DE_FORCE_INLINE de::f32 dbAsin( de::f32 v ) { return ::asinf( v ); }
+DE_FORCE_INLINE de::f64 dbAsin( de::f64 v ) { return ::asin( v ); }
+DE_FORCE_INLINE de::f80 dbAsin( de::f80 v ) { return ::asinl( v ); }
+
+// Arccos():
+DE_FORCE_INLINE de::f32 dbAcos( de::f32 v ) { return ::acosf( v ); }
+DE_FORCE_INLINE de::f64 dbAcos( de::f64 v ) { return ::acos( v ); }
+DE_FORCE_INLINE de::f80 dbAcos( de::f80 v ) { return ::acosl( v ); }
+
+// SQRT():
+DE_FORCE_INLINE de::f32 dbSqrt( de::f32 v ) { return ::sqrtf( v ); }
+DE_FORCE_INLINE de::f64 dbSqrt( de::f64 v ) { return ::sqrt( v ); }
+DE_FORCE_INLINE de::f80 dbSqrt( de::f80 v ) { return ::sqrtl( v ); }
+
+// isInfinite():
+DE_FORCE_INLINE de::f32 dbIsInf( de::f32 v ) { return std::isinf( v ) || std::isnan( v ); }
+DE_FORCE_INLINE de::f64 dbIsInf( de::f64 v ) { return std::isinf( v ) || std::isnan( v ); }
+DE_FORCE_INLINE de::f80 dbIsInf( de::f80 v ) { return std::isinf( v ) || std::isnan( v ); }
+
+// DEG: ( convert radians to degrees )
+DE_FORCE_INLINE de::f32 dbDEG( de::f32 radians ) { return radians * de::f32(180.0 / 3.1415926535897932384626433832795028841971693993751); }
+DE_FORCE_INLINE de::f64 dbDEG( de::f64 radians ) { return radians * de::f64(180.0 / 3.1415926535897932384626433832795028841971693993751); }
+DE_FORCE_INLINE de::f80 dbDEG( de::f80 radians ) { return radians * de::f80(180.0 / 3.1415926535897932384626433832795028841971693993751); }
+
+template < typename T > glm::tvec2< T > dbDEG( glm::tvec2< T > const & v ) { return { dbDEG( v.x ), dbDEG( v.y ) }; }
+template < typename T > glm::tvec3< T > dbDEG( glm::tvec3< T > const & v ) { return { dbDEG( v.x ), dbDEG( v.y ), dbDEG( v.z ) }; }
+template < typename T > glm::tvec4< T > dbDEG( glm::tvec4< T > const & v ) { return { dbDEG( v.x ), dbDEG( v.y ), dbDEG( v.z ), dbDEG( v.w ) }; }
+
+// RAD: ( convert degrees to radians )
+DE_FORCE_INLINE de::f32 dbRAD( de::f32 degrees ) { return degrees * de::f32(3.1415926535897932384626433832795028841971693993751 / 180.0); }
+DE_FORCE_INLINE de::f64 dbRAD( de::f64 degrees ) { return degrees * de::f64(3.1415926535897932384626433832795028841971693993751 / 180.0); }
+DE_FORCE_INLINE de::f80 dbRAD( de::f80 degrees ) { return degrees * de::f80(3.1415926535897932384626433832795028841971693993751 / 180.0); }
+
+template < typename T > glm::tvec2< T > dbRAD( glm::tvec2< T > const & v ) { return { dbRAD( v.x ), dbRAD( v.y ) }; }
+template < typename T > glm::tvec3< T > dbRAD( glm::tvec3< T > const & v ) { return { dbRAD( v.x ), dbRAD( v.y ), dbRAD( v.z ) }; }
+template < typename T > glm::tvec4< T > dbRAD( glm::tvec4< T > const & v ) { return { dbRAD( v.x ), dbRAD( v.y ), dbRAD( v.z ), dbRAD( v.w ) }; }
+
+// Clamp:
+DE_FORCE_INLINE de::s32 dbClamp( de::s32 v, de::s32 vmin, de::s32 vmax ) { return std::clamp<de::s32>( v, vmin, vmax ); }
+DE_FORCE_INLINE de::f32 dbClamp( de::f32 v, de::f32 vmin, de::f32 vmax ) { return dbClampf( v, vmin, vmax ); }
+DE_FORCE_INLINE de::f64 dbClamp( de::f64 v, de::f64 vmin, de::f64 vmax ) { return dbClampd( v, vmin, vmax ); }
+
+// Reciprocal:
+DE_FORCE_INLINE de::f32 dbReciprocal( de::f32 v ) { de::f32 i = 1.0f / v; if ( std::isinf( i ) || std::isnan( i ) ) { return 0.0f; } return i; }
+DE_FORCE_INLINE de::f64 dbReciprocal( de::f64 v ) { de::f64 i = 1.0 / v; if ( std::isinf( i ) || std::isnan( i ) ) { return 0.0; } return i; }
+
+// Equals:
+DE_FORCE_INLINE bool dbEquals( de::f32 a, de::f32 b, de::f32 eps = 1.0e-6f ) { return dbAbsf( b-a ) <= eps; }
+DE_FORCE_INLINE bool dbEquals( de::f64 a, de::f64 b, de::f64 eps = 1.0e-9 ) { return dbAbsd( b-a ) <= eps; }
+DE_FORCE_INLINE bool dbEquals( glm::vec3 const & a, glm::vec3 const & b, float eps = 1.0e-6f )
+{
+   return dbEquals( a.x,b.x,eps ) && dbEquals( a.y,b.y,eps ) && dbEquals( a.z,b.z,eps );
+}
+DE_FORCE_INLINE bool dbEquals( glm::dvec3 const & a, glm::dvec3 const & b, double eps = 1e-6 )
+{
+   return dbEquals( a.x, b.x, eps ) && dbEquals( a.y, b.y, eps ) && dbEquals( a.z, b.z, eps );
+}
+
+// IsZero:
+DE_FORCE_INLINE de::f32 dbIsZero( de::f32 v ) { return dbEquals( v, 0.0f ); }
+DE_FORCE_INLINE de::f64 dbIsZero( de::f64 v ) { return dbEquals( v, 0.0, 1.0e-15 ); }
+
+/*
+// Byte2float
+DE_FORCE_INLINE float dbByte2float( uint8_t b_0_255 )
+{
+   return float( b_0_255 ) / 255.0f;
+}
+
+// Float2byte
+DE_FORCE_INLINE uint8_t dbFloat2byte( float f_0_1 )
+{
+   return uint8_t( dbClamp( int( f_0_1 * 255.0f ), 0, 255 ) );
+}
+*/
 
 // ========================================================================
 bool dbMouseOver( int mx, int my, int x1, int y1, int x2, int y2 );
