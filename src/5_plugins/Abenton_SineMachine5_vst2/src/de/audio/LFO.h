@@ -48,14 +48,14 @@ public:
 
     void init( T sampleRate )
     {
-        m_phaseInc = T(de::TWO_PI) * m_frequency / sampleRate;
+        m_phaseInc = T(de::TWO_PI64) * m_frequency / sampleRate;
     }
 
     void updatePhase() // Advance phase and wrap to [0, 2π]
     {
         m_phase += m_phaseInc;
-        if (m_phase >= T(de::TWO_PI))
-            m_phase -= T(de::TWO_PI);
+        if (m_phase >= T(de::TWO_PI64))
+            m_phase -= T(de::TWO_PI64);
     }
 
     // LFO shape impl - Constant wave

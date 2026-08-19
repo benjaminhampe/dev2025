@@ -161,165 +161,250 @@ void dbLogMessage( int logLevel, const std::string& msg,
     //if ( flush ) { fflush(stdout); }
 }
 
-#ifndef USE_BENNI_RUNTIME_CHECKS
-#define USE_BENNI_RUNTIME_CHECKS
-#endif
-
-#ifndef USE_BENNI_ASSUME_AVX2
-#define USE_BENNI_ASSUME_AVX2
-#endif
-
-#if defined(USE_BENNI_RUNTIME_CHECKS) && defined(USE_BENNI_ASSUME_AVX2)
-#ifndef USE_BENNI_RUNTIME_CHECKS_AVX2
-#define USE_BENNI_RUNTIME_CHECKS_AVX2
-#endif
-#endif
-
-void de_memcpy_no_overlap(void* __restrict__ dst,
-                          const void* __restrict__ src,
-                          uint64_t bytes)
-{
-#ifndef NDEBUG
-    const auto dst_beg = (uintptr_t)dst;
-    const auto dst_end = dst_beg + bytes;
-    const auto src_beg = (uintptr_t)src;
-    const auto src_end = src_beg + bytes;
-
-    assert(dst_end <= src_beg || src_end <= dst_beg);
-#else
-
-    #ifdef USE_BENNI_RUNTIME_CHECKS
-
-    if ((uintptr_t)dst + bytes <= (uintptr_t)src ||
-        (uintptr_t)src + bytes <= (uintptr_t)dst)
-    {
-    }
-    else
-    {
-        if ((uintptr_t)dst + bytes > (uintptr_t)src)
-        {
-            DE_ERROR("overlap detected: dst + bytes > src")
-        }
-        else
-        {
-            DE_ERROR("overlap detected: src + bytes > dst")
-        }
-        #if defined(_MSC_VER)
-            __debugbreak();
-        #else
-            __builtin_trap();
-        #endif
-        return;
-    }
-    #endif
-
-    DE_ASSUME(
-        (uintptr_t)dst + bytes <= (uintptr_t)src ||
-        (uintptr_t)src + bytes <= (uintptr_t)dst);
-
-#endif
-
-    std::memcpy(dst, src, bytes);
-}
-
-/*
-void de_runtime_check_pointer_avx2(const void* p)
-{
-    #ifdef USE_BENNI_RUNTIME_CHECKS_AVX2
-    if (((uintptr_t)p & 31) != 0)
-    {
-        DE_ERROR("unaligned AVX2 pointer: ", dbHex((uint64_t)p))
-        #if defined(_MSC_VER)
-            __debugbreak();
-        #else
-            __builtin_trap();
-        #endif
-        return;
-    }
-    #endif
-}
-*/
-
-void de_memcpy_no_overlap_avx2(void* __restrict__ dst,
-                          const void* __restrict__ src,
-                          uint64_t bytes)
-{
-    // static_assert(std::is_trivially_copyable_v<T>,
-    //               "T must be trivially copyable");
-
-    // static_assert(sizeof(T) > 0, "T must not be incomplete");
-
-#ifndef NDEBUG
-    const auto dst_beg = (uintptr_t)dst;
-    const auto dst_end = dst_beg + bytes;
-    const auto src_beg = (uintptr_t)src;
-    const auto src_end = src_beg + bytes;
-
-    assert(dst_end <= src_beg || src_end <= dst_beg);
-
-    assert(((uintptr_t)dst & 31) == 0);
-    assert(((uintptr_t)src & 31) == 0);
-#else
-
-    #ifdef USE_BENNI_RUNTIME_CHECKS
-
-    if ((uintptr_t)dst + bytes <= (uintptr_t)src ||
-        (uintptr_t)src + bytes <= (uintptr_t)dst)
-    {
-        // Not overlapping
-    }
-    else
-    {
-        if ((uintptr_t)dst + bytes > (uintptr_t)src)
-        {
-            DE_ERROR("overlap detected: dst + bytes > src")
-        }
-        else
-        {
-            DE_ERROR("overlap detected: src + bytes > dst")
-        }
-        #if defined(_MSC_VER)
-            __debugbreak();
-        #else
-            __builtin_trap();
-        #endif
-        return;
-    }
-    #endif
-
-    DE_ASSUME(
-        (uintptr_t)dst + bytes <= (uintptr_t)src ||
-        (uintptr_t)src + bytes <= (uintptr_t)dst);
-
-    #ifdef USE_BENNI_RUNTIME_CHECKS_AVX2
-
-    if (((uintptr_t)src & 31) != 0)
-    {
-        DE_ERROR("unaligned AVX2 pointer src: ", dbHex((uint64_t)src))
-        DE_ABORT
-        return;
-    }
-
-    if (((uintptr_t)dst & 31) != 0)
-    {
-        DE_ERROR("unaligned AVX2 pointer dst: ", dbHex((uint64_t)dst))
-        DE_ABORT
-        return;
-    }
-    #endif
-
-    #ifdef USE_BENNI_ASSUME_AVX2
-        DE_ASSUME_POINTER_AVX2(src);
-        DE_ASSUME_POINTER_AVX2(dst);
-    #endif
-#endif
-
-    std::memcpy(dst, src, bytes);
-}
-
 namespace de {
 
     namespace fs = std::filesystem;
+
+// ===========================================================================
+// ======= AlignedFloatShiftMatrix ===========================================
+// ===========================================================================
+
+// static
+void AlignedFloatShiftMatrix::test()
+{
+    testShiftRight();
+}
+// static
+void AlignedFloatShiftMatrix::testShiftLeft()
+{
+    auto dump = []( std::string msg, const TRowVector& v )
+    {
+        auto n = v.size();
+        DE_DEBUG(msg, " :: n = ",n)
+        for (size_t i = 0; i < n; ++i)
+        {
+            DE_DEBUG(msg,"[",i,"] ", dbHex(reinterpret_cast<uint64_t>(v[i])))
+        }
+    };
+
+    TRowVector ori{ (T*)0x05, (T*)0x04, (T*)0x03, (T*)0x02, (T*)0x01 };
+    TRowVector tmp{ (T*)0x05, (T*)0x04, (T*)0x03, (T*)0x02, (T*)0x01 };
+
+    DE_OK("[Test] ShiftLeft:")
+    dump("Before-Ori",ori);
+    dump("Before-Tmp",tmp);
+    shiftVectorRight(ori,tmp);
+    dump("After-Ori",ori);
+    dump("After-Tmp",tmp);
+}
+// static
+void AlignedFloatShiftMatrix::shiftVectorLeft(TRowVector & orig, TRowVector & temp)
+{
+    const auto n = orig.size();
+    if (n < 2)
+    {
+        DE_WARN("Vector is tiny ", n)
+        return;
+    }
+
+    //   ori |5|4|3|2|1|0|
+    //   tmp |5|4|3|2|1|0|
+    // = tmp |4|3|2|1|0|x|
+    std::memcpy(temp.data(), orig.data() + 1, sizeof(T*) * (n-1));
+
+    // = tmp |4|3|2|1|0|5|
+    temp[n-1] = orig[0]; // last elem swaps around and becomes first elem.
+
+    // Make 'temp' the new 'orig'...
+    std::swap(orig,temp);
+}
+
+// static
+void AlignedFloatShiftMatrix::testShiftRight()
+{
+    auto dump = []( std::string msg, const TRowVector& v )
+    {
+        auto n = v.size();
+        DE_DEBUG(msg, " :: n = ",n)
+        for (size_t i = 0; i < n; ++i)
+        {
+            DE_DEBUG(msg,"[",i,"] ", dbHex(reinterpret_cast<uint64_t>(v[i])))
+        }
+    };
+
+    TRowVector ori{ (T*)0x01, (T*)0x02, (T*)0x03, (T*)0x04, (T*)0x05 };
+    TRowVector tmp{ (T*)0x01, (T*)0x02, (T*)0x03, (T*)0x04, (T*)0x05 };
+
+    DE_OK("[Test] ShiftRight:")
+    dump("Before-Ori",ori);
+    dump("Before-Tmp",tmp);
+    shiftVectorRight(ori,tmp);
+    dump("After-Ori",ori);
+    dump("After-Tmp",tmp);
+}
+
+// static
+void AlignedFloatShiftMatrix::shiftVectorRight(TRowVector & orig, TRowVector & temp)
+{
+    const auto n = orig.size();
+    if (n < 2)
+    {
+        DE_WARN("Vector is tiny ", n)
+        return;
+    }
+
+    //   ori |0|1|2|3|4|5|
+    //   tmp |0|1|2|3|4|5|
+    // = tmp |x|0|1|2|3|4|
+    // std::memcpy(temp.data() + 1, orig.data(), sizeof(T*) * (n-1));
+
+    //de_runtime_check_pointer_avx2(orig.data());
+    //de_runtime_check_pointer_avx2(temp.data());
+
+    std::memcpy(temp.data() + 1, orig.data(), sizeof(T*) * (n-1));
+
+    // std::memcpy(temp.data() + 1, orig.data(), sizeof(T*) * (n-1));
+
+    // = tmp |5|0|1|2|3|4|
+    temp[0] = orig[n-1]; // last elem swaps around and becomes first elem.
+
+#if 0
+    T* const* __restrict__ src = orig.data();   // read-only
+    T** __restrict__ dst = temp.data();         // write-only
+
+    DE_ASSUME(src != dst);
+    DE_ASSUME(src != dst + 1);
+
+    // DE_ASSUME((uintptr_t)(dst + 1) + sizeof(T*) * (n - 1) <= (uintptr_t)src ||
+    //           (uintptr_t)src + sizeof(T*) * (n - 1) <= (uintptr_t)(dst + 1));
+
+    std::memcpy(dst + 1, src, sizeof(T*) * (n - 1));
+
+    // = tmp |5|0|1|2|3|4|
+    //temp[0] = orig[n-1]; // last elem swaps around and becomes first elem.
+    dst[0] = src[n-1]; // last elem swaps around and becomes first elem.
+#endif
+
+    // Make 'temp' the new 'orig'...
+    std::swap(orig,temp);
+}
+
+
+// =======================================================================
+AlignedFloatShiftMatrix::AlignedFloatShiftMatrix()
+    : m_colCount( 0 )
+    , m_rowCount( 0 )
+    //, m_pushCount( 0 )
+    //, m_dummy( 0 )
+{
+    // test();
+
+    //DE_TRACE("")
+
+    // m_data.resize( m_rowCount * m_colCount );
+    // m_rows.resize( m_rowCount );
+    // m_temp.resize( m_rowCount );
+    // for (size_t i = 0; i < m_rowCount; i++)
+    // {
+    //     auto rowPtr = &m_data[m_colCount*i];
+    //     m_rows[ i ] = rowPtr;
+    //     m_temp[ i ] = rowPtr;
+    // }
+}
+
+AlignedFloatShiftMatrix::~AlignedFloatShiftMatrix()
+{
+    DE_TRACE("")
+
+}
+
+u32 AlignedFloatShiftMatrix::rowCount() const { return m_rowCount; }
+u32 AlignedFloatShiftMatrix::columnCount() const { return m_colCount; }
+
+BBox1f AlignedFloatShiftMatrix::getMinMax() const
+{
+    float lMin = std::numeric_limits< float >::max();
+    float lMax = std::numeric_limits< float >::lowest();
+
+    for ( const auto & f : m_data )
+    {
+        lMin = std::min( lMin, f );
+        lMax = std::max( lMax, f );
+    }
+
+    return BBox1f(lMin,lMax);
+}
+
+const AlignedFloatShiftMatrix::T*
+AlignedFloatShiftMatrix::getRow(int32_t row) const
+{
+    if (row < 0 || row >= int(m_rows.size()) )
+    {
+        DE_WARN("row(",row,") >= rows(",m_rows.size(),")")
+        return nullptr;
+    }
+    return m_rows[row]; // m_data.data() + row * m_colCount;
+}
+
+AlignedFloatShiftMatrix::T
+AlignedFloatShiftMatrix::getPixel(int32_t col, int32_t row, float defaultValue ) const
+{
+    const T* pRow = getRow(row);
+    if (!pRow)
+    {
+        DE_WARN("No row(",row,") >= rows(",m_rows.size(),")")
+        return defaultValue;
+    }
+    if (col < 0 || col >= m_colCount )
+    {
+        DE_WARN("No col(",col,") >= colCount(",m_colCount,")")
+        return defaultValue;
+    }
+    return pRow[ col ];
+}
+
+void AlignedFloatShiftMatrix::resize( u32 colCount, u32 rowCount )
+{
+    if (colCount < 1) { DE_WARN("Invalid colCount") return; }
+    if (rowCount < 1) { DE_WARN("Invalid rowCount") return; }
+
+    if (colCount > 4096) { DE_WARN("Invalid colCount ", colCount) return; }
+    if (rowCount > 4096) { DE_WARN("Invalid rowCount ", rowCount) return; }
+
+    if ((m_colCount != colCount) || (m_rowCount != rowCount))
+    {
+        m_data.resize( rowCount * colCount );
+        m_rows.resize( rowCount );
+        m_temp.resize( rowCount );
+        for ( size_t i = 0; i < rowCount; ++i )
+        {
+            auto rowPtr = &m_data[colCount*i];
+            m_rows[ i ] = rowPtr;
+            m_temp[ i ] = rowPtr;
+        }
+        m_colCount = colCount;
+        m_rowCount = rowCount;
+        DE_WARN("cols(",m_colCount,"), rows(",m_rowCount,")")
+    }
+}
+
+// Only mono channel data is allowed.
+void AlignedFloatShiftMatrix::push( T const* __restrict__ src, u32 srcFrames )
+{
+    if (srcFrames < 1) { DE_WARN("srcFrames < 1") return; }
+    if (srcFrames != m_colCount) { DE_WARN("srcFrames(",srcFrames,") != colCount(",m_colCount,")") return; }
+
+    //resize( srcFrames, m_rowCount );
+
+    // Shift 'orig' and store in 'view'...
+    shiftVectorRight(m_rows,m_temp);
+
+    // New front: fill data from push()
+    T* __restrict__ dst = m_rows.front();
+    DE_ASSUME(dst != src);
+    memcpy( dst, src, srcFrames * sizeof( T ));
+}
+
 
 // ===========================================================================
 // ======= PerfMarker ========================================================
@@ -341,10 +426,7 @@ PerfMarker::PerfMarker(std::string markerStr)
 
 PerfMarker::PerfMarker(std::string file, std::string func, int64_t line)
     : PerfMarker( dbStr(FileSystem::fileName(file),":",line," :: ",func,"()") )
-{
-
-}
-
+{}
 
 PerfMarker::~PerfMarker()
 {
@@ -415,6 +497,7 @@ StringUtil::to_wstr(const std::string& utf8)
 std::string
 StringUtil::to_str(const std::wstring& txt )
 {
+    DE_ERROR("Only C++17 legacy implementation")
     if (txt.empty()) return {};
     std::wstring_convert< std::codecvt_utf8< wchar_t > > converter;
     return converter.to_bytes( txt );
@@ -423,6 +506,7 @@ StringUtil::to_str(const std::wstring& txt )
 std::wstring
 StringUtil::to_wstr(const std::string& txt)
 {
+    DE_ERROR("Only C++17 legacy implementation")
     if (txt.empty()) return {};
     std::wstring_convert<std::codecvt_utf8< wchar_t > > converter;
     return converter.from_bytes(txt);
@@ -731,37 +815,16 @@ StringUtil::replace( const std::wstring& txt, const std::wstring& from, const st
                 s.erase(pos, from.length());
             }
         }
-        /*
-        size_t pos = s.find( from );
-        if ( pos == std::string::npos )
-        {
-        }
-        else
-        {
-            while( pos != std::string::npos )
-            {
-                nReplaces++;
-                s.erase( pos, pos + from.size() );
-                pos = s.find( from, pos );
-            }
-        }
-        */
     }
     else
     {
         size_t pos = s.find( from );
-        if ( pos == std::string::npos )
+        while( pos != std::string::npos )
         {
-        }
-        else
-        {
-            while( pos != std::string::npos )
-            {
-                nReplaces++;
-                s.replace( pos, from.size(), to ); // there is something to replace
-                pos += to.size(); // handles bad cases where 'to' is a substring of 'from'
-                pos = s.find( from, pos ); // advance to next token, if any
-            }
+            nReplaces++;
+            s.replace( pos, from.size(), to ); // there is something to replace
+            pos += to.size(); // handles bad cases where 'to' is a substring of 'from'
+            pos = s.find( from, pos ); // advance to next token, if any
         }
     }
     if ( nReplacements ) *nReplacements = size_t(nReplaces);
@@ -798,39 +861,6 @@ StringUtil::split( const std::string& txt, char searchChar, bool bKeepEmptyLines
     return lines;
 }
 
-/*
-// static
-std::vector< std::string >
-StringUtil::split( const std::string& txt, char searchChar )
-{
-    std::vector< std::string > lines;
-
-    std::string::size_type pos1 = 0;
-    std::string::size_type pos2 = txt.find( searchChar, pos1 );
-
-    while ( pos2 != std::string::npos )
-    {
-        std::string line = txt.substr( pos1, pos2-pos1 );
-        if ( !line.empty() )
-        {
-            lines.emplace_back( std::move( line ) );
-        }
-
-        pos1 = pos2+1;
-        pos2 = txt.find( searchChar, pos1 );
-    }
-
-    std::string line = txt.substr( pos1 );
-    if ( !line.empty() )
-    {
-        lines.emplace_back( std::move( line ) );
-    }
-
-    return lines;
-}
-*/
-
-// static
 std::string
 StringUtil::prefixLineNumbers( const std::string& src )
 {
@@ -845,7 +875,6 @@ StringUtil::prefixLineNumbers( const std::string& src )
     return s.str();
 }
 
-// static
 std::string
 StringUtil::file2header( uint8_t const* pBytes, size_t nBytes, std::string dataName )
 {
@@ -890,9 +919,6 @@ StringUtil::file2header( uint8_t const* pBytes, size_t nBytes, std::string dataN
 void
 StringUtil::lowerCase(std::string& txt, const std::locale& loc)
 {
-    //std::transform(txt.begin(), txt.end(), txt.begin(),
-    //    [&loc](unsigned char c) { return std::tolower(c, loc); });
-
     for ( char& c : txt )
     {
         #ifdef _MSC_VER
@@ -906,9 +932,6 @@ StringUtil::lowerCase(std::string& txt, const std::locale& loc)
 void
 StringUtil::upperCase(std::string& txt, const std::locale& loc)
 {
-    //std::transform(txt.begin(), txt.end(), txt.begin(),
-    //    [&loc](unsigned char c) { return std::toupper(c, loc); });
-
     for ( char& c : txt )
     {
         #ifdef _MSC_VER
@@ -940,7 +963,6 @@ StringUtil::upperCase(std::wstring& txt)
         );
 }
 
-//static
 std::string
 StringUtil::makeLower( const std::string & txt, const std::locale & loc )
 {
@@ -949,7 +971,6 @@ StringUtil::makeLower( const std::string & txt, const std::locale & loc )
     return out;
 }
 
-//static
 std::string
 StringUtil::makeUpper( const std::string & txt, const std::locale & loc )
 {
@@ -958,8 +979,6 @@ StringUtil::makeUpper( const std::string & txt, const std::locale & loc )
     return out;
 }
 
-
-//static
 bool
 StringUtil::startsWith( const std::string& str, char c )
 {
@@ -1195,50 +1214,7 @@ StringUtil::trimRight( const std::string& original, const std::string& filter )
     }
 
     // DE_DEBUG("original = ", original, ", tmp = ",tmp)
-    /*
-    size_t pos = std::string::npos;
-    for ( size_t i = 0; i < txt.size(); ++i )
-    {
-    size_t j = txt.size() - 1 - i;
-    char c = txt[ j ];
 
-    bool foundFilter = false;
-    for ( size_t k = 0; k < filter.size(); ++k )
-    {
-    if ( c == filter[k] )
-    {
-    foundFilter = true;
-    break;
-    }
-    }
-
-    if ( foundFilter )
-    {
-    pos = j;
-    }
-    else
-    {
-    break;
-    }
-    }
-
-    if ( pos != std::string::npos )
-    {
-    if ( pos < txt.size() )
-    {
-    return txt.substr( 0, pos );
-    }
-    else
-    {
-    std::cout << "[Error] dbStrTrimRight(" << txt << ") -> pos = " << pos << " of " << txt.size() << std::endl;
-    return txt;
-    }
-    }
-    else
-    {
-    return txt;
-    }
-    */
     return tmp;
 }
 
@@ -1505,6 +1481,7 @@ File::open(const std::string& utf8_uri, eFileMode fileMode, int permission)
         return false;
     }
 
+    m_uri = utf8_uri;
     return true;
 }
 
@@ -1512,7 +1489,7 @@ void File::close()
 {
     if ( m_fd < 0 )
     {
-        // DE_WARN("File already closed")
+        DE_WARN("Already closed. ",m_uri)
         return;
     }
 
@@ -1525,36 +1502,120 @@ bool File::is_open() const
     return m_fd > -1;
 }
 
-int32_t File::write( const void* __restrict__ src, int64_t nBytes ) const
+int64_t File::write( const void* __restrict__ src, int64_t nBytes ) const
 {
     if (!is_open())
     {
-        DE_ERROR("Not open")
+        DE_ERROR("Not open. ", m_uri)
         return 0;
     }
 
-    const int32_t nWritten = file64_write( m_fd, src, nBytes );
-    if ( nWritten < nBytes )
+    if ( nBytes < 1 )
     {
-        DE_ERROR("nWritten(",nWritten,") < nBytes(",nBytes,")")
+        DE_WARN("Got 0 bytes to write. ", m_uri)
+        return 0;
     }
-    return nWritten;
+
+    // INT_MAX/4 = 512MB chunks. Because file64_read() actually returns int32 not int64.
+    const int64_t chunkBytes = std::numeric_limits<int32_t>::max()/4;
+    const uint8_t* __restrict__ pSrc = reinterpret_cast<const uint8_t*>(src);
+
+    // Write File chunkwise to HDD
+    int64_t writtenBytes = 0;
+    while (writtenBytes < nBytes)
+    {
+        const int64_t reqBytes = std::min<int64_t>(nBytes - writtenBytes, chunkBytes);
+        const int64_t gotBytes = file64_write( m_fd, pSrc, reqBytes );
+
+        // ---- Hard error ----
+        if (gotBytes < 0)
+        {
+            DE_ERROR("HARD_WRITE_ERROR ", gotBytes, ". ",m_uri)
+            break;
+        }
+
+        // ---- Out of disk memory? ----
+        if (gotBytes == 0)
+        {
+            DE_ERROR("Disk full? ", m_uri);
+            break;
+        }
+
+        // ---- Partial write ----
+        if (gotBytes != reqBytes)
+        {
+            DE_ERROR("PARTIAL write: req=", reqBytes, " got=", gotBytes, ". ",m_uri)
+        }
+
+        writtenBytes += gotBytes;
+        pSrc += gotBytes;
+    }
+
+    // Check final size
+    if ( writtenBytes != nBytes )
+    {
+        DE_ERROR("Incomplete write: writtenBytes(",writtenBytes,") != expected(",nBytes,"). ",m_uri)
+    }
+
+    return writtenBytes;
 }
 
-int32_t File::read( void* __restrict__ dst, int64_t nBytes ) const
+int64_t File::read( void* __restrict__ dst, int64_t nBytes ) const
 {
     if (!is_open())
     {
-        DE_ERROR("Not open")
+        DE_ERROR("Not open. ", m_uri)
         return 0;
     }
 
-    const int32_t nRead = file64_read( m_fd, dst, nBytes );
-    if ( nRead < nBytes )
+    if ( nBytes < 1 )
     {
-        DE_ERROR("nRead(",nRead,") < nBytes(",nBytes,")")
+        DE_WARN("Got 0 bytes to read. ", m_uri)
+        return 0;
     }
-    return nRead;
+
+    // INT_MAX/4 = 512MB chunks. Because file64_read() actually returns int32 not int64.
+    const int64_t chunkBytes = std::numeric_limits<int32_t>::max()/4;
+    uint8_t* __restrict__ pDst = reinterpret_cast<uint8_t*>(dst);
+
+    // Read File chunkwise to RAM
+    int64_t readBytes = 0;
+    while (readBytes < nBytes)
+    {
+        const int64_t reqBytes = std::min<int64_t>(nBytes - readBytes, chunkBytes);
+        const int64_t gotBytes = file64_read( m_fd, pDst, reqBytes );
+
+        // ---- Hard error ----
+        if (gotBytes < 0)
+        {
+            DE_ERROR("HARD_READ_ERROR ", gotBytes, ". ",m_uri)
+            break;
+        }
+
+        // ---- EOF ----
+        if (gotBytes == 0)
+        {
+            DE_WARN("EOF should not happen here. ", m_uri);
+            break;
+        }
+
+        // ---- Partial read ----
+        if (gotBytes != reqBytes)
+        {
+            DE_WARN("PARTIAL read: req=", reqBytes, " got=", gotBytes, ". ",m_uri)
+        }
+
+        readBytes += gotBytes;
+        pDst += gotBytes;
+    }
+
+    // Check final size
+    if ( readBytes != nBytes )
+    {
+        DE_ERROR("File shorter than expected, gotBytes(",readBytes,") != expected(",nBytes,"). ",m_uri)
+    }
+
+    return readBytes;
 }
 
 int64_t File::size() const
@@ -1847,7 +1908,6 @@ FileSystem::loadStrW( const std::wstring& uri )
     }
     return o.str();
 }
-
 bool
 FileSystem::saveStr( const std::string& uri, const std::string& txt )
 {
@@ -1869,33 +1929,6 @@ FileSystem::saveStr( const std::wstring& uri, const std::wstring& txt )
     return true;
 }
 
-bool
-FileSystem::saveBin( const std::string& uri, const std::vector<uint8_t>& blob )
-{
-    //DE_PERF_MARKER
-    File file( uri, eFileMode::Write );
-    if ( !file.is_open() )
-    {
-        DE_ERROR("Cant open to write ", uri )
-        return false;
-    }
-
-    if ( blob.size() > 0 )
-    {
-        size_t bytesWritten = file.write(blob.data(), blob.size());
-        if ( bytesWritten < blob.size() )
-        {
-            DE_ERROR("bytesWritten(",bytesWritten,") < blob.size(",blob.size(),")")
-            return false;
-        }
-    }
-    else
-    {
-        DE_WARN("Write empty file. ", uri )
-    }
-    return true;
-}
-
 /*
 // Load font file into memory
 std::ifstream file("font.ttf", std::ios::binary);
@@ -1910,189 +1943,68 @@ std::vector<unsigned char> fontBuffer((std::istreambuf_iterator<char>(file)),
                                       std::istreambuf_iterator<char>());
 file.close();
 */
-// static
+
 bool
-FileSystem::loadBlob( Blob& blob, const std::string& uri )
+FileSystem::saveBlob( const Blob& blob, const std::string& uri )
 {
     // DE_PERF_MARKER
 
-    // Open file
-    File file( uri, eFileMode::Read );
-    if (!file.is_open())
+    if ( blob.empty() )
     {
-        DE_ERROR("Can't open binary file ", uri )
+        DE_WARN("Empty blob. ", uri ) // Nothing todo.
+        return true;
+    }
+
+    File file( uri, eFileMode::Write );
+    if ( !file.is_open() )
+    {
+        DE_ERROR("Cannot write blob. ", uri)
         return false;
     }
 
-    // Check file size for RAM.
-    const size_t nFileBytes = file.size();
-    if ( nFileBytes < 1 )
+    int64_t written = file.write(blob.data(), blob.size());
+    if ( written != blob.size() )
     {
-        DE_WARN("Empty file ", uri )
-        return false; // Empty file
+        DE_ERROR("written(",written,") != blob(",blob.size(),"). ",uri)
     }
+    return true;
+}
 
-    if ( nFileBytes >= size_t(1024*1024*1204) * 5 )
+bool
+FileSystem::loadBlob( Blob& blob, const std::string& uri, const int64_t sizeLimit )
+{
+    // DE_PERF_MARKER
+
+    File file( uri, eFileMode::Read );
+    if (!file.is_open()) { DE_ERROR("Cannot read file ", uri ) return false; }
+
+    // Check file size for RAM.
+    const int64_t nBytes = file.size();
+    if ( nBytes < 1 ) { DE_WARN("Empty file ", uri ) return false; }
+
+    if ( sizeLimit > 0 && sizeLimit < nBytes )
     {
-        DE_WARN("File >= 5GByte risk high, unsupported file size, 5GB limit reached.", uri )
-        return false; // Empty file
+        DE_WARN("File too big (",dbStrBytes(nBytes),"), only max. ",dbStrBytes(sizeLimit)," supported. ", uri )
+        return false;
     }
 
     // Reset and Allocate RAM for file
     blob.clear();
     try
     {
-        blob.resize( nFileBytes ); // , 0x00
+        blob.resize( nBytes ); // , 0x00
     }
     catch(...)
     {
-        return false; //DE_ERROR("OutOfMemory")
-    }
-
-    // Read File, write to RAM
-    size_t nReadBytes = 0;
-    try
-    {
-        nReadBytes = file.read( blob.data(), blob.size() );
-    }
-    catch(...)
-    {
-        //DE_ERROR("OutOfMemory")
-    }
-
-    // Check RAM size
-    if ( nReadBytes < nFileBytes )
-    {
-        DE_ERROR("nReadBytes(",nReadBytes,") < nFileBytes(",nFileBytes,")")
-        //return false;
-    }
-
-    return true;
-}
-
-// static
-Blob
-FileSystem::loadBlob( const std::string& uri )
-{
-    // DE_PERF_MARKER
-
-    // Open file
-    File file( uri, eFileMode::Read );
-    if (!file.is_open())
-    {
-        DE_ERROR("Can't open binary file ", uri )
-        return {};
-    }
-
-    // Check file size for RAM.
-    const size_t nFileBytes = file.size();
-    if ( nFileBytes < 1 )
-    {
-        DE_WARN("Empty file ", uri )
-        return {}; // Empty file
-    }
-
-    if ( nFileBytes >= size_t(1024*1024*1204) * 5 )
-    {
-        DE_WARN("File >= 5GByte risk high, unsupported file size, 5GB limit reached.", uri )
-        return {}; // Empty file
-    }
-
-    // Allocate RAM for file
-    Blob blob;
-    try
-    {
-        blob.resize( nFileBytes ); // , 0x00
-    }
-    catch(...)
-    {
-        return {}; //DE_ERROR("OutOfMemory")
-    }
-
-    // Read File, write to RAM
-    size_t nReadBytes = 0;
-    try
-    {
-        nReadBytes = file.read( blob.data(), blob.size() );
-    }
-    catch(...)
-    {
-        //DE_ERROR("OutOfMemory")
-    }
-
-    // Check RAM size
-    if ( nReadBytes < nFileBytes )
-    {
-        DE_ERROR("nReadBytes(",nReadBytes,") < nFileBytes(",nFileBytes,")")
-        //return {};
-    }
-
-    return blob;
-}
-
-// static
-bool
-FileSystem::saveBlob( const Blob& blob, const std::string& uri )
-{
-    // DE_PERF_MARKER
-    File file( uri, eFileMode::Write );
-    if ( !file.is_open() )
-    {
-        DE_ERROR("Cant open file to write blob ", uri )
+        DE_ERROR("OutOfMemory")
         return false;
     }
 
-    if ( blob.empty() )
+    // Read File to RAM, chunkwise in INT_MAX/2 chunks. Because file_read() returns int32_t not int64_t
+    const int64_t n = file.read( blob.data(), nBytes );
+    if ( n != nBytes )
     {
-        DE_WARN("Write empty file. ", uri )
-        return true;
-    }
-
-    size_t bytesWritten = file.write(blob.data(), blob.size());
-    if ( bytesWritten < blob.size() )
-    {
-        DE_ERROR("bytesWritten(",bytesWritten,") < blob.size(",blob.size(),")")
-    }
-    return true;
-}
-
-// static
-bool
-FileSystem::loadBin( const std::string& uri, std::vector<uint8_t>& blob )
-{
-    DE_PERF_MARKER
-    File file( uri, eFileMode::Read );
-    if ( !file.is_open() )
-    {
-        DE_ERROR("Can't read binary ", uri )
-        return false;
-    }
-
-    blob.clear();
-
-    const size_t nFileBytes = file.size();
-    if ( nFileBytes > 0 )
-    {
-        try
-        {
-            blob.resize( nFileBytes, 0x00 );
-        }
-        catch(...)
-        {
-            DE_ERROR("OOM")
-            return false;
-        }
-
-        const size_t nReadBytes = file.read( blob.data(), blob.size() );
-        if ( nReadBytes < nFileBytes )
-        {
-            DE_ERROR("nReadBytes(",nReadBytes,") < nFileBytes(",nFileBytes,")")
-            return false;
-        }
-    }
-    else
-    {
-        DE_WARN("Empty file content ", uri )
+        DE_ERROR("readBytes(",n,") != nBytes(",nBytes,"). ",uri)
     }
     return true;
 }
@@ -2151,7 +2063,6 @@ FileSystem::fileSize( const std::wstring & uri )
     return int64_t( fs::file_size( p ) );
 }
 
-// static
 std::string
 FileSystem::fileName( const std::string& uri, const std::string& relativeToPath )
 {
@@ -2181,7 +2092,6 @@ FileSystem::fileName( const std::string& uri, const std::string& relativeToPath 
 #endif
 }
 
-// static
 std::wstring
 FileSystem::fileName( const std::wstring& uri, const std::wstring& relativeToPath )
 {
@@ -2196,15 +2106,13 @@ FileSystem::fileName( const std::wstring& uri, const std::wstring& relativeToPat
         const auto p1 = makeAbsolute(uri);
         const auto p2 = makeAbsolute(relativeToPath);
         const auto p3 = fs::relative(p1, p2).wstring();
-        // fprintf(stdout,"p1 = %s\n",p1.c_str());
-        // fprintf(stdout,"p2 = %s\n",p2.c_str());
-        // fprintf(stdout,"p3 = %s\n",p3.c_str());
-        // fflush(stdout);
+        // DE_DEBUG("p1 = ",p1.c_str())
+        // DE_DEBUG("p2 = ",p2.c_str())
+        // DE_DEBUG("p3 = ",p3.c_str())
         return p3;
     }
 }
 
-// static
 std::string
 FileSystem::fileBase( const std::string& uri )
 {
@@ -2217,7 +2125,6 @@ FileSystem::fileBase( const std::wstring& uri )
     return fs::path( uri ).stem().wstring();
 }
 
-// static
 std::string
 FileSystem::fileSuffix( const std::string& uri )
 {
@@ -2268,36 +2175,10 @@ FileSystem::fileSuffix( const std::wstring& uri )
     return ext;
 }
 
-// static
 std::string
 FileSystem::fileDir( const std::string& uri )
 {
-#if 1
-    //return de_mbstr( fileDir(fs::u8path( uri ).wstring()) );
     return de_mbstr( fileDir( de_wstr( uri ) ) );
-#else
-    fs::path p( uri );
-    if ( p.is_relative() )
-    {
-        p = fs::absolute( p );
-    }
-
-    if ( !fs::is_directory( p ) )
-    {
-        if ( p.has_parent_path() )
-        {
-            p = p.parent_path();
-        }
-    }
-
-    std::string tmp = p.string();
-    tmp = StringUtil::replace( tmp, "\\", "/" );
-    if ( StringUtil::endsWith( tmp, "/" ) )
-    {
-        tmp = tmp.substr( 0, tmp.size() - 1 );
-    }
-    return tmp;
-#endif
 }
 
 std::wstring
@@ -2317,28 +2198,16 @@ FileSystem::fileDir( const std::wstring& uri )
         }
     }
 
-#if 1
     return makePosixPath(p.wstring());
-#else
-    std::wstring tmp = p.wstring();
-    tmp = StringUtil::replace( tmp, L"\\", L"/" );
-    if ( StringUtil::endsWith( tmp, L"/" ) )
-    {
-        tmp = tmp.substr( 0, tmp.size() - 1 );
-    }
-    return tmp;
-#endif
 }
 
-// static
 std::string
 FileSystem::parentDir( const std::string& uri )
 {
-    fs::path parent = fs::path(uri).parent_path();
+    fs::path parent = fs::u8path(uri).parent_path();
     return parent.u8string();
 }
 
-// static
 std::wstring
 FileSystem::parentDir( const std::wstring& uri )
 {
@@ -2346,7 +2215,6 @@ FileSystem::parentDir( const std::wstring& uri )
     return parent.wstring();
 }
 
-// static
 std::string
 FileSystem::makeAbsolute( const std::string& uri, const std::string& baseDir )
 {
@@ -2365,7 +2233,6 @@ FileSystem::makeAbsolute( const std::string& uri, const std::string& baseDir )
     return o;
 }
 
-// static
 std::wstring
 FileSystem::makeAbsolute( const std::wstring& uri, const std::wstring& baseDir )
 {
@@ -2382,41 +2249,14 @@ FileSystem::makeAbsolute( const std::wstring& uri, const std::wstring& baseDir )
     }
 }
 
-//static
 std::string
 FileSystem::makeWinPath( const std::string & uri )
 {
-#if 1
     fs::path p1 = fs::u8path( uri );
     fs::path p2( makeWinPath( p1.wstring() ) );
     return p2.u8string();
-#else
-    auto tmp = uri;
-
-    if (tmp.empty()) return tmp;
-
-    // DE_DEBUG("tmp = ", tmp)
-
-    tmp = StringUtil::replace( tmp, "/", "\\" );
-
-    // DE_DEBUG("tmp = ", tmp)
-
-    if ( StringUtil::endsWith( tmp, "\\.") )
-    {
-        tmp = tmp.substr(0, tmp.size()-2);
-        //DE_DEBUG("endsWithSlashDot uri = ", uri)
-    }
-    if ( StringUtil::endsWith( uri, "\\") )
-    {
-        tmp = tmp.substr(0, tmp.size()-1);
-        //DE_DEBUG("endsWithSlash uri = ", uri)
-    }
-
-    return tmp;
-#endif
 }
 
-//static
 std::wstring
 FileSystem::makeWinPath( const std::wstring & uri )
 {
@@ -2444,41 +2284,14 @@ FileSystem::makeWinPath( const std::wstring & uri )
     return tmp;
 }
 
-//static
 std::string
 FileSystem::makePosixPath( const std::string & uri )
 {
-#if 1
     fs::path p1 = fs::u8path( uri );
     fs::path p2( makePosixPath( p1.wstring() ) );
     return p2.u8string();
-#else
-    auto tmp = uri;
-
-    if (tmp.empty()) return tmp;
-
-    // DE_DEBUG("tmp = ", tmp)
-
-    tmp = StringUtil::replace( tmp, "\\", "/" );
-
-    // DE_DEBUG("tmp = ", tmp)
-
-    if ( StringUtil::endsWith( tmp, "/.") )
-    {
-        tmp = tmp.substr(0, tmp.size()-2);
-        //DE_DEBUG("endsWithSlashDot uri = ", uri)
-    }
-    if ( StringUtil::endsWith( uri, "/") )
-    {
-        tmp = tmp.substr(0, tmp.size()-1);
-        //DE_DEBUG("endsWithSlash uri = ", uri)
-    }
-
-    return tmp;
-#endif
 }
 
-//static
 std::wstring
 FileSystem::makePosixPath( const std::wstring & uri )
 {
@@ -2506,7 +2319,6 @@ FileSystem::makePosixPath( const std::wstring & uri )
     return tmp;
 }
 
-// static
 void
 FileSystem::createDirectory( const std::string& uri )
 {
@@ -2529,7 +2341,6 @@ FileSystem::createDirectory( const std::string& uri )
     }
 }
 
-// static
 void
 FileSystem::createDirectory( const std::wstring& uri )
 {
@@ -2552,8 +2363,6 @@ FileSystem::createDirectory( const std::wstring& uri )
     }
 }
 
-
-// static
 void
 FileSystem::removeFile( const std::string& uri )
 {
@@ -2566,7 +2375,6 @@ FileSystem::removeFile( const std::string& uri )
     }
 }
 
-// static
 void
 FileSystem::removeFile( const std::wstring& uri )
 {
@@ -2579,7 +2387,6 @@ FileSystem::removeFile( const std::wstring& uri )
     }
 }
 
-// static
 bool
 FileSystem::copyFile( std::string src, std::string dst )
 {
@@ -2657,7 +2464,6 @@ FileSystem::copyFile( std::string src, std::string dst )
     return true;
 }
 
-//static
 std::string
 FileSystem::createUniqueFileName( const std::string& userPrefix )
 {
@@ -2683,26 +2489,21 @@ FileSystem::createUniqueFileName( const std::string& userPrefix )
     return o.str();
 }
 
-//static
 bool
 FileSystem::isAbsolute( const std::string & uri )
 {
     return fs::u8path( uri ).is_absolute();
 }
 
-//static
 bool
 FileSystem::isAbsolute( const std::wstring & uri )
 {
     return fs::path( uri ).is_absolute();
 }
 
-// static
 std::vector<std::string>
 FileSystem::entries(std::string baseDir,
-        bool recursive,
-        bool withFiles,
-        bool withDirs)
+                    bool recursive, bool withFiles, bool withDirs)
 {
     std::vector<std::string> collection;
 
@@ -2728,13 +2529,9 @@ FileSystem::entries(std::string baseDir,
     return collection;
 }
 
-
-// static
 std::vector<std::wstring>
 FileSystem::entries(std::wstring baseDir,
-        bool recursive,
-        bool withFiles,
-        bool withDirs)
+                    bool recursive, bool withFiles, bool withDirs)
 {
     std::vector<std::wstring> collection;
 
@@ -2849,7 +2646,6 @@ FileSystem::entries(std::string baseDir,
     return true;
 }
 
-
 bool
 FileSystem::entries(std::wstring baseDir,
                     bool recursive,
@@ -2937,7 +2733,6 @@ FileSystem::entries(std::wstring baseDir,
     return true;
 }
 
-
 /*
 bool
 FileSystem::copyDirectory( std::string const & src, std::string const & dst )
@@ -2949,74 +2744,6 @@ FileSystem::copyDirectory( std::string const & src, std::string const & dst )
     //      std::cout << "[Error] " << __func__ << "( uri:" << uri << ") :: Got error " << e.message() << std::endl;
     //   }
     return false;
-}
-
-void
-FileSystem::entryList(  std::string baseDir, bool recursive, bool withFiles, bool withDirs,
-                      std::function< void( std::string const & ) > const & userFunc )
-{
-    baseDir = FileSystem::makeAbsolute( baseDir );
-    if ( !FileSystem::existDirectory( baseDir ) )
-    {
-        return;
-    }
-
-    if ( recursive )
-    {
-        fs::recursive_directory_iterator it( baseDir );
-        while ( it != fs::recursive_directory_iterator() )
-        {
-            fs::path p = it->path();
-            std::string absUri = FileSystem::makeAbsolute( p.string() );
-            dbStrReplace( absUri, "\\", "/" ); // make posix path
-
-            if ( withDirs && fs::is_directory( p ) )
-            {
-                userFunc( absUri );
-            }
-
-            if ( withFiles && fs::is_regular_file( p ) )
-            {
-                userFunc( absUri );
-            }
-
-            std::error_code ec;
-            it.increment( ec );
-            if ( ec )
-            {
-                // DE_ERROR("Recursive find : ",absUri," :: ",ec.message() )
-                break;
-            }
-        }
-    }
-    else
-    {
-        fs::directory_iterator it( baseDir );
-        while ( it != fs::directory_iterator() )
-        {
-            fs::path p = it->path();
-            std::string absUri = FileSystem::makeAbsolute( p.string() );
-            dbStrReplace( absUri, "\\", "/" ); // make posix path
-
-            if ( withDirs && fs::is_directory( p ) )
-            {
-                userFunc( absUri );
-            }
-
-            if ( withFiles && fs::is_regular_file( p ) )
-            {
-                userFunc( absUri );
-            }
-
-            std::error_code ec;
-            it.increment( ec );
-            if ( ec )
-            {
-                // DE_ERROR("Iterative find : ",absUri," :: ",ec.message() )
-                break;
-            }
-        }
-    }
 }
 
 std::string
@@ -3094,7 +2821,6 @@ FileSystem::createDirectory( std::string const & uri )
     }
 }
 
-
 void
 FileSystem::removeFile( std::string const & uri )
 {
@@ -3131,46 +2857,6 @@ FileSystem::removeDirectory( std::string const & uri )
     {
         std::cout << "[Error] " << __func__ << "( uri:" << uri << ") :: Got 2nd error " << e.message() << std::endl;
     }
-}
-
-
-size_t
-dbGetEntryCount( std::string const & uri, bool recursive, bool withFiles, bool withDirs )
-{
-    size_t entryCount = 0;
-    de::FileSystem::entryList( uri, recursive, withFiles, withDirs,
-                              [&] ( std::string const & ) { ++entryCount; } );
-    // DE_DEBUG("Found (", entryCount, ") entries in uri(", uri, "), recursive(", recursive, ")" )
-    return entryCount;
-}
-
-std::vector< std::string >
-dbGetFilesAndDirs( std::string const & uri, bool recursive, bool withFiles, bool withDirs )
-{
-    size_t entryCount = dbGetEntryCount( uri, recursive, withFiles, withDirs );
-    if ( entryCount < 1 )
-    {
-        return {};
-    }
-
-    std::vector< std::string > fileList;
-    fileList.reserve( entryCount );
-    de::FileSystem::entryList( uri, recursive, withFiles, withDirs,
-                              [&] ( std::string const & f ) { fileList.emplace_back( f ); } );
-    // DE_DEBUG("Found (", entryCount, ") entries in uri(", uri, "), recursive(", recursive, ")" )
-    return fileList;
-}
-
-std::vector< std::string >
-dbGetDirs( std::string const & uri, bool recursive )
-{
-    return dbGetFilesAndDirs( uri, recursive, false, true );
-}
-
-std::vector< std::string >
-dbGetFiles( std::string const & uri, bool recursive )
-{
-    return dbGetFilesAndDirs( uri, recursive, true, false );
 }
 
 std::vector< std::string >
@@ -3275,7 +2961,6 @@ dbFirstSubDirectory( std::string const & uri, bool recursive )
 
 // ===========================================================================
 
-// static
 int64_t
 SteadyClock::GetTimeInNanoseconds()
 {
@@ -3284,21 +2969,18 @@ SteadyClock::GetTimeInNanoseconds()
    return std::chrono::duration_cast< std::chrono::nanoseconds >( dur ).count();
 }
 
-// static
 int64_t
 SteadyClock::GetTimeInMicroseconds()
 {
    return GetTimeInNanoseconds() / 1000;
 }
 
-// static
 int32_t
 SteadyClock::GetTimeInMilliseconds()
 {
    return int32_t( GetTimeInNanoseconds() / 1000000 );
 }
 
-// static
 double
 SteadyClock::GetTimeInSeconds()
 {
@@ -3307,7 +2989,6 @@ SteadyClock::GetTimeInSeconds()
 
 // ===========================================================================
 
-// static
 int64_t
 HighResolutionClock::GetTimeInNanoseconds()
 {
@@ -3316,21 +2997,18 @@ HighResolutionClock::GetTimeInNanoseconds()
    return std::chrono::duration_cast< std::chrono::nanoseconds >( dur ).count();
 }
 
-// static
 int64_t
 HighResolutionClock::GetTimeInMicroseconds()
 {
    return GetTimeInNanoseconds() / 1000;
 }
 
-// static
 int32_t
 HighResolutionClock::GetTimeInMilliseconds()
 {
    return int32_t( GetTimeInNanoseconds() / 1000000 );
 }
 
-// static
 double
 HighResolutionClock::GetTimeInSeconds()
 {
@@ -3364,29 +3042,16 @@ PerformanceTimer::stop()
 }
 
 int64_t
-PerformanceTimer::ns() const
-{
-   return m_timeStop - m_timeStart;
-}
+PerformanceTimer::ns() const { return m_timeStop - m_timeStart; }
 
 int64_t
-PerformanceTimer::us() const
-{
-   return ns() / 1000;
-}
+PerformanceTimer::us() const { return ns() / 1000; }
 
 int32_t
-PerformanceTimer::ms() const
-{
-   return int32_t( ns() / 1000000 );
-}
+PerformanceTimer::ms() const { return int32_t( ns() / 1000000 ); }
 
 double
-PerformanceTimer::sec() const
-{
-   return double( ns() ) * 1.0e-9;
-}
-
+PerformanceTimer::sec() const { return double( ns() ) * 1.0e-9; }
 
 // ============================================================================
 // Binary
@@ -3441,12 +3106,6 @@ Binary::readU32_lsb()
     m_index += 4;
     m_avail -= 4;
     return size_t( a ) | ( size_t( b ) << 8 ) | ( size_t( c ) << 16 ) | ( size_t( d ) << 24 );
-
-    //      uint8_t a = readU8();
-    //      uint8_t b = readU8();
-    //      uint8_t c = readU8();
-    //      uint8_t d = readU8();
-    //      return size_t( a ) | ( size_t( b ) << 8 ) | ( size_t( c ) << 16 ) | ( size_t( d ) << 24 );
 }
 
 uint16_t
@@ -3464,10 +3123,6 @@ Binary::readU16_msb()
     m_index += 2;
     m_avail -= 2;
     return size_t( b ) | ( size_t( a ) << 8 );
-
-    //      uint8_t a = readU8();
-    //      uint8_t b = readU8();
-    //      return size_t( b ) | ( size_t( a ) << 8 );
 }
 
 uint32_t
@@ -3486,15 +3141,11 @@ Binary::readU32_msb()
     uint8_t d = *(p + 3);
     m_index += 4;
     m_avail -= 4;
-    return size_t( d ) | ( size_t( c ) << 8 ) | ( size_t( b ) << 16 ) | ( size_t( a ) << 24 );
-
-    //      uint8_t a = readU8();
-    //      uint8_t b = readU8();
-    //      uint8_t c = readU8();
-    //      uint8_t d = readU8();
-    //      return size_t( d ) | ( size_t( c ) << 8 ) | ( size_t( b ) << 16 ) | ( size_t( a ) << 24 );
+    return uint32_t( d ) |
+         ( uint32_t( c ) << 8 ) |
+         ( uint32_t( b ) << 16 ) |
+         ( uint32_t( a ) << 24 );
 }
-
 
 bool Binary::save( const std::string& uri ) const
 {
@@ -3844,9 +3495,6 @@ Binary::seek( uint64_t byteOffset, int dir )
 }
 */
 
-
-
-// static
 FileMagic::EFileMagic
 FileMagic::getFileMagicFromFile(const std::string& uri)
 {
@@ -3869,9 +3517,9 @@ FileMagic::getFileMagicFromFile(const std::string& uri)
     return getFileMagic( blob.data() );
 }
 
-// ============================================================================
-/// ImageMagic
-// ============================================================================
+// ===================
+// ImageMagic
+// ===================
 
 bool
 FileMagic::isJPG( void const* ptr )
@@ -4014,9 +3662,9 @@ FileMagic::isPCX( void const* ptr )
    return false;
 }
 
-// ============================================================================
-/// AudioMagic
-// ============================================================================
+// ===================
+// AudioMagic
+// ===================
 
 // CDA
 // 52 49 46 46 xx xx xx xx == RIFF....
@@ -4142,7 +3790,7 @@ bool FileMagic::isFLV( void const* ptr )
    return false;
 }
 
-
+// ===================
 
 Recti::Recti( int dummy )
     : x(0), y(0), w(0), h(0)
@@ -4345,8 +3993,9 @@ Recti::test()
     //      }
 }
 
-
+// ===================
 Rectf::Rectf()
+// ===================
     : m_x( 0 )
     , m_y( 0 )
     , m_w( 0 )
@@ -4367,7 +4016,6 @@ Rectf::Rectf( Rectf const & other )
     , m_h( other.m_h )
 {}
 
-// static
 float
 Rectf::computeU1( int32_t x1, int32_t w, bool useOffset )
 {
@@ -4378,7 +4026,6 @@ Rectf::computeU1( int32_t x1, int32_t w, bool useOffset )
         return float( x1 ) / float( w );
 }
 
-// static
 float
 Rectf::computeV1( int32_t y1, int32_t h, bool useOffset )
 {
@@ -4389,7 +4036,6 @@ Rectf::computeV1( int32_t y1, int32_t h, bool useOffset )
         return float( y1 ) / float( h );
 }
 
-// static
 float
 Rectf::computeU2( int32_t x2, int32_t w, bool useOffset )
 {
@@ -4400,7 +4046,6 @@ Rectf::computeU2( int32_t x2, int32_t w, bool useOffset )
         return float( x2+1 ) / float( w );
 }
 
-// static
 float
 Rectf::computeV2( int32_t y2, int32_t h, bool useOffset )
 {
@@ -4411,7 +4056,6 @@ Rectf::computeV2( int32_t y2, int32_t h, bool useOffset )
         return float( y2+1 ) / float( h );
 }
 
-// static
 Rectf
 Rectf::fromRecti( Recti const & pos, int32_t w, int32_t h, bool useOffset )
 {
@@ -4423,24 +4067,8 @@ Rectf::fromRecti( Recti const & pos, int32_t w, int32_t h, bool useOffset )
     float v1 = computeV1( y1, h, useOffset );
     float u2 = computeU2( x2, w, useOffset );
     float v2 = computeV2( y2, h, useOffset );
-    //      float u1 = (float(x1)+0.5f) / float( w );
-    //      float v1 = (float(y1)+0.5f) / float( h );
-    //      float u2 = (float(x2)+0.5f) / float( w );
-    //      float v2 = (float(y2)+0.5f) / float( h );
-    //   float u1 = (float(x1) + float(0.5)) / float( w );
-    //   float v1 = (float(y1) + float(0.5)) / float( h );
-    //   float u2 = (float(pw)) / float( w );
-    //   float v2 = (float(ph)) / float( h );
     return Rectf( u1, v1, u2-u1, v2-v1 );
-    //   float u1 = (float(x1)+0.5f) / float( w );
-    //   float v1 = (float(y1)+0.5f) / float( h );
-    //   float u2 = (float(x2)) / float( w );
-    //   float v2 = (float(y2)) / float( h );
-    //   float tw = (float(pos.getWidth())-0.5f) / float( w );
-    //   float th = (float(pos.getHeight())-0.5f) / float( h );
-    //   return Rectf( u1, v1, tw, th );
 }
-
 
 std::string
 Rectf::toString() const
@@ -4456,7 +4084,6 @@ Rectf::zero()
     m_x = m_y = m_w = m_h = float(0);
 }
 
-// static
 Rectf
 Rectf::identity() { return Rectf( float(0), float(0), float(1), float(1) ); }
 
@@ -4585,7 +4212,6 @@ bool dbMouseOver( int mx, int my, const de::Recti& pos )
     return dbMouseOver(mx,my,x1,y1,x2,y2);
 }
 
-
 std::string dbStrVal(float val, int digits)
 {
     int mg = val * std::pow(10.0f, digits );
@@ -4651,12 +4277,26 @@ std::string de_mbstr(const std::wstring& w ) { return de::StringUtil::to_str( w 
 std::string de_mbstr( wchar_t const w ) { return de::StringUtil::to_str( w ); }
 std::wstring de_wstr(const std::string& mb ) { return de::StringUtil::to_wstr( mb ); }
 
-de::Blob dbLoadBlob( const std::string& uri ) { return de::FileSystem::loadBlob(uri); }
-bool dbLoadBlob( de::Blob & blob, const std::string& uri ) { return de::FileSystem::loadBlob(blob,uri); }
-bool dbSaveBlob( const de::Blob& blob, const std::string& uri )  { return de::FileSystem::saveBlob(blob,uri); }
-
-std::string dbLoadText(const std::string& uri) { return de::FileSystem::loadStr( uri ); }
-std::wstring dbLoadText(const std::wstring& uri) { return de::FileSystem::loadStrW( uri ); }
+bool
+dbLoadBlob( de::Blob & blob, const std::string& uri, const int64_t sizeLimit )
+{
+    return de::FileSystem::loadBlob(blob,uri,sizeLimit);
+}
+bool
+dbSaveBlob( const de::Blob& blob, const std::string& uri )
+{
+    return de::FileSystem::saveBlob(blob,uri);
+}
+std::string
+dbLoadText(const std::string& uri)
+{
+    return de::FileSystem::loadStr( uri );
+}
+std::wstring
+dbLoadText(const std::wstring& uri)
+{
+    return de::FileSystem::loadStrW( uri );
+}
 
 DE_StringsA
 dbStrSplit(const std::string& txt, char searchChar, bool bKeepEmptyLines )
@@ -4721,8 +4361,6 @@ void dbRemoveFile( const std::string& uri )
 {
     de::FileSystem::removeFile(uri);
 }
-
-
 
 int64_t dbFileSize( const std::string & uri )
 {

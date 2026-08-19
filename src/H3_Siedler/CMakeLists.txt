@@ -18,7 +18,7 @@ else()
         enable_language(RC)
         list(APPEND APP_SOURCES ${CMAKE_CURRENT_LIST_DIR}/res/resource.h)
         list(APPEND APP_SOURCES ${CMAKE_CURRENT_LIST_DIR}/res/resource.rc)
-	  # list(APPEND APP_SOURCES "${APP_RC_DIR}/resource.qrc")
+      # list(APPEND APP_SOURCES "${APP_RC_DIR}/resource.qrc")
     endif()
 
     # set(CMAKE_AUTOMOC ON)
@@ -40,15 +40,16 @@ else()
 
     target_include_directories(${APP_NAME} PRIVATE ${APP_SOURCE_DIR})
 
-	if (MSVC)
+    if (MSVC)
     else()
         target_link_options(${APP_NAME} PRIVATE -mwindows)
     endif()
-	
+
     include(${CMAKE_SOURCE_DIR}/src/embed_static_runtime.cmake)
-    target_link_libraries(${APP_NAME} PRIVATE DarkImage_2504)
-	# target_link_libraries(${APP_NAME} PRIVATE de_gui_2504)
-	
+    target_link_libraries(${APP_NAME} PRIVATE DarkImage_2604)
+    target_link_libraries(${APP_NAME} PRIVATE DarkGPU_2604)
+    # target_link_libraries(${APP_NAME} PRIVATE de_gui_2504)
+
     if (CMAKE_BUILD_TYPE STREQUAL "Release")
 
         # message(STATUS "Building in Release mode, strip symbols")

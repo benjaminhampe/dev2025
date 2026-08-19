@@ -41,7 +41,7 @@ struct OSC_Saw
 
         // Convert to saw [-1, +1]
         //float sample = (2.0f * phase) - 1.0f;
-        return sinf(de::TWO_PI * phase);
+        return sinf(de::TWO_PI32 * phase);
     }
 
     //   |  /|   | ma = m_amp / (pulseWidth * m_period)

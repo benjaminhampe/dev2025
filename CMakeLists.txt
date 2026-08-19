@@ -42,7 +42,7 @@ set(BENNI_USE_JUCE 1)       # <optional> Big JUCE lib, Bespoke, Odin2, Surge Rac
 set(BENNI_USE_JUCE_EXTRA 0) # <optional> Big JUCE plugins, Odin2, Surge Rack plugins, etc..
 set(BENNI_USE_JUCE_BESPOKE 0) # <optional> Big JUCE plugin Bespoke
 set(BENNI_USE_WHISPER 0)    # <optional> Big speech2text
-set(BENNI_USE_RAYLIB 0)     # <optional>
+set(BENNI_USE_RAYLIB 1)     # <optional>
 set(BENNI_USE_VCV 0)        # <optional> Big VCV-Rack2 + Benni plugins
 set(BENNI_USE_VCV_EXTRA 0)  # <optional> Big VCV-Rack2 + ca. 500 external plugins.
 set(BENNI_USE_OPENGL_TUTORIALS 0) # <optional> Builds LearnOpenGL, Norberts and

@@ -112,11 +112,11 @@ ImageWriterWEBP::save( Image const & img, std::string const & uri, uint32_t /* q
     //DE_WARN("pData = ",pData)
     //DE_WARN("szSize = ",szSize)
 
-    std::vector<uint8_t> byteVector(pData, pData + szSize);
+    TAlignedVector<uint8_t> byteVector(pData, pData + szSize);
 
     WebPFree(pData); // Free memory allocated by WebPEncodeRGBA
 
-    return FileSystem::saveBin( uri, byteVector );
+    return de::FileSystem::saveBlob( byteVector, uri );
 }
 
 #endif // DE_IMAGE_WRITER_WEBP_ENABLED

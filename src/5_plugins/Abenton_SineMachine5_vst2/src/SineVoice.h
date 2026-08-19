@@ -51,7 +51,7 @@ struct OSC_Partials
 
         //m_frequencies.resize(cfg.getNumPartials());
 
-        const float fScale = de::TWO_PI * m_baseFrequency / float(m_sampleRate);
+        const float fScale = de::TWO_PI32 * m_baseFrequency / float(m_sampleRate);
 
         float amplitudeSum = 0.0f;
 
@@ -95,9 +95,9 @@ struct OSC_Partials
             sample += A * sinf(phase);
 
             phase += phaseInc;
-            if (phase > de::TWO_PI)
+            if (phase > de::TWO_PI32)
             {
-                phase -= de::TWO_PI;
+                phase -= de::TWO_PI32;
             }
         }
 

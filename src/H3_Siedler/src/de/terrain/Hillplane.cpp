@@ -38,9 +38,9 @@ BumpMapUtil::createTriangles( Triangles & o, const Image & bumpMapRGB, glm::vec3
         for ( int32_t i = 0; i < w; i++ )
         {
             const uint32_t color = bumpMapRGB.getPixel( i, j );
-            const float r = dbRGBA_R( color );
-            const float g = dbRGBA_G( color );
-            const float b = dbRGBA_B( color );
+            const float r = dbRGB_R( color );
+            const float g = dbRGB_G( color );
+            const float b = dbRGB_B( color );
             const float f = (r + g + b) * (1.0f / (3.0f * 255.0f));
             const float x = cell_x * i;
             const float y = cell_y * f;
@@ -1227,12 +1227,12 @@ BumpMapUtil::drawHexagon( Image & img, Recti pos, uint32_t color, bool blend )
     ImagePainter::drawLine( img, x3, y2+1, x3, y3-2, color, blend ); // EF
     ImagePainter::drawLine( img, x3, y3-1, x2, y4, color, blend ); // FA
 
-    // ImagePainter::drawLine( img, x1, y3-1, x2-1, y4, dbRGBA(255,255,255), blend ); // AB
-    // ImagePainter::drawLine( img, x1, y2, x1, y3-2, dbRGBA(255,0,255), blend ); // BC
-    // ImagePainter::drawLine( img, x1, y2, x2-1, y1, dbRGBA(255,255,0), blend ); // CD
-    // ImagePainter::drawLine( img, x2, y1, x3, y2, dbRGBA(255,0,0), blend ); // DE
-    // ImagePainter::drawLine( img, x3, y2+1, x3, y3-2, dbRGBA(100,200,0), blend ); // EF
-    // ImagePainter::drawLine( img, x3, y3-1, x2, y4, dbRGBA(100,0,200), blend ); // FA
+    // ImagePainter::drawLine( img, x1, y3-1, x2-1, y4, dbRGB(255,255,255), blend ); // AB
+    // ImagePainter::drawLine( img, x1, y2, x1, y3-2, dbRGB(255,0,255), blend ); // BC
+    // ImagePainter::drawLine( img, x1, y2, x2-1, y1, dbRGB(255,255,0), blend ); // CD
+    // ImagePainter::drawLine( img, x2, y1, x3, y2, dbRGB(255,0,0), blend ); // DE
+    // ImagePainter::drawLine( img, x3, y2+1, x3, y3-2, dbRGB(100,200,0), blend ); // EF
+    // ImagePainter::drawLine( img, x3, y3-1, x2, y4, dbRGB(100,0,200), blend ); // FA
 
     const int cx = pos.x + pos.w/2;
     const int cy = pos.y + pos.h/2;
@@ -1274,7 +1274,7 @@ Image
 BumpMapUtil::createHexagonFilter( int w )
 {
     Image img( w, w, PixelFormat::RGBA_32);
-    img.fill( dbRGBA(0,0,0) );
+    img.fill( dbRGB(0,0,0) );
     int d = w / 33;
     drawHexagon( img, Recti(d, d, w-2*d, w-2*d), 0xFFFFFFFF );
     return img;
@@ -1286,7 +1286,7 @@ Image
 BumpMapUtil::createHexagonFilter( int w )
 {
     Image img( w, w, PixelFormat::RGBA_32);
-    img.fill( dbRGBA(0,0,0) );
+    img.fill( dbRGB(0,0,0) );
     int d = w / 6;
     drawHexagon( img, Recti(d, d, w-2*d, w-2*d), 0xFFFFFFFF );
     return img;
@@ -1295,7 +1295,7 @@ Image
 BumpMapUtil::createHexagonFilter( int w )
 {
     Image img( w, w, PixelFormat::RGBA_32);
-    img.fill( dbRGBA(0,0,0) );
+    img.fill( dbRGB(0,0,0) );
 
     int pc = w / 5;
 
@@ -1304,7 +1304,7 @@ BumpMapUtil::createHexagonFilter( int w )
     for ( int i = 0; i < pc; i++ )
     {
         uint8_t r = std::clamp( std::lround(fStep * i), 0l, 255l);
-        uint32_t color = dbRGBA(r,r,r);
+        uint32_t color = dbRGB(r,r,r);
 
         auto rect = Recti(i+1, i+1, w-2 - (2*i), w-2 - (2*i));
         drawHexagon( img, rect, color );
@@ -1372,17 +1372,17 @@ BumpMapUtil::filterGrey( Image & img, const Image & mask )
         for ( int x = 0; x < img.w(); x++ )
         {
             uint32_t c_mask = mask.getPixel(x,y);
-            float fR = float(dbRGBA_R(c_mask)) / 255.0f;
+            float fR = float(dbRGB_R(c_mask)) / 255.0f;
 
             uint32_t c_img = img.getPixel(x,y);
-            uint8_t r0 = dbRGBA_R(c_img);
+            uint8_t r0 = dbRGB_R(c_img);
             uint8_t r = std::clamp( std::lround( fR * r0 ), 0l, 255l );
-            // uint8_t g0 = dbRGBA_G(c_img);
+            // uint8_t g0 = dbRGB_G(c_img);
             // uint8_t g1 = std::clamp( std::lround( f_mask * g0 ), 0l, 255l );
-            // uint8_t b0 = dbRGBA_B(c_img);
+            // uint8_t b0 = dbRGB_B(c_img);
             // uint8_t b1 = std::clamp( std::lround( f_mask * b0 ), 0l, 255l );
 
-            img.setPixel( x,y, dbRGBA(r,r,r) );
+            img.setPixel( x,y, dbRGB(r,r,r) );
         }
     }
 }
@@ -1497,25 +1497,25 @@ void
 BumpMapUtil::test1_4x4( SMeshBuffer & o, VideoDriver* driver, V3 tileSize )
 {
     Image imgDiffuseMap( 4, 4, PixelFormat::RGBA_32 );
-    imgDiffuseMap.setPixel(0,0,dbRGBA(255,0,0));
-    imgDiffuseMap.setPixel(1,0,dbRGBA(0,255,0));
-    imgDiffuseMap.setPixel(2,0,dbRGBA(0,0,255));
-    imgDiffuseMap.setPixel(3,0,dbRGBA(255,255,0));
+    imgDiffuseMap.setPixel(0,0,dbRGB(255,0,0));
+    imgDiffuseMap.setPixel(1,0,dbRGB(0,255,0));
+    imgDiffuseMap.setPixel(2,0,dbRGB(0,0,255));
+    imgDiffuseMap.setPixel(3,0,dbRGB(255,255,0));
 
-    imgDiffuseMap.setPixel(0,1,dbRGBA(155,55,255));
-    imgDiffuseMap.setPixel(1,1,dbRGBA(0,200,0));
-    imgDiffuseMap.setPixel(2,1,dbRGBA(255,0,255));
-    imgDiffuseMap.setPixel(3,1,dbRGBA(255,155,0));
+    imgDiffuseMap.setPixel(0,1,dbRGB(155,55,255));
+    imgDiffuseMap.setPixel(1,1,dbRGB(0,200,0));
+    imgDiffuseMap.setPixel(2,1,dbRGB(255,0,255));
+    imgDiffuseMap.setPixel(3,1,dbRGB(255,155,0));
 
-    imgDiffuseMap.setPixel(0,2,dbRGBA(0,0,0));
-    imgDiffuseMap.setPixel(1,2,dbRGBA(0,0,100));
-    imgDiffuseMap.setPixel(2,2,dbRGBA(0,0,255));
-    imgDiffuseMap.setPixel(3,2,dbRGBA(255,255,0));
+    imgDiffuseMap.setPixel(0,2,dbRGB(0,0,0));
+    imgDiffuseMap.setPixel(1,2,dbRGB(0,0,100));
+    imgDiffuseMap.setPixel(2,2,dbRGB(0,0,255));
+    imgDiffuseMap.setPixel(3,2,dbRGB(255,255,0));
 
-    imgDiffuseMap.setPixel(0,3,dbRGBA(255,255,255));
-    imgDiffuseMap.setPixel(1,3,dbRGBA(0,200,0));
-    imgDiffuseMap.setPixel(2,3,dbRGBA(55,0,255));
-    imgDiffuseMap.setPixel(3,3,dbRGBA(255,155,0));
+    imgDiffuseMap.setPixel(0,3,dbRGB(255,255,255));
+    imgDiffuseMap.setPixel(1,3,dbRGB(0,200,0));
+    imgDiffuseMap.setPixel(2,3,dbRGB(55,0,255));
+    imgDiffuseMap.setPixel(3,3,dbRGB(255,155,0));
 
     Triangles in_triangles;
     createTriangles( in_triangles, imgDiffuseMap, tileSize );
@@ -1542,25 +1542,25 @@ void
 BumpMapUtil::test2_4x4( SMeshBuffer & o, VideoDriver* driver, V3 tileSize )
 {
     Image imgDiffuseMap( 4, 4, PixelFormat::RGBA_32 );
-    imgDiffuseMap.setPixel(0,0,dbRGBA(255,0,0));
-    imgDiffuseMap.setPixel(1,0,dbRGBA(0,255,0));
-    imgDiffuseMap.setPixel(2,0,dbRGBA(0,0,255));
-    imgDiffuseMap.setPixel(3,0,dbRGBA(255,255,0));
+    imgDiffuseMap.setPixel(0,0,dbRGB(255,0,0));
+    imgDiffuseMap.setPixel(1,0,dbRGB(0,255,0));
+    imgDiffuseMap.setPixel(2,0,dbRGB(0,0,255));
+    imgDiffuseMap.setPixel(3,0,dbRGB(255,255,0));
 
-    imgDiffuseMap.setPixel(0,1,dbRGBA(155,55,255));
-    imgDiffuseMap.setPixel(1,1,dbRGBA(0,200,0));
-    imgDiffuseMap.setPixel(2,1,dbRGBA(255,0,255));
-    imgDiffuseMap.setPixel(3,1,dbRGBA(255,155,0));
+    imgDiffuseMap.setPixel(0,1,dbRGB(155,55,255));
+    imgDiffuseMap.setPixel(1,1,dbRGB(0,200,0));
+    imgDiffuseMap.setPixel(2,1,dbRGB(255,0,255));
+    imgDiffuseMap.setPixel(3,1,dbRGB(255,155,0));
 
-    imgDiffuseMap.setPixel(0,2,dbRGBA(0,0,0));
-    imgDiffuseMap.setPixel(1,2,dbRGBA(0,0,100));
-    imgDiffuseMap.setPixel(2,2,dbRGBA(0,0,255));
-    imgDiffuseMap.setPixel(3,2,dbRGBA(255,255,0));
+    imgDiffuseMap.setPixel(0,2,dbRGB(0,0,0));
+    imgDiffuseMap.setPixel(1,2,dbRGB(0,0,100));
+    imgDiffuseMap.setPixel(2,2,dbRGB(0,0,255));
+    imgDiffuseMap.setPixel(3,2,dbRGB(255,255,0));
 
-    imgDiffuseMap.setPixel(0,3,dbRGBA(255,255,255));
-    imgDiffuseMap.setPixel(1,3,dbRGBA(0,200,0));
-    imgDiffuseMap.setPixel(2,3,dbRGBA(55,0,255));
-    imgDiffuseMap.setPixel(3,3,dbRGBA(255,155,0));
+    imgDiffuseMap.setPixel(0,3,dbRGB(255,255,255));
+    imgDiffuseMap.setPixel(1,3,dbRGB(0,200,0));
+    imgDiffuseMap.setPixel(2,3,dbRGB(55,0,255));
+    imgDiffuseMap.setPixel(3,3,dbRGB(255,155,0));
 
     Triangles in_triangles;
     createTriangles( in_triangles, imgDiffuseMap, tileSize );
@@ -1598,12 +1598,12 @@ void
 BumpMapUtil::testMask()
 {
     Image img( 17, 17, PixelFormat::RGBA_32 );
-    img.fill( dbRGBA(255,120,32) );
+    img.fill( dbRGB(255,120,32) );
     auto r0 = img.rect();
-    drawHexagon(img, r0, dbRGBA(0,90,0) );
+    drawHexagon(img, r0, dbRGB(0,90,0) );
     DE_DEBUG("r0 = ", r0.str())
     //auto r1 = Recti(r0.x + 1, r0.y + 1, r0.w-2, r0.h - 2);
-    //drawHexagon(img, r1, dbRGBA(255,255,0,128), true );
+    //drawHexagon(img, r1, dbRGB(255,255,0,128), true );
     dbSaveImage( img, "a_testMask.png" );
 }
 
@@ -1822,7 +1822,7 @@ Hillplane::addTriangles( SMeshBuffer & o, Image const & heightMap, glm::vec3 siz
     {
         for ( int32_t i = 0; i < w; ++i )
         {
-            uint8_t r = dbRGBA_R( heightMap.getPixel( i, j ) );
+            uint8_t r = dbRGB_R( heightMap.getPixel( i, j ) );
             float x = cell_x * i;
             float y = cell_y * float( r );
             float z = cell_z * j;
@@ -1893,7 +1893,7 @@ Hillplane::addIndexedTriangles( SMeshBuffer & o, Image const & heightMap, glm::v
     {
         for ( int32_t i = 0; i < w; ++i )
         {
-            uint8_t r = dbRGBA_R( heightMap.getPixel( i, j ) );
+            uint8_t r = dbRGB_R( heightMap.getPixel( i, j ) );
             float x = cell_x * i;
             float y = cell_y * float( r );
             float z = cell_z * j;

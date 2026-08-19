@@ -52,7 +52,7 @@ void Preview::init( const SynthCfg& cfg, int n )
 
     for (Curve & curve : m_curves)
     {
-        const float phaseInc = float(de::TWO_PI * curve.partial) / float(n-1); // 1Hz base for preview.
+        const float phaseInc = (de::TWO_PI32 * float(curve.partial)) / float(n-1); // 1Hz base for preview.
         float phase = 0.0;
         for (int i = 0; i < n; i++)
         {

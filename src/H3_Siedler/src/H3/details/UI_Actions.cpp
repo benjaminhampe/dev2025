@@ -22,7 +22,7 @@ UI_Actions::UI_Actions( H3_Game* game, de::gui::Env* env, de::gui::Widget* paren
         fX = 0.3f * scr_w;
         auto btn = new de::gui::Button("", env, this, 0, de::Recti(fX,fY,68,28));
         btn->setTexture(m_game->getTex(H3_Tex::DoDice, "UI_Actions().DoDice"));
-        btn->setBorderColor(dbRGBA(255,255,0),1);
+        btn->setBorderColor(dbRGB(255,255,0),1);
         m_btnDice = btn;
         m_btnDice->setOnClicked([&](){ m_game->doDice(); });
     }
@@ -32,7 +32,7 @@ UI_Actions::UI_Actions( H3_Game* game, de::gui::Env* env, de::gui::Widget* paren
         fX = 0.4f * scr_w;
         auto btn = new de::gui::Button("", env, this, 0, de::Recti(fX,fY,68,28));
         btn->setTexture(m_game->getTex(H3_Tex::DoBank, "UI_Actions().DoDice"));
-        btn->setBorderColor(dbRGBA(255,255,0),1);
+        btn->setBorderColor(dbRGB(255,255,0),1);
         m_btnBank = btn;
         m_btnBank->setOnClicked([&](){ H3_MessageBox("Bank", "DoBanking"); });
     }
@@ -42,7 +42,7 @@ UI_Actions::UI_Actions( H3_Game* game, de::gui::Env* env, de::gui::Widget* paren
         fX = 0.5f * scr_w;
         auto btn = new de::gui::Button("", env, this, 0, de::Recti(fX,fY,68,28));
         btn->setTexture(m_game->getTex(H3_Tex::DoTrade, "UI_Actions().DoTrade"));
-        btn->setBorderColor(dbRGBA(255,255,0),1);
+        btn->setBorderColor(dbRGB(255,255,0),1);
         m_btnTrade = btn;
         m_btnTrade->setOnClicked([&](){ H3_MessageBox("Trade", "DoTrade"); });
     }
@@ -52,7 +52,7 @@ UI_Actions::UI_Actions( H3_Game* game, de::gui::Env* env, de::gui::Widget* paren
         fX = 0.6f * scr_w;
         auto btn = new de::gui::Button("", env, this, 0, de::Recti(fX,fY,68,28));
         btn->setTexture(m_game->getTex(H3_Tex::DoEndTurn, "UI_Actions().DoEndTurn"));
-        btn->setBorderColor(dbRGBA(255,255,0),1);
+        btn->setBorderColor(dbRGB(255,255,0),1);
         m_btnEndTurn = btn;
         m_btnEndTurn->setOnClicked([&](){ m_game->doEndTurn(); });
     }
@@ -65,7 +65,7 @@ UI_Actions::UI_Actions( H3_Game* game, de::gui::Env* env, de::gui::Widget* paren
         fH = 0.1f * scr_h;
         auto btn = new de::gui::Button("", env, this, 0, de::Recti(fX,fY,64,64));
         btn->setTexture(tex);
-        btn->setBorderColor(dbRGBA(255,255,0),1);
+        btn->setBorderColor(dbRGB(255,255,0),1);
         m_btnBuyCard = btn;
         m_btnBuyCard->setOnClicked([&](){ m_game->doBuyCard(); });
     }
@@ -78,7 +78,7 @@ UI_Actions::UI_Actions( H3_Game* game, de::gui::Env* env, de::gui::Widget* paren
         fX = 0.3f * scr_w;
         auto btn = new de::gui::Button("", env, this, 0, de::Recti(fX,fY,64,64));
         btn->setTexture(tex);
-        btn->setBorderColor(dbRGBA(255,255,0),1);
+        btn->setBorderColor(dbRGB(255,255,0),1);
         m_btnCancel = btn;
         m_btnCancel->setOnClicked([&](){ m_game->doPlaceCancel(); });
     }
@@ -89,7 +89,7 @@ UI_Actions::UI_Actions( H3_Game* game, de::gui::Env* env, de::gui::Widget* paren
         fX = 0.4f * scr_w;
         auto btn = new de::gui::Button("", env, this, 0, de::Recti(fX,fY,64,64));
         btn->setTexture(tex);
-        btn->setBorderColor(dbRGBA(255,255,0),1);
+        btn->setBorderColor(dbRGB(255,255,0),1);
         m_btnBuyRoad = btn;
         m_btnBuyRoad->setOnClicked([&](){ m_game->doBuyRoad(); });
     }
@@ -100,7 +100,7 @@ UI_Actions::UI_Actions( H3_Game* game, de::gui::Env* env, de::gui::Widget* paren
         fX = 0.5f * scr_w;
         auto btn = new de::gui::Button("", env, this, 0, de::Recti(fX,fY,64,64));
         btn->setTexture(tex);
-        btn->setBorderColor(dbRGBA(255,255,0),1);
+        btn->setBorderColor(dbRGB(255,255,0),1);
         m_btnBuyFarm = btn;
         m_btnBuyFarm->setOnClicked([&](){ m_game->doBuyFarm(); });
     }
@@ -111,7 +111,7 @@ UI_Actions::UI_Actions( H3_Game* game, de::gui::Env* env, de::gui::Widget* paren
         fX = 0.6f * scr_w;
         auto btn = new de::gui::Button("", env, this, 0, de::Recti(fX,fY,64,64));
         btn->setTexture(tex);
-        btn->setBorderColor(dbRGBA(255,255,0),1);
+        btn->setBorderColor(dbRGB(255,255,0),1);
         m_btnBuyCity = btn;
         m_btnBuyCity->setOnClicked([&](){ m_game->doBuyCity(); });
     }

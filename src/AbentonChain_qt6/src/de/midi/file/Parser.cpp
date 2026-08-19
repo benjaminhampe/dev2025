@@ -30,7 +30,7 @@ bool Parser::parse( std::string const & uri )
     de::PerformanceTimer perf;
     perf.start();
 
-    std::vector< uint8_t > byteVector;
+    Blob byteVector;
     FileSystem::loadBlob( byteVector, uri );
 
     if ( byteVector.size() < 14 ) // No space for a midi header

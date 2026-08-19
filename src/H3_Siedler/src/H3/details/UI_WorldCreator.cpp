@@ -300,8 +300,8 @@ UI_WorldCreator::createButton(std::string txt, de::gpu::TexRef ref, de::Recti po
 {
     auto btn = new de::gui::Button(txt, m_env, this, 0, pos);
     btn->setRadius( 8 );
-    btn->setFillColor(dbRGBA(255,255,255,200),0);
-    btn->setTextColor(dbRGBA(255,255,255),1);
+    btn->setFillColor(dbRGB(255,255,255,200),0);
+    btn->setTextColor(dbRGB(255,255,255),1);
     btn->setTexture( ref );
     return btn;
 }

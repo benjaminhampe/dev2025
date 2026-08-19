@@ -1,7 +1,7 @@
 #include "PluginExplorer.h"
 #include "App.h"
 #include "Draw.h"
-#include <de_fontawesome.hpp>
+#include <de_fontawesome.h>
 
 PluginExplorer::PluginExplorer( App & app, QWidget* parent )
    : QWidget( parent )

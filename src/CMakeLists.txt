@@ -1,32 +1,20 @@
 add_subdirectory(0_tools)
 add_subdirectory(1_libs)
 
-add_subdirectory(Polyline_fltk)
-
+add_subdirectory(minimal_vst2x_host)
+# add_subdirectory(zstd_fltk)
 add_subdirectory(wav2mp3_fltk)
-add_subdirectory(win32)
-add_subdirectory(win32_OpenGL_Overlay)
-add_subdirectory(win32_OpenGL_Overlay2)
-add_subdirectory(win32_OpenGL_Overlay3)
-
 add_subdirectory(AVX_Mandelbrot_de_glew)
+add_subdirectory(H3_Siedler)
+add_subdirectory(Minecraft_54k)
+
+if (BENNI_USE_QT)
+    add_subdirectory(AbentonChain_qt6)
+    add_subdirectory(AbentonLive_qt6)
+endif()
 
 if (BENNI_USE_DEMOS)
     add_subdirectory(2_demos)
-
-    if (BENNI_USE_QT)
-        add_subdirectory(VHS_qt6)
-        add_subdirectory(AbentonTest1_qt6)
-        add_subdirectory(AbentonTest2_qt6)
-        add_subdirectory(AbentonTest3_qt6)
-        add_subdirectory(AbentonTest4_qt6_nanovg)
-    endif()
-
-    add_subdirectory(RoundRectShader)
-    add_subdirectory(RoundRectShader2)
-    add_subdirectory(RoundRectShader3)
-    add_subdirectory(RoundRectShader4)
-    # add_subdirectory(stream_WASAPI)
 endif()
 
 if (BENNI_USE_JUCE)
@@ -35,23 +23,12 @@ endif()
 
 add_subdirectory(5_plugins)
 
-if (BENNI_USE_QT)
-    add_subdirectory(AbentonChain_qt6)
-endif()
-
-# add_subdirectory(H3_Siedler)
-#add_subdirectory(Kinescope)
-add_subdirectory(Minecraft_54k)
-
 
 if (BENNI_USE_VCV)
     add_subdirectory(vcv-rack2)
 endif()
 
-# add_subdirectory(VST_benni) # Only for reference now
-
-add_subdirectory(minimal_vst2x_host)
-
+add_subdirectory(7_sfml)
 
 if (BENNI_USE_RAYLIB)
     add_subdirectory(raylib)

@@ -196,8 +196,8 @@ inline void DSP_MUL(const float* __restrict__ src, float* __restrict__ dst, u64 
 }
 
 inline void DSP_MUL(
-    const DE_AlignedFloatVector & src,
-    DE_AlignedFloatVector & dst,
+    const AlignedFloatVector & src,
+    AlignedFloatVector & dst,
     f32 factor )
 {
     if (src.empty()) { DE_WARN("") return; }
@@ -205,31 +205,31 @@ inline void DSP_MUL(
     DSP_MUL(src.data(),dst.data(),src.size(),factor);
 }
 
-inline void DSP_MUL( DE_AlignedFloatVector & dst, f32 factor )
+inline void DSP_MUL( AlignedFloatVector & dst, f32 factor )
 {
     for (f32 & v : dst) { v *= factor; }
 }
-inline void DSP_ADD( DE_AlignedFloatVector & dst, f32 offset )
+inline void DSP_ADD( AlignedFloatVector & dst, f32 offset )
 {
     for (f32 & v : dst) { v += offset; }
 }
-inline void DSP_FMA( DE_AlignedFloatVector & dst, f32 factor, f32 offset )
+inline void DSP_FMA( AlignedFloatVector & dst, f32 factor, f32 offset )
 {
     for (f32 & v : dst) { v = (v * factor) + offset; }
 }
-inline void DSP_RESIZE( DE_AlignedFloatVector & dst, u64 n )
+inline void DSP_RESIZE( AlignedFloatVector & dst, u64 n )
 {
     if (dst.size() != n)
     {
         dst.resize( n );
     }
 }
-inline void DSP_ZEROES( DE_AlignedFloatVector & dst )
+inline void DSP_ZEROES( AlignedFloatVector & dst )
 {
     for (f32 & val : dst) { val = 0.0f; }
 }
 
-inline void DSP_RESIZE( DE_AlignedFloatShiftVector & dst, u64 n )
+inline void DSP_RESIZE( AlignedFloatShiftVector & dst, u64 n )
 {
     if (dst.size() != n)
     {
@@ -237,12 +237,12 @@ inline void DSP_RESIZE( DE_AlignedFloatShiftVector & dst, u64 n )
     }
 }
 
-inline void DSP_CLEAR( DE_AlignedFloatShiftVector & dst )
+inline void DSP_CLEAR( AlignedFloatShiftVector & dst )
 {
     dst.clear();
 }
 
-inline void DSP_RESIZE( DE_AlignedFloatShiftMatrix & dst, u32 nCols, u32 nRows )
+inline void DSP_RESIZE( AlignedFloatShiftMatrix & dst, u32 nCols, u32 nRows )
 {
     if (dst.columnCount() != nCols)
     {

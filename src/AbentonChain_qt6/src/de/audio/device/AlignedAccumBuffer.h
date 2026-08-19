@@ -1,5 +1,5 @@
 #pragma once
-#include <de/AlignedMemory.h>
+#include <de/Core.h>
 
 namespace de {
 namespace audio {

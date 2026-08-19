@@ -1,0 +1,5 @@
+add_subdirectory(sfml_demo_ftp)
+add_subdirectory(sfml_demo_http)
+add_subdirectory(sfml_demo_sftp)
+add_subdirectory(sfml_demo_sockets)
+add_subdirectory(sfml_demo_voip)

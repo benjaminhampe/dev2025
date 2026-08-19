@@ -57,7 +57,7 @@ else()
     endif()
 
     target_link_libraries(${APP_NAME} PRIVATE Qt6::Widgets)
-    target_link_libraries(${APP_NAME} PRIVATE DarkImage_2504)
+    target_link_libraries(${APP_NAME} PRIVATE DarkImage_2604)
     target_link_libraries(${APP_NAME} PRIVATE de_fontawesome)
     target_link_libraries(${APP_NAME} PRIVATE de_tinyxml2)
     target_link_libraries(${APP_NAME} PRIVATE de_rtaudio)

@@ -13,8 +13,8 @@ struct DE_FFT_pffft_Private
     PFFFT_Setup* m_ctx;
     uint32_t m_fftSize;
     uint32_t m_fftSizeRequest;
-    DE_AlignedFloatVector m_input;
-    DE_AlignedFloatVector m_output;
+    de::AlignedFloatVector m_input;
+    de::AlignedFloatVector m_output;
 
     DE_FFT_pffft_Private()
         : m_ctx(nullptr)

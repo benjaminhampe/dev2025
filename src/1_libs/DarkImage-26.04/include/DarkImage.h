@@ -3,7 +3,6 @@
 #include <de/Math.h>
 #include <de/Color.h>
 #include <de/ColorGradient.h>
-#include <de/AlignedMemory.h>
 #include <de/Font5x8.h>
 #include <de/MathMusic.h>
 #include <de/Math3D.h>

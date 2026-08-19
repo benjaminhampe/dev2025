@@ -1,7 +1,7 @@
 #include "Header.h"
 #include "App.h"
 #include "Draw.h"
-#include <de_fontawesome.hpp>
+#include <de_fontawesome.h>
 
 // Header = EngineButtonBar
 

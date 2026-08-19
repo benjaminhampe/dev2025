@@ -221,7 +221,7 @@ void H3_Game::init(de::IrrlichtDevice* device)
     de::smesh::SMeshSphere::add(
         m_smeshSun,
         glm::vec3(50,50,50),
-        dbRGBA(255,255,200),
+        dbRGB(255,255,200),
         33, 33);
     m_smeshSun.name = "m_sunMesh";
     m_smeshSun.setLighting(0);
@@ -667,7 +667,7 @@ void H3_Game::enterRound2()
     marqueeH1( L"Placing first Road and Farm", 3000, 0xFF00CC10 );
 
     marqueeH3( L"Each player has to place one farm\n"
-              L"and one road next to the farm.", 6000, dbRGBA(255,128,0) );
+              L"and one road next to the farm.", 6000, dbRGB(255,128,0) );
 
     UI_updateActions();
 }
@@ -691,7 +691,7 @@ void H3_Game::enterRound3()
     marqueeH1( L"Placing second Road and Farm", 3000, 0xFF00CC10 );
 
     marqueeH3( L"Each player has to place one farm\n"
-              L"and one road next to the farm.", 6000, dbRGBA(255,128,0) );
+              L"and one road next to the farm.", 6000, dbRGB(255,128,0) );
 
     UI_updateActions();
 }
@@ -709,7 +709,7 @@ void H3_Game::enterRoundN()
     marqueeH1( L"Normal round and Farm", 2000, 0xFF00CC10 );
 
     marqueeH3( L"Each player has to place one farm\n"
-              L"and one road next to the farm.", 6000, dbRGBA(255,128,0) );
+              L"and one road next to the farm.", 6000, dbRGB(255,128,0) );
 
     UI_updateActions();
 }
@@ -3071,9 +3071,9 @@ repairSchriftrolle( de::Image & img )
         for ( int x = 0; x < w; ++x )
         {
             u32 color = img.getPixel(x,y);
-            uint8_t r = dbRGBA_R(color);
-            uint8_t g = dbRGBA_G(color);
-            uint8_t b = dbRGBA_B(color);
+            uint8_t r = dbRGB_R(color);
+            uint8_t g = dbRGB_G(color);
+            uint8_t b = dbRGB_B(color);
             if (r>d && g>d && b>=d)
             {
                 img.setPixel( x,y, 0x00000000 ); // Make transparent

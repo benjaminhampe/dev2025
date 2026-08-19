@@ -28,7 +28,7 @@ struct Util
 
     // Define size and array in .cpp (Dont use constexpr because narrowing)
     static std::wstring
-    bin2cpp( const std::vector<uint8_t>& bytes, std::wstring dataName )
+    bin2cpp( const de::TAlignedVector<uint8_t>& bytes, std::wstring dataName )
     {
         if (bytes.empty())
         {
@@ -101,7 +101,7 @@ struct Util
         o << "namespace BinaryData {\n";
         o << "\n";
 
-        std::vector<uint8_t> blob;
+        de::TAlignedVector<uint8_t> blob;
         for (const auto& inputFileName : inputFileNames)
         {
             bins.emplace_back();
@@ -126,7 +126,7 @@ struct Util
             // bin.binName = de::StringUtil::replace(bin.binName, "____", "_");
             // bin.binName = de::StringUtil::replace(bin.binName, "___", "_");
             // bin.binName = de::StringUtil::replace(bin.binName, "__", "_");
-            de::FileSystem::loadBin(de_mbstr(inputFileName), blob);
+            de::FileSystem::loadBlob(blob, de_mbstr(inputFileName));
             bin.binSize = blob.size();
 
             auto cppText = bin2cpp(blob, bin.binName);

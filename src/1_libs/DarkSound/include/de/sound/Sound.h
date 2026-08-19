@@ -1,6 +1,5 @@
 #pragma once
 #include <de/Core.h>
-#include <de/AlignedMemory.h>
 
 namespace de {
 

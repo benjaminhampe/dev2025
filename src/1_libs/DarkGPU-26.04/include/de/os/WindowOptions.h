@@ -25,6 +25,7 @@ struct WindowOptions
     bool isDoubleBuffered = false;
     bool handleSRGB = false;
     //bool isStereoBuffered = false;
+    std::wstring title;
 
     int
     getColorBits() const { return r+g+b+a; }

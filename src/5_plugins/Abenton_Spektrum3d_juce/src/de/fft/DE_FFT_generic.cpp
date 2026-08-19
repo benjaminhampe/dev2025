@@ -29,7 +29,7 @@ void DE_FFT_generic::resize(size_t n)
     m_packed.resize(n, 0.0f);
 }
 
-void DE_FFT_generic::fft(const DE_AlignedFloatVector& input, DE_AlignedFloatVector& output)
+void DE_FFT_generic::fft(const AlignedFloatVector& input, AlignedFloatVector& output)
 {
     size_t N = input.size();
 

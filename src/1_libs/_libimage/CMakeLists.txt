@@ -26,6 +26,7 @@ add_subdirectory(de-dds-image)
 # Fonts
 add_subdirectory(de-freetype-2.10.0)
 add_subdirectory(de-fontawesome)
+add_subdirectory(de-harfbuzz-14.3.1)
 
 ### Supported but deactivated for faster compile:
 add_subdirectory(de-giflib-5.2.1)

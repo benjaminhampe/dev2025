@@ -19,7 +19,8 @@ add_subdirectory(de-cpio-1.0.0)
 
 add_subdirectory(de-zstd-1.5.7)
 add_subdirectory(de-xz-5.8.1-static)
-add_subdirectory(de-mbedtls-3.6.4-static)
+add_subdirectory(de-mbedtls-4.2.0)
+# add_subdirectory(de-mbedtls-3.6.4-static)
 add_subdirectory(de-pcre2-10.46)
 
 add_subdirectory(de-xml2-2.9.10)

@@ -406,8 +406,8 @@ void H3_Img::save(const std::string& baseDir)
         }
 
         // Load image as binary...
-        std::vector<uint8_t> bv;
-        de::FileSystem::loadBin(item.saveUri, bv);
+        de::TAlignedVector<uint8_t> bv;
+        de::FileSystem::loadBlob(bv,item.saveUri);
         item.binSize = bv.size();
 
         // Load convert binary to C++ header file string

@@ -214,7 +214,8 @@ endif()
     target_link_libraries(${LIB_NAME} PRIVATE de_xz_static) # -> TODO: integrate sources
     target_link_libraries(${LIB_NAME} PRIVATE de_iconv)
     target_link_libraries(${LIB_NAME} PRIVATE de_xml2)
-    target_link_libraries(${LIB_NAME} PRIVATE de_mbedtls_static) # -> TODO: integrate sources
+    # target_link_libraries(${LIB_NAME} PRIVATE de_mbedtls_static) # -> TODO: integrate sources
+    target_link_libraries(${LIB_NAME} PRIVATE de_mbedtls_420)
     target_link_libraries(${LIB_NAME} PRIVATE de_zstd)
     target_link_libraries(${LIB_NAME} PRIVATE de_lz4)
     target_link_libraries(${LIB_NAME} PRIVATE de_lzo2)

@@ -225,11 +225,11 @@ struct H3_Game : public de::IEventReceiver
     {
         switch( i % 6 )
         {
-        case 1: return dbRGBA(255,0,0);
-        case 2: return dbRGBA(255,255,0);
-        case 3: return dbRGBA(0,255,0);
-        case 4: return dbRGBA(0,0,255);
-        case 5: return dbRGBA(255,0,255);
+        case 1: return dbRGB(255,0,0);
+        case 2: return dbRGB(255,255,0);
+        case 3: return dbRGB(0,255,0);
+        case 4: return dbRGB(0,0,255);
+        case 5: return dbRGB(255,0,255);
         default: return 0xFFFFFFFF;
         }
     }

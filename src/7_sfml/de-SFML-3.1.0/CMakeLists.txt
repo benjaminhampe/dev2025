@@ -1,0 +1,8 @@
+add_subdirectory(de-sfml-exlibs)
+add_subdirectory(de-SheenBidi-3.0.0)
+# add_subdirectory(de-harfbuzz-14.3.1)
+add_subdirectory(de-sfml-system-3.1.0)
+add_subdirectory(de-sfml-window-3.1.0)
+add_subdirectory(de-sfml-graphics-3.1.0)
+add_subdirectory(de-sfml-audio-3.1.0)
+add_subdirectory(de-sfml-network-3.1.0)

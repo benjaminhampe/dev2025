@@ -3,7 +3,7 @@
 #include "Draw.h"
 #include <QProcess>
 #include <QProcessEnvironment>
-#include <de_fontawesome.hpp>
+#include <de_fontawesome.h>
 
 PluginScanner::PluginScanner( App & app, QWidget* parent )
    : QWidget( parent )

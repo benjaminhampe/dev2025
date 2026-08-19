@@ -5,6 +5,7 @@
 #include <dwmapi.h>
 #include <tchar.h>
 #include <mmsystem.h> // For JOYCAPS
+#include <random>
 
 // ===================================================================
 // INCLUDE: WGL
@@ -26,6 +27,7 @@ struct Window_WGL_Internals
     int m_screenWidth = 600;
     int m_screenHeight = 480;
     bool focused = false;
+    bool m_bPaintEventEnabled = false;
 
     IEventReceiver* m_receiver;
 
@@ -176,20 +178,7 @@ Window_WGL::Window_WGL( IEventReceiver* receiver )
 
 Window_WGL::~Window_WGL()
 {
-    killTimers();
-    //destroy();
-
-    if (_d->m_hBackgroundBitmap)
-    {
-        DeleteObject(_d->m_hBackgroundBitmap);
-        _d->m_hBackgroundBitmap = nullptr; // Optional but good practice
-    }
-
-    // SetParent(_d->m_hWnd, NULL);
-
-    // setHideOnClose(false);
-
-    DestroyWindow(_d->m_hWnd);
+    destroy();
 
     delete _d;
 }
@@ -276,23 +265,39 @@ void Window_WGL::onEvent( const Event& event )
 
 void Window_WGL::destroy()
 {
-    //   if ( m_dummyRC )
-    //   {
-    //      wglDeleteContext( m_dummyRC );
-    //      m_dummyRC = nullptr;
-    //   }
+    DE_DEBUG("")
 
-    //   if ( m_opengl32 )
-    //   {
-    //      FreeLibrary( m_opengl32 );
-    //      m_opengl32 = nullptr;
-    //   }
+    killTimers();
 
-    //   wglMakeCurrent(hDC, nullptr);
-    //   wglDeleteContext(hRC);
-    //   ReleaseDC(hwnd, hDC);
-    //   DestroyWindow(hwnd);
-    //   UnregisterClass(className.c_str(), hInstance);
+    _d->m_bPaintEventEnabled = false;
+
+    Sleep(100);
+
+    if (_d->m_hBackgroundBitmap)
+    {
+        DeleteObject(_d->m_hBackgroundBitmap);
+        _d->m_hBackgroundBitmap = nullptr; // Optional but good practice
+    }
+
+    // if (m_vg)
+    // {
+    //     wglMakeCurrent(_d->hDC, _d->hGL);
+    //     nvgDeleteGL3(m_vg);
+    //     m_vg = nullptr;
+    // }
+
+    HGLRC current = wglGetCurrentContext();
+    if (current == _d->m_hRC)
+        wglMakeCurrent(nullptr, nullptr); // nur deinen Kontext entbinden
+
+    wglDeleteContext(_d->m_hRC);
+    _d->m_hRC = nullptr;
+
+    ReleaseDC(_d->m_hWnd, _d->m_hDC);
+    _d->m_hDC = nullptr;
+
+    DestroyWindow(_d->m_hWnd);
+    _d->m_hWnd = nullptr;
 }
 
 void Window_WGL::yield( int ms )
@@ -811,11 +816,49 @@ WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
     }
     return DefWindowProc(hwnd, msg, wParam, lParam);
 }
+/*
+bool ensureClassRegistered(HINSTANCE hInst, const wchar_t* className) {
+    WNDCLASSEXW wc = { sizeof(wc) };
+    wc.style         = CS_HREDRAW | CS_VREDRAW;
+    wc.lpfnWndProc   = DefWindowProcW;
+    wc.hInstance     = hInst;
+    wc.lpszClassName = className;
+
+    ATOM a = RegisterClassExW(&wc);
+    if (a != 0)
+        return true; // erfolgreich registriert
+
+    DWORD err = GetLastError();
+    if (err == ERROR_CLASS_ALREADY_EXISTS)
+        return true; // Klasse existiert bereits → OK
+
+    return false; // anderer Fehler
+}
+*/
+
+std::wstring makeUniqueWindowTitle() {
+    // 64‑bit RNG
+    static thread_local std::mt19937_64 rng{ std::random_device{}() };
+    uint64_t r = rng();
+
+    // Combine timestamp + random
+    uint64_t t = static_cast<uint64_t>(GetTickCount64());
+
+    wchar_t buf[64];
+    swprintf(buf, 64, L"win_%016llX_%016llX", r, t);
+
+    return std::wstring(buf);
+}
 
 bool Window_WGL::create( WindowOptions params )
 {
+    static const auto lpszClassName = L"DarkGPU_Window_WGL_Class";
+
+    const auto hInstance = GetModuleHandle(0);
+
     int desktopW = GetSystemMetrics( SM_CXSCREEN );
     int desktopH = GetSystemMetrics( SM_CYSCREEN );
+    DE_DEBUG("desktopSize(",desktopW,",",desktopH,")")
 
     _d->m_screenWidth = desktopW / 2 - 100;
     _d->m_screenHeight = desktopH - 300;
@@ -823,40 +866,71 @@ bool Window_WGL::create( WindowOptions params )
     int w = _d->m_screenWidth;
     int h = _d->m_screenHeight;
 
-    HWND parentHwnd = nullptr; //(HWND)parent;
 
-    WNDCLASS wc = {0};
+    DE_DEBUG("windowSize(",w,",",h,")")
+
+    WNDCLASSW wc = {0};
     wc.lpfnWndProc = WndProc;
-    wc.hInstance = GetModuleHandle(nullptr);
-    wc.lpszClassName = _T("DarkWGL_EditorClass");
-    RegisterClass(&wc);
+    wc.hInstance = hInstance;
+    wc.lpszClassName = lpszClassName;
+    ATOM a = RegisterClassW(&wc);
 
-    _d->m_hWnd = CreateWindowEx(
+    if (a == 0)
+    {
+        DWORD err = GetLastError();
+        if (err != ERROR_CLASS_ALREADY_EXISTS)
+        {
+            DE_ERROR("Cannot register class, err = ",err)
+            return false;
+        }
+    }
+
+    HWND parentHwnd = (HWND)params.parent; //(HWND)parent;
+
+    DWORD dwStyle = WS_VISIBLE | WS_TABSTOP;//  | WS_CLIPCHILDREN
+    if (parentHwnd) dwStyle |= WS_CHILD;
+
+    std::wstring winTitle = params.title.empty() ?
+        makeUniqueWindowTitle() : params.title;
+
+    _d->m_hWnd = CreateWindowExW(
         WS_EX_CONTROLPARENT,
-        wc.lpszClassName,
-        _T("SineMachine5"),
-        WS_CHILD | WS_VISIBLE | WS_TABSTOP, //  | WS_CLIPCHILDREN
+        lpszClassName,
+        winTitle.c_str(),
+        dwStyle,
         0, 0, w, h,
         parentHwnd,
         nullptr,
-        wc.hInstance,
+        hInstance,
         this);
+
+    if (!_d->m_hWnd)
+    {
+        DE_ERROR("No WGL window created")
+        return false;
+    }
 
     SetFocus( _d->m_hWnd );
 
+    _d->m_hInstance = hInstance;
     _d->m_hDC = GetDC(_d->m_hWnd);
-    PIXELFORMATDESCRIPTOR pfd = {sizeof(PIXELFORMATDESCRIPTOR),
-                                 1,
-                                 PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL | PFD_DOUBLEBUFFER,
-                                 PFD_TYPE_RGBA,
-                                 32 };
+    PIXELFORMATDESCRIPTOR pfd = {
+        sizeof(PIXELFORMATDESCRIPTOR),
+        1,
+        PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL | PFD_DOUBLEBUFFER,
+        PFD_TYPE_RGBA,
+        32 };
+
     int pf = ChoosePixelFormat(_d->m_hDC, &pfd);
     SetPixelFormat(_d->m_hDC, pf, &pfd);
+
     _d->m_hRC = wglCreateContext(_d->m_hDC);
     wglMakeCurrent(_d->m_hDC, _d->m_hRC);
 
-    // glewExperimental = GL_TRUE;
-    // glewInit();
+    glewExperimental = GL_TRUE;
+    glewInit();
+
+    _d->m_bPaintEventEnabled = true;
 
     //GetWindowRect(_d->m_hWnd,_d-
 #if 0
@@ -1500,8 +1574,22 @@ bool Window_WGL::create( WindowOptions params )
 }
 
 LRESULT CALLBACK
-Window_WGL_Proc( HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam )
+Window_WGL_Proc( HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam )
 {
+    Window_WGL* self = reinterpret_cast<Window_WGL*>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
+    if (msg == WM_CREATE)
+    {
+        CREATESTRUCT* cs = (CREATESTRUCT*)lParam;
+        SetWindowLongPtr(hwnd, GWLP_USERDATA, (LONG_PTR)cs->lpCreateParams);
+
+        DE_OK("WM_CREATE")
+        //SetTimer(hwnd, 123, 1000 / 60, NULL); // 1/10th-second timer
+        return 0;
+    }
+
+    if (!self) return DefWindowProc(hwnd, msg, wParam, lParam);
+
+#if 0
     Window_WGL* glwin = nullptr;
     if ( message == WM_NCCREATE )
     {
@@ -1523,16 +1611,7 @@ Window_WGL_Proc( HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam )
     {
         glwin = reinterpret_cast< Window_WGL* >( GetWindowLongPtr( hwnd, GWL_USERDATA ) );
     }
-
-//  if ( win )
-//  {
-//     return win->handleEvent( uMsg, wParam, lParam );
-//  }
-//  else
-//  {
-//     return DefWindowProc( hWnd, uMsg, wParam, lParam );
-//  }
-
+#endif
 
     auto createMouseDblClickEvent = [](UINT msg, WPARAM wParam, LPARAM lParam)
     {
@@ -1692,7 +1771,7 @@ Window_WGL_Proc( HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam )
         return e;
     };
 
-    switch (message)
+    switch (msg)
     {
         case WM_NCCREATE:
         {
@@ -1710,7 +1789,7 @@ Window_WGL_Proc( HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam )
         case WM_CLOSE:
         {
             DE_TRACE("WM_CLOSE ", hwnd)
-            if (glwin->_d->m_hideOnClose)
+            if (self->_d->m_hideOnClose)
             {
                 // Instead of destroying, just hide the window
                 ShowWindow(hwnd, SW_HIDE);
@@ -1718,22 +1797,22 @@ Window_WGL_Proc( HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam )
             }
             else
             {
-                return DefWindowProc(hwnd, message, wParam, lParam);
+                return DefWindowProc(hwnd, msg, wParam, lParam);
             }
         }
         case WM_DESTROY:
         {
-            glwin->_d->m_receiver = nullptr;
+            self->_d->m_receiver = nullptr;
             DE_TRACE("WM_DESTROY ", hwnd)
 
-            if (glwin->_d->m_postQuitMessage)
+            if (self->_d->m_postQuitMessage)
             {
                 PostQuitMessage(0);
                 return 0;
             }
             else
             {
-                return DefWindowProc(hwnd, message, wParam, lParam);
+                return DefWindowProc(hwnd, msg, wParam, lParam);
             }
         }
         case WM_ERASEBKGND:
@@ -1745,19 +1824,19 @@ Window_WGL_Proc( HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam )
             PAINTSTRUCT ps;
             BeginPaint(hwnd, &ps);
 
-            if ( glwin )
+            if ( self && self->_d->m_bPaintEventEnabled)
             {
-                wglMakeCurrent(ps.hdc, glwin->_d->m_hRC);
+                wglMakeCurrent(ps.hdc, self->_d->m_hRC);
 
                 PaintEvent event;
-                Recti r = glwin->getClientRect();
+                Recti r = self->getClientRect();
                 event.w = r.w;
                 event.h = r.h;
                 //std::lock_guard< std::mutex > guard( os::win32::s_Mutex );
-                glwin->onEvent( event );
-                //glwin->swapBuffers();
+                self->onEvent( event );
+                //self->swapBuffers();
 
-                //SwapBuffers( glwin->_d->m_hDC );
+                //SwapBuffers( self->_d->m_hDC );
 
                 SwapBuffers( ps.hdc );
 
@@ -1767,10 +1846,10 @@ Window_WGL_Proc( HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam )
             EndPaint(hwnd, &ps);
 
         /*
-            int dstW = glwin->_d->m_screenWidth;
-            int dstH = glwin->_d->m_screenHeight;
+            int dstW = self->_d->m_screenWidth;
+            int dstH = self->_d->m_screenHeight;
 
-            HBITMAP hBmp = glwin->_d->m_hBackgroundBitmap;
+            HBITMAP hBmp = self->_d->m_hBackgroundBitmap;
             if (hBmp)
             {
                HDC hMemDC = CreateCompatibleDC(hDC);
@@ -1797,104 +1876,104 @@ Window_WGL_Proc( HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam )
         }
         case WM_MOVE:
         {
-            if ( glwin )
+            if ( self )
             {
                 MoveEvent moveEvent;
                 moveEvent.x = GET_X_LPARAM( lParam );
                 moveEvent.y = GET_Y_LPARAM( lParam );
                 //DE_WARN("MoveEvent = ", moveEvent.str())
-                glwin->onEvent( moveEvent );
+                self->onEvent( moveEvent );
             }
             return 0;
         }
         case WM_SIZE:
         {
-            if ( glwin )
+            if ( self )
             {
                 ResizeEvent resizeEvent;
                 resizeEvent.w = GET_X_LPARAM( lParam );
                 resizeEvent.h = GET_Y_LPARAM( lParam );
                 //DE_WARN("ResizeEvent = ", resizeEvent.str())
-                glwin->onEvent( resizeEvent );
+                self->onEvent( resizeEvent );
             }
             return 0;
         }
         case WM_LBUTTONDBLCLK:
         {
-            if ( glwin )
+            if ( self )
             {
-                glwin->onEvent( createMouseDblClickEvent(message, wParam, lParam) );
+                self->onEvent( createMouseDblClickEvent(msg, wParam, lParam) );
             }
             return 0;
         }
         case WM_RBUTTONDBLCLK:
         {
-            if ( glwin )
+            if ( self )
             {
-                glwin->onEvent( createMouseDblClickEvent(message, wParam, lParam) );
+                self->onEvent( createMouseDblClickEvent(msg, wParam, lParam) );
             }
             return 0;
         }
         case WM_MBUTTONDBLCLK:
         {
-            if ( glwin )
+            if ( self )
             {
-                glwin->onEvent( createMouseDblClickEvent(message, wParam, lParam) );
+                self->onEvent( createMouseDblClickEvent(msg, wParam, lParam) );
             }
             return 0;
         }
         case WM_MOUSEMOVE:
         {
-            if ( glwin )
+            if ( self )
             {
                MouseMoveEvent mouseMoveEvent;
                mouseMoveEvent.x = int( LOWORD( lParam ) );
                mouseMoveEvent.y = int( HIWORD( lParam ) );
                //DE_OK("MouseMoveEvent = ", mouseMoveEvent.str())
                //std::lock_guard< std::mutex > guard( os::win32::s_Mutex );
-               glwin->onEvent( mouseMoveEvent );
+               self->onEvent( mouseMoveEvent );
             }
             return 0;
         }
         case WM_MOUSEWHEEL:
         {
-            if ( glwin )
+            if ( self )
             {
                 MouseWheelEvent mouseWheelEvent;
                 mouseWheelEvent.x = 0.0f;
                 mouseWheelEvent.y = float( int16_t( HIWORD( wParam ) ) ) / float( WHEEL_DELTA );
-                glwin->onEvent( mouseWheelEvent );
+                self->onEvent( mouseWheelEvent );
             }
             return 0;
         }
         case WM_LBUTTONDOWN:
         {
-            if ( glwin ) { glwin->onEvent( createMousePressEvent(message, wParam, lParam) ); }
+            if ( self ) { self->onEvent( createMousePressEvent(msg, wParam, lParam) ); }
             return 0;
         }
         case WM_RBUTTONDOWN:
         {
-            if ( glwin ) { glwin->onEvent( createMousePressEvent(message, wParam, lParam) ); }
+            if ( self ) { self->onEvent( createMousePressEvent(msg, wParam, lParam) ); }
             return 0;
         }
         case WM_MBUTTONDOWN:
         {
-            if ( glwin ) { glwin->onEvent( createMousePressEvent(message, wParam, lParam) ); }
+            if ( self ) { self->onEvent( createMousePressEvent(msg, wParam, lParam) ); }
             return 0;
         }
         case WM_LBUTTONUP:
         {
-            if ( glwin ) { glwin->onEvent( createMouseReleaseEvent(message, wParam, lParam) ); }
+            if ( self ) { self->onEvent( createMouseReleaseEvent(msg, wParam, lParam) ); }
             return 0;
         }
         case WM_RBUTTONUP:
         {
-            if ( glwin ) { glwin->onEvent( createMouseReleaseEvent(message, wParam, lParam) ); }
+            if ( self ) { self->onEvent( createMouseReleaseEvent(msg, wParam, lParam) ); }
             return 0;
         }
         case WM_MBUTTONUP:
         {
-            if ( glwin ) { glwin->onEvent( createMouseReleaseEvent(message, wParam, lParam) ); }
+            if ( self ) { self->onEvent( createMouseReleaseEvent(msg, wParam, lParam) ); }
             return 0;
         }
 
@@ -1905,32 +1984,32 @@ Window_WGL_Proc( HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam )
 
         case WM_INPUTLANGCHANGE:
         {
-            if ( glwin )
+            if ( self )
             {
                 auto hkl = GetKeyboardLayout( 0 ); // get the new codepage used for keyboard input
-                glwin->_d->m_KEYBOARD_INPUT_HKL = hkl; // get the new codepage used for keyboard input
-                glwin->_d->m_KEYBOARD_INPUT_CODEPAGE = convertLocaleIdToCodepage( LOWORD( hkl ) );
+                self->_d->m_KEYBOARD_INPUT_HKL = hkl; // get the new codepage used for keyboard input
+                self->_d->m_KEYBOARD_INPUT_CODEPAGE = convertLocaleIdToCodepage( LOWORD( hkl ) );
             }
             return 0;
         }
         case WM_SYSKEYDOWN:
         {
-            if ( glwin ) { glwin->onEvent( createKeyPressEvent(glwin, message, wParam, lParam) ); }
+            if ( self ) { self->onEvent( createKeyPressEvent(self, msg, wParam, lParam) ); }
             return 0;
         }
         case WM_KEYDOWN:
         {
-            if ( glwin ) { glwin->onEvent( createKeyPressEvent(glwin, message, wParam, lParam) ); }
+            if ( self ) { self->onEvent( createKeyPressEvent(self, msg, wParam, lParam) ); }
             return 0;
         }
         case WM_SYSKEYUP:
         {
-            if ( glwin ) { glwin->onEvent( createKeyReleaseEvent(glwin, message, wParam, lParam) ); }
+            if ( self ) { self->onEvent( createKeyReleaseEvent(self, msg, wParam, lParam) ); }
             return 0;
         }
         case WM_KEYUP:
         {
-            if ( glwin ) { glwin->onEvent( createKeyReleaseEvent(glwin, message, wParam, lParam) ); }
+            if ( self ) { self->onEvent( createKeyReleaseEvent(self, msg, wParam, lParam) ); }
             return 0;
         }
 
@@ -1994,13 +2073,18 @@ Window_WGL_Proc( HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam )
         default:
             break;
     }
-    return DefWindowProc(hwnd, message, wParam, lParam);
+    return DefWindowProc(hwnd, msg, wParam, lParam);
 }
 
 Recti Window_WGL::getWindowRect() const
 {
     RECT r;
     GetWindowRect( _d->m_hWnd, &r );
+    DE_DEBUG("hWnd(",_d->m_hWnd,"), "
+             "r.left(",r.left,"), "
+             "r.top(",r.top,"), "
+             "r.right(",r.right,"), "
+             "r.bottom(",r.bottom,")")
     return Recti(r.left, r.top, r.right - r.left, r.bottom - r.top );
 }
 
@@ -2008,6 +2092,11 @@ Recti Window_WGL::getClientRect() const
 {
     RECT r;
     GetClientRect( _d->m_hWnd, &r );
+    DE_DEBUG("hWnd(",_d->m_hWnd,"), "
+             "r.left(",r.left,"), "
+             "r.top(",r.top,"), "
+             "r.right(",r.right,"), "
+             "r.bottom(",r.bottom,")")
     return Recti(r.left, r.top, r.right - r.left, r.bottom - r.top );
 }
 
@@ -2277,8 +2366,8 @@ bool Window_WGL::run()
    {
       TranslateMessage (&msg);
       DispatchMessage (&msg);
-      // glwin.beginScene();
-      // glwin.endScene();
+      // self.beginScene();
+      // self.endScene();
    }
 */
 

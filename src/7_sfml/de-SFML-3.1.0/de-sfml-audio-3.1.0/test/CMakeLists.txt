@@ -1,0 +1,6 @@
+add_subdirectory(sfml_demo_keyboard)
+add_subdirectory(sfml_demo_sound)
+add_subdirectory(sfml_demo_sound_capture)
+add_subdirectory(sfml_demo_sound_device)
+add_subdirectory(sfml_demo_sound_effects)
+add_subdirectory(sfml_demo_tennis)

@@ -78,7 +78,7 @@ H3_Cfg::createStandard()
     {
         H3_CfgPlayer player;
         player.name = "firestarter";
-        player.color = dbRGBA(255,0,0);
+        player.color = dbRGB(255,0,0);
         player.typ = H3_PlayerType::HUMAN;
         player.connect = H3_PlayerConnect::LOCAL;
         player.avatar = H3_Tex::Play1;
@@ -88,7 +88,7 @@ H3_Cfg::createStandard()
     {
         H3_CfgPlayer player;
         player.name = "Kleopatra";
-        player.color = dbRGBA(255,255,0);
+        player.color = dbRGB(255,255,0);
         player.typ = H3_PlayerType::CPU;
         player.connect = H3_PlayerConnect::LOCAL;
         player.avatar = H3_Tex::Play2;
@@ -98,7 +98,7 @@ H3_Cfg::createStandard()
     // {
     //     H3_CfgPlayer player;
     //     player.name = "Alexander";
-    //     player.color = dbRGBA(0,255,0);
+    //     player.color = dbRGB(0,255,0);
     //     player.typ = H3_PlayerType::CPU;
     //     player.connect = H3_PlayerConnect::LOCAL;
     //     player.avatar = H3_Tex::Play3;
@@ -108,7 +108,7 @@ H3_Cfg::createStandard()
     // {
     //     H3_CfgPlayer player;
     //     player.name = "Napoleon";
-    //     player.color = dbRGBA(0,0,255);
+    //     player.color = dbRGB(0,0,255);
     //     player.typ = H3_PlayerType::CPU;
     //     player.connect = H3_PlayerConnect::LOCAL;
     //     player.avatar = H3_Tex::Play4;

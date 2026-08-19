@@ -162,8 +162,9 @@ else()
 
     target_sources(${LIB_NAME} PUBLIC ${LIB_HEADERS} PRIVATE ${LIB_SOURCES})
 
-    target_compile_definitions(${LIB_NAME} PUBLIC HAVE_FREETYPE2)
-    target_compile_definitions(${LIB_NAME} PUBLIC FT2_BUILD_LIBRARY)
+    target_compile_definitions(${LIB_NAME} PUBLIC HAVE_FREETYPE=1)
+    target_compile_definitions(${LIB_NAME} PUBLIC HAVE_FREETYPE2=1)
+    target_compile_definitions(${LIB_NAME} PUBLIC FT2_BUILD_LIBRARY=1)
     target_compile_definitions(${LIB_NAME} PUBLIC FT_WITH_ZLIB=1)
     target_compile_definitions(${LIB_NAME} PUBLIC FT_WITH_BZIP2=1)
     target_compile_definitions(${LIB_NAME} PUBLIC FT_WITH_PNG=1)

@@ -51,10 +51,10 @@ UI_MainMenu::createButton(std::string txt, int x, int y )
     auto btn = new de::gui::Button(txt, m_env, this, 0, de::Recti(x, y, 0.60 * pw, 0.1 * ph));
 
     btn->setTexture(m_game->getTex(H3_Tex::Scroll1, __func__));
-    btn->setFillColor(dbRGBA(255,255,255,200),0);
-    btn->setFillColor(dbRGBA(255,255,255,255),1);
-    btn->setTextColor(dbRGBA(0,0,0,150),0);
-    btn->setTextColor(dbRGBA(0,0,0,255),1);
+    btn->setFillColor(dbRGB(255,255,255,200),0);
+    btn->setFillColor(dbRGB(255,255,255,255),1);
+    btn->setTextColor(dbRGB(0,0,0,150),0);
+    btn->setTextColor(dbRGB(0,0,0,255),1);
 
     // de::Font5x8 menuFont;
     // menuFont.quadWidth = 3;

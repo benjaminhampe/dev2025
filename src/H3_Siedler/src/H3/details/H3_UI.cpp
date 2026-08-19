@@ -131,11 +131,11 @@ void UI_drawRoundStats( H3_Game & game)
     auto s0 = dbStr("FPS(",fps,")");
     auto s1 = dbStr("Screen(",w,",",h,")");
     auto s2 = dbStr("Mouse(",mx,",",my,") L(", game.m_isMouseLeftPressed, "), R(", game.m_isMouseRightPressed,"), M(", game.m_isMouseMiddlePressed,")");
-    H3_drawText( game, x,y, s0, dbRGBA(255,225,100), align, font1 );
+    H3_drawText( game, x,y, s0, dbRGB(255,225,100), align, font1 );
     y += ln1;
-    H3_drawText( game, x,y, s1, dbRGBA(255,100,100), align, font1 );
+    H3_drawText( game, x,y, s1, dbRGB(255,100,100), align, font1 );
     y += ln1;
-    H3_drawText( game, x,y, s2, dbRGBA(255,200,100), align, font1 );
+    H3_drawText( game, x,y, s2, dbRGB(255,200,100), align, font1 );
     y += ln1;
 
     auto camera = driver->getCamera();
@@ -144,11 +144,11 @@ void UI_drawRoundStats( H3_Game & game)
         auto s1 = dbStr("Camera-Pos(",glm::ivec3(camera->getPos()),")");
         auto s2 = dbStr("Camera-Target(",glm::ivec3(camera->getTarget()),")");
         auto s3 = dbStr("Camera-Angle(",camera->getAng(),")");
-        H3_drawText( game, x,y, s1, dbRGBA(100,200,100), align, font1 );
+        H3_drawText( game, x,y, s1, dbRGB(100,200,100), align, font1 );
         y += ln1;
-        H3_drawText( game, x,y, s2, dbRGBA(125,215,125), align, font1 );
+        H3_drawText( game, x,y, s2, dbRGB(125,215,125), align, font1 );
         y += ln1;
-        H3_drawText( game, x,y, s3, dbRGBA(145,225,145), align, font1 );
+        H3_drawText( game, x,y, s3, dbRGB(145,225,145), align, font1 );
         y += ln1;
     }
 
@@ -336,9 +336,9 @@ void UI_Stats_drawItem( H3_Game & game, int x, int y, int w, int h,
                            tw + 2*s,
                            th + 2*s);
 
-    H3_draw2DRect( game, r_num, dbRGBA(0,0,0,128) );
+    H3_draw2DRect( game, r_num, dbRGB(0,0,0,128) );
 
-    H3_drawText( game, r_num.x + 1, r_num.y + 1, str, dbRGBA(255,255,255), de::Align::Default, font);
+    H3_drawText( game, r_num.x + 1, r_num.y + 1, str, dbRGB(255,255,255), de::Align::Default, font);
 }
 
 void UI_Stats_render( H3_Game & game )
