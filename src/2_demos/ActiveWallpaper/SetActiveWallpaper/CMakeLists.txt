@@ -19,10 +19,10 @@ else()
     add_executable(${APP_NAME} ${APP_SOURCES})
 
     target_include_directories(${APP_NAME} PRIVATE ${APP_SOURCE_DIR})
-		
+
     if (WIN32)
-		target_compile_definitions(${APP_NAME} PRIVATE _UNICODE=1)
-		target_compile_definitions(${APP_NAME} PRIVATE UNICODE=1)
+        target_compile_definitions(${APP_NAME} PRIVATE _UNICODE=1)
+        target_compile_definitions(${APP_NAME} PRIVATE UNICODE=1)
         target_link_libraries(${APP_NAME} PRIVATE comctl32 user32 gdi32 kernel32 shell32)
         target_link_libraries(${APP_NAME} PRIVATE ole32 oleaut32)
     else()
@@ -33,11 +33,11 @@ else()
     else()
         # target_link_options(${APP_NAME} PRIVATE -mwindows)
     endif()
-	
-    target_link_libraries(${APP_NAME} PRIVATE DarkImage_2504)
+
+    target_link_libraries(${APP_NAME} PRIVATE DarkImage_2604)
 
     include(${CMAKE_SOURCE_DIR}/src/embed_static_runtime.cmake)
-    
+
     # if (CMAKE_BUILD_TYPE STREQUAL "Release")
         # message(STATUS "Building in Release mode, strip symbols")
         # --strip-debug : Removes only debugging symbols.

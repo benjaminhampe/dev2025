@@ -18,21 +18,21 @@ struct TimeSeekTools
          if ( y < 0 || y >= h ) return;
          uint32_t* p = reinterpret_cast< uint32_t* >( img.scanLine( y ) ) + x;
          uint32_t bg = *p;
-         int r = dbRGBA_B( bg );
-         int g = dbRGBA_G( bg );
-         int b = dbRGBA_R( bg );
-         int a = dbRGBA_A( bg );
-         bg = dbRGBA(r,g,b,a);
+         int r = dbRGB_B( bg );
+         int g = dbRGB_G( bg );
+         int b = dbRGB_R( bg );
+         int a = dbRGB_A( bg );
+         bg = dbRGB(r,g,b,a);
          //uint32_t bg = img.pixel( x, y );
          uint32_t blend = de::blendColor( bg, color );
          //img.setPixel( x, y, color );
          //*p = color;
          //*p = blend;
-         r = dbRGBA_B( blend );
-         g = dbRGBA_G( blend );
-         b = dbRGBA_R( blend );
-         a = dbRGBA_A( blend );
-         blend = dbRGBA(r,g,b,a);
+         r = dbRGB_B( blend );
+         g = dbRGB_G( blend );
+         b = dbRGB_R( blend );
+         a = dbRGB_A( blend );
+         blend = dbRGB(r,g,b,a);
          *p = blend;
       };
 
@@ -66,7 +66,7 @@ struct TimeSeekTools
 
       int w = pos.w;
       int h = pos.h;
-      drawLine( img, 0,h/2,w-1,h/2, dbRGBA(255,255,255,255) );
+      drawLine( img, 0,h/2,w-1,h/2, dbRGB(255,255,255,255) );
 
       uint64_t frameCount = src.getFrameCount();
       if ( frameCount < 2 ) { DE_DEBUG("Nothing to draw") return; }
@@ -99,7 +99,7 @@ struct TimeSeekTools
          int y1 = int( float(h/2) - float(h/2) * energy );
          int y2 = h/2;
 
-         drawLine( img, k,y1,k+1,y2, dbRGBA(255,255,255,255) );
+         drawLine( img, k,y1,k+1,y2, dbRGB(255,255,255,255) );
       }
    }
 

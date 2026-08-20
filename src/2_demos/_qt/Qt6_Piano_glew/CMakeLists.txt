@@ -66,5 +66,6 @@ else()
     target_link_libraries(${APP_NAME} PRIVATE de_glm)
     target_link_libraries(${APP_NAME} PRIVATE de_glew)
     target_link_libraries(${APP_NAME} PRIVATE de_kissfft_cpp) # What i use
-    target_link_libraries(${APP_NAME} PRIVATE DarkImage_2504)
+    target_link_libraries(${APP_NAME} PRIVATE DarkImage_2604)
+    target_link_libraries(${APP_NAME} PRIVATE DarkGPU_2604)
 endif()

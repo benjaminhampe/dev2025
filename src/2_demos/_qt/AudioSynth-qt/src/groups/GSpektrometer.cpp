@@ -140,21 +140,21 @@ void drawLine( QImage & img, int x1, int y1, int x2, int y2, uint32_t color )
       if ( y < 0 || y >= h ) return;
       uint32_t* p = reinterpret_cast< uint32_t* >( img.scanLine( y ) ) + x;
       uint32_t bg = *p;
-      int r = dbRGBA_B( bg );
-      int g = dbRGBA_G( bg );
-      int b = dbRGBA_R( bg );
-      int a = dbRGBA_A( bg );
-      bg = dbRGBA(r,g,b,a);
+      int r = dbRGB_B( bg );
+      int g = dbRGB_G( bg );
+      int b = dbRGB_R( bg );
+      int a = dbRGB_A( bg );
+      bg = dbRGB(r,g,b,a);
       //uint32_t bg = img.pixel( x, y );
       uint32_t blend = de::blendColor( bg, color );
       //img.setPixel( x, y, color );
       //*p = color;
       //*p = blend;
-      r = dbRGBA_B( blend );
-      g = dbRGBA_G( blend );
-      b = dbRGBA_R( blend );
-      a = dbRGBA_A( blend );
-      blend = dbRGBA(r,g,b,a);
+      r = dbRGB_B( blend );
+      g = dbRGB_G( blend );
+      b = dbRGB_R( blend );
+      a = dbRGB_A( blend );
+      blend = dbRGB(r,g,b,a);
       *p = blend;
    };
 
@@ -275,7 +275,7 @@ void GSpektrometer::updateImage( int w, int h )
       drawLine( m_img,a,b,color );
    }
 
-   color = dbRGBA(155,155,155,255);
+   color = dbRGB(155,155,155,255);
    a = computePos( 1.0f, db_min );
    b = computePos( 1.0f, db_max );
    drawLine( m_img,a,b,color );
@@ -325,7 +325,7 @@ void GSpektrometer::updateImage( int w, int h )
    drawLine( m_img,a,b,color );
 
    // C0...C6
-   color = dbRGBA(125,120,120);
+   color = dbRGB(125,120,120);
    auto f = getFrequencyFromNote( 0,0 );
    a = computePos( f, db_min );
    b = computePos( f, db_max );
@@ -364,18 +364,18 @@ void GSpektrometer::updateImage( int w, int h )
    // A3-A5
    a = computePos( 440.0f, db_min );
    b = computePos( 440.0f, db_max );
-   drawLine( m_img,a,b,dbRGBA(255,155,155) );
+   drawLine( m_img,a,b,dbRGB(255,155,155) );
 
    a = computePos( 220.0f, db_min );
    b = computePos( 220.0f, db_max );
-   drawLine( m_img,a,b,dbRGBA(255,200,155) );
+   drawLine( m_img,a,b,dbRGB(255,200,155) );
 
    a = computePos( 880.0f, db_min );
    b = computePos( 880.0f, db_max );
-   drawLine( m_img,a,b,dbRGBA(255,200,155) );
+   drawLine( m_img,a,b,dbRGB(255,200,155) );
 
    // C0 Text
-   color = dbRGBA(125,120,120);
+   color = dbRGB(125,120,120);
    a = computePos( getFrequencyFromNote( 0,0 ), -60 );
    m_font5x8.drawText( m_img,a.x+2,a.y+2,"C0",color );
    a = computePos( getFrequencyFromNote( 1,0 ), -60 );
@@ -392,7 +392,7 @@ void GSpektrometer::updateImage( int w, int h )
    m_font5x8.drawText( m_img,a.x+2,a.y+2,"C6",color );
 
    // 0 DB Text
-   //color = dbRGBA(125,120,120);
+   //color = dbRGB(125,120,120);
    a = computePos( 1.0f, 0.0f );
    m_font5x8.drawText( m_img,a.x+2,a.y+2,"0 dB",color );
    a = computePos( 440.0f, 0.0f );
@@ -415,7 +415,7 @@ void GSpektrometer::updateImage( int w, int h )
    m_font5x8.drawText( m_img,a.x,a.y,QString("%1 dB").arg(db_min),color, de::Align::BottomRight );
 
    // A4 Text
-   color = dbRGBA(255,100,155);
+   color = dbRGB(255,100,155);
    a = computePos( 440.0f, db_min );
    m_font5x8.drawText( m_img,a.x+2,a.y+2,"440Hz",color, de::Align::BottomLeft );
 
@@ -427,14 +427,14 @@ void GSpektrometer::updateImage( int w, int h )
       DSP_FILLZERO( m_outputBuffer, fftSize );
       m_fft.getOutputInDecibel( m_outputBuffer.data(), fftSize ); // y already logarithmic
 
-      uint32_t color = dbRGBA(255,255,32,100);
+      uint32_t color = dbRGB(255,255,32,100);
       if ( c == 0 )
       {
          getMinMax( m_outputBuffer.data(), fftSize, L_min, L_max );
       }
       else
       {
-         color = dbRGBA(255,0,0,100);
+         color = dbRGB(255,0,0,100);
          getMinMax( m_outputBuffer.data(), fftSize, R_min, R_max );
       }
 

@@ -353,7 +353,8 @@ void SpaceMouseMessageWindow::Poll()
    MSG msg; //incoming message to be evaluated
    while (PeekMessage(&msg, (HWND)0, 0, 0, PM_NOREMOVE))
    {
-      if (bRet = GetMessage(&msg, NULL, 0, 0))
+      bRet = GetMessage(&msg, NULL, 0, 0);
+      if (bRet)
       {
          if (bRet == -1)
          {

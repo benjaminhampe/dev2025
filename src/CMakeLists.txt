@@ -2,7 +2,6 @@ add_subdirectory(0_tools)
 add_subdirectory(1_libs)
 
 add_subdirectory(minimal_vst2x_host)
-# add_subdirectory(zstd_fltk)
 add_subdirectory(wav2mp3_fltk)
 add_subdirectory(AVX_Mandelbrot_de_glew)
 add_subdirectory(H3_Siedler)
@@ -23,12 +22,12 @@ endif()
 
 add_subdirectory(5_plugins)
 
-
 if (BENNI_USE_VCV)
     add_subdirectory(vcv-rack2)
 endif()
 
 add_subdirectory(7_sfml)
+add_subdirectory(8-Zip)
 
 if (BENNI_USE_RAYLIB)
     add_subdirectory(raylib)

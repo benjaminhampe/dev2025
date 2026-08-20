@@ -50,10 +50,10 @@ toQImage( de::Image const & img )
       for ( size_t i = 0; i < w; ++i )
       {
          uint32_t color = img.getPixel( i,j );
-         int r = dbRGBA_R( color );
-         int g = dbRGBA_G( color );
-         int b = dbRGBA_B( color );
-         int a = dbRGBA_A( color );
+         int r = dbRGB_R( color );
+         int g = dbRGB_G( color );
+         int b = dbRGB_B( color );
+         int a = dbRGB_A( color );
          dst.setPixelColor( i,j, QColor( r,g,b,255 ) );
       }
    }

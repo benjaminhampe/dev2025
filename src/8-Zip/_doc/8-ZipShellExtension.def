@@ -1,0 +1,4 @@
+LIBRARY "8-ZipShellExtension"
+EXPORTS
+    DllGetClassObject
+    DllCanUnloadNow

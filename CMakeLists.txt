@@ -33,16 +33,16 @@ set(CMAKE_SYSTEM_NAME Windows)
 cmake_minimum_required(VERSION 3.14 FATAL_ERROR)
 
 set(BENNI_USE_QT 1)         # <optional> Build QtSDK Apps and copy runtime
-set(BENNI_USE_DEMOS 0)      # <optional> Build QtSDK Apps and copy runtime
+set(BENNI_USE_DEMOS 1)      # <optional> Build QtSDK Apps and copy runtime
 set(BENNI_USE_OPENCV 0)     # <optional> Build OpenCV and face detection demo app
 set(BENNI_USE_POLYPHONE 0)  # <optional> Big app
 set(BENNI_USE_WX 0)         # <optional> Build wxWidgets Apps and copy runtime
 set(BENNI_USE_IRR 0)        # <optional> Builds Irrlicht libs and apps.
 set(BENNI_USE_JUCE 1)       # <optional> Big JUCE lib, Bespoke, Odin2, Surge Rack plugins, etc..
-set(BENNI_USE_JUCE_EXTRA 0) # <optional> Big JUCE plugins, Odin2, Surge Rack plugins, etc..
+set(BENNI_USE_JUCE_EXTRA 1) # <optional> Big JUCE plugins, Odin2, Surge Rack plugins, etc..
 set(BENNI_USE_JUCE_BESPOKE 0) # <optional> Big JUCE plugin Bespoke
 set(BENNI_USE_WHISPER 0)    # <optional> Big speech2text
-set(BENNI_USE_RAYLIB 1)     # <optional>
+set(BENNI_USE_RAYLIB 0)     # <optional>
 set(BENNI_USE_VCV 0)        # <optional> Big VCV-Rack2 + Benni plugins
 set(BENNI_USE_VCV_EXTRA 0)  # <optional> Big VCV-Rack2 + ca. 500 external plugins.
 set(BENNI_USE_OPENGL_TUTORIALS 0) # <optional> Builds LearnOpenGL, Norberts and

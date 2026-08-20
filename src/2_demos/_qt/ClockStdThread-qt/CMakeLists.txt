@@ -71,7 +71,7 @@ else()
     target_link_libraries(${APP_NAME} PRIVATE "Qt6::Core")
     target_link_libraries(${APP_NAME} PRIVATE "Qt6::Widgets")
 
-    target_link_libraries(${APP_NAME} PRIVATE DarkImage_2504)
+    target_link_libraries(${APP_NAME} PRIVATE DarkImage_2604)
 
    # COPY MEDIA FILES relative to exe
    #file( COPY        ${CMAKE_CURRENT_LIST_DIR}/media/tux.png

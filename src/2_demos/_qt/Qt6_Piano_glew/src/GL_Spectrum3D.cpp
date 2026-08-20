@@ -8,24 +8,24 @@ GL_Spectrum3D::GL_Spectrum3D()
 {
     m_shiftMatrixL.resize( 1024, 64 );
 
-    m_cgWaveform.addStop( 0, dbRGBA(0,0,0) );
-    m_cgWaveform.addStop( 0.1f, dbRGBA(255,255,255) );
-    m_cgWaveform.addStop( 0.2f, dbRGBA(0,0,255) );
-    m_cgWaveform.addStop( 0.3f, dbRGBA(0,20,0) );
-    m_cgWaveform.addStop( 0.6f, dbRGBA(0,200,0) );
-    m_cgWaveform.addStop( 0.8f, dbRGBA(255,255,0) );
-    m_cgWaveform.addStop( 1.0f, dbRGBA(255,0,0) );
-    //   m_cgWaveform.addStop( 1.1f, dbRGBA(255,0,255) );
-    //   m_cgWaveform.addStop( 1.3f, dbRGBA(0,0,255) );
-    //   m_cgWaveform.addStop( 1.5f, dbRGBA(0,0,155) );
-    m_cgWaveform.addStop( 2.5f, dbRGBA(205,105,5) );
+    m_cgWaveform.addStop( 0, dbRGB(0,0,0) );
+    m_cgWaveform.addStop( 0.1f, dbRGB(255,255,255) );
+    m_cgWaveform.addStop( 0.2f, dbRGB(0,0,255) );
+    m_cgWaveform.addStop( 0.3f, dbRGB(0,20,0) );
+    m_cgWaveform.addStop( 0.6f, dbRGB(0,200,0) );
+    m_cgWaveform.addStop( 0.8f, dbRGB(255,255,0) );
+    m_cgWaveform.addStop( 1.0f, dbRGB(255,0,0) );
+    //   m_cgWaveform.addStop( 1.1f, dbRGB(255,0,255) );
+    //   m_cgWaveform.addStop( 1.3f, dbRGB(0,0,255) );
+    //   m_cgWaveform.addStop( 1.5f, dbRGB(0,0,155) );
+    m_cgWaveform.addStop( 2.5f, dbRGB(205,105,5) );
 
-    m_cgSpektrum.addStop( 0, dbRGBA(0,0,0) );
-    m_cgSpektrum.addStop( 0.45, dbRGBA(125,125,125) );
-    m_cgSpektrum.addStop( 0.5, dbRGBA(0,0,255) );
-    m_cgSpektrum.addStop( 0.6, dbRGBA(0,200,0) );
-    m_cgSpektrum.addStop( 0.8, dbRGBA(255,255,0) );
-    m_cgSpektrum.addStop( 1.0, dbRGBA(255,0,0) );
+    m_cgSpektrum.addStop( 0, dbRGB(0,0,0) );
+    m_cgSpektrum.addStop( 0.45, dbRGB(125,125,125) );
+    m_cgSpektrum.addStop( 0.5, dbRGB(0,0,255) );
+    m_cgSpektrum.addStop( 0.6, dbRGB(0,200,0) );
+    m_cgSpektrum.addStop( 0.8, dbRGB(255,255,0) );
+    m_cgSpektrum.addStop( 1.0, dbRGB(255,0,0) );
 }
 
 GL_Spectrum3D::~GL_Spectrum3D()

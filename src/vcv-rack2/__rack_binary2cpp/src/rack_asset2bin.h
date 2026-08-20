@@ -28,7 +28,7 @@ struct RackAssetUtil
 
     // Define size and array in .cpp (Dont use constexpr because narrowing)
     static std::string
-    bin2cpp( const std::vector<uint8_t>& bytes, std::string sym, uint32_t bytesPerLine = 256 )
+    bin2cpp( const de::Blob& bytes, std::string sym, uint32_t bytesPerLine = 256 )
     {
         if (bytes.empty())
         {
@@ -105,7 +105,7 @@ struct RackAssetUtil
         // o << "\n";
 
         size_t i = 0;
-        std::vector<uint8_t> blob;
+        de::Blob blob;
         for (const auto& inputFileName : inputFileNames)
         {
             bins.emplace_back();
@@ -130,7 +130,7 @@ struct RackAssetUtil
             bin.binName = de::StringUtil::replace(bin.binName, ")", "");
             bin.binName = de::StringUtil::replace(bin.binName, "[", "");
             bin.binName = de::StringUtil::replace(bin.binName, "]", "");
-            de::FileSystem::loadBin(inputFileName, blob);
+            de::FileSystem::loadBlob(blob, inputFileName);
             bin.binSize = blob.size();
 
             auto cppText = bin2cpp(blob, bin.binName);

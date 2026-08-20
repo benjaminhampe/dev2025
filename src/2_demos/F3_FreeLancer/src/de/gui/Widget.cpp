@@ -4,7 +4,7 @@
 
 namespace de {
 namespace gui {
-    
+
 // =====================================================================
 Widget::Widget( Env* env, Widget* parent, u32 id, const Recti& r )
     // =====================================================================
@@ -77,7 +77,7 @@ void Widget::draw()
     const auto pos = getAbsoluteRect();
 
     // --- [Draw] Fill ---
-    if (dbRGBA_A(fillColor) > 0)
+    if (dbRGB_A(fillColor) > 0)
     {
         if ( m_radius < 1 )
         {
@@ -91,7 +91,7 @@ void Widget::draw()
     }
 
     // --- [Draw] Border ---
-    if (dbRGBA_A(borderColor) > 0 && m_borderWidth > 0)
+    if (dbRGB_A(borderColor) > 0 && m_borderWidth > 0)
     {
         if ( m_radius < 1 )
         {

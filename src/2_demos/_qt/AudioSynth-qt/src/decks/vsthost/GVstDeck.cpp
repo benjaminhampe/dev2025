@@ -8,10 +8,10 @@ namespace {
 
 QColor toQColor( uint32_t color )
 {
-   int32_t r = dbRGBA_R(color);
-   int32_t g = dbRGBA_G(color);
-   int32_t b = dbRGBA_B(color);
-   int32_t a = dbRGBA_A(color);
+   int32_t r = dbRGB_R(color);
+   int32_t g = dbRGB_G(color);
+   int32_t b = dbRGB_B(color);
+   int32_t a = dbRGB_A(color);
    return QColor( b,g,r,a );
 }
 

@@ -12,18 +12,18 @@
 
 // GLFWwindow* window = glfwCreateWindow(800, 600, "My Window", NULL, NULL);
 // HWND hwnd = glfwGetWin32Window(window);
-#include <de_AlignedVector.h>
 
+// TODO: Remove
 #include <fstream>
-#include <vector>
-#include <string>
-#include <sstream>
+// #include <vector>
+// #include <string>
+// #include <sstream>
+// #include <iostream>
 
 #include <osdialog.h>
 
 #include <de/Core.h>
 
-#include <iostream>
 
 using namespace rack;
 

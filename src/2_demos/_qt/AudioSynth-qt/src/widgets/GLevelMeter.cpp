@@ -33,10 +33,10 @@ namespace {
 
 QColor toQColor( uint32_t color )
 {
-   int r = dbRGBA_R( color );
-   int g = dbRGBA_G( color );
-   int b = dbRGBA_B( color );
-   int a = dbRGBA_A( color );
+   int r = dbRGB_R( color );
+   int g = dbRGB_G( color );
+   int b = dbRGB_B( color );
+   int a = dbRGB_A( color );
    return QColor( r,g,b,a );
 }
 

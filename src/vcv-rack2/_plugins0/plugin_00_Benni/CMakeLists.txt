@@ -46,7 +46,7 @@ else()
     target_link_libraries(${LIB_NAME} PRIVATE de_rack2)
     target_link_libraries(${LIB_NAME} PRIVATE de_samplerate)
     target_link_libraries(${LIB_NAME} PRIVATE de_dr_wav)
-    target_link_libraries(${LIB_NAME} PRIVATE DarkImage_2504)
+    target_link_libraries(${LIB_NAME} PRIVATE DarkImage_2604)
     target_link_libraries(${LIB_NAME} PRIVATE DarkSIMD)
 
     target_link_libraries(${LIB_NAME} PRIVATE de_vst2sdk)

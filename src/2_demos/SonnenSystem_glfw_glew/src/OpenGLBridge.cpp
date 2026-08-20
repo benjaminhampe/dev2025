@@ -57,8 +57,8 @@ Bridge::init()
     ensureDesktopOpenGL(); // initGlew()
 
     // <OpenGL debug output>
-    de_glEnable(GL_DEBUG_OUTPUT);
-    de_glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
+    glEnable(GL_DEBUG_OUTPUT);
+    glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
     glDebugMessageCallback(BridgeMessageCallback, 0);
 
     // <OpenGL shaderVersion>
@@ -82,7 +82,7 @@ Bridge::init()
 
     // <OpenGL maximalAnisotropy>
     GLfloat maxAnisotropy = 0.0f;
-    de_glGetFloatv( GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &maxAnisotropy );
+    glGetFloatv( GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &maxAnisotropy );
     m_maxAnisotropy = maxAnisotropy;
 
     // <OpenGL maximalTex2DSize>

@@ -192,7 +192,13 @@ public:
 
         hsr &= hardSync;
         //Delaying our hard sync gate signal and frac
-        hsr = syncd.feedReturn(hsr);
+
+        // Original:
+        // hsr = syncd.feedReturn(hsr);
+
+        // TODO: Is that Benni fix correct?
+        hsr |= (syncd.feedReturn(hsr) != 0.0f);
+
         hsfrac = syncFracd.feedReturn(hsfrac);
 
         if(osc1Pul)

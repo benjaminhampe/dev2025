@@ -21,6 +21,8 @@ add_subdirectory(DarkImage-26.04)   # Abenton Live64 Instrument
 add_subdirectory(DarkGPU-26.04)     # Abenton Live64 Instrument
 add_subdirectory(DarkMP4)           # Abenton Live64 Instrument -> import YouTube AAC audio from MP4 files
 add_subdirectory(DarkSound)
+add_subdirectory(DarkSIMD-26.04)
+add_subdirectory(DarkCoverArt-25.04)
 
 add_subdirectory(file2bin)
 

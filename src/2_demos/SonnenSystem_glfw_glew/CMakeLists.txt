@@ -10,7 +10,7 @@ else()
     file(GLOB_RECURSE APP_HEADER_H ${APP_HEADER_DIR}/*.h)
     file(GLOB_RECURSE APP_HEADER_HPP ${APP_HEADER_DIR}/*.hpp)
     set(APP_HEADERS ${APP_HEADER_H} ${APP_HEADER_HPP})
-	
+
     set(APP_SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/src)
     file(GLOB_RECURSE APP_SOURCES_H ${APP_SOURCE_DIR}/*.h)
     file(GLOB_RECURSE APP_SOURCES_CPP ${APP_SOURCE_DIR}/*.cpp)
@@ -28,7 +28,7 @@ else()
 
     target_include_directories(${APP_NAME} PRIVATE ${APP_SOURCE_DIR})
     target_include_directories(${APP_NAME} PRIVATE ${APP_HEADER_DIR})
-	
+
     if (MSVC)
     else()
         # target_link_options(${APP_NAME} PRIVATE -mwindows)
@@ -38,9 +38,10 @@ else()
     target_link_libraries(${APP_NAME} PRIVATE de_glew)
     target_link_libraries(${APP_NAME} PRIVATE de_glfw)
     target_link_libraries(${APP_NAME} PRIVATE de_imgui)
-    target_link_libraries(${APP_NAME} PRIVATE DarkImage_2504)
+    target_link_libraries(${APP_NAME} PRIVATE DarkImage_2604)
+    target_link_libraries(${APP_NAME} PRIVATE DarkGPU_2604)
     # target_link_libraries(${APP_NAME} PRIVATE rayTracingCore)
-	
+
     include(${CMAKE_SOURCE_DIR}/src/embed_static_runtime.cmake)
 
     # if (CMAKE_BUILD_TYPE STREQUAL "Release")

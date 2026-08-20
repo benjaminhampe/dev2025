@@ -6,10 +6,10 @@ namespace {
 
 QColor toQColor( uint32_t color )
 {
-   int32_t r = dbRGBA_R(color);
-   int32_t g = dbRGBA_G(color);
-   int32_t b = dbRGBA_B(color);
-   int32_t a = dbRGBA_A(color);
+   int32_t r = dbRGB_R(color);
+   int32_t g = dbRGB_G(color);
+   int32_t b = dbRGB_B(color);
+   int32_t a = dbRGB_A(color);
    return QColor( b,g,r,a );
 }
 
@@ -95,10 +95,10 @@ GDeck::GDeck( QString title, QWidget* parent )
    for ( int32_t x = 0; x < img.width(); ++x )
    {
       uint32_t c = m_ColorGradient.getColor32( fx*x );
-      int32_t r = dbRGBA_R( c );
-      int32_t g = dbRGBA_G( c );
-      int32_t b = dbRGBA_B( c );
-      int32_t a = dbRGBA_A( c );
+      int32_t r = dbRGB_R( c );
+      int32_t g = dbRGB_G( c );
+      int32_t b = dbRGB_B( c );
+      int32_t a = dbRGB_A( c );
       QColor color( r,g,b,a );
       for ( int32_t y = 0; y < img.height(); ++y )
       {

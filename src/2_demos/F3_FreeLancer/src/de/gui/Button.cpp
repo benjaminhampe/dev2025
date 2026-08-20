@@ -4,7 +4,7 @@
 
 namespace de {
 namespace gui {
-    
+
 // =====================================================================
 Button::Button( std::string text, Env* env, Widget* parent, u32 id, const Recti& r)
 // =====================================================================
@@ -24,15 +24,15 @@ Button::Button( std::string text, Env* env, Widget* parent, u32 id, const Recti&
     setBorderColor(0x00000000, eWS_Pressed);
     setBorderColor(0x00000000, eWS_Released);
 
-    setTextColor(dbRGBA(0,0,0), eWS_Idle);
-    setTextColor(dbRGBA(0,0,0), eWS_Hovered);
-    setTextColor(dbRGBA(0,0,0), eWS_Pressed);
-    setTextColor(dbRGBA(0,0,0), eWS_Released);
+    setTextColor(dbRGB(0,0,0), eWS_Idle);
+    setTextColor(dbRGB(0,0,0), eWS_Hovered);
+    setTextColor(dbRGB(0,0,0), eWS_Pressed);
+    setTextColor(dbRGB(0,0,0), eWS_Released);
 }
 
 Button::~Button()
 {
-    
+
 }
 
 
@@ -70,7 +70,7 @@ Button::draw()
     const auto pos = getAbsoluteRect();
 
     // --- [Draw] Fill ---
-    if (dbRGBA_A(fillColor) > 0)
+    if (dbRGB_A(fillColor) > 0)
     {
         auto r_screen = driver->getScreenRenderer();
         if ( m_radius < 1 )
@@ -92,7 +92,7 @@ Button::draw()
     }
 
     // --- [Draw] Text ---
-    if (dbRGBA_A(textColor) > 0 && !m_text.empty())
+    if (dbRGB_A(textColor) > 0 && !m_text.empty())
     {
         const int cx = pos.centerX();
         const int cy = pos.centerY();
@@ -103,7 +103,7 @@ Button::draw()
     }
 
     // --- [Draw] Border ---
-    if (dbRGBA_A(borderColor) > 0 && m_borderWidth > 0)
+    if (dbRGB_A(borderColor) > 0 && m_borderWidth > 0)
     {
         auto r_screen = driver->getScreenRenderer();
         if ( m_radius < 1 )

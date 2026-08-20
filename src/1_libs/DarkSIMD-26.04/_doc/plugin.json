@@ -1,0 +1,25 @@
+{
+  "slug": "VSTHost",
+  "version": "1.0.0",
+  "name": "VST Host",
+  "author": "Your Name",
+  "license": "GPL-3.0-or-later",
+  "pluginUrl": "https://yourwebsite.com/vsthost",
+  "authorUrl": "https://yourwebsite.com",
+  "manualUrl": "https://yourwebsite.com/vsthost/manual",
+  "sourceUrl": "https://github.com/yourusername/vsthost",
+  "changelogUrl": "https://yourwebsite.com/vsthost/changelog",
+  "tags": ["VST", "Host", "MIDI", "Audio", "Utility"],
+  "modules": [
+    {
+      "slug": "VSTHost",
+      "name": "VST Host",
+      "description": "Hosts a VST 2.4 plugin with embedded editor, audio routing, CV-to-MIDI, and preset support",
+      "tags": ["VST", "Host", "MIDI", "Audio", "Utility"]
+      "tags": ["VST Host", "Plugin Loader", "Audio Processor", "MIDI Generator",
+            "CV to MIDI", "Embedded GUI", "Preset Manager", "External Synth", "Effect Host", "Utility"
+        ]
+
+    }
+  ]
+}

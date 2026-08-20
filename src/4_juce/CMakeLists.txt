@@ -4,6 +4,8 @@ if (BENNI_USE_JUCE)
     add_subdirectory(soundtouch-plugin)
     add_subdirectory(rubberband-plugin)    
     
+    add_subdirectory(APMG_VersatileCompressor)
+        
     if (BENNI_USE_JUCE_EXTRA)
         add_subdirectory(Odin2)
         add_subdirectory(Obxd)
