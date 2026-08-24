@@ -340,29 +340,36 @@ inline bool tar_add_file(de::File& file, const std::string& uri)
 inline bool tar_writer(const FileNamesA& fileNames,
                        const std::string& uri)
 {
+    de::PerformanceTimer perfTimer;
+    perfTimer.start();
+
+    DE_OK("uri = ",uri)
+    DE_BENNI("fileNames.size() = ",fileNames.size())
+
     FileNamesA relativeFileNames = makeRelative(fileNames, uri);
 
     de::File file;
     if (!file.open(uri, de::eFileMode::Write))
     {
-        DE_ERROR("Cannot write tar file. ",uri)
+        DE_ERROR("Cannot write file. ",uri)
         return false;
     }
-
-    DE_OK("Write tar file. ",uri)
 
     for (const auto& p : relativeFileNames)
     {
         tar_add_file(file, p);
     }
 
+    // Add (*.tar) padding = 2 x 512 bytes.
     uint8_t zero[512] = {0};
     file.write(zero, 512);
     file.write(zero, 512);
 
     file.close();
 
-    DE_OK("TAR Archive written: ", uri)
+    perfTimer.stop();
+
+    DE_OK("[tar] needed ", perfTimer.ms(), " ms. ",uri)
 
     return true;
 }

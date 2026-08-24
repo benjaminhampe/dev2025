@@ -25,111 +25,223 @@
     #include <windows.h>
 #endif
 
+/* 🔍 TAR - Header
+
+    Offset  Size  Field     Default	        Linux	Windows
+    --------------------------------------------------------------
+    000     100   name      none	        yes     yes
+    100     8     mode      644/755	        yes	    mostly ignored
+    108     8     uid       0	            yes	    ignored
+    116     8     gid       0	            yes	    ignored
+    124     12    size      0 for non-files	yes	    yes
+    136     12    mtime     now	            yes	    yes
+    148     8     chksum    computed	    yes	    yes
+    156     1     typeflag  '0'	            yes	    partial
+    157     100   linkname  empty	        yes	    partial
+    257     6     magic     "ustar\0"	    yes	    yes
+    263     2     version   "00"	        yes	    yes
+    265     32    uname     empty	        yes	    ignored
+    297     32    gname     empty	        yes	    ignored
+    329     8     devmajor  0               yes	    ignored
+    337     8     devminor  0               yes	    ignored
+    345     155   prefix    empty	        yes	    yes
+    500     12    padding (NUL)
+    --------------------------------------------------------------
+    Total: 512 bytes
+
+    🧬 TAR variants
+
+        v7 tar — original 1979 format, 100‑char filename limit.
+        ustar — POSIX.1‑1988, 256‑char names, device files.
+        pax — POSIX.1‑2001, extended headers, unlimited UTF‑8 names.
+        GNU tar — long-name extensions, extra metadata.
+
+    🧬 Key typeflags:
+
+        Regular file — '0'
+        Hard link — '1'
+        Symlink — '2'
+        Character device — '3'
+        Block device — '4'
+        Directory — '5'
+        FIFO — '6'
+
+All fields are ASCII, mostly octal, NUL‑terminated or space‑padded.
+🌐 Field‑by‑field explanation with possible values, defaults, Linux/Windows relevance
+
+1) name (100 bytes)
+    Meaning: Path relative to archive root.
+    Default: Empty string (invalid for a real entry).
+    Linux: Fully meaningful; stores full POSIX path.
+    Windows: Same; tar does not use backslashes.
+    Notes: If >100 bytes, prefix field is used.
+
+2) mode (8 bytes, octal)
+    Possible values: Standard POSIX file modes:
+        000644 regular file
+        000755 executable
+        000600 private
+
+    Default: 000644 for files, 000755 for directories.
+    Linux: Fully meaningful (permissions matter).
+    Windows: Mostly ignored; NTFS ACLs override.
+
+3) uid / gid (8 bytes, octal)
+
+    Possible values: Any octal integer.
+    Default: 0000000 or actual user/group.
+    Linux: Meaningful; restored if possible.
+    Windows: Ignored; Windows does not use POSIX UID/GID.
+
+4) size (12 bytes, octal)
+
+    Possible values: 0 to 8GB in ustar; pax removes limit.
+    Default: 0 for directories, symlinks, devices.
+    Linux/Windows: Always meaningful.
+
+5) mtime (12 bytes, octal)
+
+    Possible values: Unix timestamp.
+    Default: Current time.
+    Linux: Meaningful.
+    Windows: Meaningful but mapped to FILETIME.
+
+6) chksum (8 bytes, ASCII octal)
+
+    Possible values: Computed over header with this field filled with spaces.
+    Default: Must be computed; no static default.
+    Linux/Windows: Always meaningful.
+
+7) typeflag (1 byte)
+
+Possible values (POSIX):
+
+    '0' — regular file
+    '1' — hard link
+    '2' — symlink
+    '3' — char device
+    '4' — block device
+    '5' — directory
+    '6' — FIFO
+    '7' — reserved
+    'g' — pax global header
+    'x' — pax extended header
+
+    Default: '0' (regular file).
+    Linux: All meaningful.
+
+    Windows:
+    '2' symlink only works if symlink privilege enabled.
+    '3', '4', '6' mostly ignored (no POSIX devices/FIFOs).
+
+8) linkname (100 bytes)
+
+    Meaning: Target of symlink or hard link.
+    Default: Empty.
+    Linux: Fully meaningful.
+    Windows: Symlinks require admin or developer mode.
+
+9) magic (6 bytes)
+
+    Possible values:
+        "ustar\0" — POSIX ustar
+        "ustar " — GNU tar
+
+    Default: "ustar\0"
+    Linux/Windows: Meaningful for format detection.
+
+10) version (2 bytes)
+
+    Possible values: "00"
+    Default: "00"
+    Linux/Windows: Always "00".
+
+11) uname / gname (32 bytes)
+
+    Possible values: ASCII user/group names.
+    Default: Empty or actual user.
+    Linux: Meaningful.
+    Windows: Ignored.
+
+12) devmajor / devminor (8 bytes, octal)
+
+    Possible values: Device numbers.
+    Default: 0.
+    Linux: Meaningful for typeflag '3'/'4'.
+    Windows: Ignored.
+
+13) prefix (155 bytes)
+
+    Meaning: Path prefix for long filenames.
+    Default: Empty.
+    Linux/Windows: Meaningful.
+
 // 🔥 Linux (POSIX) File Attribues and permissions
-/*
-#include <sys/stat.h>
 
-struct FileAttrs {
-    uint32_t mode;      // permissions
-    uint32_t uid;
-    uint32_t gid;
-    uint32_t mtime;     // seconds
-};
+    #include <sys/stat.h>
 
-struct stat st;
-stat(path.c_str(), &st);
+    struct FileAttrs {
+        uint32_t mode;      // permissions
+        uint32_t uid;
+        uint32_t gid;
+        uint32_t mtime;     // seconds
+    };
 
-attrs.mode  = st.st_mode & 07777;
-attrs.uid   = st.st_uid;
-attrs.gid   = st.st_gid;
-attrs.mtime = st.st_mtime;
-*/
+    struct stat st;
+    stat(path.c_str(), &st);
+
+    attrs.mode  = st.st_mode & 07777;
+    attrs.uid   = st.st_uid;
+    attrs.gid   = st.st_gid;
+    attrs.mtime = st.st_mtime;
 
 // 🔥 Win32 (NT) File Attribues and permissions
-/*
-#include <windows.h>
 
-struct FileAttrs {
-    uint32_t mode;      // we emulate POSIX perms
-    uint32_t uid;       // always 0
-    uint32_t gid;       // always 0
-    uint32_t mtime;     // convert FILETIME → Unix time
-};
+    #include <windows.h>
 
-// Convert FILETIME:
+    struct FileAttrs {
+        uint32_t mode;      // we emulate POSIX perms
+        uint32_t uid;       // always 0
+        uint32_t gid;       // always 0
+        uint32_t mtime;     // convert FILETIME → Unix time
+    };
 
-uint64_t filetime_to_unix(const FILETIME& ft) {
-    ULARGE_INTEGER u;
-    u.LowPart  = ft.dwLowDateTime;
-    u.HighPart = ft.dwHighDateTime;
-    return (u.QuadPart - 116444736000000000ULL) / 10000000ULL;
-}
+    // Convert FILETIME:
 
-// Permissions:
-// Windows has no POSIX perms, so we emulate:
+    uint64_t filetime_to_unix(const FILETIME& ft) {
+        ULARGE_INTEGER u;
+        u.LowPart  = ft.dwLowDateTime;
+        u.HighPart = ft.dwHighDateTime;
+        return (u.QuadPart - 116444736000000000ULL) / 10000000ULL;
+    }
+
+    // Permissions:
+    // Windows has no POSIX perms, so we emulate:
 
     readable → 0644
     executable → 0755
     directories → 0755
 
+    mode    // 0644 or 0755
+    uid     // 0 on Windows
+    gid     // 0 on Windows
+    mtime   // Unix timestamp
+    size    // file size
+    typeflag // '0' or '5'
+    uname   // optional
+    gname   // optional
 
-mode    // 0644 or 0755
-uid     // 0 on Windows
-gid     // 0 on Windows
-mtime   // Unix timestamp
-size    // file size
-typeflag // '0' or '5'
-uname   // optional
-gname   // optional
+    NT path                     \\?\C:\Users\Benjamin\Music\Überraschung.wav
+    UNC path                    \\server\share\folder\file.txt
+    Volume GUID path            \\?\Volume{1234-5678-ABCD-EF01}\file.txt
+    ADS (alternate data stream) C:\file.txt:Zone.Identifier
 
-NT path                     \\?\C:\Users\Benjamin\Music\Überraschung.wav
-UNC path                    \\server\share\folder\file.txt
-Volume GUID path            \\?\Volume{1234-5678-ABCD-EF01}\file.txt
-ADS (alternate data stream) C:\file.txt:Zone.Identifier
+    If you convert these to forward slashes:
 
-If you convert these to forward slashes:
-
-//?/C:/Users/Benjamin/Music/Überraschung.wav
-//server/share/folder/file.txt
-//?/Volume{1234-5678-ABCD-EF01}/file.txt
-C:/file.txt:Zone.Identifier
-
-*/
-
-/*
-🧬 Key typeflags: 
-
-    Regular file — '0'
-    Hard link — '1'
-    Symlink — '2'
-    Character device — '3'
-    Block device — '4'
-    Directory — '5'
-    FIFO — '6'
-
-🧬 TAR variants
-
-    v7 tar — original 1979 format, 100‑char filename limit.
-    ustar — POSIX.1‑1988, 256‑char names, device files.
-    pax — POSIX.1‑2001, extended headers, unlimited UTF‑8 names.
-    GNU tar — long-name extensions, extra metadata.
-    
-🧬 Defaults summary table
-
-Field	    Default	        Linux relevance	Windows relevance
-name	    none	        yes	            yes
-mode	    644/755	        yes	            mostly ignored
-uid/gid	    0	            yes	            ignored
-size	    0 for non-files	yes	            yes
-mtime	    now	            yes	            yes
-chksum	    computed	    yes	            yes
-typeflag	'0'	            yes	            partial
-linkname	empty	        yes	            partial
-magic	    "ustar\0"	    yes	            yes
-version	    "00"	        yes	            yes
-uname/gname	empty	        yes	            ignored
-devmajor/minor	0	        yes	            ignored
-prefix	    empty	        yes	            yes
+    //?/C:/Users/Benjamin/Music/Überraschung.wav
+    //server/share/folder/file.txt
+    //?/Volume{1234-5678-ABCD-EF01}/file.txt
+    C:/file.txt:Zone.Identifier
 */
 
 // ============================================================================

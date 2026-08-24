@@ -1,3 +1,5 @@
+#pragma once
+/*
 #include <de_zstd.h>
 #include <zstd.h>
 
@@ -45,16 +47,12 @@ compress_tar_file(
     return true;
 }
 
-
-/*
-
 int main() {
     compress_tar_file("archive.tar", "archive.tar.zst", 3);
     decompress_tar_file("archive.tar.zst", "archive_restored.tar");
     return 0;
 }
 
-*/
 // ====================================================
 bool
 decompress_tar_file(
@@ -104,3 +102,4 @@ decompress_tar_file(
     out_file.write(out.data(), out.size());
     return true;
 }
+*/

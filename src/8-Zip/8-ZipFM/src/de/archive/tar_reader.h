@@ -55,7 +55,8 @@ ensure_directory(const std::string& dir)
 //  Restore file attributes
 // ============================================================================
 
-inline void restore_attributes(const std::string& path, uint32_t mode, uint32_t mtime)
+inline void
+restore_attributes(const std::string& path, uint32_t mode, uint32_t mtime)
 {
 #ifdef _WIN32
     // Restore READONLY based on POSIX mode
@@ -106,26 +107,57 @@ inline void restore_attributes(const std::string& path, uint32_t mode, uint32_t 
 //  Extract TAR
 // ============================================================================
 
-inline bool tar_extract(const std::string& tarPath)
+inline bool
+tar_extract(const std::string& uri)
 {
-    de::File fs;
-    if (!fs.open(tarPath, de::eFileMode::Read))
+    DE_BENNI("tarPath = ", uri)
+
+    de::File file(uri, de::eFileMode::Read);
+    if (!file.is_open())
+    {
+        DE_ERROR("Cannot read file ",uri)
         return false;
+    }
 
     // Create output folder
-    std::string outFolder = tarPath + "_contents";
+    std::string outPath = dbFileDir(uri);
+    std::string outName = dbFileBase(uri);
+    std::string outFolder = outPath + "/" + outName;
+    DE_DEBUG("outPath = ", outPath)
+    DE_DEBUG("outName = ", outName)
+    DE_DEBUG("outFolder = ", outFolder)
+
+    if (dbExistDirectory(outFolder))
+    {
+        DE_ERROR("Folder already exists, ", outFolder)
+        return false;
+    }
+
     ensure_directory(outFolder);
+
+    if (!dbExistDirectory(outFolder))
+    {
+        DE_ERROR("Folder not exist, ", outFolder)
+        return false;
+    }
 
     std::string longlink;
 
-    while (true) {
+    while (true)
+    {
         TarHeader h{};
-        fs.read(&h, 512);
+        file.read(&h, 512);
 
         // End of archive?
         bool allZero = true;
         for (int i = 0; i < 512; i++)
-            if (((uint8_t*)&h)[i] != 0) { allZero = false; break; }
+        {
+            if (((uint8_t*)&h)[i] != 0)
+            {
+                allZero = false;
+                break;
+            }
+        }
         if (allZero) break;
 
         uint32_t fsize = read_octal(h.size, 12);
@@ -138,12 +170,12 @@ inline bool tar_extract(const std::string& tarPath)
         // GNU LongLink
         if (type == 'L') {
             de::Blob buf(fsize);
-            fs.read(buf.data(), fsize);
+            file.read(buf.data(), fsize);
 
             longlink.assign((char*)buf.data(), fsize);
 
             size_t rem = fsize % 512;
-            if (rem) fs.seek(fs.tell() + (512 - rem));
+            if (rem) file.seek(file.tell() + (512 - rem));
 
             continue;
         }
@@ -160,10 +192,10 @@ inline bool tar_extract(const std::string& tarPath)
         {
             // Read file data
             de::Blob data(fsize);
-            fs.read(data.data(), fsize);
+            file.read(data.data(), fsize);
 
             size_t rem = fsize % 512;
-            if (rem) fs.seek(fs.tell() + (512 - rem));
+            if (rem) file.seek(file.tell() + (512 - rem));
 
             // Ensure parent directory exists
             size_t pos = outPath.find_last_of("/\\");
@@ -181,49 +213,49 @@ inline bool tar_extract(const std::string& tarPath)
 
             // Restore attributes
             restore_attributes(outPath, mode, mtime);
-        } else {
+        }
+        else
+        {
             // Skip non-regular files
-            fs.seek(fs.tell() + fsize);
+            file.seek(file.tell() + fsize);
             size_t rem = fsize % 512;
-            if (rem) fs.seek(fs.tell() + (512 - rem));
+            if (rem) file.seek(file.tell() + (512 - rem));
         }
     }
 
-    fs.close();
+    file.close();
     return true;
 }
 
 // ============================================================================
 //  MAIN PROGRAM
 // ============================================================================
-
+/*
 inline int main_tar_reader(int argc, char** argv)
 {
-    if (argc < 2) {
-        std::printf("Usage: tarextract <archive.tar>\n");
+    if (argc < 2)
+    {
+        DE_ERROR("Usage: tarextract <archive.tar>")
         return 1;
     }
 
-    std::string tarPath = argv[1];
+    std::string uri = argv[1];
 
-    if (!tar_extract(tarPath)) {
-        std::printf("Extraction failed\n");
+    if (!tar_extract(uri))
+    {
+        DE_ERROR("Extraction failed")
         return 1;
     }
 
-    std::printf("Extracted to: %s_contents\n", tarPath.c_str());
+    DE_BENNI("Extracted to: ", uri.c_str())
     return 0;
 }
 
-/*
 ✔ Windows does NOT support POSIX permissions
 
 The tar header contains:
-
     mode (0644, 0755, etc.)
-
     uid
-
     gid
 
 These are POSIX-only.
@@ -231,19 +263,12 @@ These are POSIX-only.
 Windows has none of these.
 
 Windows permissions are:
-
     ACLs (Access Control Lists)
-
     SIDs (Security Identifiers)
-
     DACLs (Discretionary ACLs)
-
     Owner SID
-
     Group SID
-
     Inheritance flags
-
     Access masks
 
 These are not representable in tar.
@@ -252,15 +277,10 @@ So:
 ✔ Windows cannot restore mode
 
 Because Windows does not have:
-
     owner/group execute bits
-
     owner/group read/write bits
-
     sticky bit
-
     setuid
-
     setgid
 
 ✔ Windows cannot restore uid or gid
@@ -274,9 +294,7 @@ Because Windows does not have POSIX permissions.
 Only mtime (modification time).
 
 That’s why the extractor restores:
-
     mtime (Windows supports this)
-
     mode (Linux only)
 
 This is correct behavior.
@@ -286,22 +304,16 @@ Option A — Restore only READONLY bit
 This is the only POSIX-like permission Windows supports.
 
 You can map:
-
     POSIX write → remove READONLY
-
     POSIX no-write → set READONLY
 
 This is safe and simple.
 Option B — Restore full ACLs
 
 This requires:
-
     SetNamedSecurityInfoA
-
     SetSecurityDescriptorDacl
-
     SID creation
-
     ACE creation
 
 This is dangerous, complex, and not stored in tar.
