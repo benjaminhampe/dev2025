@@ -4,7 +4,7 @@ project(${LIB_NAME})
 if (TARGET ${LIB_NAME})
     message("${BoldYellow}[benni] HEADER_GUARD: ${LIB_NAME}${ColourReset}")
 else()
-    add_subdirectory(lib)
+    # add_subdirectory(lib)
 
     set(LIB_HEADER_DIR ${CMAKE_CURRENT_LIST_DIR}/include)
     file(GLOB_RECURSE LIB_HEADERS ${LIB_HEADER_DIR}/*.h)

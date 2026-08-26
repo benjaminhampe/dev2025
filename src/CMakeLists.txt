@@ -7,6 +7,8 @@ add_subdirectory(AVX_Mandelbrot_de_glew)
 add_subdirectory(H3_Siedler)
 add_subdirectory(Minecraft_54k)
 
+add_subdirectory(8-Zip)
+
 if (BENNI_USE_QT)
     add_subdirectory(AbentonChain_qt6)
     add_subdirectory(AbentonLive_qt6)
@@ -26,8 +28,9 @@ if (BENNI_USE_VCV)
     add_subdirectory(vcv-rack2)
 endif()
 
-add_subdirectory(7_sfml)
-add_subdirectory(8-Zip)
+if (BENNI_USE_SFML)
+    add_subdirectory(7_sfml)
+endif()
 
 if (BENNI_USE_RAYLIB)
     add_subdirectory(raylib)

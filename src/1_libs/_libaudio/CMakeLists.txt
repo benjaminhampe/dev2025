@@ -10,6 +10,9 @@ add_subdirectory(de-tinyexpr)           # Introduced by Rack2
 add_subdirectory(de-celt-0.11)
 add_subdirectory(_libsndfile)           # Import/Export WAV, FLAC, OGG, etc...
 
+add_subdirectory(de-faad2-2.11.2)       # MP4 AAC decoder
+add_subdirectory(de-alac)               # MP4 ALAC decoder
+
 add_subdirectory(de-asiosdk-2.3)        # Steinberg ASIO driver, for RtAudio.
 
 add_subdirectory(de-rtaudio-5.1.0)      # AudioHardwareBackend

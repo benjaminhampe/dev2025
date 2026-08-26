@@ -36,6 +36,7 @@ set(BENNI_USE_QT 0)         # <optional> Build QtSDK Apps and copy runtime
 set(BENNI_USE_DEMOS 0)      # <optional> Build QtSDK Apps and copy runtime
 set(BENNI_USE_OPENCV 0)     # <optional> Build OpenCV and face detection demo app
 set(BENNI_USE_POLYPHONE 0)  # <optional> Big app
+set(BENNI_USE_SFML 0)       # <optional> Build SFML 3.1.0 libs and apps
 set(BENNI_USE_WX 0)         # <optional> Build wxWidgets Apps and copy runtime
 set(BENNI_USE_IRR 0)        # <optional> Builds Irrlicht libs and apps.
 set(BENNI_USE_JUCE 0)       # <optional> Big JUCE lib, Bespoke, Odin2, Surge Rack plugins, etc..
