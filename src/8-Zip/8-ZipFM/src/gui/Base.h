@@ -34,7 +34,7 @@
 #include <functional>
 #include <algorithm>
 
-#include <DarkImage.h>
+#include <de/Core.h>
 
 // #include <windows.h>
 // #include <shellapi.h>

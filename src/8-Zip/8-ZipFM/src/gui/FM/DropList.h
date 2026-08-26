@@ -1,5 +1,9 @@
 #pragma once
-#include <gui/Base.h>
+#include <FL/Fl_Hold_Browser.H>
+#include <FL/fl_draw.H>
+#include <de/archive/FileNames.h>
+#include <de/image/Image.h>
+#include <de/win32/win32_Load_Shell_Icon.h>
 
 class DropList : public Fl_Browser
 {

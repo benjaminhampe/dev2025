@@ -1,3 +1,4 @@
+#pragma once
 // ============================================================================
 //  Simple, Safe TAR Extractor (Windows + Linux)
 //  - Reads a tar archive using ONLY your File class
@@ -7,18 +8,19 @@
 //  - Converts / → \ on Windows
 //  - Restores file attributes (mtime + mode)
 // ============================================================================
-#pragma once
 #include <de/archive/tar_header.h>
 #include <de/archive/FileNames.h>
 
 #include <cstdio>
 #include <cstring>
 #include <string>
-#include <vector>
 #include <sys/stat.h>
 
 #ifdef _WIN32
-#include <windows.h>
+    #ifndef WIN32_LEAN_AND_MEAN
+    #define WIN32_LEAN_AND_MEAN
+    #endif
+    #include <windows.h>
 #endif
 
 // ============================================================================

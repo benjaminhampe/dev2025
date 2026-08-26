@@ -1,3 +1,4 @@
+#pragma once
 // ============================================================================
 //  Simple, Safe TAR Builder (Windows + Linux)
 //  - Builds a tar archive from a list of file paths
@@ -7,13 +8,8 @@
 //  - Stores original file attributes (mode, uid, gid, mtime)
 //  - Loads file into de::Blob INSIDE the tar-add function
 // ============================================================================
-#pragma once
 #include <de/Core.h>
-
-#include <cstdio>
 #include <cstring>
-#include <string>
-#include <vector>
 #include <ctime>
 #include <cctype>
 #include <sys/stat.h>

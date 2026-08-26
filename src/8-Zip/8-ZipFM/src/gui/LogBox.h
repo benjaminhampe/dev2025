@@ -1,5 +1,7 @@
 #pragma once
-#include <gui/Base.h>
+#include <FL/Fl_Group.H>
+#include <FL/Fl_Text_Display.H>
+#include <FL/Fl_Text_Buffer.H>
 
 // =============================================================
 class LogBox : public Fl_Group

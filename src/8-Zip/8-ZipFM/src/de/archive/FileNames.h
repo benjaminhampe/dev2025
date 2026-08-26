@@ -1,6 +1,5 @@
 #pragma once
 #include <de/Core.h>
-#include <DarkImage.h>
 #include <filesystem>
 
 typedef std::vector<std::string> FileNamesA;

@@ -7,12 +7,6 @@ else()
     # add_subdirectory(lib)
 
     set(APP_SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/src)
-    # set(APP_SOURCES
-        # ${APP_SOURCE_DIR}/main_wav2mp3_fltk.cpp
-        # ${APP_SOURCE_DIR}/de/Core.cpp
-        # ${APP_SOURCE_DIR}/de/Core.h
-    # )
-
     file(GLOB_RECURSE APP_HEADERS ${APP_SOURCE_DIR}/*.h)
     file(GLOB_RECURSE APP_SOURCES ${APP_SOURCE_DIR}/*.cpp)
 
@@ -53,6 +47,7 @@ else()
     target_link_libraries(${APP_NAME} PRIVATE DarkImage_2604)
     target_link_libraries(${APP_NAME} PRIVATE de_fltk_145)
     target_link_libraries(${APP_NAME} PRIVATE de_zstd)
+    target_link_libraries(${APP_NAME} PRIVATE de_lyra_180)
     # target_link_libraries(${APP_NAME} PRIVATE de_win32_RegUtil)
 
     include(${CMAKE_SOURCE_DIR}/src/embed_static_runtime.cmake)
@@ -61,7 +56,7 @@ else()
         message(STATUS "Building in Release mode, strip symbols")
         add_custom_command(TARGET ${APP_NAME} POST_BUILD
             COMMAND ${CMAKE_OBJCOPY} --strip-unneeded $<TARGET_FILE:${APP_NAME}>
-            COMMENT "Stripping debug symbols"
+            COMMENT "Stripping unneeded symbols"
         )
     endif()
 

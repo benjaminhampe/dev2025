@@ -1,3 +1,4 @@
+add_subdirectory(_lib)
 add_subdirectory(GenCLSID)
 add_subdirectory(Installer)
 add_subdirectory(8-ZipFM)

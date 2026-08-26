@@ -1,5 +1,6 @@
 #pragma once
-#include "Base.h"
+#include <FL/Fl_Progress.H>
+#include <FL/fl_draw.H>
 
 // =============================================================
 class XP_ProgressBar : public Fl_Progress
@@ -12,6 +13,9 @@ public:
         color(fl_rgb_color(200, 200, 200));        // XP trough
         selection_color(fl_rgb_color(0, 180, 0));  // XP green
         labelcolor(FL_WHITE);
+        minimum(0);
+        maximum(1);
+        value(0);
     }
 
     void draw_round_rect(int X, int Y, int W, int H, int r, Fl_Color c)
