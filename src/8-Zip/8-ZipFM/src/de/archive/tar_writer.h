@@ -19,12 +19,12 @@
 // #include <cctype>
 // #include <sys/stat.h>
 
-// #ifdef _WIN32
-//     #ifndef WIN32_LEAN_AND_MEAN
-//     #define WIN32_LEAN_AND_MEAN
-//     #endif
-//     #include <windows.h>
-// #endif
+#ifdef _WIN32
+    #ifndef WIN32_LEAN_AND_MEAN
+    #define WIN32_LEAN_AND_MEAN
+    #endif
+    #include <windows.h>
+#endif
 
 // 🔥 Linux (POSIX) File Attribues and permissions
 /*
@@ -103,10 +103,10 @@ C:/file.txt:Zone.Identifier
 inline bool is_safe_path(const std::string& p)
 {
     // Reject absolute Windows NT paths
-    if (p.rfind("\\\\?\\", 0) == 0) return false;
+    //if (p.rfind("\\\\?\\", 0) == 0) return false;
 
     // Reject UNC paths
-    if (p.rfind("\\\\", 0) == 0) return false;
+    //if (p.rfind("\\\\", 0) == 0) return false;
 
     // Reject drive letters
     //if (p.size() > 2 && std::isalpha(p[0]) && p[1] == ':') return false;
@@ -124,6 +124,7 @@ inline bool is_safe_path(const std::string& p)
 //  OCTAL ENCODERS
 // ============================================================================
 
+// 📦 Max = 077777777UL: 8^8 - 1 = 16,777,215 decimal
 inline void encode_octal_8(uint8_t (&dst)[8], uint32_t value)
 {
     for (int i = 0; i < 7; i++) dst[i] = '0';
@@ -135,12 +136,14 @@ inline void encode_octal_8(uint8_t (&dst)[8], uint32_t value)
     }
 }
 
-inline void encode_octal_12(uint8_t (&dst)[12], uint32_t value)
+// 📦 Max = 0777777777777ULL: 8^12 - 1 = 68,719,476,735 decimal
+inline void encode_octal_12(uint8_t (&dst)[12], uint64_t value)
 {
     for (int i = 0; i < 11; i++) dst[i] = '0';
     dst[11] = '\0';
     int pos = 10;
-    while (value > 0 && pos >= 0) {
+    while (value > 0 && pos >= 0)
+    {
         dst[pos--] = '0' + (value & 7);
         value >>= 3;
     }
@@ -177,8 +180,8 @@ inline void tar_build_header(TarHeader& h,
                              uint32_t mode,
                              uint32_t uid,
                              uint32_t gid,
-                             uint32_t size,
-                             uint32_t mtime,
+                             uint64_t size,
+                             uint64_t mtime,
                              char typeflag)
 {
     std::memset(&h, 0, sizeof(h));
@@ -236,7 +239,6 @@ inline void tar_write_longlink(de::File& file, const std::string& longname)
 // ============================================================================
 //  WRITE FILE ENTRY (loads file into de::Blob INSIDE this function)
 // ============================================================================
-
 inline bool tar_add_file(de::File& file, const std::string& uri)
 {
     std::wstring wuri = de_wstr(uri);
@@ -283,7 +285,27 @@ inline bool tar_add_file(de::File& file, const std::string& uri)
             ULARGE_INTEGER ui;
             ui.LowPart = ft.dwLowDateTime;
             ui.HighPart = ft.dwHighDateTime;
-            mtime = (uint32_t)((ui.QuadPart - 116444736000000000ULL) / 10000000ULL);
+            /*
+                Subtract: 116'444'736'000'000'000ULL
+
+                    This constant is the number of 100‑ns ticks between:
+
+                    Windows epoch: 1601‑01‑01 00:00:00 UTC
+                    Unix epoch: 1970‑01‑01 00:00:00 UTC
+
+                    Epoch difference from 1601 → 1970 is 369 years.
+
+                    Days between epochs: 369 [years] × 365 [days/year] + 89 [leap days] = 134774 [days]
+
+                    Convert: 134774 [days] × 86400 [s/days] = 11'644'473'600 [s]
+
+                    Convert: 11'644'473'600 [s] × 10^7 [100ns_ticks/s]= 116'444'736'000'000'000 [100ns_ticks]
+
+                Divide: by 10'000'000ULL
+
+                    Win FILETIME units are 100‑nanosecond intervals: 1 [s] = 10^7 FILETIME ticks
+            */
+            mtime = (uint64_t)((ui.QuadPart - 116'444'736'000'000'000ULL) / 10'000'000ULL);
         }
         CloseHandle(h);
     }

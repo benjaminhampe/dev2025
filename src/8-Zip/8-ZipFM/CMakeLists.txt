@@ -48,6 +48,7 @@ else()
     target_link_libraries(${APP_NAME} PRIVATE de_fltk_145)
     target_link_libraries(${APP_NAME} PRIVATE de_zstd)
     target_link_libraries(${APP_NAME} PRIVATE de_lyra_180)
+    target_link_libraries(${APP_NAME} PRIVATE de_moodycamel_concurrentqueue_105)
     # target_link_libraries(${APP_NAME} PRIVATE de_win32_RegUtil)
 
     include(${CMAKE_SOURCE_DIR}/src/embed_static_runtime.cmake)

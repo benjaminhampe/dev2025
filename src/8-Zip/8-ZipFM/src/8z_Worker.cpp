@@ -3,7 +3,186 @@
 namespace EightZip {
 namespace worker {
 
+enum WidgetID
+{
+    WID_Progress,
+    WID_File,
+    WID_Dir,
+    WID_FileIndex,
+    WID_FileCount,
+    WID_TotalSize,
+    WID_Processed,
+    WID_Compressed,
+    WID_CompressRatio
+};
+
+//🟧
+struct UI_Update
+{
+    WidgetID id; // = WID_Progress;
+    std::string data;
+};
+
+struct UI
+{
+    static constexpr uintptr_t MAGIC_GUI = 0xF1CED123;
+
+    Fl_Window* window = nullptr;
+
+    // Title: 59% <Entpacken|Komprimieren> C:\Github\__lib_neu\2_demos.zst
+    Fl_Box* lblTimeCurr = nullptr; // Verstrichene Zeit:
+    Fl_Box* edtTimeCurr = nullptr;
+    Fl_Box* lblTimeLeft = nullptr; // Verbleibende Zeit:
+    Fl_Box* edtTimeLeft = nullptr;
+
+    Fl_Box* lblNumFiles = nullptr; // Dateien:
+    Fl_Box* edtFileIndex = nullptr;
+    Fl_Box* edtFileCount = nullptr;
+
+    Fl_Box* lblTotalBytes = nullptr;  // Gesamtdatenmenge:
+    Fl_Box* edtTotalBytes = nullptr;
+    Fl_Box* lblSpeed = nullptr;     // Geschwindigket:
+    Fl_Box* edtSpeed = nullptr;
+
+    Fl_Box* lblProcessed = nullptr;   // Verarbeitet:
+    Fl_Box* edtProcessed = nullptr;
+
+    Fl_Box* lblCompressed = nullptr;  // Komprimiert:
+    Fl_Box* edtCompressed = nullptr;
+
+    Fl_Box* lblCompressRatio = nullptr;  // Kompressionsrate:
+    Fl_Box* edtCompressRatio = nullptr;
+
+    Fl_Box* edtModus = nullptr;  // Hinzufügen|Entpacken:
+    Fl_Box* edtDir = nullptr;   // Current DirectoryName
+    Fl_Box* edtFile = nullptr;  // Current FileName
+
+    XP_ProgressBar* progressBar = nullptr;
+
+    LogBox* logBox = nullptr;
+
+    Fl_Button* btnBackground = nullptr;
+    Fl_Button* btnPause = nullptr;
+    Fl_Button* btnCancel = nullptr;
+
+    // Other stuff:
+    Job job;
+
+    moodycamel::ConcurrentQueue<UI_Update> queue;
+
+    std::atomic<bool> bRunFlag{false};
+    std::atomic<bool> bCancelFlag{false};
+    std::atomic<bool> bPauseFlag{false};
+    // std::atomic<bool> reloadFile{true};
+
+    std::thread worker;
+
+    void enqueueUpdate(const UI_Update& u)
+    {
+        //DE_BENNI("queue = ",queue.size_approx())
+        queue.enqueue(u);
+        //DE_BENNI("queue = ",queue.size_approx())
+        //Fl::awake(this);   // Payload = Dispatcher
+    }
+
+    void requestUpdate()
+    {
+        // Fl::awake(this);   // Payload = Dispatcher
+    }
+
+    void dispatchUpdates()
+    {
+        //DE_BENNI("queue = ",queue.size_approx())
+        UI_Update u;
+        while (queue.try_dequeue(u))
+        {
+            applyUpdate(u);
+        }
+    }
+
+    void applyUpdate(const UI_Update& u)
+    {
+        // DE_BENNI("u.id(", u.id, "), data(",u.data,")")
+        switch (u.id)
+        {
+            case WID_Progress:
+            {
+                double v = std::atof(u.data.c_str());
+                progressBar->value(v);
+                progressBar->redraw();
+                break;
+            }
+            case WID_File:
+            {
+                edtFile->copy_label(u.data.c_str());
+                edtFile->redraw();
+                break;
+            }
+            case WID_Dir:
+            {
+                edtDir->copy_label(u.data.c_str());
+                edtDir->redraw();
+                break;
+            }
+            case WID_FileIndex:
+            {
+                edtFileIndex->copy_label(u.data.c_str());
+                edtFileIndex->redraw();
+                break;
+            }
+            case WID_FileCount:
+            {
+                edtFileCount->copy_label(u.data.c_str());
+                edtFileCount->redraw();
+                break;
+            }
+            case WID_Processed:
+            {
+                edtProcessed->copy_label(u.data.c_str());
+                edtProcessed->redraw();
+                break;
+            }
+            case WID_Compressed:
+            {
+                edtCompressed->copy_label(u.data.c_str());
+                edtCompressed->redraw();
+                break;
+            }
+            case WID_CompressRatio:
+            {
+                edtCompressRatio->copy_label(u.data.c_str());
+                edtCompressRatio->redraw();
+                break;
+            }
+            default:
+            {
+                DE_ERROR("Missed WidgetId ",int(u.id))
+                break;
+            }
+        }
+    }
+};
+
+static UI ui;
+
+// Awake handler
+void awake_update_gui(void* payload)
+{
+    // DE_BENNI("")
+    auto caller = static_cast<UI*>(payload);
+    caller->dispatchUpdates();
+}
+
+// Awake handler
+void awake_exit_gui(void* payload)
+{
+    DE_BENNI("Exit Program from Thread ",std::this_thread::get_id())
+    auto caller = static_cast<UI*>(payload);
+    ui.window->hide();
+}
+
 /*
+// 🟧
 void log_common(const char* msg, char style)
 {
     // Text anhängen
@@ -98,108 +277,8 @@ static void cancel_cb(Fl_Widget*, void*)
     }
 }
 
-// ---------------- callbacks ----------------
-static void sync_progressBar(void* data)
-{
-    int percent = *static_cast<int*>(data);
-    ui.progressBar->value(0.01 * percent);
-    ui.progressBar->redraw();
-    delete static_cast<int*>(data);
-}
-
-// ---------------- Fl::awake ----------------
-static void async_progressBar(int pc)
-{
-    auto progress = new int;
-    *progress = pc;
-    Fl::awake(sync_progressBar, progress);
-}
-
-// ---------------- Fl::awake ----------------
-static void sync_edtFileCount(void* data)
-{
-    if (!data) return;
-    auto p = static_cast<size_t*>(data);
-    ui.edtFileCount->label(std::to_string(*p).c_str());
-    delete p;
-}
-
-static void async_edtFileCount(size_t n)
-{
-    auto p = new size_t;
-    *p = n;
-    Fl::awake(sync_edtFileCount, p);
-}
-
-// ---------------- Fl::awake ----------------
-static void sync_edtFileIndex(void* data)
-{
-    if (!data) return;
-    auto p = static_cast<size_t*>(data);
-    ui.edtFileIndex->label(std::to_string(*p).c_str());
-    delete p;
-}
-
-static void async_edtFileIndex(size_t n)
-{
-    auto p = new size_t;
-    *p = n;
-    Fl::awake(sync_edtFileIndex, p);
-}
-
-// ---------------- Fl::awake ----------------
-static void sync_edtModus(void* data)
-{
-    if (!data) return;
-    auto p = static_cast<char*>(data);
-    ui.edtModus->label(p);
-    delete p;
-}
-
-static void async_edtModus(std::string msg)
-{
-    auto p = new char[msg.size() + 1];
-    std::memcpy(p, msg.c_str(), msg.size());
-    p[msg.size()] = '\0';
-    Fl::awake(sync_edtModus, p);
-}
-
-// ---------------- Fl::awake ----------------
-static void sync_edtDir(void* data)
-{
-    if (!data) return;
-    auto p = static_cast<char*>(data);
-    ui.edtDir->label(p);
-    delete p;
-}
-
-static void async_edtDir(std::string msg)
-{
-    auto p = new char[msg.size() + 1];
-    std::memcpy(p, msg.c_str(), msg.size());
-    p[msg.size()] = '\0';
-    Fl::awake(sync_edtDir, p);
-}
-
-// ---------------- Fl::awake ----------------
-static void sync_edtFile(void* data)
-{
-    if (!data) return;
-    auto p = static_cast<char*>(data);
-    ui.edtFile->label(p);
-    delete p;
-}
-
-static void async_edtFile(std::string msg)
-{
-    auto p = new char[msg.size() + 1];
-    std::memcpy(p, msg.c_str(), msg.size());
-    p[msg.size()] = '\0';
-    Fl::awake(sync_edtFile, p);
-}
-
 // ---------------- worker ----------------
-static void async_compress_worker()
+static void async_compress_worker_demo()
 {
     if (ui.bRunFlag)
     {
@@ -207,26 +286,34 @@ static void async_compress_worker()
     }
     ui.bCancelFlag = false;
 
-    //async_log_ok(dbStr("Compress Start: qualityPreset = ",ui.job.iQuality));
-    async_progressBar(0);
+    DE_BENNI("Begin Worker Thread ",std::this_thread::get_id())
+
+    ui.enqueueUpdate({ WID_Progress, "0.0" });
+    Fl::awake(awake_update_gui,&ui);
+    std::this_thread::sleep_for(std::chrono::milliseconds(50));
 
     FileNamesA fileNames;
-    for (int i = 0; i < 10000; i++)
+    for (int i = 0; i < 1000; i++)
     {
         fileNames.emplace_back(dbStr("File",i,".txt"));
     }
 
-    async_edtFileIndex(0);
-    async_edtFileCount(fileNames.size());
+    ui.enqueueUpdate({ WID_FileIndex, "0" });
+    ui.enqueueUpdate({ WID_FileCount, std::to_string(fileNames.size()) });
+    ui.requestUpdate();
+    Fl::awake(awake_update_gui,&ui);
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+
 
     for (size_t i = 0; i < fileNames.size(); ++i)
     {
-        //std::this_thread::sleep_for(std::chrono::nanoseconds(1'000'000'000));
-        async_edtFileIndex(i+1);
-        async_edtFile( dbFileName(fileNames[i]) );
-        async_edtDir( dbFileDir(fileNames[i]) );
-        async_progressBar(100.0 * (double(i+1) / double(fileNames.size())));
-        std::this_thread::yield();
+        ui.enqueueUpdate({ WID_FileIndex, std::to_string(i+1) });
+        ui.enqueueUpdate({ WID_File, dbFileName(fileNames[i]) });
+        ui.enqueueUpdate({ WID_Dir, dbFileDir(fileNames[i]) });
+        ui.enqueueUpdate({ WID_Progress, std::to_string(double(i+1) / double(fileNames.size())) });
+        ui.requestUpdate();
+        Fl::awake(awake_update_gui,&ui);
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
 
 /*
@@ -283,12 +370,19 @@ static void async_compress_worker()
     // async_log_ok(dbStr("Compress tarUri = ",tarUri));
     // async_log_ok(dbStr("Compress dstUri = ",dstUri));
 */
-    async_progressBar(100);
+    // async_progressBar(100);
+    ui.enqueueUpdate({ WID_Progress, "1.0" });
+    ui.requestUpdate();
+    Fl::awake(awake_update_gui,&ui);
     ui.bRunFlag = false;
+
+    DE_BENNI("End Worker Thread ",std::this_thread::get_id())
+    Fl::awake(awake_exit_gui,&ui);
 }
 
 static void start_worker_cb(Fl_Widget*, void*)
 {
+    DE_OK("Start worker from MainThread ",std::this_thread::get_id())
 /*
     std::string src_uri = ui.getSrcUri();
     std::string dst_uri = ui.getDstUri();
@@ -301,7 +395,7 @@ static void start_worker_cb(Fl_Widget*, void*)
     ui.bitrate = 0; // ui.encoder->getBitrate();
     ui.quality = 5; // ui.encoder->getQuality();
 */
-    ui.worker = std::thread(async_compress_worker);
+    ui.worker = std::thread(async_compress_worker_demo);
     ui.worker.detach();
 }
 
@@ -319,6 +413,8 @@ Fl_Choice* combo = new Fl_Choice(20, 40, 120, 28);
 Dialog::Dialog(int W, int H, const char* title)
     : Fl_Window(W, H, title)
 {
+    ui.window = this;
+
     begin();
 
     const float zoom = Fl::screen_scale(0);
@@ -480,6 +576,8 @@ Dialog::Dialog(int W, int H, const char* title)
     });
 
     end();
+
+    // Fl::add_awake_handler_(awakeHandler, &ui);
 }
 
 void Dialog::resize(int X, int Y, int W, int H)
@@ -580,3 +678,129 @@ void Dialog::resize(int X, int Y, int W, int H)
 
 } // end namespace worker.
 } // end namespace EightZip.
+
+
+/*
+
+//🟧
+class FixedDispatcher
+{
+public:
+    FixedDispatcher(Fl_Slider* s1, Fl_Slider* s2, Fl_Slider* s3,
+                    Fl_Box* l1, Fl_Box* l2, Fl_Box* l3)
+        : slider1(s1), slider2(s2), slider3(s3),
+          label1(l1), label2(l2), label3(l3)
+    {
+        front.store(0, std::memory_order_relaxed);
+    }
+
+    // Worker: Back-Buffer referenzieren
+    GuiUpdate& back() {
+        int fi = front.load(std::memory_order_relaxed);
+        return buffers[1 - fi];
+    }
+
+    // Worker: nach dem Schreiben aufwecken
+    void notify() {
+        Fl::awake((void*)MAGIC_GUI);
+    }
+
+    // Mainthread: Flip + Anwenden
+    void dispatch() {
+        int oldFront = front.load(std::memory_order_relaxed);
+        int newFront = 1 - oldFront;
+
+        front.store(newFront, std::memory_order_release);
+
+        auto& buf = buffers[newFront];
+        apply(buf);
+        clear(buf);
+    }
+
+private:
+    std::atomic<int> front;
+    GuiUpdate buffers[2];
+
+    Fl_Slider* slider1;
+    Fl_Slider* slider2;
+    Fl_Slider* slider3;
+    Fl_Box*    label1;
+    Fl_Box*    label2;
+    Fl_Box*    label3;
+
+    void apply(const GuiUpdate& u) {
+        if (u.slider1) { slider1->value(u.slider1->value); slider1->redraw(); }
+        if (u.slider2) { slider2->value(u.slider2->value); slider2->redraw(); }
+        if (u.slider3) { slider3->value(u.slider3->value); slider3->redraw(); }
+
+        if (u.label1) { label1->copy_label(u.label1->text); label1->redraw(); }
+        if (u.label2) { label2->copy_label(u.label2->text); label2->redraw(); }
+        if (u.label3) { label3->copy_label(u.label3->text); label3->redraw(); }
+    }
+
+    void clear(GuiUpdate& u) {
+        u.slider1.reset();
+        u.slider2.reset();
+        u.slider3.reset();
+        u.label1.reset();
+        u.label2.reset();
+        u.label3.reset();
+    }
+};
+
+// 🟧Awake‑Handler mit MAGIC‑Routing
+
+FixedDispatcher* g_dispatcher = nullptr;
+
+void awakeHandler(void* payload) {
+    uintptr_t magic = (uintptr_t)payload;
+    if (magic == MAGIC_GUI && g_dispatcher)
+        g_dispatcher->dispatch();
+}
+
+// 🟧Anwendung im Worker‑Thread
+
+void workerThread(FixedDispatcher* d)
+{
+    while (true) {
+        GuiUpdate& b = d->back();
+
+        b.slider1 = GuiUpdateItem{0.25f, nullptr};
+        b.slider2 = GuiUpdateItem{0.75f, nullptr};
+        b.label1  = GuiUpdateItem{0.0f, "Hallo Benjamin"};
+        b.label2  = GuiUpdateItem{0.0f, "Neuer Wert"};
+        b.label3  = GuiUpdateItem{0.0f, "Noch ein Wert"};
+
+        d->notify();
+
+        std::this_thread::sleep_for(std::chrono::milliseconds(50));
+    }
+}
+
+🟧Main‑Setup
+
+int main() {
+    Fl_Window* win = new Fl_Window(400, 300);
+
+    Fl_Slider* s1 = new Fl_Slider(50, 50, 300, 30);
+    Fl_Slider* s2 = new Fl_Slider(50, 100, 300, 30);
+    Fl_Slider* s3 = new Fl_Slider(50, 150, 300, 30);
+
+    Fl_Box* l1 = new Fl_Box(50, 200, 300, 30, "Label 1");
+    Fl_Box* l2 = new Fl_Box(50, 240, 300, 30, "Label 2");
+    Fl_Box* l3 = new Fl_Box(50, 280, 300, 30, "Label 3");
+
+    FixedDispatcher dispatcher(s1, s2, s3, l1, l2, l3);
+    g_dispatcher = &dispatcher;
+
+    Fl::add_awake_handler(awakeHandler);
+
+    std::thread worker(workerThread, &dispatcher);
+    worker.detach();
+
+    win->end();
+    win->show();
+
+    return Fl::run();
+}
+*/

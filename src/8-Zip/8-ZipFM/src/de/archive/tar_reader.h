@@ -27,13 +27,13 @@
 //  Convert octal ASCII → integer
 // ============================================================================
 
-inline uint32_t
-read_octal(const uint8_t* src, size_t len)
+inline uint64_t
+tar_read_octal(const uint8_t* __restrict__ src, size_t len)
 {
-    uint32_t v = 0;
+    uint64_t v = 0;
     for (size_t i = 0; i < len; i++) {
         if (src[i] < '0' || src[i] > '7') break;
-        v = (v << 3) + (src[i] - '0');
+        v = (v << 3) + (src[i] - '0'); // mul by 8 and add (0–7)
     }
     return v;
 }
@@ -43,7 +43,7 @@ read_octal(const uint8_t* src, size_t len)
 // ============================================================================
 
 inline void
-ensure_directory(const std::string& dir)
+tar_ensure_directory(const std::string& dir)
 {
 #ifdef _WIN32
     std::wstring w = make_win_path(de_wstr(dir));
@@ -58,7 +58,7 @@ ensure_directory(const std::string& dir)
 // ============================================================================
 
 inline void
-restore_attributes(const std::string& path, uint32_t mode, uint32_t mtime)
+tar_restore_attributes(const std::string& path, uint32_t mode, uint32_t mtime)
 {
 #ifdef _WIN32
     // Restore READONLY based on POSIX mode
@@ -109,19 +109,47 @@ restore_attributes(const std::string& path, uint32_t mode, uint32_t mtime)
 //  Extract TAR
 // ============================================================================
 
+inline bool tar_allZero512(const void* ptr)
+{
+    constexpr size_t MACHINE_WORD_SIZE = sizeof(void*);
+
+    // [64-bit]:
+    if constexpr (MACHINE_WORD_SIZE == 8) // 512 bytes = 64 × 8‑byte machine words
+    {
+        const uint64_t* __restrict__ p = static_cast<const uint64_t*>(ptr);
+        uint64_t accum = 0;
+        for (int i = 0; i < 64; ++i) { accum |= p[i]; }
+        return accum == uint64_t(0);
+    }
+    // [32-bit]:
+    else // 512 bytes = 128 × 4‑byte machine words
+    {
+        const uint32_t* __restrict__ p = static_cast<const uint32_t*>(ptr);
+        uint32_t accum = 0;
+        for (int i = 0; i < 128; ++i) { accum |= p[i]; }
+        return accum == uint32_t(0);
+    }
+}
+
+#include <immintrin.h>
+
+inline bool tar_allZero512_avx2(const void* ptr)
+{
+    const __m256i* __restrict__ p = static_cast<const __m256i*>(ptr); // Read 32 bytes at once.
+
+    __m256i accum = _mm256_setzero_si256(); // Init Accum.
+
+    // [256-bit] AVX2 = 16 × 32‑byte registers
+    for (int i = 0; i < 16; ++i) accum = _mm256_or_si256(accum, p[i]);
+
+    return _mm256_testz_si256(accum, accum);
+}
+
+
 inline bool
 tar_extract(const std::string& uri)
 {
     DE_BENNI("tarPath = ", uri)
-
-    de::File file(uri, de::eFileMode::Read);
-    if (!file.is_open())
-    {
-        DE_ERROR("Cannot read file ",uri)
-        return false;
-    }
-
-    // Create output folder
     std::string outPath = dbFileDir(uri);
     std::string outName = dbFileBase(uri);
     std::string outFolder = outPath + "/" + outName;
@@ -129,17 +157,25 @@ tar_extract(const std::string& uri)
     DE_DEBUG("outName = ", outName)
     DE_DEBUG("outFolder = ", outFolder)
 
+    // Create output folder
     if (dbExistDirectory(outFolder))
     {
         DE_ERROR("Folder already exists, ", outFolder)
         return false;
     }
 
-    ensure_directory(outFolder);
+    tar_ensure_directory(outFolder);
 
     if (!dbExistDirectory(outFolder))
     {
         DE_ERROR("Folder not exist, ", outFolder)
+        return false;
+    }
+
+    de::File file(uri, de::eFileMode::Read);
+    if (!file.is_open())
+    {
+        DE_ERROR("Cannot read file ",uri)
         return false;
     }
 
@@ -151,26 +187,19 @@ tar_extract(const std::string& uri)
         file.read(&h, 512);
 
         // End of archive?
-        bool allZero = true;
-        for (int i = 0; i < 512; i++)
-        {
-            if (((uint8_t*)&h)[i] != 0)
-            {
-                allZero = false;
-                break;
-            }
-        }
+        bool allZero = tar_allZero512(&h);
         if (allZero) break;
 
-        uint32_t fsize = read_octal(h.size, 12);
-        uint32_t mode  = read_octal(h.mode, 8);
-        uint32_t mtime = read_octal(h.mtime, 12);
+        uint64_t fsize = tar_read_octal(h.size, 12);
+        uint32_t mode  = tar_read_octal(h.mode, 8);
+        uint64_t mtime = tar_read_octal(h.mtime, 12);
         char type = h.typeflag;
 
         std::string name((char*)h.name, strnlen((char*)h.name, 100));
 
         // GNU LongLink
-        if (type == 'L') {
+        if (type == 'L')
+        {
             de::Blob buf(fsize);
             file.read(buf.data(), fsize);
 
@@ -204,7 +233,7 @@ tar_extract(const std::string& uri)
             if (pos != std::string::npos)
             {
                 std::string parent = outPath.substr(0, pos);
-                ensure_directory(parent);
+                tar_ensure_directory(parent);
             }
 
             // Write file
@@ -214,7 +243,7 @@ tar_extract(const std::string& uri)
             out.close();
 
             // Restore attributes
-            restore_attributes(outPath, mode, mtime);
+            tar_restore_attributes(outPath, mode, mtime);
         }
         else
         {
