@@ -61,7 +61,7 @@ int main(int argc, char** argv)
     const int w = 600;
     const int h = 600;
     auto job = new EightZip::worker::Dialog(w, h, sTitle.c_str());
-    //job->resizable(job);
+    job->resizable(job);
     set_window_icon_from_resource(job);
     job->show();
     // job->show(fl_argc, fl_argv);

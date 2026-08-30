@@ -379,7 +379,7 @@ struct FileInfo
 typedef std::vector<FileInfo> FileInfos;
 
 inline uint64_t
-SUM(const FileInfos& fileInfos)
+TOTAL_FILE_SIZE(const FileInfos& fileInfos)
 {
     uint64_t nBytes = 0;
     for (const auto& fi : fileInfos)
