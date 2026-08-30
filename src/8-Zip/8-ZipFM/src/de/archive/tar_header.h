@@ -99,7 +99,7 @@ struct TarHeader
     // Possible: 0–(2^31-1)
     // Linux: stat.st_mtime
     // Windows: FILETIME → Unix time conversion
-    uint8_t mtime[12];      // 136–147   modification time (octal, seconds)
+    uint8_t mtime[12];      // 136–147   last modification time (octal, seconds)
     // Checksum (octal)
     // Possible: 0000000–7777777
     // Default: computed from header

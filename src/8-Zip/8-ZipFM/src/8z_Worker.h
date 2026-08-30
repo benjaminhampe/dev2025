@@ -16,7 +16,7 @@
 namespace EightZip {
 namespace worker {
 
-class Dialog : public Fl_Window
+class Dialog : public Fl_Double_Window
 {
 public:
     Dialog(int W, int H, const char* title);
