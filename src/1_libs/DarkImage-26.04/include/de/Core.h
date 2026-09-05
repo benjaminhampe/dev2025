@@ -1143,7 +1143,8 @@ enum class eSeekMode
     End = 2
 };
 
-int32_t file64_open(const char* path, eFileMode fileMode, int32_t permission = 0);
+int32_t file64_open(const std::wstring& utf16path, eFileMode fileMode, int32_t permission = 0);
+int32_t file64_open(const std::string& utf8path, eFileMode fileMode, int32_t permission = 0);
 int32_t file64_close(int32_t fd);
 int32_t file64_read(int32_t fd, void* buf, int64_t bytes);
 int32_t file64_write(int32_t fd, const void* buf, int64_t bytes);
@@ -1160,7 +1161,14 @@ struct File
     File();
     ~File();
 
+    File(const std::wstring& utf8_uri, eFileMode fm = eFileMode::Read,
+         int permissionBits = 0);
+
     File(const std::string& utf8_uri, eFileMode fm = eFileMode::Read,
+         int permissionBits = 0);
+
+    bool
+    open(const std::wstring& utf8_uri, eFileMode fm = eFileMode::Read,
          int permissionBits = 0);
 
     bool

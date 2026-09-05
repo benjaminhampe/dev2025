@@ -1,5 +1,7 @@
 #include "8z_Worker.h"
+#include "8z_App.h"
 #include <de/archive/FileInfo.h>
+#include <de/archive/TarWriter.h>
 
 namespace EightZip {
 namespace worker {
@@ -9,10 +11,10 @@ class DoubleBufferDirty {
 public:
     void workerWrite(const T& value)
     {
-        int wi = writeIndex.load(std::memory_order_relaxed);
-        buffers[wi] = value;
-        writeIndex.store(1 - wi, std::memory_order_release);
-        dirty.store(true, std::memory_order_release);
+        int wi = m_writeIndex.load(std::memory_order_relaxed);
+        m_buffers[wi] = value;
+        m_writeIndex.store(1 - wi, std::memory_order_release);
+        m_dirty.store(true, std::memory_order_release);
     }
 
     DoubleBufferDirty& operator= (const T& value)
@@ -23,53 +25,23 @@ public:
 
     bool mainReadIfDirty(T& out)
     {
-        if (dirty.exchange(false))
+        if (m_dirty.exchange(false))
         {
-            int ri = writeIndex.load(std::memory_order_acquire);
-            out = buffers[ri];
+            int ri = m_writeIndex.load(std::memory_order_acquire);
+            out = m_buffers[ri];
             return true;
         }
         return false;
     }
 
 private:
-    std::atomic<int> writeIndex{0};
-    std::atomic<bool> dirty{false};
-    T buffers[2];
+    std::atomic<int> m_writeIndex{0};
+    std::atomic<bool> m_dirty{false};
+    T m_buffers[2];
 };
 
 namespace {
 
-    struct Util
-    {
-        // Anticipate Long NT Paths (start with \\?\C: ...)
-        static std::wstring getExeFile()
-        {
-            constexpr DWORD NT_MAX_PATH = 32767; // With trailing '\0'
-
-            std::wstring blob;
-            blob.resize(NT_MAX_PATH);
-
-            DWORD n = GetModuleFileNameW(nullptr, blob.data(), NT_MAX_PATH);
-
-            if (n == 0)
-                return L""; // error
-
-            blob.resize(n);
-            return blob;
-        }
-
-        static std::wstring getExeDir()
-        {
-            std::wstring exeDir = getExeFile();
-            size_t pos = exeDir.find_last_of(L"\\/");
-            if (pos != std::wstring::npos)
-            {
-                exeDir = exeDir.substr(0, pos);
-            }
-            return exeDir;
-        }
-    };
 
 } // end namespace.
 
@@ -156,7 +128,7 @@ struct UI
 
     void pollGuiUpdate()
     {
-        bool bRedraw = false;
+        // bool bRedraw = false;
 
         // DE_BENNI("u.id(", u.id, "), data(",u.data,")")
         double d;
@@ -167,13 +139,13 @@ struct UI
         {
             edtFile->copy_label(s.c_str());
             edtFile->redraw();
-            bRedraw = true;
+            //bRedraw = true;
         }
         if (pollDir.mainReadIfDirty(s))
         {
             edtDir->copy_label(s.c_str());
             edtDir->redraw();
-            bRedraw = true;
+            //bRedraw = true;
         }
 
         edtTimeCurr->copy_label(dbStrSeconds(pollTimeElapsed).c_str());
@@ -196,7 +168,7 @@ struct UI
         edtCompressed->redraw();
         edtCompressRatio->copy_label(dbStr(int(100.0 * pollCompressRatio)," %").c_str());
         edtCompressRatio->redraw();
-        bRedraw = true;
+        // bRedraw = true;
         // if (bRedraw) window->redraw();
     }
 };
@@ -357,7 +329,7 @@ static void workerThread_Demo()
 
     DE_BENNI("Begin Worker Thread ",std::this_thread::get_id())
 
-    std::wstring exeDir = Util::getExeDir();
+    std::wstring exeDir = App::getInstance()->getExeDirW();
     FileInfos fileInfos;
 
     DE_BENNI("exeDir = ", de_mbstr(exeDir))
@@ -440,6 +412,153 @@ static void workerThread_Demo()
     Fl::awake(finish_cb,&ui);
 }
 
+// ---------------- worker ----------------
+static void workerThread_CompressTar()
+{
+    const double timeStart = dbTimeInSeconds();
+
+    if (ui.bRunFlag)
+    {
+        DE_ERROR("TAR Writer Thread already running, abort")
+        return; // Already running!
+    }
+
+    ui.bRunFlag = true;
+    ui.bAbortFlag = false;
+    ui.bPauseFlag = false;
+    ui.pollProgress = 0.0;
+
+    DE_BENNI("Begin TAR Writer Thread ",std::this_thread::get_id())
+
+    std::wstring exeDir = App::getInstance()->getExeDirW();
+    std::wstring tarBaseName = L"demo_longLink1";
+    std::wstring tarDir = exeDir + L"\\" + tarBaseName;
+    std::wstring tarName = tarBaseName + L".tar";
+
+    FileInfos fileInfos;
+
+    DE_BENNI("exeDir = ", de_mbstr(exeDir))
+    DE_BENNI("tarDir = ", de_mbstr(tarDir))
+
+    scanDirectory(fileInfos,tarDir,true);
+    DUMP(fileInfos);
+
+    double timeElapsed = 0;
+    // double timeRemain = 0;
+    double speed = 0.0;
+    // double progress = 0.01;
+    // std::string curFile;
+    // std::string curDir;
+    // uint64_t fileIndex = 0;
+    // uint64_t compressedBytes = 0;
+    // double compressRatio = 1.0;
+    uint64_t totalBytes = TOTAL_FILE_SIZE(fileInfos);
+    uint64_t processedBytes = 0;
+
+    ui.pollProgress = 0.01;
+    ui.pollFileCount = fileInfos.size();
+    ui.pollTotalBytes = totalBytes;
+    std::this_thread::sleep_for(std::chrono::milliseconds(1));
+
+    const int maxItersBeforeAbort = 100;
+    //uint64_t i = 0;
+    //uint64_t n = fileInfos.size();
+
+    // <TAR_Writer>
+
+    TarWriter::Cfg m_tarWriterCfg;
+    m_tarWriterCfg.baseDir = de_mbstr(tarDir);
+    m_tarWriterCfg.archiveBaseName = "demo_longLink1";
+    m_tarWriterCfg.fileInfos = &fileInfos;
+    m_tarWriterCfg.onNextFile =
+        [&] (const FileInfo& fileInfo, uint32_t fileIndex)
+        {
+            ui.pollFileIndex = fileIndex+1;
+            ui.pollProgress = 0.01 + (0.98*double(fileIndex+1) / double(fileInfos.size()));
+            ui.pollFile = de_mbstr(fileInfo.fileName());
+            ui.pollDir = de_mbstr(fileInfo.dir());
+            processedBytes += fileInfo.fileSize();
+            timeElapsed = dbTimeInSeconds() - timeStart;
+            speed = double(processedBytes) / timeElapsed;
+            ui.pollProcessed = processedBytes;
+            ui.pollSpeed = speed;
+            ui.pollTimeElapsed = timeElapsed;
+            ui.pollTimeRemain = double(totalBytes - processedBytes) / speed;  // v = s/t -> t = s / v
+        };
+
+    m_tarWriterCfg.onProcessed =
+        [&] (const uint64_t compressedBytes)
+        {
+            ui.pollCompressed += compressedBytes;
+            ui.pollCompressRatio = double(compressedBytes) / double(processedBytes);
+        };
+
+    de::Blob m_tarBuffer(16*1024*1024); // 16MB WorkBuffer
+    de::File m_tarFile;
+    TarWriter m_tarWriter;
+
+    if (!m_tarWriter.configure(m_tarWriterCfg))
+    {
+        DE_ERROR("No TarWriter config")
+        goto _exit_compress_tar_thread;
+    }
+
+    if (!m_tarFile.open(tarName,de::eFileMode::Write))
+    {
+        DE_ERROR("Cannot write Tar file. ",de_mbstr(tarName))
+        goto _exit_compress_tar_thread;
+    }
+
+    // </TAR_Writer>
+
+    while (ui.bRunFlag)
+    {
+        if (ui.bAbortFlag)
+        {
+            DE_ERROR("Abort ThreadLoop")
+            break;
+        }
+
+        if (ui.bPauseFlag)
+        {
+            std::this_thread::yield();
+            continue;
+        }
+
+        // <TAR_Writer>
+        uint64_t gotBytes = 0;
+        int curIters = 0;
+        while (gotBytes == 0 && curIters < maxItersBeforeAbort)
+        {
+            gotBytes = m_tarWriter.process( m_tarBuffer.data(), m_tarBuffer.size() );
+            curIters++;
+        }
+
+        if (gotBytes > 0)
+        {
+            m_tarFile.write(m_tarBuffer.data(),gotBytes);
+        }
+        else // if (curIters >= maxItersBeforeAbort)
+        {
+            DE_WARN("EOS")
+            break;
+        }
+        // </TAR_Writer>
+
+        //std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    }
+
+_exit_compress_tar_thread:
+    ui.bRunFlag = false;
+    ui.pollProgress = 1.0;
+    std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    // <TAR_Writer>
+    m_tarFile.close();
+    // </TAR_Writer>
+    DE_BENNI("End Worker Thread ",std::this_thread::get_id())
+    Fl::awake(finish_cb,&ui);
+}
+
 static void start_worker_cb(Fl_Widget*, void*)
 {
     DE_OK("MainThread ",std::this_thread::get_id())
@@ -459,7 +578,7 @@ static void start_worker_cb(Fl_Widget*, void*)
 
         Fl::add_timeout(0.01, awake_poll_update); // Start polling gui update 10 ms
 
-        ui.worker = std::thread(workerThread_Demo);
+        ui.worker = std::thread(workerThread_CompressTar);
         ui.worker.detach();
     }
     else

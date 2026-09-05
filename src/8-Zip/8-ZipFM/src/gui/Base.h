@@ -39,7 +39,6 @@
 // #include <windows.h>
 // #include <shellapi.h>
 
-
 // =============================================================
 inline void trim(std::string& s)
 {

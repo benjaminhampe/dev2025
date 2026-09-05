@@ -1,4 +1,6 @@
 #include "8z_Install.h"
+#include "8z_App.h"
+#include <de/win32/win32_LongPath.h>
 
 #ifdef _WIN32
     #ifndef WIN32_LEAN_AND_MEAN
@@ -90,43 +92,12 @@ namespace {
 
     static const std::wstring dllName = L"8-ZipShellExtension.dll";
 
-    struct InstallUtil
-    {
-        // Anticipate Long NT Paths (start with \\?\C: ...)
-        static std::wstring getExeFile()
-        {
-            constexpr DWORD NT_MAX_PATH = 32767; // With trailing '\0'
-
-            std::wstring blob;
-            blob.resize(NT_MAX_PATH);
-
-            DWORD n = GetModuleFileNameW(nullptr, blob.data(), NT_MAX_PATH);
-
-            if (n == 0)
-                return L""; // error
-
-            blob.resize(n);
-            return blob;
-        }
-
-        static std::wstring getExeDir(std::wstring exeFile)
-        {
-            std::wstring exeDir = exeFile;
-            size_t pos = exeDir.find_last_of(L"\\/");
-            if (pos != std::wstring::npos)
-            {
-                exeDir = exeDir.substr(0, pos);
-            }
-            return exeDir;
-        }
-    };
-
 } // end namespace.
 
 bool EightZip_Install()
 {
-    std::wstring exeFile = InstallUtil::getExeFile();
-    std::wstring exeDir = InstallUtil::getExeDir(exeFile);
+    std::wstring exeFile = App::getInstance()->getExeFileW();
+    std::wstring exeDir = App::getInstance()->getExeDirW();
     if (exeFile.empty() || exeDir.empty())
     {
         DE_ERROR("Fail:")
@@ -193,8 +164,8 @@ bool EightZip_Install()
 
 bool EightZip_Uninstall()
 {
-    std::wstring exeFile = InstallUtil::getExeFile();
-    std::wstring exeDir = InstallUtil::getExeDir(exeFile);
+    std::wstring exeFile = App::getInstance()->getExeFileW();
+    std::wstring exeDir = App::getInstance()->getExeDirW();
     if (exeFile.empty() || exeDir.empty())
     {
         DE_ERROR("Fail:")
@@ -256,6 +227,26 @@ bool EightZip_Uninstall()
     DE_ERROR("Not implemented")
     return false;
 #endif
+}
+
+
+bool EightZip_isAdmin()
+{
+    BYTE sidBuffer[SECURITY_MAX_SID_SIZE];
+    PSID adminSid = (PSID)sidBuffer;
+    DWORD sidSize = sizeof(sidBuffer);
+
+    // 1. Well-known SID erzeugen
+    if (!CreateWellKnownSid(WinBuiltinAdministratorsSid, NULL, adminSid, &sidSize))
+        return false;
+
+    BOOL isMember = FALSE;
+
+    // 2. Prüfen, ob Token Mitglied der Admin-Gruppe ist
+    if (!CheckTokenMembership(NULL, adminSid, &isMember))
+        return false;
+
+    return isMember;
 }
 
 /*

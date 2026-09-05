@@ -1446,7 +1446,7 @@ File::open(const std::string& utf8_uri, eFileMode fileMode, int permission)
         return true;
     }
 
-    m_fd = file64_open( utf8_uri.c_str(), fileMode, permission );
+    m_fd = file64_open( utf8_uri, fileMode, permission );
     if ( m_fd < 0 )
     {
         DE_ERROR("Cannot open ", utf8_uri)

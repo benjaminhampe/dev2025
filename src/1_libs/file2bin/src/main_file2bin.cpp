@@ -41,7 +41,7 @@ int main(int argc, char** argv)
     de::FileSystem::createDirectory(oDir);
 
     // Binaries for Odin2
-    Util::convertFiles( oDir + L"/file2bin.h", iDir );
+    Util::convertFiles( oDir, iDir );
     return 0;
 }
 

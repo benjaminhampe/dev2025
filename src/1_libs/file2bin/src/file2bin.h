@@ -70,12 +70,12 @@ struct Util
     }
 
     static void convertFiles(
-        const std::wstring& outputFileNameH,
+        const std::wstring& outputDirectory,
         const std::wstring& inputDirectory, bool bRecursive = false)
     {
 
-        std::wstring outputFileNameDir = de::FileSystem::fileDir(outputFileNameH);
-        std::wstring outputFileNameCPP = outputFileNameDir + L"/" + de::FileSystem::fileBase(outputFileNameH) + L".cpp";
+        std::wstring outputFileNameH = outputDirectory + L"/BinaryData.h";
+        std::wstring outputFileNameCPP = outputDirectory + L"/BinaryData.cpp";
 
         DE_DEBUG("outputFileNameH = ",de_mbstr(outputFileNameH))
         DE_DEBUG("outputFileNameCPP = ",de_mbstr(outputFileNameCPP))
@@ -96,7 +96,7 @@ struct Util
         std::wostringstream o;
         o << "// (c) 2025 by Benjamin Hampe <benjaminhampe@gmx.de>\n";
         o << "// This file contains the binary data (images/fonts/etc..).\n";
-        o << "#include <cstdint>\n";
+        o << "#include \"BinaryData.h\"\n";
         o << "\n";
         o << "namespace BinaryData {\n";
         o << "\n";

@@ -1,4 +1,6 @@
 #include <de/win32/install_8-Zip.h>
+#include <8z_App.h>
+
 #include <de/win32/win32_RegUtil.h>
 #include <FL/Fl.H>
 #include <FL/fl_ask.H>

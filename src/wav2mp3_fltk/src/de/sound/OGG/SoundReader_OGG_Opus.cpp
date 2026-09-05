@@ -61,7 +61,7 @@ bool load_sound_ogg_opus(
     const std::string& uri,
     const SoundLoadOptions& options)
 {
-    int fd = file64_open(uri.c_str(), eFileMode::Read);
+    int fd = file64_open(uri, eFileMode::Read);
     if (fd < 0)
     {
         DE_ERROR("Cannot open OGG/Opus file ", uri)

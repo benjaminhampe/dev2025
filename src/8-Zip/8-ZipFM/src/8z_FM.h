@@ -7,31 +7,6 @@ namespace EightZip {
 namespace FM {
 
 // =============================================================
-struct UI
-// =============================================================
-{
-    Fl_Menu_Bar* menuBar = nullptr;
-    UI_FileOutput* outFile = nullptr;
-    UI_FileInput* inFile = nullptr;
-    UI_DropList* inList = nullptr;
-    UI_Progress* progress = nullptr;
-    LogBox* logbox = nullptr;
-
-    std::atomic<bool> bCancelFlag{false};
-    // std::atomic<bool> reloadFile{true};
-
-    std::thread worker;
-
-    int bitrate; // bitrate in kbit, e.g. 128, not 128000
-    int quality; // quality 0..9
-
-    std::string getSrcUri() const { return inFile->edtUri->value(); }
-    std::string getDstUri() const { return outFile->edtUri->value(); }
-};
-
-static UI ui;
-
-// =============================================================
 class MainWindow : public Fl_Window
 // =============================================================
 {
@@ -39,6 +14,8 @@ public:
     MainWindow(int W, int H, const char* title);
 
     void resize(int X, int Y, int W, int H) override;
+
+    void addUri(const std::string& uri);
 };
 
 

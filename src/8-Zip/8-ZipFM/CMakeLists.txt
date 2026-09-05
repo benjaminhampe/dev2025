@@ -28,7 +28,7 @@ else()
 
     if (MSVC)
     else()
-        # target_link_options(${APP_NAME} PRIVATE -mwindows)
+        target_link_options(${APP_NAME} PRIVATE -mwindows)
 
         if (WIN32)
             # target_link_libraries(${APP_NAME} PRIVATE shcore) # for DPI‑Awareness
@@ -47,8 +47,8 @@ else()
     target_link_libraries(${APP_NAME} PRIVATE DarkImage_2604)
     target_link_libraries(${APP_NAME} PRIVATE de_fltk_145)
     target_link_libraries(${APP_NAME} PRIVATE de_zstd)
-    target_link_libraries(${APP_NAME} PRIVATE de_lyra_180)
-    target_link_libraries(${APP_NAME} PRIVATE de_moodycamel_concurrentqueue_105)
+    # target_link_libraries(${APP_NAME} PRIVATE de_lyra_180)
+    # target_link_libraries(${APP_NAME} PRIVATE de_moodycamel_concurrentqueue_105)
     # target_link_libraries(${APP_NAME} PRIVATE de_win32_RegUtil)
 
     include(${CMAKE_SOURCE_DIR}/src/embed_static_runtime.cmake)

@@ -699,29 +699,35 @@ StringUtil::bytes( uint64_t nBytes )
 
     int unit = 0;
 
-    double fytes = double( nBytes );
+    double value = double( nBytes );
 
     while ( nBytes >= 1024 )
     {
         nBytes >>= 10; // div by 1024
-        fytes *= INV_1024;
+        value *= INV_1024;
         unit++;
     };
 
     std::ostringstream o;
 
-    o << fytes << " ";
+    o << value;
 
-    switch (unit)
+
+    if (value > 0)
     {
-        case BYTE: o << "Byte(s)"; break;
-        case KILO: o << "KB"; break;
-        case MEGA: o << "MB"; break;
-        case GIGA: o << "GB"; break;
-        case TERA: o << "TB"; break;
-        case PETA: o << "PB"; break;
-        case EXA:  o << "EB"; break;
-        default: o << "Unknown"; break;
+        o << " ";
+
+        switch (unit)
+        {
+            case BYTE: o << "Bytes"; break;
+            case KILO: o << "KB"; break;
+            case MEGA: o << "MB"; break;
+            case GIGA: o << "GB"; break;
+            case TERA: o << "TB"; break;
+            case PETA: o << "PB"; break;
+            case EXA:  o << "EB"; break;
+            default: o << "Unknown"; break;
+        }
     }
 
     return o.str();
@@ -1325,40 +1331,38 @@ int32_t to_native_openmode(const eFileMode fileMode)
 
 } // end namespace.
 
-
 // -------------------------------
-// open
+// openW
 // -------------------------------
-int32_t file64_open(const char* path, eFileMode fileMode, int32_t permission)
+int32_t file64_open(const std::wstring& uri, eFileMode fileMode, int32_t permission)
 {
-    const std::string uri = path;
-
     const int nativeMode = to_native_openmode(fileMode);
 #ifdef _WIN32
-    //const std::wstring w = de::FileSystem::makeAbsolute(de_wstr(uri));
-    const std::wstring w = de_wstr(uri);
-
-    // if (FileSystem::existFile(uri))
-    // {
-    //     DE_WARN("File exists ", uri)
-    // }
 
     if (permission == 0)
     {
         permission = 0666; // _S_IWRITE, octal 0666 = rw-rw-rw- (no executable bits)
     }
-    int fd = _wopen(w.c_str(), nativeMode, permission);
+    int fd = _wopen(uri.c_str(), nativeMode, permission);
 
     if (fd < 0)
     {
-        DE_ERROR("Failed with errno(",errno,"), msg(",errno_to_string(errno),")")
+        DE_ERROR("Open failed! errno(",errno,"), msg(",errno_to_string(errno),"), uri(",de_mbstr(uri),")")
         DE_ERROR("_wopen(",native_openmode_str(nativeMode),",",permission,")")
     }
 
     return fd;
 #else
-    return open(path, nativeMode, permission);
+    return open(de_mbstr(uri).c_str(), nativeMode, permission);
 #endif
+}
+
+// -------------------------------
+// open
+// -------------------------------
+int32_t file64_open(const std::string& uri, eFileMode fileMode, int32_t permission)
+{
+    return file64_open(de_wstr(uri),fileMode,permission);
 }
 
 // -------------------------------
@@ -1458,12 +1462,37 @@ File::~File()
     close();
 }
 
-File::File(const std::string& ut8_uri, eFileMode fm, int permission)
+File::File(const std::wstring& utf16_uri, eFileMode fm, int permission)
     : m_fd(-1)
 {
-    open( ut8_uri, fm, permission );
+    open( utf16_uri, fm, permission );
 }
 
+File::File(const std::string& utf8_uri, eFileMode fm, int permission)
+    : m_fd(-1)
+{
+    open( utf8_uri, fm, permission );
+}
+
+bool
+File::open(const std::wstring& utf16_uri, eFileMode fileMode, int permission)
+{
+    if ( is_open() )
+    {
+        DE_ERROR("Already open", de_mbstr(utf16_uri))
+        return true;
+    }
+
+    m_fd = file64_open( utf16_uri, fileMode, permission );
+    if ( m_fd < 0 )
+    {
+        DE_ERROR("Cannot open ", de_mbstr(utf16_uri))
+        return false;
+    }
+
+    m_uri = de_mbstr(utf16_uri);
+    return true;
+}
 
 bool
 File::open(const std::string& utf8_uri, eFileMode fileMode, int permission)
@@ -1474,7 +1503,7 @@ File::open(const std::string& utf8_uri, eFileMode fileMode, int permission)
         return true;
     }
 
-    m_fd = file64_open( utf8_uri.c_str(), fileMode, permission );
+    m_fd = file64_open( utf8_uri, fileMode, permission );
     if ( m_fd < 0 )
     {
         DE_ERROR("Cannot open ", utf8_uri)

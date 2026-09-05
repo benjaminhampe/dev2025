@@ -30,24 +30,9 @@ FILE_ATTRIBUTE_INTEGRITY_STREAM	0x8000	ReFS integrity.
 */
 struct FileInfoUtil
 {
-    static void write_octal(uint64_t v, uint8_t* out, int len)
-    {
-        for (int i = len - 1; i >= 0; --i) {
-            out[i] = (uint8_t)('0' + (v & 7));
-            v >>= 3;
-        }
-    }
-
-    // 🧩 Extracted attribute functions (one per attribute)
-    // 1) Tar typeflag ('0' file, '5' directory)
-    static char tar_typeflag(uint32_t attrs)
-    {
-        return (attrs & FILE_ATTRIBUTE_DIRECTORY) ? '5' : '0';
-    }
-
     // 2) Tar mode (permissions) Windows attributes
     // → Unix permission bits (owner/group/other)
-    static uint16_t winAttrs_to_unixPerms(uint32_t attrs) // winAttrsToUnixPerms
+    static uint16_t unixPerms_from_win32(uint32_t attrs) // winAttrsToUnixPerms
     {
         uint16_t p = 0;
 
@@ -69,37 +54,8 @@ struct FileInfoUtil
         return p;
     }
 
-    static void tar_mode_from_unixPerms(uint16_t perms, uint8_t out[8])
-    {
-        // perms is 0–07777 (12 bits)
-        // We must produce 8 ASCII octal digits, zero‑padded.
-
-        // Convert perms to octal digits manually.
-        // perms has at most 4 octal digits, so we pad to 8.
-
-        // Fill from the rightmost digit backwards.
-        uint16_t v = perms;
-        for (int i = 7; i >= 0; --i) {
-            out[i] = (uint8_t)('0' + (v & 7)); // lowest octal digit
-            v >>= 3;
-        }
-    }
-
-    static uint16_t tar_mode_to_unixPerms(const uint8_t in[8])
-    {
-        uint16_t v = 0;
-        for (int i = 0; i < 8; ++i)
-        {
-            uint8_t c = in[i];
-            if (c < '0' || c > '7')
-                break; // stop on invalid octal
-            v = (v << 3) + (c - '0');
-        }
-        return v;
-    }
-
     // 3) Tar size, extracted from WIN32_FIND_DATAW
-    static uint64_t tar_size(const WIN32_FIND_DATAW& fd)
+    static uint64_t fileSize_from_win32(const WIN32_FIND_DATAW& fd)
     {
         ULARGE_INTEGER sz;
         sz.LowPart  = fd.nFileSizeLow;
@@ -108,7 +64,7 @@ struct FileInfoUtil
     }
 
     // 4) Tar mtime, Convert Windows FILETIME → Unix timestamp
-    static uint64_t tar_mtime(const FILETIME& ft)
+    static uint64_t unixTime_from_win32(const FILETIME& ft)
     {
         ULARGE_INTEGER t;
         t.LowPart  = ft.dwLowDateTime;
@@ -126,12 +82,74 @@ struct FileInfoUtil
     //     HANDLE h = CreateFileW(path.c_str(), FILE_READ_ATTRIBUTES, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
     //     GetFileTime(h, NULL, NULL, &ft);
     //     CloseHandle(h);
+#if 0
+    // Collect attributes
+    uint32_t mode = 0644;
+    uint32_t uid = 0;
+    uint32_t gid = 0;
+    uint32_t mtime = (uint32_t)std::time(nullptr);
 
+    #ifdef _WIN32 // Windows: use FILETIME
+    HANDLE h = CreateFileA(uri.c_str(), GENERIC_READ,
+                           FILE_SHARE_READ, NULL, OPEN_EXISTING,
+                           FILE_ATTRIBUTE_NORMAL, NULL);
+    if (h != INVALID_HANDLE_VALUE)
+    {
+        FILETIME ft;
+        if (GetFileTime(h, NULL, NULL, &ft))
+        {
+            ULARGE_INTEGER ui;
+            ui.LowPart = ft.dwLowDateTime;
+            ui.HighPart = ft.dwHighDateTime;
+            /*
+                Subtract: 116'444'736'000'000'000ULL
+
+                    This constant is the number of 100‑ns ticks between:
+
+                    Windows epoch: 1601‑01‑01 00:00:00 UTC
+                    Unix epoch: 1970‑01‑01 00:00:00 UTC
+
+                    Epoch difference from 1601 → 1970 is 369 years.
+
+                    Days between epochs: 369 [years] × 365 [days/year] + 89 [leap days] = 134774 [days]
+
+                    Convert: 134774 [days] × 86400 [s/days] = 11'644'473'600 [s]
+
+                    Convert: 11'644'473'600 [s] × 10^7 [100ns_ticks/s]= 116'444'736'000'000'000 [100ns_ticks]
+
+                Divide: by 10'000'000ULL
+
+                    Win FILETIME units are 100‑nanosecond intervals: 1 [s] = 10^7 FILETIME ticks
+            */
+            mtime = (uint64_t)((ui.QuadPart - 116'444'736'000'000'000ULL) / 10'000'000ULL);
+        }
+        CloseHandle(h);
+    }
+    else
+    {
+        DE_ERROR("Cannot read FileAttributes. ",uri)
+    }
+    #else
+    // Linux: use stat
+    struct stat st{};
+    if (stat(path.c_str(), &st) == 0)
+    {
+        mode = st.st_mode & 07777;
+        uid = st.st_uid;
+        gid = st.st_gid;
+        mtime = (uint32_t)st.st_mtime;
+    }
+    else
+    {
+        DE_ERROR("Cannot read stat. ",uri)
+    }
+    #endif
+#endif
 
 
     // YYYY-MM-DD HH:MM:SS
 
-    static std::string mtime_str(uint64_t unixSeconds)
+    static std::string unixTime_str(uint64_t unixSeconds)
     {
         time_t t = (time_t)unixSeconds;
 
@@ -157,62 +175,84 @@ struct FileInfoUtil
     }
 
 
-    // 5) Tar uname, Windows has no POSIX users → return constant
-
-    static const char* tar_uname() { return "root"; }
-
-    // 6) Tar gname, Windows has no POSIX group → return constant
-
-    static const char* tar_gname() { return "root"; }
-
-    // 7) Tar uid, Windows has no POSIX uid → return 0
-
-    static uint32_t tar_uid() { return 0; }
-
-    // 8) Tar gid, Windows has no POSIX gid → return 0
-
-    static uint32_t tar_gid() { return 0; }
-
-    // 9) Tar linkname, Windows symlink target (only if reparse point)
-    /*
-    static std::string tar_linkname(uint32_t attrs, const std::wstring& fullPath)
+    static void unixPerm_to_string(uint16_t mode, char out[10])
     {
-        if (!(attrs & FILE_ATTRIBUTE_REPARSE_POINT))
-            return "";
+        // out must be 10 bytes: 9 chars + '\0'
 
-        // read symlink target
-        HANDLE h = CreateFileW(fullPath.c_str(),
-                               GENERIC_READ,
-                               FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
-                               NULL,
-                               OPEN_EXISTING,
-                               FILE_FLAG_OPEN_REPARSE_POINT | FILE_FLAG_BACKUP_SEMANTICS,
-                               NULL);
+        // Base rwx bits
+        out[0] = (mode & 0400) ? 'r' : '-';
+        out[1] = (mode & 0200) ? 'w' : '-';
+        out[2] = (mode & 0100) ? 'x' : '-';
 
-        if (h == INVALID_HANDLE_VALUE)
-            return "";
+        out[3] = (mode & 0040) ? 'r' : '-';
+        out[4] = (mode & 0020) ? 'w' : '-';
+        out[5] = (mode & 0010) ? 'x' : '-';
 
-        BYTE buf[MAXIMUM_REPARSE_DATA_BUFFER_SIZE];
-        DWORD out = 0;
+        out[6] = (mode & 0004) ? 'r' : '-';
+        out[7] = (mode & 0002) ? 'w' : '-';
+        out[8] = (mode & 0001) ? 'x' : '-';
 
-        if (!DeviceIoControl(h, FSCTL_GET_REPARSE_POINT, NULL, 0, buf, sizeof(buf), &out, NULL)) {
-            CloseHandle(h);
-            return "";
+        // --- setuid / setgid / sticky overrides ---
+        // owner execute position (index 2)
+        if (mode & 04000) { // setuid
+            if (out[2] == 'x') out[2] = 's';
+            else              out[2] = 'S';
         }
 
-        CloseHandle(h);
+        // group execute position (index 5)
+        if (mode & 02000) { // setgid
+            if (out[5] == 'x') out[5] = 's';
+            else              out[5] = 'S';
+        }
 
-        auto* rp = (REPARSE_DATA_BUFFER*)buf;
+        // other execute position (index 8)
+        if (mode & 01000) { // sticky
+            if (out[8] == 'x') out[8] = 't';
+            else              out[8] = 'T';
+        }
 
-        if (rp->ReparseTag != IO_REPARSE_TAG_SYMLINK)
-            return "";
-
-        std::wstring target(rp->SymbolicLinkReparseBuffer.PathBuffer,
-                            rp->SymbolicLinkReparseBuffer.PrintNameLength / sizeof(WCHAR));
-
-        return utf16_to_utf8(target);
+        out[9] = '\0';
     }
-    */
+
+    static std::string unixPerm_str(uint16_t perm)
+    {
+        // out must be 10 bytes: 9 chars + '\0'
+        std::ostringstream o;
+
+        // Base rwx bits
+        if (perm & 0400) { o << 'r'; } else { o << '-'; }
+        if (perm & 0200) { o << 'w'; } else { o << '-'; }
+        if (perm & 0100) { o << 'x'; } else { o << '-'; }
+
+        if (perm & 0040) { o << 'r'; } else { o << '-'; }
+        if (perm & 0020) { o << 'w'; } else { o << '-'; }
+        if (perm & 0010) { o << 'x'; } else { o << '-'; }
+
+        if (perm & 0004) { o << 'r'; } else { o << '-'; }
+        if (perm & 0002) { o << 'w'; } else { o << '-'; }
+        if (perm & 0001) { o << 'x'; } else { o << '-'; }
+/*
+        // --- setuid / setgid / sticky overrides ---
+        // owner execute position (index 2)
+        if (perm & 04000) { // setuid
+            if (out[2] == 'x') out[2] = 's';
+            else              out[2] = 'S';
+        }
+
+        // group execute position (index 5)
+        if (perm & 02000) { // setgid
+            if (out[5] == 'x') out[5] = 's';
+            else              out[5] = 'S';
+        }
+
+        // other execute position (index 8)
+        if (perm & 01000) { // sticky
+            if (out[8] == 'x') out[8] = 't';
+            else              out[8] = 'T';
+        }
+*/
+        return o.str();
+    }
 
     static bool is_regular(DWORD a)
     {
@@ -263,54 +303,6 @@ struct FileInfoUtil
 
         return false; // Reject (files)
     }
-
-
-    static void unixPerm_to_string(uint16_t mode, char out[10])
-    {
-        // out must be 10 bytes: 9 chars + '\0'
-
-        // Base rwx bits
-        out[0] = (mode & 0400) ? 'r' : '-';
-        out[1] = (mode & 0200) ? 'w' : '-';
-        out[2] = (mode & 0100) ? 'x' : '-';
-
-        out[3] = (mode & 0040) ? 'r' : '-';
-        out[4] = (mode & 0020) ? 'w' : '-';
-        out[5] = (mode & 0010) ? 'x' : '-';
-
-        out[6] = (mode & 0004) ? 'r' : '-';
-        out[7] = (mode & 0002) ? 'w' : '-';
-        out[8] = (mode & 0001) ? 'x' : '-';
-
-        // --- setuid / setgid / sticky overrides ---
-        // owner execute position (index 2)
-        if (mode & 04000) { // setuid
-            if (out[2] == 'x') out[2] = 's';
-            else              out[2] = 'S';
-        }
-
-        // group execute position (index 5)
-        if (mode & 02000) { // setgid
-            if (out[5] == 'x') out[5] = 's';
-            else              out[5] = 'S';
-        }
-
-        // other execute position (index 8)
-        if (mode & 01000) { // sticky
-            if (out[8] == 'x') out[8] = 't';
-            else              out[8] = 'T';
-        }
-
-        out[9] = '\0';
-    }
-
-
-    static std::string unixPerm_str(uint16_t perm)
-    {
-        char out[10];
-        unixPerm_to_string(perm,out);
-        return std::string(out,10);
-    }
 };
 
 // In Posix format with '/' forward slashes.
@@ -358,7 +350,7 @@ struct FileInfo
         "file(" << de_mbstr(m_name) << "), "
         "size(" << dbStrBytes(m_fileSize) << "), "
         "perm(" << FileInfoUtil::unixPerm_str(m_unixPerms) << "), "
-        "time(" << FileInfoUtil::mtime_str(m_unixTime) << ")"
+        "time(" << FileInfoUtil::unixTime_str(m_unixTime) << ")"
         ;
         return o.str();
     }
@@ -394,23 +386,24 @@ inline void
 DUMP(const FileInfos& fileInfos)
 {
     DE_BENNI("FileInfo.Count = ",fileInfos.size())
-    // for (size_t i = 0; i < fileInfos.size(); ++i )
-    // {
-    //     DE_DEBUG("[",i,"] ",fileInfos[i].str())
-    // }
+    for (size_t i = 0; i < fileInfos.size(); ++i )
+    {
+        DE_DEBUG("[",i,"] ",fileInfos[i].str())
+    }
 }
 
 inline void
 scanDirectory(FileInfos& fileInfos, std::wstring dir, bool recursive)
 {
-    dir = de::FileSystem::makeWinPath(dir);
-    std::wstring pattern = dir + L"\\*";
+    const auto posixDir = de::FileSystem::makePosixPath(dir);
+    const auto win32Dir = de::FileSystem::makeWinPath(dir);
+    const std::wstring pattern = win32Dir + L"\\*";
 
     WIN32_FIND_DATAW fd;
     HANDLE h = FindFirstFileW(pattern.c_str(), &fd);
     if (h == INVALID_HANDLE_VALUE)
     {
-        DE_ERROR("No FindFirstFileW(), dir = ",de_mbstr(dir))
+        DE_ERROR("No FindFirstFileW(), dir = ",de_mbstr(win32Dir))
         return;
     }
 
@@ -419,7 +412,7 @@ scanDirectory(FileInfos& fileInfos, std::wstring dir, bool recursive)
     // size_t nFiles = 0;
     do
     {
-        std::wstring name = fd.cFileName;
+        const std::wstring name = fd.cFileName;
 
         if ((name == L".") || (name == L".."))
         {
@@ -435,7 +428,7 @@ scanDirectory(FileInfos& fileInfos, std::wstring dir, bool recursive)
             continue;
         }
 
-        bool bDirectory = fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY;
+        const bool bDirectory = fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY;
 
         // if (bDirectory)
         //     nDirectories++;
@@ -443,17 +436,17 @@ scanDirectory(FileInfos& fileInfos, std::wstring dir, bool recursive)
         //     nFiles++;
 
         FileInfo fi;
-        fi.m_dir = de::FileSystem::makePosixPath(dir);
+        fi.m_dir = posixDir;
         fi.m_name = name;
         fi.m_bDirectory = bDirectory;
-        fi.m_fileSize = bDirectory ? 0ull : FileInfoUtil::tar_size(fd);
-        fi.m_unixPerms = FileInfoUtil::winAttrs_to_unixPerms(fd.dwFileAttributes);
-        fi.m_unixTime = FileInfoUtil::tar_mtime(fd.ftLastWriteTime);
+        fi.m_fileSize = bDirectory ? 0ull : FileInfoUtil::fileSize_from_win32(fd);
+        fi.m_unixPerms = FileInfoUtil::unixPerms_from_win32(fd.dwFileAttributes);
+        fi.m_unixTime = FileInfoUtil::unixTime_from_win32(fd.ftLastWriteTime);
         fileInfos.push_back(std::move(fi));
 
         if (recursive && fi.m_bDirectory)
         {
-            scanDirectory(fileInfos, dir + L"\\" + name, true);
+            scanDirectory(fileInfos, win32Dir + L"\\" + name, true);
         }
     }
     while (FindNextFileW(h, &fd));

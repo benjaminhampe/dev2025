@@ -1,5 +1,27 @@
 #pragma once
 /*
+🎯 Most likely candidates
+
+Based on the screenshot’s shapes, spacing, and proportions, the font is almost certainly one of these:
+1) DejaVu Sans
+
+    Most common default in Linux FLTK builds.
+    Matches the screenshot extremely well.
+
+2) Liberation Sans
+
+    Red Hat’s metric‑compatible Arial replacement.
+    Also very close to what you have.
+
+3) Arial
+
+    If your FLTK was built on Windows and uses system fonts.
+    The screenshot looks very similar to Arial 10pt.
+
+4) Helvetica
+
+    If you’re on Linux with older FLTK defaults.
+
 🎯 4. Alle Variablen eines Projekts (z. B. FLTK)
 
 FLTK definiert eigene Variablen wie:
