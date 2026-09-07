@@ -1,5 +1,11 @@
 #include "8z_Worker.h"
 #include "8z_App.h"
+#include "8z_ArgParser.h"
+
+#include <gui/Widgets.h>
+#include <gui/XP_ProgressBar.h>
+#include <gui/LogBox.h>
+
 #include <de/archive/FileInfo.h>
 #include <de/archive/TarWriter.h>
 
@@ -662,8 +668,10 @@ static void start_worker_cb(Fl_Widget*, void*)
     // async_log_ok(dbStr("Compress dstUri = ",dstUri));
 */
 
+// =============================================================
 Dialog::Dialog(int W, int H, const char* title)
-    : Fl_Double_Window(W, H, title)
+// =============================================================
+    : DoubleWindow(W, H, title)
 {
     ui.window = this;
 
@@ -693,10 +701,10 @@ Dialog::Dialog(int W, int H, const char* title)
     // Row[1]
     int x = ml;
     int y = mt;
-    ui.lblTimeCurr = new Fl_Box(x,y,w1,h1,"Elapsed Time:"); x += w1 + sx;
-    ui.edtTimeCurr = new Fl_Box(x,y,w1,h1,"00:00:00"); x += w1 + sx + w0;
-    ui.lblTotalBytes = new Fl_Box(x,y,w1,h1,"Total Size:"); x += w1 + sx;
-    ui.edtTotalBytes = new Fl_Box(x,y,w1,h1,"420 MB"); //x += w1 + sx;
+    ui.lblTimeCurr = new Label(x,y,w1,h1,"Elapsed Time:"); x += w1 + sx;
+    ui.edtTimeCurr = new Label(x,y,w1,h1,"00:00:00"); x += w1 + sx + w0;
+    ui.lblTotalBytes = new Label(x,y,w1,h1,"Total Size:"); x += w1 + sx;
+    ui.edtTotalBytes = new Label(x,y,w1,h1,"420 MB"); //x += w1 + sx;
     y += h1 + sy;
 
     ui.lblTimeCurr->align(FL_ALIGN_LEFT | FL_ALIGN_TOP | FL_ALIGN_INSIDE);
@@ -706,10 +714,10 @@ Dialog::Dialog(int W, int H, const char* title)
 
     // Row[2]
     x = ml;
-    ui.lblTimeLeft = new Fl_Box(x,y,w1,h1,"Remaining Time:"); x += w1 + sx;
-    ui.edtTimeLeft = new Fl_Box(x,y,w1,h1,"00:00:00"); x += w1 + sx + w0;
-    ui.lblSpeed = new Fl_Box(x,y,w1,h1,"Speed:"); x += w1 + sx;
-    ui.edtSpeed = new Fl_Box(x,y,w1,h1,"59 MB/s"); //x += w1 + sx;
+    ui.lblTimeLeft = new Label(x,y,w1,h1,"Remaining Time:"); x += w1 + sx;
+    ui.edtTimeLeft = new Label(x,y,w1,h1,"00:00:00"); x += w1 + sx + w0;
+    ui.lblSpeed = new Label(x,y,w1,h1,"Speed:"); x += w1 + sx;
+    ui.edtSpeed = new Label(x,y,w1,h1,"59 MB/s"); //x += w1 + sx;
     y += h1 + sy;
 
     ui.lblTimeLeft->align(FL_ALIGN_LEFT | FL_ALIGN_TOP | FL_ALIGN_INSIDE);
@@ -719,10 +727,10 @@ Dialog::Dialog(int W, int H, const char* title)
 
     // Row[3]
     x = ml;
-    ui.lblNumFiles = new Fl_Box(x,y,w1,h1,"Files:"); x += w1 + sx;
-    ui.edtFileIndex = new Fl_Box(x,y,w1,h1,"3140"); x += w1 + sx + w0;
-    ui.lblProcessed = new Fl_Box(x,y,w1,h1,"Processed:"); x += w1 + sx;
-    ui.edtProcessed = new Fl_Box(x,y,w1,h1,"123 MB"); //x += w1 + sx;
+    ui.lblNumFiles = new Label(x,y,w1,h1,"Files:"); x += w1 + sx;
+    ui.edtFileIndex = new Label(x,y,w1,h1,"3140"); x += w1 + sx + w0;
+    ui.lblProcessed = new Label(x,y,w1,h1,"Processed:"); x += w1 + sx;
+    ui.edtProcessed = new Label(x,y,w1,h1,"123 MB"); //x += w1 + sx;
     y += h1 + sy;
 
     ui.lblNumFiles->align(FL_ALIGN_LEFT | FL_ALIGN_TOP | FL_ALIGN_INSIDE);
@@ -732,9 +740,9 @@ Dialog::Dialog(int W, int H, const char* title)
 
     // Row[4]
     x = ml + w1 + sx;
-    ui.edtFileCount = new Fl_Box(x,y,w1,h1,"4280"); x += w1 + sx + w0;
-    ui.lblCompressed = new Fl_Box(x,y,w1,h1,"Compressed:"); x += w1 + sx;
-    ui.edtCompressed = new Fl_Box(x,y,w1,h1,"46 MB"); //x += w1 + sx;
+    ui.edtFileCount = new Label(x,y,w1,h1,"4280"); x += w1 + sx + w0;
+    ui.lblCompressed = new Label(x,y,w1,h1,"Compressed:"); x += w1 + sx;
+    ui.edtCompressed = new Label(x,y,w1,h1,"46 MB"); //x += w1 + sx;
     y += h1 + sy;
 
     //ui.lblNumFiles->align(FL_ALIGN_LEFT | FL_ALIGN_TOP | FL_ALIGN_INSIDE);
@@ -744,8 +752,8 @@ Dialog::Dialog(int W, int H, const char* title)
 
     // Row[5]
     x = ml + 2*(w1 + sx) + w0;
-    ui.lblCompressRatio = new Fl_Box(x,y,w1,h1,"Compress Ratio:"); x += w1 + sx;
-    ui.edtCompressRatio = new Fl_Box(x,y,w1,h1,"34%"); //x += w1 + sx;
+    ui.lblCompressRatio = new Label(x,y,w1,h1,"Compress Ratio:"); x += w1 + sx;
+    ui.edtCompressRatio = new Label(x,y,w1,h1,"34%"); //x += w1 + sx;
     y += h1 + sy;
 
     //ui.lblNumFiles->align(FL_ALIGN_LEFT | FL_ALIGN_TOP | FL_ALIGN_INSIDE);
@@ -755,21 +763,21 @@ Dialog::Dialog(int W, int H, const char* title)
 
     // Row[6]
     x = ml;
-    ui.edtModus = new Fl_Box(x,y,mw,h1,"Compress:");
+    ui.edtModus = new Label(x,y,mw,h1,"Compress:");
     y += h1 + sy;
 
     ui.edtModus->align(FL_ALIGN_LEFT | FL_ALIGN_TOP | FL_ALIGN_INSIDE);
 
     // Row[7]
     x = ml;
-    ui.edtDir = new Fl_Box(x,y,mw,h1,"DirectoryName");
+    ui.edtDir = new Label(x,y,mw,h1,"DirectoryName");
     y += h1 + sy;
 
     ui.edtDir->align(FL_ALIGN_LEFT | FL_ALIGN_TOP | FL_ALIGN_INSIDE);
 
     // Row[8]
     x = ml;
-    ui.edtFile = new Fl_Box(x,y,mw,h1,"FileName");
+    ui.edtFile = new Label(x,y,mw,h1,"FileName");
     y += h1 + sy;
 
     ui.edtFile->align(FL_ALIGN_LEFT | FL_ALIGN_TOP | FL_ALIGN_INSIDE);
@@ -786,9 +794,9 @@ Dialog::Dialog(int W, int H, const char* title)
 
     // Row[11]
     x = ml;
-    ui.btnBackground = new Fl_Button(x,y,wBackG,h2,"Background"); x += wBackG + sx;
-    ui.btnPause = new Fl_Button(x,y,wPause,h2,"Pause"); x += wPause + sx;
-    ui.btnCancel = new Fl_Button(x,y,wCancel,h2,"Cancel");
+    ui.btnBackground = new Button(x,y,wBackG,h2,"Background"); x += wBackG + sx;
+    ui.btnPause = new Button(x,y,wPause,h2,"Pause"); x += wPause + sx;
+    ui.btnCancel = new Button(x,y,wCancel,h2,"Cancel");
 
     // m_edtArchiveName->onChange = [](int index, std::string text)
     // {

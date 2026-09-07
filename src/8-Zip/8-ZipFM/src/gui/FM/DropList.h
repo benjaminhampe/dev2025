@@ -1,7 +1,7 @@
 #pragma once
 #include <FL/Fl_Hold_Browser.H>
 #include <FL/fl_draw.H>
-#include <de/archive/FileNames.h>
+#include <de/archive/FileInfo.h>
 #include <de/image/Image.h>
 #include <de/win32/win32_Load_Shell_Icon.h>
 
@@ -9,7 +9,7 @@ class DropList : public Fl_Browser
 {
 public:
     struct Row {
-        std::string uri;
+        FileInfo fileInfo;
         std::shared_ptr<de::Image> ico;   // RAII-safe shared ownership
         float progress = 0.0f;
         int typ = 0;
@@ -17,16 +17,16 @@ public:
 
     std::vector<Row> rows;
 
-    FileNamesA getFileNamesA() const
+    FileInfos getFileInfosA() const
     {
-        FileNamesA fileNames;
-        fileNames.reserve(rows.size());
+        FileInfos fileInfos;
+        fileInfos.reserve(rows.size());
 
         for (const auto& row : rows)
         {
-            fileNames.push_back(row.uri);
+            fileInfos.push_back(row.fileInfo);
         }
-        return fileNames;
+        return fileInfos;
     }
 
     typedef void(*FN_onListChange)(void);
@@ -55,7 +55,7 @@ public:
             return;
         }
 
-        uri = make_posix_path(uri);
+        uri = FileInfoUtil::make_posix_path(uri);
 
         if (uri.empty())
         {
@@ -63,13 +63,14 @@ public:
             return;
         }
 
+        auto lowerUri = de::StringUtil::makeLower(uri);
         // Only add unique paths:
         auto found = std::find_if( rows.begin(), rows.end(),
                 [&] (const Row& cached)
                 {
                 #ifdef _WIN32
-                return de::StringUtil::makeLower(cached.uri)
-                    == de::StringUtil::makeLower(uri);
+                return lowerUri
+                    == de_mbstr(de::StringUtil::makeLower(cached.fileInfo.uri()));
                 #else
                     return cached.uri == uri;
                 #endif
@@ -91,7 +92,7 @@ public:
         int ico_w = item_height(nullptr) - 4;
 
         Row row;
-        row.uri = uri;
+        row.fileInfo.set(uri);
         row.ico = load_shell_icon(uri, ico_w, ico_w);
         row.progress = 0.0f;
         row.typ = (bFile) ? 0 : 5;
@@ -137,10 +138,11 @@ public:
                 if (a.typ != b.typ)
                     return a.typ > b.typ;
 #ifdef _WIN32
-                return de::StringUtil::makeLower(a.uri)
-                     < de::StringUtil::makeLower(b.uri);
+                return de::StringUtil::makeLower(a.fileInfo.uri())
+                     < de::StringUtil::makeLower(b.fileInfo.uri());
 #else
-                return a.uri < b.uri;
+                return a.fileInfo.uri()
+                     < b.fileInfo.uri();
 #endif
             });
     }
@@ -189,7 +191,7 @@ public:
         }
 
         fl_color(FL_BLACK);
-        fl_draw(r.uri.c_str(), x, y + H/2 + textsize()/2);
+        fl_draw(r.fileInfo.uriA().c_str(), x, y + H/2 + textsize()/2);
 
         if (r.progress > 0.0f)
         {

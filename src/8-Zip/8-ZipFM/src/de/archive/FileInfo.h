@@ -30,6 +30,66 @@ FILE_ATTRIBUTE_INTEGRITY_STREAM	0x8000	ReFS integrity.
 */
 struct FileInfoUtil
 {
+    // ============================================================================
+    //  Normalize POSIX → WINDOWS
+    // ============================================================================
+
+    static std::string make_win_path(const std::string& txt)
+    {
+        std::string o = txt;
+        for (char & c : o)
+        {
+            if (c == '/')
+            {
+                c = '\\';
+            }
+        }
+        return o;
+    }
+
+    static std::wstring make_win_path(const std::wstring& txt)
+    {
+        std::wstring o = txt;
+        for (wchar_t & c : o)
+        {
+            if (c == L'/')
+            {
+                c = L'\\';
+            }
+        }
+        return o;
+    }
+
+    // ============================================================================
+    //  Normalize WINDOWS → POSIX
+    // ============================================================================
+
+    static std::string make_posix_path(const std::string& txt)
+    {
+        std::string o = txt;
+        for (char & c : o)
+        {
+            if (c == '\\')
+            {
+                c = '/';
+            }
+        }
+        return o;
+    }
+
+    static std::wstring make_posix_path(const std::wstring& txt)
+    {
+        std::wstring o = txt;
+        for (wchar_t & c : o)
+        {
+            if (c == L'\\')
+            {
+                c = L'/';
+            }
+        }
+        return o;
+    }
+
     // 2) Tar mode (permissions) Windows attributes
     // → Unix permission bits (owner/group/other)
     static uint16_t unixPerms_from_win32(uint32_t attrs) // winAttrsToUnixPerms
@@ -63,6 +123,27 @@ struct FileInfoUtil
         return sz.QuadPart;
     }
 
+    /*
+        Subtract: 116'444'736'000'000'000ULL
+
+            This constant is the number of 100‑ns ticks between:
+
+            Windows epoch: 1601‑01‑01 00:00:00 UTC
+            Unix epoch: 1970‑01‑01 00:00:00 UTC
+
+            Epoch difference from 1601 → 1970 is 369 years.
+
+            Days between epochs: 369 [years] × 365 [days/year] + 89 [leap days] = 134774 [days]
+
+            Convert: 134774 [days] × 86400 [s/days] = 11'644'473'600 [s]
+
+            Convert: 11'644'473'600 [s] × 10^7 [100ns_ticks/s]= 116'444'736'000'000'000 [100ns_ticks]
+
+        Divide: by 10'000'000ULL
+
+            Win FILETIME units are 100‑nanosecond intervals: 1 [s] = 10^7 FILETIME ticks
+    */
+
     // 4) Tar mtime, Convert Windows FILETIME → Unix timestamp
     static uint64_t unixTime_from_win32(const FILETIME& ft)
     {
@@ -75,77 +156,6 @@ struct FileInfoUtil
 
         return (t.QuadPart - EPOCH_DIFF) / 10000000ULL;
     }
-
-    // You get the FILETIME via:
-
-    //     FILETIME ft;
-    //     HANDLE h = CreateFileW(path.c_str(), FILE_READ_ATTRIBUTES, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
-    //     GetFileTime(h, NULL, NULL, &ft);
-    //     CloseHandle(h);
-#if 0
-    // Collect attributes
-    uint32_t mode = 0644;
-    uint32_t uid = 0;
-    uint32_t gid = 0;
-    uint32_t mtime = (uint32_t)std::time(nullptr);
-
-    #ifdef _WIN32 // Windows: use FILETIME
-    HANDLE h = CreateFileA(uri.c_str(), GENERIC_READ,
-                           FILE_SHARE_READ, NULL, OPEN_EXISTING,
-                           FILE_ATTRIBUTE_NORMAL, NULL);
-    if (h != INVALID_HANDLE_VALUE)
-    {
-        FILETIME ft;
-        if (GetFileTime(h, NULL, NULL, &ft))
-        {
-            ULARGE_INTEGER ui;
-            ui.LowPart = ft.dwLowDateTime;
-            ui.HighPart = ft.dwHighDateTime;
-            /*
-                Subtract: 116'444'736'000'000'000ULL
-
-                    This constant is the number of 100‑ns ticks between:
-
-                    Windows epoch: 1601‑01‑01 00:00:00 UTC
-                    Unix epoch: 1970‑01‑01 00:00:00 UTC
-
-                    Epoch difference from 1601 → 1970 is 369 years.
-
-                    Days between epochs: 369 [years] × 365 [days/year] + 89 [leap days] = 134774 [days]
-
-                    Convert: 134774 [days] × 86400 [s/days] = 11'644'473'600 [s]
-
-                    Convert: 11'644'473'600 [s] × 10^7 [100ns_ticks/s]= 116'444'736'000'000'000 [100ns_ticks]
-
-                Divide: by 10'000'000ULL
-
-                    Win FILETIME units are 100‑nanosecond intervals: 1 [s] = 10^7 FILETIME ticks
-            */
-            mtime = (uint64_t)((ui.QuadPart - 116'444'736'000'000'000ULL) / 10'000'000ULL);
-        }
-        CloseHandle(h);
-    }
-    else
-    {
-        DE_ERROR("Cannot read FileAttributes. ",uri)
-    }
-    #else
-    // Linux: use stat
-    struct stat st{};
-    if (stat(path.c_str(), &st) == 0)
-    {
-        mode = st.st_mode & 07777;
-        uid = st.st_uid;
-        gid = st.st_gid;
-        mtime = (uint32_t)st.st_mtime;
-    }
-    else
-    {
-        DE_ERROR("Cannot read stat. ",uri)
-    }
-    #endif
-#endif
-
 
     // YYYY-MM-DD HH:MM:SS
 
@@ -254,6 +264,121 @@ struct FileInfoUtil
         return o.str();
     }
 
+    static uint64_t getUnixFileTime(const std::wstring& uri)
+    {
+        uint64_t mtime = (uint32_t)std::time(nullptr);
+
+        #ifdef _WIN32
+        HANDLE h = CreateFileW(uri.c_str(),
+                        FILE_READ_ATTRIBUTES,
+                        FILE_SHARE_READ,
+                        NULL,
+                        OPEN_EXISTING,
+                        FILE_ATTRIBUTE_NORMAL,
+                        NULL);
+        if (h == INVALID_HANDLE_VALUE)
+        {
+            DE_ERROR("Cannot open file ",de_mbstr(uri))
+            return mtime;
+        }
+
+        FILETIME ft;
+        GetFileTime(h, NULL, NULL, &ft);
+        CloseHandle(h);
+
+        ULARGE_INTEGER t;
+        t.LowPart  = ft.dwLowDateTime;
+        t.HighPart = ft.dwHighDateTime;
+
+        // FILETIME epoch → Unix epoch
+        const uint64_t EPOCH_DIFF = 116444736000000000ULL;
+
+        mtime = (t.QuadPart - EPOCH_DIFF) / 10000000ULL;
+
+        #else // Linux
+        struct stat st{};
+        if (stat(de_mbstr(uri).c_str(), &st) == 0)
+        {
+            //mode = st.st_mode & 07777;
+            //uid = st.st_uid;
+            //gid = st.st_gid;
+            mtime = static_cast<uint64_t>(st.st_mtime); // is uint32_t
+        }
+        else
+        {
+            DE_ERROR("Cannot read stat. ",de_mbstr(uri))
+        }
+        #endif
+
+        return mtime;
+    }
+
+    static uint16_t getUnixFilePerm(const std::wstring& uri)
+    {
+    #ifdef _WIN32
+        // -------------------------
+        // WINDOWS
+        // -------------------------
+        DWORD attrs = GetFileAttributesW(uri.c_str());
+        if (attrs == INVALID_FILE_ATTRIBUTES)
+            return 0; // or throw
+
+        uint16_t p = 0;
+
+        // owner read always allowed
+        p |= 0400;
+
+        // owner write only if not readonly
+        if (!(attrs & FILE_ATTRIBUTE_READONLY))
+            p |= 0200;
+
+        // directories get execute bits
+        if (attrs & FILE_ATTRIBUTE_DIRECTORY)
+            p |= 0100;
+
+        // mirror owner → group/other
+        p |= (p >> 3);
+        p |= (p >> 6);
+
+        return p;
+
+    #else
+        // -------------------------
+        // LINUX
+        // -------------------------
+        std::string utf8 = de_mbstr(uri); // your UTF‑16 → UTF‑8 converter
+
+        struct stat st{};
+        if (stat(utf8.c_str(), &st) != 0)
+            return 0; // or throw
+
+        // extract only permission bits
+        return static_cast<uint16_t>(st.st_mode & 07777);
+
+    #endif
+    }
+
+
+    static bool isDirectory(const std::wstring& uri)
+    {
+    #ifdef _WIN32
+        DWORD attrs = GetFileAttributesW(uri.c_str());
+        if (attrs == INVALID_FILE_ATTRIBUTES)
+            return false;
+
+        return (attrs & FILE_ATTRIBUTE_DIRECTORY) != 0;
+
+    #else
+        std::string utf8 = de_mbstr(uri); // your UTF‑16 → UTF‑8 converter
+
+        struct stat st{};
+        if (stat(utf8.c_str(), &st) != 0)
+            return false;
+
+        return S_ISDIR(st.st_mode);
+    #endif
+    }
+
     static bool is_regular(DWORD a)
     {
         if (a & FILE_ATTRIBUTE_REPARSE_POINT)
@@ -312,8 +437,44 @@ struct FileInfo
     std::wstring m_name{};     // filename only
     uint64_t    m_fileSize{};  // file size in bytes
     uint64_t    m_unixTime{};  // timestamp unixSeconds since
-    uint16_t    m_unixPerms{}; // unix/tar-like permission bits
+    uint16_t    m_unixPerm{}; // unix/tar-like permission bits
     bool        m_bDirectory{};
+
+    FileInfo()
+        : m_dir{}
+        , m_name{}
+        , m_fileSize{ 0 }
+        , m_unixTime{ 0 }
+        , m_unixPerm{ 0 }
+        , m_bDirectory{ false }
+    {}
+
+    FileInfo( const std::wstring& uri )
+        : FileInfo{}
+    {
+        set(uri);
+    }
+
+    FileInfo( const std::string& uri )
+        : FileInfo{}
+    {
+        set(uri);
+    }
+
+    void set( const std::wstring& uri )
+    {
+        m_dir = dbFileDir(uri);
+        m_name = dbFileName(uri);
+        m_fileSize = dbFileSize(uri);
+        m_unixTime = FileInfoUtil::getUnixFileTime(uri);
+        m_unixPerm = FileInfoUtil::getUnixFilePerm(uri);
+        m_bDirectory = FileInfoUtil::isDirectory(uri);
+    }
+
+    void set( const std::string& uri )
+    {
+        set(de_wstr(uri));
+    }
 
     // --- member funcs ---
     std::wstring suffix() const
@@ -327,6 +488,16 @@ struct FileInfo
     std::wstring dir() const { return m_dir; }
 
     std::wstring fileName() const { return m_name; }
+
+
+    std::string uriA() const { return de_mbstr(uri()); }
+
+    std::string dirA() const { return de_mbstr(dir()); }
+
+    std::string fileNameA() const { return de_mbstr(fileName()); }
+
+    std::string suffixA() const { return de_mbstr(suffix()); }
+
 
     uint64_t fileSize() const { return m_fileSize; }
 /*
@@ -349,7 +520,7 @@ struct FileInfo
         "dir(" << de_mbstr(m_dir) << "), "
         "file(" << de_mbstr(m_name) << "), "
         "size(" << dbStrBytes(m_fileSize) << "), "
-        "perm(" << FileInfoUtil::unixPerm_str(m_unixPerms) << "), "
+        "perm(" << FileInfoUtil::unixPerm_str(m_unixPerm) << "), "
         "time(" << FileInfoUtil::unixTime_str(m_unixTime) << ")"
         ;
         return o.str();
@@ -440,7 +611,7 @@ scanDirectory(FileInfos& fileInfos, std::wstring dir, bool recursive)
         fi.m_name = name;
         fi.m_bDirectory = bDirectory;
         fi.m_fileSize = bDirectory ? 0ull : FileInfoUtil::fileSize_from_win32(fd);
-        fi.m_unixPerms = FileInfoUtil::unixPerms_from_win32(fd.dwFileAttributes);
+        fi.m_unixPerm = FileInfoUtil::unixPerms_from_win32(fd.dwFileAttributes);
         fi.m_unixTime = FileInfoUtil::unixTime_from_win32(fd.ftLastWriteTime);
         fileInfos.push_back(std::move(fi));
 

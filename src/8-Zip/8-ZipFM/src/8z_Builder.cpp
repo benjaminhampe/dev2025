@@ -1,242 +1,10 @@
 #include "8z_Builder.h"
 #include "8z_App.h"
+#include <gui/AB/Win11Combo.h>
+#include <de/archive/ZstHeader.h>
 
 namespace EightZip {
 namespace builder {
-
-// =============================================================
-class Label : public Fl_Box
-// =============================================================
-{
-public:
-    Label(int X, int Y, int W, int H, const char* Title)
-        : Fl_Box(X, Y, W, H, Title)
-    {
-        align(FL_ALIGN_LEFT | FL_ALIGN_INSIDE); //  | FL_ALIGN_TOP
-        // labelfont(FL_FREE_FONT);
-        labelsize(10*Fl::screen_scale(0));
-    }
-
-    void draw() override
-    {
-        //int cw = 20 * Fl::screen_scale(0) + fl_width(label());
-
-        fl_push_clip(x(), y(), w(), h());
-
-        Fl_Box::draw();
-
-        // --- Hintergrund ---
-
-        Fl_Color border_blue = fl_rgb_color(0,120,215);     // Windows blue
-        fl_color(border_blue);
-        fl_rect(x(), y(), w(), h());
-        fl_pop_clip();
-    }
-};
-
-// =============================================================
-class Button : public Fl_Button
-// =============================================================
-{
-public:
-    Button(int X, int Y, int W, int H, const char* L = 0)
-        : Fl_Button(X, Y, W, H, L)
-    {
-        box(FL_NO_BOX);   // Wir zeichnen selbst
-    }
-
-    void draw() override
-    {
-        const bool hover = Fl::belowmouse() == this;
-        const bool down  = value();
-
-        Fl_Color textColor = fl_rgb_color(0,0,0);
-        Fl_Color fillColor;
-        Fl_Color borderColor;
-        if (down)
-        {
-            fillColor = fl_rgb_color(204, 228, 247);
-            borderColor = fl_rgb_color( 0,  84, 153);
-        }
-        else if (hover)
-        {
-            fillColor = fl_rgb_color(224, 238, 249);
-            borderColor = fl_rgb_color( 0, 120, 212);
-        }
-        else
-        {
-            fillColor = fl_rgb_color(253, 253, 253);
-            borderColor = fl_rgb_color(208, 208, 208);
-        }
-
-        fl_color(fillColor);
-        fl_rounded_rectf(x(), y(), w(), h(), 1);
-
-        fl_color(borderColor);
-        fl_rounded_rect(x(), y(), w(), h(), 1);
-
-        fl_color(textColor);
-        fl_font(FL_HELVETICA, 14 * Fl::screen_scale(0));
-        fl_draw(label(), x(), y(), w(), h(), FL_ALIGN_CENTER);
-    }
-
-    int handle(int e) override
-    {
-        switch (e)
-        {
-        case FL_ENTER:
-            redraw();
-            break;
-        case FL_LEAVE:
-            redraw();
-            break;
-        default:
-            break;
-        }
-
-        return Fl_Button::handle(e);
-    }
-};
-
-
-// 🟩 Code: Perfekte FLTK‑GroupBox (Win32‑Style)
-
-class GroupBox : public Fl_Group
-{
-public:
-    Fl_Box* title;
-
-    GroupBox(int X, int Y, int W, int H, const char* label)
-        : Fl_Group(X, Y, W, H)
-    {
-        box(FL_NO_BOX); // wir zeichnen den Rahmen selbst
-
-        // Titel oben im Rahmen
-        title = new Fl_Box(X + 10, Y, W - 20, 20, label);
-        title->box(FL_NO_BOX);
-        title->labelfont(FL_BOLD);
-
-        // Kinderbereich leicht eingerückt
-        this->begin();
-        // Benutzer fügt hier seine Widgets ein
-        this->end();
-    }
-
-    void draw() override {
-        // Rahmen zeichnen
-        fl_color(FL_DARK3);
-        fl_rect(x(), y() + 10, w(), h() - 10);
-
-        // Standard FLTK draw
-        Fl_Group::draw();
-    }
-};
-
-/*
-// 🟧 Wie du es benutzt
-
-    GroupBox* gb = new GroupBox(20, 20, 300, 120, "Audio Settings");
-    gb->begin();
-
-    new Fl_Check_Button(40, 50, 120, 25, "Enable DSP");
-    new Fl_Input(40, 80, 200, 25, "Buffer:");
-
-    gb->end();
-*/
-
-// =============================================================
-class LineEdit : public Fl_Input
-// =============================================================
-{
-public:
-    bool hover = false;
-    bool pressed = false;
-
-    LineEdit(int X, int Y, int W, int H, const char* L = 0)
-        : Fl_Input(X, Y, W, H, L)
-    {
-        // box(FL_NO_BOX);     // wir zeichnen alles selbst
-    }
-
-    int handle(int e) override {
-        switch (e) {
-        case FL_ENTER:
-            hover = true;
-            redraw();
-            break;
-            // return 1;
-
-        case FL_LEAVE:
-            hover = false;
-            redraw();
-            break;
-            // return 1;
-
-        case FL_PUSH:
-            pressed = true;
-            redraw();
-            break;
-            // return 1;
-
-        case FL_RELEASE:
-            pressed = false;
-            redraw();
-            break;
-            // return 1;
-        default:
-            break;
-        }
-        return Fl_Input::handle(e);
-    }
-
-    void draw() override {
-
-        // if (input_type() == FL_HIDDEN_INPUT) return;
-
-        // --- Farben ---
-        Fl_Color bg_normal   = fl_rgb_color(245,245,245);
-        Fl_Color bg_hover    = fl_rgb_color(220,235,255);   // light blue
-        Fl_Color border_blue = fl_rgb_color(0,120,215);     // Windows blue
-        Fl_Color text_color  = fl_rgb_color(20,20,20);
-
-        // --- Hintergrund ---
-        fl_push_clip(x(), y(), w(), h());
-
-        Fl_Boxtype b = box();
-        if (damage() & FL_DAMAGE_ALL)
-        {
-            // --- Hintergrund ---
-            fl_color(hover ? bg_hover : bg_normal);
-            fl_rectf(x(), y(), w(), h());
-            // draw_box(b, color());
-        }
-
-        Fl_Input_::drawtext(x()+Fl::box_dx(b), y()+Fl::box_dy(b),
-                      w()-Fl::box_dw(b), h()-Fl::box_dh(b));
-
-        // --- Border ---
-        fl_color(border_blue);
-        fl_rect(x(), y(), w(), h());
-
-        fl_pop_clip();
-
-    /*
-        // --- Text ---
-        fl_color(text_color);
-        fl_font(FL_HELVETICA, 14);   // Textgröße
-        int lh = fl_height();        // Lineheight
-
-        // Textposition
-        int tx = x() + 4;
-        int ty = y() + lh + 2;
-        const char* t = value();
-
-        // Zeichnen
-        fl_draw(t, tx, ty);
-    */
-
-    }
-};
 
 // =============================================================
 struct UI
@@ -351,63 +119,9 @@ struct UI
         return my_map[i];
     }
 
-    struct ZstPreset
+    ZstPreset getZstPreset() const
     {
-        int quality = 0;
-        int factor = 0;
-        std::string name;
-        ZstPreset() : quality{ 0 }, factor{ 3 }, name{ "Default" } {}
-        ZstPreset(int q, int f, std::string n) : quality{ q }, factor{ f }, name{ n } {}
-    };
-
-    const std::array<ZstPreset,36> getZstPresets() const
-    {
-        static const std::array<ZstPreset,36> presets
-        {{
-            { 0, 0, "0 - No compression"},
-            { ZSTD_fast, 0, "Fast -1000 (highest throughput)"},
-            { ZSTD_fast, 0, "Fast -500 (ultra throughput)"},
-            { ZSTD_fast, 0, "Fast -400 (ultra throughput)"},
-            { ZSTD_fast, 0, "Fast -300 (ultra throughput)"},
-            { ZSTD_fast, 0, "Fast -200 (higher throughput)"},
-            { ZSTD_fast, 0, "Fast -100 (high throughput)"},
-            { ZSTD_fast, 0, "Fast -50 (logs/telemetry)"},
-            { ZSTD_fast, 0, "Fast -30 (super fast)"},
-            { ZSTD_fast, 0, "Fast -20 (extremely fast)"},
-            { ZSTD_fast, 0, "Fast -10 (very fast)"},
-            { ZSTD_fast, 0, "Fast -5 (fast)"},
-            { ZSTD_fast, 0, "Fast -3 (Standard‑Fast)"},
-            { ZSTD_fast, 0, "Fast -1 (a little faster)"},
-            { 0, 1, "1 - very fast    - ZSTD_fast"},
-            { 0, 2, "2 - fast         - ZSTD_fast"},
-            { 0, 3, "3 - (default)    - ZSTD_dfast"},
-            { 0, 4, "4 - better ratio - ZSTD_dfast"},
-            { 0, 5, "5 - medium ratio - ZSTD_greedy"},
-            { 0, 6, "6 - higher ratio - ZSTD_lazy"},
-            { 0, 7, "7 - higher ratio - ZSTD_lazy"},
-            { 0, 8, "8 - high ratio   - ZSTD_lazy2"},
-            { 0, 9, "9 - high ratio   - ZSTD_lazy2"},
-            { 0, 10, "10 - very high ratio - ZSTD_lazy2"},
-            { 0, 11, "11 - very high ratio - ZSTD_lazy2"},
-            { 0, 12, "12 - very high ratio - ZSTD_lazy2"},
-            { 0, 13, "13 - super high ratio - ZSTD_btlazy2"},
-            { 0, 14, "14 - super high ratio - ZSTD_btlazy2"},
-            { 0, 15, "15 - super high ratio - ZSTD_btlazy2"},
-            { 0, 16, "16 - maximal - ZSTD_btopt"},
-            { 0, 17, "17 - maximal - ZSTD_btopt"},
-            { 0, 18, "18 - maximal - ZSTD_btopt"},
-            { 0, 19, "19 - maximal - ZSTD_btopt"},
-            { 0, 20, "20 - ultra - ZSTD_btultra"},
-            { 0, 21, "21 - ultra - ZSTD_btultra"},
-            { 0, 22, "22 - ultra - ZSTD_btultra"}
-        }};
-
-        return presets;
-    }
-
-    const ZstPreset& getZstPreset() const
-    {
-        const auto& presets = getZstPresets();
+        const auto& presets = ZstPresets::get();
 
         int i = cbxPreset->value();
         if (i < 0 || i > presets.size())
@@ -461,11 +175,8 @@ T* make_widget(int size, Args&&... args) {
 // =============================================================
 Dialog::Dialog(int W, int H, const char* title)
 // =============================================================
-    : Fl_Window(W, H, title)
+    : Window(W, H, title)
 {
-    color(fl_rgb_color(240, 240, 240));
-    begin();
-
     const float zoom = Fl::screen_scale(0);
 
     const int ml = 5 * zoom;
@@ -679,42 +390,11 @@ Dialog::Dialog(int W, int H, const char* title)
     16–19	ZSTD_btopt	maximal
     20–22 Ultra	ZSTD_btultra	höchste Ratio, extrem langsam
     */
-    ui.cbxPreset->add("0 - No compression");
-    ui.cbxPreset->add("Fast -1000 (highest throughput)");
-    ui.cbxPreset->add("Fast -500 (ultra throughput)");
-    ui.cbxPreset->add("Fast -400 (ultra throughput)");
-    ui.cbxPreset->add("Fast -300 (ultra throughput)");
-    ui.cbxPreset->add("Fast -200 (higher throughput)");
-    ui.cbxPreset->add("Fast -100 (high throughput)");
-    ui.cbxPreset->add("Fast -50 (logs/telemetry)");
-    ui.cbxPreset->add("Fast -30 (super fast)");
-    ui.cbxPreset->add("Fast -20 (extremely fast)");
-    ui.cbxPreset->add("Fast -10 (very fast)");
-    ui.cbxPreset->add("Fast -5 (fast)");
-    ui.cbxPreset->add("Fast -3 (Standard‑Fast)");
-    ui.cbxPreset->add("Fast -1 (a little faster)");
-    ui.cbxPreset->add("1 - very fast    - ZSTD_fast");
-    ui.cbxPreset->add("2 - fast         - ZSTD_fast");
-    ui.cbxPreset->add("3 - (default)    - ZSTD_dfast");
-    ui.cbxPreset->add("4 - better ratio - ZSTD_dfast");
-    ui.cbxPreset->add("5 - medium ratio - ZSTD_greedy");
-    ui.cbxPreset->add("6 - higher ratio - ZSTD_lazy");
-    ui.cbxPreset->add("7 - higher ratio - ZSTD_lazy");
-    ui.cbxPreset->add("8 - high ratio   - ZSTD_lazy2");
-    ui.cbxPreset->add("9 - high ratio   - ZSTD_lazy2");
-    ui.cbxPreset->add("10 - very high ratio - ZSTD_lazy2");
-    ui.cbxPreset->add("11 - very high ratio - ZSTD_lazy2");
-    ui.cbxPreset->add("12 - very high ratio - ZSTD_lazy2");
-    ui.cbxPreset->add("13 - super high ratio - ZSTD_btlazy2");
-    ui.cbxPreset->add("14 - super high ratio - ZSTD_btlazy2");
-    ui.cbxPreset->add("15 - super high ratio - ZSTD_btlazy2");
-    ui.cbxPreset->add("16 - maximal - ZSTD_btopt");
-    ui.cbxPreset->add("17 - maximal - ZSTD_btopt");
-    ui.cbxPreset->add("18 - maximal - ZSTD_btopt");
-    ui.cbxPreset->add("19 - maximal - ZSTD_btopt");
-    ui.cbxPreset->add("20 - ultra - ZSTD_btultra");
-    ui.cbxPreset->add("21 - ultra - ZSTD_btultra");
-    ui.cbxPreset->add("22 - ultra - ZSTD_btultra");
+    const auto & zstPresets = ZstPresets::get();
+    for (size_t i = 0; i < zstPresets.size(); ++i)
+    {
+        ui.cbxPreset->add(zstPresets[i].name.c_str());
+    }
 
     ui.cbxPreset->value(16);
 

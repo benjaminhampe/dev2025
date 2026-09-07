@@ -19,7 +19,7 @@ App::~App()
 
 }
 
-void App::init(int argc, char** argv)
+bool App::parseCommandLine(int argc, char** argv)
 {
     m_argc = argc;
     m_argv = argv;
@@ -40,6 +40,25 @@ void App::init(int argc, char** argv)
         DE_DEBUG("argv[",i,"] = ", m_argv[i])
     }
 //</debug>
+
+    // Job jobLyra;
+    // bool okLyra = ArgParser::parseLyra(&jobLyra,argc,argv);
+    // DE_OK("[Lyra ] ok(",okLyra,"), job(", jobLyra.str(),")")
+
+    bool ok = ArgParser::parseBenni(&m_job,argc,argv);
+    if (ok)
+    {
+        DE_OK("Parser OK.")
+        DE_OK("Job: ")
+        DE_OK(m_job.str())
+    }
+    else
+    {
+        DE_ERROR("Parser Error.")
+        DE_ERROR("Job: ")
+        DE_ERROR(m_job.str())
+    }
+    return ok;
 }
 
 const std::string& App::getExeFileA() const

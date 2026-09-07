@@ -1,6 +1,7 @@
 #include "8z_Install.h"
 #include "8z_App.h"
 #include <de/win32/win32_LongPath.h>
+#include <de/win32/win32_RegUtil.h>
 
 #ifdef _WIN32
     #ifndef WIN32_LEAN_AND_MEAN
@@ -19,8 +20,6 @@
     // #include <winuser.h>
     // #include <dwmapi.h>
 #endif
-
-#include <de/Core.h>
 
 /*
 🧩 Long‑path safe wrapper (fully deterministic, no hidden behavior)
@@ -63,29 +62,24 @@ std::wstring NormalizeLongPath(const std::wstring &input)
 This wrapper is real NT‑safe:
 
     No MAX_PATH assumptions
-
     No stack‑allocated 32 KB buffers
-
     No accidental prefixing of device paths
-
     Correct UNC handling
-
     Deterministic behavior regardless of registry long‑path settings
 
 🧱 How to use it
-cpp
 
-std::wstring longPath = NormalizeLongPath(L"C:\\some\\very\\long\\path\\file.txt");
+    std::wstring longPath = NormalizeLongPath(L"C:\\some\\very\\long\\path\\file.txt");
 
-HANDLE h = CreateFileW(
-    longPath.c_str(),
-    GENERIC_READ,
-    FILE_SHARE_READ,
-    nullptr,
-    OPEN_EXISTING,
-    FILE_ATTRIBUTE_NORMAL,
-    nullptr
-);
+    HANDLE h = CreateFileW(
+        longPath.c_str(),
+        GENERIC_READ,
+        FILE_SHARE_READ,
+        nullptr,
+        OPEN_EXISTING,
+        FILE_ATTRIBUTE_NORMAL,
+        nullptr
+    );
 */
 
 namespace {
@@ -94,19 +88,121 @@ namespace {
 
 } // end namespace.
 
+std::wstring EightZip_Registry_readExePath()
+{
+    HKEY hKey;
+    DWORD r = RegOpenKeyExW(HKEY_CURRENT_USER,
+        L"Software\\8-Zip", 0, KEY_READ, &hKey);
+    if (r != ERROR_SUCCESS)
+    {
+        return {};
+    }
+
+    DWORD type = 0;
+    DWORD size = 0;
+
+    // First call: get required buffer size
+    r = RegQueryValueExW(hKey, L"Path", nullptr, &type, nullptr, &size);
+    if (r != ERROR_SUCCESS || type != REG_SZ)
+    {
+        RegCloseKey(hKey);
+        return {};
+    }
+
+    // Allocate buffer (size is in bytes)
+    std::wstring out;
+    out.resize(size / sizeof(wchar_t));
+
+    // Second call: read actual data
+    r = RegQueryValueExW(
+        hKey,
+        L"Path",
+        nullptr,
+        nullptr,
+        reinterpret_cast<LPBYTE>(&out[0]),
+        &size
+    );
+
+    RegCloseKey(hKey);
+
+    if (r != ERROR_SUCCESS)
+        return {};
+
+    // Remove trailing null if present
+    while (!out.empty() && out.back() == L'\0')
+    {
+        out.pop_back();
+    }
+
+    return out;
+}
+
+bool EightZip_Registry_writeExePath()
+{
+    const std::wstring exeFile0 = App::getInstance()->getExeFileW();
+    DE_BENNI("[Registry] Write current exePath")
+
+    HKEY hKey;
+    DWORD r = RegCreateKeyExW(HKEY_CURRENT_USER, L"Software\\8-Zip", 0, nullptr, 0, KEY_WRITE, nullptr, &hKey, nullptr);
+    if (r != ERROR_SUCCESS)
+        return false;
+
+    r = RegSetValueExW(
+        hKey,
+        L"Path",
+        0,
+        REG_SZ,
+        (const BYTE*)exeFile0.data(),
+        (DWORD)((exeFile0.size() + 1) * sizeof(wchar_t))
+    );
+
+    RegCloseKey(hKey);
+    return (r == ERROR_SUCCESS);
+}
+
+bool EightZip_Registry_updateExePath()
+{
+    const std::wstring exeFile0 = App::getInstance()->getExeFileW();
+    const std::wstring exeFile1 = EightZip_Registry_readExePath();
+
+    DE_DEBUG("[Programm] exeFile0 = ",de_mbstr(exeFile0))
+    DE_DEBUG("[Registry] exeFile1 = ",de_mbstr(exeFile1))
+
+    if (exeFile0 != exeFile1)
+    {
+        DE_WARN("[Registry] Need update.")
+        if (!EightZip_Registry_writeExePath())
+        {
+            DE_ERROR("[Registry] Cannot update!")
+            return false;
+        }
+        else
+        {
+            DE_OK("[Registry] Ok. Updated.")
+            return true;
+        }
+    }
+    else
+    {
+        DE_OK("[Registry] Ok. Nothing todo.")
+        return true;
+    }
+}
+
 bool EightZip_Install()
 {
+#ifdef _WIN32
     std::wstring exeFile = App::getInstance()->getExeFileW();
     std::wstring exeDir = App::getInstance()->getExeDirW();
+
     if (exeFile.empty() || exeDir.empty())
     {
-        DE_ERROR("Fail:")
+        DE_ERROR("You need to call App::getInstance()->init()")
         DE_ERROR("exeUri = ",de_mbstr(exeFile))
         DE_ERROR("exeDir = ",de_mbstr(exeDir))
         return false;
     }
 
-#ifdef _WIN32
     std::wstring dllFile = exeDir + L"\\" + dllName;
     std::wstring params = L"/s \"" + dllFile + L"\"";
 
@@ -164,6 +260,7 @@ bool EightZip_Install()
 
 bool EightZip_Uninstall()
 {
+#ifdef _WIN32
     std::wstring exeFile = App::getInstance()->getExeFileW();
     std::wstring exeDir = App::getInstance()->getExeDirW();
     if (exeFile.empty() || exeDir.empty())
@@ -174,7 +271,6 @@ bool EightZip_Uninstall()
         return false;
     }
 
-#ifdef _WIN32
     std::wstring dllFile = exeDir + L"\\" + dllName;
     std::wstring params = L"/u /s \"" + dllFile + L"\"";
 
@@ -229,6 +325,11 @@ bool EightZip_Uninstall()
 #endif
 }
 
+/*
+taskkill /IM explorer.exe /F
+start explorer.exe
+*/
+
 
 bool EightZip_isAdmin()
 {
@@ -248,6 +349,49 @@ bool EightZip_isAdmin()
 
     return isMember;
 }
+
+
+// 1. Check if HKCU\\Software\\8-Zip exists
+// 2. Check if HKCU\\Software\\8-Zip exists
+static const std::wstring clsid_8zip =
+    L"{8A9EC69E-DFBA-4321-8E7D-6514968B4A5C}";
+static const std::wstring k1 =
+    dbStrW(L"Software\\Classes\\CLSID\\",clsid_8zip);
+static const std::wstring k2 =
+    dbStrW(L"Software\\Classes\\CLSID\\",clsid_8zip,L"\\InProcServer32");
+static const std::wstring k3 =
+    dbStrW(L"Software\\Classes\\*\\shellex\\ContextMenuHandlers\\8-Zip");
+static const std::wstring k4 =
+    dbStrW(L"Software\\Classes\\Directory\\shellex\\ContextMenuHandlers\\8-Zip");
+
+bool EightZip_isInstalled()
+{
+    if (!RegUtil::existKey(HKEY_LOCAL_MACHINE, k1))
+    {
+        DE_ERROR("No k1")
+        return false;
+    }
+    if (!RegUtil::existKey(HKEY_LOCAL_MACHINE, k2))
+    {
+        DE_ERROR("No k2")
+        return false;
+    }
+    if (!RegUtil::existKey(HKEY_LOCAL_MACHINE, k3))
+    {
+        DE_ERROR("No k3")
+        return false;
+    }
+
+    if (!RegUtil::existKey(HKEY_LOCAL_MACHINE, k4))
+    {
+        DE_ERROR("No k4")
+        return false;
+    }
+
+    DE_DEBUG("Got k1..k4")
+    return true;
+}
+
 
 /*
 ✔ Der korrekte Weg: Exit‑Code von regsvr32 prüfen

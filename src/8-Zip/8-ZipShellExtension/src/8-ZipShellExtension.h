@@ -24,8 +24,8 @@ static CLSID CLSID_8ZipShellExt;
 static const std::wstring CLSID_STR =
     L"{8A9EC69E-DFBA-4321-8E7D-6514968B4A5C}";
 
-static std::wstring g_exeFull =
-    L"C:\\GitHub\\dev2025_zstd_fltk\\bin\\win64_Release_static\\8-ZipFM.exe";
+// static std::wstring g_exeFull =
+//     L"C:\\GitHub\\dev2025_zstd_fltk\\bin\\win64_Release_static\\8-ZipFM.exe";
 
 // Parse function (call once in DllMain)
 inline bool ParseCLSID()

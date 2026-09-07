@@ -1,5 +1,5 @@
 #pragma once
-#include <de/Core.h>
+#include "8z_ArgParser.h"
 
 struct App
 {
@@ -8,7 +8,11 @@ struct App
     App();
     ~App();
 
-    void init(int argc, char** argv);
+    bool parseCommandLine(int argc, char** argv);
+
+    Job& getJob() { return m_job; }
+
+    const Job& getJob() const { return m_job; }
 
     const std::string& getExeFileA() const;
 
@@ -24,4 +28,6 @@ private:
 
     std::string m_exeFile;
     std::string m_exeDir;
+
+    Job m_job;
 };

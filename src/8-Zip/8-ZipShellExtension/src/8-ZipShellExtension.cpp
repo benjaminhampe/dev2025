@@ -5,7 +5,7 @@
 
 void LogEvent(const wchar_t* msg)
 {
-    HANDLE h = RegisterEventSourceW(NULL, L"8ZipFM-ShellExt");
+    HANDLE h = RegisterEventSourceW(NULL, L"8-ZipSE");
     if (!h) return;
 
     ReportEventW(
@@ -26,27 +26,27 @@ void LogEvent(const wchar_t* msg)
 ClassFactory::ClassFactory()
     : m_refCount(1)
 {
-    LogEvent(L"8-ZipShellExt :: ClassFactory().");
+    // LogEvent(L"8-ZipSE :: ClassFactory().");
 }
 
 ClassFactory::~ClassFactory()
 {
-    LogEvent(L"8-ZipShellExt :: ~ClassFactory().");
+    // LogEvent(L"8-ZipSE :: ~ClassFactory().");
 }
 
 ULONG ClassFactory::AddRef()
 {
-    LogEvent(L"8-ZipShellExt :: AddRef().");
+    // LogEvent(L"8-ZipSE :: AddRef().");
     return InterlockedIncrement(&m_refCount);
 }
 
 ULONG ClassFactory::Release()
 {
-    LogEvent(L"8-ZipShellExt :: Release().");
+    // LogEvent(L"8-ZipSE :: Release().");
     ULONG count = InterlockedDecrement(&m_refCount);
     if (count < 1)
     {
-        LogEvent(L"8-ZipShellExt :: Release() -> delete");
+        // LogEvent(L"8-ZipSE :: Release() -> delete");
         delete this;
     }
     return count;
@@ -54,7 +54,7 @@ ULONG ClassFactory::Release()
 
 HRESULT ClassFactory::QueryInterface(REFIID riid, void** ppv)
 {
-    LogEvent(L"8-ZipShellExt :: Try QueryInterface().");
+    // LogEvent(L"8-ZipSE :: Try QueryInterface().");
 
     if (riid == IID_IUnknown ||
         riid == IID_IClassFactory)
@@ -63,23 +63,23 @@ HRESULT ClassFactory::QueryInterface(REFIID riid, void** ppv)
     }
     else
     {
-        LogEvent(L"8-ZipShellExt :: [Error] QueryInterface() :: E_NOINTERFACE.");
+        // LogEvent(L"8-ZipSE :: [Error] QueryInterface() :: E_NOINTERFACE.");
         *ppv = nullptr;
         return E_NOINTERFACE;
     }
     AddRef();
 
-    LogEvent(L"8-ZipShellExt :: [Ok] QueryInterface().");
+    // LogEvent(L"8-ZipSE :: [Ok] QueryInterface().");
     return S_OK;
 }
 
 HRESULT ClassFactory::CreateInstance(IUnknown* pUnkOuter, REFIID riid, void** ppv)
 {
-    LogEvent(L"8-ZipShellExt :: Try CreateInstance().");
+    // LogEvent(L"8-ZipSE :: Try CreateInstance().");
 
     if (pUnkOuter)
     {
-        LogEvent(L"8-ZipShellExt :: [Error] CreateInstance() :: CLASS_E_NOAGGREGATION.");
+        // LogEvent(L"8-ZipSE :: [Error] CreateInstance() :: CLASS_E_NOAGGREGATION.");
         return CLASS_E_NOAGGREGATION;
     }
 
@@ -87,11 +87,11 @@ HRESULT ClassFactory::CreateInstance(IUnknown* pUnkOuter, REFIID riid, void** pp
     HRESULT hr = ext->QueryInterface(riid, ppv);
     if (FAILED(hr))
     {
-        LogEvent(L"8-ZipShellExt :: [Error] CreateInstance() :: FAILED.");
+        // LogEvent(L"8-ZipSE :: [Error] CreateInstance() :: FAILED.");
         delete ext; // 🔥 Leak-Fix
     }
 
-    LogEvent(L"8-ZipShellExt :: [Ok] CreateInstance().");
+    // LogEvent(L"8-ZipSE :: [Ok] CreateInstance().");
     return hr;
 }
 
@@ -101,39 +101,114 @@ HRESULT ClassFactory::LockServer(BOOL)
 }
 
 // namespace {
+/*
+📦 Supported Formats
+
+    zst — zst, zstd
+    tar — tar
+    zip — zip, zipx, jar, xpi
+    bz2 — bz2, bzip2, tbz2, tbz
+    gz — gz, gzip, tgz
+    xz — xz, txz
+    7z — 7z
+    z — z, taz
+    lzma — lzma
+    lzh — lzh, lha
+    cab — cab
+    arj — arj
+    rar — rar, r00
+    iso — iso, img
+    wim — wim, swm, esd
+    rpm — rpm
+    deb — deb
+    cpio — cpio
+    chm — chm, chw, chi, chq
+    nsis — exe (NSIS installer)
+    split — 001, 002, …
+
+Dateisystem‑Images
+
+    apfs — apfs
+    dmg — dmg
+    ext — ext, ext2, ext3, ext4, img
+    fat — fat, img
+    ntfs — ntfs, img
+    hfs — hfs, hfsx
+    gpt — gpt
+    mbr — mbr
+    udf — udf, iso, img
+    uefi — scap, uefif
+
+Virtuelle Maschinen / Disk‑Images
+
+    qcow2 — qcow, qcow2, qcow2c
+    vdi — vdi
+    vhd — vhd
+    vhdx — vhdx
+    vmdk — vmdk
+
+Weitere Formate
+
+    cramfs — cramfs
+    squashfs — squashfs
+    ihex — ihex
+    mslz — mslz
+    mub — mub
+    xar — xar, pkg
+    ppmd — ppmd
+*/
 
 struct ShellExtension::Impl
 {
     std::vector<std::wstring> m_selectedItems;
 
-    bool hasFolders = false;
-    bool hasFiles = false;
+    int compressCmd = -1; // relative index
+    int extractCmd = -1; // relative index
+
+    uint32_t numDirs = 0;
+    uint32_t numFiles = 0;
+    uint32_t num_tar = 0;
+    uint32_t num_zst = 0;
+    uint32_t num_zip = 0;
+    uint32_t num_gz = 0;
+    uint32_t num_bz2 = 0;
+    uint32_t num_7z = 0;
+    uint32_t num_xz = 0;
+
     //bool hasTarOrZst = false;
-    bool onlyTarOrZst = false;
 
     HICON m_hIcon = nullptr;
 
     // 🧩 Step 2 — Classify selection
     void classifySelection()
     {
-        hasFolders = false;
-        hasFiles = false;
-        //hasTarOrZst = false;
-        onlyTarOrZst = true;
+        numDirs = 0;
+        numFiles = 0;
+        num_tar = 0;
+        num_zst = 0;
+        num_zip = 0;
 
         for (auto& p : m_selectedItems)
         {
             DWORD attr = GetFileAttributesW(p.c_str());
 
-            if ((attr != INVALID_FILE_ATTRIBUTES) &&
-                (attr & FILE_ATTRIBUTE_DIRECTORY))
+            if (attr == FILE_ATTRIBUTE_REPARSE_POINT)
             {
-                hasFolders = true;
-                onlyTarOrZst = false;
+                continue; // Skip symlinks, mountpoints, etc...
+            }
+
+            if (attr == INVALID_FILE_ATTRIBUTES)
+            {
+                continue; // Skip whatever that means...
+            }
+
+            if (attr & FILE_ATTRIBUTE_DIRECTORY)
+            {
+                numDirs++;
             }
             else
             {
-                hasFiles = true;
+                numFiles++;
 
                 std::wstring ext = std::filesystem::path(p)
                     .extension()
@@ -144,8 +219,14 @@ struct ShellExtension::Impl
                                ext.begin(),
                                ::towlower);
 
-                if (ext != L".tar" && ext != L".zst")
-                    onlyTarOrZst = false;
+                if (ext == L".tar")
+                    num_tar++;
+
+                if (ext == L".zst" || ext == L".zstd")
+                    num_zst++;
+
+                if (ext == L".zip")
+                    num_zip++;
 
                 //if (ext == L".tar" || ext == L".zst")
                 //    hasTarOrZst = true;
@@ -153,8 +234,54 @@ struct ShellExtension::Impl
         }
     }
 
-    int compressCmd = -1; // relative index
-    int extractCmd = -1; // relative index
+    std::wstring EightZip_Registry_readExePath()
+    {
+        HKEY hKey;
+        DWORD r = RegOpenKeyExW(HKEY_CURRENT_USER,
+            L"Software\\8-Zip", 0, KEY_READ, &hKey);
+        if (r != ERROR_SUCCESS)
+        {
+            return {};
+        }
+
+        DWORD type = 0;
+        DWORD size = 0;
+
+        // First call: get required buffer size
+        r = RegQueryValueExW(hKey, L"Path", nullptr, &type, nullptr, &size);
+        if (r != ERROR_SUCCESS || type != REG_SZ)
+        {
+            RegCloseKey(hKey);
+            return {};
+        }
+
+        // Allocate buffer (size is in bytes)
+        std::wstring out;
+        out.resize(size / sizeof(wchar_t));
+
+        // Second call: read actual data
+        r = RegQueryValueExW(
+            hKey,
+            L"Path",
+            nullptr,
+            nullptr,
+            reinterpret_cast<LPBYTE>(&out[0]),
+            &size
+        );
+
+        RegCloseKey(hKey);
+
+        if (r != ERROR_SUCCESS)
+            return {};
+
+        // Remove trailing null if present
+        while (!out.empty() && out.back() == L'\0')
+        {
+            out.pop_back();
+        }
+
+        return out;
+    }
 
     /*
         ShellExecuteW(
@@ -167,9 +294,21 @@ struct ShellExtension::Impl
         );
     */
 
+
     void runCompressor()
     {
         // Build commandLine
+
+        std::wstring exePath = EightZip_Registry_readExePath();
+        if (exePath.empty())
+        {
+            LogEvent(L"8-ZipShellExt :: [Error] No 8-Zip exePath in registry.");
+            return;
+        }
+
+        std::wstring cmdLine = L"\"" + exePath + L"\"";
+
+        // Build commandLine argument-list:
 
         std::wstring args = L" --compress";
         for (auto& s : m_selectedItems)
@@ -177,11 +316,9 @@ struct ShellExtension::Impl
             args += L" \"" + s + L"\"";
         }
 
-        std::wstring cmdLine = L"\"" + g_exeFull + L"\"";
-
-        LogEvent(L"8-ZipShellExt :: [Ok] runCompressor.");
-        LogEvent(cmdLine.c_str());
-        LogEvent(args.c_str());
+        // LogEvent(L"8-ZipShellExt :: [Ok] runCompressor.");
+        // LogEvent(cmdLine.c_str());
+        // LogEvent(args.c_str());
 
         ShellExecuteW(
             NULL,
@@ -190,12 +327,23 @@ struct ShellExtension::Impl
             args.c_str(),
             NULL,
             SW_SHOW);
-
     }
 
     void runExtractor()
     {
         // Build commandLine
+
+        std::wstring exePath = EightZip_Registry_readExePath();
+
+        if (exePath.empty())
+        {
+            LogEvent(L"8-ZipShellExt :: [Error] No 8-Zip exePath in registry.");
+            return;
+        }
+
+        std::wstring cmdLine = L"\"" + exePath + L"\"";
+
+        // Build commandLine argument-list:
 
         std::wstring args = L" --extract";
         for (auto& s : m_selectedItems)
@@ -203,11 +351,9 @@ struct ShellExtension::Impl
             args += L" \"" + s + L"\"";
         }
 
-        std::wstring cmdLine = L"\"" + g_exeFull + L"\"";
-
-        LogEvent(L"8-ZipShellExt :: [Ok] runExtractor.");
-        LogEvent(cmdLine.c_str());
-        LogEvent(args.c_str());
+        //LogEvent(L"8-ZipShellExt :: [Ok] runExtractor.");
+        //LogEvent(cmdLine.c_str());
+        //LogEvent(args.c_str());
 
         ShellExecuteW(
             NULL,
@@ -216,7 +362,6 @@ struct ShellExtension::Impl
             args.c_str(),
             NULL,
             SW_SHOW);
-
     }
 
 };
@@ -306,11 +451,11 @@ HRESULT ShellExtension::Initialize( LPCITEMIDLIST pidlFolder,
 {
     if (!pDataObj)
     {
-        LogEvent(L"8-ZipShellExtension :: [Error] !pDataObj");
+        // LogEvent(L"8-ZipSE :: [Error] !pDataObj");
         return S_OK; // E_INVALIDARG;
     }
 
-    LogEvent(L"8-ZipShellExtension :: Initialize...");
+    // LogEvent(L"8-ZipSE :: Initialize...");
 
     FORMATETC fmt = { CF_HDROP, NULL, DVASPECT_CONTENT, -1, TYMED_HGLOBAL };
     STGMEDIUM stg = {};
@@ -340,7 +485,7 @@ HRESULT ShellExtension::Initialize( LPCITEMIDLIST pidlFolder,
     // 🧩 Step 2 — Classify selection
     _d->classifySelection();
 
-    LogEvent(L"8-ZipShellExtension :: [Ok] Initialize.");
+    // LogEvent(L"8-ZipSE :: [Ok] Initialize.");
 
     return S_OK;
 }
@@ -360,8 +505,6 @@ You implement IContextMenu::QueryContextMenu.
     mixed .tar + .zst
 */
 
-
-
 HRESULT ShellExtension::QueryContextMenu(
     HMENU hMenu,
     UINT indexMenu,
@@ -369,11 +512,11 @@ HRESULT ShellExtension::QueryContextMenu(
     UINT idCmdLast,
     UINT uFlags)
 {
-    LogEvent(L"8-ZipShellExtension :: Try QueryContextMenu...");
+    // LogEvent(L"8-ZipShellExtension :: Try QueryContextMenu...");
 
     if (uFlags & CMF_DEFAULTONLY)
     {
-        LogEvent(L"8-ZipShellExtension :: !(uFlags & CMF_DEFAULTONLY).");
+        // LogEvent(L"8-ZipShellExtension :: !(uFlags & CMF_DEFAULTONLY).");
         return MAKE_HRESULT(SEVERITY_SUCCESS, 0, 0);
     }
 
@@ -381,9 +524,15 @@ HRESULT ShellExtension::QueryContextMenu(
     _d->compressCmd = -1;
     _d->extractCmd = -1;
 
-    if (_d->hasFiles || _d->hasFolders)
+    if ((_d->numFiles > 0) || (_d->numDirs > 0))
     {
-        LogEvent(L"8-ZipShellExtension :: [I.] QueryContextMenu.");
+        // LogEvent(L"8-ZipShellExtension :: [I.] QueryContextMenu.");
+
+        std::wstring w = L"8-Zip Compress Files(";
+        w += std::to_wstring(_d->numFiles);
+        w += L") + Dirs(";
+        w += std::to_wstring(_d->numDirs);
+        w += L") ...";
 
         InsertMenuW(
             hMenu,
@@ -393,15 +542,29 @@ HRESULT ShellExtension::QueryContextMenu(
 #endif
             MF_BYPOSITION,
             id,
-            L"8-Zip Compress ShellExt I."
+            w.c_str()
         );
         _d->compressCmd = id - idCmdFirst;
         ++id;
     }
 
-    else if (_d->onlyTarOrZst)
+    if ((_d->num_tar + _d->num_zst) > 0)
     {
-        LogEvent(L"8-ZipShellExtension :: [II.] QueryContextMenu.");
+        // LogEvent(L"8-ZipShellExtension :: [II.] QueryContextMenu.");
+        std::wstring w = L"8-Zip Extract";
+        if (_d->num_tar > 0)
+        {
+            w += L" TAR(";
+            w += std::to_wstring(_d->num_tar);
+            w += L")";
+        }
+        if (_d->num_zst > 0)
+        {
+            w += L" ZST(";
+            w += std::to_wstring(_d->num_zst);
+            w += L")";
+        }
+        w += L") ...";
 
         InsertMenuW(
             hMenu,
@@ -411,13 +574,13 @@ HRESULT ShellExtension::QueryContextMenu(
 #endif
             MF_BYPOSITION,
             id,
-            L"8-Zip Extract ShellExt II."
+            w.c_str()
         );
         _d->extractCmd = id - idCmdFirst;
         ++id;
     }
 
-    LogEvent(L"8-ZipShellExtension :: [Ok] QueryContextMenu.");
+    // LogEvent(L"8-ZipShellExtension :: [Ok] QueryContextMenu.");
     return MAKE_HRESULT(SEVERITY_SUCCESS, 0, id - idCmdFirst);
 }
 
@@ -425,81 +588,40 @@ HRESULT ShellExtension::QueryContextMenu(
 
 HRESULT ShellExtension::InvokeCommand(LPCMINVOKECOMMANDINFO pCmdInfo)
 {
-    LogEvent(L"8-ZipShellExtension :: [Try] InvokeCommand.");
+    // LogEvent(L"8-ZipShellExtension :: [Try] InvokeCommand.");
 
     if (!pCmdInfo)
     {
-        LogEvent(L"8-ZipShellExtension :: [Error] InvokeCommand - !pCmdInfo.");
+        // LogEvent(L"8-ZipShellExtension :: [Error] InvokeCommand - !pCmdInfo.");
         return E_INVALIDARG; //  S_OK;
     }
 
     if (HIWORD(pCmdInfo->lpVerb))
     {
-        LogEvent(L"8-ZipShellExtension :: [Error] InvokeCommand - HIWORD(pCmdInfo->lpVerb).");
+        // LogEvent(L"8-ZipShellExtension :: [Error] InvokeCommand - HIWORD(pCmdInfo->lpVerb).");
         return E_FAIL;
     }
 
     int cmd = LOWORD(pCmdInfo->lpVerb);
     if (cmd == _d->compressCmd)
     {
-        LogEvent(L"8-ZipShellExtension :: [Ok] InvokeCommand -> Compress.");
+        // LogEvent(L"8-ZipShellExtension :: [Ok] InvokeCommand -> Compress.");
 
         _d->runCompressor();
         return S_OK;
     }
     else if (cmd == _d->extractCmd)
     {
-        LogEvent(L"8-ZipShellExtension :: [Ok] InvokeCommand -> Extract.");
+        // LogEvent(L"8-ZipShellExtension :: [Ok] InvokeCommand -> Extract.");
 
         _d->runExtractor();
         return S_OK;
     }
     else
     {
-        LogEvent(L"8-ZipShellExtension :: [Error] InvokeCommand - Invalid LOWORD(pCmdInfo->lpVerb).");
+        // LogEvent(L"8-ZipShellExtension :: [Error] InvokeCommand - Invalid LOWORD(pCmdInfo->lpVerb).");
         return E_FAIL;
     }
-/*
-    UINT id = LOWORD(pCmdInfo->lpVerb);
-    if (id != 0)
-        return E_FAIL;
-
-    // EIN Prozess, egal wie viele Dateien/Ordner
-
-    std::wstring args;
-    for (auto& s : _d->m_selectedItems) {
-        args += L" \"" + s + L"\"";
-    }
-
-    std::wstring cmd = L"\"" + exe + L"\"" + args;
-
-    ShellExecuteW(NULL, L"open", exe.c_str(), args.c_str(), NULL, SW_SHOW);
-
-    return S_OK;
-
-    // ======================================================
-
-    if (id == 0)
-    {
-        // Launch your external app asynchronously
-        STARTUPINFOW si = { sizeof(si) };
-        PROCESS_INFORMATION pi = {};
-
-        CreateProcessW(
-            L"C:\\Path\\To\\8ZipFM.exe",
-            NULL,
-            NULL, NULL, FALSE,
-            CREATE_NO_WINDOW,
-            NULL, NULL,
-            &si, &pi);
-
-        if (pi.hProcess) CloseHandle(pi.hProcess);
-        if (pi.hThread) CloseHandle(pi.hThread);
-
-        return S_OK;
-    }
-*/
-
 }
 
 HRESULT ShellExtension::GetCommandString(
@@ -510,134 +632,17 @@ HRESULT ShellExtension::GetCommandString(
     UINT cchMax )   // Buffergröße
 {
     //LogEvent(L"8-ZipShellExt :: GetCommandString()");
-    //lstrcpynA(pszName, "8‑Zip Compress/Exract HelpText", cchMax);
-    //return S_OK;
 
-        if (idCmd == _d->compressCmd)
-    {
-        if (uFlags & GCS_HELPTEXTA)
-        {
-            lstrcpynA(pszName, "Compress with 8-Zip", cchMax);
-            return S_OK;
-        }
-        if (uFlags & GCS_VERBA)
-        {
-            lstrcpynA(pszName, "8zip_compress", cchMax);
-            return S_OK;
-        }
-    }
+    // GCS_HELPTEXTA → Hilfetext in ANSI
+    // GCS_HELPTEXTW → Hilfetext in Unicode
+    // GCS_VERBA → Verb‑Name in ANSI
+    // GCS_VERBW → Verb‑Name in Unicode
 
-    if (idCmd == _d->extractCmd)
-    {
-        if (uFlags & GCS_HELPTEXTA)
-        {
-            lstrcpynA(pszName, "Extract archive with 8-Zip", cchMax);
-            return S_OK;
-        }
-        if (uFlags & GCS_VERBA)
-        {
-            lstrcpynA(pszName, "8zip_extract", cchMax);
-            return S_OK;
-        }
-    }
-
-    return E_INVALIDARG;
-}
-
-/*
-
-uFlags bestimmt, was du zurückgeben sollst:
-
-    GCS_HELPTEXTA → Hilfetext in ANSI
-    GCS_HELPTEXTW → Hilfetext in Unicode
-    GCS_VERBA → Verb‑Name in ANSI
-    GCS_VERBW → Verb‑Name in Unicode
-
-🎯 Minimal korrekte Implementierung
-
-HRESULT ShellExtension::GetCommandString(
-    UINT_PTR idCmd,
-    UINT uFlags,
-    UINT*,
-    LPSTR pszName,
-    UINT cchMax)
-{
-    // Explorer fragt fast nie, aber manche Programme tun es.
-    // Wir geben nur einen kurzen Hilfetext zurück.
-
-    if (uFlags & GCS_HELPTEXTA)
-    {
-        if (idCmd == _d->compressCmd)
-        {
-            lstrcpynA(pszName, "Compress with 8-Zip", cchMax);
-            return S_OK;
-        }
-        if (idCmd == _d->extractCmd)
-        {
-            lstrcpynA(pszName, "Extract with 8-Zip", cchMax);
-            return S_OK;
-        }
-    }
-
-    if (uFlags & GCS_HELPTEXTW)
-    {
-        if (idCmd == _d->compressCmd)
-        {
-            lstrcpynW((LPWSTR)pszName, L"Compress with 8-Zip", cchMax);
-            return S_OK;
-        }
-        if (idCmd == _d->extractCmd)
-        {
-            lstrcpynW((LPWSTR)pszName, L"Extract with 8-Zip", cchMax);
-            return S_OK;
-        }
-    }
-
-    // Verb-Strings (optional, aber minimal korrekt)
-    if (uFlags & GCS_VERBA)
-    {
-        if (idCmd == _d->compressCmd)
-        {
-            lstrcpynA(pszName, "8zip_compress", cchMax);
-            return S_OK;
-        }
-        if (idCmd == _d->extractCmd)
-        {
-            lstrcpynA(pszName, "8zip_extract", cchMax);
-            return S_OK;
-        }
-    }
-
-    if (uFlags & GCS_VERBW)
-    {
-        if (idCmd == _d->compressCmd)
-        {
-            lstrcpynW((LPWSTR)pszName, L"8zip_compress", cchMax);
-            return S_OK;
-        }
-        if (idCmd == _d->extractCmd)
-        {
-            lstrcpynW((LPWSTR)pszName, L"8zip_extract", cchMax);
-            return S_OK;
-        }
-    }
-
-    return E_INVALIDARG;
-}
-
-
-HRESULT ShellExtension::GetCommandString(
-    UINT_PTR idCmd,
-    UINT uFlags,
-    UINT*,
-    LPSTR pszName,
-    UINT cchMax)
-{
     if (idCmd == _d->compressCmd)
     {
         if (uFlags & GCS_HELPTEXTA)
         {
-            lstrcpynA(pszName, "Compress selected files with 8-Zip", cchMax);
+            lstrcpynA(pszName, "Compress with 8-Zip", cchMax);
             return S_OK;
         }
         if (uFlags & GCS_VERBA)
@@ -663,53 +668,6 @@ HRESULT ShellExtension::GetCommandString(
 
     return E_INVALIDARG;
 }
-
-Für Unicode:
-cpp
-
-if (uFlags & GCS_HELPTEXTW)
-{
-    lstrcpynW((LPWSTR)pszName, L"Compress selected files with 8-Zip", cchMax);
-}
-
-
-
-
-IFACEMETHODIMP ShellExtension::GetCommandString(
-    UINT_PTR idCmd,
-    UINT uFlags,
-    UINT* pwReserved,
-    LPSTR pszName,
-    UINT cchMax)
-{
-    if (!(uFlags & GCS_HELPTEXTA) && !(uFlags & GCS_HELPTEXTW))
-        return E_INVALIDARG;
-
-    const wchar_t* helpText = nullptr;
-
-    if (idCmd == (UINT_PTR)compressCmd)
-        helpText = L"Compress selected files/folders with 8-Zip";
-    else if (idCmd == (UINT_PTR)extractCmd)
-        helpText = L"Extract selected archives with 8-Zip";
-
-    if (!helpText)
-        return E_INVALIDARG;
-
-    if (uFlags & GCS_HELPTEXTW)
-    {
-        lstrcpynW((LPWSTR)pszName, helpText, cchMax);
-    }
-    else
-    {
-        // Convert to ANSI
-        WideCharToMultiByte(CP_ACP, 0, helpText, -1,
-                            pszName, cchMax, NULL, NULL);
-    }
-
-    return S_OK;
-}
-
-*/
 
 #ifdef USE_8ZIP_ICON
 
@@ -789,11 +747,11 @@ HRESULT ShellExtension::HandleMenuMsg2(
 // ---------------------------------------------------------
 HRESULT __stdcall DllGetClassObject(REFCLSID rclsid, REFIID riid, void** ppv)
 {
-    LogEvent(L"8-ZipShellExt :: [Try] DllGetClassObject()");
+    // LogEvent(L"8-ZipShellExt :: [Try] DllGetClassObject()");
 
     if (!ppv)
     {
-        LogEvent(L"8-ZipShellExt :: [Error] DllGetClassObject() :: !ppv");
+        // LogEvent(L"8-ZipShellExt :: [Error] DllGetClassObject() :: !ppv");
         return E_POINTER;
     }
 
@@ -803,26 +761,26 @@ HRESULT __stdcall DllGetClassObject(REFCLSID rclsid, REFIID riid, void** ppv)
 
     if (!IsEqualCLSID(rclsid, CLSID_8ZipShellExt))
     {
-        LogEvent(L"8-ZipShellExt :: [Error] DllGetClassObject() :: !IsEqualCLSID(rclsid, CLSID_8ZipShellExt)");
+        // LogEvent(L"8-ZipShellExt :: [Error] DllGetClassObject() :: !IsEqualCLSID(rclsid, CLSID_8ZipShellExt)");
         return CLASS_E_CLASSNOTAVAILABLE;
     }
 
     ClassFactory* factory = new(std::nothrow)ClassFactory();
     if (!factory)
     {
-        LogEvent(L"8-ZipShellExt :: [Error] DllGetClassObject() :: !ClassFactory");
+        // LogEvent(L"8-ZipShellExt :: [Error] DllGetClassObject() :: !ClassFactory");
         return E_OUTOFMEMORY;
     }
 
     HRESULT hr = factory->QueryInterface(riid, ppv);
     if (hr != ERROR_SUCCESS)
     {
-        LogEvent(L"8-ZipShellExt :: [Debug] DllGetClassObject() :: !QueryInterface");
+        // LogEvent(L"8-ZipShellExt :: [Debug] DllGetClassObject() :: !QueryInterface");
     }
 
     factory->Release();
 
-    LogEvent(L"8-ZipShellExt :: DllGetClassObject()");
+    // LogEvent(L"8-ZipShellExt :: DllGetClassObject()");
 
     return hr;
 }
@@ -832,7 +790,7 @@ HRESULT __stdcall DllGetClassObject(REFCLSID rclsid, REFIID riid, void** ppv)
 // ---------------------------------------------------------
 HRESULT __stdcall DllCanUnloadNow()
 {
-    LogEvent(L"8-ZipShellExt :: DllCanUnloadNow()");
+    // LogEvent(L"8-ZipShellExt :: DllCanUnloadNow()");
 
     return (g_cDllRef == 0) ? S_OK : S_FALSE;
 }
@@ -842,16 +800,16 @@ HRESULT __stdcall DllCanUnloadNow()
 // ---------------------------------------------------------
 HRESULT __stdcall DllRegisterServer()
 {
-    LogEvent(L"8-ZipShellExt :: DllRegisterServer()");
+    // LogEvent(L"8-ZipShellExt :: DllRegisterServer()");
 
     wchar_t dllPath[MAX_PATH];
     if (!GetModuleFileNameW(g_hInst, dllPath, MAX_PATH))
     {
-        LogEvent(L"8-ZipShellExt :: [Error] DllRegisterServer :: !dllPath");
+        // LogEvent(L"8-ZipShellExt :: [Error] DllRegisterServer :: !dllPath");
         return E_FAIL;
     }
 
-    // CLSID\InprocServer32
+    // L"Software\\Classes\\CLSID\\{CLSID_STR}\\InprocServer32"
     std::wstring base = L"Software\\Classes\\CLSID\\";
     base += CLSID_STR;
     base += L"\\InprocServer32";
@@ -873,11 +831,11 @@ HRESULT __stdcall DllRegisterServer()
 
     if (hr != ERROR_SUCCESS)
     {
-        LogEvent(L"8-ZipShellExt :: [Error] InprocServer32");
+        LogEvent(L"8-ZipSE :: [Error] Create RegKey InprocServer32");
         return E_FAIL;
     }
 
-    LogEvent(L"8-ZipShellExt :: [Ok] InprocServer32");
+    // LogEvent(L"8-ZipShellExt :: [Ok] InprocServer32");
 
     RegSetValueExW(
         hKey,
@@ -898,7 +856,7 @@ HRESULT __stdcall DllRegisterServer()
 
     RegCloseKey(hKey);
 
-    LogEvent(L"8-ZipShellExt :: [Ok] ThreadingModel = Apartment");
+    // LogEvent(L"8-ZipShellExt :: [Ok] ThreadingModel = Apartment");
 
     // ContextMenuHandlers für Dateien
     hr = RegCreateKeyExW(
@@ -912,7 +870,13 @@ HRESULT __stdcall DllRegisterServer()
         &hKey,
         NULL);
 
-    RegSetValueExW(
+    if (hr != ERROR_SUCCESS)
+    {
+        LogEvent(L"8-ZipSE :: [Error] Create RegKey {*}");
+        //return E_FAIL;
+    }
+
+    hr = RegSetValueExW(
         hKey,
         NULL,
         0,
@@ -920,9 +884,15 @@ HRESULT __stdcall DllRegisterServer()
         (BYTE*)CLSID_STR.c_str(),
         (DWORD)((CLSID_STR.size() + 1) * sizeof(wchar_t)));
 
+    if (hr != ERROR_SUCCESS)
+    {
+        LogEvent(L"8-ZipSE :: [Error] Set RegKey {*}");
+        // return E_FAIL;
+    }
+
     RegCloseKey(hKey);
 
-    LogEvent(L"8-ZipShellExt :: [Ok] Files (*)");
+    // LogEvent(L"8-ZipShellExt :: [Ok] Files (*)");
 
     // ContextMenuHandlers für Ordner
     hr = RegCreateKeyExW(
@@ -936,12 +906,25 @@ HRESULT __stdcall DllRegisterServer()
         &hKey,
         NULL);
 
-    RegSetValueExW(hKey, NULL, 0, REG_SZ,
+    if (hr != ERROR_SUCCESS)
+    {
+        LogEvent(L"8-ZipSE :: [Error] Create RegKey {Directory}");
+        // return E_FAIL;
+    }
+
+    hr = RegSetValueExW(hKey, NULL, 0, REG_SZ,
                    (BYTE*)CLSID_STR.c_str(),
                    (DWORD)((CLSID_STR.size() + 1) * sizeof(wchar_t)));
+
+    if (hr != ERROR_SUCCESS)
+    {
+        LogEvent(L"8-ZipSE :: [Error] Set RegKey {Directory}");
+        // return E_FAIL;
+    }
+
     RegCloseKey(hKey);
 
-    LogEvent(L"8-ZipShellExt :: [Ok] Directory.");
+    // LogEvent(L"8-ZipShellExt :: [Ok] Directory.");
 
     hr = RegCreateKeyExW(
         HKEY_LOCAL_MACHINE,
@@ -955,19 +938,32 @@ HRESULT __stdcall DllRegisterServer()
         NULL
     );
 
-    const wchar_t* desc = L"8-Zip Benni Shell Extension";
-    RegSetValueExW(
+    if (hr != ERROR_SUCCESS)
+    {
+        LogEvent(L"8-ZipSE :: [Error] Create RegKey {Approved}");
+        // return E_FAIL;
+    }
+
+    const std::wstring desc = L"8-Zip Benni Shell Extension";
+
+    hr = RegSetValueExW(
         hKey,
         CLSID_STR.c_str(),
         0,
         REG_SZ,
-        (BYTE*)desc,
-        (DWORD)((wcslen(desc) + 1) * sizeof(wchar_t))
+        (BYTE*)desc.c_str(),
+        (DWORD)((desc.size() + 1) * sizeof(wchar_t))
     );
+
+    if (hr != ERROR_SUCCESS)
+    {
+        LogEvent(L"8-ZipSE :: [Error] Set RegKey {Approved}");
+        // return E_FAIL;
+    }
 
     RegCloseKey(hKey);
 
-    LogEvent(L"8-ZipShellExt :: [Ok] Approved.");
+    // LogEvent(L"8-ZipShellExt :: [Ok] Approved.");
 
     return S_OK;
 }
@@ -977,16 +973,14 @@ HRESULT __stdcall DllRegisterServer()
 // ---------------------------------------------------------
 HRESULT __stdcall DllUnregisterServer()
 {
-    std::wstring base = L"Software\\Classes\\CLSID\\";
-    base += CLSID_STR;
-
-    RegDeleteTreeW(HKEY_LOCAL_MACHINE, base.c_str());
+    RegDeleteTreeW(HKEY_LOCAL_MACHINE,
+        (std::wstring(L"Software\\Classes\\CLSID\\") + CLSID_STR).c_str());
     RegDeleteTreeW(HKEY_LOCAL_MACHINE,
         L"Software\\Classes\\*\\shellex\\ContextMenuHandlers\\8-Zip");
     RegDeleteTreeW(HKEY_LOCAL_MACHINE,
         L"Software\\Classes\\Directory\\shellex\\ContextMenuHandlers\\8-Zip");
 
-    LogEvent(L"8-ZipShellExt :: [Ok] DllUnregisterServer()");
+    // LogEvent(L"8-ZipSE :: [Ok] DllUnregisterServer()");
 
     return S_OK;
 }

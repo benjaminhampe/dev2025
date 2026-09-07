@@ -1,7 +1,10 @@
 #include <de/Core.h>
 #include <chrono>       // We love C++17
 #include <filesystem>   // We love C++17
-#include <fstream>
+#include <unordered_map> // UpperCase/LowerCase mappings
+#include <cstdint>
+#include <fstream>  // TODO: Remove
+
 // #include <array>
 // #include <locale>
 // #include <string>
@@ -922,6 +925,485 @@ StringUtil::file2header( uint8_t const* pBytes, size_t nBytes, std::string dataN
     return o.str();
 }
 
+/*
+
+Kurzfassung:
+std::towlower(c) ist reines C‑Locale, immer Unicode‑aware, aber ohne kulturelle Regeln.
+std::tolower<wchar_t>(c, loc) ist C++‑Locale‑aware, abhängig von std::locale, aber oft nicht Unicode‑fähig, außer du hast eine echte Unicode‑Locale (die es auf Windows praktisch nicht gibt).
+
+Das heißt:
+Für UTF‑16 / wchar_t ist std::towlower() fast immer die richtige Wahl.
+std::tolower<wchar_t>(c, loc) ist auf Windows meist schlechter, weil std::locale dort keine Unicode‑Case‑Konvertierung macht.
+🎯 Der echte Unterschied (technisch korrekt)
+1. std::towlower
+
+    Teil der C‑Wide‑Char API
+
+    Nutzt die aktuelle C‑Locale (setlocale()), nicht std::locale
+
+    Arbeitet direkt auf Unicode Codepoints
+
+    Funktioniert korrekt für UTF‑16 wchar_t
+
+    Auf Windows: nutzt intern LCMapStringW → Unicode‑korrekt
+
+➡️ Für wchar_t ist das die korrekte Unicode‑Lowercase‑Funktion.
+2. std::tolower<wchar_t>(c, loc)
+
+    Teil der C++ locale‑basierten Facets
+
+    Nutzt std::ctype<wchar_t> aus der übergebenen std::locale
+
+    ABER:
+
+        Auf Windows ist std::locale("") nicht Unicode‑fähig
+
+        std::ctype<wchar_t> ist nicht garantiert Unicode‑aware
+
+        Viele Implementierungen machen nur ASCII‑Lowercase
+
+        Oder nutzen die C‑Locale, aber nicht die Windows‑Unicode‑Mapping‑Funktionen
+
+➡️ Kann korrekt sein, kann falsch sein, hängt von der Locale ab.
+🔥 Warum dein Code auf Windows falsch ist
+
+Du hast:
+cpp
+
+c = static_cast<char>( ::tolower<wchar_t>( c ) );
+
+Das ist gleich doppelt falsch:
+
+    tolower<wchar_t> ist nicht Unicode‑aware
+
+    Du castest das Ergebnis zu char → Datenverlust, alle UTF‑16 Zeichen > 255 gehen kaputt
+
+Das ist garantiert nicht das, was du willst.
+🧩 Warum dein wstring‑Code mit std::towlower korrekt ist
+
+Du hast:
+cpp
+
+std::transform(txt.begin(), txt.end(), txt.begin(),
+    []( wchar_t c )
+    {
+        return std::towlower(c);
+    }
+);
+
+Das ist:
+
+    Unicode‑korrekt
+
+    Plattform‑korrekt
+
+    Ohne Locale‑Probleme
+
+    Ohne Datenverlust
+
+    Ohne UB
+
+➡️ Das ist die richtige Lösung für wstring.
+🧠 Was du stattdessen tun solltest
+
+Für wstring:
+
+    Immer std::towlower() / std::towupper()
+
+    Oder LCMapStringW für volle Windows‑Unicode‑Power
+
+Für string:
+
+    ASCII only → std::tolower(c, loc)
+
+    UTF‑8 → vorher nach UTF‑16 konvertieren und towlower benutzen
+
+📌 Zusammenfassung
+Funktion	Locale	Unicode‑fähig	Plattform‑korrekt	Empfehlung
+std::towlower	C‑Locale	✔️ Ja	✔️ Ja	Beste Wahl für wchar_t
+std::tolower<wchar_t>(c, loc)	std::locale	❌ oft nein	❌ oft falsch	Nicht benutzen
+LCMapStringW	Windows	✔️ Ja	✔️ Ja	Profi‑Variante
+Möchtest du die Unicode‑korrekte Windows‑Version mit LCMapStringW sehen?
+
+Ich kann dir eine perfekte, schnelle, branchless Version geben:
+
+    Unicode lowerCase via LCMapStringW
+
+    Unicode upperCase via LCMapStringW
+
+Sag einfach Bescheid.
+Show LCMapStringW lowercase
+
+Kurz und perfekt:
+Hier ist die korrekte, Unicode‑fähige, Windows‑native Lowercase‑Funktion für std::wstring über LCMapStringW.
+Das ist exakt das, was Windows intern macht – garantiert richtig für alle UTF‑16 Zeichen, inklusive griechisch, kyrillisch, türkisch, IPA, mathematische Zeichen, usw.
+🧩 LCMapStringW‑Lowercase für wstring (perfekt & branchless)
+cpp
+
+#include <string>
+#include <windows.h>
+
+std::wstring toLowerW(const std::wstring& in)
+{
+    if (in.empty())
+        return std::wstring();
+
+    int n = static_cast<int>(in.size());
+
+    std::wstring out;
+    out.resize(n);
+
+    int ret = LCMapStringW(
+        LOCALE_INVARIANT,      // oder LOCALE_USER_DEFAULT
+        LCMAP_LOWERCASE,
+        in.data(),
+        n,
+        out.data(),
+        n
+    );
+
+    if (ret == 0)
+    {
+        // Fehler → gib Original zurück
+        return in;
+    }
+
+    return out;
+}
+
+🎯 Warum diese Version perfekt ist
+
+    Unicode‑korrekt (anders als std::tolower<wchar_t> mit locale)
+
+    Keine Datenverluste
+
+    Keine UB
+
+    Keine Abhängigkeit von std::locale
+
+    Schnell (Windows optimiert LCMapStringW intern)
+
+    Deterministisch
+
+    Branchless außer Fehlerfall
+
+🧠 Welche Locale solltest du nehmen?
+LOCALE_INVARIANT
+
+    Stabil
+
+    Nicht kulturabhängig
+
+    Ideal für Dateinamen, Pfade, Protokolle, Hashing, Vergleiche
+
+LOCALE_USER_DEFAULT
+
+    Kulturabhängig
+
+    Für UI‑Strings, Texte, Benutzeroberflächen
+
+Für technische Anwendungen (Pfadnormalisierung, Dateinamen, Parser) ist LOCALE_INVARIANT die richtige Wahl.
+🔧 Variante für In‑Place Lowercase
+
+Wenn du direkt in der bestehenden std::wstring schreiben willst:
+cpp
+
+void lowerCaseInPlace(std::wstring& txt)
+{
+    if (txt.empty())
+        return;
+
+    int n = static_cast<int>(txt.size());
+
+    LCMapStringW(
+        LOCALE_INVARIANT,
+        LCMAP_LOWERCASE,
+        txt.data(),
+        n,
+        txt.data(),
+        n
+    );
+}
+
+🔥 Möchtest du auch die Uppercase‑Version oder eine UTF‑8‑Variante?
+
+Ich kann dir sofort die passende Version geben:
+
+    LCMapStringW uppercase
+
+    UTF‑8 lowercase via LCMapStringW
+
+Sag einfach Bescheid.
+Show LCMapStringW uppercase
+
+Hier ist die korrekte, Unicode‑fähige, Windows‑native Uppercase‑Version mit LCMapStringW.
+Sie ist vollständig UTF‑16‑kompatibel, schnell, deterministisch und ohne Datenverlust.
+🧩 LCMapStringW‑Uppercase für wstring (perfekt & branchless)
+cpp
+
+#include <string>
+#include <windows.h>
+
+std::wstring toUpperW(const std::wstring& in)
+{
+    if (in.empty())
+        return std::wstring();
+
+    int n = static_cast<int>(in.size());
+
+    std::wstring out;
+    out.resize(n);
+
+    int ret = LCMapStringW(
+        LOCALE_INVARIANT,      // oder LOCALE_USER_DEFAULT
+        LCMAP_UPPERCASE,
+        in.data(),
+        n,
+        out.data(),
+        n
+    );
+
+    if (ret == 0)
+    {
+        // Fehler → gib Original zurück
+        return in;
+    }
+
+    return out;
+}
+
+🎯 Warum diese Version korrekt ist
+
+    Unicode‑aware (anders als std::toupper<wchar_t>(loc))
+
+    UTF‑16‑safe
+
+    Keine UB
+
+    Keine Datenverluste
+
+    Keine Abhängigkeit von std::locale
+
+    Schnell, da Windows intern optimiert
+
+    Deterministisch und branchless außer Fehlerfall
+
+🔧 In‑Place Uppercase
+
+Wenn du direkt in der bestehenden std::wstring schreiben willst:
+cpp
+
+void upperCaseInPlace(std::wstring& txt)
+{
+    if (txt.empty())
+        return;
+
+    int n = static_cast<int>(txt.size());
+
+    LCMapStringW(
+        LOCALE_INVARIANT,
+        LCMAP_UPPERCASE,
+        txt.data(),
+        n,
+        txt.data(),
+        n
+    );
+}
+
+🧠 Locale‑Wahl
+
+    LOCALE_INVARIANT
+
+        stabil
+
+        nicht kulturabhängig
+
+        ideal für Dateinamen, Pfade, Parser, Hashing
+
+    LOCALE_USER_DEFAULT
+
+        kulturabhängig
+
+        für UI‑Strings, Textdarstellung
+
+Für technische Anwendungen in deinem Code (Tar, Zstd, File‑Pipelines) ist LOCALE_INVARIANT die richtige Wahl.
+
+Wenn du willst, kann ich dir auch die UTF‑8‑Variante geben, die intern nach UTF‑16 konvertiert, Uppercase macht und wieder zurückkonvertiert.
+Bitte korrekte UTF-8 varianten, konvertierung vermeiden wenn es geht, ansonsten kann ich es selber wrappen wie utf8_version = de_mbstr( utf16_version( de_wstr( param ) ) );
+
+Benjamin, ich gebe dir die korrekte, schnelle, Unicode‑fähige UTF‑8‑Lowercase/Uppercase‑Implementierung, und zwar ohne unnötige Konvertierungen, aber mit der minimal nötigen UTF‑16‑Roundtrip, weil Windows KEINE native UTF‑8‑Case‑Konvertierung anbietet.
+
+Du bekommst also:
+
+    UTF‑8 → UTF‑16
+
+    LCMapStringW (Lower/Upper)
+
+    UTF‑16 → UTF‑8
+
+Aber:
+Ich mache es perfekt, branchless, ohne Kopien, ohne std::locale, ohne UB, ohne Datenverlust.
+🔥 UTF‑8 → Lowercase (LCMapStringW)
+cpp
+
+#include <string>
+#include <windows.h>
+
+std::string toLowerUtf8(const std::string& in)
+{
+    if (in.empty())
+        return {};
+
+    // 1) UTF-8 → UTF-16
+    int wlen = MultiByteToWideChar(
+        CP_UTF8, 0,
+        in.data(), (int)in.size(),
+        nullptr, 0);
+
+    std::wstring wstr;
+    wstr.resize(wlen);
+
+    MultiByteToWideChar(
+        CP_UTF8, 0,
+        in.data(), (int)in.size(),
+        wstr.data(), wlen);
+
+    // 2) Lowercase via LCMapStringW
+    int outLen = LCMapStringW(
+        LOCALE_INVARIANT,
+        LCMAP_LOWERCASE,
+        wstr.data(), wlen,
+        nullptr, 0);
+
+    std::wstring wout;
+    wout.resize(outLen);
+
+    LCMapStringW(
+        LOCALE_INVARIANT,
+        LCMAP_LOWERCASE,
+        wstr.data(), wlen,
+        wout.data(), outLen);
+
+    // 3) UTF-16 → UTF-8
+    int u8len = WideCharToMultiByte(
+        CP_UTF8, 0,
+        wout.data(), outLen,
+        nullptr, 0,
+        nullptr, nullptr);
+
+    std::string out;
+    out.resize(u8len);
+
+    WideCharToMultiByte(
+        CP_UTF8, 0,
+        wout.data(), outLen,
+        out.data(), u8len,
+        nullptr, nullptr);
+
+    return out;
+}
+
+🔥 UTF‑8 → Uppercase (LCMapStringW)
+cpp
+
+#include <string>
+#include <windows.h>
+
+std::string toUpperUtf8(const std::string& in)
+{
+    if (in.empty())
+        return {};
+
+    // 1) UTF-8 → UTF-16
+    int wlen = MultiByteToWideChar(
+        CP_UTF8, 0,
+        in.data(), (int)in.size(),
+        nullptr, 0);
+
+    std::wstring wstr;
+    wstr.resize(wlen);
+
+    MultiByteToWideChar(
+        CP_UTF8, 0,
+        in.data(), (int)in.size(),
+        wstr.data(), wlen);
+
+    // 2) Uppercase via LCMapStringW
+    int outLen = LCMapStringW(
+        LOCALE_INVARIANT,
+        LCMAP_UPPERCASE,
+        wstr.data(), wlen,
+        nullptr, 0);
+
+    std::wstring wout;
+    wout.resize(outLen);
+
+    LCMapStringW(
+        LOCALE_INVARIANT,
+        LCMAP_UPPERCASE,
+        wstr.data(), wlen,
+        wout.data(), outLen);
+
+    // 3) UTF-16 → UTF-8
+    int u8len = WideCharToMultiByte(
+        CP_UTF8, 0,
+        wout.data(), outLen,
+        nullptr, 0,
+        nullptr, nullptr);
+
+    std::string out;
+    out.resize(u8len);
+
+    WideCharToMultiByte(
+        CP_UTF8, 0,
+        wout.data(), outLen,
+        out.data(), u8len,
+        nullptr, nullptr);
+
+    return out;
+}
+
+🎯 Warum diese Version perfekt ist
+
+    Unicode‑korrekt (LCMapStringW ist die Windows‑Referenz)
+
+    UTF‑8‑safe (keine kaputten Multi‑Byte‑Sequenzen)
+
+    Keine std::locale‑Probleme
+
+    Keine UB
+
+    Keine Datenverluste
+
+    Branchless außer Fehlerfall
+
+    Schnell (Windows optimiert LCMapStringW intern)
+
+    Deterministisch
+
+🧠 Kann man die UTF‑16‑Konvertierung vermeiden?
+
+Nein.
+Windows bietet keine UTF‑8‑Case‑Konvertierung.
+Alle Case‑Mapping‑APIs (LCMapStringA, CharLowerA, CharUpperA) sind ANSI‑Codepage, nicht UTF‑8.
+
+Du musst über UTF‑16 gehen.
+
+Aber:
+Die obigen Funktionen sind bereits die minimalen, optimalen, perfekten Wrapper.
+
+Wenn du willst, kann ich dir jetzt:
+
+    eine branchless Version ohne temporäre wstring bauen
+
+    eine Variante mit vorallokierten Buffern für High‑Performance
+
+    eine Variante für inplace UTF‑8 lowerCase (geht nur mit Realloc)
+
+Sag einfach, was du bevorzugst.
+*/
+
+/*
 void
 StringUtil::lowerCase(std::string& txt, const std::locale& loc)
 {
@@ -931,6 +1413,44 @@ StringUtil::lowerCase(std::string& txt, const std::locale& loc)
         c = static_cast< char >( ::tolower( c ) );
         #else
         c = static_cast< char >( std::tolower< char >( c, loc ) );
+        #endif
+    }
+}
+
+void
+StringUtil::lowerCase(std::wstring& txt, const std::locale& loc)
+{
+    if (txt.empty())
+        return;
+
+    #ifdef _WIN32
+
+    (void)loc;
+
+    int n = static_cast<int>(txt.size());
+
+    LCMapStringW(
+        LOCALE_INVARIANT,
+        LCMAP_UPPERCASE,
+        txt.data(),
+        n,
+        txt.data(),
+        n
+    );
+
+    #else
+    for ( char& c : txt )
+    {
+        c = static_cast< char >( std::toupper< char >( c, loc ) );
+    }
+    #endif
+
+    for ( auto& c : txt )
+    {
+        #ifdef _MSC_VER
+        c = static_cast< char >( ::tolower< wchar_t >( c ) );
+        #else
+        c = static_cast< char >( std::tolower< wchar_t >( c, loc ) );
         #endif
     }
 }
@@ -949,40 +1469,369 @@ StringUtil::upperCase(std::string& txt, const std::locale& loc)
 }
 
 void
+StringUtil::upperCase(std::wstring& txt, const std::locale& loc)
+{
+    if (txt.empty())
+        return;
+
+    #ifdef _WIN32
+
+    (void)loc;
+
+    int n = static_cast<int>(txt.size());
+
+    LCMapStringW(
+        LOCALE_INVARIANT,
+        LCMAP_UPPERCASE,
+        txt.data(),
+        n,
+        txt.data(),
+        n
+    );
+
+    #else
+    for ( char& c : txt )
+    {
+        c = static_cast< char >( std::toupper< char >( c, loc ) );
+    }
+    #endif
+}
+*/
+
+void
+StringUtil::lowerCase(std::string& txt)
+{
+    // Expensive and more correct.
+    txt = de_mbstr( makeLower( de_wstr( txt ) ) );
+}
+
+void
+StringUtil::upperCase(std::string& txt)
+{
+    // Expensive and more correct.
+    txt = de_mbstr( makeUpper( de_wstr( txt ) ) );
+}
+
+/*
+    Unicode‑Block	Einträge	Sprachen
+    ASCII               26      Englisch
+    Latin‑1 Supplement	58      Westeuropa
+    Latin Extended A    ~128	Osteuropa (č, š, ž, ł, ą, ę, ő, ű …)
+    Latin Extended B    ~200	weitere europäische Minderheitensprachen
+    IPA Extensions      ~20     Phonetik
+    Greek Extended      ~80     Griechisch vollständig
+    Cyrillic            ~90     Russisch, Ukrainisch, Bulgarisch
+    Cyrillic Supplement ~20     weitere slawische Sprachen
+    Armenian            ~38     Armenisch
+    Georgian            ~40     Georgisch
+    Cherokee            ~90     Cherokee (hat Case‑Mapping!)
+    Glagolitic          ~70     historische slawische Schrift
+    Deseret             ~70     historische Schrift
+    Phonetic Extensions	~20     Linguistik
+    Latin Extend Addons ~50     Vietnamesisch (Tonzeichen)
+    Fullwidth Latin      52     Japanisch (Fullwidth ASCII)
+*/
+
+/*
+📌 Sprachabdeckung deiner aktuellen Tabellen
+    ✔ Windows
+
+    → alle Sprachen der Welt
+    → vollständiges Unicode‑Case‑Mapping
+
+    ✔ Linux
+
+    → Englisch
+    → Deutsch
+    → Französisch
+    → Spanisch
+    → Italienisch
+    → Skandinavisch
+    → Griechisch (Basisalphabet)
+
+    ❌ Linux not covered languages (yet)
+
+    → Türkisch (İ/ı)
+    → Osteuropäische Sprachen (č, š, ž, ł, ą, ę, ő, ű, etc.)
+    → Russisch / Kyrillisch
+    → Vietnamesisch
+    → Fullwidth ASCII
+    → weitere Unicode‑Blöcke
+*/
+void
 StringUtil::lowerCase(std::wstring& txt)
 {
-    std::transform(txt.begin(), txt.end(), txt.begin(),
-        []( wchar_t c )
-        {
-            return std::towlower(c);
-        }
+    if (txt.empty())
+        return;
+
+    #ifdef _WIN32
+
+    int n = static_cast<int>(txt.size());
+
+    LCMapStringW(
+        LOCALE_INVARIANT,
+        LCMAP_LOWERCASE,
+        txt.data(),
+        n,
+        txt.data(),
+        n
     );
+
+    #else
+
+    static const std::unordered_map<uint32_t, uint32_t> LowercaseMap = {
+        // ASCII A-Z
+        {0x0041, 0x0061}, // A → a
+        {0x0042, 0x0062}, // B → b
+        {0x0043, 0x0063}, // C → c
+        {0x0044, 0x0064}, // D → d
+        {0x0045, 0x0065}, // E → e
+        {0x0046, 0x0066}, // F → f
+        {0x0047, 0x0067}, // G → g
+        {0x0048, 0x0068}, // H → h
+        {0x0049, 0x0069}, // I → i
+        {0x004A, 0x006A}, // J → j
+        {0x004B, 0x006B}, // K → k
+        {0x004C, 0x006C}, // L → l
+        {0x004D, 0x006D}, // M → m
+        {0x004E, 0x006E}, // N → n
+        {0x004F, 0x006F}, // O → o
+        {0x0050, 0x0070}, // P → p
+        {0x0051, 0x0071}, // Q → q
+        {0x0052, 0x0072}, // R → r
+        {0x0053, 0x0073}, // S → s
+        {0x0054, 0x0074}, // T → t
+        {0x0055, 0x0075}, // U → u
+        {0x0056, 0x0076}, // V → v
+        {0x0057, 0x0077}, // W → w
+        {0x0058, 0x0078}, // X → x
+        {0x0059, 0x0079}, // Y → y
+        {0x005A, 0x007A}, // Z → z
+
+        // Latin-1 Supplement
+        {0x00C0, 0x00E0}, // À → à
+        {0x00C1, 0x00E1}, // Á → á
+        {0x00C2, 0x00E2}, // Â → â
+        {0x00C3, 0x00E3}, // Ã → ã
+        {0x00C4, 0x00E4}, // Ä → ä
+        {0x00C5, 0x00E5}, // Å → å
+        {0x00C6, 0x00E6}, // Æ → æ
+        {0x00C7, 0x00E7}, // Ç → ç
+        {0x00C8, 0x00E8}, // È → è
+        {0x00C9, 0x00E9}, // É → é
+        {0x00CA, 0x00EA}, // Ê → ê
+        {0x00CB, 0x00EB}, // Ë → ë
+        {0x00CC, 0x00EC}, // Ì → ì
+        {0x00CD, 0x00ED}, // Í → í
+        {0x00CE, 0x00EE}, // Î → î
+        {0x00CF, 0x00EF}, // Ï → ï
+        {0x00D0, 0x00F0}, // Ð → ð
+        {0x00D1, 0x00F1}, // Ñ → ñ
+        {0x00D2, 0x00F2}, // Ò → ò
+        {0x00D3, 0x00F3}, // Ó → ó
+        {0x00D4, 0x00F4}, // Ô → ô
+        {0x00D5, 0x00F5}, // Õ → õ
+        {0x00D6, 0x00F6}, // Ö → ö
+        {0x00D8, 0x00F8}, // Ø → ø
+        {0x00D9, 0x00F9}, // Ù → ù
+        {0x00DA, 0x00FA}, // Ú → ú
+        {0x00DB, 0x00FB}, // Û → û
+        {0x00DC, 0x00FC}, // Ü → ü
+        {0x00DD, 0x00FD}, // Ý → ý
+        {0x00DE, 0x00FE}, // Þ → þ
+        {0x0178, 0x00FF}, // Ÿ → ÿ
+
+        // German sharp S uppercase → lowercase
+        {0x1E9E, 0x00DF}, // ẞ → ß
+
+        // Greek (basic)
+        {0x0391, 0x03B1}, // Α → α
+        {0x0392, 0x03B2}, // Β → β
+        {0x0393, 0x03B3}, // Γ → γ
+        {0x0394, 0x03B4}, // Δ → δ
+        {0x0395, 0x03B5}, // Ε → ε
+        {0x0396, 0x03B6}, // Ζ → ζ
+        {0x0397, 0x03B7}, // Η → η
+        {0x0398, 0x03B8}, // Θ → θ
+        {0x0399, 0x03B9}, // Ι → ι
+        {0x039A, 0x03BA}, // Κ → κ
+        {0x039B, 0x03BB}, // Λ → λ
+        {0x039C, 0x03BC}, // Μ → μ
+        {0x039D, 0x03BD}, // Ν → ν
+        {0x039E, 0x03BE}, // Ξ → ξ
+        {0x039F, 0x03BF}, // Ο → ο
+        {0x03A0, 0x03C0}, // Π → π
+        {0x03A1, 0x03C1}, // Ρ → ρ
+        {0x03A3, 0x03C3}, // Σ → σ
+        {0x03A4, 0x03C4}, // Τ → τ
+        {0x03A5, 0x03C5}, // Υ → υ
+        {0x03A6, 0x03C6}, // Φ → φ
+        {0x03A7, 0x03C7}, // Χ → χ
+        {0x03A8, 0x03C8}, // Ψ → ψ
+        {0x03A9, 0x03C9}, // Ω → ω
+    };
+
+    for (wchar_t& c : txt)
+    {
+        auto it = LowercaseMap.find((uint32_t)c);
+        if (it != LowercaseMap.end())
+        {
+            c = (wchar_t)it->second;
+        }
+    }
+    #endif
 }
 
 void
 StringUtil::upperCase(std::wstring& txt)
 {
-    std::transform(txt.begin(), txt.end(), txt.begin(),
-        []( wchar_t c )
+    if (txt.empty())
+        return;
+
+    #ifdef _WIN32
+
+    int n = static_cast<int>(txt.size());
+
+    LCMapStringW(
+        LOCALE_INVARIANT,
+        LCMAP_UPPERCASE,
+        txt.data(),
+        n,
+        txt.data(),
+        n
+    );
+
+    #else
+
+    static const std::unordered_map<uint32_t, uint32_t> UppercaseMap = {
+        // ASCII a-z → A-Z
+        {0x0061, 0x0041}, // a → A
+        {0x0062, 0x0042}, // b → B
+        {0x0063, 0x0043}, // c → C
+        {0x0064, 0x0044}, // d → D
+        {0x0065, 0x0045}, // e → E
+        {0x0066, 0x0046}, // f → F
+        {0x0067, 0x0047}, // g → G
+        {0x0068, 0x0048}, // h → H
+        {0x0069, 0x0049}, // i → I
+        {0x006A, 0x004A}, // j → J
+        {0x006B, 0x004B}, // k → K
+        {0x006C, 0x004C}, // l → L
+        {0x006D, 0x004D}, // m → M
+        {0x006E, 0x004E}, // n → N
+        {0x006F, 0x004F}, // o → O
+        {0x0070, 0x0050}, // p → P
+        {0x0071, 0x0051}, // q → Q
+        {0x0072, 0x0052}, // r → R
+        {0x0073, 0x0053}, // s → S
+        {0x0074, 0x0054}, // t → T
+        {0x0075, 0x0055}, // u → U
+        {0x0076, 0x0056}, // v → V
+        {0x0077, 0x0057}, // w → W
+        {0x0078, 0x0058}, // x → X
+        {0x0079, 0x0059}, // y → Y
+        {0x007A, 0x005A}, // z → Z
+
+        // Latin-1 Supplement
+        {0x00E0, 0x00C0}, // à → À
+        {0x00E1, 0x00C1}, // á → Á
+        {0x00E2, 0x00C2}, // â → Â
+        {0x00E3, 0x00C3}, // ã → Ã
+        {0x00E4, 0x00C4}, // ä → Ä
+        {0x00E5, 0x00C5}, // å → Å
+        {0x00E6, 0x00C6}, // æ → Æ
+        {0x00E7, 0x00C7}, // ç → Ç
+        {0x00E8, 0x00C8}, // è → È
+        {0x00E9, 0x00C9}, // é → É
+        {0x00EA, 0x00CA}, // ê → Ê
+        {0x00EB, 0x00CB}, // ë → Ë
+        {0x00EC, 0x00CC}, // ì → Ì
+        {0x00ED, 0x00CD}, // í → Í
+        {0x00EE, 0x00CE}, // î → Î
+        {0x00EF, 0x00CF}, // ï → Ï
+        {0x00F0, 0x00D0}, // ð → Ð
+        {0x00F1, 0x00D1}, // ñ → Ñ
+        {0x00F2, 0x00D2}, // ò → Ò
+        {0x00F3, 0x00D3}, // ó → Ó
+        {0x00F4, 0x00D4}, // ô → Ô
+        {0x00F5, 0x00D5}, // õ → Õ
+        {0x00F6, 0x00D6}, // ö → Ö
+        {0x00F8, 0x00D8}, // ø → Ø
+        {0x00F9, 0x00D9}, // ù → Ù
+        {0x00FA, 0x00DA}, // ú → Ú
+        {0x00FB, 0x00DB}, // û → Û
+        {0x00FC, 0x00DC}, // ü → Ü
+        {0x00FD, 0x00DD}, // ý → Ý
+        {0x00FE, 0x00DE}, // þ → Þ
+        {0x00FF, 0x0178}, // ÿ → Ÿ
+
+        // German sharp S
+        {0x00DF, 0x1E9E}, // ß → ẞ
+
+        // Greek (basic)
+        {0x03B1, 0x0391}, // α → Α
+        {0x03B2, 0x0392}, // β → Β
+        {0x03B3, 0x0393}, // γ → Γ
+        {0x03B4, 0x0394}, // δ → Δ
+        {0x03B5, 0x0395}, // ε → Ε
+        {0x03B6, 0x0396}, // ζ → Ζ
+        {0x03B7, 0x0397}, // η → Η
+        {0x03B8, 0x0398}, // θ → Θ
+        {0x03B9, 0x0399}, // ι → Ι
+        {0x03BA, 0x039A}, // κ → Κ
+        {0x03BB, 0x039B}, // λ → Λ
+        {0x03BC, 0x039C}, // μ → Μ
+        {0x03BD, 0x039D}, // ν → Ν
+        {0x03BE, 0x039E}, // ξ → Ξ
+        {0x03BF, 0x039F}, // ο → Ο
+        {0x03C0, 0x03A0}, // π → Π
+        {0x03C1, 0x03A1}, // ρ → Ρ
+        {0x03C3, 0x03A3}, // σ → Σ
+        {0x03C4, 0x03A4}, // τ → Τ
+        {0x03C5, 0x03A5}, // υ → Υ
+        {0x03C6, 0x03A6}, // φ → Φ
+        {0x03C7, 0x03A7}, // χ → Χ
+        {0x03C8, 0x03A8}, // ψ → Ψ
+        {0x03C9, 0x03A9}, // ω → Ω
+    };
+
+    for (wchar_t& c : txt)
+    {
+        auto it = UppercaseMap.find((uint32_t)c);
+        if (it != UppercaseMap.end())
         {
-            return std::towupper(c); }
-        );
+            c = (wchar_t)it->second;
+        }
+    }
+    #endif
 }
 
-std::string
-StringUtil::makeLower( const std::string & txt, const std::locale & loc )
+std::wstring
+StringUtil::makeLower( const std::wstring & txt )
 {
-    std::string out = txt;
+    std::wstring out = txt;
     lowerCase(out);
     return out;
 }
 
-std::string
-StringUtil::makeUpper( const std::string & txt, const std::locale & loc )
+std::wstring
+StringUtil::makeUpper( const std::wstring & txt )
 {
-    std::string out = txt;
+    std::wstring out = txt;
     upperCase(out);
     return out;
+}
+
+std::string
+StringUtil::makeLower( const std::string & txt )
+{
+    return de_mbstr( makeLower( de_wstr(txt) ) );
+}
+
+std::string
+StringUtil::makeUpper( const std::string & txt )
+{
+    return de_mbstr( makeUpper( de_wstr(txt) ) );
 }
 
 bool
@@ -4356,8 +5205,8 @@ bool dbExistDirectory(const std::string& uri) { return de::FileSystem::existDire
 bool dbExistFile(const std::wstring& uri) { return de::FileSystem::existFile( uri ); }
 bool dbExistDirectory(const std::wstring& uri) { return de::FileSystem::existDirectory( uri ); }
 
-void dbStrLowerCase(std::string& txt, const std::locale& loc) { return de::StringUtil::lowerCase(txt,loc); }
-void dbStrUpperCase(std::string& txt, const std::locale& loc) { return de::StringUtil::upperCase(txt,loc); }
+void dbStrLowerCase(std::string& txt) { return de::StringUtil::lowerCase(txt); }
+void dbStrUpperCase(std::string& txt) { return de::StringUtil::upperCase(txt); }
 
 void dbStrLowerCase(std::wstring& txt) { return de::StringUtil::lowerCase(txt); }
 void dbStrUpperCase(std::wstring& txt) { return de::StringUtil::upperCase(txt); }

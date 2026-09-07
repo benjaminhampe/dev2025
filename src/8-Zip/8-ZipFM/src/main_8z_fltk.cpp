@@ -4,6 +4,7 @@
 #include "8z_Worker.h"
 #include "8z_Install.h"
 #include "8z_ArgParser.h"
+#include <de/win32/win32_Set_Window_Icon.h>
 #include <de/win32/win32_LongPath.h>
 #include <gui/fltk_CustomFont.h>
 
@@ -15,23 +16,34 @@ const int h = 600;
 
 int main(int argc, char** argv)
 {
-    App::getInstance()->init(argc,argv);
+    if (!App::getInstance()->parseCommandLine(argc,argv))
+    {
+        return 0;
+    }
 
-    Job jobLyra;
-    bool okLyra = ArgParser::parseLyra(&jobLyra,argc,argv);
-    DE_OK("[Lyra ] ok(",okLyra,"), job(", jobLyra.str(),")")
+    EightZip_Registry_updateExePath();
 
-    Job job;
-    bool ok = ArgParser::parseBenni(&job,argc,argv);
-    DE_OK("[Benni] ok(",ok,"), job(", job.str(),")")
+    if (!EightZip_isInstalled())
+    {
+        DE_WARN("[Install] ShellExtension not installed, initiate...")
+        if (!EightZip_Install())
+        {
+            DE_ERROR("[Install] Failed.")
+        }
+        else
+        {
+            DE_OK("[Install] Ok.")
+        }
+    }
 
+    const auto& job = App::getInstance()->getJob();
     if (job.bUninstall)
     {
         EightZip_Uninstall();
     }
     else if (job.bInstall)
     {
-        EightZip_Install();
+        //EightZip_Install();
     }
     else if (job.bCompress || job.bExtract)
     {

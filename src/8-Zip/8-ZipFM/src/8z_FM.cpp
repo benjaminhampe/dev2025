@@ -1,9 +1,13 @@
 #include "8z_FM.h"
+#include "8z_Install.h"
 #include <FL/Fl_Native_File_Chooser.H>
-#include <de/win32/install_8-Zip.h>
+#include <FL/Fl_Menu_Bar.H>
+#include <gui/FM/FM.h>
+#include <gui/FM/DropList.h>
+// #include <de/win32/install_8-Zip.h>
 // #include <de/win32/win32_Load_Shell_Icon.h>
 // #include <de/archive/FileNames.h>
-#include <de/archive/tar_writer.h>
+// #include <de/archive/tar_writer.h>
 // #include <de/archive/tar_reader.h>
 // #include <de/archive/zstd_writer.h>
 // #include <de/archive/zstd_reader.h>
@@ -130,14 +134,16 @@ void compress_async()
     ui.bCancelFlag = false;
     std::string srcUri = ui.getSrcUri();
     std::string dstUri = ui.getDstUri();
+/*
+
 
     async_log_ok(dbStr("Compress Start: qualityPreset = ",ui.quality));
     async_progress(0);
 
-    FileNamesA fileNames;
-    collectFileNames(srcUri, fileNames);
+    FileInfos fileInfos;
+    collectFileNames(srcUri, fileInfos);
 
-    if (fileNames.empty())
+    if (fileInfos.empty())
     {
         async_log_error("No files: ");
         async_log_error(dbStr("Compress srcUri = ",srcUri));
@@ -147,7 +153,7 @@ void compress_async()
     }
 
     auto tarUri = dstUri+".tar";
-    if (!tar_writer(fileNames,tarUri))
+    if (!tar_writer(fileInfos,tarUri))
     {
         async_log_error("TAR failed: ");
         async_log_error(dbStr("srcUri = ",srcUri));
@@ -180,6 +186,7 @@ void compress_async()
     // async_log_ok(dbStr("Compress srcUri = ",srcUri));
     // async_log_ok(dbStr("Compress tarUri = ",tarUri));
     // async_log_ok(dbStr("Compress dstUri = ",dstUri));
+*/
     async_progress(100);
 }
 
@@ -309,8 +316,8 @@ void onMenuHelp_About(Fl_Widget*, void*)
     auto s = dbStr(
         "About dialog\n",
         "\n"
-        "IsAdmin = ", win32_is_admin(), "\n"
-        "IsInstalled = ", win32_8zip_is_installed(), "\n"
+        "IsAdmin = ", EightZip_isAdmin(), "\n"
+        "IsInstalled = ", EightZip_isInstalled(), "\n"
         "\n"
         "\n"
         "\n"
@@ -322,7 +329,7 @@ void onMenuHelp_About(Fl_Widget*, void*)
 }
 
 MainWindow::MainWindow(int W, int H, const char* title)
-    : Fl_Window(W, H, title)
+    : Window(W, H, title)
 {
     begin();
 
@@ -393,9 +400,11 @@ MainWindow::MainWindow(int W, int H, const char* title)
     ui.inList->dropList->onListChangeListeners.push_back(
         []() -> void
         {
-            const auto fileNames = ui.inList->dropList->getFileNamesA();
+            /*
+            const auto fileNames = ui.inList->dropList->getFileInfosA();
             const auto outName = computeBestOutputFileName(fileNames,"tar.zst");
             ui.outFile->edtUri->value(outName.c_str());
+            */
         });
     end();
 }

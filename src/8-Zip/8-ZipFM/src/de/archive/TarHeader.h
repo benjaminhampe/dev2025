@@ -1,7 +1,12 @@
 #pragma once
-#include <cstdint>
+#include <de/archive/FileInfo.h>
+
+// #include <ctime>
+// #include <string>
+// #include <filesystem>
+
 // ===========================================================================
-// TAR Header (exact 512 bytes)
+// 🔥 TAR Header (exact 512 bytes)
 // ===========================================================================
 // Modern POSIX = ustar,
 // GNU extensions possible, like magic == "ustar\0" + typeflag == 'L' -> LongPath
@@ -69,6 +74,8 @@
 
         POSIX fixed this by defining ustar.
 */
+
+// 🔥
 struct TarHeader
 {
     // File name (max 100 bytes)
@@ -399,156 +406,163 @@ That’s why GNU invented:
     Your struct is a ustar header.
     Every modern tar reader expects ustar.
     GNU extensions (LongLink, pax) sit on top of ustar.
-
-// ============================================================================
-//  GNU LongLink (store original Windows path)
-// ============================================================================
-
-static void tar_write_longlink(File& fs, const std::string& longname) {
-    TarHeader h{};
-    tar_build_header(h, "././@LongLink", 0644, 0, 0,
-                     (uint32_t)longname.size(), 0, 'L');
-
-    fs.write(&h, 512);
-
-    size_t full = longname.size() / 512;
-    size_t rem  = longname.size() % 512;
-
-    for (size_t i = 0; i < full; i++)
-        fs.write(longname.data() + i * 512, 512);
-
-    if (rem > 0) {
-        uint8_t buf[512] = {0};
-        std::memcpy(buf, longname.data() + full * 512, rem);
-        fs.write(buf, 512);
-    }
-}
-
-// ============================================================================
-//  WRITE FILE ENTRY (loads file into de::Blob INSIDE this function)
-// ============================================================================
-
-void tar_add_file(File& fs,
-                  const std::string& path)
-{
-    // Reject unsafe paths
-    if (!is_safe_path(path))
-        return;
-
-    // POSIX path for tar
-    std::string posix = normalize_to_posix(path);
-
-    // Load file into Blob
-    File in;
-    if (!in.open(path, eFileMode::Read))
-        return;
-
-    uint64_t size = in.size();
-    de::Blob blob(size);
-    in.read(blob.data(), size);
-    in.close();
-
-    // Collect attributes
-    uint32_t mode = 0644;
-    uint32_t uid = 0;
-    uint32_t gid = 0;
-    uint32_t mtime = (uint32_t)std::time(nullptr);
-
-#ifdef _WIN32
-    // Windows: use FILETIME
-    HANDLE h = CreateFileA(path.c_str(), GENERIC_READ,
-                           FILE_SHARE_READ, NULL, OPEN_EXISTING,
-                           FILE_ATTRIBUTE_NORMAL, NULL);
-    if (h != INVALID_HANDLE_VALUE) {
-        FILETIME ft;
-        if (GetFileTime(h, NULL, NULL, &ft)) {
-            ULARGE_INTEGER ui;
-            ui.LowPart = ft.dwLowDateTime;
-            ui.HighPart = ft.dwHighDateTime;
-            mtime = (uint32_t)((ui.QuadPart - 116444736000000000ULL) / 10000000ULL);
-        }
-        CloseHandle(h);
-    }
-#else
-    // Linux: use stat
-    struct stat st{};
-    if (stat(path.c_str(), &st) == 0) {
-        mode = st.st_mode & 07777;
-        uid = st.st_uid;
-        gid = st.st_gid;
-        mtime = (uint32_t)st.st_mtime;
-    }
-#endif
-
-    // Store original Windows path
-    tar_write_longlink(fs, path);
-
-    // Build header
-    TarHeader h;
-    tar_build_header(h, posix, mode, uid, gid,
-                     (uint32_t)blob.size(), mtime, '0');
-
-    fs.write(&h, 512);
-
-    // Write data
-    size_t full = blob.size() / 512;
-    size_t rem  = blob.size() % 512;
-
-    for (size_t i = 0; i < full; i++)
-        fs.write(blob.data() + i * 512, 512);
-
-    if (rem > 0) {
-        uint8_t buf[512] = {0};
-        std::memcpy(buf, blob.data() + full * 512, rem);
-        fs.write(buf, 512);
-    }
-}
-
-// ============================================================================
-//  BUILD ARCHIVE
-// ============================================================================
-
-bool tar_build_archive(const std::string& outTar,
-                       const std::vector<std::string>& fileNames)
-{
-    File fs;
-    if (!fs.open(outTar, eFileMode::Write))
-        return false;
-
-    for (const auto& p : fileNames)
-        tar_add_file(fs, p);
-
-    uint8_t zero[512] = {0};
-    fs.write(zero, 512);
-    fs.write(zero, 512);
-
-    fs.close();
-    return true;
-}
-
-// ============================================================================
-//  MAIN PROGRAM
-// ============================================================================
-
-int main(int argc, char** argv)
-{
-    if (argc < 3) {
-        std::printf("Usage: tarbuild <output.tar> <file1> <file2> ...\n");
-        return 1;
-    }
-
-    std::string outTar = argv[1];
-    std::vector<std::string> files;
-
-    for (int i = 2; i < argc; i++)
-        files.push_back(argv[i]);
-
-    if (!tar_build_archive(outTar, files)) {
-        std::printf("Failed to build archive\n");
-        return 1;
-    }
-
-    std::printf("Archive written: %s\n", outTar.c_str());
-    return 0;
-}
 */
+
+// 🔥
+struct TarUtil
+{
+    /*
+    🧩 Summary of behavior
+        Case                        Fits in field?  Output         Tar‑valid?
+        0                           ✔               padded zeros	✔
+        64                          ✔               padded octal	✔
+        493                         ✔               padded octal	✔
+        16777215 (max for 8‑byte)	✔               correct octal	✔
+        16777216 (overflow)         ✘               truncated       ✘ (should switch to base‑256)
+        68719476735 (max for 12‑byte)✔              correct octal	✔
+        68719476736 (overflow)      ✘               truncated       ✘
+
+    🧩 Examples 8-byte fields (7 octal digits + ' ' terminator)
+
+        tar_write_octal(0, dst, 8);         -> dst = "0000000 "
+        tar_write_octal(64, dst, 8);        -> dst = "0000100 "
+        tar_write_octal(493, dst, 8);       -> dst = "0000755 "
+        tar_write_octal(16777215, dst, 8);  -> dst = "77777777 "
+        tar_write_octal(16777216, dst, 8);  -> dst = "0000000 "
+
+    🧩 Examples 12‑byte fields (11 octal digits + ' ' terminator)
+
+        tar_write_octal(68719476735, dst, 12); -> dst = "777777777777 "
+        tar_write_octal(68719476736, dst, 12); -> dst = "000000000000 "
+
+    🧩 Want the correct base‑256 encoder too?
+
+        A drop‑in base‑256 encoder (GNU tar format)
+        Automatic fallback logic (octal → base‑256)
+        A full tar header builder (POSIX + GNU extensions)
+    */
+    static void tar_write_octal(uint64_t v, uint8_t* out, int len);
+
+    /*
+        read function matching write_tar_octal()
+        stops at first non‑octal (' ' terminator or '\0')
+        ignores leading zeros exactly like tar readers do
+        ------------------------------------------------------------
+        0 = tar_read_octal("0000000 ", 8);
+        64 = tar_read_octal("0000100 ", 8);
+        493 = tar_read_octal("0000755 ", 8);
+        16777215 = tar_read_octal("77777777 ", 8);
+        68719476735 = tar_read_octal("777777777777 ", 12);
+    */
+    static uint64_t tar_read_octal(const uint8_t* src, int len);
+
+
+    static void tar_mode_from_unixPerms(uint16_t perms, uint8_t out[8]);
+
+    static uint16_t tar_mode_to_unixPerms(const uint8_t in[8]);
+
+    // 5) Tar uname, Windows has no POSIX users → return constant
+
+    static const char* tar_uname();
+
+    // 6) Tar gname, Windows has no POSIX group → return constant
+
+    static const char* tar_gname();
+
+    // 7) Tar uid, Windows has no POSIX uid → return 0
+
+    static uint32_t tar_uid();
+
+    // 8) Tar gid, Windows has no POSIX gid → return 0
+
+    static uint32_t tar_gid();
+
+    // 9) Tar linkname, Windows symlink target (only if reparse point)
+
+    // static std::string tar_linkname(uint32_t attrs, const std::wstring& fullPath);
+
+    static char tar_typeflag(const FileInfo& fileInfo);
+
+    // ============================================================================
+    //  ✔️ CHECKSUM (no magic offsets)
+    // ============================================================================
+
+    static void tar_compute_checksum(TarHeader& h);
+
+    /*
+    // 📦 Max = 077777777UL: 8^8 - 1 = 16,777,215 decimal
+    static void encode_octal_8(uint8_t (&dst)[8], uint32_t value);
+
+    // 📦 Max = 0777777777777ULL: 8^12 - 1 = 68,719,476,735 decimal
+    static void encode_octal_12(uint8_t (&dst)[12], uint64_t value);
+    */
+
+    static std::string dbStrRightmost(const std::string& s, size_t n);
+
+    static std::string makePosix(std::string s);
+
+    static std::string trimLeadingSlashes(std::string s);
+
+    static std::string makeRelative(std::string uri, std::string baseDir);
+
+    static std::string trimLeadingDotDotSlash(std::string s);
+
+    static std::string make_tar_path(std::string uri, std::string baseDir, std::string archiveBase);
+
+    //
+    /** 🔥
+     * param[in] uri Trimmed relative unix filename, only '/' and does not start with '/'.
+     * param[out] name Rightmost max. 100 bytes for the 'tar_name' field. (basename.suffix)
+     * param[out] prefix Rightmost max. 155 bytes for the 'tar_prefix' field. (directory without trailing '/')
+     * return bool bNeedLongLink.
+     */
+    static bool split_ustar_path(const std::string& uri, std::string& name, std::string& prefix);
+
+    // ============================================================================
+    // ✔️ HEADER BUILDER (no magic offsets)
+    // ============================================================================
+
+    static void tar_build_header(TarHeader& h,
+                    const std::string& name,
+                    const std::string& prefix,
+                    uint32_t mode,
+                    uint32_t uid,
+                    uint32_t gid,
+                    uint64_t size,
+                    uint64_t mtime,
+                    char typeflag);
+
+    // ============================================================================
+    //  GNU LongLink (store original Windows path)
+    // ============================================================================
+
+    // Param[out] out Buffer we write the headers to, should be >= 128KB.
+    static uint32_t tar_write_longlink(uint8_t* out, const std::string& longname);
+
+    /// param[in] fileInfo -> the
+    static uint32_t tar_build_header(uint8_t* out,
+                                     const FileInfo& fileInfo,
+                                     const std::string& baseDir,
+                                     const std::string& archiveBaseName);
+
+    /*
+    // 🔥 4) GNU LongName header builder (FOR LONG PATHS)
+
+    // This is the part you kept asking for.
+    // Here it is, complete, correct, ready to use.
+
+    static void build_gnu_longname(const std::string& fullPath, uint8_t out[512]);
+
+    // 🔥 5) GNU LongName payload block
+
+    static void build_gnu_longname_payload(const std::string& fullPath, uint8_t out[512]);
+
+    // 🔥 6) Main USTAR header builder (with longname fallback)
+
+    static void build_ustar_header(const FileInfo& fi, const std::string& relUri, uint8_t out[512]);
+
+    /// param[in] fileInfo -> the
+    static uint32_t tar_build_header2(uint8_t* out, const FileInfo& fileInfo, const std::string& baseDir);
+    */
+};
+

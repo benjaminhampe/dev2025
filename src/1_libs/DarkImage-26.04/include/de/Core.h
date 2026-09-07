@@ -456,29 +456,35 @@ struct StringUtil
     static std::vector< std::string >
     split( const std::string& txt, char searchChar, bool bKeepEmptyLines = false );
 
-    static std::string
-    makeLower( const std::string & txt, const std::locale & loc = std::locale() );
-
-    static std::string
-    makeUpper( const std::string & txt, const std::locale & loc = std::locale() );
-
-    // static void
-    // lowerCase( std::string & out, const std::locale & loc = std::locale() );
-
-    // static void
-    // upperCase( std::string & out, const std::locale & loc = std::locale() );
+    // Inplace:
 
     static void
-    lowerCase(std::string& txt, const std::locale& loc = std::locale());
-
-    static void
-    upperCase(std::string& txt, const std::locale& loc = std::locale());
+    lowerCase(std::string& txt);
 
     static void
     lowerCase(std::wstring& txt);
 
     static void
+    upperCase(std::string& txt);
+
+    static void
     upperCase(std::wstring& txt);
+
+    // Create new string:
+
+    static std::string
+    makeLower( const std::string & txt );
+
+    static std::wstring
+    makeLower( const std::wstring & txt );
+
+    static std::string
+    makeUpper( const std::string & txt );
+
+    static std::wstring
+    makeUpper( const std::wstring & txt );
+
+    // Find substrings:
 
     static bool
     startsWith( const std::string& str, const std::string& query );
@@ -503,6 +509,8 @@ struct StringUtil
 
     static bool
     endsWith( const std::wstring& str, wchar_t c );
+
+    // Combine:
 
     static std::string
     joinVector( std::vector< std::string > const & v, const std::string& prefix );
@@ -2369,8 +2377,8 @@ bool dbExistFile(const std::wstring& uri);
 bool dbExistDirectory(const std::string& uri);
 bool dbExistDirectory(const std::wstring& uri);
 // ========================================================================
-void dbStrLowerCase(std::string& txt, const std::locale& loc = std::locale());
-void dbStrUpperCase(std::string& txt, const std::locale& loc = std::locale());
+void dbStrLowerCase(std::string& txt);
+void dbStrUpperCase(std::string& txt);
 // ========================================================================
 void dbStrLowerCase(std::wstring& txt);
 void dbStrUpperCase(std::wstring& txt);

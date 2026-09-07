@@ -1,13 +1,12 @@
 #pragma once
-#include <gui/FM/FM.h>
-#include <FL/Fl_Window.H>
-#include <FL/Fl_Menu_Bar.H>
+#include <de/Core.h>
+#include <gui/Widgets.h>
 
 namespace EightZip {
 namespace FM {
 
 // =============================================================
-class MainWindow : public Fl_Window
+class MainWindow : public Window
 // =============================================================
 {
 public:
