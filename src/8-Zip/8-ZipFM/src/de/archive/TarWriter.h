@@ -1,12 +1,12 @@
 #pragma once
-#include <de/archive/FileInfo.h>
+#include <de/FileInfo.h>
 #include <de/archive/TarHeader.h>
 
 struct TarWriter
 {
     struct Cfg
     {
-        const FileInfos* fileInfos = nullptr;
+        const de::FileInfos* fileInfos = nullptr;
 
         std::string baseDir;
 
@@ -14,7 +14,7 @@ struct TarWriter
 
         //int32_t blockSize = 16 * 512; // Should be multiple of 512 bytes, makes tar things easier.
 
-        typedef std::function<void(const FileInfo& /* fileInfo */, uint32_t)> FN_onNextFile;
+        typedef std::function<void(const de::FileInfo& /* fileInfo */, uint32_t)> FN_onNextFile;
 
         FN_onNextFile onNextFile;
 

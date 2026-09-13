@@ -4,11 +4,12 @@
 #include "8z_Worker.h"
 #include "8z_Install.h"
 #include "8z_ArgParser.h"
+#include <de/win32/win32_Get_Explorer_Selection.h>
 #include <de/win32/win32_Set_Window_Icon.h>
 #include <de/win32/win32_LongPath.h>
 #include <gui/fltk_CustomFont.h>
 
-const std::string sTitle = dbStr("8-ZipFM | 2026 (c) by benjaminhampe@gmx.de");
+const std::string sTitle = dbStr("8-Zip | 2026 (c) by benjaminhampe@gmx.de");
 const int w = 600;
 const int h = 600;
 
@@ -16,6 +17,8 @@ const int h = 600;
 
 int main(int argc, char** argv)
 {
+    volatile AutoCoInitialize autoCOM;
+
     if (!App::getInstance()->parseCommandLine(argc,argv))
     {
         return 0;
@@ -23,27 +26,35 @@ int main(int argc, char** argv)
 
     EightZip_Registry_updateExePath();
 
-    if (!EightZip_isInstalled())
-    {
-        DE_WARN("[Install] ShellExtension not installed, initiate...")
-        if (!EightZip_Install())
-        {
-            DE_ERROR("[Install] Failed.")
-        }
-        else
-        {
-            DE_OK("[Install] Ok.")
-        }
-    }
+    // if (!EightZip_isInstalled())
+    // {
+    //     DE_WARN("[Install] ShellExtension not installed, initiate...")
+    //     if (!EightZip_Install())
+    //     {
+    //         DE_ERROR("[Install] Failed.")
+    //     }
+    //     else
+    //     {
+    //         DE_OK("[Install] Ok.")
+    //     }
+    // }
 
     const auto& job = App::getInstance()->getJob();
-    if (job.bUninstall)
+    if (job.bRestartExplorer)
+    {
+        EightZip_restartExplorer();
+    }
+    else if (job.bUpdate)
+    {
+        EightZip_Registry_updateExePath();
+    }
+    else if (job.bUninstall)
     {
         EightZip_Uninstall();
     }
     else if (job.bInstall)
     {
-        //EightZip_Install();
+        EightZip_Install();
     }
     else if (job.bCompress || job.bExtract)
     {
@@ -80,13 +91,15 @@ int main(int argc, char** argv)
         if (job.bCompress)
         {
             auto B = new EightZip::builder::Dialog(w, h, sTitle.c_str());
+            B->setJob(job);
             B->resizable(B);
             set_window_icon_from_resource(B);
             B->show();
 
             B->setCallback_onOk([&]()
                 {
-                    auto W = new EightZip::worker::Dialog(w, h, sTitle.c_str());
+                    Job dlgjob = B->getJob();
+                    auto W = new EightZip::worker::Dialog(dlgjob, w, h, sTitle.c_str());
                     W->resizable(W);
                     set_window_icon_from_resource(W);
                     W->show();
@@ -100,7 +113,7 @@ int main(int argc, char** argv)
         }
         else
         {
-            auto W = new EightZip::worker::Dialog(w, h, sTitle.c_str());
+            auto W = new EightZip::worker::Dialog(job, w, h, sTitle.c_str());
             W->resizable(W);
             set_window_icon_from_resource(W);
             W->show();

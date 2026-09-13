@@ -1,7 +1,8 @@
 #pragma once
 #include <FL/Fl_Hold_Browser.H>
 #include <FL/fl_draw.H>
-#include <de/archive/FileInfo.h>
+
+#include <de/ScanDirectory.h>
 #include <de/image/Image.h>
 #include <de/win32/win32_Load_Shell_Icon.h>
 
@@ -9,7 +10,7 @@ class DropList : public Fl_Browser
 {
 public:
     struct Row {
-        FileInfo fileInfo;
+        de::FileInfo fileInfo;
         std::shared_ptr<de::Image> ico;   // RAII-safe shared ownership
         float progress = 0.0f;
         int typ = 0;
@@ -17,9 +18,9 @@ public:
 
     std::vector<Row> rows;
 
-    FileInfos getFileInfosA() const
+    de::FileInfos getFileInfosA() const
     {
-        FileInfos fileInfos;
+        de::FileInfos fileInfos;
         fileInfos.reserve(rows.size());
 
         for (const auto& row : rows)
@@ -55,7 +56,7 @@ public:
             return;
         }
 
-        uri = FileInfoUtil::make_posix_path(uri);
+        uri = de::FileInfoUtil::make_posix_path(uri);
 
         if (uri.empty())
         {

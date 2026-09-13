@@ -25,6 +25,8 @@ public:
 
     Job getJob() const;
 
+    void setJob(Job job);
+
     Dialog(int W, int H, const char* title);
 
     void resize(int X, int Y, int W, int H) override;

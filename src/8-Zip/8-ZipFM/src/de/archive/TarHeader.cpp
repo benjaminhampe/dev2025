@@ -291,7 +291,7 @@ std::string TarUtil::tar_linkname(uint32_t attrs, const std::wstring& fullPath)
 */
 
 // static
-char TarUtil::tar_typeflag(const FileInfo& fileInfo)
+char TarUtil::tar_typeflag(const de::FileInfo& fileInfo)
 {
     return fileInfo.isDir() ? '5' : '0';
 }
@@ -629,7 +629,7 @@ TarUtil::tar_write_longlink(uint8_t* out, const std::string& longname)
 // static
 uint32_t
 TarUtil::tar_build_header(uint8_t* out,
-                 const FileInfo& fileInfo,
+                 const de::FileInfo& fileInfo,
                  const std::string& baseDir,
                  const std::string& archiveBaseName)
 {

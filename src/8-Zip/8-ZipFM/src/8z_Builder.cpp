@@ -1,6 +1,7 @@
 #include "8z_Builder.h"
 #include "8z_App.h"
 #include <gui/AB/Win11Combo.h>
+#include <gui/ComboBox.h>
 #include <de/archive/ZstHeader.h>
 
 namespace EightZip {
@@ -19,48 +20,50 @@ struct UI
     Win11Combo* edtArchive = nullptr;
     Fl_Button* btnChoose = nullptr;
 
+    Fl_Choice* choice;
+
     // Body Column[0]
     Fl_Box* lblFormat = nullptr;
-    Fl_Choice* cbxFormat = nullptr;
+    ComboBox* cbxFormat = nullptr;
 
     Fl_Box* lblPreset = nullptr;
-    Fl_Choice* cbxPreset = nullptr;
+    ComboBox* cbxPreset = nullptr;
 
     Fl_Box* lblAlgorithm = nullptr;
-    Fl_Choice* cbxAlgorithm = nullptr;
+    ComboBox* cbxAlgorithm = nullptr;
 
     Fl_Box* lblDictSize = nullptr;
-    Fl_Choice* cbxDictSize = nullptr;
+    ComboBox* cbxDictSize = nullptr;
 
     Fl_Box* lblWordSize = nullptr;
-    Fl_Choice* cbxWordSize = nullptr;
+    ComboBox* cbxWordSize = nullptr;
 
     Fl_Box* lblBlockSize = nullptr;
-    Fl_Choice* cbxBlockSize = nullptr;
+    ComboBox* cbxBlockSize = nullptr;
 
     Fl_Box* lblCpuThreads = nullptr;
-    Fl_Choice* cbxCpuThreads = nullptr;
+    ComboBox* cbxCpuThreads = nullptr;
 
     Fl_Box* lblCompressRamMax = nullptr;
-    Fl_Choice* cbxCompressRamMax = nullptr;
+    ComboBox* cbxCompressRamMax = nullptr;
 
     Fl_Box* lblExtractRamMax = nullptr;
-    Fl_Choice* cbxExtractRamMax = nullptr;
+    ComboBox* cbxExtractRamMax = nullptr;
 
     Fl_Box* lblSplitSize = nullptr;
-    Fl_Choice* cbxSplitSize = nullptr;
+    ComboBox* cbxSplitSize = nullptr;
 
     Fl_Box* lblParameter = nullptr;
-    Fl_Choice* cbxParameter = nullptr;
+    ComboBox* cbxParameter = nullptr;
 
     Fl_Button* btnOptions = nullptr;
 
     // Body Column[1]
     Fl_Box* lblUpdateType = nullptr;
-    Fl_Choice* cbxUpdateType = nullptr;
+    ComboBox* cbxUpdateType = nullptr;
 
     Fl_Box* lblDirStruct = nullptr;
-    Fl_Choice* cbxDirStruct = nullptr;
+    ComboBox* cbxDirStruct = nullptr;
 
     GroupBox* groupOpts = nullptr;
     // Fl_Box* groupOpts = nullptr;
@@ -76,7 +79,7 @@ struct UI
     Fl_Input* edtPassword2 = nullptr;
     Fl_Check_Button* optShowPassword = nullptr;
     Fl_Box* lblCryptAlgo = nullptr;
-    Fl_Choice* cbxCryptAlgo = nullptr;
+    ComboBox* cbxCryptAlgo = nullptr;
     Fl_Check_Button* optEncryptNames = nullptr;
 
     // Footer Buttons:
@@ -89,19 +92,6 @@ struct UI
     FN_onCancel onCancel;
     FN_onHelp onHelp;
 
-    Job getJob() const
-    {
-        Job job;
-        job.bCompress = true;
-        job.iPreset = cbxPreset->value();
-        job.bCompress = true;
-        job.baseDir = App::getInstance()->getExeDirA();
-        job.baseName = edtArchive->label();
-        job.extension = cbxFormat->value();
-
-        return job;
-    }
-
     std::string getArchiveFormat() const
     {
         static std::array<std::string,2> my_map
@@ -110,7 +100,7 @@ struct UI
             "zst"
         };
 
-        int i = cbxFormat->value();
+        int i = cbxFormat->currentIndex();
         if (i < 0 || i > my_map.size())
         {
             DE_ERROR("Invalid index ",i)
@@ -123,7 +113,7 @@ struct UI
     {
         const auto& presets = ZstPresets::get();
 
-        int i = cbxPreset->value();
+        int i = cbxPreset->currentIndex();
         if (i < 0 || i > presets.size())
         {
             DE_ERROR("Invalid index ",i)
@@ -158,7 +148,26 @@ void Dialog::setCallback_onHelp(const FN_onHelp& onHelp)
 
 Job Dialog::getJob() const
 {
-    return ui.getJob();
+    Job job;
+    job.bCompress = true;
+    job.baseDir = App::getInstance()->getExeDirA();
+    job.baseName = ui.edtArchive->label();
+    job.extension = ui.cbxFormat->currentData().toString();
+    job.iPreset = ui.cbxPreset->currentData().toInt();
+    return job;
+}
+
+void Dialog::setJob(Job job)
+{
+    ui.edtDir->label( job.baseDir.c_str() );
+
+    ui.edtArchive->label( job.baseName.c_str() );
+
+    // job.baseDir = App::getInstance()->getExeDirA();
+    // job.baseName = ui.edtArchive->label();
+    // job.bCompress = true;
+    // job.extension = ui.cbxFormat->currentData().toString();
+    // job.iPreset = ui.cbxPreset->currentData().toInt();
 }
 
 template <typename T, typename... Args>
@@ -204,49 +213,49 @@ Dialog::Dialog(int W, int H, const char* title)
 
     // Body Column[0]
     ui.lblFormat = new Label(x,y,mw,h1,"Archive:");
-    ui.cbxFormat = new Fl_Choice(x,y,mw,h1);
+    ui.cbxFormat = new ComboBox(x,y,mw,h1);
 
     ui.lblPreset = new Label(x,y,mw,h1,"Preset:");
-    ui.cbxPreset = new Fl_Choice(x,y,mw,h1);
+    ui.cbxPreset = new ComboBox(x,y,mw,h1);
 
     // ui.lblQuality = new Label(x,y,mw,h1,"Compress-Quality:");
-    // ui.cbxQuality = new Fl_Choice(x,y,mw,h1);
+    // ui.cbxQuality = new ComboBox(x,y,mw,h1);
 
     ui.lblAlgorithm = new Label(x,y,mw,h1,"Compress Algorithm:");
-    ui.cbxAlgorithm = new Fl_Choice(x,y,mw,h1);
+    ui.cbxAlgorithm = new ComboBox(x,y,mw,h1);
 
     ui.lblDictSize = new Label(x,y,mw,h1,"Dictionary Size:");
-    ui.cbxDictSize = new Fl_Choice(x,y,mw,h1);
+    ui.cbxDictSize = new ComboBox(x,y,mw,h1);
 
     ui.lblWordSize = new Label(x,y,mw,h1,"Word Size:");
-    ui.cbxWordSize = new Fl_Choice(x,y,mw,h1);
+    ui.cbxWordSize = new ComboBox(x,y,mw,h1);
 
     ui.lblBlockSize = new Label(x,y,mw,h1,"BlockSize:");
-    ui.cbxBlockSize = new Fl_Choice(x,y,mw,h1);
+    ui.cbxBlockSize = new ComboBox(x,y,mw,h1);
 
     ui.lblCpuThreads = new Label(x,y,mw,h1,"CPU Threads:");
-    ui.cbxCpuThreads = new Fl_Choice(x,y,mw,h1);
+    ui.cbxCpuThreads = new ComboBox(x,y,mw,h1);
 
     ui.lblCompressRamMax = new Label(x,y,mw,h1,"Compress RAM Usage:");
-    ui.cbxCompressRamMax = new Fl_Choice(x,y,mw,h1);
+    ui.cbxCompressRamMax = new ComboBox(x,y,mw,h1);
 
     ui.lblExtractRamMax = new Label(x,y,mw,h1,"Extract RAM Usage:");
-    ui.cbxExtractRamMax = new Fl_Choice(x,y,mw,h1);
+    ui.cbxExtractRamMax = new ComboBox(x,y,mw,h1);
 
     ui.lblSplitSize = new Label(x,y,mw,h1,"Split Size:");
-    ui.cbxSplitSize = new Fl_Choice(x,y,mw,h1);
+    ui.cbxSplitSize = new ComboBox(x,y,mw,h1);
 
     ui.lblParameter = new Label(x,y,mw,h1,"Parameter:");
-    ui.cbxParameter = new Fl_Choice(x,y,mw,h1);
+    ui.cbxParameter = new ComboBox(x,y,mw,h1);
 
     ui.btnOptions = new Button(x,y,mw,h1,"Options");
 
     // Body Column[1]
     ui.lblUpdateType = new Label(x,y,mw,h1,"Update Type:");
-    ui.cbxUpdateType = new Fl_Choice(x,y,mw,h1);
+    ui.cbxUpdateType = new ComboBox(x,y,mw,h1);
 
     ui.lblDirStruct = new Label(x,y,mw,h1,"Directory Struct:");
-    ui.cbxDirStruct = new Fl_Choice(x,y,mw,h1);
+    ui.cbxDirStruct = new ComboBox(x,y,mw,h1);
 
     //ui.groupOpts = new Label(x,y,mw,h1,"Update Type:");
     ui.groupOpts = new GroupBox(x,y,mw,h1,"Options:");
@@ -263,7 +272,7 @@ Dialog::Dialog(int W, int H, const char* title)
     ui.edtPassword2->value("*******");
     ui.optShowPassword = new Fl_Check_Button(x,y,mw,h1,"Show Password");
     ui.lblCryptAlgo = new Label(x,y,mw,h1,"Encrypt Mode:");
-    ui.cbxCryptAlgo = new Fl_Choice(x,y,mw,h1);
+    ui.cbxCryptAlgo = new ComboBox(x,y,mw,h1);
     ui.optEncryptNames = new Fl_Check_Button(x,y,mw,h1,"Encrypt FileNames");
 
     // Footer
@@ -310,14 +319,14 @@ Dialog::Dialog(int W, int H, const char* title)
             Fl::screen_scale(0, z);
         });
 
-    ui.cbxFormat->add(".tar - TAR Archive");
-    ui.cbxFormat->add(".zst - ZSTD Archive");
+    ui.cbxFormat->addItem(".tar - TAR Archive", 0);
+    ui.cbxFormat->addItem(".zst - ZSTD Archive", 1);
     // ui.cbxFormat->add(".zip - ZIP Archive");
     // ui.cbxFormat->add(".bz2 - BZIP2 Archive");
     // ui.cbxFormat->add(".gz - GZIP Archive");
     // ui.cbxFormat->add(".xz - XZ Archive");
     // ui.cbxFormat->add(".7z - 7-Zip Archive");
-    ui.cbxFormat->value(0);
+    ui.cbxFormat->setCurrentIndex(0,false);
 
     /*
     ui.cbxQuality->add("0 - No compression");
@@ -393,17 +402,19 @@ Dialog::Dialog(int W, int H, const char* title)
     const auto & zstPresets = ZstPresets::get();
     for (size_t i = 0; i < zstPresets.size(); ++i)
     {
-        ui.cbxPreset->add(zstPresets[i].name.c_str());
+        ui.cbxPreset->addItem(zstPresets[i].name.c_str(), int(i));
     }
 
-    ui.cbxPreset->value(16);
+    ui.cbxPreset->setCurrentIndex(10,false);
 
-    ui.cbxPreset->callback([](Fl_Widget* w)
-    {
-        Fl_Choice* c = (Fl_Choice*)w;
-        DE_DEBUG("[Preset] selected index: ", c->value())
-        DE_DEBUG("[Preset] selected data: ", c->mvalue()->label())
-    });
+    ui.cbxPreset->onChange =
+        [](int idx, ComboBox* self)
+        {
+            DE_DEBUG("[Preset] idx: ", idx)
+            DE_DEBUG("[Preset] index: ", self->currentIndex())
+            DE_DEBUG("[Preset] text: ", self->currentText())
+            DE_DEBUG("[Preset] data: ", self->currentData().toString())
+        };
 
     end();
 }

@@ -1,5 +1,6 @@
 #pragma once
 #include <gui/Widgets.h>
+#include <8z_ArgParser.h>
 
 // #include <gui/Base.h>
 // #include <FL/Fl.H>
@@ -20,7 +21,7 @@ namespace worker {
 class Dialog : public DoubleWindow
 {
 public:
-    Dialog(int W, int H, const char* title);
+    Dialog(Job job, int W, int H, const char* title);
 
     void resize(int X, int Y, int W, int H) override;
 };

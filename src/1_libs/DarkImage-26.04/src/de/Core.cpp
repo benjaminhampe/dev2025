@@ -870,6 +870,36 @@ StringUtil::split( const std::string& txt, char searchChar, bool bKeepEmptyLines
     return lines;
 }
 
+//static
+std::vector< std::wstring >
+StringUtil::split( const std::wstring& txt, wchar_t searchChar, bool bKeepEmptyLines )
+{
+    std::vector< std::wstring > lines;
+
+    std::wstring::size_type pos1 = 0;
+    std::wstring::size_type pos2 = txt.find( searchChar, pos1 );
+
+    while ( pos2 != std::wstring::npos )
+    {
+        std::wstring line = txt.substr( pos1, pos2-pos1 );
+        if ( !line.empty() || bKeepEmptyLines )
+        {
+            lines.emplace_back( std::move( line ) );
+        }
+
+        pos1 = pos2+1;
+        pos2 = txt.find( searchChar, pos1 );
+    }
+
+    std::wstring line = txt.substr( pos1 );
+    if ( !line.empty() || bKeepEmptyLines )
+    {
+        lines.emplace_back( std::move( line ) );
+    }
+
+    return lines;
+}
+
 std::string
 StringUtil::prefixLineNumbers( const std::string& src )
 {
@@ -1809,6 +1839,7 @@ StringUtil::upperCase(std::wstring& txt)
 std::wstring
 StringUtil::makeLower( const std::wstring & txt )
 {
+    if (txt.empty()) return {};
     std::wstring out = txt;
     lowerCase(out);
     return out;
@@ -1817,6 +1848,7 @@ StringUtil::makeLower( const std::wstring & txt )
 std::wstring
 StringUtil::makeUpper( const std::wstring & txt )
 {
+    if (txt.empty()) return {};
     std::wstring out = txt;
     upperCase(out);
     return out;
@@ -1825,42 +1857,42 @@ StringUtil::makeUpper( const std::wstring & txt )
 std::string
 StringUtil::makeLower( const std::string & txt )
 {
+    if (txt.empty()) return {};
     return de_mbstr( makeLower( de_wstr(txt) ) );
 }
 
 std::string
 StringUtil::makeUpper( const std::string & txt )
 {
+    if (txt.empty()) return {};
     return de_mbstr( makeUpper( de_wstr(txt) ) );
 }
 
 bool
 StringUtil::startsWith( const std::string& str, char c )
 {
-    if ( str.empty() ) return false;
+    if (str.empty()) return false;
     return str[ 0 ] == c;
 }
 
 bool
 StringUtil::startsWith( const std::wstring& str, wchar_t c )
 {
-    if ( str.empty() ) return false;
+    if (str.empty()) return false;
     return str[ 0 ] == c;
 }
 
-//static
 bool
 StringUtil::endsWith( const std::string& str, char c )
 {
-    if ( str.empty() ) return false;
+    if (str.empty()) return false;
     return str[ str.size() - 1 ] == c;
 }
 
-//static
 bool
 StringUtil::endsWith( const std::wstring& str, wchar_t c )
 {
-    if ( str.empty() ) return false;
+    if (str.empty()) return false;
     return str[ str.size() - 1 ] == c;
 }
 
@@ -1898,7 +1930,6 @@ impl_StringUtil_startsWith( const T& str, const T& query )
     }
 }
 
-//static
 bool
 StringUtil::startsWith( const std::string& str, const std::string& query )
 {
@@ -1958,7 +1989,6 @@ StringUtil::endsWith( const std::wstring& str, const std::wstring& query )
     return impl_StringUtil_endsWith(str,query);
 }
 
-//static
 std::string
 StringUtil::joinVector( std::vector< std::string > const & v, const std::string& prefix )
 {
@@ -1977,14 +2007,29 @@ StringUtil::joinVector( std::vector< std::string > const & v, const std::string&
     return o.str();
 }
 
-//static
+std::wstring
+StringUtil::joinVector( std::vector< std::wstring > const & v, const std::wstring& prefix )
+{
+    std::wostringstream o;
+
+    if ( v.size() > 0 )
+    {
+        o << v[ 0 ];
+
+        for ( size_t i = 1; i < v.size(); ++i )
+        {
+            o << prefix << v[ i ];
+        }
+    }
+
+    return o.str();
+}
 std::string
 StringUtil::trim( const std::string& txt, const std::string& filter )
 {
     return trimRight( trimLeft( txt, filter ), filter );
 }
 
-//static
 std::string
 StringUtil::trimLeft( const std::string& txt, const std::string& filter )
 {
@@ -2027,7 +2072,6 @@ StringUtil::trimLeft( const std::string& txt, const std::string& filter )
     }
 }
 
-//static
 std::string
 StringUtil::trimRight( const std::string& original, const std::string& filter )
 {
@@ -2037,8 +2081,6 @@ StringUtil::trimRight( const std::string& original, const std::string& filter )
     }
 
     std::string tmp = original;
-
-    //std::string::size_type pos = std::string::npos;
 
     auto isFilter = [&] ( char const c )
     {
@@ -5176,20 +5218,20 @@ dbLoadText(const std::wstring& uri)
     return de::FileSystem::loadStrW( uri );
 }
 
-DE_StringsA
+StringListA
 dbStrSplit(const std::string& txt, char searchChar, bool bKeepEmptyLines )
 {
     return de::StringUtil::split( txt, searchChar, bKeepEmptyLines );
 }
 
-DE_StringsA
+StringListA
 dbLoadTextLn(const std::string& uri)
 {
     auto content = de::FileSystem::loadStr( uri );
     return dbStrSplit( content, '\n', false);
 }
 
-DE_StringsA
+StringListA
 dbLoadTextLn(const std::wstring& uri)
 {
     auto content = de::FileSystem::loadStr( uri );
@@ -5210,6 +5252,12 @@ void dbStrUpperCase(std::string& txt) { return de::StringUtil::upperCase(txt); }
 
 void dbStrLowerCase(std::wstring& txt) { return de::StringUtil::lowerCase(txt); }
 void dbStrUpperCase(std::wstring& txt) { return de::StringUtil::upperCase(txt); }
+
+std::string dbStrLower(const std::string& txt) { return de::StringUtil::makeLower(txt); }
+std::string dbStrUpper(const std::string& txt) { return de::StringUtil::makeUpper(txt); }
+
+std::wstring dbStrLower(const std::wstring& txt) { return de::StringUtil::makeLower(txt); }
+std::wstring dbStrUpper(const std::wstring& txt) { return de::StringUtil::makeUpper(txt); }
 
 std::string dbStrReplace(const std::string& txt,
                          const std::string& from,

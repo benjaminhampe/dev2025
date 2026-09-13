@@ -6,7 +6,7 @@
 #include <gui/XP_ProgressBar.h>
 #include <gui/LogBox.h>
 
-#include <de/archive/FileInfo.h>
+#include <de/ScanDirectory.h>
 #include <de/archive/TarWriter.h>
 
 namespace EightZip {
@@ -336,10 +336,10 @@ static void workerThread_Demo()
     DE_BENNI("Begin Worker Thread ",std::this_thread::get_id())
 
     std::wstring exeDir = App::getInstance()->getExeDirW();
-    FileInfos fileInfos;
+    de::FileInfos fileInfos;
 
     DE_BENNI("exeDir = ", de_mbstr(exeDir))
-    scanDirectory(fileInfos,exeDir,true);
+    de::ScanDirectory(fileInfos,exeDir,true);
     DUMP(fileInfos);
 
     double timeElapsed = 0;
@@ -441,12 +441,12 @@ static void workerThread_CompressTar()
     std::wstring tarDir = exeDir + L"\\" + tarBaseName;
     std::wstring tarName = tarBaseName + L".tar";
 
-    FileInfos fileInfos;
+    de::FileInfos fileInfos;
 
     DE_BENNI("exeDir = ", de_mbstr(exeDir))
     DE_BENNI("tarDir = ", de_mbstr(tarDir))
 
-    scanDirectory(fileInfos,tarDir,true);
+    de::ScanDirectory(fileInfos,tarDir,true);
     DUMP(fileInfos);
 
     double timeElapsed = 0;
@@ -477,7 +477,7 @@ static void workerThread_CompressTar()
     m_tarWriterCfg.archiveBaseName = "demo_longLink1";
     m_tarWriterCfg.fileInfos = &fileInfos;
     m_tarWriterCfg.onNextFile =
-        [&] (const FileInfo& fileInfo, uint32_t fileIndex)
+        [&] (const de::FileInfo& fileInfo, uint32_t fileIndex)
         {
             ui.pollFileIndex = fileIndex+1;
             ui.pollProgress = 0.01 + (0.98*double(fileIndex+1) / double(fileInfos.size()));
@@ -669,10 +669,14 @@ static void start_worker_cb(Fl_Widget*, void*)
 */
 
 // =============================================================
-Dialog::Dialog(int W, int H, const char* title)
+Dialog::Dialog(Job job, int W, int H, const char* title)
 // =============================================================
     : DoubleWindow(W, H, title)
 {
+    ui.job = job;
+
+    DE_DEBUG("WorkerJob: ",job.str())
+
     ui.window = this;
 
     begin();

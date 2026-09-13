@@ -1,7 +1,0 @@
-<!DOCTYPE RCC><RCC version="1.0">
-<qresource>
-   <file alias="winico">./H3.ico</file>
-   <file alias="winico2">./audio.ico</file>
-   <file alias="winico3">./draw.ico</file>
-</qresource>
-</RCC>

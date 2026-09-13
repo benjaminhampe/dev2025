@@ -1,5 +1,5 @@
 #pragma once
-#include <de/archive/FileInfo.h>
+#include <de/FileInfo.h>
 
 // #include <ctime>
 // #include <string>
@@ -481,7 +481,7 @@ struct TarUtil
 
     // static std::string tar_linkname(uint32_t attrs, const std::wstring& fullPath);
 
-    static char tar_typeflag(const FileInfo& fileInfo);
+    static char tar_typeflag(const de::FileInfo& fileInfo);
 
     // ============================================================================
     //  ✔️ CHECKSUM (no magic offsets)
@@ -541,7 +541,7 @@ struct TarUtil
 
     /// param[in] fileInfo -> the
     static uint32_t tar_build_header(uint8_t* out,
-                                     const FileInfo& fileInfo,
+                                     const de::FileInfo& fileInfo,
                                      const std::string& baseDir,
                                      const std::string& archiveBaseName);
 

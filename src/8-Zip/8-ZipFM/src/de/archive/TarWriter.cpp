@@ -71,7 +71,7 @@ TarWriter::process(uint8_t* __restrict__ out, int64_t outSize)
         // ForEach FileInfo.
         else
         {
-            const FileInfo& fi = (*m_cfg.fileInfos)[ m_fileIndex ];
+            const de::FileInfo& fi = (*m_cfg.fileInfos)[ m_fileIndex ];
 
             switch (m_state)
             {

@@ -1,6 +1,6 @@
 #include "8z_ArgParser.h"
 //#include <lyra/lyra.hpp>
-
+#include <de/win32/win32_Get_Explorer_Selection.h>
 
 // static
 bool ArgParser::parseBenni(Job* m_job, int argc, char** argv)
@@ -9,6 +9,16 @@ bool ArgParser::parseBenni(Job* m_job, int argc, char** argv)
     {
         DE_ERROR("Job is nullptr")
         return false;
+    }
+
+    auto fileList = win32_Get_Explorer_Selection();
+    DE_DEBUG("Got fileList = ",fileList.size())
+
+    for (size_t i = 0; i < fileList.size(); ++i)
+    {
+        std::string fileName = de_mbstr(fileList[i]);
+        DE_DEBUG("fileList[",i,"] ",fileName)
+        m_job->filesIn.emplace_back( fileName );
     }
 
     enum Mode { NORMAL, READ_I_LIST, READ_O_LIST };
@@ -43,6 +53,27 @@ bool ArgParser::parseBenni(Job* m_job, int argc, char** argv)
         }
 
         // --- flags ---
+        if (arg == "--update")
+        {
+            m_job->bUpdate = true;
+            mode = NORMAL;
+            break;
+        }
+
+        if (arg == "-k" || arg == "--killexplorer")
+        {
+            m_job->bRestartExplorer = true;
+            mode = NORMAL;
+            break;
+        }
+
+        if (arg == "--admin")
+        {
+            m_job->bAdmin = true;
+            mode = NORMAL;
+            break;
+        }
+
         if (arg == "-i" || arg == "--install")
         {
             m_job->bInstall = true;

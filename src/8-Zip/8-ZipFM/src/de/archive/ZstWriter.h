@@ -12,7 +12,7 @@ struct ZstWriter
 
         ZstPreset preset;
 
-        typedef std::function<void(const FileInfo& /* fileInfo */, uint32_t)> FN_onNextFile;
+        typedef std::function<void(const de::FileInfo& /* fileInfo */, uint32_t)> FN_onNextFile;
 
         FN_onNextFile onNextFile;
 

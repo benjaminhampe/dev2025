@@ -445,17 +445,6 @@ struct StringUtil
     static std::string
     bytes( uint64_t nBytes );
 
-    static std::string
-    replace( const std::string& txt, const std::string& from,
-             const std::string& to, size_t* nReplacements = nullptr );
-
-    static std::wstring
-    replace( const std::wstring& txt, const std::wstring& from,
-             const std::wstring& to, size_t* nReplacements = nullptr );
-
-    static std::vector< std::string >
-    split( const std::string& txt, char searchChar, bool bKeepEmptyLines = false );
-
     // Inplace:
 
     static void
@@ -510,10 +499,32 @@ struct StringUtil
     static bool
     endsWith( const std::wstring& str, wchar_t c );
 
-    // Combine:
+    // Replace:
+
+    static std::string
+    replace( const std::string& txt, const std::string& from,
+             const std::string& to, size_t* nReplacements = nullptr );
+
+    static std::wstring
+    replace( const std::wstring& txt, const std::wstring& from,
+             const std::wstring& to, size_t* nReplacements = nullptr );
+
+    // Split a line into vector of lines:
+
+    static std::vector< std::string >
+    split( const std::string& txt, char searchChar, bool bKeepEmptyLines = false );
+
+    static std::vector< std::wstring >
+    split( const std::wstring& txt, wchar_t searchChar, bool bKeepEmptyLines = false );
+
+    // Combine vector of lines into a line:
 
     static std::string
     joinVector( std::vector< std::string > const & v, const std::string& prefix );
+
+    static std::wstring
+    joinVector( std::vector< std::wstring > const & v, const std::wstring& prefix );
+
 
     static std::string
     trim( const std::string& txt, const std::string& filter );
@@ -2383,6 +2394,12 @@ void dbStrUpperCase(std::string& txt);
 void dbStrLowerCase(std::wstring& txt);
 void dbStrUpperCase(std::wstring& txt);
 // ========================================================================
+std::string dbStrLower(const std::string& txt);
+std::string dbStrUpper(const std::string& txt);
+// ========================================================================
+std::wstring dbStrLower(const std::wstring& txt);
+std::wstring dbStrUpper(const std::wstring& txt);
+// ========================================================================
 std::string dbStrReplace(const std::string& txt,
                          const std::string& from,
                          const std::string& to,
@@ -2403,18 +2420,18 @@ bool dbStrEndsWith( const std::wstring& txt, const std::wstring& query );
 bool dbStrEndsWith( const std::string& txt, char c );
 bool dbStrEndsWith( const std::wstring& txt, wchar_t c );
 // ========================================================================
-typedef std::string DE_StringA;
-typedef std::vector< DE_StringA > DE_StringsA;
-typedef std::wstring DE_StringW;
-typedef std::vector< DE_StringW > DE_StringsW;
+typedef std::string StringA;
+typedef std::vector< StringA > StringListA;
+typedef std::wstring StringW;
+typedef std::vector< StringW > StringListW;
 
-DE_StringsA
+StringListA
 dbStrSplit(const std::string& txt, char searchChar, bool bKeepEmptyLines = false );
 
-DE_StringsA
+StringListA
 dbLoadTextLn(const std::string& uri);
 
-DE_StringsA
+StringListA
 dbLoadTextLn(const std::wstring& uri);
 
 void dbRemoveFile( const std::string& uri );

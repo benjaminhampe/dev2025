@@ -1,0 +1,4 @@
+PS C:\WINDOWS\system32> regsvr32 /u C:\GitHub\dev2025\bin\win64_Debug_static\8-ZipShellExtension.dll
+PS C:\WINDOWS\system32> regsvr32 /u C:\GitHub\dev2025\bin\win64_Release_static\8-ZipShellExtension.dll
+PS C:\WINDOWS\system32> regsvr32 /u C:\GitHub\dev2026_8-ZipFM\bin\win64_Release_static\8-ZipShellExtension.dll
+PS C:\WINDOWS\system32> regsvr32 /u C:\GitHub\dev2026_8-ZipFM\bin\win64_Debug_static\8-ZipShellExtension.dll

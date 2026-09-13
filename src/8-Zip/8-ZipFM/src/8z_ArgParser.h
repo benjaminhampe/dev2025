@@ -6,6 +6,9 @@ struct Job
     std::vector<std::string> filesIn; // utf8
     std::vector<std::string> filesOut; // utf8
 
+    bool bUpdate = false;
+    bool bRestartExplorer = false;
+    bool bAdmin = false;
     bool bGui = false;
     bool bInstall = false;
     bool bUninstall = false;
@@ -21,6 +24,9 @@ struct Job
     std::string str() const
     {
         std::ostringstream o;
+        if (bUpdate) o << "--update ";
+        if (bRestartExplorer) o << "-k ";
+        if (bAdmin) o << "--admin ";
         if (baseDir.size()) o << "-b " << baseDir;
         if (baseName.size()) o << "-n " << baseName;
         if (extension.size()) o << "-x " << extension;

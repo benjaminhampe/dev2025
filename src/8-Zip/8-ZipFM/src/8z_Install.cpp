@@ -2,6 +2,7 @@
 #include "8z_App.h"
 #include <de/win32/win32_LongPath.h>
 #include <de/win32/win32_RegUtil.h>
+#include <de/win32/win32_HKCU.h>
 
 #ifdef _WIN32
     #ifndef WIN32_LEAN_AND_MEAN
@@ -21,70 +22,9 @@
     // #include <dwmapi.h>
 #endif
 
-/*
-🧩 Long‑path safe wrapper (fully deterministic, no hidden behavior)
-
-#include <windows.h>
-#include <string>
-
-// Long-path safe normalization wrapper.
-// Returns a \\?\ absolute path unless the input is already a device/NT path.
-std::wstring NormalizeLongPath(const std::wstring &input)
-{
-    // 1. Expand environment variables
-    DWORD needed = ExpandEnvironmentStringsW(input.c_str(), nullptr, 0);
-    std::wstring expanded(needed, L'\0');
-    ExpandEnvironmentStringsW(input.c_str(), expanded.data(), needed);
-
-    // 2. Convert to absolute path (GetFullPathNameW supports > MAX_PATH)
-    DWORD absNeeded = GetFullPathNameW(expanded.c_str(), 0, nullptr, nullptr);
-    std::wstring absolute(absNeeded, L'\0');
-    GetFullPathNameW(expanded.c_str(), absNeeded, absolute.data(), nullptr);
-
-    // 3. Already a device path? Leave untouched.
-    //    \\?\C:\..., \\?\UNC\..., \\.\PhysicalDrive0, etc.
-    if (absolute.rfind(L"\\\\?\\", 0) == 0 ||
-        absolute.rfind(L"\\\\.\\", 0) == 0)
-    {
-        return absolute;
-    }
-
-    // 4. UNC path → \\?\UNC\server\share\...
-    if (absolute.rfind(L"\\\\", 0) == 0)
-    {
-        return L"\\\\?\\UNC" + absolute.substr(1);
-    }
-
-    // 5. Normal Win32 path → \\?\C:\...
-    return L"\\\\?\\" + absolute;
-}
-
-This wrapper is real NT‑safe:
-
-    No MAX_PATH assumptions
-    No stack‑allocated 32 KB buffers
-    No accidental prefixing of device paths
-    Correct UNC handling
-    Deterministic behavior regardless of registry long‑path settings
-
-🧱 How to use it
-
-    std::wstring longPath = NormalizeLongPath(L"C:\\some\\very\\long\\path\\file.txt");
-
-    HANDLE h = CreateFileW(
-        longPath.c_str(),
-        GENERIC_READ,
-        FILE_SHARE_READ,
-        nullptr,
-        OPEN_EXISTING,
-        FILE_ATTRIBUTE_NORMAL,
-        nullptr
-    );
-*/
-
 namespace {
 
-    static const std::wstring dllName = L"8-ZipShellExtension.dll";
+    static const std::wstring dllName = L"8-Zip.dll";
 
 } // end namespace.
 
@@ -189,7 +129,415 @@ bool EightZip_Registry_updateExePath()
     }
 }
 
+/*
+// Your CLSID as wstring
+static const std::wstring S_PackCommand = L"{23170F69-40C1-278A-2026-01B100020000}";
+static const std::wstring S_ExtractCommand = L"{23170F69-40C1-278A-2026-02B100020000}";
+
+    // New EC version: IExplorerCommand in EC ShellExtension approach
+
+    [HKEY_CURRENT_USER\Software\Classes\CLSID\{PACK_CLSID}\InprocServer32]
+        @="C:\\Path\\8z.dll"
+        "ThreadingModel"="Apartment"
+
+    [HKEY_CURRENT_USER\Software\Classes\CLSID\{EXTR_CLSID}\InprocServer32]
+        @="C:\\Path\\8z.dll"
+        "ThreadingModel"="Apartment"
+
+    [HKEY_CURRENT_USER\Software\Classes\*\shell\8-Zip_Compress]
+        @="Compres* with 8-Zip"
+        "ExplorerCommandHandler"="{PACK_CLSID}"
+        "Icon"="C:\\Path\\8z.exe"
+
+    [HKEY_CURRENT_USER\Software\Classes\*\shell\8-Zip_Extract]
+        @="Extract Archive"
+        "ExplorerCommandHandler"="{EXTR_CLSID}"
+        "Icon"="C:\\Path\\8z.exe"
+
+    [HKEY_CURRENT_USER\Software\Classes\Directory\shell\8-Zip_Compress]
+        @="Compress with 8-Zip"
+        "ExplorerCommandHandler"="{PACK_CLSID}"
+        "Icon"="C:\\Path\\8z.exe"
+
+    [HKEY_CURRENT_USER\Software\Classes\Directory\shell\8-Zip_Extract]
+        @="Extract Archive"
+        "ExplorerCommandHandler"="{EXTR_CLSID}"
+        "Icon"="C:\\Path\\8z.exe"
+*/
+
 bool EightZip_Install()
+{
+    DE_DEBUG("Installing...")
+
+    const std::wstring ID_Pack = L"{23170F69-40C1-278A-2026-01B100020000}";
+    const std::wstring ID_Extr = L"{23170F69-40C1-278A-2026-02B100020000}";
+
+    const std::wstring k1 = dbStrW(L"Software\\Classes\\CLSID\\",ID_Pack,L"\\InprocServer32");
+    const std::wstring k2 = dbStrW(L"Software\\Classes\\CLSID\\",ID_Extr,L"\\InprocServer32");
+
+    const std::wstring f1 = L"Software\\Classes\\*\\shell\\8z_Compress";
+    const std::wstring f2 = L"Software\\Classes\\*\\shell\\8z_Extract";
+
+    const std::wstring d1 = L"Software\\Classes\\Directory\\shell\\8z_Compress";
+    const std::wstring d2 = L"Software\\Classes\\Directory\\shell\\8z_Extract";
+
+    const std::wstring exeName = App::getInstance()->getExeFileW();
+    const std::wstring dllName = App::getInstance()->getExeDirW() + L"\\8z.dll";
+
+    DE_DEBUG("exeName = ", de_mbstr(exeName))
+    DE_DEBUG("dllName = ", de_mbstr(dllName))
+/*
+    [HKEY_CURRENT_USER\Software\Classes\CLSID\{PACK_CLSID}\InprocServer32]
+        @="C:\\Path\\8-ZipEC.dll"
+        "ThreadingModel"="Apartment"
+
+    [HKEY_CURRENT_USER\Software\Classes\CLSID\{EXTR_CLSID}\InprocServer32]
+        @="C:\\Path\\8-ZipEC.dll"
+        "ThreadingModel"="Apartment"
+*/
+    auto makeG1 = [&] (std::string g, std::wstring key)
+    {
+        bool ok = de::HKCU::createKey(key);
+        if (!ok) { DE_ERROR("No [",g,"]") return false; }
+
+        // Default
+        ok = de::HKCU::writeREG_SZ(key,L"",dllName);
+        if (!ok) { DE_ERROR("No [",g,"] Default") return false; }
+
+        // ThreadingModel
+        ok = de::HKCU::writeREG_SZ(key,L"ThreadingModel",L"Apartment");
+        if (!ok) { DE_ERROR("No [",g,"] ThreadingModel") return false; }
+
+        return true;
+    };
+
+    makeG1("k1",k1);
+    makeG1("k2",k2);
+
+/*
+    [HKEY_CURRENT_USER\Software\Classes\*\shell\8-Zip_Compress]
+        @="Compres* with 8-Zip"
+        "ExplorerCommandHandler"="{PACK_CLSID}"
+        "Icon"="C:\\Path\\8ZipFM.exe"
+
+    [HKEY_CURRENT_USER\Software\Classes\*\shell\8-Zip_Extract]
+        @="Extract Archive"
+        "ExplorerCommandHandler"="{EXTR_CLSID}"
+        "Icon"="C:\\Path\\8ZipFM.exe"
+
+    [HKEY_CURRENT_USER\Software\Classes\Directory\shell\8-Zip_Compress]
+        @="Compress with 8-Zip"
+        "ExplorerCommandHandler"="{PACK_CLSID}"
+        "Icon"="C:\\Path\\8Zip.exe"
+
+    [HKEY_CURRENT_USER\Software\Classes\Directory\shell\8-Zip_Extract]
+        @="Extract Archive"
+        "ExplorerCommandHandler"="{EXTR_CLSID}"
+        "Icon"="C:\\Path\\8Zip.exe"
+*/
+
+    auto makeG2 = [&] (std::string g, std::wstring key, std::wstring id, std::wstring label)
+    {
+        bool ok = de::HKCU::createKey(key);
+        if (!ok) { DE_ERROR("No [",g,"]") return false; }
+
+        // Default
+        ok = de::HKCU::writeREG_SZ(key,L"",label);
+        if (!ok) { DE_ERROR("No [",g,"] Default") return false; }
+
+        // ExplorerCommandHandler
+        ok = de::HKCU::writeREG_SZ(key,L"ExplorerCommandHandler",id);
+        if (!ok) { DE_ERROR("No [",g,"] ExplorerCommandHandler") return false; }
+
+        // Icon
+        ok = de::HKCU::writeREG_SZ(key,L"Icon",exeName);
+        if (!ok) { DE_ERROR("No [",g,"] Icon") return false; }
+
+        return true;
+    };
+
+    makeG2("f1", f1, ID_Pack, L"8z Compress");
+    makeG2("f2", f2, ID_Extr, L"8z Extract");
+    makeG2("d1", d1, ID_Pack, L"8z Compress");
+    makeG2("d2", d2, ID_Extr, L"8z Extract");
+
+    DE_OK("OK.")
+    return true;
+}
+
+bool EightZip_Uninstall()
+{
+    const std::wstring ID_Pack = L"{23170F69-40C1-278A-2026-01B100020000}";
+    const std::wstring ID_Extr = L"{23170F69-40C1-278A-2026-02B100020000}";
+
+    const std::wstring k1 = dbStrW(L"Software\\Classes\\CLSID\\",ID_Pack,L"\\InprocServer32");
+    const std::wstring k2 = dbStrW(L"Software\\Classes\\CLSID\\",ID_Extr,L"\\InprocServer32");
+
+    const std::wstring f1 = L"Software\\Classes\\*\\shell\\8z_Compress";
+    const std::wstring f2 = L"Software\\Classes\\*\\shell\\8z_Extract";
+
+    const std::wstring d1 = L"Software\\Classes\\Directory\\shell\\8z_Compress";
+    const std::wstring d2 = L"Software\\Classes\\Directory\\shell\\8z_Extract";
+
+    de::HKCU::removeKey(k1,true);
+    de::HKCU::removeKey(k2,true);
+
+    de::HKCU::removeKey(f1,true);
+    de::HKCU::removeKey(f2,true);
+
+    de::HKCU::removeKey(d1,true);
+    de::HKCU::removeKey(d2,true);
+
+    if (EightZip_isInstalled())
+    {
+        DE_ERROR("Registry still has entries!")
+        return false;
+    }
+    else
+    {
+        DE_OK("OK.")
+        return true;
+    }
+}
+
+bool EightZip_isInstalled()
+{
+    const std::wstring ID_Pack = L"{23170F69-40C1-278A-2026-01B100020000}";
+    const std::wstring ID_Extr = L"{23170F69-40C1-278A-2026-02B100020000}";
+
+    const std::wstring k1 = dbStrW(L"Software\\Classes\\CLSID\\",ID_Pack,L"\\InprocServer32");
+    const std::wstring k2 = dbStrW(L"Software\\Classes\\CLSID\\",ID_Extr,L"\\InprocServer32");
+
+    const std::wstring f1 = L"Software\\Classes\\*\\shell\\8z_Compress";
+    const std::wstring f2 = L"Software\\Classes\\*\\shell\\8z_Extract";
+
+    const std::wstring d1 = L"Software\\Classes\\Directory\\shell\\8z_Compress";
+    const std::wstring d2 = L"Software\\Classes\\Directory\\shell\\8z_Extract";
+
+    bool b1 = de::HKCU::existKey(k1);
+    bool b2 = de::HKCU::existKey(k2);
+    bool b3 = de::HKCU::existKey(f1);
+    bool b4 = de::HKCU::existKey(f2);
+    bool b5 = de::HKCU::existKey(d1);
+    bool b6 = de::HKCU::existKey(d2);
+
+    if (b1 && b2 && b3 && b4 && b5 && b6)
+    {
+        return true;
+    }
+    return false;
+}
+
+
+/*
+    1.) Just two contextMenu entries:
+
+    HKCU\Software\Classes\AllFilesystemObjects\shell\8-Zip
+        (Default) = "Compress with 8-Zip"
+        Icon = "C:\Program Files\8-Zip\8zip.exe"
+
+    HKCU\Software\Classes\AllFilesystemObjects\shell\8-Zip\command
+        (Default) = "\"C:\\Program Files\\8-Zip\\8zip.exe\" \"%1\""
+*/
+
+bool EightZip_Install_stupid()
+{
+    DE_DEBUG("Installing...")
+
+    const auto HKCU = HKEY_CURRENT_USER;
+    const std::wstring k0 = L"Software\\Classes\\AllFilesystemObjects\\shell\\";
+    const std::wstring k1 = k0 + L"8-Zip_Compress";
+    const std::wstring k2 = k0 + L"8-Zip_Compress\\command";
+    const std::wstring k3 = k0 + L"8-Zip_Extract";
+    const std::wstring k4 = k0 + L"8-Zip_Extract\\command";
+    const std::wstring v1 = L""; // (Default)
+    const std::wstring v2 = L"Icon";
+    const std::wstring exeName = App::getInstance()->getExeFileW();
+
+    // (1.) Create k1 Key
+    bool ok = RegUtil::createKey(HKCU, k1);
+    if (!ok) { DE_ERROR("No [k1]") return false; }
+
+    // Default
+    ok = RegUtil::writeREG_SZ(HKCU,k1,v1,L"8-Zip Compress files and dirs");
+    if (!ok) { DE_ERROR("No [k1] Default") return false; }
+
+    // Icon
+    ok = RegUtil::writeREG_SZ(HKCU,k1,v2,exeName);
+    if (!ok) { DE_ERROR("No [k1] Icon") return false; }
+
+    // (2.) Create k2 Key
+    ok = RegUtil::createKey(HKCU, k2);
+    if (!ok) { DE_ERROR("No [k2]") return false; }
+
+    // Default
+    std::wstring cmdLineC = dbStrW(L"\"", exeName, L"\" --compress \"%1\"");
+    ok = RegUtil::writeREG_SZ(HKCU,k2,v1,cmdLineC);
+    if (!ok) { DE_ERROR("No [k2] Default") return false; }
+
+    // ========================================================
+
+    // (3.) Create k3 Key
+    ok = RegUtil::createKey(HKCU, k3);
+    if (!ok) { DE_ERROR("No [k3]") return false; }
+
+    // Default
+    ok = RegUtil::writeREG_SZ(HKCU,k3,v1,L"8-Zip Extract Archive");
+    if (!ok) { DE_ERROR("No [k3] Default") return false; }
+
+    // Icon
+    ok = RegUtil::writeREG_SZ(HKCU,k3,v2,exeName);
+    if (!ok) { DE_ERROR("No [k3] Icon") return false; }
+
+    // (4.) Create k4 Key
+    ok = RegUtil::createKey(HKCU, k4);
+    if (!ok) { DE_ERROR("No [k4]") return false; }
+
+    // Default
+    std::wstring cmdLineE = dbStrW(L"\"", exeName, L"\" --extract \"%1\"");
+    ok = RegUtil::writeREG_SZ(HKCU,k4,v1,cmdLineE);
+    if (!ok) { DE_ERROR("No [k4]") return false; }
+
+    DE_OK("OK.")
+    return true;
+}
+
+bool EightZip_Uninstall_stupid()
+{
+    const auto HKCU = HKEY_CURRENT_USER;
+    const std::wstring k0 = L"Software\\Classes\\AllFilesystemObjects\\shell\\";
+    const std::wstring k1 = k0 + L"8-Zip_Compress";
+    const std::wstring k3 = k0 + L"8-Zip_Extract";
+
+    RegUtil::removeKey(HKCU, k1,true);
+    RegUtil::removeKey(HKCU, k3,true);
+
+    if (EightZip_isInstalled())
+    {
+        DE_ERROR("Registry still has entries!")
+        return false;
+    }
+    else
+    {
+        DE_OK("OK.")
+        return true;
+    }
+}
+
+bool EightZip_isInstalled_stupid()
+{
+    const auto HKCU = HKEY_CURRENT_USER;
+    const std::wstring k0 = L"Software\\Classes\\AllFilesystemObjects\\shell\\";
+    const std::wstring k1 = k0 + L"8-Zip_Compress";
+    const std::wstring k2 = k0 + L"8-Zip_Compress\\command";
+    const std::wstring k3 = k0 + L"8-Zip_Extract";
+    const std::wstring k4 = k0 + L"8-Zip_Extract\\command";
+
+    bool b1 = RegUtil::existKey(HKCU, k1);
+    bool b2 = RegUtil::existKey(HKCU, k2);
+    bool b3 = RegUtil::existKey(HKCU, k3);
+    bool b4 = RegUtil::existKey(HKCU, k4);
+    if (b1 && b2 && b3 && b4)
+    {
+        return true;
+    }
+    return false;
+}
+
+/*
+
+   // Another EC version from the dumb AI:
+
+    [HKEY_CURRENT_USER\Software\Classes\CLSID\{PACK_CLSID}\InprocServer32]
+        @="C:\\Path\\MyShell.dll"
+        "ThreadingModel"="Apartment"
+
+    [HKEY_CURRENT_USER\Software\Classes\CLSID\{EXTR_CLSID}\InprocServer32]
+        @="C:\\Path\\MyShell.dll"
+        "ThreadingModel"="Apartment"
+
+    [HKEY_CURRENT_USER\Software\Classes\*\shell\8-Zip_Compress]
+        @="Compres* with 8-Zip"
+        "ExplorerCommandHandler"="{PACK_CLSID}"
+        "Icon"="C:\\Path\\8Zip.exe"
+
+    [HKEY_CURRENT_USER\Software\Classes\*\shell\8-Zip_Extract]
+        @="Extract Archive"
+        "ExplorerCommandHandler"="{EXTR_CLSID}"
+        "Icon"="C:\\Path\\8Zip.exe"
+
+    [HKEY_CURRENT_USER\Software\Classes\Directory\shell\8-Zip_Compress]
+        @="Compress with 8-Zip"
+        "ExplorerCommandHandler"="{PACK_CLSID}"
+        "Icon"="C:\\Path\\8Zip.exe"
+
+    [HKEY_CURRENT_USER\Software\Classes\Directory\shell\8-Zip_Extract]
+        @="Extract Archive"
+        "ExplorerCommandHandler"="{EXTR_CLSID}"
+        "Icon"="C:\\Path\\8Zip.exe"
+
+    // =========================================================
+
+    HKCU\Software\Classes\CLSID\{PACK_CLSID}\InprocServer32
+        (Default) = C:\...\MyShell.dll
+        ThreadingModel = Apartment
+
+    HKCU\Software\Classes\CLSID\{EXTR_CLSID}\InprocServer32
+        (Default) = C:\...\MyShell.dll
+        ThreadingModel = Apartment
+
+HKCU\Software\Classes\*\shell\8-Zip_Compress
+
+HKCU\Software\Classes\*\shell\8-Zip_Extract
+3
+
+4
+HKCU\Software\Classes\Directory\shell\8-Zip_Compress
+5
+HKCU\Software\Classes\Directory\shell\8-Zip_Extract
+
+    HKCU\Software\Classes\*\shell\8-Zip_Compress
+        ExplorerCommandHandler = "{PACK_CLSID}"
+
+    HKCU\Software\Classes\Directory\shell\8-Zip_Compress
+        ExplorerCommandHandler = "{PACK_CLSID}"
+
+    HKCU\Software\Classes\AllFilesystemObjects\shell\8-Zip_Compress
+        ExplorerCommandHandler = "{PACK_CLSID}"
+
+
+    HKCU\Software\Classes\AllFilesystemObjects\shell\8-Zip_Compress
+        (Default) = "Compress with 8-Zip"
+        ExplorerCommandHandler = "{PACK_CLSID}"
+        Icon = "C:\...\8Zip.exe"
+
+    HKCU\Software\Classes\AllFilesystemObjects\shell\8-Zip_Compress
+        ExplorerCommandHandler = "{PACK_CLSID}"
+11
+
+12
+HKCU\Software\Classes\AllFilesystemObjects\shell\8-Zip_Extract
+13
+ExplorerCommandHandler = "{EXTR_CLSID}"
+
+/*
+    2.) Modern IExplorerCommand ShellExtension 8-ZipEC.dll
+
+    HKEY_CURRENT_USER\Software\Classes\CLSID\{PACK_CLSID}\InprocServer32
+        (Default)      = c:\...\MyShell.dll
+        ThreadingModel = Apartment
+
+    HKEY_CURRENT_USER\Software\Classes\CLSID\{EXTR_CLSID}\InprocServer32
+        (Default)      = c:\...\MyShell.dll
+        ThreadingModel = Apartment
+
+    HKEY_CURRENT_USER\Software\Classes\*\shell\8-Zip_Compress
+        ExplorerCommandHandler="{PACK_CLSID}"
+
+    HKEY_CURRENT_USER\Software\Classes\*\shell\8-Zip_Extract
+        ExplorerCommandHandler="{EXTR_CLSID}"
+*/
+bool EightZip_Install_ShellExtension()
 {
 #ifdef _WIN32
     std::wstring exeFile = App::getInstance()->getExeFileW();
@@ -258,7 +606,7 @@ bool EightZip_Install()
 #endif
 }
 
-bool EightZip_Uninstall()
+bool EightZip_Uninstall_ShellExtension()
 {
 #ifdef _WIN32
     std::wstring exeFile = App::getInstance()->getExeFileW();
@@ -364,7 +712,7 @@ static const std::wstring k3 =
 static const std::wstring k4 =
     dbStrW(L"Software\\Classes\\Directory\\shellex\\ContextMenuHandlers\\8-Zip");
 
-bool EightZip_isInstalled()
+bool EightZip_isInstalled_ShellExtension1()
 {
     if (!RegUtil::existKey(HKEY_LOCAL_MACHINE, k1))
     {
@@ -389,6 +737,245 @@ bool EightZip_isInstalled()
     }
 
     DE_DEBUG("Got k1..k4")
+    return true;
+}
+
+/*
+🧩 SEE_MASK_NOCLOSEPROCESS — was genau passiert?
+
+Wenn du ShellExecuteExW mit einem SHELLEXECUTEINFOW aufrufst und kein SEE_MASK_NOCLOSEPROCESS setzt:
+
+    Windows startet das Programm
+
+    Windows schließt den Prozess-Handle sofort wieder
+
+    sei.hProcess ist NULL
+
+    Du kannst nicht warten (WaitForSingleObject)
+
+    Du kannst nicht den Exit-Code holen (GetExitCodeProcess)
+
+    Du kannst nicht den Prozess terminieren (TerminateProcess)
+
+    Du kannst nicht den Prozess überwachen
+
+Wenn du SEE_MASK_NOCLOSEPROCESS setzt:
+
+    Windows startet das Programm
+
+    Windows lässt den Prozess-Handle offen
+
+    sei.hProcess enthält einen gültigen Handle
+
+    Du kannst:
+
+        auf den Prozess warten
+
+        Exit-Code holen
+
+        Prozess überwachen
+
+        Prozess beenden
+
+Und du musst den Handle selbst schließen:
+cpp
+
+CloseHandle(sei.hProcess);
+
+🔍 Dein Code:
+cpp
+
+SHELLEXECUTEINFOW sei = { sizeof(sei) };
+sei.fMask = SEE_MASK_NOCLOSEPROCESS;
+
+Das ist korrekt.
+Damit bekommst du einen gültigen Prozess-Handle in sei.hProcess.
+🧠 Warum fehlt dir manchmal ein Handle?
+
+Weil ShellExecuteEx nur dann einen Prozess erzeugt, wenn:
+
+    du ein Programm startest
+
+    nicht eine Datei, die über einen Handler geöffnet wird (z. B. .txt → Notepad)
+
+    nicht eine URL
+
+    nicht ein Ordner
+
+    nicht ein Shell-Verb wie "open" auf etwas, das keinen Prozess erzeugt
+
+Beispiel:
+ShellExecuteEx("C:\\Windows\\explorer.exe") → Handle
+ShellExecuteEx("C:\\Windows") → kein Handle, Explorer-Fenster wird nur geöffnet
+
+Wenn du willst, kann ich dir eine Liste geben:
+
+    Wann ShellExecuteEx einen Prozess-Handle liefert
+
+🧪 Minimal korrektes Beispiel
+cpp
+
+SHELLEXECUTEINFOW sei = { sizeof(sei) };
+sei.fMask = SEE_MASK_NOCLOSEPROCESS;
+sei.lpFile = L"C:\\Windows\\System32\\notepad.exe";
+sei.nShow = SW_SHOW;
+
+if (ShellExecuteExW(&sei))
+{
+    WaitForSingleObject(sei.hProcess, INFINITE);
+
+    DWORD exitCode = 0;
+    GetExitCodeProcess(sei.hProcess, &exitCode);
+
+    CloseHandle(sei.hProcess);
+*/
+
+bool EightZip_execute(
+        std::wstring cmd,
+        std::wstring params,
+        bool bFireAndForget,
+        bool bAdmin,
+        std::wstring dir)
+{
+    DE_DEBUG("cmd = ",de_mbstr(cmd))
+    DE_DEBUG("params = ",de_mbstr(params))
+    DE_DEBUG("bAdmin = ",bAdmin)
+    DE_DEBUG("dir = ",de_mbstr(dir))
+
+#ifdef _WIN32
+    SHELLEXECUTEINFOW sei = { sizeof(sei) };
+    sei.fMask = SEE_MASK_DEFAULT;
+    sei.nShow = SW_SHOWNORMAL; // SW_SHOW | SW_HIDE;
+    sei.lpFile = cmd.c_str(); // L"regsvr32.exe";
+
+    if (!bFireAndForget)
+    {
+        sei.fMask = SEE_MASK_NOCLOSEPROCESS;
+    }
+    if (bAdmin)
+    {
+        sei.lpVerb = L"runas"; // (default: L"open")
+    }
+    if (!params.empty())
+    {
+        sei.lpParameters = params.c_str();
+    }
+    if (!dir.empty())
+    {
+        sei.lpDirectory = dir.c_str();
+    }
+
+    if (bFireAndForget)
+    {
+        ShellExecuteExW(&sei);
+        return true;
+    }
+    else
+    {
+        WINBOOL ok = ShellExecuteExW(&sei);
+        if (!ok)
+        {
+            DWORD err = GetLastError();
+            DE_ERROR("ShellExecuteExW failed: ", err)
+            return false;
+        }
+
+        WaitForSingleObject(sei.hProcess, INFINITE);
+
+        DWORD exitCode = 0;
+        if (!GetExitCodeProcess(sei.hProcess, &exitCode))
+        {
+            DWORD err = GetLastError();
+            DE_ERROR("GetExitCodeProcess failed: ", err)
+            CloseHandle(sei.hProcess);
+            return false;
+        }
+
+        CloseHandle(sei.hProcess);
+
+        if (exitCode == 0) // regsvr32 returns 0 on success
+        {
+            DE_OK("Deregistration succeeded.")
+            return true;
+        }
+        else
+        {
+            DE_ERROR("Deregistration FAILED. regsvr32 exit code: ", exitCode)
+            return false;
+        }
+    }
+#else
+    DE_ERROR("Not implemented")
+    return false;
+#endif
+}
+
+/*
+Und schon der nächste Kack Windows Bug:
+Wenn das Security Center Window offen ist startet der Explorer nicht sauber neu.
+Killen geht aber neu starten natürlich nicht, was für eine Scheisse.
+
+🔥 Kurzfassung, die du dir merken kannst
+
+    SW_SHOW → Zeig das Fenster so, wie die App es will.
+    SW_SHOWNORMAL → Zeig das Fenster im normalen Zustand, den Windows gespeichert hat.
+
+STARTUPINFOW si = { sizeof(si) };
+PROCESS_INFORMATION pi = {};
+
+CreateProcessW(
+    L"C:\\Windows\\explorer.exe",
+    NULL,
+    NULL, NULL, FALSE,
+    0,
+    NULL, NULL,
+    &si, &pi
+);
+
+CloseHandle(pi.hThread);
+CloseHandle(pi.hProcess);
+
+
+
+
+STARTUPINFOW si = { sizeof(si) };      // Pflicht: Strukturgröße setzen
+si.dwFlags = STARTF_USESHOWWINDOW;     // Wir wollen Fenstersteuerung aktivieren
+si.wShowWindow = SW_HIDE;              // CLI-Tools unsichtbar starten
+
+PROCESS_INFORMATION pi = {};           // Hier landen Prozess- und Thread-Handles
+
+// Fire-and-forget Prozessstart
+BOOL ok = CreateProcessW(
+    L"C:\\Windows\\System32\\taskkill.exe",   // EXE-Pfad (empfohlen)
+    L"taskkill.exe /IM explorer.exe /F",      // komplette Befehlszeile
+    NULL,                                     // Prozess-Security (NULL = Standard)
+    NULL,                                     // Thread-Security (NULL = Standard)
+    FALSE,                                    // Keine Handle-Vererbung
+    CREATE_NO_WINDOW,                         // Keine Konsole anzeigen
+    NULL,                                     // Environment (NULL = erben)
+    NULL,                                     // Arbeitsverzeichnis (NULL = erben)
+    &si,                                      // Startup-Info (Fenstersteuerung)
+    &pi                                       // Ergebnis: Prozess + Thread
+);
+
+// Fire-and-forget → sofort Handles schließen
+if (ok) {
+    CloseHandle(pi.hThread);
+    CloseHandle(pi.hProcess);
+}
+*/
+
+bool EightZip_restartExplorer()
+{
+    // I. taskkill /IM explorer.exe /F      -> kill
+    // II. explorer.exe                     -> start
+
+    // Kill explorer, but wait for return, so we can restart in order.
+    EightZip_execute(L"taskkill.exe", L"/IM explorer.exe /F", false);
+
+    // No restart explorer, but dont wait, aka don't block console of this app.
+    EightZip_execute(L"explorer.exe", L"", true);
+
     return true;
 }
 
