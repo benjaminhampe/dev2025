@@ -16,11 +16,10 @@ struct UI
 
     // Top
     Fl_Box* lblArchive = nullptr;
-    Fl_Box* edtDir = nullptr;
-    Win11Combo* edtArchive = nullptr;
+    Fl_Input* edtDir = nullptr;
+    Fl_Input* edtArchive = nullptr;
     Fl_Button* btnChoose = nullptr;
-
-    Fl_Choice* choice;
+    //Win11Combo* edtArchive = nullptr;
 
     // Body Column[0]
     Fl_Box* lblFormat = nullptr;
@@ -28,7 +27,7 @@ struct UI
 
     Fl_Box* lblPreset = nullptr;
     ComboBox* cbxPreset = nullptr;
-
+/*
     Fl_Box* lblAlgorithm = nullptr;
     ComboBox* cbxAlgorithm = nullptr;
 
@@ -81,6 +80,7 @@ struct UI
     Fl_Box* lblCryptAlgo = nullptr;
     ComboBox* cbxCryptAlgo = nullptr;
     Fl_Check_Button* optEncryptNames = nullptr;
+*/
 
     // Footer Buttons:
     Fl_Button* btnOk = nullptr;
@@ -92,7 +92,7 @@ struct UI
     FN_onCancel onCancel;
     FN_onHelp onHelp;
 
-    std::string getArchiveFormat() const
+    std::string getExtension() const
     {
         static std::array<std::string,2> my_map
         {
@@ -127,41 +127,144 @@ struct UI
     //     int quality_map[] = {0,1,5,7,9};
     //     return quality_map[quality->value()];
     // }
+
+    Job job;
 };
 
 static UI ui;
 
-void Dialog::setCallback_onOk(const FN_onOk& onOk)
+void Builder::setCallback_onOk(const FN_onOk& onOk)
 {
     ui.onOk = onOk;
 }
 
-void Dialog::setCallback_onCancel(const FN_onCancel& onCancel)
+void Builder::setCallback_onCancel(const FN_onCancel& onCancel)
 {
     ui.onCancel = onCancel;
 }
 
-void Dialog::setCallback_onHelp(const FN_onHelp& onHelp)
+void Builder::setCallback_onHelp(const FN_onHelp& onHelp)
 {
     ui.onHelp = onHelp;
 }
 
-Job Dialog::getJob() const
+Job Builder::getJob() const
 {
-    Job job;
+    Job job = ui.job;
     job.bCompress = true;
-    job.baseDir = App::getInstance()->getExeDirA();
-    job.baseName = ui.edtArchive->label();
-    job.extension = ui.cbxFormat->currentData().toString();
-    job.iPreset = ui.cbxPreset->currentData().toInt();
+    job.baseDir = "";
+    job.baseName = "";
+    job.extension = "";
+    job.iPreset = -1;
+
+    // ======== baseDir =========================
+    if (ui.edtDir && ui.edtDir->value())
+    {
+        job.baseDir = ui.edtDir->value();
+    }
+    else
+    {
+        DE_ERROR("Got empty ui.edtDir->value()")
+    }
+
+    if (job.baseDir.empty())
+    {
+        job.baseDir = App::getInstance()->getExeDirA();
+    }
+
+    // ======== baseName =========================
+    if (ui.edtArchive && ui.edtArchive->value())
+    {
+        job.baseName = ui.edtArchive->value();
+    }
+    else
+    {
+        DE_ERROR("Got empty ui.edtArchive->value()")
+    }
+
+    if (job.baseName.empty())
+    {
+        job.baseName = "8z_untitled.tar";
+    }
+
+    // ======== extension =========================
+    if (ui.cbxFormat && !ui.cbxFormat->currentData().toString().empty())
+    {
+        job.extension = ui.cbxFormat->currentData().toString();
+    }
+    else
+    {
+        DE_ERROR("Got empty ui.cbxFormat->currentData().toString()")
+    }
+
+    if (job.extension.empty())
+    {
+        DE_ERROR("Got empty extension, fallback to .tar")
+        job.extension = "tar";
+    }
+
+    // ======== iPreset =========================
+    if (ui.cbxPreset && !ui.cbxFormat->currentData().toString().empty())
+    {
+        job.iPreset = ui.cbxPreset->currentData().toInt();
+    }
+
+    if (job.iPreset < 0)
+    {
+        if (job.extension == "zst")
+        {
+            DE_ERROR("Got invalid zst preset, fallback to 5")
+            job.iPreset = 5;
+        }
+    }
+
+    DE_DEBUG("Job: ",job.str())
+
     return job;
 }
 
-void Dialog::setJob(Job job)
+void Builder::setJob(const Job& job)
 {
-    ui.edtDir->label( job.baseDir.c_str() );
+    ui.job = job;
 
-    ui.edtArchive->label( job.baseName.c_str() );
+    DE_DEBUG("Got Job: ")
+    DE_DEBUG(ui.job.str())
+
+    if (ui.job.baseDir.empty())
+    {
+        if (ui.job.filesIn.size() > 0)
+        {
+            ui.job.baseDir = dbFileDir(ui.job.filesIn[0]);
+        }
+        else
+        {
+            ui.job.baseDir = App::getInstance()->getExeDirA();
+            DE_ERROR("Fallback job.baseDir")
+        }
+    }
+
+    if (ui.job.baseName.empty())
+    {
+        if (ui.job.filesIn.size() > 1)
+        {
+            ui.job.baseName = dbFileBase(ui.job.baseDir);
+        }
+        else if (ui.job.filesIn.size() == 1)
+        {
+            ui.job.baseName = dbFileBase(ui.job.filesIn[0]);
+        }
+        else
+        {
+            ui.job.baseName = "Untitled";
+            DE_ERROR("Fallback job.baseName")
+        }
+
+        ui.job.baseName += ".";
+        ui.job.baseName += ui.getExtension();
+    }
+
+    ui.edtDir->value( ui.job.baseDir.c_str() );
+    ui.edtArchive->value( ui.job.baseName.c_str() );
 
     // job.baseDir = App::getInstance()->getExeDirA();
     // job.baseName = ui.edtArchive->label();
@@ -182,7 +285,7 @@ T* make_widget(int size, Args&&... args) {
 }
 
 // =============================================================
-Dialog::Dialog(int W, int H, const char* title)
+Builder::Builder(int W, int H, const char* title)
 // =============================================================
     : Window(W, H, title)
 {
@@ -206,9 +309,10 @@ Dialog::Dialog(int W, int H, const char* title)
     // Top
     ui.lblArchive = new Label(x,y,mw,h1,"Archive:");
     ui.lblArchive->labelsize(18);
-    ui.edtDir = new Label(x,y,mw,h1,"C:\\Hello\\World\\");
+    ui.edtDir = new Fl_Input(x,y,mw,h1);
     ui.edtDir->align(FL_ALIGN_LEFT | FL_ALIGN_BOTTOM | FL_ALIGN_INSIDE);
-    ui.edtArchive = new Win11Combo(x,y,mw,h1,s);
+    //ui.edtArchive = new Win11Combo(x,y,mw,h1,s);
+    ui.edtArchive = new Fl_Input(x,y,mw,h1);
     ui.btnChoose = new Button(x,y,mw,h1,"...");
 
     // Body Column[0]
@@ -221,6 +325,7 @@ Dialog::Dialog(int W, int H, const char* title)
     // ui.lblQuality = new Label(x,y,mw,h1,"Compress-Quality:");
     // ui.cbxQuality = new ComboBox(x,y,mw,h1);
 
+#if 0
     ui.lblAlgorithm = new Label(x,y,mw,h1,"Compress Algorithm:");
     ui.cbxAlgorithm = new ComboBox(x,y,mw,h1);
 
@@ -274,6 +379,7 @@ Dialog::Dialog(int W, int H, const char* title)
     ui.lblCryptAlgo = new Label(x,y,mw,h1,"Encrypt Mode:");
     ui.cbxCryptAlgo = new ComboBox(x,y,mw,h1);
     ui.optEncryptNames = new Fl_Check_Button(x,y,mw,h1,"Encrypt FileNames");
+#endif
 
     // Footer
     ui.btnOk = new Button(x,y,mw,h1,"Ok");
@@ -383,21 +489,21 @@ Dialog::Dialog(int W, int H, const char* title)
     Fast‑50 (Logs/Telemetry)
     Fast‑100 (High‑Throughput)
 
-    Level	Strategie	Qualität
-    −N Fast	ZSTD_fast	extrem schnell, geringste Ratio
-    1	ZSTD_fast	schnell
-    2	ZSTD_fast	schnell
-    3	ZSTD_dfast	Standard‑Default
-    4	ZSTD_dfast	besser
-    5	ZSTD_greedy	mittlere Ratio
-    6	ZSTD_lazy	höhere Ratio
-    7	ZSTD_lazy	höhere Ratio
-    8	ZSTD_lazy2	hohe Ratio
-    9	ZSTD_lazy2	hohe Ratio
-    10–12	ZSTD_lazy2	sehr hohe Ratio
+    Level	Strategie       Qualität
+    −N Fast	ZSTD_fast       extrem schnell, geringste Ratio
+    1       ZSTD_fast       schnell
+    2       ZSTD_fast       schnell
+    3       ZSTD_dfast      Standard‑Default
+    4       ZSTD_dfast      besser
+    5       ZSTD_greedy     mittlere Ratio
+    6       ZSTD_lazy       höhere Ratio
+    7       ZSTD_lazy       höhere Ratio
+    8       ZSTD_lazy2      hohe Ratio
+    9       ZSTD_lazy2      hohe Ratio
+    10–12	ZSTD_lazy2      sehr hohe Ratio
     13–15	ZSTD_btlazy2	sehr hohe Ratio
-    16–19	ZSTD_btopt	maximal
-    20–22 Ultra	ZSTD_btultra	höchste Ratio, extrem langsam
+    16–19	ZSTD_btopt      maximal
+    20–22 	ZSTD_btultra	höchste Ratio, extrem langsam
     */
     const auto & zstPresets = ZstPresets::get();
     for (size_t i = 0; i < zstPresets.size(); ++i)
@@ -419,10 +525,9 @@ Dialog::Dialog(int W, int H, const char* title)
     end();
 }
 
-void Dialog::resize(int X, int Y, int W, int H)
+void Builder::resize(int X, int Y, int W, int H)
 {
     Fl_Window::resize(X, Y, W, H);
-
 
     const float zoom = Fl::screen_scale(0);
 
@@ -467,7 +572,7 @@ void Dialog::resize(int X, int Y, int W, int H)
     ui.lblPreset->resize(x,   y,w4,h1);
     ui.cbxPreset->resize(x+w4,y,w4,h1);
     y += ln;
-
+#if 0
     ui.lblAlgorithm->resize(x,   y,w4,h1);
     ui.cbxAlgorithm->resize(x+w4,y,w4,h1);
     y += ln;
@@ -550,6 +655,7 @@ void Dialog::resize(int X, int Y, int W, int H)
     y += ln;
     ui.optEncryptNames->resize(x+wC,y,w2-wC*2,h1);
     y += h1;
+#endif
 
     // Footer
 
@@ -559,6 +665,8 @@ void Dialog::resize(int X, int Y, int W, int H)
     ui.btnOk->resize(x,y,wB,h1); x += wB + sB;
     ui.btnCancel->resize(x,y,wB,h1); x += wB + sB;
     ui.btnHelp->resize(x,y,wB,h1);
+
+
 }
 
 } // end namespace builder.

@@ -14,10 +14,6 @@ namespace de {
         bool        m_bDirectory{};
 
         FileInfo();
-        FileInfo( const std::wstring& uri );
-        FileInfo( const std::string& uri );
-        void set( const std::wstring& uri );
-        void set( const std::string& uri );
 
         // --- member funcs ---
         std::wstring suffix() const;
@@ -29,10 +25,7 @@ namespace de {
         std::string fileNameA() const;
         std::string suffixA() const;
         uint64_t fileSize() const;
-    /*
-        std::wstring relativePath(const std::string& base) const;
-        bool isDir() const;
-    */
+
         bool isDir() const;
         bool isFile() const;
 
@@ -43,21 +36,60 @@ namespace de {
 
     typedef std::vector<FileInfo> FileInfos;
 
-    /*
-    struct FileInfos
-    {
-
-    }
-    */
-
     uint64_t
     TOTAL_FILE_SIZE(const FileInfos& fileInfos);
 
     void
     DUMP(const FileInfos& fileInfos);
 
+    std::optional<FileInfo>
+    ScanFileInfo(const std::wstring& uri);
+
 } // end namespace de.
 
+
+inline std::vector<std::string>
+de_mbstr( const std::vector<std::wstring>& in_list )
+{
+    if (in_list.empty()) return {};
+
+    std::vector<std::string> out_list;
+    out_list.reserve(in_list.size());
+    for (const auto& w : in_list)
+    {
+        std::string a = de_mbstr(w);
+        out_list.emplace_back( std::move(a) );
+    }
+    return out_list;
+}
+
+inline std::vector<std::wstring>
+de_wstr( const std::vector<std::string>& in_list )
+{
+    if (in_list.empty()) return {};
+
+    std::vector<std::wstring> out_list;
+    out_list.reserve(in_list.size());
+    for (const auto& a : in_list)
+    {
+        std::wstring w = de_wstr(a);
+        out_list.emplace_back( std::move(w) );
+    }
+    return out_list;
+}
+
+inline StringListW
+dbStrLower(const StringListW& iList)
+{
+    StringListW oList;
+    oList.reserve( iList.size() );
+    for (const auto& iName : iList)
+    {
+        auto oName = dbStrLower(iName);
+        oList.emplace_back( std::move( oName ) );
+    }
+    return oList;
+};
 
 // A bit more expensive on Win32, since we need to convert to lowerCase
 // before doing the comparison
@@ -69,3 +101,8 @@ void addUniqueFileName(const std::wstring& fileName, StringListW & liste, bool b
 // Win32: bCaseSensitive = false;
 // Linux: bCaseSensitive = true;
 void addUniqueFileNames(const StringListW& src, StringListW & dst, bool bCaseSensitive);
+
+
+void platform_addUniqueFileName(const std::wstring& src, StringListW & dst);
+
+void platform_addUniqueFileNames(const StringListW& src, StringListW & dst);

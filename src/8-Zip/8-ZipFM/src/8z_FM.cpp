@@ -42,6 +42,7 @@ struct UI
 
 static UI ui;
 
+/*
 void log_common(const char* msg, char style)
 {
     // Text anhängen
@@ -61,6 +62,7 @@ inline void log_error(const char* msg) { log_common(msg,'B'); }
 inline void log_debug(const char* msg) { log_common(msg,'C'); }
 inline void log_warn(const char* msg) { log_common(msg,'D'); }
 inline void log_success(const char* msg) { log_common(msg,'E'); }
+*/
 
 struct LogAsync
 {
@@ -74,11 +76,11 @@ static void log_common_awake(void* data)
     auto logAsync = (LogAsync*)data;
     switch(logAsync->logLevel)
     {
-        case de::LogLevel::Error: log_common(logAsync->msg,'B'); break;
-        case de::LogLevel::Debug: log_common(logAsync->msg,'C'); break;
-        case de::LogLevel::Warn: log_common(logAsync->msg,'D'); break;
-        case de::LogLevel::Ok: log_common(logAsync->msg,'E'); break;
-        default: log_common(logAsync->msg,'A'); break;
+        case de::LogLevel::Error: ui.logbox->log_common(logAsync->msg,'B'); break;
+        case de::LogLevel::Debug: ui.logbox->log_common(logAsync->msg,'C'); break;
+        case de::LogLevel::Warn: ui.logbox->log_common(logAsync->msg,'D'); break;
+        case de::LogLevel::Ok: ui.logbox->log_common(logAsync->msg,'E'); break;
+        default: ui.logbox->log_common(logAsync->msg,'A'); break;
     }
     delete logAsync;
 }
@@ -280,7 +282,7 @@ void compare_async()
     // Comparing....
     async_log_info("Comparing...");
 
-    log_success("Finished compare.");
+    async_log_ok("Finished compare.");
 }
 
 // ---------------- callbacks ----------------

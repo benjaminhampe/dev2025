@@ -24,20 +24,8 @@ int main(int argc, char** argv)
         return 0;
     }
 
-    EightZip_Registry_updateExePath();
-
-    // if (!EightZip_isInstalled())
-    // {
-    //     DE_WARN("[Install] ShellExtension not installed, initiate...")
-    //     if (!EightZip_Install())
-    //     {
-    //         DE_ERROR("[Install] Failed.")
-    //     }
-    //     else
-    //     {
-    //         DE_OK("[Install] Ok.")
-    //     }
-    // }
+    // EightZip_Install();
+    // EightZip_InstallExePath();
 
     const auto& job = App::getInstance()->getJob();
     if (job.bRestartExplorer)
@@ -46,7 +34,7 @@ int main(int argc, char** argv)
     }
     else if (job.bUpdate)
     {
-        EightZip_Registry_updateExePath();
+        EightZip_InstallExePath();
     }
     else if (job.bUninstall)
     {
@@ -55,6 +43,8 @@ int main(int argc, char** argv)
     else if (job.bInstall)
     {
         EightZip_Install();
+        EightZip_InstallExePath();
+        // EightZip_restartExplorer();
     }
     else if (job.bCompress || job.bExtract)
     {
@@ -90,7 +80,7 @@ int main(int argc, char** argv)
 
         if (job.bCompress)
         {
-            auto B = new EightZip::builder::Dialog(w, h, sTitle.c_str());
+            auto B = new EightZip::builder::Builder(w, h, sTitle.c_str());
             B->setJob(job);
             B->resizable(B);
             set_window_icon_from_resource(B);
@@ -98,8 +88,8 @@ int main(int argc, char** argv)
 
             B->setCallback_onOk([&]()
                 {
-                    Job dlgjob = B->getJob();
-                    auto W = new EightZip::worker::Dialog(dlgjob, w, h, sTitle.c_str());
+                    Job jobB = B->getJob();
+                    auto W = new EightZip::worker::Dialog(jobB, w, h, sTitle.c_str());
                     W->resizable(W);
                     set_window_icon_from_resource(W);
                     W->show();

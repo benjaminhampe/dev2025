@@ -1,6 +1,7 @@
 #include "8z_ArgParser.h"
 //#include <lyra/lyra.hpp>
 #include <de/win32/win32_Get_Explorer_Selection.h>
+#include <de/FileInfo.h>
 
 // static
 bool ArgParser::parseBenni(Job* m_job, int argc, char** argv)
@@ -11,15 +12,20 @@ bool ArgParser::parseBenni(Job* m_job, int argc, char** argv)
         return false;
     }
 
-    auto fileList = win32_Get_Explorer_Selection();
-    DE_DEBUG("Got fileList = ",fileList.size())
+    StringListW filesOut;
+    StringListW filesIn;
 
-    for (size_t i = 0; i < fileList.size(); ++i)
+    StringListW explorerSelection = win32_Get_Explorer_Selection();
+//<debug>
+    /*
+    DE_BENNI("explorerSelection = ",explorerSelection.size())
+    for (size_t i = 0; i < explorerSelection.size(); ++i)
     {
-        std::string fileName = de_mbstr(fileList[i]);
-        DE_DEBUG("fileList[",i,"] ",fileName)
-        m_job->filesIn.emplace_back( fileName );
+        DE_DEBUG("explorerSelection[",i,"] ",de_mbstr(explorerSelection[i]))
     }
+    */
+//</debug>
+    platform_addUniqueFileNames(explorerSelection,filesIn);
 
     enum Mode { NORMAL, READ_I_LIST, READ_O_LIST };
 
@@ -33,20 +39,22 @@ bool ArgParser::parseBenni(Job* m_job, int argc, char** argv)
         if (mode == READ_I_LIST || mode == READ_O_LIST)
         {
             // Stop when encountering another flag
-            if (arg.size() > 0 && arg[0] == L'-')
+            if (arg.size() > 0 && arg[0] == '-')
             {
                 mode = NORMAL;
                 // fall through to flag handling
             }
             else
             {
+                std::wstring ws = de_wstr(argv[i]);
+
                 if (mode == READ_I_LIST)
                 {
-                    m_job->filesIn.emplace_back(argv[i]);
+                    platform_addUniqueFileName(ws, filesIn);
                 }
                 else
                 {
-                    m_job->filesOut.emplace_back(argv[i]);
+                    platform_addUniqueFileName(ws, filesOut);
                 }
                 continue;
             }
@@ -74,14 +82,14 @@ bool ArgParser::parseBenni(Job* m_job, int argc, char** argv)
             break;
         }
 
-        if (arg == "-i" || arg == "--install")
+        if (arg == "--install")
         {
             m_job->bInstall = true;
             mode = NORMAL;
             break;
         }
 
-        if (arg == "-u" || arg == "--uninstall" || arg == "--deinstall")
+        if (arg == "--uninstall" || arg == "--deinstall")
         {
             m_job->bUninstall = true;
             mode = NORMAL;
@@ -149,22 +157,38 @@ bool ArgParser::parseBenni(Job* m_job, int argc, char** argv)
         }
 */
         // --- list of input files ---
-        if (arg == "-a" || arg == "--add")
+        if (arg == "-i" || arg == "--in" || arg == "--input" || arg == "--inputs")
         {
             mode = READ_I_LIST;
             continue;
         }
 
         // --- list of output files ---
-        if (arg == "-o" || arg == "--out")
+        if (arg == "-o" || arg == "--out" || arg == "--output" || arg == "--outputs")
         {
             mode = READ_O_LIST;
             continue;
         }
 
-        // // --- positional files ---
-        // m_job->filesIn.emplace_back(argv[i]);
+        // --- positional files ---
+        platform_addUniqueFileName(de_wstr(argv[i]), filesIn);
     }
+
+
+    DE_BENNI("filesOut = ",filesOut.size())
+    for (size_t i = 0; i < filesOut.size(); ++i)
+    {
+        DE_DEBUG("filesOut[",i,"] ",de_mbstr(filesOut[i]))
+    }
+
+    DE_BENNI("filesIn = ",filesIn.size())
+    for (size_t i = 0; i < filesIn.size(); ++i)
+    {
+        DE_DEBUG("filesIn[",i,"] ",de_mbstr(filesIn[i]))
+    }
+
+    m_job->filesOut = de_mbstr(filesOut);
+    m_job->filesIn = de_mbstr(filesIn);
 
     return true;
 }

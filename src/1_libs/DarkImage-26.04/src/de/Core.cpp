@@ -740,13 +740,13 @@ StringUtil::bytes( uint64_t nBytes )
 std::string
 StringUtil::replace( const std::string& txt, const std::string& from, const std::string& to, size_t* nReplacements )
 {
+    if ( txt.empty() )
+    {
+        return {};
+    }
+
     size_t nReplaces = 0;
     std::string s = txt;
-
-    if ( s.empty() )
-    {
-        return s;
-    }
 
     if ( to.empty() )
     {
@@ -802,13 +802,13 @@ StringUtil::replace( const std::string& txt, const std::string& from, const std:
 std::wstring
 StringUtil::replace( const std::wstring& txt, const std::wstring& from, const std::wstring& to, size_t* nReplacements )
 {
+    if ( txt.empty() )
+    {
+        return {};
+    }
+
     size_t nReplaces = 0;
     std::wstring s = txt;
-
-    if ( s.empty() )
-    {
-        return s;
-    }
 
     if ( to.empty() )
     {
@@ -3110,13 +3110,13 @@ FileSystem::fileDir( const std::wstring& uri )
         p = fs::absolute( p );
     }
 
-    if ( !fs::is_directory( p ) )
-    {
+    // if ( !fs::is_directory( p ) )
+    // {
         if ( p.has_parent_path() )
         {
             p = p.parent_path();
         }
-    }
+    //}
 
     return makePosixPath(p.wstring());
 }
@@ -3215,13 +3215,11 @@ FileSystem::makePosixPath( const std::string & uri )
 std::wstring
 FileSystem::makePosixPath( const std::wstring & uri )
 {
-    auto tmp = uri;
-
-    if (tmp.empty()) return tmp;
+    if (uri.empty()) return {};
 
     // DE_DEBUG("tmp = ", tmp)
 
-    tmp = StringUtil::replace( tmp, L"\\", L"/" );
+    auto tmp = StringUtil::replace( uri, L"\\", L"/" );
 
     // DE_DEBUG("tmp = ", tmp)
 

@@ -112,6 +112,8 @@ struct UI
     // Other stuff:
     Job job;
 
+    de::FileInfos fileInfos;
+
     volatile std::atomic<bool> bRunFlag{false};
     volatile std::atomic<bool> bAbortFlag{false};
     volatile std::atomic<bool> bPauseFlag{false};
@@ -188,7 +190,7 @@ void awake_poll_update(void* payload)
     ui.pollGuiUpdate();
     Fl::repeat_timeout(0.01, awake_poll_update); // wiederholen
 }
-
+/*
 // 🟧
 void log_common(const char* msg, char style)
 {
@@ -247,6 +249,7 @@ inline void async_log_info(const std::string& msg) { async_log_common(msg,de::Lo
 inline void async_log_warn(const std::string& msg) { async_log_common(msg,de::LogLevel::Warn); }
 inline void async_log_error(const std::string& msg) { async_log_common(msg,de::LogLevel::Error); }
 inline void async_log_ok(const std::string& msg) { async_log_common(msg,de::LogLevel::Ok); }
+*/
 
 // ---------------- callbacks ----------------
 static void pause_cb(Fl_Widget*, void*)
@@ -306,7 +309,7 @@ static void finish_cb(void*)
     if (ui.bAbortFlag)
     {
         DE_ERROR("Aborted.")
-        log_error("Aborted by user.");
+        ui.logBox->log_error("Aborted by user.");
         ui.btnPause->label("Pause");
         ui.btnPause->redraw();
     }
@@ -429,6 +432,12 @@ static void workerThread_CompressTar()
         return; // Already running!
     }
 
+    if (ui.fileInfos.empty())
+    {
+        DE_ERROR("Empty fileInfos, abort")
+        return; // Already running!
+    }
+
     ui.bRunFlag = true;
     ui.bAbortFlag = false;
     ui.bPauseFlag = false;
@@ -437,17 +446,17 @@ static void workerThread_CompressTar()
     DE_BENNI("Begin TAR Writer Thread ",std::this_thread::get_id())
 
     std::wstring exeDir = App::getInstance()->getExeDirW();
-    std::wstring tarBaseName = L"demo_longLink1";
-    std::wstring tarDir = exeDir + L"\\" + tarBaseName;
+    std::wstring tarBaseName = de_wstr(ui.job.baseName);
+    std::wstring tarDir = de_wstr( ui.job.baseDir ); // exeDir + L"\\" + tarBaseName;
     std::wstring tarName = tarBaseName + L".tar";
 
-    de::FileInfos fileInfos;
+    // de::FileInfos fileInfos;
 
-    DE_BENNI("exeDir = ", de_mbstr(exeDir))
-    DE_BENNI("tarDir = ", de_mbstr(tarDir))
+    // DE_BENNI("exeDir = ", de_mbstr(exeDir))
+    // DE_BENNI("tarDir = ", de_mbstr(tarDir))
 
-    de::ScanDirectory(fileInfos,tarDir,true);
-    DUMP(fileInfos);
+    // de::ScanDirectory(fileInfos,tarDir,true);
+    // DUMP(fileInfos);
 
     double timeElapsed = 0;
     // double timeRemain = 0;
@@ -458,12 +467,12 @@ static void workerThread_CompressTar()
     // uint64_t fileIndex = 0;
     // uint64_t compressedBytes = 0;
     // double compressRatio = 1.0;
-    uint64_t totalBytes = TOTAL_FILE_SIZE(fileInfos);
+    uint64_t totalBytes = TOTAL_FILE_SIZE(ui.fileInfos);
     uint64_t processedBytes = 0;
 
     ui.pollProgress = 0.01;
-    ui.pollFileCount = fileInfos.size();
-    ui.pollTotalBytes = totalBytes;
+    ui.pollFileCount = ui.fileInfos.size();
+    //ui.pollTotalBytes = totalBytes;
     std::this_thread::sleep_for(std::chrono::milliseconds(1));
 
     const int maxItersBeforeAbort = 100;
@@ -475,12 +484,12 @@ static void workerThread_CompressTar()
     TarWriter::Cfg m_tarWriterCfg;
     m_tarWriterCfg.baseDir = de_mbstr(tarDir);
     m_tarWriterCfg.archiveBaseName = "demo_longLink1";
-    m_tarWriterCfg.fileInfos = &fileInfos;
+    m_tarWriterCfg.fileInfos = &ui.fileInfos;
     m_tarWriterCfg.onNextFile =
         [&] (const de::FileInfo& fileInfo, uint32_t fileIndex)
         {
             ui.pollFileIndex = fileIndex+1;
-            ui.pollProgress = 0.01 + (0.98*double(fileIndex+1) / double(fileInfos.size()));
+            ui.pollProgress = 0.01 + (0.98*double(fileIndex+1) / double(ui.fileInfos.size()));
             ui.pollFile = de_mbstr(fileInfo.fileName());
             ui.pollDir = de_mbstr(fileInfo.dir());
             processedBytes += fileInfo.fileSize();
@@ -593,6 +602,48 @@ static void start_worker_cb(Fl_Widget*, void*)
     }
 }
 
+static void initial_filescan()
+{
+    DE_BENNI("inFiles = ", ui.job.filesIn.size())
+    for (size_t i = 0; i < ui.job.filesIn.size(); ++i)
+    {
+        ui.logBox->log_debug(ui.job.filesIn[i].c_str());
+    }
+
+    ui.fileInfos.clear();
+
+    for (size_t i = 0; i < ui.job.filesIn.size(); ++i)
+    {
+        auto fileInfo = de::ScanFileInfo(de_wstr(ui.job.filesIn[i]));
+        if (fileInfo)
+        {
+            ui.fileInfos.emplace_back( *fileInfo );
+
+            if (fileInfo->isDir())
+            {
+                de::ScanDirectory(ui.fileInfos,fileInfo->uri(),true);
+            }
+        }
+    }
+
+    for (size_t i = 0; i < ui.fileInfos.size(); ++i)
+    {
+        ui.logBox->log_success(ui.fileInfos[i].str().c_str());
+    }
+
+    DE_BENNI("fileInfos = ", ui.fileInfos.size())
+
+    //DUMP(fileInfos);
+    uint64_t totalBytes = TOTAL_FILE_SIZE(ui.fileInfos);
+
+    ui.edtDir->copy_label( ui.job.baseDir.c_str() );
+    ui.edtFile->copy_label( ui.job.fileName().c_str() );
+    ui.edtFileIndex->copy_label("0");
+    ui.edtFileCount->copy_label( std::to_string(ui.job.filesIn.size()).c_str() );
+    ui.edtTotalBytes->copy_label( dbStrBytes(totalBytes).c_str() );
+    ui.edtSpeed->copy_label("0 MB/s");
+}
+
 /*
     for (size_t i = 0; i < fileNames.size(); ++i)
     {
@@ -669,14 +720,12 @@ static void start_worker_cb(Fl_Widget*, void*)
 */
 
 // =============================================================
-Dialog::Dialog(Job job, int W, int H, const char* title)
+Dialog::Dialog(const Job& job, int W, int H, const char* title)
 // =============================================================
     : DoubleWindow(W, H, title)
 {
     ui.job = job;
-
-    DE_DEBUG("WorkerJob: ",job.str())
-
+    DE_DEBUG("Worker.Job = ", ui.job.str())
     ui.window = this;
 
     begin();
@@ -818,6 +867,8 @@ Dialog::Dialog(Job job, int W, int H, const char* title)
     // Fl::add_awake_handler_(awakeHandler, &ui);
 
     // resizable(ui.edtFile);
+
+    initial_filescan();
 }
 
 void Dialog::resize(int X, int Y, int W, int H)

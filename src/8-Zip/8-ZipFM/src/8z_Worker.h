@@ -21,7 +21,7 @@ namespace worker {
 class Dialog : public DoubleWindow
 {
 public:
-    Dialog(Job job, int W, int H, const char* title);
+    Dialog(const Job& job, int W, int H, const char* title);
 
     void resize(int X, int Y, int W, int H) override;
 };

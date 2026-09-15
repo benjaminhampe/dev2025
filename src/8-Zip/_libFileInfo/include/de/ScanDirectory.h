@@ -1,6 +1,5 @@
 #pragma once
 #include <de/FileInfo.h>
-#include <de/FileInfoUtil.h>
 
 namespace de {
 

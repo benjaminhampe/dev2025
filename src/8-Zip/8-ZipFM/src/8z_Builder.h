@@ -12,7 +12,7 @@ typedef std::function<void()> FN_onCancel;
 typedef std::function<void()> FN_onHelp;
 
 // =============================================================
-class Dialog : public Window
+class Builder : public Window
 // =============================================================
 {
 public:
@@ -25,9 +25,9 @@ public:
 
     Job getJob() const;
 
-    void setJob(Job job);
+    void setJob(const Job& job); // Deep copy for now.
 
-    Dialog(int W, int H, const char* title);
+    Builder(int W, int H, const char* title);
 
     void resize(int X, int Y, int W, int H) override;
 };

@@ -3,8 +3,8 @@
 
 struct Job
 {
-    std::vector<std::string> filesIn; // utf8
-    std::vector<std::string> filesOut; // utf8
+    StringListA filesIn; // utf8
+    StringListA filesOut; // utf8
 
     bool bUpdate = false;
     bool bRestartExplorer = false;
@@ -21,7 +21,12 @@ struct Job
     std::string baseName;
     std::string extension;
 
-    std::string str() const
+    std::string fileName() const
+    {
+        return baseName + "." + extension;
+    }
+
+    std::string str(bool bPrintFileNames = false) const
     {
         std::ostringstream o;
         if (bUpdate) o << "--update ";
@@ -32,7 +37,7 @@ struct Job
         if (extension.size()) o << "-x " << extension;
 
         if (bGui) o << "-g ";
-        if (bInstall) o << "-i ";
+        if (bInstall) o << "--install ";
         if (bUninstall) o << "-u ";
         if (bCompress) o << "-c ";
         if (bExtract) o << "-e ";
@@ -41,18 +46,24 @@ struct Job
         if (filesOut.size())
         {
             o << "-o " << filesOut.size() << " ";
-            for (size_t i = 0; i < filesOut.size(); ++i)
+            if (bPrintFileNames)
             {
-                o << filesOut[i] << " ";
+                for (size_t i = 0; i < filesOut.size(); ++i)
+                {
+                    o << filesOut[i] << " ";
+                }
             }
         }
 
         if (filesIn.size())
         {
-            o << "-a " << filesIn.size() << " ";
-            for (size_t i = 0; i < filesIn.size(); ++i)
+            o << "-i " << filesIn.size() << " ";
+            if (bPrintFileNames)
             {
-                o << filesIn[i] << " ";
+                for (size_t i = 0; i < filesIn.size(); ++i)
+                {
+                    o << filesIn[i] << " ";
+                }
             }
         }
 

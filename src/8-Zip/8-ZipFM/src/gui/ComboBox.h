@@ -36,7 +36,7 @@ public:
         : Fl_Choice(X,Y,W,H,L)
     {
     }
-
+/*
     void draw() override
     {
         fl_push_clip(x(), y(), w(), h());
@@ -65,7 +65,7 @@ public:
 
         fl_pop_clip();
     }
-
+*/
     struct Item
     {
         typedef std::variant<int, std::string> UserData;
