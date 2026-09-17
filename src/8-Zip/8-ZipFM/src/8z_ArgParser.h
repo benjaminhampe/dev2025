@@ -4,7 +4,7 @@
 struct Job
 {
     StringListA filesIn; // utf8
-    StringListA filesOut; // utf8
+    // StringListA filesOut; // utf8
 
     bool bUpdate = false;
     bool bRestartExplorer = false;
@@ -17,13 +17,12 @@ struct Job
     bool bForce = false; // Don't ask for overwrite
     int iPreset = -1;
 
-    std::string baseDir;
-    std::string baseName;
-    std::string extension;
+    std::string directory; // No trailing slash allowed
+    std::string fileName; // e.g. archive.zst = <baseName>.<extension>
 
-    std::string fileName() const
+    std::string uri() const
     {
-        return baseName + "." + extension;
+        return directory + "/" + fileName;
     }
 
     std::string str(bool bPrintFileNames = false) const
@@ -32,9 +31,8 @@ struct Job
         if (bUpdate) o << "--update ";
         if (bRestartExplorer) o << "-k ";
         if (bAdmin) o << "--admin ";
-        if (baseDir.size()) o << "-b " << baseDir;
-        if (baseName.size()) o << "-n " << baseName;
-        if (extension.size()) o << "-x " << extension;
+        if (fileName.size()) o << "-o " << fileName;
+        if (directory.size()) o << "-d " << directory;
 
         if (bGui) o << "-g ";
         if (bInstall) o << "--install ";
@@ -43,17 +41,17 @@ struct Job
         if (bExtract) o << "-e ";
         if (bForce) o << "-f ";
         if (iPreset > -1) o << "-p " << iPreset << " ";
-        if (filesOut.size())
-        {
-            o << "-o " << filesOut.size() << " ";
-            if (bPrintFileNames)
-            {
-                for (size_t i = 0; i < filesOut.size(); ++i)
-                {
-                    o << filesOut[i] << " ";
-                }
-            }
-        }
+        // if (filesOut.size())
+        // {
+        //     o << "-o " << filesOut.size() << " ";
+        //     if (bPrintFileNames)
+        //     {
+        //         for (size_t i = 0; i < filesOut.size(); ++i)
+        //         {
+        //             o << filesOut[i] << " ";
+        //         }
+        //     }
+        // }
 
         if (filesIn.size())
         {

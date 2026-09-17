@@ -89,7 +89,7 @@ int main(int argc, char** argv)
             B->setCallback_onOk([&]()
                 {
                     Job jobB = B->getJob();
-                    auto W = new EightZip::worker::Dialog(jobB, w, h, sTitle.c_str());
+                    auto W = new EightZip::worker::Worker(jobB, w, h, sTitle.c_str());
                     W->resizable(W);
                     set_window_icon_from_resource(W);
                     W->show();
@@ -103,7 +103,7 @@ int main(int argc, char** argv)
         }
         else
         {
-            auto W = new EightZip::worker::Dialog(job, w, h, sTitle.c_str());
+            auto W = new EightZip::worker::Worker(job, w, h, sTitle.c_str());
             W->resizable(W);
             set_window_icon_from_resource(W);
             W->show();

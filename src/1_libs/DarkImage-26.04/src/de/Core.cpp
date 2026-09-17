@@ -3018,14 +3018,19 @@ FileSystem::fileName( const std::wstring& uri, const std::wstring& relativeToPat
     if ( relativeToPath.empty() )
     {
         auto p1 = fs::path( uri ).filename().wstring();
-        if ( p1.empty() ) return uri;
+        //if ( p1.empty() ) return uri;
         return p1;
     }
     else
     {
         const auto p1 = makeAbsolute(uri);
         const auto p2 = makeAbsolute(relativeToPath);
-        const auto p3 = fs::relative(p1, p2).wstring();
+        std::error_code ec;
+        const auto p3 = fs::relative(p1, p2, ec).wstring();
+        if (ec)
+        {
+            DE_ERROR("ec(",ec.message(),"), ",de_mbstr(uri))
+        }
         // DE_DEBUG("p1 = ",p1.c_str())
         // DE_DEBUG("p2 = ",p2.c_str())
         // DE_DEBUG("p3 = ",p3.c_str())
@@ -5285,6 +5290,10 @@ void dbRemoveFile( const std::string& uri )
 {
     de::FileSystem::removeFile(uri);
 }
+void dbRemoveFile( const std::wstring& uri )
+{
+    de::FileSystem::removeFile(uri);
+}
 
 int64_t dbFileSize( const std::string & uri )
 {
@@ -5344,4 +5353,24 @@ std::string dbParentDir( const std::string& uri )
 std::wstring dbParentDir( const std::wstring& uri )
 {
     return de::FileSystem::parentDir(uri);
+}
+
+std::string dbMakePosix( const std::string & uri )
+{
+    return de::FileSystem::makePosixPath(uri);
+}
+
+std::wstring dbMakePosix( const std::wstring & uri )
+{
+    return de::FileSystem::makePosixPath(uri);
+}
+
+std::string dbMakeNT( const std::string & uri )
+{
+    return de::FileSystem::makeWinPath(uri);
+}
+
+std::wstring dbMakeNT( const std::wstring & uri )
+{
+    return de::FileSystem::makeWinPath(uri);
 }

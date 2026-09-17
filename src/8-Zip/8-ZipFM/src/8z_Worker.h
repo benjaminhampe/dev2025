@@ -18,10 +18,10 @@ namespace worker {
 // ======================================================
 // 🟧
 // ======================================================
-class Dialog : public DoubleWindow
+class Worker : public DoubleWindow
 {
 public:
-    Dialog(const Job& job, int W, int H, const char* title);
+    Worker(const Job& job, int W, int H, const char* title);
 
     void resize(int X, int Y, int W, int H) override;
 };

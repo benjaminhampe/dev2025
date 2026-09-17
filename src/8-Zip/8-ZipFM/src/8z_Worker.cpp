@@ -11,6 +11,22 @@
 
 namespace EightZip {
 namespace worker {
+namespace {
+/*
+template< typename T >
+struct StateMachine2
+{
+    T curr;
+    T last;
+
+    StateMachine2() : curr{}, last{} {}
+    StateMachine2(const T& value) : curr{value}, last{value} {}
+    StateMachine2& operator= (const T& value)
+    {
+        curr = last = value;
+    }
+};
+*/
 
 template <typename T>
 class DoubleBufferDirty {
@@ -46,30 +62,13 @@ private:
     T m_buffers[2];
 };
 
-namespace {
-
-
 } // end namespace.
 
-/*
-template< typename T >
-struct StateMachine2
-{
-    T curr;
-    T last;
-
-    StateMachine2() : curr{}, last{} {}
-    StateMachine2(const T& value) : curr{value}, last{value} {}
-    StateMachine2& operator= (const T& value)
-    {
-        curr = last = value;
-    }
-};
-*/
-
-struct UI
+struct UI_Worker
 {
     static constexpr uintptr_t MAGIC_GUI = 0xF1CED123;
+
+    bool bAutoCloseWindow = false; // TODO: Set to true for Release.
 
     Fl_Window* window = nullptr;
 
@@ -181,7 +180,7 @@ struct UI
     }
 };
 
-static UI ui;
+static UI_Worker ui;
 
 // Awake handler
 void awake_poll_update(void* payload)
@@ -211,7 +210,7 @@ inline void log_error(const char* msg) { log_common(msg,'B'); }
 inline void log_debug(const char* msg) { log_common(msg,'C'); }
 inline void log_warn(const char* msg) { log_common(msg,'D'); }
 inline void log_success(const char* msg) { log_common(msg,'E'); }
-
+*/
 struct LogAsync
 {
     int logLevel = de::LogLevel::Info;
@@ -224,11 +223,11 @@ static void log_common_awake(void* data)
     auto logAsync = (LogAsync*)data;
     switch(logAsync->logLevel)
     {
-        case de::LogLevel::Error: log_common(logAsync->msg,'B'); break;
-        case de::LogLevel::Debug: log_common(logAsync->msg,'C'); break;
-        case de::LogLevel::Warn: log_common(logAsync->msg,'D'); break;
-        case de::LogLevel::Ok: log_common(logAsync->msg,'E'); break;
-        default: log_common(logAsync->msg,'A'); break;
+        case de::LogLevel::Error: ui.logBox->log_error(logAsync->msg); break;
+        case de::LogLevel::Debug: ui.logBox->log_debug(logAsync->msg); break;
+        case de::LogLevel::Warn: ui.logBox->log_warn(logAsync->msg); break;
+        case de::LogLevel::Ok: ui.logBox->log_success(logAsync->msg); break;
+        default: ui.logBox->log_info(logAsync->msg); break;
     }
     delete logAsync;
 }
@@ -244,12 +243,12 @@ static void async_log_common(const std::string& text, int logLevel)
     Fl::awake(log_common_awake, logAsync);
 }
 
+inline void async_log_trace(const std::string& msg) { async_log_common(msg,de::LogLevel::Info); }
 inline void async_log_debug(const std::string& msg) { async_log_common(msg,de::LogLevel::Debug); }
 inline void async_log_info(const std::string& msg) { async_log_common(msg,de::LogLevel::Info); }
 inline void async_log_warn(const std::string& msg) { async_log_common(msg,de::LogLevel::Warn); }
 inline void async_log_error(const std::string& msg) { async_log_common(msg,de::LogLevel::Error); }
 inline void async_log_ok(const std::string& msg) { async_log_common(msg,de::LogLevel::Ok); }
-*/
 
 // ---------------- callbacks ----------------
 static void pause_cb(Fl_Widget*, void*)
@@ -316,174 +315,146 @@ static void finish_cb(void*)
     else
     {
         DE_BENNI("Exit Program from Thread ",std::this_thread::get_id())
-        ui.window->hide();
+        if (ui.bAutoCloseWindow)
+        {
+            ui.window->hide();
+        }
     }
 }
 
-// ---------------- worker ----------------
-static void workerThread_Demo()
+static uint64_t NUM_FILES(const de::FileInfos& fileInfos)
 {
-    const double timeStart = dbTimeInSeconds();
-
-    if (ui.bRunFlag)
+    uint64_t n = 0;
+    for (const auto& fi : fileInfos)
     {
-        DE_ERROR("Worker already running, abort")
-        return; // Already running!
+        n += int(fi.isFile());
     }
+    return n;
+}
 
-    ui.bRunFlag = true;
-    ui.bAbortFlag = false;
-    ui.bPauseFlag = false;
+static uint64_t NUM_DIRECTORIES(const de::FileInfos& fileInfos)
+{
+    uint64_t n = 0;
+    for (const auto& fi : fileInfos)
+    {
+        n += int(fi.isDir());
+    }
+    return n;
+}
+
+// ---------------- worker ----------------
+static void workerThread_CommonScanInit()
+{
+    const double timeScanBeg = dbTimeInSeconds();
+
     ui.pollProgress = 0.0;
-
-    DE_BENNI("Begin Worker Thread ",std::this_thread::get_id())
-
-    std::wstring exeDir = App::getInstance()->getExeDirW();
-    de::FileInfos fileInfos;
-
-    DE_BENNI("exeDir = ", de_mbstr(exeDir))
-    de::ScanDirectory(fileInfos,exeDir,true);
-    DUMP(fileInfos);
-
-    double timeElapsed = 0;
-    double timeRemain = 0;
-    double speed = 0.0;
-    double progress = 0.01;
-    std::string curFile;
-    std::string curDir;
-    uint64_t fileIndex = 0;
-    uint64_t processedBytes = 0;
-    uint64_t compressedBytes = 0;
-    double compressRatio = 1.0;
-    uint64_t totalBytes = TOTAL_FILE_SIZE(fileInfos);
-
-    ui.pollProgress = 0.01;
-    ui.pollFileCount = fileInfos.size();
-    ui.pollTotalBytes = totalBytes;
+    ui.pollFileIndex = 0;
+    ui.pollFileCount = 0;
+    ui.pollTotalBytes = 0;
     std::this_thread::sleep_for(std::chrono::milliseconds(1));
 
-    int numItersBeforeSleep = 10;
-    int curIters = 0;
-    dbRandomize();
+    // ScanDirectories:
 
-    uint64_t i = 0;
-    uint64_t n = fileInfos.size();
-    while (ui.bRunFlag && i < n)
+    ui.fileInfos.clear();
+
+    for (size_t i = 0; i < ui.job.filesIn.size(); ++i)
     {
-        if (ui.bAbortFlag)
+        auto fileInfo = de::ScanFileInfo(de_wstr(ui.job.filesIn[i]));
+        if (fileInfo)
         {
-            DE_ERROR("Abort ThreadLoop")
-            break;
+            ui.fileInfos.emplace_back( *fileInfo );
+
+            if (fileInfo->isDir())
+            {
+                de::ScanDirectory(ui.fileInfos,fileInfo->uri(),true);
+            }
+
+            ui.pollFileCount = ui.fileInfos.size();
+            ui.pollTotalBytes = de::TOTAL_FILE_SIZE(ui.fileInfos);
         }
-
-        if (ui.bPauseFlag)
-        {
-            std::this_thread::yield();
-            continue;
-        }
-
-        const auto& fileInfo = fileInfos[i];
-        progress = 0.01 + (0.98*double(i+1) / double(fileInfos.size()));
-        curFile = de_mbstr(fileInfos[i].fileName());
-        curDir = de_mbstr(fileInfos[i].dir());
-        fileIndex = i+1;
-        processedBytes += fileInfo.fileSize();
-        compressedBytes += fileInfo.fileSize() / uint32_t(1+(dbRND() % 47));
-        compressRatio = double(compressedBytes) / double(processedBytes);
-        timeElapsed = dbTimeInSeconds() - timeStart;
-        speed = double(processedBytes) / timeElapsed;
-        timeRemain = double(totalBytes - processedBytes) / speed;  // v = s/t -> t = s / v
-
-        ui.pollProgress = progress;
-        ui.pollFile = curFile;
-        ui.pollDir = curDir;
-        ui.pollFileIndex = fileIndex;
-        ui.pollProcessed = processedBytes;
-        ui.pollCompressed = compressedBytes;
-        ui.pollCompressRatio = compressRatio;
-        ui.pollTimeElapsed = timeElapsed;
-        ui.pollSpeed = speed;
-        ui.pollTimeRemain = timeRemain;
-
-        curIters++;
-        if (curIters >= numItersBeforeSleep)
-        {
-            curIters = 0;
-            std::this_thread::sleep_for(std::chrono::milliseconds(1));
-        }
-
-        i++;
     }
 
-    ui.bRunFlag = false;
-    ui.pollProgress = 1.0;
-    DE_BENNI("End Worker Thread ",std::this_thread::get_id())
-    Fl::awake(finish_cb,&ui);
+    //<debug>
+
+    const double timeScanEnd = dbTimeInSeconds();
+    const auto t = dbStrSeconds(timeScanEnd - timeScanBeg);
+    const auto s = dbStr("[Scan] Needed ",t,", "
+                    "fileInfos(",ui.fileInfos.size(),"), "
+                    "files(",NUM_FILES(ui.fileInfos),"), "
+                    "dirs(",NUM_DIRECTORIES(ui.fileInfos),")");
+    async_log_ok(s);
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    //</debug>
+
+    //<trace>
+    for (size_t i = 0; i < ui.fileInfos.size(); ++i)
+    {
+        async_log_trace(ui.fileInfos[i].str().c_str());
+    }
+    std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    //</trace>
 }
 
 // ---------------- worker ----------------
 static void workerThread_CompressTar()
 {
-    const double timeStart = dbTimeInSeconds();
-
     if (ui.bRunFlag)
     {
         DE_ERROR("TAR Writer Thread already running, abort")
         return; // Already running!
     }
 
-    if (ui.fileInfos.empty())
-    {
-        DE_ERROR("Empty fileInfos, abort")
-        return; // Already running!
-    }
-
     ui.bRunFlag = true;
     ui.bAbortFlag = false;
     ui.bPauseFlag = false;
     ui.pollProgress = 0.0;
 
-    DE_BENNI("Begin TAR Writer Thread ",std::this_thread::get_id())
+    workerThread_CommonScanInit();
 
-    std::wstring exeDir = App::getInstance()->getExeDirW();
-    std::wstring tarBaseName = de_wstr(ui.job.baseName);
-    std::wstring tarDir = de_wstr( ui.job.baseDir ); // exeDir + L"\\" + tarBaseName;
-    std::wstring tarName = tarBaseName + L".tar";
-
-    // de::FileInfos fileInfos;
-
-    // DE_BENNI("exeDir = ", de_mbstr(exeDir))
-    // DE_BENNI("tarDir = ", de_mbstr(tarDir))
-
-    // de::ScanDirectory(fileInfos,tarDir,true);
-    // DUMP(fileInfos);
-
-    double timeElapsed = 0;
-    // double timeRemain = 0;
-    double speed = 0.0;
-    // double progress = 0.01;
-    // std::string curFile;
-    // std::string curDir;
-    // uint64_t fileIndex = 0;
-    // uint64_t compressedBytes = 0;
-    // double compressRatio = 1.0;
-    uint64_t totalBytes = TOTAL_FILE_SIZE(ui.fileInfos);
-    uint64_t processedBytes = 0;
+    if (ui.fileInfos.empty())
+    {
+        DE_ERROR("No files, abort worker thread ",std::this_thread::get_id())
+        ui.bRunFlag = false;
+        ui.pollProgress = 1.0;
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+        Fl::awake(finish_cb,&ui);
+        return;
+    }
 
     ui.pollProgress = 0.01;
-    ui.pollFileCount = ui.fileInfos.size();
-    //ui.pollTotalBytes = totalBytes;
-    std::this_thread::sleep_for(std::chrono::milliseconds(1));
 
+    DE_BENNI("Begin TAR Writer Thread ",std::this_thread::get_id())
+
+    const double timeStart = dbTimeInSeconds();
+
+    //std::wstring exeDir = App::getInstance()->getExeDirW();
+    std::string tarUri = dbMakePosix( ui.job.uri() );
+    DE_BENNI("TAR ",tarUri)
+
+    std::string tarBaseName = dbFileBase(tarUri);
+    DE_BENNI("TAR ArchiveBaseName ",tarBaseName)
+
+    std::string tarDir = dbMakePosix( ui.job.directory );
+    //std::wstring tarBaseName = de_wstr(ui.job.baseName);
+    //std::wstring tarDir = de_wstr( ui.job.baseDir ); // exeDir + L"\\" + tarBaseName;
+
+
+    double timeElapsed = 0;
+    double speed = 0.0;
+    uint64_t totalBytes = TOTAL_FILE_SIZE(ui.fileInfos);
+    uint64_t processedBytes = 0;
     const int maxItersBeforeAbort = 100;
-    //uint64_t i = 0;
-    //uint64_t n = fileInfos.size();
+
+    ui.pollProgress = 0.02;
+    std::this_thread::sleep_for(std::chrono::milliseconds(1));
 
     // <TAR_Writer>
 
     TarWriter::Cfg m_tarWriterCfg;
-    m_tarWriterCfg.baseDir = de_mbstr(tarDir);
-    m_tarWriterCfg.archiveBaseName = "demo_longLink1";
+    m_tarWriterCfg.archiveBaseName = tarBaseName;
+    m_tarWriterCfg.baseDir = tarDir;
+
     m_tarWriterCfg.fileInfos = &ui.fileInfos;
     m_tarWriterCfg.onNextFile =
         [&] (const de::FileInfo& fileInfo, uint32_t fileIndex)
@@ -509,8 +480,8 @@ static void workerThread_CompressTar()
         };
 
     de::Blob m_tarBuffer(16*1024*1024); // 16MB WorkBuffer
-    de::File m_tarFile;
     TarWriter m_tarWriter;
+    de::File m_tarFile;
 
     if (!m_tarWriter.configure(m_tarWriterCfg))
     {
@@ -518,9 +489,9 @@ static void workerThread_CompressTar()
         goto _exit_compress_tar_thread;
     }
 
-    if (!m_tarFile.open(tarName,de::eFileMode::Write))
+    if (!m_tarFile.open(tarUri,de::eFileMode::Write))
     {
-        DE_ERROR("Cannot write Tar file. ",de_mbstr(tarName))
+        DE_ERROR("Cannot write Tar file. ",tarUri)
         goto _exit_compress_tar_thread;
     }
 
@@ -602,6 +573,7 @@ static void start_worker_cb(Fl_Widget*, void*)
     }
 }
 
+/*
 static void initial_filescan()
 {
     DE_BENNI("inFiles = ", ui.job.filesIn.size())
@@ -644,7 +616,8 @@ static void initial_filescan()
     ui.edtSpeed->copy_label("0 MB/s");
 }
 
-/*
+static void bad_zst()
+{
     for (size_t i = 0; i < fileNames.size(); ++i)
     {
         // ui.enqueueUpdate({ WID_FileIndex, std::to_string(i+1) });
@@ -720,7 +693,7 @@ static void initial_filescan()
 */
 
 // =============================================================
-Dialog::Dialog(const Job& job, int W, int H, const char* title)
+Worker::Worker(const Job& job, int W, int H, const char* title)
 // =============================================================
     : DoubleWindow(W, H, title)
 {
@@ -868,10 +841,17 @@ Dialog::Dialog(const Job& job, int W, int H, const char* title)
 
     // resizable(ui.edtFile);
 
-    initial_filescan();
+    // initial_filescan();
+
+    ui.edtDir->copy_label( ui.job.directory.c_str() );
+    ui.edtFile->copy_label( ui.job.fileName.c_str() );
+    ui.edtFileIndex->copy_label("0");
+    ui.edtFileCount->copy_label("0");
+    ui.edtTotalBytes->copy_label("0");
+    ui.edtSpeed->copy_label("0 MB/s");
 }
 
-void Dialog::resize(int X, int Y, int W, int H)
+void Worker::resize(int X, int Y, int W, int H)
 {
     // 1. Basis-Resize
     Fl_Double_Window::resize(X, Y, W, H);
@@ -970,3 +950,111 @@ void Dialog::resize(int X, int Y, int W, int H)
 
 } // end namespace worker.
 } // end namespace EightZip.
+
+
+/*
+ *
+// ---------------- worker ----------------
+static void workerThread_Demo()
+{
+    workerThread_CommonScanInit();
+
+    const double timeStart = dbTimeInSeconds();
+
+    // if (ui.bRunFlag)
+    // {
+    //     DE_ERROR("Worker already running, abort")
+    //     return; // Already running!
+    // }
+
+    // ui.bRunFlag = true;
+    // ui.bAbortFlag = false;
+    // ui.bPauseFlag = false;
+    // ui.pollProgress = 0.0;
+
+    // DE_BENNI("Begin Worker Thread ",std::this_thread::get_id())
+
+    // std::wstring exeDir = App::getInstance()->getExeDirW();
+    // de::FileInfos fileInfos;
+
+    // DE_BENNI("exeDir = ", de_mbstr(exeDir))
+    // de::ScanDirectory(fileInfos,exeDir,true);
+    // DUMP(fileInfos);
+
+    double timeElapsed = 0;
+    double timeRemain = 0;
+    double speed = 0.0;
+    double progress = 0.01;
+    std::string curFile;
+    std::string curDir;
+    uint64_t fileIndex = 0;
+    uint64_t processedBytes = 0;
+    uint64_t compressedBytes = 0;
+    double compressRatio = 1.0;
+    uint64_t totalBytes = TOTAL_FILE_SIZE(fileInfos);
+
+    ui.pollProgress = 0.01;
+    ui.pollFileCount = fileInfos.size();
+    ui.pollTotalBytes = totalBytes;
+    std::this_thread::sleep_for(std::chrono::milliseconds(1));
+
+    int numItersBeforeSleep = 10;
+    int curIters = 0;
+    dbRandomize();
+
+    uint64_t i = 0;
+    uint64_t n = fileInfos.size();
+    while (ui.bRunFlag && i < n)
+    {
+        if (ui.bAbortFlag)
+        {
+            DE_ERROR("Abort ThreadLoop")
+            break;
+        }
+
+        if (ui.bPauseFlag)
+        {
+            std::this_thread::yield();
+            continue;
+        }
+
+        const auto& fileInfo = fileInfos[i];
+        progress = 0.01 + (0.98*double(i+1) / double(fileInfos.size()));
+        curFile = de_mbstr(fileInfos[i].fileName());
+        curDir = de_mbstr(fileInfos[i].dir());
+        fileIndex = i+1;
+        processedBytes += fileInfo.fileSize();
+        compressedBytes += fileInfo.fileSize() / uint32_t(1+(dbRND() % 47));
+        compressRatio = double(compressedBytes) / double(processedBytes);
+        timeElapsed = dbTimeInSeconds() - timeStart;
+        speed = double(processedBytes) / timeElapsed;
+        timeRemain = double(totalBytes - processedBytes) / speed;  // v = s/t -> t = s / v
+
+        ui.pollProgress = progress;
+        ui.pollFile = curFile;
+        ui.pollDir = curDir;
+        ui.pollFileIndex = fileIndex;
+        ui.pollProcessed = processedBytes;
+        ui.pollCompressed = compressedBytes;
+        ui.pollCompressRatio = compressRatio;
+        ui.pollTimeElapsed = timeElapsed;
+        ui.pollSpeed = speed;
+        ui.pollTimeRemain = timeRemain;
+
+        curIters++;
+        if (curIters >= numItersBeforeSleep)
+        {
+            curIters = 0;
+            std::this_thread::sleep_for(std::chrono::milliseconds(1));
+        }
+
+        i++;
+    }
+
+    ui.bRunFlag = false;
+    ui.pollProgress = 1.0;
+    DE_BENNI("End Worker Thread ",std::this_thread::get_id())
+    Fl::awake(finish_cb,&ui);
+}
+
+*/

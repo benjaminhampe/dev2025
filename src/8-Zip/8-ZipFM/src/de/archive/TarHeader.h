@@ -499,7 +499,7 @@ struct TarUtil
 
     static std::string dbStrRightmost(const std::string& s, size_t n);
 
-    static std::string makePosix(std::string s);
+    // static std::string makePosix(std::string s);
 
     static std::string trimLeadingSlashes(std::string s);
 

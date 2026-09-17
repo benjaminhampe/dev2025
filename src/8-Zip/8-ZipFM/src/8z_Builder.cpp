@@ -92,7 +92,7 @@ struct UI
     FN_onCancel onCancel;
     FN_onHelp onHelp;
 
-    std::string getExtension() const
+    std::string selectedExtension() const
     {
         static std::array<std::string,2> my_map
         {
@@ -152,56 +152,55 @@ Job Builder::getJob() const
 {
     Job job = ui.job;
     job.bCompress = true;
-    job.baseDir = "";
-    job.baseName = "";
-    job.extension = "";
+    job.directory = "";
+    job.fileName = "";
     job.iPreset = -1;
 
     // ======== baseDir =========================
     if (ui.edtDir && ui.edtDir->value())
     {
-        job.baseDir = ui.edtDir->value();
+        job.directory = ui.edtDir->value();
     }
     else
     {
         DE_ERROR("Got empty ui.edtDir->value()")
     }
 
-    if (job.baseDir.empty())
+    if (job.directory.empty())
     {
-        job.baseDir = App::getInstance()->getExeDirA();
+        job.directory = App::getInstance()->getExeDirA();
     }
 
     // ======== baseName =========================
     if (ui.edtArchive && ui.edtArchive->value())
     {
-        job.baseName = ui.edtArchive->value();
+        job.fileName = ui.edtArchive->value();
     }
     else
     {
         DE_ERROR("Got empty ui.edtArchive->value()")
     }
 
-    if (job.baseName.empty())
+    if (job.fileName.empty())
     {
-        job.baseName = "8z_untitled.tar";
+        job.fileName = "8z_untitled.tar";
     }
 
     // ======== extension =========================
-    if (ui.cbxFormat && !ui.cbxFormat->currentData().toString().empty())
-    {
-        job.extension = ui.cbxFormat->currentData().toString();
-    }
-    else
-    {
-        DE_ERROR("Got empty ui.cbxFormat->currentData().toString()")
-    }
+    // if (ui.cbxFormat && !ui.cbxFormat->currentData().toString().empty())
+    // {
+    //     job.extension = ui.cbxFormat->currentData().toString();
+    // }
+    // else
+    // {
+    //     DE_ERROR("Got empty ui.cbxFormat->currentData().toString()")
+    // }
 
-    if (job.extension.empty())
-    {
-        DE_ERROR("Got empty extension, fallback to .tar")
-        job.extension = "tar";
-    }
+    // if (job.extension.empty())
+    // {
+    //     DE_ERROR("Got empty extension, fallback to .tar")
+    //     job.extension = "tar";
+    // }
 
     // ======== iPreset =========================
     if (ui.cbxPreset && !ui.cbxFormat->currentData().toString().empty())
@@ -211,7 +210,8 @@ Job Builder::getJob() const
 
     if (job.iPreset < 0)
     {
-        if (job.extension == "zst")
+        auto suffix = dbFileSuffix(job.fileName);
+        if (suffix == "zst")
         {
             DE_ERROR("Got invalid zst preset, fallback to 5")
             job.iPreset = 5;
@@ -223,6 +223,39 @@ Job Builder::getJob() const
     return job;
 }
 
+std::string getLastDirectory(const std::string& uri)
+{
+    auto s1 = dbMakePosix(uri);
+
+    auto p2 = s1.find_last_of('/');
+    if (p2 == std::string::npos || p2 < 1)
+    {
+        DE_ERROR("Invalid p2(",p2,") in uri(", uri,")")
+        return "";
+    }
+
+    auto p1 = s1.find_last_of('/',p2-1);
+    if (p1 == std::string::npos)
+    {
+        DE_ERROR("No p1 in uri(", uri,")")
+        auto s2 = s1.substr(0, p2);
+        DE_DEBUG("Got s1(", s1,")")
+        DE_DEBUG("Got s2(", s2,")")
+        return s2;
+    }
+    else
+    {
+        // "/a/b.c" -> "a"
+        // p1 = 0
+        // p2 = 2
+        // s2 = s1.substr(1, 1);
+        auto s2 = s1.substr(p1+1, p2-p1-1);
+        DE_DEBUG("Got s1(", s1,")")
+        DE_DEBUG("Got s2(", s2,")")
+        return s2;
+    }
+}
+
 void Builder::setJob(const Job& job)
 {
     ui.job = job;
@@ -230,41 +263,41 @@ void Builder::setJob(const Job& job)
     DE_DEBUG("Got Job: ")
     DE_DEBUG(ui.job.str())
 
-    if (ui.job.baseDir.empty())
+    if (ui.job.directory.empty())
     {
         if (ui.job.filesIn.size() > 0)
         {
-            ui.job.baseDir = dbFileDir(ui.job.filesIn[0]);
+            ui.job.directory = dbFileDir(ui.job.filesIn[0]);
         }
         else
         {
-            ui.job.baseDir = App::getInstance()->getExeDirA();
-            DE_ERROR("Fallback job.baseDir")
+            ui.job.directory = App::getInstance()->getExeDirA();
+            DE_ERROR("Fallback job.directory")
         }
     }
 
-    if (ui.job.baseName.empty())
+    if (ui.job.fileName.empty())
     {
         if (ui.job.filesIn.size() > 1)
         {
-            ui.job.baseName = dbFileBase(ui.job.baseDir);
+            ui.job.fileName = getLastDirectory(ui.job.filesIn[0]);
         }
         else if (ui.job.filesIn.size() == 1)
         {
-            ui.job.baseName = dbFileBase(ui.job.filesIn[0]);
+            ui.job.fileName = dbFileBase(ui.job.filesIn[0]);
         }
         else
         {
-            ui.job.baseName = "Untitled";
-            DE_ERROR("Fallback job.baseName")
+            ui.job.fileName = "Untitled";
+            DE_ERROR("Fallback job.fileName")
         }
 
-        ui.job.baseName += ".";
-        ui.job.baseName += ui.getExtension();
+        ui.job.fileName += ".";
+        ui.job.fileName += ui.selectedExtension();
     }
 
-    ui.edtDir->value( ui.job.baseDir.c_str() );
-    ui.edtArchive->value( ui.job.baseName.c_str() );
+    ui.edtDir->value( ui.job.directory.c_str() );
+    ui.edtArchive->value( ui.job.fileName.c_str() );
 
     // job.baseDir = App::getInstance()->getExeDirA();
     // job.baseName = ui.edtArchive->label();

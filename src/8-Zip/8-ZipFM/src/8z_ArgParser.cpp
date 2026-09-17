@@ -12,7 +12,7 @@ bool ArgParser::parseBenni(Job* m_job, int argc, char** argv)
         return false;
     }
 
-    StringListW filesOut;
+    //StringListW filesOut;
     StringListW filesIn;
 
     StringListW explorerSelection = win32_Get_Explorer_Selection();
@@ -52,15 +52,63 @@ bool ArgParser::parseBenni(Job* m_job, int argc, char** argv)
                 {
                     platform_addUniqueFileName(ws, filesIn);
                 }
-                else
-                {
-                    platform_addUniqueFileName(ws, filesOut);
-                }
+                // else
+                // {
+                //     platform_addUniqueFileName(ws, filesOut);
+                // }
                 continue;
             }
         }
 
         // --- flags ---
+        if (arg == "-o")
+        {
+            mode = NORMAL;
+            if (i + 1 < argc)
+            {
+                i++; // Advance to data argument
+                m_job->fileName = argv[i];
+                continue;
+            }
+            else
+            {
+                DE_ERROR("-o Output filename missing, abort.")
+                return false;
+            }
+        }
+
+        if (arg == "-d")
+        {
+            mode = NORMAL;
+            if (i + 1 < argc)
+            {
+                i++; // Advance to data argument
+                m_job->directory = argv[i];
+                continue;
+            }
+            else
+            {
+                DE_ERROR("-d Output directory missing, abort.")
+                return false;
+            }
+        }
+
+        if (arg == "-p" || arg == "--preset") // Preset quality + heuristic + other settings
+        {
+            mode = NORMAL;
+            if (i + 1 < argc)
+            {
+                i++; // Advance to data argument
+                m_job->iPreset = std::stoi(argv[i]);
+                continue;
+            }
+            else
+            {
+                DE_ERROR("Preset value missing, malformed cli.")
+                return false;
+            }
+        }
+
         if (arg == "--update")
         {
             m_job->bUpdate = true;
@@ -75,6 +123,7 @@ bool ArgParser::parseBenni(Job* m_job, int argc, char** argv)
             break;
         }
 
+        // Todo: Do we need it, IExplorerCommand works without Admin rights.
         if (arg == "--admin")
         {
             m_job->bAdmin = true;
@@ -124,21 +173,6 @@ bool ArgParser::parseBenni(Job* m_job, int argc, char** argv)
             continue;
         }
 
-        if (arg == "-p" || arg == "--preset") // Preset quality + heuristic + other settings
-        {
-            mode = NORMAL;
-            if (i + 1 < argc)
-            {
-                i++; // Advance to data argument
-                m_job->iPreset = std::stoi(argv[i]);
-                continue;
-            }
-            else
-            {
-                DE_ERROR("Preset value missing, malformed cli.")
-                return false;
-            }
-        }
 /*
         if (arg == "-q" || arg == "--quality") // CompressOP quality
         {
@@ -164,22 +198,21 @@ bool ArgParser::parseBenni(Job* m_job, int argc, char** argv)
         }
 
         // --- list of output files ---
-        if (arg == "-o" || arg == "--out" || arg == "--output" || arg == "--outputs")
-        {
-            mode = READ_O_LIST;
-            continue;
-        }
+        // if (arg == "-o" || arg == "--out" || arg == "--output" || arg == "--outputs")
+        // {
+        //     mode = READ_O_LIST;
+        //     continue;
+        // }
 
         // --- positional files ---
         platform_addUniqueFileName(de_wstr(argv[i]), filesIn);
     }
 
-
-    DE_BENNI("filesOut = ",filesOut.size())
-    for (size_t i = 0; i < filesOut.size(); ++i)
-    {
-        DE_DEBUG("filesOut[",i,"] ",de_mbstr(filesOut[i]))
-    }
+    // DE_BENNI("filesOut = ",filesOut.size())
+    // for (size_t i = 0; i < filesOut.size(); ++i)
+    // {
+    //     DE_DEBUG("filesOut[",i,"] ",de_mbstr(filesOut[i]))
+    // }
 
     DE_BENNI("filesIn = ",filesIn.size())
     for (size_t i = 0; i < filesIn.size(); ++i)
@@ -187,7 +220,7 @@ bool ArgParser::parseBenni(Job* m_job, int argc, char** argv)
         DE_DEBUG("filesIn[",i,"] ",de_mbstr(filesIn[i]))
     }
 
-    m_job->filesOut = de_mbstr(filesOut);
+    //m_job->filesOut = de_mbstr(filesOut);
     m_job->filesIn = de_mbstr(filesIn);
 
     return true;

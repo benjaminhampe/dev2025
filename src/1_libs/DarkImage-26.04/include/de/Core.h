@@ -2435,6 +2435,7 @@ StringListA
 dbLoadTextLn(const std::wstring& uri);
 
 void dbRemoveFile( const std::string& uri );
+void dbRemoveFile( const std::wstring& uri );
 // ========================================================================
 int64_t dbFileSize( const std::string & uri );
 int64_t dbFileSize( const std::wstring & uri );
@@ -2454,3 +2455,8 @@ std::wstring dbFileDir( const std::wstring& uri );
 std::string dbParentDir( const std::string& uri );
 std::wstring dbParentDir( const std::wstring& uri );
 
+std::string dbMakePosix( const std::string & uri );
+std::wstring dbMakePosix( const std::wstring & uri );
+
+std::string dbMakeNT( const std::string & uri );
+std::wstring dbMakeNT( const std::wstring & uri );
