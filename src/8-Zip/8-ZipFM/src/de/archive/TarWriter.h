@@ -6,6 +6,8 @@ struct TarWriter
 {
     struct Cfg
     {
+        bool bDebug = false;
+
         const de::FileInfos* fileInfos = nullptr;
 
         std::string baseDir;

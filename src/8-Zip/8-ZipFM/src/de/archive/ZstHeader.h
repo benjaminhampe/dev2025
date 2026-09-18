@@ -2,6 +2,78 @@
 #include <de/Core.h>
 #include <zstd.h>
 
+/*
+    ui.cbxQuality->add("0 - No compression");
+    ui.cbxQuality->add("1 - Very fast");
+    ui.cbxQuality->add("3 - Fast");
+    ui.cbxQuality->add("5 - Normal");
+    ui.cbxQuality->add("7 - Max");
+    ui.cbxQuality->add("9 - Ultra");
+    ui.cbxQuality->value(0);
+
+    🧩 Fully custom preset:
+    ZSTD_CCtx_setParameter(cctx, ZSTD_c_strategy, ZSTD_btopt);
+    ZSTD_CCtx_setParameter(cctx, ZSTD_c_windowLog, 20);
+    ZSTD_CCtx_setParameter(cctx, ZSTD_c_hashLog, 18);
+    ZSTD_CCtx_setParameter(cctx, ZSTD_c_chainLog, 19);
+    ZSTD_CCtx_setParameter(cctx, ZSTD_c_searchLog, 5);
+    ZSTD_CCtx_setParameter(cctx, ZSTD_c_searchLength, 4);
+    ZSTD_CCtx_setParameter(cctx, ZSTD_c_targetLength, 16);
+
+    🧩 Existing Presets for FastMode:
+    ZSTD_CCtx_setParameter(cctx, ZSTD_c_fast, N=30); // N = 1 … 1000+
+    ZSTD_c_fast	Überschreibt ZSTD_c_compressionLevel, erzwingt ZSTD_fast, setzt alle internen Parameter neu
+
+    🧩 Existing Presets for High‑Level: (überschreiben alles andere)
+    ZSTD_c_compressionLevel	1–22
+        Setzt alle internen Parameter (WindowLog, ChainLog, HashLog, SearchLog, SearchLength, TargetLength, Strategy)
+
+    Empfohlene Presets (UI‑tauglich)
+        Fast‑1 — leicht schneller als Level 1, Ratio noch ok
+        Fast‑3 — guter Kompromiss, oft verwendet
+        Fast‑5 — deutlich schneller, Ratio spürbar schlechter
+        Fast‑10 — sehr schnell, Ratio niedrig
+        Fast‑20 — extrem schnell, Ratio sehr niedrig
+        Fast‑50 — für Telemetrie/Logs
+        Fast‑100 — für High‑Throughput Pipelines
+        Fast‑200 — maximale Geschwindigkeit, Ratio minimal
+
+    🧠 Warum diese Werte?
+
+    Fast‑Mode ist ein kontinuierlicher Parameter, aber:
+        ab Fast=1–5 ist Ratio noch brauchbar
+        ab Fast=10–20 wird Ratio deutlich schlechter
+        ab Fast=50–200 ist Ratio fast egal, nur Speed zählt
+        über Fast=200 gibt es kaum noch messbare Vorteile
+
+    Kombobox: Fast‑Mode
+
+    Off
+    Fast‑1 (leicht schneller)
+    Fast‑3 (Standard‑Fast)
+    Fast‑5 (schnell)
+    Fast‑10 (sehr schnell)
+    Fast‑20 (extrem schnell)
+    Fast‑50 (Logs/Telemetry)
+    Fast‑100 (High‑Throughput)
+
+    Level	Strategie       Qualität
+    −N Fast	ZSTD_fast       extrem schnell, geringste Ratio
+    1       ZSTD_fast       schnell
+    2       ZSTD_fast       schnell
+    3       ZSTD_dfast      Standard‑Default
+    4       ZSTD_dfast      besser
+    5       ZSTD_greedy     mittlere Ratio
+    6       ZSTD_lazy       höhere Ratio
+    7       ZSTD_lazy       höhere Ratio
+    8       ZSTD_lazy2      hohe Ratio
+    9       ZSTD_lazy2      hohe Ratio
+    10–12	ZSTD_lazy2      sehr hohe Ratio
+    13–15	ZSTD_btlazy2	sehr hohe Ratio
+    16–19	ZSTD_btopt      maximal
+    20–22 	ZSTD_btultra	höchste Ratio, extrem langsam
+*/
+
 // =====================================================
 struct ZstPreset
 // =====================================================

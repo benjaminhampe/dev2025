@@ -36,6 +36,94 @@ public:
         : Fl_Choice(X,Y,W,H,L)
     {
     }
+
+/*
+    static void choice_callback(Fl_Widget* widget, void* data)
+    {
+        // Das generische Widget in ein Fl_Choice-Objekt umwandeln
+        auto self = (Fl_Choice*)widget;
+
+        int index = self->value();
+
+        // Den Text des ausgewählten Elements abrufen
+        const char* label = self->text();
+
+        DE_DEBUG("index = ",index)
+        DE_DEBUG("label = ",label ? label : "nullptr")
+
+        if (self->onChange)
+        {
+            self->onChange(index, self);
+        }
+    }
+
+    void draw() override
+    {
+        fl_push_clip(x(), y(), w(), h());
+
+        int w2 = std::min( w(), h() );
+        int w1 = w() - w2;
+
+        Fl_Color fillColor = fl_rgb_color(224, 238, 249);
+        fl_color(fillColor);
+        fl_rectf(x(), y(), w1, h());
+
+        // Draw menu item's label
+        if (mvalue())
+        {
+            Fl_Menu_Item m = *mvalue();
+            //if (active) m.activate(); else m.deactivate();
+
+            if (m.text)
+            {
+                fl_color(FL_BLACK);
+                fl_draw(m.text, x() + 4, y() + h() - 6);
+            }
+        }
+        // draw arrow
+        //fl_draw("@2", x() + w() - 16, y() + 2);
+
+        fl_pop_clip();
+    }
+*/
+
+};
+
+
+
+
+#if 0
+
+
+class ComboBox : public Fl_Choice
+{
+public:
+    ComboBox(int X, int Y, int W, int H, const char *L = 0)
+        : Fl_Choice(X,Y,W,H,L)
+    {
+        callback(choice_callback);
+    }
+
+    // 1. Die Callback-Funktion definieren
+    static void choice_callback(Fl_Widget* widget, void* data)
+    {
+        // Das generische Widget in ein Fl_Choice-Objekt umwandeln
+        auto self = (ComboBox*)widget;
+
+        int index = self->value();
+
+        // Den Text des ausgewählten Elements abrufen
+        const char* label = self->text();
+
+        DE_DEBUG("index = ",index)
+        DE_DEBUG("label = ",label ? label : "nullptr")
+
+        if (self->onChange)
+        {
+            self->onChange(index, self);
+        }
+    }
+
 /*
     void draw() override
     {
@@ -193,11 +281,7 @@ public:
 
 };
 
-
-
-
-#if 0
-
+// ========================================================
 
 class ComboBox : public Fl_Widget
 {

@@ -39,6 +39,12 @@ namespace de {
     uint64_t
     TOTAL_FILE_SIZE(const FileInfos& fileInfos);
 
+    uint64_t
+    NUM_FILES(const de::FileInfos& fileInfos);
+
+    uint64_t
+    NUM_DIRECTORIES(const de::FileInfos& fileInfos);
+
     void
     DUMP(const FileInfos& fileInfos);
 

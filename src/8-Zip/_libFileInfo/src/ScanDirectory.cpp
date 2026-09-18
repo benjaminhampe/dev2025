@@ -82,6 +82,7 @@ void ScanDirectory(FileInfos& fileInfos, std::wstring dir, bool bRecursive)
 
     if (!std::filesystem::exists( p ))
     {
+        DE_ERROR("Not exist, ",de_mbstr(dir))
         return;
     }
 
@@ -89,25 +90,68 @@ void ScanDirectory(FileInfos& fileInfos, std::wstring dir, bool bRecursive)
 
     if (bRecursive)
     {
-        for (const auto& e : std::filesystem::recursive_directory_iterator(p,ec))
+        DE_TRACE("Recursive: ",de_mbstr(dir))
+        std::filesystem::recursive_directory_iterator it( p,ec );
+        if (ec)
         {
-            auto fileInfo = ScanFileInfo(e.path().wstring());
+            DE_ERROR("Got ec(",ec.message(),"), ",de_mbstr(dir))
+            return;
+        }
+
+        size_t i = 0;
+        while ( it != std::filesystem::recursive_directory_iterator() )
+        {
+            const auto p1 = it->path();
+
+            //DE_TRACE("[",i,"] ", p1.u8string())
+            /*
+            std::error_code ec2;
+            const auto p2 = std::filesystem::absolute( p1, ec2 );
+            if (ec2)
+            {
+                DE_ERROR("Got ec2(",ec2.message(),"), ",p2.u8string())
+                // continue;
+            }
+
+            std::error_code ec3;
+            const auto p3 = std::filesystem::canonical( p2, ec3 );
+            if (ec3)
+            {
+                DE_ERROR("Got ec3(",ec3.message(),"), ",p3.u8string())
+                // continue;
+            }
+            */
+            const std::wstring uri = FileSystem::makePosixPath( p1.wstring() );
+
+            auto fileInfo = ScanFileInfo(uri);
             if (fileInfo)
             {
-                platform_addUniqueFileInfo(*fileInfo,fileInfos);
+                fileInfos.emplace_back(*fileInfo);
+                //platform_addUniqueFileInfo(*fileInfo,fileInfos);
             }
+
+            std::error_code ec4;
+            it.increment( ec4 );
+            if ( ec4 )
+            {
+                DE_ERROR("Got ec4(",ec4.message(),")")
+                break;
+            }
+
+            i++;
         }
     }
     else
     {
-        for (const auto& e : std::filesystem::directory_iterator(p,ec))
-        {
-            auto fileInfo = ScanFileInfo(e.path().wstring());
-            if (fileInfo)
-            {
-                platform_addUniqueFileInfo(*fileInfo,fileInfos);
-            }
-        }
+        DE_TRACE("NOT IMPLEMENTED: NonRecursive: ",de_mbstr(dir))
+        // for (const auto& e : std::filesystem::directory_iterator(p,ec))
+        // {
+        //     auto fileInfo = ScanFileInfo(e.path().wstring());
+        //     if (fileInfo)
+        //     {
+        //         platform_addUniqueFileInfo(*fileInfo,fileInfos);
+        //     }
+        // }
     }
 
     if (ec)

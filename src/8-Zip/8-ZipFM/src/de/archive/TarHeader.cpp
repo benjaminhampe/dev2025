@@ -2,6 +2,11 @@
 #include <filesystem>
 #include <de/FileInfoUtil.h>
 
+// #ifndef USE_TAR_HEADER_DEBUG
+// #define USE_TAR_HEADER_DEBUG 1
+// #endif
+
+
 /*
 🧩 Want the correct base‑256 encoder too?
 
@@ -397,9 +402,11 @@ TarUtil::makeRelative(std::string uri, std::string baseDir)
     }
     else
     {
+#ifdef USE_TAR_HEADER_DEBUG
         DE_TRACE("Param[1] uri = ", uri)
         DE_TRACE("Param[2] baseDir = ", baseDir)
         DE_TRACE("makeRelative = ", out)
+#endif
     }
     return out;
 }
@@ -451,21 +458,24 @@ TarUtil::trimLeadingDotDotSlash(std::string s)
 std::string
 TarUtil::make_tar_path(std::string uri, std::string baseDir, std::string archiveBase)
 {
-    DE_TRACE("in[1] uri = ", uri)
-    DE_TRACE("in[2] baseDir = ", baseDir)
-    DE_TRACE("in[3] archiveBase = ", archiveBase)
-
     std::string p1 = makeRelative( uri, baseDir );
     std::string p2 = trimLeadingDotDotSlash( p1 );
     std::string p3 = dbMakePosix( p2 );
 
+#ifdef USE_TAR_HEADER_DEBUG
+    DE_TRACE("in[1] uri = ", uri)
+    DE_TRACE("in[2] baseDir = ", baseDir)
+    DE_TRACE("in[3] archiveBase = ", archiveBase)
     DE_TRACE("p1 = makeRelative( uri, baseDir ) = ", p1)
     DE_TRACE("p2 = trimLeadingDotDotSlash( p1 ) = ", p2)
     DE_TRACE("p3 = dbMakePosix( p2 ) = ", p3)
+#endif
 
     if (archiveBase.size())
     {
+#ifdef USE_TAR_HEADER_DEBUG
         DE_TRACE("p4 = archiveBase + '/' + p3 = ", p3)
+#endif
         p3 = archiveBase + "/" + p3;
     }
     return p3;
@@ -480,8 +490,9 @@ TarUtil::make_tar_path(std::string uri, std::string baseDir, std::string archive
 bool
 TarUtil::split_ustar_path(const std::string& uri, std::string& name, std::string& prefix)
 {
+#ifdef USE_TAR_HEADER_DEBUG
     DE_TRACE("in[1] uri = ", uri)
-
+#endif
     std::string p = uri;
 
     constexpr uint32_t nameLen = 100;
@@ -508,35 +519,39 @@ TarUtil::split_ustar_path(const std::string& uri, std::string& name, std::string
         name   = p.substr(slashPos + 1); // Keeps file basename.suffixe
     }
 
+#ifdef USE_TAR_HEADER_DEBUG
     DE_TRACE("mid[1] slashPos = ", slashPos)
     DE_TRACE("mid[2] name = ", name)
     DE_TRACE("mid[3] prefix = ", prefix)
+#endif
 
     if (name.size() > nameLen)
     {
-        //DE_ERROR("Name too long. name(",name,"), prefix(",prefix,")")
         name = dbStrRightmost(name, nameLen);
-        //DE_ERROR("Rightmost name(",name,")")
+#ifdef USE_TAR_HEADER_DEBUG
         DE_TRACE("out[2] name = ", name, ", (Name too long).")
         DE_TRACE("out[3] prefix = ", prefix)
         DE_TRACE("out[4] bNeedLongLink = ", true)
+#endif
         return true; // bNeedLongLink == true
     }
 
     if (prefix.size() > prefixLen)
     {
-        //DE_ERROR("Prefix too long. name(",name,"), prefix(",prefix,")")
         prefix = dbStrRightmost(prefix, prefixLen);
-        //DE_ERROR("Rightmost prefix(",prefix,")")
+#ifdef USE_TAR_HEADER_DEBUG
         DE_TRACE("out[2] name = ", name)
         DE_TRACE("out[3] prefix = ", prefix, ", (Prefix too long).")
         DE_TRACE("out[4] bNeedLongLink = ", true)
+#endif
         return true; // bNeedLongLink == true
     }
 
+#ifdef USE_TAR_HEADER_DEBUG
     DE_TRACE("out[2] name = ", name)
     DE_TRACE("out[3] prefix = ", prefix)
     DE_TRACE("out[4] bNeedLongLink = ", false)
+#endif
     return false; // Need LongLink == false
 
 /*
@@ -582,6 +597,7 @@ TarUtil::tar_build_header(TarHeader& h,
                 uint64_t mtime,
                 char typeflag)
 {
+#ifdef USE_TAR_HEADER_DEBUG
     DE_TRACE("in[1] name = ", name)
     DE_TRACE("in[2] prefix = ", prefix)
     DE_TRACE("in[3] mode = ", mode)
@@ -590,6 +606,7 @@ TarUtil::tar_build_header(TarHeader& h,
     DE_TRACE("in[6] size = ", dbStrBytes(size))
     DE_TRACE("in[7] size = ", de::FileInfoUtil::unixTime_str(mtime))
     DE_TRACE("in[8] type = ", typeflag)
+#endif
 
     std::memset(&h, 0, sizeof(h));
 
@@ -688,28 +705,36 @@ TarUtil::tar_build_header(uint8_t* out,
                  const std::string& baseDir,
                  const std::string& archiveBaseName)
 {
+#ifdef USE_TAR_HEADER_DEBUG
     DE_TRACE("in[1] fileInfo = ", fileInfo.str())
     DE_TRACE("in[2] baseDir = ", baseDir)
     DE_TRACE("in[3] archiveBaseName = ", archiveBaseName)
+#endif
 
     constexpr uint32_t blockSize = 512;
     std::string uri = make_tar_path( de_mbstr(fileInfo.uri()), baseDir, archiveBaseName);
     std::string name;
     std::string prefix;
 
+#ifdef USE_TAR_HEADER_DEBUG
     DE_TRACE("out[1] tar_path = ", uri)
     DE_TRACE("out[2] name = ", name)
     DE_TRACE("out[3] prefix = ", prefix)
+#endif
 
     uint32_t nWritten = 0;
 
     bool bNeedLongLink = split_ustar_path(uri, name, prefix);
+
+#ifdef USE_TAR_HEADER_DEBUG
     DE_DEBUG("L(",bNeedLongLink,")"
             ", len(",uri.size(),")"
             ", name(",name,")"
             ", prefix(",prefix,")"
             // ", uri(",uri,")"
             )
+#endif
+
     if (bNeedLongLink)
     {
         // Write meta 'LongLink' header + payload
@@ -754,7 +779,9 @@ TarUtil::tar_build_header(uint8_t* out,
 
     uint64_t blocks = nWritten / 512;
     uint64_t remain = nWritten % 512;
-    DE_DEBUG("uri(",uri,"), blocks(",blocks,"), remain(",remain,")")
 
+#ifdef USE_TAR_HEADER_DEBUG
+    DE_DEBUG("uri(",uri,"), blocks(",blocks,"), remain(",remain,")")
+#endif
     return nWritten;
 }

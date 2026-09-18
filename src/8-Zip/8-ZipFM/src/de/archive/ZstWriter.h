@@ -10,11 +10,13 @@ struct ZstWriter
     {
         int64_t blockSize = 8 * 1024 * 1024;
 
-        ZstPreset preset;
+        // ZstPreset preset;
 
-        typedef std::function<void(const de::FileInfo& /* fileInfo */, uint32_t)> FN_onNextFile;
+        int32_t compressionLevel = 3;
 
-        FN_onNextFile onNextFile;
+        // typedef std::function<void(const de::FileInfo& /* fileInfo */, uint32_t)> FN_onNextFile;
+
+        // FN_onNextFile onNextFile;
 
         typedef std::function<void(const uint64_t /* byteCount */)> FN_onProcessed;
 
@@ -30,9 +32,7 @@ struct ZstWriter
     enum eState
     {
         STATE_TAR = 0, // → TAR liefert Daten
-
         STATE_ZSTD_FLUSH, // → TAR ist fertig, ZSTD muss noch flushen
-
         STATE_DONE, // → alles fertig
     };
 
@@ -47,185 +47,11 @@ struct ZstWriter
     ZSTD_inBuffer m_zin;
     ZSTD_outBuffer m_zout;
 
-    void close()
-    {
-        if (m_ctx)
-        {
-            ZSTD_freeCCtx(m_ctx);
-            m_ctx = nullptr;
-        }
-    }
+    void close();
 
-    bool init(const Cfg& cfg, TarWriter* tarWriter)
-    {
-        if (!tarWriter)
-        {
-            DE_ERROR("No tarWriter")
-            return false;
-        }
-        m_cfg = cfg;
+    bool init(const Cfg& cfg, TarWriter* tarWriter);
 
-        m_byteIndex = 0;
-        m_byteCount = 0;
-        m_callCount = 0;
-        m_tarWriter = tarWriter;
-
-        m_iBlob.resize( m_cfg.blockSize );
-        m_oBlob.resize( m_cfg.blockSize );
-
-        m_ctx = ZSTD_createCCtx();
-        if (!m_ctx)
-        {
-            DE_ERROR("No ZStd context.")
-            return false;
-        }
-
-        size_t ok = 0;
-        if (m_cfg.preset.algo == 0)
-        {
-            ok = ZSTD_CCtx_setParameter(m_ctx, ZSTD_c_compressionLevel, m_cfg.preset.level);
-        }
-        // else if (m_cfg.preset.algo == ZSTD_fast)
-        // {
-        //     ok = ZSTD_CCtx_setParameter(m_ctx, ZSTD_fast, m_cfg.preset.level);
-        // }
-        // else
-        // {
-        //     ok = ZSTD_CCtx_setParameter(m_ctx, ZSTD_c_compressionLevel, 3);
-        // }
-
-        if (ZSTD_isError(ok))
-        {
-            DE_ERROR("Invalid ZSTD_c_compressionLevel = ",m_cfg.preset.level)
-            ZSTD_freeCCtx(m_ctx);
-            return false;
-        }
-
-        DE_DEBUG("ZSTD_c_compressionLevel = ",m_cfg.preset.level)
-
-        m_state = STATE_TAR;
-
-        return true;
-    }
-
-    // Benni statemachine with 4+1 states now. Hope it is well designed.
-
-
-    int64_t process(uint8_t* __restrict out, int64_t outSize)
-    {
-        int64_t outWritten = 0;
-
-        while (outWritten < outSize)
-        {
-            // 1) TAR INPUT PHASE
-            if (m_state == STATE_TAR)
-            {
-                m_zin.src  = m_iBlob.data();
-                m_zin.size = m_tarWriter->process(m_iBlob.data(), m_iBlob.size());
-                m_zin.pos  = 0;
-
-                if (m_zin.size == 0)
-                {
-                    // TAR finished → switch to ZSTD flush mode
-                    m_state = STATE_ZSTD_FLUSH;
-                }
-            }
-
-            // 2) ZSTD OUTPUT PHASE
-            m_zout.dst  = out + outWritten;
-            m_zout.size = outSize - outWritten;
-            m_zout.pos  = 0;
-
-            ZSTD_EndDirective mode =
-                (m_state == STATE_ZSTD_FLUSH)
-                ? ZSTD_e_end
-                : ZSTD_e_continue;
-
-            size_t ret = ZSTD_compressStream2(
-                m_ctx,
-                &m_zout,
-                &m_zin,
-                mode);
-
-            if (ZSTD_isError(ret))
-            {
-                DE_ERROR("ZSTD: ", ZSTD_getErrorName(ret));
-                return -1;
-            }
-
-            outWritten += m_zout.pos;
-
-            // 3) Check if ZSTD is fully flushed
-            if (m_state == STATE_ZSTD_FLUSH && ret == 0)
-            {
-                m_state = STATE_DONE;
-                break;
-            }
-
-            // 4) If no output was produced, break to avoid infinite loop
-            if (m_zout.pos == 0)
-            {
-                break;
-            }
-        }
-
-        return outWritten;
-    }
-
-    /* BAD
-    int64_t process(uint8_t* __restrict__ out, int64_t outSize)
-    {
-
-
-        int64_t nReadBytes = m_tarWriter->process(m_iBlob.data(), m_iBlob.size());
-        if (nReadBytes > 0)
-        {
-            int64_t has = std::min<int64_t>(tarDataSize - readBytes, inBlob.size());
-            int64_t got = tarFile.read(inBlob.data(), has);
-
-            readBytes += got;
-
-            options.onProgress( 100.0 * double(readBytes) / double(tarDataSize) );
-
-            // Input setzen
-            zin.src = inBlob.data();
-            zin.size = got;
-            zin.pos = 0;
-
-            // Streamen
-            while (zin.pos < zin.size)
-            {
-                zout.dst = outBuf.data();
-                zout.size = outBuf.size();
-                zout.pos = 0;
-
-                size_t ret = ZSTD_compressStream2(
-                                cctx,
-                                &zout,
-                                &zin,
-                                ZSTD_e_continue);
-
-                if (ZSTD_isError(ret))
-                {
-                    DE_ERROR("ZSTD: ", ZSTD_getErrorName(ret))
-                    return false;
-                }
-
-                // out.write(reinterpret_cast<char*>(outBuf.data()), zout.pos);
-                zstFile.write(outBuf.data(), zout.pos);
-            }
-        }
-        else
-        {
-            DE_BENNI("EOS, m_callCount = ",m_callCount)
-            return 0;
-        }
-
-
-
-        m_callCount++;
-    }
-    */
+    int64_t process(uint8_t* __restrict out, int64_t outSize);
 };
 
 /*

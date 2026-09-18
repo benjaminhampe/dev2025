@@ -8,12 +8,88 @@
 #include <de/win32/win32_Set_Window_Icon.h>
 #include <de/win32/win32_LongPath.h>
 #include <gui/fltk_CustomFont.h>
+#include <de/ScanDirectory.h>
 
 const std::string sTitle = dbStr("8-Zip | 2026 (c) by benjaminhampe@gmx.de");
 const int w = 600;
 const int h = 600;
 
 // static int global_handler(int event);
+
+// ---------------- worker ----------------
+void testScanImpl(de::FileInfos & fileInfos, const std::vector<std::string>& filesIn)
+{
+    const double timeScanBeg = dbTimeInSeconds();
+
+    uint64_t pollFileCount = 0;
+    uint64_t pollTotalBytes = 0;
+
+    DE_TRACE("[2.1]")
+
+    fileInfos.clear();
+
+    for (size_t i = 0; i < filesIn.size(); ++i)
+    {
+        DE_WARN("Scan [",i,"] ",filesIn[i])
+        auto optFileInfo = de::ScanFileInfo(de_wstr(filesIn[i]));
+        if (optFileInfo)
+        {
+            const de::FileInfo& fileInfo = *optFileInfo;
+            DE_WARN("Add [",i,"] ",fileInfo.str())
+
+            fileInfos.emplace_back( fileInfo );
+
+            if (fileInfo.isDir())
+            {
+                de::ScanDirectory(fileInfos,fileInfo.uri(),true);
+            }
+
+            pollFileCount = fileInfos.size();
+            pollTotalBytes = de::TOTAL_FILE_SIZE(fileInfos);
+        }
+        else
+        {
+            DE_WARN("Skip [",i,"] ",filesIn[i])
+        }
+    }
+
+    DE_TRACE("[2.4]")
+
+    //<debug>
+
+    const double timeScanEnd = dbTimeInSeconds();
+    const auto t = dbStrSeconds(timeScanEnd - timeScanBeg);
+    const auto s = dbStr("[Scan] Needed ",t,", "
+                    "fileInfos(",fileInfos.size(),"), "
+                    "files(",NUM_FILES(fileInfos),"), "
+                    "dirs(",NUM_DIRECTORIES(fileInfos),")");
+    //async_log_ok(s);
+    DE_OK(s)
+
+    //std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    //</debug>
+
+    DE_TRACE("[2.5]")
+
+    //<trace>
+    for (size_t i = 0; i < std::min<size_t>(fileInfos.size(),1000); ++i)
+    {
+        //async_log_trace(ui.fileInfos[i].str().c_str());
+        DE_TRACE("[",i,"] ", fileInfos[i].str())
+    }
+    std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    //</trace>
+
+    DE_TRACE("[2.6]")
+}
+
+void testScan()
+{
+    de::FileInfos fileInfos;
+    std::vector<std::string> filesIn;
+    filesIn.emplace_back("C:\\Users\\firestarter\\Downloads\\_3_zst/17000Midis[www.Jwejem.com]");
+    testScanImpl(fileInfos,filesIn);
+};
 
 int main(int argc, char** argv)
 {
@@ -26,6 +102,8 @@ int main(int argc, char** argv)
 
     // EightZip_Install();
     // EightZip_InstallExePath();
+
+    // testScan();
 
     const auto& job = App::getInstance()->getJob();
     if (job.bRestartExplorer)

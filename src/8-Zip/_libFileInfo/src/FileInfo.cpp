@@ -98,6 +98,25 @@ uint64_t TOTAL_FILE_SIZE(const FileInfos& fileInfos)
     return nBytes;
 }
 
+uint64_t NUM_FILES(const de::FileInfos& fileInfos)
+{
+    uint64_t n = 0;
+    for (const auto& fi : fileInfos)
+    {
+        n += int(fi.isFile());
+    }
+    return n;
+}
+
+uint64_t NUM_DIRECTORIES(const de::FileInfos& fileInfos)
+{
+    uint64_t n = 0;
+    for (const auto& fi : fileInfos)
+    {
+        n += int(fi.isDir());
+    }
+    return n;
+}
 
 void DUMP(const FileInfos& fileInfos)
 {

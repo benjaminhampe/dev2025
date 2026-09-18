@@ -84,33 +84,45 @@ TarWriter::process(uint8_t* __restrict__ out, int64_t outSize)
                     m_headSize = TarUtil::tar_build_header(m_head.data(), fi, m_cfg.baseDir, m_cfg.archiveBaseName);
                     m_headByte = 0;
                     m_state = 1; // Start writing header data
-                    DE_BENNI("[",i,"] Made header bytes ",m_headSize, ", ", de_mbstr(fi.uri()))
+                    if (m_cfg.bDebug)
+                    {
+                        DE_BENNI("[",i,"] Made header bytes ",m_headSize, ", ", de_mbstr(fi.uri()))
+                    }
                     break;
                 }
                 case 1: // Write header
                 {
                     uint64_t availBytes = std::min<uint64_t>(remainBytes, m_headSize - m_headByte);
                     std::memcpy(p,m_head.data() + m_headByte, availBytes);
-                    DE_DEBUG("[",i,"] Wrote header bytes ",availBytes)
+                    if (m_cfg.bDebug)
+                    {
+                        DE_DEBUG("[",i,"] Wrote header bytes ",availBytes)
+                    }
                     doneBytes += availBytes;
                     m_headByte += availBytes;
 
                     if (m_headByte >= m_headSize)
                     {
-                        if (fi.isFile())
+                        if (fi.isFile() && fi.fileSize() > 0)
                         {
                             m_state = 2; // Start writing file data
                             m_fileByte = 0;
                             m_file.close();
                             m_file.open(fi.uri(),de::eFileMode::Read);
                             m_fileSize = fi.fileSize();
-                            DE_DEBUG("[",i,"] Ok (file) header written. ", de_mbstr(fi.uri()))
+                            if (m_cfg.bDebug)
+                            {
+                                DE_DEBUG("[",i,"] Ok (file) header written. ", de_mbstr(fi.uri()))
+                            }
                         }
                         else
                         {
                             m_fileIndex++;
-                            m_state = 0; // Directory is done, go to next fileInfo.
-                            DE_DEBUG("[",i,"] Ok (dir) header written. ", de_mbstr(fi.uri()))
+                            m_state = 0; // Directory or empty file is done, go to next fileInfo.
+                            if (m_cfg.bDebug)
+                            {
+                                DE_DEBUG("[",i,"] Ok (dir) header written. ", de_mbstr(fi.uri()))
+                            }
                         }
                     }
                     break;
@@ -119,8 +131,10 @@ TarWriter::process(uint8_t* __restrict__ out, int64_t outSize)
                 {
                     uint64_t availBytes = std::min<uint64_t>(remainBytes, m_fileSize - m_fileByte);
                     uint64_t wroteBytes = m_file.read(p,availBytes);
-                    DE_DEBUG("[",i,"] Wrote file bytes ",wroteBytes)
-
+                    if (m_cfg.bDebug)
+                    {
+                        DE_DEBUG("[",i,"] Wrote file bytes ",wroteBytes)
+                    }
                     if (wroteBytes == 0)
                         return doneBytes; // yield, caller must retry
 
@@ -136,12 +150,18 @@ TarWriter::process(uint8_t* __restrict__ out, int64_t outSize)
 
                         if (m_paddSize > 0)
                         {
-                            DE_DEBUG("[",i,"] Need padd bytes ",m_paddSize)
+                            if (m_cfg.bDebug)
+                            {
+                                DE_DEBUG("[",i,"] Need padd bytes ",m_paddSize)
+                            }
                             m_state = 3; // Padd file data to 512 bytes
                         }
                         else
                         {
-                            DE_DEBUG("[",i,"] No padding needed.")
+                            if (m_cfg.bDebug)
+                            {
+                                DE_DEBUG("[",i,"] No padding needed.")
+                            }
                             m_fileIndex++;
                             m_state = 0; // Goto next fileInfo
                         }
@@ -152,13 +172,19 @@ TarWriter::process(uint8_t* __restrict__ out, int64_t outSize)
                 {
                     uint64_t availBytes = std::min<uint64_t>(remainBytes, m_paddSize - m_paddByte);
                     std::memset(p,0,availBytes);
-                    DE_DEBUG("[",i,"] Wrote padd bytes ",availBytes)
+                    if (m_cfg.bDebug)
+                    {
+                        DE_DEBUG("[",i,"] Wrote padd bytes ",availBytes)
+                    }
                     m_paddByte += availBytes;
                     doneBytes += availBytes;
 
                     if (m_paddByte >= m_paddSize)
                     {
-                        DE_OK("[",i,"] Done FileInfo[",m_fileIndex,"/",m_fileCount,"] ",fi.str())
+                        if (m_cfg.bDebug)
+                        {
+                            DE_OK("[",i,"] Done FileInfo[",m_fileIndex,"/",m_fileCount,"] ",fi.str())
+                        }
                         m_fileIndex++;
                         m_state = 0; // Goto next fileInfo
                     }

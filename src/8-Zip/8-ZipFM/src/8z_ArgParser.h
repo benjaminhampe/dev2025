@@ -15,7 +15,7 @@ struct Job
     bool bCompress = false;
     bool bExtract = false;
     bool bForce = false; // Don't ask for overwrite
-    int iPreset = -1;
+    int iPreset = 0;
 
     std::string directory; // No trailing slash allowed
     std::string fileName; // e.g. archive.zst = <baseName>.<extension>

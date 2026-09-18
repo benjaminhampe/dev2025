@@ -3,6 +3,7 @@
 #include <gui/AB/Win11Combo.h>
 #include <gui/ComboBox.h>
 #include <de/archive/ZstHeader.h>
+#include <filesystem>
 
 namespace EightZip {
 namespace builder {
@@ -11,6 +12,8 @@ namespace builder {
 struct UI
 // =============================================================
 {
+    int iLastPreset = 0; // No compression
+
     Fl_Button* btnZoomIn = nullptr;
     Fl_Button* btnZoomOut = nullptr;
 
@@ -92,31 +95,30 @@ struct UI
     FN_onCancel onCancel;
     FN_onHelp onHelp;
 
-    std::string selectedExtension() const
+    std::string selectedFormat() const
     {
-        static std::array<std::string,2> my_map
+        static std::array<std::string,2> formats
         {
-            "tar",
-            "zst"
+            "tar", "zst"
         };
 
-        int i = cbxFormat->currentIndex();
-        if (i < 0 || i > my_map.size())
+        int i = cbxFormat->value();
+        if (i < 0 || i > formats.size())
         {
-            DE_ERROR("Invalid index ",i)
+            DE_ERROR("Invalid format ",i, " of ",formats.size())
             return "";
         }
-        return my_map[i];
+        return formats[i];
     }
 
-    ZstPreset getZstPreset() const
+    ZstPreset selectedPresetZst() const
     {
         const auto& presets = ZstPresets::get();
 
-        int i = cbxPreset->currentIndex();
+        int i = cbxPreset->value();
         if (i < 0 || i > presets.size())
         {
-            DE_ERROR("Invalid index ",i)
+            DE_ERROR("Invalid preset ",i, " of ",presets.size())
             return {};
         }
         return presets[i];
@@ -132,6 +134,104 @@ struct UI
 };
 
 static UI ui;
+
+namespace {
+
+std::string getLastDirectory(const std::string& uri)
+{
+    auto s1 = dbMakePosix(uri);
+
+    auto p2 = s1.find_last_of('/');
+    if (p2 == std::string::npos || p2 < 1)
+    {
+        DE_ERROR("Invalid p2(",p2,") in uri(", uri,")")
+        return "";
+    }
+
+    auto p1 = s1.find_last_of('/',p2-1);
+    if (p1 == std::string::npos)
+    {
+        DE_ERROR("No p1 in uri(", uri,")")
+        auto s2 = s1.substr(0, p2);
+        DE_DEBUG("Got s1(", s1,")")
+        DE_DEBUG("Got s2(", s2,")")
+        return s2;
+    }
+    else
+    {
+        // "/a/b.c" -> "a"
+        // p1 = 0
+        // p2 = 2
+        // s2 = s1.substr(1, 1);
+        auto s2 = s1.substr(p1+1, p2-p1-1);
+        DE_DEBUG("Got s1(", s1,")")
+        DE_DEBUG("Got s2(", s2,")")
+        return s2;
+    }
+}
+
+std::string replaceExtension(std::string uri, std::string ext)
+{
+    auto p1 = std::filesystem::u8path(uri);
+    auto p2 = std::filesystem::u8path(ext);
+    return p1.replace_extension(p2).u8string();
+}
+
+} // end namespace
+
+static void cbxFormat_cb(Fl_Widget* widget, void* data)
+{
+    // Das generische Widget in ein Fl_Choice-Objekt umwandeln
+    auto self = (Fl_Choice*)widget;
+
+    int index = self->value();
+
+    // Den Text des ausgewählten Elements abrufen
+    const char* label = self->text();
+
+    auto ext = ui.selectedFormat();
+
+    DE_DEBUG("[Format] index(",index,"), "
+                "label(", (label ? label : "nullptr"), "), "
+                "ext(", ext,")")
+
+    std::string uri = ui.edtArchive->value() ? ui.edtArchive->value() : "";
+    if (uri.empty())
+    {
+        uri = "8z_untitled_archive";
+    }
+    auto s = replaceExtension(uri,ext);
+    ui.edtArchive->value(s.c_str());
+
+    if (ext == "tar")
+    {
+        ui.iLastPreset = ui.cbxPreset->value();
+        ui.cbxPreset->value(0);
+        ui.cbxPreset->deactivate();
+    }
+    else if (ext == "zst")
+    {
+        ui.cbxPreset->activate();
+        ui.cbxPreset->value(ui.iLastPreset);
+    }
+}
+
+static void cbxPreset_cb(Fl_Widget* widget, void* data)
+{
+    // Das generische Widget in ein Fl_Choice-Objekt umwandeln
+    auto self = (Fl_Choice*)widget;
+
+    int index = self->value();
+
+    // Den Text des ausgewählten Elements abrufen
+    const char* label = self->text();
+
+    DE_DEBUG("[Preset] "
+                "index(",index,"), "
+                "label(", (label ? label : "nullptr"), "), "
+                "algo(", ui.selectedPresetZst().algo,"), "
+                "level(", ui.selectedPresetZst().level,")")
+}
 
 void Builder::setCallback_onOk(const FN_onOk& onOk)
 {
@@ -203,9 +303,9 @@ Job Builder::getJob() const
     // }
 
     // ======== iPreset =========================
-    if (ui.cbxPreset && !ui.cbxFormat->currentData().toString().empty())
+    if (ui.cbxPreset)
     {
-        job.iPreset = ui.cbxPreset->currentData().toInt();
+        job.iPreset = ui.cbxPreset->value();
     }
 
     if (job.iPreset < 0)
@@ -221,39 +321,6 @@ Job Builder::getJob() const
     DE_DEBUG("Job: ",job.str())
 
     return job;
-}
-
-std::string getLastDirectory(const std::string& uri)
-{
-    auto s1 = dbMakePosix(uri);
-
-    auto p2 = s1.find_last_of('/');
-    if (p2 == std::string::npos || p2 < 1)
-    {
-        DE_ERROR("Invalid p2(",p2,") in uri(", uri,")")
-        return "";
-    }
-
-    auto p1 = s1.find_last_of('/',p2-1);
-    if (p1 == std::string::npos)
-    {
-        DE_ERROR("No p1 in uri(", uri,")")
-        auto s2 = s1.substr(0, p2);
-        DE_DEBUG("Got s1(", s1,")")
-        DE_DEBUG("Got s2(", s2,")")
-        return s2;
-    }
-    else
-    {
-        // "/a/b.c" -> "a"
-        // p1 = 0
-        // p2 = 2
-        // s2 = s1.substr(1, 1);
-        auto s2 = s1.substr(p1+1, p2-p1-1);
-        DE_DEBUG("Got s1(", s1,")")
-        DE_DEBUG("Got s2(", s2,")")
-        return s2;
-    }
 }
 
 void Builder::setJob(const Job& job)
@@ -280,20 +347,33 @@ void Builder::setJob(const Job& job)
     {
         if (ui.job.filesIn.size() > 1)
         {
+            DE_DEBUG("ui.job.filesIn[0] = ",ui.job.filesIn[0])
+            DE_DEBUG("ui.job.filesIn[1] = ",ui.job.filesIn[1])
             ui.job.fileName = getLastDirectory(ui.job.filesIn[0]);
+            DE_DEBUG("getLastDirectory() = ",ui.job.fileName)
         }
         else if (ui.job.filesIn.size() == 1)
         {
-            ui.job.fileName = dbFileBase(ui.job.filesIn[0]);
+            DE_DEBUG("ui.job.filesIn[0] = ",ui.job.filesIn[0])
+            if (dbExistDirectory(ui.job.filesIn[0]))
+            {
+                ui.job.fileName = dbFileName(ui.job.filesIn[0]);
+                DE_DEBUG("[Dir] dbFileName() = ",ui.job.fileName)
+            }
+            else
+            {
+                ui.job.fileName = dbFileBase(ui.job.filesIn[0]);
+                DE_DEBUG("[File] dbFileBase() = ",ui.job.fileName)
+            }
         }
         else
         {
-            ui.job.fileName = "Untitled";
-            DE_ERROR("Fallback job.fileName")
+            ui.job.fileName = "8z_Untitled";
+            DE_ERROR("Fallback job.fileName = ", ui.job.fileName)
         }
 
         ui.job.fileName += ".";
-        ui.job.fileName += ui.selectedExtension();
+        ui.job.fileName += ui.selectedFormat();
     }
 
     ui.edtDir->value( ui.job.directory.c_str() );
@@ -458,103 +538,25 @@ Builder::Builder(int W, int H, const char* title)
             Fl::screen_scale(0, z);
         });
 
-    ui.cbxFormat->addItem(".tar - TAR Archive", 0);
-    ui.cbxFormat->addItem(".zst - ZSTD Archive", 1);
+    // ========================================================
+    ui.cbxFormat->add(".tar - TAR Archive");
+    ui.cbxFormat->add(".zst - ZSTD Archive");
     // ui.cbxFormat->add(".zip - ZIP Archive");
     // ui.cbxFormat->add(".bz2 - BZIP2 Archive");
     // ui.cbxFormat->add(".gz - GZIP Archive");
     // ui.cbxFormat->add(".xz - XZ Archive");
     // ui.cbxFormat->add(".7z - 7-Zip Archive");
-    ui.cbxFormat->setCurrentIndex(0,false);
-
-    /*
-    ui.cbxQuality->add("0 - No compression");
-    ui.cbxQuality->add("1 - Very fast");
-    ui.cbxQuality->add("3 - Fast");
-    ui.cbxQuality->add("5 - Normal");
-    ui.cbxQuality->add("7 - Max");
-    ui.cbxQuality->add("9 - Ultra");
-    ui.cbxQuality->value(0);
-
-    🧩 Fully custom preset:
-    ZSTD_CCtx_setParameter(cctx, ZSTD_c_strategy, ZSTD_btopt);
-    ZSTD_CCtx_setParameter(cctx, ZSTD_c_windowLog, 20);
-    ZSTD_CCtx_setParameter(cctx, ZSTD_c_hashLog, 18);
-    ZSTD_CCtx_setParameter(cctx, ZSTD_c_chainLog, 19);
-    ZSTD_CCtx_setParameter(cctx, ZSTD_c_searchLog, 5);
-    ZSTD_CCtx_setParameter(cctx, ZSTD_c_searchLength, 4);
-    ZSTD_CCtx_setParameter(cctx, ZSTD_c_targetLength, 16);
-
-    🧩 Existing Presets for FastMode:
-    ZSTD_CCtx_setParameter(cctx, ZSTD_c_fast, N=30); // N = 1 … 1000+
-    ZSTD_c_fast	Überschreibt ZSTD_c_compressionLevel, erzwingt ZSTD_fast, setzt alle internen Parameter neu
-
-    🧩 Existing Presets for High‑Level: (überschreiben alles andere)
-    ZSTD_c_compressionLevel	1–22
-        Setzt alle internen Parameter (WindowLog, ChainLog, HashLog, SearchLog, SearchLength, TargetLength, Strategy)
-
-    Empfohlene Presets (UI‑tauglich)
-        Fast‑1 — leicht schneller als Level 1, Ratio noch ok
-        Fast‑3 — guter Kompromiss, oft verwendet
-        Fast‑5 — deutlich schneller, Ratio spürbar schlechter
-        Fast‑10 — sehr schnell, Ratio niedrig
-        Fast‑20 — extrem schnell, Ratio sehr niedrig
-        Fast‑50 — für Telemetrie/Logs
-        Fast‑100 — für High‑Throughput Pipelines
-        Fast‑200 — maximale Geschwindigkeit, Ratio minimal
-
-    🧠 Warum diese Werte?
-
-    Fast‑Mode ist ein kontinuierlicher Parameter, aber:
-        ab Fast=1–5 ist Ratio noch brauchbar
-        ab Fast=10–20 wird Ratio deutlich schlechter
-        ab Fast=50–200 ist Ratio fast egal, nur Speed zählt
-        über Fast=200 gibt es kaum noch messbare Vorteile
-
-    Kombobox: Fast‑Mode
-
-    Off
-    Fast‑1 (leicht schneller)
-    Fast‑3 (Standard‑Fast)
-    Fast‑5 (schnell)
-    Fast‑10 (sehr schnell)
-    Fast‑20 (extrem schnell)
-    Fast‑50 (Logs/Telemetry)
-    Fast‑100 (High‑Throughput)
-
-    Level	Strategie       Qualität
-    −N Fast	ZSTD_fast       extrem schnell, geringste Ratio
-    1       ZSTD_fast       schnell
-    2       ZSTD_fast       schnell
-    3       ZSTD_dfast      Standard‑Default
-    4       ZSTD_dfast      besser
-    5       ZSTD_greedy     mittlere Ratio
-    6       ZSTD_lazy       höhere Ratio
-    7       ZSTD_lazy       höhere Ratio
-    8       ZSTD_lazy2      hohe Ratio
-    9       ZSTD_lazy2      hohe Ratio
-    10–12	ZSTD_lazy2      sehr hohe Ratio
-    13–15	ZSTD_btlazy2	sehr hohe Ratio
-    16–19	ZSTD_btopt      maximal
-    20–22 	ZSTD_btultra	höchste Ratio, extrem langsam
-    */
+    ui.cbxFormat->value(1);
+    ui.cbxFormat->callback(cbxFormat_cb);
+    // ========================================================
     const auto & zstPresets = ZstPresets::get();
     for (size_t i = 0; i < zstPresets.size(); ++i)
     {
-        ui.cbxPreset->addItem(zstPresets[i].name.c_str(), int(i));
+        ui.cbxPreset->add(zstPresets[i].name.c_str());
     }
-
-    ui.cbxPreset->setCurrentIndex(10,false);
-
-    ui.cbxPreset->onChange =
-        [](int idx, ComboBox* self)
-        {
-            DE_DEBUG("[Preset] idx: ", idx)
-            DE_DEBUG("[Preset] index: ", self->currentIndex())
-            DE_DEBUG("[Preset] text: ", self->currentText())
-            DE_DEBUG("[Preset] data: ", self->currentData().toString())
-        };
-
+    ui.cbxPreset->value(10);
+    ui.cbxPreset->callback(cbxPreset_cb);
+    // ========================================================
     end();
 }
 
