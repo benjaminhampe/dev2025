@@ -57,16 +57,10 @@ struct TarWriter
 
     bool m_bOpen = false;
 
-    // TarWriter()
-    // {
-    // };
-
-    // ~TarWriter()
-    // {
-    //     close();
-    // }
-
-    bool configure(const Cfg& cfg);
+    TarWriter();
+    ~TarWriter();
+    void close();
+    bool init(const Cfg& cfg);
 
     // Benni statemachine with 4+1 states now. Hope it is well designed.
 

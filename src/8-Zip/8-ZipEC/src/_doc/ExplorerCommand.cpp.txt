@@ -1,7 +1,4 @@
 #include "ExplorerCommand.h"
-
-#if 0
-
 #include "EC_Utils.h"
 //#include <shellapi.h>
 //#include <filesystem>
@@ -283,5 +280,3 @@ HRESULT ClassFactory::LockServer(BOOL)
 {
     return S_OK;
 }
-
-#endif

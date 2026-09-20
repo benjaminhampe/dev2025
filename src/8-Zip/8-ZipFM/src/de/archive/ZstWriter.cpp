@@ -1,6 +1,15 @@
 #include "ZstWriter.h"
 
-// =====================================================
+ZstWriter::ZstWriter()
+{
+
+}
+
+ZstWriter::~ZstWriter()
+{
+    close();
+}
+
 void ZstWriter::close()
 {
     if (m_ctx)
@@ -30,9 +39,24 @@ bool ZstWriter::init(const Cfg& cfg, TarWriter* tarWriter)
     m_ctx = ZSTD_createCCtx();
     if (!m_ctx)
     {
-        DE_ERROR("No ZStd context.")
+        DE_ERROR("No ZSTD context.")
         return false;
     }
+
+    //DE_INFO("ZSTD_staticSize = ",m_ctx->staticSize)
+
+    // 2. Aktiviere Multithreading (0 bedeutet automatisch alle Kerne, oder z.B. 4)
+    // size_t e1 = ZSTD_CCtx_setParameter(m_ctx, ZSTD_c_nbWorkers, m_cfg.num_threads);
+
+    // if (ZSTD_isError(e1))
+    // {
+    //     // Fehlerbehandlung
+    //     DE_ERROR("Invalid ZSTD_c_nbWorkers = ",m_cfg.num_threads, ", e1(",e1,") = ",ZSTD_getErrorName(e1))
+    //     ZSTD_freeCCtx(m_ctx);
+    //     return false;
+    // }
+
+    DE_INFO("ZSTD_num_threads = ",m_cfg.num_threads)
 
     size_t ok = 0;
     // if (m_cfg.preset.preset == 0)
@@ -64,13 +88,75 @@ bool ZstWriter::init(const Cfg& cfg, TarWriter* tarWriter)
     return true;
 }
 
-// Benni statemachine with 4+1 states now. Hope it is well designed.
-
 int64_t ZstWriter::process(uint8_t* __restrict out, int64_t outSize)
 {
     int64_t outWritten = 0;
 
-    while (outWritten < outSize)
+    // Schleife läuft, solange noch Platz im Ausgabe-Puffer ist
+    // UND wir noch nicht fertig sind (STATE_DONE).
+    while (outWritten < outSize && m_state != STATE_DONE)
+    {
+        // 1) TAR INPUT PHASE
+        // Nur neue Daten holen, wenn der ZSTD-Input-Buffer komplett leer/verarbeitet ist
+        if (m_state == STATE_TAR && m_zin.pos >= m_zin.size)
+        {
+            m_zin.src = m_iBlob.data();
+            m_zin.size = m_tarWriter->process(m_iBlob.data(), m_iBlob.size());
+            m_zin.pos = 0;
+
+            if (m_zin.size == 0) {
+                // TAR fertig -> wechsle in den ZSTD-Flush-Modus
+                m_state = STATE_ZSTD_FLUSH;
+            }
+        }
+
+        // 2) ZSTD OUTPUT PHASE
+        m_zout.dst = out + outWritten;
+        m_zout.size = outSize - outWritten;
+        m_zout.pos = 0;
+
+        ZSTD_EndDirective mode = (m_state == STATE_ZSTD_FLUSH)
+                               ? ZSTD_e_end : ZSTD_e_continue;
+
+        // Merk dir den alten Input-Fortschritt, um unendliche Schleifen zu erkennen
+        size_t prevInPos = m_zin.pos;
+
+        size_t ret = ZSTD_compressStream2(m_ctx, &m_zout, &m_zin, mode);
+
+        if (ZSTD_isError(ret)) {
+            DE_ERROR("ZSTD: ", ZSTD_getErrorName(ret));
+            return outWritten;
+        }
+
+        outWritten += m_zout.pos;
+
+        // 3) Check if ZSTD is fully flushed
+        if (m_state == STATE_ZSTD_FLUSH && ret == 0) {
+            m_state = STATE_DONE;
+            break;
+        }
+
+        // 4) Echte Endlosschleifen-Prüfung:
+        // Wenn ZSTD weder Input konsumiert noch Output generiert hat, kommen wir nicht weiter.
+        if (m_zout.pos == 0 && m_zin.pos == prevInPos) {
+            break;
+        }
+    }
+
+    m_byteIndex += outWritten;
+    if (m_cfg.onProcessed) {
+        m_cfg.onProcessed(m_byteIndex);
+    }
+
+    return outWritten;
+}
+
+#if 0
+int64_t ZstWriter::process(uint8_t* __restrict out, int64_t outSize)
+{
+    int64_t outWritten = 0;
+
+    while (outWritten <= outSize)
     {
         // 1) TAR INPUT PHASE
         if (m_state == STATE_TAR)
@@ -105,7 +191,7 @@ int64_t ZstWriter::process(uint8_t* __restrict out, int64_t outSize)
         if (ZSTD_isError(ret))
         {
             DE_ERROR("ZSTD: ", ZSTD_getErrorName(ret));
-            return -1;
+            return outWritten;
         }
 
         outWritten += m_zout.pos;
@@ -133,6 +219,7 @@ int64_t ZstWriter::process(uint8_t* __restrict out, int64_t outSize)
     }
     return outWritten;
 }
+#endif
 
 /* BAD
 int64_t process(uint8_t* __restrict__ out, int64_t outSize)

@@ -1,6 +1,4 @@
 #pragma once
-
-#if 0
 #include <de/Core.h>
 
 #ifndef WIN32_LEAN_AND_MEAN
@@ -141,5 +139,3 @@ public:
 };
 
 
-
-#endif

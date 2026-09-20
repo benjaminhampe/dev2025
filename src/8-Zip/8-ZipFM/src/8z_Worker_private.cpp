@@ -70,6 +70,5 @@ void noop_cb(Fl_Widget*, void*)
     // DE_WARN("Not implemented")
 }
 
-
 } // end namespace worker.
 } // end namespace EightZip.

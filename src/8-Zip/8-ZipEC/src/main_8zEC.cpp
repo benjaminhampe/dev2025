@@ -1,5 +1,6 @@
 #include "main_8zEC.h"
-#include "ExplorerCommand.h"
+// #include "ExplorerCommand.h"
+#include "EC.h"
 #include "EC_Utils.h"
 
 LONG g_dllRefCount = 0;

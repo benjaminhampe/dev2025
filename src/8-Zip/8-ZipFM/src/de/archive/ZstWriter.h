@@ -8,6 +8,8 @@ struct ZstWriter
 {
     struct Cfg
     {
+        int num_threads = 8;
+
         int64_t blockSize = 8 * 1024 * 1024;
 
         // ZstPreset preset;
@@ -47,10 +49,10 @@ struct ZstWriter
     ZSTD_inBuffer m_zin;
     ZSTD_outBuffer m_zout;
 
+    ZstWriter();
+    ~ZstWriter();
     void close();
-
     bool init(const Cfg& cfg, TarWriter* tarWriter);
-
     int64_t process(uint8_t* __restrict out, int64_t outSize);
 };
 

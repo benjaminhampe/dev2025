@@ -1,0 +1,137 @@
+#include <windows.h>
+#include <shobjidl.h>
+#include <shobjidl_core.h>
+#include <shlwapi.h>
+
+// Definiere die benötigte GUID, falls sie in den MinGW-Headern fehlt
+#ifndef SID_STopLevelBrowser
+#define SID_STopLevelBrowser IID_IShellBrowser
+#endif
+
+class MyExplorerCommand : public IExplorerCommand, public IObjectWithSite {
+private:
+    ULONG m_refCount = 1;
+    IUnknown* m_site = nullptr; // Speichert den Kontext des Fensters/Tabs
+
+public:
+    // --- IUnknown Methoden ---
+    IFACEMETHODIMP QueryInterface(REFIID riid, void** ppvObject) {
+        if (!ppvObject) return E_POINTER;
+        
+        if (riid == IID_IUnknown || riid == IID_IExplorerCommand) {
+            *ppvObject = static_cast<IExplorerCommand*>(this);
+        } else if (riid == IID_IObjectWithSite) {
+            *ppvObject = static_cast<IObjectWithSite*>(this);
+        } else {
+            *ppvObject = nullptr;
+            return E_NOINTERFACE;
+        }
+        AddRef();
+        return S_OK;
+    }
+
+    IFACEMETHODIMP_(ULONG) AddRef() { return InterlockedIncrement(&m_refCount); }
+    IFACEMETHODIMP_(ULONG) Release() {
+        ULONG res = InterlockedDecrement(&m_refCount);
+        if (res == 0) {
+            if (m_site) m_site->Release();
+            delete this;
+        }
+        return res;
+    }
+
+    // --- IObjectWithSite Methoden ---
+    IFACEMETHODIMP SetSite(IUnknown* pUnkSite) {
+        if (m_site) { m_site->Release(); m_site = nullptr; }
+        if (pUnkSite) {
+            m_site = pUnkSite;
+            m_site->AddRef();
+        }
+        return S_OK;
+    }
+
+    IFACEMETHODIMP GetSite(REFIID riid, void** ppvSite) {
+        if (!m_site) return E_FAIL;
+        return m_site->QueryInterface(riid, ppvSite);
+    }
+
+    // --- Hilfsfunktion: Holt die Selektion des AKTIVEN Tabs ---
+    HRESULT GetActiveTabSelection(IShellItemArray** ppSelection) {
+        if (!m_site || !ppSelection) return E_FAIL;
+        *ppSelection = nullptr;
+
+        IServiceProvider* pServiceProvider = nullptr;
+        HRESULT hr = m_site->QueryInterface(IID_IServiceProvider, (void**)&pServiceProvider);
+        if (FAILED(hr)) return hr;
+
+        IShellBrowser* pShellBrowser = nullptr;
+        // SID_STopLevelBrowser zwingt den Explorer, das aktuell im Vordergrund stehende Tab-Frame zu liefern
+        hr = pServiceProvider->QueryService(SID_STopLevelBrowser, IID_IShellBrowser, (void**)&pShellBrowser);
+        if (SUCCEEDED(hr)) {
+            IShellView* pShellView = nullptr;
+            hr = pShellBrowser->QueryActiveShellView(&pShellView);
+            if (SUCCEEDED(hr)) {
+                IDataObject* pDataObject = nullptr;
+                // SVGIO_SELECTION holt die markierten Elemente des fokussierten Tabs
+                hr = pShellView->GetItemObject(SVGIO_SELECTION, IID_IDataObject, (void**)&pDataObject);
+                if (SUCCEEDED(hr)) {
+                    // Konvertiert das Datenobjekt zurück in ein sauberes IShellItemArray
+                    hr = SHCreateShellItemArrayFromDataObject(pDataObject, IID_IShellItemArray, (void**)ppSelection);
+                    pDataObject->Release();
+                }
+                pShellView->Release();
+            }
+            pShellBrowser->Release();
+        }
+        pServiceProvider->Release();
+        return hr;
+    }
+
+    // --- IExplorerCommand Methoden ---
+    IFACEMETHODIMP Invoke(IShellItemArray* psiItemArray, IBindCtx* pbc) {
+        IShellItemArray* pActiveSelection = nullptr;
+        
+        // Versuche die korrekte Tab-Auswahl zu erzwingen
+        if (SUCCEEDED(GetActiveTabSelection(&pActiveSelection)) && pActiveSelection) {
+            // Nutze die echte Selektion des aktiven Tabs!
+            ProcessItems(pActiveSelection);
+            pActiveSelection->Release();
+        } else if (psiItemArray) {
+            // Fallback auf das vom OS übergebene Array, falls das Tab-Routing fehlschlägt
+            ProcessItems(psiItemArray);
+        } else {
+            return E_INVALIDARG;
+        }
+        return S_OK;
+    }
+
+    IFACEMETHODIMP GetState(IShellItemArray* psiItemArray, BOOL fOkToBeSlow, EXPCMDSTATE* pCmdState) {
+        *pCmdState = ECS_ENABLED;
+        return S_OK;
+    }
+
+    // Die restlichen Pflicht-Methoden von IExplorerCommand (z.B. GetTitle, GetIcon etc.) hier einfügen...
+    IFACEMETHODIMP GetTitle(IShellItemArray* psi, LPWSTR* ppszName) { return E_NOTIMPL; }
+    IFACEMETHODIMP GetIcon(IShellItemArray* psi, LPWSTR* ppszIcon) { return E_NOTIMPL; }
+    IFACEMETHODIMP GetToolTip(IShellItemArray* psi, LPWSTR* ppszInfotip) { return E_NOTIMPL; }
+    IFACEMETHODIMP GetCanonicalName(GUID* pguidCommandName) { return E_NOTIMPL; }
+    IFACEMETHODIMP GetFlags(EXPCMDFLAGS* pFlags) { *pFlags = ECF_DEFAULT; return S_OK; }
+    IFACEMETHODIMP EnumSubCommands(IEnumExplorerCommand** ppEnum) { *ppEnum = nullptr; return E_NOTIMPL; }
+
+private:
+    void ProcessItems(IShellItemArray* items) {
+        DWORD count = 0;
+        items->GetCount(&count);
+        for (DWORD i = 0; i < count; ++i) {
+            IShellItem* item = nullptr;
+            if (SUCCEEDED(items->GetItemAt(i, &item))) {
+                LPWSTR path = nullptr;
+                if (SUCCEEDED(item->GetDisplayName(SIGDN_FILESYSPATH, &path))) {
+                    // Hier ist dein korrekter Dateipfad aus dem aktiven Tab!
+                    CoTaskMemFree(path);
+                }
+                item->Release();
+            }
+        }
+    }
+};

@@ -107,7 +107,7 @@ else()
     target_link_libraries(${LIB_NAME} PRIVATE de_bzip2)     # Compress
     target_link_libraries(${LIB_NAME} PRIVATE de_minizip)   # Compress
     target_link_libraries(${LIB_NAME} PRIVATE de_unzip)     # Compress
-    target_link_libraries(${LIB_NAME} PRIVATE de_zstd)      # Compress
+    # target_link_libraries(${LIB_NAME} PRIVATE de_zstd)      # Compress
 
     target_link_libraries(${LIB_NAME} PRIVATE de_webp)    # Best lossless RGBA friend.
     target_link_libraries(${LIB_NAME} PRIVATE de_png)     # Best old lossless RGBA friend.

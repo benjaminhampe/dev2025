@@ -99,7 +99,7 @@ void workerThread_CompressTar()
     TarWriter m_tarWriter;
     de::File m_tarFile;
 
-    if (!m_tarWriter.configure(m_tarWriterCfg))
+    if (!m_tarWriter.init(m_tarWriterCfg))
     {
         DE_ERROR("No TarWriter config")
         goto _exit_compress_tar_thread;

@@ -2409,7 +2409,7 @@ void File::close()
 {
     if ( m_fd < 0 )
     {
-        DE_WARN("Already closed. ",m_uri)
+        // DE_WARN("Already closed. ",m_uri)
         return;
     }
 
@@ -2494,7 +2494,8 @@ int64_t File::read( void* __restrict__ dst, int64_t nBytes ) const
         return 0;
     }
 
-    // INT_MAX/4 = 512MB chunks. Because file64_read() actually returns int32 not int64.
+    // INT_MAX/4 = 512MB chunks.
+    // Because file64_read() actually returns int32_t not int64_t.
     const int64_t chunkBytes = std::numeric_limits<int32_t>::max()/4;
     uint8_t* __restrict__ pDst = reinterpret_cast<uint8_t*>(dst);
 
@@ -2515,26 +2516,29 @@ int64_t File::read( void* __restrict__ dst, int64_t nBytes ) const
         // ---- EOF ----
         if (gotBytes == 0)
         {
-            DE_WARN("EOF should not happen here. ", m_uri);
+            // DE_WARN("EOF should not happen here. ", m_uri);
             break;
         }
 
         // ---- Partial read ----
+        /*
         if (gotBytes != reqBytes)
         {
             DE_WARN("PARTIAL read: req=", reqBytes, " got=", gotBytes, ". ",m_uri)
         }
+        */
 
         readBytes += gotBytes;
         pDst += gotBytes;
     }
 
     // Check final size
+    /*
     if ( readBytes != nBytes )
     {
         DE_ERROR("File shorter than expected, gotBytes(",readBytes,") != expected(",nBytes,"). ",m_uri)
     }
-
+    */
     return readBytes;
 }
 

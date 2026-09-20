@@ -1,6 +1,214 @@
 #pragma once
 #include <de/Core.h>
+
+#define ZSTD_STATIC_LINKING_ONLY
 #include <zstd.h>
+
+/*
+#include <stdio.h>
+#include <time.h>
+
+// Use standard clock_gettime for cross-platform microsecond precision
+struct timespec start, end;
+clock_gettime(CLOCK_MONOTONIC, &start);
+
+size_t const cSize = ZSTD_compressCCtx(cctx, cBuffer, cCapacity, srcBuffer, srcSize, 19);
+
+clock_gettime(CLOCK_MONOTONIC, &end);
+
+// Calculate elapsed time in seconds
+double elapsed = (end.tv_sec - start.tv_sec) + (end.tv_nsec - start.tv_nsec) / 1e9;
+double mbps = ((double)srcSize / (1024.0 * 1024.0)) / elapsed;
+
+printf("Compressed in: %.4f seconds\n", elapsed);
+printf("Throughput:    %.2f MB/s\n", mbps);
+*/
+struct AutoLibzstdCC
+{
+    ZSTD_CCtx* m_ctx;
+
+    AutoLibzstdCC()
+        : m_ctx{ nullptr }
+    {
+        open();
+    }
+    ~AutoLibzstdCC()
+    {
+        close();
+    }
+
+    bool is_open() const
+    {
+        return (m_ctx != nullptr);
+    }
+
+    void open()
+    {
+        close();
+        m_ctx = ZSTD_createCCtx();
+    }
+
+    void close()
+    {
+        if (m_ctx)
+        {
+            ZSTD_freeCCtx(m_ctx);
+            m_ctx = nullptr;
+        }
+    }
+
+
+};
+
+/**
+ * Compresses a file using multi-threaded Zstd.
+ *
+ * @param source       Path to the input file (e.g., "archive.tar")
+ * @param dest         Path to the output file (e.g., "archive.tar.zst")
+ * @param compressionLevel The Zstd compression level (1 to 19, 0 for default)
+ * @param nbThreads    Number of threads to use (0 auto-detects based on CPU cores)
+ * @return             0 on success, 1 on failure
+ */
+inline bool
+zst_compress_file_mt(
+    StringA src,
+    StringA dst,
+    int compressionLevel,
+    int nbThreads)
+{
+    de::File m_fin(src,de::eFileMode::Read);
+    de::File m_fout(dst,de::eFileMode::Write);
+    if (!m_fin.is_open()) { DE_ERROR("Cannot read ",src) return false; }
+    if (!m_fout.is_open()) { DE_ERROR("Cannot write ",dst) return false; }
+
+    AutoLibzstdCC zst;
+    if (!zst.is_open())
+    {
+        DE_ERROR("No ZSTD_createCCtx()")
+        return false;
+    }
+
+    auto cctx = zst.m_ctx;
+
+    // // Configure the compression parameters
+    // // 1. Set the compression level
+    // auto errLevel = ZSTD_CCtx_setParameter(cctx, ZSTD_c_compressionLevel, compressionLevel);
+    // if (ZSTD_isError(errLevel))
+    // {
+    //     DE_ERROR("Cannot set compressionLevel: ", ZSTD_getErrorName(errLevel))
+    //     return false;
+    // }
+
+    // // 2. Enable multithreading by setting the number of workers
+    // // Passing 0 tells libzstd to automatically use all available CPU cores.
+    // auto errThread = ZSTD_CCtx_setParameter(cctx, ZSTD_c_nbWorkers, nbThreads);
+    // if (ZSTD_isError(errThread))
+    // {
+    //     DE_ERROR("Cannot set threadCount: ", ZSTD_getErrorName(errThread))
+    //     return false;
+    // }
+
+// 1. Drop from level 22 to 19 (19 is the highest standard level)
+// Level 19 natively allows multi-threading without a master thread bottleneck.
+ZSTD_CCtx_setParameter(cctx, ZSTD_c_compressionLevel, 19);
+
+// 2. Enable your 8 worker threads
+ZSTD_CCtx_setParameter(cctx, ZSTD_c_nbWorkers, 8);
+
+// 3. FORCE smaller job sizes (e.g., 2MB chunks)
+// This overrides the massive default 19-level block and forces data
+// to be distributed to all 8 threads instantly.
+ZSTD_CCtx_setParameter(cctx, ZSTD_c_jobSize, 2 * 1024 * 1024);
+
+// 4. Force a matching window size (e.g., 64MB or 128MB)
+// This acts as a replacement for LDM, ensuring high compression ratios.
+ZSTD_CCtx_setParameter(cctx, ZSTD_c_windowLog, 26); // 2^26 = 64MB window
+
+// 5. Set maximum ultra compression level
+ZSTD_CCtx_setParameter(cctx, ZSTD_c_enableLongDistanceMatching, 1);
+
+// 6. Set the LDM window size to maintain high compression ratio (e.g., 128MB)
+//ZSTD_CCtx_setParameter(cctx, ZSTD_c_ldmWindowLog, 27);
+
+
+
+
+    // Setup streaming buffers using recommended sizes
+    size_t const buffInSize = ZSTD_CStreamInSize();
+    size_t const buffOutSize = ZSTD_CStreamOutSize();
+    de::Blob iBlob( buffInSize );
+    de::Blob oBlob( buffOutSize );
+
+    void* const buffIn = iBlob.data();
+    void* const buffOut = oBlob.data();
+
+    DE_TRACE("ZST compressionLevel = ", compressionLevel)
+    DE_TRACE("ZST threadCount = ", nbThreads)
+    DE_TRACE("ZSTD_CStreamInSize = ", buffInSize)
+    DE_TRACE("ZSTD_CStreamOutSize = ", buffOutSize)
+
+    size_t readLen;
+    bool ok = true; // Tracks overall streaming success
+
+    // Main streaming loop
+    while ((readLen = m_fin.read(buffIn, buffInSize)) > 0)
+    {
+        ZSTD_inBuffer input = { buffIn, readLen, 0 };
+
+        // Push data to the compressor until the input buffer is fully consumed
+        while (input.pos < input.size)
+        {
+            ZSTD_outBuffer output = { buffOut, buffOutSize, 0 };
+
+            size_t const toRead = ZSTD_compressStream2(zst.m_ctx, &output, &input, ZSTD_e_continue);
+            if (ZSTD_isError(toRead))
+            {
+                DE_ERROR(ZSTD_getErrorName(toRead))
+                ok = false;
+                break;
+            }
+
+            // Write out the compressed data chunk
+            if (output.pos > 0)
+            {
+                m_fout.write(buffOut, output.pos);
+            }
+        }
+        if (!ok) break;
+    }
+
+    // Flush and finish the frame
+    if (ok)
+    {
+        ZSTD_inBuffer input = { NULL, 0, 0 };
+        size_t remainingToFlush;
+
+        do
+        {
+            ZSTD_outBuffer output = { buffOut, buffOutSize, 0 };
+            // ZSTD_e_end signs off the frame, creating the final Zstd file trailer
+            remainingToFlush = ZSTD_compressStream2(zst.m_ctx, &output, &input, ZSTD_e_end);
+
+            if (ZSTD_isError(remainingToFlush))
+            {
+                DE_ERROR("Flush error: ", ZSTD_getErrorName(remainingToFlush))
+                ok = false;
+                break;
+            }
+
+            if (output.pos > 0)
+            {
+                m_fout.write(buffOut, output.pos);
+            }
+        }
+        while (remainingToFlush > 0); // Keep flushing until 0 tokens remain
+    }
+
+    // Cleanup resources
+    DE_DEBUG("Return Ok = ",ok)
+    return ok;
+}
+
 
 /*
     ui.cbxQuality->add("0 - No compression");
