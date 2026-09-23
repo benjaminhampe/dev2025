@@ -147,6 +147,7 @@ else()
         ZSTD_MULTITHREAD_SUPPORT=1
         ZSTD_MULTITHREAD=1
         ZSTD_DISABLE_ASM=1
+        ZSTD_STATIC_LINKING_ONLY=1
     )
 
     if (MSVC)

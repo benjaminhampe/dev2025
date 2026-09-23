@@ -1194,6 +1194,9 @@ struct File
     open(const std::string& utf8_uri, eFileMode fm = eFileMode::Read,
          int permissionBits = 0);
 
+    const std::string&
+    uri() const { return m_uri; }
+
     void close();
     bool is_open() const;
 

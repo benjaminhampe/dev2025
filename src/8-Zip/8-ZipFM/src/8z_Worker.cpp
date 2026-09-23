@@ -1,73 +1,11 @@
 #include "8z_Worker.h"
 #include "8z_Worker_private.h"
-#include "8z_Worker_compress.h"
-#include "8z_Worker_compressTar.h"
-#include "8z_Worker_compressZst.h"
+// #include "8z_Worker_compress.h"
+// #include "8z_Worker_compressTar.h"
+// #include "8z_Worker_compressZst.h"
 
 namespace EightZip {
 namespace worker {
-
-// ---------------- callback ----------------
-static void start_worker_cb(Fl_Widget*, void*)
-{
-    DE_OK("MainThread ",std::this_thread::get_id())
-
-    if (ui.bRunFlag)
-    {
-        DE_ERROR("Worker already running.")
-        return;
-    }
-
-    DE_OK("Start worker from MainThread ",std::this_thread::get_id())
-
-    Fl::add_timeout(0.01, awake_poll_update); // Start polling gui update 10 ms
-
-    auto ext = dbFileSuffix(ui.job.fileName);
-
-    ui.btnPause->callback(noop_cb);     // No-op
-    ui.btnCancel->callback(noop_cb);    // No-op
-
-    if (ui.job.bCompress)
-    {
-        if (ext == "tar")
-        {
-            auto e = dbStr("Start [tar] Writer (",ui.job.fileName,")");
-            ui.logBox->log_success(e.c_str());
-
-            ui.btnPause->callback(compress_pause_cb);
-            ui.btnCancel->callback(compress_cancel_cb);
-
-            ui.worker = std::thread(workerThread_CompressTar);
-            ui.worker.detach();
-        }
-        else if (ext == "zst")
-        {
-            auto e = dbStr("Start [zst] Writer (",ui.job.fileName,")");
-            ui.logBox->log_success(e.c_str());
-
-            ui.btnPause->callback(compress_pause_cb);
-            ui.btnCancel->callback(compress_cancel_cb);
-
-            ui.worker = std::thread(workerThread_CompressZst);
-            ui.worker.detach();
-        }
-        else
-        {
-            auto e = dbStr("Unsupported [",ext,"] Writer (",ui.job.fileName,")");
-            ui.logBox->log_error(e.c_str());
-        }
-    }
-    else if (ui.job.bExtract)
-    {
-        auto e = dbStr("Unsupported [",ext,"] Reader (",ui.job.fileName,")");
-        ui.logBox->log_error(e.c_str());
-    }
-    else
-    {
-        auto e = dbStr("Unsupported Job (",ui.job.str(),")");
-        ui.logBox->log_error(e.c_str());
-    }
-}
 
 // =============================================================
 Worker::Worker(const Job& job, int W, int H, const char* title)
@@ -206,7 +144,7 @@ Worker::Worker(const Job& job, int W, int H, const char* title)
     //     DE_OK("Selected[",index,"] ", text)
     // };
 
-    ui.btnBackground->callback(start_worker_cb);
+    ui.btnBackground->callback(start_cb);
 
     end();
 

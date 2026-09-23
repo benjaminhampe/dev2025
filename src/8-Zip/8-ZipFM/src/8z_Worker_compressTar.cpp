@@ -22,39 +22,38 @@ void workerThread_CompressTar()
     ui.bPauseFlag = false;
     ui.pollProgress = 0.0;
 
-    DE_TRACE("[2]")
+    // DE_TRACE("[2]")
 
     workerThread_CommonScanInit();
 
-    DE_TRACE("[3]")
+    // DE_TRACE("[3]")
 
     if (ui.fileInfos.empty())
     {
-        DE_ERROR("No files, abort worker thread ",std::this_thread::get_id())
+        DE_ERROR("Nothing todo, abort.")
         ui.bRunFlag = false;
+        ui.bAbortFlag = true;
         ui.pollProgress = 1.0;
         std::this_thread::sleep_for(std::chrono::milliseconds(1));
-        Fl::awake(compress_finish_cb,&ui);
+        Fl::awake(finish_cb,&ui);
         return;
     }
 
     ui.pollProgress = 0.01;
 
-    DE_BENNI("Begin TAR Writer Thread ",std::this_thread::get_id())
+    DE_BENNI("Start [TAR] Writer")
 
     const double timeStart = dbTimeInSeconds();
 
     //std::wstring exeDir = App::getInstance()->getExeDirW();
     std::string tarUri = dbMakePosix( ui.job.uri() );
-    DE_BENNI("TAR ",tarUri)
+    DE_BENNI("TAR Uri = ",tarUri)
 
     std::string tarBaseName = dbFileBase(tarUri);
-    DE_BENNI("TAR ArchiveBaseName ",tarBaseName)
+    DE_BENNI("TAR BaseName = ",tarBaseName)
 
     std::string tarDir = dbMakePosix( ui.job.directory );
-    //std::wstring tarBaseName = de_wstr(ui.job.baseName);
-    //std::wstring tarDir = de_wstr( ui.job.baseDir ); // exeDir + L"\\" + tarBaseName;
-
+    DE_BENNI("TAR Dir = ",tarDir)
 
     double timeElapsed = 0;
     double speed = 0.0;
@@ -84,7 +83,7 @@ void workerThread_CompressTar()
             speed = double(processedBytes) / timeElapsed;
             ui.pollProcessed = processedBytes;
             ui.pollSpeed = speed;
-            ui.pollTimeElapsed = timeElapsed;
+            // ui.pollTimeElapsed = timeElapsed;
             ui.pollTimeRemain = double(totalBytes - processedBytes) / speed;  // v = s/t -> t = s / v
         };
 
@@ -117,7 +116,7 @@ void workerThread_CompressTar()
     {
         if (ui.bAbortFlag)
         {
-            DE_ERROR("Abort ThreadLoop")
+            DE_ERROR("Abort Loop.")
             break;
         }
 
@@ -154,11 +153,9 @@ _exit_compress_tar_thread:
     ui.bRunFlag = false;
     ui.pollProgress = 1.0;
     std::this_thread::sleep_for(std::chrono::milliseconds(1));
-    // <TAR_Writer>
     m_tarFile.close();
-    // </TAR_Writer>
-    DE_BENNI("End Worker Thread ",std::this_thread::get_id())
-    Fl::awake(compress_finish_cb,&ui);
+    DE_BENNI("End Worker Thread")
+    Fl::awake(finish_cb,&ui);
 }
 
 

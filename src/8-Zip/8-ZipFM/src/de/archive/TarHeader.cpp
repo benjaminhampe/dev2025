@@ -418,6 +418,7 @@ TarUtil::trimLeadingDotDotSlash(std::string s)
     bool bDidSomething = false;
     do
     {
+        bDidSomething = false;
         if (s.compare(0, 3, "../") == 0)
         {
             s = s.substr(3);
@@ -784,4 +785,236 @@ TarUtil::tar_build_header(uint8_t* out,
     DE_DEBUG("uri(",uri,"), blocks(",blocks,"), remain(",remain,")")
 #endif
     return nWritten;
+}
+
+// static
+uint64_t
+TarUtil::tar_writePadding(de::File& file, uint64_t m)
+{
+    constexpr uint32_t blockSize = 512;
+
+    const uint64_t remain = m % blockSize;
+    if (remain < 1)
+    {
+        return 0;
+    }
+
+    const uint32_t padd = blockSize - remain;
+    TarHeader z;
+    memset(&z,0,blockSize);
+    return file.write(&z,padd);
+};
+
+// static
+uint64_t
+TarUtil::tar_addFile(
+            de::File& file,
+            const de::FileInfo& fileInfo,
+            std::string baseName,
+            std::string baseDir,
+            bool bDebug)
+{
+    std::string uri = de_mbstr( dbMakePosix( fileInfo.uri() ));
+    std::string p1 = makeRelative( uri, baseDir );
+    std::string p2 = trimLeadingDotDotSlash( p1 );
+    std::string tarPath = p2;
+    if (baseName.size())
+    {
+        p2 = baseName + "/" + p2;
+    }
+    std::string name;
+    std::string prefix;
+    bool bNeedLongLink = split_ustar_path(tarPath, name, prefix);
+
+if (bDebug)
+{
+    DE_DEBUG("===============================================")
+    DE_TRACE("uri = ", uri)
+    DE_TRACE("fileInfo = ", fileInfo.str())
+    DE_TRACE("makeRelative = ", p1)
+    DE_TRACE("trimLeadingDotDotSlash = ", p2)
+    DE_TRACE("tarPath = ", tarPath)
+    DE_TRACE("name = ", name)
+    DE_TRACE("prefix = ", prefix)
+    DE_DEBUG("bNeedLongLink = ",bNeedLongLink)
+}
+    uint64_t n = 0; // Global num bytes written.
+    uint64_t m = 0; // Local num bytes written.
+
+    TarHeader h; // Header
+    TarHeader z; // Zero
+
+    // =======================================================
+    // Write 'LongLink'
+    // =======================================================
+    if (bNeedLongLink)
+    {
+        // Write 'LongLink' header
+        const std::string longname = fileInfo.uriA();
+        tar_build_header(h, "././@LongLink", "", 0644, 0, 0, longname.size(), 0, 'L');
+        n += file.write(&h,512);
+
+        // Write 'LongLink' payload
+        m = file.write(longname.c_str(), longname.size());
+        n += m;
+
+        // Write 'LongLink' padding
+        n += tar_writePadding(file, m);
+    }
+
+    // =======================================================
+    // Write 'USTAR'
+    // =======================================================
+    tar_build_header(h, name, prefix, fileInfo.m_unixPerm, 0, 0, fileInfo.fileSize(), fileInfo.m_unixTime, fileInfo.isDir() ? '5' : '0');
+    n += file.write(&h,512);
+
+    // =======================================================
+    // Write Data
+    // =======================================================
+    if (fileInfo.isFile() && fileInfo.fileSize() > 0)
+    {
+        m = 0;
+
+        // Write data
+        de::File dataFile(fileInfo.uri(),de::eFileMode::Read);
+        constexpr int64_t bufSize = 2*1024*1024;
+        // uint8_t buf[bufSize]; -> Stack overflow.
+        static de::TAlignedVector<uint8_t> buf(bufSize);
+        while (1)
+        {
+            int64_t e = dataFile.read(buf.data(), buf.size());
+            if (e <= 0)
+            {
+                if (e < 0)
+                {
+                    DE_ERROR("Got error(",e,"), ",fileInfo.str())
+                }
+                break;
+            }
+            m += file.write(buf.data(), e);
+        }
+
+        n += m;
+
+        // Write 'LongLink' padding
+        n += tar_writePadding(file, m);
+    }
+
+    return n;
+}
+
+static std::string strip_tmp_zst_tar(std::string uri)
+{
+    DE_DEBUG("[Strip] uri = ",uri)
+
+    if (dbStrEndsWith(uri,".tmp"))
+    {
+        uri = uri.substr(0,uri.size() - 4);
+        DE_DEBUG("[Strip] .tmp ",uri)
+    }
+    if (dbStrEndsWith(uri,".zst"))
+    {
+        uri = uri.substr(0,uri.size() - 4);
+        DE_DEBUG("[Strip] .zst ",uri)
+    }
+    if (dbStrEndsWith(uri,".tar"))
+    {
+        uri = uri.substr(0,uri.size() - 4);
+        DE_DEBUG("[Strip] .tar ",uri)
+    }
+    return uri;
+}
+
+static std::string strip_path(std::string uri)
+{
+    DE_DEBUG("[Strip] uri = ",uri)
+
+    size_t pos = uri.find_last_of('/');
+    if (pos == std::string::npos)
+    {
+        return uri;
+    }
+
+    return uri.substr(pos + 1);
+}
+
+bool
+WriteTarFileSimple(
+    const std::string& uri,
+    const WriteTarFileSimpleCfg& cfg,
+    const de::FileInfos& fileInfos)
+{
+    if (sizeof(TarHeader) != 512)
+    {
+        DE_ERROR(sizeof(TarHeader)," = sizeof(TarHeader) != 512")
+        return false;
+    }
+
+    de::File file(uri,de::eFileMode::Write);
+    if (!file.is_open())
+    {
+        DE_ERROR("No file ",uri)
+        return false;
+    }
+
+    DE_TRACE("uri = ", uri)
+
+    const std::string uriPosix = dbMakePosix(uri);
+    DE_TRACE("uriPosix = ", uriPosix)
+
+    const std::string fileName = dbFileName(uriPosix);
+    DE_TRACE("fileName = ", fileName)
+
+    const std::string baseName = strip_tmp_zst_tar(fileName);
+    DE_TRACE("baseName = ", baseName)
+
+    const std::string baseDir = dbFileDir(uriPosix);
+    DE_TRACE("baseDir = ", baseDir)
+
+    const int num_files = de::NUM_FILES(fileInfos);
+    DE_TRACE("num_files = ", num_files)
+
+    const int num_dirs = de::NUM_DIRECTORIES(fileInfos);
+    DE_TRACE("num_dirs = ", num_dirs)
+
+    uint64_t nBytes = 0;
+
+    for (size_t i = 0; i < fileInfos.size(); ++i)
+    {
+        const auto& fileInfo = fileInfos[i];
+
+        if (cfg.onNextFile)
+        {
+            cfg.onNextFile(fileInfo);
+        }
+
+        bool bDebug = false;
+        if (i < 11) bDebug = true;
+        if (bDebug)
+        {
+            DE_BENNI("[",i," of ", fileInfos.size(),"] ", fileInfo.str())
+        }
+        nBytes += TarUtil::tar_addFile(file, fileInfo, baseName, baseDir, bDebug);
+
+        if (cfg.onProcessed)
+        {
+            cfg.onProcessed(nBytes);
+        }
+    }
+
+    // Write EndOfFile
+    TarHeader h;
+    std::memset(&h,0,512);
+    file.write(&h,512);
+    file.write(&h,512);
+
+    if (cfg.onProcessed)
+    {
+        cfg.onProcessed(file.tell());
+    }
+
+    file.close();
+
+    DE_OK("Finished Tar ",uri)
+    return true;
 }

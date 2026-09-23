@@ -118,12 +118,15 @@ void EightZip_runCompressor(const StringListW& files)
     }
 
     std::wstring cmdLine = L"\"" + exePath + L"\"";
-    std::wstring args = L" --compress";
+    std::wstring args = L" --gui --compress";
 
-    for (auto& s : files)
-    {
-        args += L" \"" + s + L"\"";
-    }
+    // We don't send selection of files and directories (anymore).
+    // 8z.exe queries them with win32_Get_Explorer_Selection().
+
+    // for (auto& s : files)
+    // {
+    //     args += L" \"" + s + L"\"";
+    // }
 
     ShellExecuteW(
         NULL,
@@ -147,12 +150,15 @@ void EightZip_runExtractor(const StringListW& files)
     }
 
     std::wstring cmdLine = L"\"" + exePath + L"\"";
-    std::wstring args = L" --extract";
+    std::wstring args = L" --gui --extract";
 
-    for (auto& s : files)
-    {
-        args += L" \"" + s + L"\"";
-    }
+    // We don't send selection of files and directories (anymore).
+    // 8z.exe queries them with win32_Get_Explorer_Selection().
+
+    // for (auto& s : files)
+    // {
+    //     args += L" \"" + s + L"\"";
+    // }
 
     ShellExecuteW(
         NULL,

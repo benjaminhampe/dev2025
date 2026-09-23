@@ -564,5 +564,45 @@ struct TarUtil
     /// param[in] fileInfo -> the
     static uint32_t tar_build_header2(uint8_t* out, const FileInfo& fileInfo, const std::string& baseDir);
     */
+
+    static uint64_t
+    tar_writePadding(de::File& file, uint64_t size);
+
+    /// param[in] fileInfo -> the
+    static uint64_t
+    tar_addFile(
+        de::File& file,
+        const de::FileInfo& fileInfo,
+        std::string baseName,
+        std::string baseDir,
+        bool bDebug);
+
+
 };
 
+struct WriteTarFileSimpleCfg
+{
+    bool bDebug = false;
+
+    const de::FileInfos* fileInfos = nullptr;
+
+    std::string baseDir;
+
+    std::string archiveBaseName;
+
+    //int32_t blockSize = 16 * 512; // Should be multiple of 512 bytes, makes tar things easier.
+
+    typedef std::function<void(const de::FileInfo& /* fileInfo */)> FN_onNextFile;
+
+    FN_onNextFile onNextFile;
+
+    typedef std::function<void(const int64_t /* byteCount */)> FN_onProcessed;
+
+    FN_onProcessed onProcessed;
+};
+
+bool
+WriteTarFileSimple(
+    const std::string& uri,
+    const WriteTarFileSimpleCfg& cfg,
+    const de::FileInfos& fileInfos);

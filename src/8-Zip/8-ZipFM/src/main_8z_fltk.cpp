@@ -4,6 +4,7 @@
 #include "8z_Worker.h"
 #include "8z_Install.h"
 #include "8z_ArgParser.h"
+#include "8z_TarTree.h"
 #include <de/win32/win32_Get_Explorer_Selection.h>
 #include <de/win32/win32_Set_Window_Icon.h>
 #include <de/win32/win32_LongPath.h>
@@ -124,7 +125,7 @@ int main(int argc, char** argv)
         EightZip_InstallExePath();
         // EightZip_restartExplorer();
     }
-    else if (job.bCompress || job.bExtract)
+    else if (job.bCompress || job.bExtract || job.bTarTree)
     {
         DE_DEBUG("Fl::screen_scaling_supported() = ",Fl::screen_scaling_supported())
         DE_DEBUG("Fl::screen_scale(0) = ",Fl::screen_scale(0))
@@ -179,11 +180,23 @@ int main(int argc, char** argv)
                     B->hide();
                 });
         }
-        else
+        else if (job.bExtract)
         {
             auto W = new EightZip::worker::Worker(job, w, h, sTitle.c_str());
             W->resizable(W);
             set_window_icon_from_resource(W);
+            W->show();
+        }
+        else if (job.bTarTree)
+        {
+            std::string uri;
+            if (job.filesIn.empty())
+            {
+                uri = job.filesIn[0].uriA();
+            }
+            auto W = new TarTree(uri,200,200,600,600);
+            W->resizable(W);
+            //set_window_icon_from_resource(W);
             W->show();
         }
         return Fl::run();

@@ -4,79 +4,6 @@
 namespace EightZip {
 namespace worker {
 
-// ---------------- callback ----------------
-void compress_finish_cb(void*)
-{
-    DE_OK("Finish callback from MainThread ",std::this_thread::get_id())
-
-    Fl::remove_timeout(awake_poll_update);
-
-    if (ui.bAbortFlag)
-    {
-        DE_ERROR("Aborted.")
-        ui.logBox->log_error("Aborted by user.");
-        ui.btnPause->label("Pause");
-        ui.btnPause->redraw();
-    }
-    else
-    {
-        DE_BENNI("Exit Program from Thread ",std::this_thread::get_id())
-        if (ui.bAutoCloseWindow)
-        {
-            ui.window->hide();
-        }
-    }
-}
-
-// ---------------- callback ----------------
-void compress_pause_cb(Fl_Widget*, void*)
-{
-    if (ui.bPauseFlag)
-    {
-        DE_WARN("Resumed")
-        ui.bPauseFlag = false;
-        ui.btnPause->label("Pause");
-        ui.btnPause->redraw();
-    }
-    else
-    {
-        DE_WARN("Paused")
-        ui.bPauseFlag = true;
-        ui.btnPause->label("Resume");
-        ui.btnPause->redraw();
-    }
-}
-
-// ---------------- callbacks ----------------
-void compress_cancel_cb(Fl_Widget*, void*)
-{
-    if (ui.bAbortFlag)
-    {
-        DE_WARN("Abort already in progress")
-        return;
-    }
-
-    int r = fl_choice(
-        "\n"
-        "Do you like cancel the operation?\n"
-        "\n",
-        "Cancel operation",  // Button 0
-        "Abort this dialog", // Button 1
-        nullptr
-    );
-
-    if (r == 0) // Cancel operation
-    {
-        DE_OK("Pressed Cancel")
-        ui.bAbortFlag = true;
-        ui.logBox->show();
-    }
-    else if (r == 1) // Abort
-    {
-        DE_OK("Pressed Abort")
-    }
-}
-
 // ---------------- worker ----------------
 void workerThread_CommonScanInit()
 {
@@ -100,31 +27,33 @@ void workerThread_CommonScanInit()
 
     for (size_t i = 0; i < ui.job.filesIn.size(); ++i)
     {
-        auto fileInfo = de::ScanFileInfo(de_wstr(ui.job.filesIn[i]));
-        if (fileInfo)
+        const auto& fileInfo = ui.job.filesIn[i];
+        ui.fileInfos.emplace_back( fileInfo );
+
+        if (fileInfo.isDir())
         {
-            ui.fileInfos.emplace_back( *fileInfo );
-
-            if (fileInfo->isDir())
-            {
-                de::ScanDirectory(ui.fileInfos,fileInfo->uri(),true);
-            }
-
-            ui.pollFileCount = ui.fileInfos.size();
-            ui.pollTotalBytes = de::TOTAL_FILE_SIZE(ui.fileInfos);
+            de::ScanDirectory(ui.fileInfos,fileInfo.uri(),true);
         }
     }
 
-    DE_TRACE("[2.4]")
+    const uint64_t num_files = NUM_FILES(ui.fileInfos);
+    const uint64_t num_dirs = NUM_DIRECTORIES(ui.fileInfos);
+    const uint64_t num_bytes = de::TOTAL_FILE_SIZE(ui.fileInfos);
+
+    ui.pollFileCount = num_files;
+    ui.pollTotalBytes = num_bytes;
+
+    // DE_TRACE("[2.4]")
 
     //<debug>
 
     const double timeScanEnd = dbTimeInSeconds();
     const auto t = dbStrSeconds(timeScanEnd - timeScanBeg);
     const auto s = dbStr("[Scan] Needed ",t,", "
-                    "fileInfos(",ui.fileInfos.size(),"), "
-                    "files(",NUM_FILES(ui.fileInfos),"), "
-                    "dirs(",NUM_DIRECTORIES(ui.fileInfos),")");
+                    "items(",ui.fileInfos.size(),"), "
+                    "files(",num_files,"), "
+                    "dirs(",num_dirs,"), "
+                    "bytes(",num_bytes,")");
     async_log_ok(s);
 
     std::this_thread::sleep_for(std::chrono::milliseconds(1));
@@ -140,7 +69,7 @@ void workerThread_CommonScanInit()
     std::this_thread::sleep_for(std::chrono::milliseconds(1));
     //</trace>
 
-    DE_TRACE("[2.6]")
+    // DE_TRACE("[2.6]")
 }
 
 } // end namespace worker.

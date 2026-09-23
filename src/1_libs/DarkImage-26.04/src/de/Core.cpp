@@ -3116,7 +3116,12 @@ FileSystem::fileDir( const std::wstring& uri )
     fs::path p( uri );
     if ( p.is_relative() )
     {
-        p = fs::absolute( p );
+        std::error_code ec;
+        p = fs::absolute( p, ec );
+        if (ec)
+        {
+            DE_ERROR("ec(",ec.message(),") for ", de_mbstr(uri))
+        }
     }
 
     // if ( !fs::is_directory( p ) )
@@ -3125,6 +3130,11 @@ FileSystem::fileDir( const std::wstring& uri )
         {
             p = p.parent_path();
         }
+        else
+        {
+            DE_ERROR("No parent path for ", de_mbstr(uri))
+        }
+
     //}
 
     return makePosixPath(p.wstring());

@@ -8,6 +8,208 @@ namespace worker {
 
 void workerThread_CompressZst()
 {
+    const double timeStart = dbTimeInSeconds();
+    double timeElapsed = 0;
+    double speed = 0.0;
+    uint64_t totalBytes = TOTAL_FILE_SIZE(ui.fileInfos);
+    //uint64_t processedBytes = 0;
+    const int maxItersBeforeAbort = 100;
+
+    std::string finalUri = dbMakePosix( ui.job.uri() );
+    std::string tarUri = dbFileBase(finalUri) + ".tar";
+    std::string tarBaseName = dbFileBase(tarUri);
+    std::string tarDir = dbMakePosix( ui.job.directory );
+
+    DE_BENNI("FinalUri = ",finalUri)
+    DE_BENNI("TAR Uri = ",tarUri)
+    DE_BENNI("TAR BaseName = ",tarBaseName)
+    DE_BENNI("TAR Dir = ",tarDir)
+
+    if (ui.bRunFlag)
+    {
+        DE_ERROR("Worker thread already running, abort")
+        return; // Already running!
+    }
+
+    ui.bRunFlag = true;
+    ui.bAbortFlag = false;
+    ui.bPauseFlag = false;
+    ui.pollProgress = 0.0;
+    // workerThread_CommonScanInit();
+    ui.pollFileIndex = 0;
+    ui.pollFileCount = 0;
+    ui.pollTotalBytes = 0;
+    std::this_thread::sleep_for(std::chrono::milliseconds(1));
+
+    // ScanDirectories:
+    const double timeScanBeg = dbTimeInSeconds();
+    ui.fileInfos.clear();
+    for (size_t i = 0; i < ui.job.filesIn.size(); ++i)
+    {
+        const auto& fileInfo = ui.job.filesIn[i];
+        ui.fileInfos.emplace_back( fileInfo );
+
+        if (fileInfo.isDir())
+        {
+            de::ScanDirectory(ui.fileInfos,fileInfo.uri(),true);
+        }
+    }
+
+    const uint64_t num_files = NUM_FILES(ui.fileInfos);
+    const uint64_t num_dirs = NUM_DIRECTORIES(ui.fileInfos);
+    const uint64_t num_bytes = de::TOTAL_FILE_SIZE(ui.fileInfos);
+
+    //<poll>
+    const double timeScanEnd = dbTimeInSeconds();
+    const auto t = dbStrSeconds(timeScanEnd - timeScanBeg);
+    const auto s = dbStr("[Scan] Needed ",t,", "
+                    "items(",ui.fileInfos.size(),"), "
+                    "files(",num_files,"), "
+                    "dirs(",num_dirs,"), "
+                    "bytes(",num_bytes,")");
+    async_log_ok(s);
+
+    ui.pollFileCount = num_files;
+    ui.pollDirCount = num_dirs;
+    ui.pollTotalBytes = num_bytes;
+    std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    //</poll>
+
+    //<trace>
+    // for (size_t i = 0; i < std::min<size_t>(ui.fileInfos.size(),1000); ++i)
+    // {
+    //     async_log_trace(ui.fileInfos[i].str().c_str());
+    // }
+    //std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    //</trace>
+
+    if (ui.fileInfos.empty())
+    {
+        DE_ERROR("No files, abort worker thread ",std::this_thread::get_id())
+        ui.bRunFlag = false;
+        ui.pollProgress = 1.0;
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+        Fl::awake(finish_cb,&ui);
+        return;
+    }
+
+    // ==========================================
+    // TAR writer
+    // ==========================================
+    ui.pollProgress = 0.01;
+    auto e1 = dbStr("Start [tar] Writer(",ui.job.fileName,"), Thread(",std::this_thread::get_id(),")");
+    async_log_ok(e1.c_str());
+    DE_OK(e1)
+
+    uint64_t fileIndex = 0;
+    uint64_t dirIndex = 0;
+    const double timeTarBeg = dbTimeInSeconds();
+
+    WriteTarFileSimpleCfg m_tarCfg;
+    m_tarCfg.onNextFile =
+        [&] (const de::FileInfo& fileInfo)
+        {
+            if (fileInfo.isFile())
+            {
+                fileIndex++;
+            }
+            if (fileInfo.isDir())
+            {
+                dirIndex++;
+            }
+
+            ui.pollFileIndex = fileIndex;
+            ui.pollDirIndex = dirIndex;
+            ui.pollProgress = 0.01 + (0.98*double(fileIndex+1) / double(num_files));
+            ui.pollFile = fileInfo.fileNameA();
+            ui.pollDir = fileInfo.dirA();
+            // processedBytes += fileInfo.fileSize();
+            // timeElapsed = dbTimeInSeconds() - timeStart;
+            // speed = double(processedBytes) / timeElapsed;
+            // ui.pollProcessed = processedBytes;
+            // ui.pollSpeed = speed;
+            // ui.pollTimeElapsed = timeElapsed;
+            // ui.pollTimeRemain = double(totalBytes - processedBytes) / speed;  // v = s/t -> t = s / v
+        };
+
+    m_tarCfg.onProcessed =
+        [&] (uint64_t processedBytes)
+        {
+            // ui.pollFileIndex = fileIndex+1;
+            // ui.pollProgress = 0.01 + (0.98*double(fileIndex+1) / double(ui.fileInfos.size()));
+            // ui.pollFile = de_mbstr(fileInfo.fileName());
+            // ui.pollDir = de_mbstr(fileInfo.dir());
+            // processedBytes += fileInfo.fileSize();
+            // processedBytes = onProcessedBytes;
+
+            const double timeNow = dbTimeInSeconds();
+            ui.pollTimeElapsed = timeNow - timeStart;
+
+            const double timeTar = timeNow - timeTarBeg;
+            ui.pollProcessed = processedBytes;
+            speed = double(processedBytes) / timeTar;
+            ui.pollSpeed = speed;
+            ui.pollTimeRemain = double(totalBytes - processedBytes) / speed;  // v = s/t -> t = s / v
+
+            ui.pollProgress = double(processedBytes) / double(totalBytes);
+        };
+
+    std::string tmpTarUri = dbFileBase(tarUri) + ".tmp";
+    WriteTarFileSimple(tmpTarUri, m_tarCfg, ui.fileInfos);
+
+    const double timeTarEnd = dbTimeInSeconds();
+
+    auto e2 = dbStr("Start [tar] Writer(",ui.job.fileName,"), Thread(",std::this_thread::get_id(),")");
+    async_log_ok(e2.c_str());
+    DE_OK(e2)
+
+    ui.pollProgress = 0.1;
+    std::this_thread::sleep_for(std::chrono::milliseconds(1));
+
+    // ==========================================
+    // ZST writer
+    // ==========================================
+    const double timeZstBeg = dbTimeInSeconds();
+
+    ZstCompressFileCfg m_zstCfg;
+    m_zstCfg.onProcessed =
+        [&] (uint64_t processedBytes, uint64_t compressedBytes)
+        {
+            const double timeNow = dbTimeInSeconds();
+            ui.pollTimeElapsed = timeNow - timeStart;
+
+            const double timeZst = timeNow - timeZstBeg;
+            speed = double(processedBytes) / timeZst;
+            ui.pollSpeed = speed;
+            ui.pollTimeRemain = double(totalBytes - processedBytes) / speed;  // v = s/t -> t = s / v
+
+            ui.pollCompressed = compressedBytes;
+            ui.pollCompressRatio = double(compressedBytes) / double(processedBytes);
+
+            ui.pollProgress = double(processedBytes) / double(totalBytes);
+        };
+
+    ZstCompressFileSimple(tmpTarUri,finalUri,m_zstCfg);
+
+    // </ZST_Writer>
+
+    ui.bRunFlag = false;
+    ui.pollProgress = 1.0;
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    auto e3 = dbStr("End [Zst] Writer(",ui.job.fileName,"), Thread(",std::this_thread::get_id(),")");
+    async_log_ok(e3.c_str());
+    DE_OK(e3)
+    Fl::awake(finish_cb,&ui);
+}
+
+} // end namespace worker.
+} // end namespace EightZip.
+
+#if 0
+
+
+void workerThread_CompressZst()
+{
     if (ui.bRunFlag)
     {
         DE_ERROR("Worker thread already running, abort")
@@ -203,11 +405,6 @@ void workerThread_CompressZst()
     DE_BENNI("End [zst] compression workerThread ",std::this_thread::get_id())
     Fl::awake(compress_finish_cb,&ui);
 }
-
-} // end namespace worker.
-} // end namespace EightZip.
-
-#if 0
 
 
 void workerThread_CompressZst()

@@ -111,6 +111,9 @@ struct UI_Worker
 
     de::FileInfos fileInfos;
 
+    // double timeStartInSec = 0.0;   // Dialog tracks elapsed time, not the worker.
+    // double timeElapsedInSec = 0.0; // Dialog tracks elapsed time, not the worker.
+
     volatile std::atomic<bool> bDebug{false};
     volatile std::atomic<bool> bRunFlag{false};
     volatile std::atomic<bool> bAbortFlag{false};
@@ -119,21 +122,24 @@ struct UI_Worker
 
     std::thread worker;
 
-    double pollTimeElapsed; // In [s]
-    double pollTimeRemain;  // In [s]
-    double pollSpeed;       // In [bytes/s]
-    double pollProgress;
+    double pollTimeElapsed = 0.0; // In [s]
+    double pollTimeRemain = 0.0;  // In [s]
+    double pollSpeed = 0.0;       // In [bytes/s]
+    double pollProgress = 0.0;
     DoubleBufferDirty<std::string> pollFile;
     DoubleBufferDirty<std::string> pollDir;
-    uint64_t pollFileIndex;
-    uint64_t pollFileCount;
-    uint64_t pollTotalBytes;
-    uint64_t pollProcessed;
-    uint64_t pollCompressed;
-    double pollCompressRatio;
+    uint64_t pollFileIndex = 0;
+    uint64_t pollFileCount = 0;
+    uint64_t pollDirIndex = 0;
+    uint64_t pollDirCount = 0;
+    uint64_t pollTotalBytes = 0;
+    uint64_t pollProcessed = 0;
+    uint64_t pollCompressed = 0;
+    double pollCompressRatio = 0;
 
     void pollGuiUpdate()
     {
+
         // bool bRedraw = false;
 
         // DE_BENNI("u.id(", u.id, "), data(",u.data,")")
@@ -154,6 +160,9 @@ struct UI_Worker
             //bRedraw = true;
         }
 
+        // Update GUI worker time
+        //timeElapsedInSec = dbTimeInSeconds() - timeStartInSec;
+
         edtTimeCurr->copy_label(dbStrSeconds(pollTimeElapsed).c_str());
         edtTimeCurr->redraw();
         edtTimeLeft->copy_label(dbStrSeconds(pollTimeRemain).c_str());
@@ -166,6 +175,10 @@ struct UI_Worker
         edtFileIndex->redraw();
         edtFileCount->copy_label(std::to_string(pollFileCount).c_str());
         edtFileCount->redraw();
+        // edtDirIndex->copy_label(std::to_string(pollDirIndex).c_str());
+        // edtDirIndex->redraw();
+        // edtDirCount->copy_label(std::to_string(pollDirCount).c_str());
+        // edtDirCount->redraw();
         edtTotalBytes->copy_label(dbStrBytes(pollTotalBytes).c_str());
         edtTotalBytes->redraw();
         edtProcessed->copy_label(dbStrBytes(pollProcessed).c_str());
@@ -191,10 +204,15 @@ void async_log_error(const std::string& msg);
 void async_log_ok(const std::string& msg);
 
 // ---------------- callbacks ----------------
-void toggle_logbox_cb(Fl_Widget*, void*);
-void awake_poll_update(void* payload);
+void timer_update(void* payload);
 void noop_cb(Fl_Widget*, void*);
+void pause_cb(Fl_Widget*, void*);
+void cancel_cb(Fl_Widget*, void*);
+void finish_cb(void*);
+void start_cb(Fl_Widget*, void*);
 
+// ---------------- callbacks ----------------
+void logbox_cb(Fl_Widget*, void*);
 } // end namespace worker.
 } // end namespace EightZip.
 

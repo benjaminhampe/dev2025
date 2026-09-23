@@ -16,15 +16,16 @@ bool ArgParser::parseBenni(Job* m_job, int argc, char** argv)
     StringListW filesIn;
 
     StringListW explorerSelection = win32_Get_Explorer_Selection();
-//<debug>
-    /*
-    DE_BENNI("explorerSelection = ",explorerSelection.size())
+    // <debug>
+    DE_BENNI("SelExplorer = ",explorerSelection.size())
+    // </debug>
+    // <trace>
     for (size_t i = 0; i < explorerSelection.size(); ++i)
     {
-        DE_DEBUG("explorerSelection[",i,"] ",de_mbstr(explorerSelection[i]))
+        DE_DEBUG("SelExplorer[",i,"] ",de_mbstr(explorerSelection[i]))
     }
-    */
-//</debug>
+    // </trace>
+
     platform_addUniqueFileNames(explorerSelection,filesIn);
 
     enum Mode { NORMAL, READ_I_LIST, READ_O_LIST };
@@ -145,6 +146,13 @@ bool ArgParser::parseBenni(Job* m_job, int argc, char** argv)
             break;
         }
 
+        if (arg == "--tree")
+        {
+            m_job->bTarTree = true;
+            mode = NORMAL;
+            break;
+        }
+
         if (arg == "-c" || arg == "--compress")
         {
             m_job->bCompress = true;
@@ -208,25 +216,41 @@ bool ArgParser::parseBenni(Job* m_job, int argc, char** argv)
         platform_addUniqueFileName(de_wstr(argv[i]), filesIn);
     }
 
-    // DE_BENNI("filesOut = ",filesOut.size())
-    // for (size_t i = 0; i < filesOut.size(); ++i)
-    // {
-    //     DE_DEBUG("filesOut[",i,"] ",de_mbstr(filesOut[i]))
-    // }
-
-    DE_BENNI("filesIn = ",filesIn.size())
+    // =====================================================
+    // <debug>
+    DE_BENNI("collectedIn = ",filesIn.size())
+    // <debug>
+    // =====================================================
+    // <scan-and-store>
+    m_job->filesIn.clear();
+    m_job->filesIn.reserve( filesIn.size() );
     for (size_t i = 0; i < filesIn.size(); ++i)
     {
-        DE_DEBUG("filesIn[",i,"] ",de_mbstr(filesIn[i]))
+        auto fileInfo = de::ScanFileInfo(filesIn[i]);
+        if (fileInfo)
+        {
+            m_job->filesIn.emplace_back( *fileInfo );
+        }
+        else
+        {
+            DE_WARN("Scan rejected ", de_mbstr(filesIn[i]) )
+        }
     }
-
-    //m_job->filesOut = de_mbstr(filesOut);
-    m_job->filesIn = de_mbstr(filesIn);
-
+    // </scan-and-store>
+    // =====================================================
+    // <debug>
+    DE_BENNI("In = ",m_job->filesIn.size())
+    // </debug>
+    // =====================================================
+    // <trace>
+    for (size_t i = 0; i < m_job->filesIn.size(); ++i)
+    {
+        DE_DEBUG("In[",i,"] ",m_job->filesIn[i].str())
+    }
+    // </trace>
+    // =====================================================
     return true;
 }
-
-
 
 // We make parser static and give distinct job struct
 // To make both functions easier testable and comparable to each other

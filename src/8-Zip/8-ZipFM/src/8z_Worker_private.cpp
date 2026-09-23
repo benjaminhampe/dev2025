@@ -1,4 +1,6 @@
 #include "8z_Worker_private.h"
+#include "8z_Worker_compressTar.h"
+#include "8z_Worker_compressZst.h"
 
 namespace EightZip {
 namespace worker {
@@ -58,16 +60,150 @@ void toggle_logbox_cb(Fl_Widget*, void*)
 }
 
 // ---------------- callback ----------------
-void awake_poll_update(void* payload)
+void timer_update(void* payload)
 {
     ui.pollGuiUpdate();
-    Fl::repeat_timeout(0.01, awake_poll_update); // wiederholen
+    Fl::repeat_timeout(0.01, timer_update); // wiederholen
 }
 
 // ---------------- callback ----------------
 void noop_cb(Fl_Widget*, void*)
 {
     // DE_WARN("Not implemented")
+}
+
+
+// ---------------- callback ----------------
+void pause_cb(Fl_Widget*, void*)
+{
+    if (ui.bPauseFlag)
+    {
+        DE_WARN("Resumed")
+        ui.bPauseFlag = false;
+        ui.btnPause->label("Pause");
+        ui.btnPause->redraw();
+    }
+    else
+    {
+        DE_WARN("Paused")
+        ui.bPauseFlag = true;
+        ui.btnPause->label("Resume");
+        ui.btnPause->redraw();
+    }
+}
+
+// ---------------- callbacks ----------------
+void cancel_cb(Fl_Widget*, void*)
+{
+    if (ui.bAbortFlag)
+    {
+        DE_WARN("Abort already in progress")
+        return;
+    }
+
+    int r = fl_choice(
+        "\n"
+        "Do you like cancel the operation?\n"
+        "\n",
+        "Cancel operation",  // Button 0
+        "Abort this dialog", // Button 1
+        nullptr
+    );
+
+    if (r == 0) // Cancel operation
+    {
+        DE_OK("Pressed Cancel")
+        ui.bAbortFlag = true;
+        ui.logBox->show();
+    }
+    else if (r == 1) // Abort
+    {
+        DE_OK("Pressed Abort")
+    }
+}
+
+// ---------------- callback ----------------
+void finish_cb(void*)
+{
+    Fl::remove_timeout(timer_update);
+
+    ui.edtTimeLeft->copy_label("00:00:00"); // Reset
+    ui.btnPause->callback(noop_cb);     // Reset
+    ui.btnCancel->callback(noop_cb);    // Reset
+
+    if (ui.bAbortFlag)
+    {
+        DE_ERROR("Aborted.")
+        ui.logBox->log_error("Aborted by user.");
+        ui.btnPause->label("Pause");
+        ui.btnPause->redraw();
+    }
+    else
+    {
+        DE_OK("Finished.")
+        if (ui.bAutoCloseWindow)
+        {
+            ui.window->hide();
+        }
+    }
+}
+
+// ---------------- callback ----------------
+void start_cb(Fl_Widget*, void*)
+{
+    DE_OK("MainThread ",std::this_thread::get_id())
+
+    if (ui.bRunFlag)
+    {
+        DE_ERROR("Worker already running.")
+        return;
+    }
+
+    DE_OK("Start worker from MainThread ",std::this_thread::get_id())
+
+    // ui.timeStartInSec = dbTimeInSeconds();
+
+    Fl::add_timeout(0.01, timer_update); // Start polling gui update 10 ms
+
+    ui.btnPause->callback(pause_cb);
+    ui.btnCancel->callback(cancel_cb);
+
+    auto ext = dbFileSuffix(ui.job.fileName);
+
+    if (ui.job.bCompress)
+    {
+        if (ext == "tar")
+        {
+            auto e = dbStr("Start [tar] Writer (",ui.job.fileName,")");
+            ui.logBox->log_success(e.c_str());
+
+            ui.worker = std::thread(workerThread_CompressTar);
+            ui.worker.detach();
+        }
+        else if (ext == "zst")
+        {
+            auto e = dbStr("Start [zst] Writer (",ui.job.fileName,")");
+            ui.logBox->log_success(e.c_str());
+
+            ui.worker = std::thread(workerThread_CompressZst);
+            ui.worker.detach();
+        }
+        else
+        {
+            auto e = dbStr("Unsupported [",ext,"] Writer (",ui.job.fileName,")");
+            ui.logBox->log_error(e.c_str());
+        }
+    }
+    else if (ui.job.bExtract)
+    {
+        auto e = dbStr("Unsupported [",ext,"] Reader (",ui.job.fileName,")");
+        ui.logBox->log_error(e.c_str());
+    }
+    else
+    {
+        auto e = dbStr("Unsupported Job (",ui.job.str(),")");
+        ui.logBox->log_error(e.c_str());
+    }
 }
 
 } // end namespace worker.

@@ -7,6 +7,63 @@
 
 namespace EightZip {
 namespace builder {
+namespace {
+
+std::string getLastDirectory(const std::string& uri)
+{
+    auto s1 = dbMakePosix(uri);
+
+    auto p2 = s1.find_last_of('/');
+    if (p2 == std::string::npos || p2 < 1)
+    {
+        DE_ERROR("Invalid p2(",p2,") in uri(", uri,")")
+        return "";
+    }
+
+    auto p1 = s1.find_last_of('/',p2-1);
+    if (p1 == std::string::npos)
+    {
+        DE_ERROR("No p1 in uri(", uri,")")
+        auto s2 = s1.substr(0, p2);
+        DE_DEBUG("Got s1(", s1,")")
+        DE_DEBUG("Got s2(", s2,")")
+        return s2;
+    }
+    else
+    {
+        // "/a/b.c" -> "a"
+        // p1 = 0
+        // p2 = 2
+        // s2 = s1.substr(1, 1);
+        auto s2 = s1.substr(p1+1, p2-p1-1);
+        DE_DEBUG("Got s1(", s1,")")
+        DE_DEBUG("Got s2(", s2,")")
+        return s2;
+    }
+}
+
+/*
+std::string replaceExtension(std::string uri, std::string ext)
+{
+    auto p1 = std::filesystem::u8path(uri);
+    auto p2 = std::filesystem::u8path(ext);
+    return p1.replace_extension(p2).u8string();
+}
+
+
+template <typename T, typename... Args>
+T* make_widget(int size, Args&&... args) {
+    T* w = new T(std::forward<Args>(args)...);
+    w->labelsize(size);
+
+    if constexpr (std::is_base_of_v<Fl_Input, T>)
+        w->textsize(size);
+
+    return w;
+}
+*/
+
+} // end namespace
 
 // =============================================================
 struct UI
@@ -14,13 +71,15 @@ struct UI
 {
     int iLastPreset = 0; // No compression
 
+    Job job;
+
     Fl_Button* btnZoomIn = nullptr;
     Fl_Button* btnZoomOut = nullptr;
 
     // Top
     Fl_Box* lblArchive = nullptr;
     Fl_Input* edtDir = nullptr;
-    Fl_Input* edtArchive = nullptr;
+    Fl_Input* edtFile = nullptr;
     Fl_Button* btnChoose = nullptr;
     //Win11Combo* edtArchive = nullptr;
 
@@ -95,6 +154,7 @@ struct UI
     FN_onCancel onCancel;
     FN_onHelp onHelp;
 
+
     std::string selectedFormat() const
     {
         static std::array<std::string,2> formats
@@ -130,54 +190,158 @@ struct UI
     //     return quality_map[quality->value()];
     // }
 
-    Job job;
+    static bool dbExistDirectory(const de::FileInfo& fileInfo)
+    {
+        return fileInfo.isDir();
+    }
+
+    static bool dbExistFile(const de::FileInfo& fileInfo)
+    {
+        return fileInfo.isFile();
+    }
+
+    void produceDirName()
+    {
+        std::string dir = App::getInstance()->getExeDirA();
+
+        if (job.filesIn.size() > 0)
+        {
+            dir = dbFileDir(job.filesIn[0].uriA());
+        }
+
+        edtDir->value( dir.c_str() );
+    }
+
+    void produceFileName()
+    {
+        // fileName
+        std::string fn = edtFile->value() ? edtFile->value() : "";
+
+        const std::string ext = selectedFormat();
+
+        //===========================================
+        // Remove suffix, leave baseName
+        //===========================================
+        DE_DEBUG("[Cut] Input ",fn)
+
+        if (dbStrEndsWith(fn,".tar.zst"))
+        {
+            DE_DEBUG("[Cut] Before (.tar.zst) ",fn)
+            fn = fn.substr(0,fn.size() - 8);
+            DE_DEBUG("[Cut] After (.tar.zst) ",fn)
+        }
+        if (dbStrEndsWith(fn,".zst"))
+        {
+            DE_DEBUG("[Cut] Before (.zst) ",fn)
+            fn = fn.substr(0,fn.size() - 4);
+            DE_DEBUG("[Cut] After (.zst) ",fn)
+        }
+        if (dbStrEndsWith(fn,".tar"))
+        {
+            DE_DEBUG("[Cut] Before (.tar.zst) ",fn)
+            fn = fn.substr(0,fn.size() - 4);
+            DE_DEBUG("[Cut] After (.tar) ",fn)
+        }
+
+        //===========================================
+        // Create baseName, take job.filesIn[] into account
+        //===========================================
+        if (fn.empty())
+        {
+            if (job.filesIn.size() == 0)
+            {
+                fn = "8z_untitled";
+                DE_DEBUG("[Empty] ",fn)
+            }
+            else if (job.filesIn.size() == 1)
+            {
+                const auto& fi = job.filesIn[0];
+
+                if (ext == "tar")
+                {
+                    fn = dbFileName(fi.uriA());
+                    DE_DEBUG("[Generic] ",fn)
+                }
+                else if (ext == "zst")
+                {
+                    if (dbExistDirectory(fi))
+                    {
+                        fn = dbFileName(fi.uriA());
+                        DE_DEBUG("[Dir] ",fn)
+                    }
+                    else
+                    {
+                        fn = dbFileName(fi.uriA());
+                        DE_DEBUG("[File] ",fn)
+                    }
+                }
+            }
+            else
+            {
+                const auto& fi = job.filesIn[0];
+                DE_DEBUG("job.filesIn[0] = ",job.filesIn[0].str())
+                DE_DEBUG("job.filesIn[1] = ",job.filesIn[1].str())
+                fn = getLastDirectory(fi.uriA());
+                DE_DEBUG("getLastDirectory() = ",fn)
+            }
+        }
+
+        //=====================================================
+        // Create suffix, also takes job.filesIn[] into account
+        //=====================================================
+        // For compressor only (zst, gz, bz2, etc..).
+        // + 1 file "video.mp4" becomes "video.mp4.zst"
+        // + 1 dir "fol.der" becomes "fol.der.tar.zst"
+        // + 1 file "arch.tar" becomes "arch.tar.zst"
+        //=====================================================
+        if (ext == "tar")
+        {
+            fn += ".tar"; // Same for single or multiple files and dirs.
+        }
+        else if (ext == "zst")
+        {
+            if (job.filesIn.size() == 1)
+            {
+                const auto& fi = job.filesIn[0]; // Single file or dir
+
+                if (dbExistDirectory(fi))
+                {
+                    fn += ".tar.zst"; // Single dir
+                }
+                else
+                {
+                    fn += ".zst"; // Single file
+                }
+            }
+            else
+            {
+                fn += ".tar.zst"; // Multiple files or dirs
+            }
+        }
+
+        edtFile->value(fn.c_str());
+
+        if (ext == "tar")
+        {
+            iLastPreset = cbxPreset->value();
+            cbxPreset->value(0);
+            cbxPreset->deactivate();
+        }
+        else if (ext == "zst")
+        {
+            cbxPreset->activate();
+            cbxPreset->value(iLastPreset);
+        }
+
+        // DE_DEBUG("[Format] index(",index,"), "
+        //         "label(", (label ? label : "nullptr"), "), "
+        //         "ext(", ext,")")
+
+    }
 };
 
 static UI ui;
 
-namespace {
-
-std::string getLastDirectory(const std::string& uri)
-{
-    auto s1 = dbMakePosix(uri);
-
-    auto p2 = s1.find_last_of('/');
-    if (p2 == std::string::npos || p2 < 1)
-    {
-        DE_ERROR("Invalid p2(",p2,") in uri(", uri,")")
-        return "";
-    }
-
-    auto p1 = s1.find_last_of('/',p2-1);
-    if (p1 == std::string::npos)
-    {
-        DE_ERROR("No p1 in uri(", uri,")")
-        auto s2 = s1.substr(0, p2);
-        DE_DEBUG("Got s1(", s1,")")
-        DE_DEBUG("Got s2(", s2,")")
-        return s2;
-    }
-    else
-    {
-        // "/a/b.c" -> "a"
-        // p1 = 0
-        // p2 = 2
-        // s2 = s1.substr(1, 1);
-        auto s2 = s1.substr(p1+1, p2-p1-1);
-        DE_DEBUG("Got s1(", s1,")")
-        DE_DEBUG("Got s2(", s2,")")
-        return s2;
-    }
-}
-
-std::string replaceExtension(std::string uri, std::string ext)
-{
-    auto p1 = std::filesystem::u8path(uri);
-    auto p2 = std::filesystem::u8path(ext);
-    return p1.replace_extension(p2).u8string();
-}
-
-} // end namespace
 
 static void cbxFormat_cb(Fl_Widget* widget, void* data)
 {
@@ -189,19 +353,10 @@ static void cbxFormat_cb(Fl_Widget* widget, void* data)
     // Den Text des ausgewählten Elements abrufen
     const char* label = self->text();
 
-    auto ext = ui.selectedFormat();
+    ui.produceFileName();
 
-    DE_DEBUG("[Format] index(",index,"), "
-                "label(", (label ? label : "nullptr"), "), "
-                "ext(", ext,")")
-
-    std::string uri = ui.edtArchive->value() ? ui.edtArchive->value() : "";
-    if (uri.empty())
-    {
-        uri = "8z_untitled_archive";
-    }
-    auto s = replaceExtension(uri,ext);
-    ui.edtArchive->value(s.c_str());
+/*
+    ui.edtFile->value(s.c_str());
 
     if (ext == "tar")
     {
@@ -214,6 +369,7 @@ static void cbxFormat_cb(Fl_Widget* widget, void* data)
         ui.cbxPreset->activate();
         ui.cbxPreset->value(ui.iLastPreset);
     }
+*/
 }
 
 static void cbxPreset_cb(Fl_Widget* widget, void* data)
@@ -272,9 +428,9 @@ Job Builder::getJob() const
     }
 
     // ======== baseName =========================
-    if (ui.edtArchive && ui.edtArchive->value())
+    if (ui.edtFile && ui.edtFile->value())
     {
-        job.fileName = ui.edtArchive->value();
+        job.fileName = ui.edtFile->value();
     }
     else
     {
@@ -330,6 +486,10 @@ void Builder::setJob(const Job& job)
     DE_DEBUG("Got Job: ")
     DE_DEBUG(ui.job.str())
 
+    ui.produceDirName();
+    ui.produceFileName();
+
+    /*
     if (ui.job.directory.empty())
     {
         if (ui.job.filesIn.size() > 0)
@@ -377,24 +537,14 @@ void Builder::setJob(const Job& job)
     }
 
     ui.edtDir->value( ui.job.directory.c_str() );
-    ui.edtArchive->value( ui.job.fileName.c_str() );
+    ui.edtFile->value( ui.job.fileName.c_str() );
 
     // job.baseDir = App::getInstance()->getExeDirA();
     // job.baseName = ui.edtArchive->label();
     // job.bCompress = true;
     // job.extension = ui.cbxFormat->currentData().toString();
     // job.iPreset = ui.cbxPreset->currentData().toInt();
-}
-
-template <typename T, typename... Args>
-T* make_widget(int size, Args&&... args) {
-    T* w = new T(std::forward<Args>(args)...);
-    w->labelsize(size);
-
-    if constexpr (std::is_base_of_v<Fl_Input, T>)
-        w->textsize(size);
-
-    return w;
+    */
 }
 
 // =============================================================
@@ -425,7 +575,7 @@ Builder::Builder(int W, int H, const char* title)
     ui.edtDir = new Fl_Input(x,y,mw,h1);
     ui.edtDir->align(FL_ALIGN_LEFT | FL_ALIGN_BOTTOM | FL_ALIGN_INSIDE);
     //ui.edtArchive = new Win11Combo(x,y,mw,h1,s);
-    ui.edtArchive = new Fl_Input(x,y,mw,h1);
+    ui.edtFile = new Fl_Input(x,y,mw,h1);
     ui.btnChoose = new Button(x,y,mw,h1,"...");
 
     // Body Column[0]
@@ -595,7 +745,7 @@ void Builder::resize(int X, int Y, int W, int H)
     // Top
     ui.lblArchive->resize(x,y,100,2*h1);
     ui.edtDir->resize(x+100,y,mw-200,h1);
-    ui.edtArchive->resize(x+100,y+h1,mw-200,h1);
+    ui.edtFile->resize(x+100,y+h1,mw-200,h1);
     ui.btnChoose->resize(x+mw - 50,y+h1,50,h1);
     y += ln + ln;
 

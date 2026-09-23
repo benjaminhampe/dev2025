@@ -1,15 +1,18 @@
 #pragma once
 #include <de/Core.h>
+#include <de/FileInfo.h>
 
 struct Job
 {
-    StringListA filesIn; // utf8
+    de::FileInfos filesIn; // utf8
+    // StringListA filesIn; // utf8
     // StringListA filesOut; // utf8
 
     bool bUpdate = false;
     bool bRestartExplorer = false;
     bool bAdmin = false;
     bool bGui = false;
+    bool bTarTree = false;
     bool bInstall = false;
     bool bUninstall = false;
     bool bCompress = false;
@@ -60,7 +63,7 @@ struct Job
             {
                 for (size_t i = 0; i < filesIn.size(); ++i)
                 {
-                    o << filesIn[i] << " ";
+                    o << filesIn[i].str() << "\n";
                 }
             }
         }
