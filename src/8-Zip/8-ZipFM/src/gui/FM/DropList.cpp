@@ -64,11 +64,7 @@ DropList::addRow(std::string uri)
     int ico_w = item_height(nullptr) - 4;
 
     Row row;
-    auto fileInfo = de::ScanFileInfo(de_wstr(uri));
-    if ( fileInfo )
-    {
-    row.fileInfo = *fileInfo;
-    }
+    row.fileInfo = de::ScanFileInfo(de_wstr(uri));
     row.ico = load_shell_icon(uri, ico_w, ico_w);
     row.progress = 0.0f;
     rows.emplace_back( std::move(row) );

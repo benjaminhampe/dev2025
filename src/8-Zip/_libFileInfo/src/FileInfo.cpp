@@ -11,6 +11,7 @@ FileInfo::FileInfo()
     , m_unixTime{ 0 }
     , m_unixPerm{ 0 }
     , m_bDirectory{ false }
+    , m_bExists{ false }
 {}
 
 // --- member funcs ---
@@ -62,6 +63,7 @@ bool isDir() const
 */
 bool FileInfo::isDir() const { return m_bDirectory; }
 bool FileInfo::isFile() const { return !m_bDirectory; }
+bool FileInfo::exists() const { return m_bExists; }
 
 std::string FileInfo::str() const
 {
@@ -190,30 +192,30 @@ for (const auto& e : fs::recursive_directory_iterator(root))
 }
 */
 
-std::optional<FileInfo> ScanFileInfo(const std::wstring& uri)
+FileInfo ScanFileInfo(const std::wstring& uri)
 {
     if (uri.empty())
     {
         DE_ERROR("Invalid URI1 ", de_mbstr(uri))
-        return std::nullopt;
+        return {};
     }
 
     if ((uri == L".") || (uri == L".."))
     {
         DE_ERROR("Invalid URI2 ", de_mbstr(uri))
-        return std::nullopt;
+        return {};
     }
 
     if (dbStrEndsWith(uri,L"/.") || dbStrEndsWith(uri,L"\\."))
     {
         DE_ERROR("Invalid URI3 ", de_mbstr(uri))
-        return std::nullopt;
+        return {};
     }
 
     if (dbStrEndsWith(uri,L"/..") || dbStrEndsWith(uri,L"\\.."))
     {
         DE_ERROR("Invalid URI4 ", de_mbstr(uri))
-        return std::nullopt;
+        return {};
     }
 
     std::filesystem::path p(uri);
@@ -221,7 +223,7 @@ std::optional<FileInfo> ScanFileInfo(const std::wstring& uri)
     if (!std::filesystem::exists( p ))
     {
         DE_ERROR("Invalid URI5 ", p.u8string())
-        return std::nullopt;
+        return {};
     }
 
     std::error_code ec;
@@ -245,7 +247,7 @@ std::optional<FileInfo> ScanFileInfo(const std::wstring& uri)
     if (ec)
     {
         DE_ERROR("No file_status ec(", ec.message(),") ",p.u8string())
-        return std::nullopt;
+        return {};
     }
 
     const bool bDir = std::filesystem::is_directory( fs );
@@ -254,7 +256,7 @@ std::optional<FileInfo> ScanFileInfo(const std::wstring& uri)
     if (!bDir && !bFile)
     {
         DE_ERROR("Not a file or dir ", p.u8string())
-        return std::nullopt;
+        return {};
     }
 
     int64_t fileSize = 0;
@@ -272,6 +274,7 @@ std::optional<FileInfo> ScanFileInfo(const std::wstring& uri)
     }
 
     FileInfo fileInfo;
+    fileInfo.m_bExists = true;
     fileInfo.m_bDirectory = bDir;
     fileInfo.m_dir = de::FileSystem::makePosixPath(p.parent_path().wstring());
     fileInfo.m_name = de::FileSystem::makePosixPath(p.filename().wstring());
@@ -286,6 +289,12 @@ std::optional<FileInfo> ScanFileInfo(const std::wstring& uri)
 
 void addUniqueFileName(const std::wstring& src, StringListW & dst, bool bCaseSensitive)
 {
+    if (dst.empty())
+    {
+        dst.emplace_back( src );
+        return;
+    }
+
     if (bCaseSensitive) // Linux allows A,a to be different files.
     {
         const auto found = std::find_if(dst.cbegin(), dst.cend(),

@@ -6,16 +6,21 @@ namespace de {
     // In Posix format with '/' forward slashes.
     struct FileInfo
     {
-        std::wstring m_dir{};      // directory without trailing slash
-        std::wstring m_name{};     // filename only
-        uint64_t    m_fileSize{};  // file size in bytes
-        uint64_t    m_unixTime{};  // timestamp unixSeconds since
-        uint16_t    m_unixPerm{}; // unix/tar-like permission bits
-        bool        m_bDirectory{};
+        std::wstring m_dir;      // directory without trailing slash
+        std::wstring m_name;     // filename only
+        uint64_t    m_fileSize;  // file size in bytes
+        uint64_t    m_unixTime;  // timestamp unixSeconds since
+        uint16_t    m_unixPerm; // unix/tar-like permission bits
+        bool        m_bDirectory;
+        bool        m_bExists;
 
         FileInfo();
 
         // --- member funcs ---
+        bool exists() const;
+        bool isDir() const;
+        bool isFile() const;
+        std::string str() const;
         std::wstring suffix() const;
         std::wstring uri() const;
         std::wstring dir() const;
@@ -25,11 +30,6 @@ namespace de {
         std::string fileNameA() const;
         std::string suffixA() const;
         uint64_t fileSize() const;
-
-        bool isDir() const;
-        bool isFile() const;
-
-        std::string str() const;
 
         bool loadBlob(de::Blob & blob);
     };
@@ -48,7 +48,7 @@ namespace de {
     void
     DUMP(const FileInfos& fileInfos);
 
-    std::optional<FileInfo>
+    FileInfo
     ScanFileInfo(const std::wstring& uri);
 
 } // end namespace de.

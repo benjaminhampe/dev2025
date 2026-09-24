@@ -124,9 +124,9 @@ void ScanDirectory(FileInfos& fileInfos, std::wstring dir, bool bRecursive)
             const std::wstring uri = FileSystem::makePosixPath( p1.wstring() );
 
             auto fileInfo = ScanFileInfo(uri);
-            if (fileInfo)
+            if (fileInfo.exists())
             {
-                fileInfos.emplace_back(*fileInfo);
+                fileInfos.emplace_back(fileInfo);
                 //platform_addUniqueFileInfo(*fileInfo,fileInfos);
             }
 

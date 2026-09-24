@@ -15,18 +15,6 @@ bool ArgParser::parseBenni(Job* m_job, int argc, char** argv)
     //StringListW filesOut;
     StringListW filesIn;
 
-    StringListW explorerSelection = win32_Get_Explorer_Selection();
-    // <debug>
-    DE_BENNI("SelExplorer = ",explorerSelection.size())
-    // </debug>
-    // <trace>
-    for (size_t i = 0; i < explorerSelection.size(); ++i)
-    {
-        DE_DEBUG("SelExplorer[",i,"] ",de_mbstr(explorerSelection[i]))
-    }
-    // </trace>
-
-    platform_addUniqueFileNames(explorerSelection,filesIn);
 
     enum Mode { NORMAL, READ_I_LIST, READ_O_LIST };
 
@@ -35,6 +23,8 @@ bool ArgParser::parseBenni(Job* m_job, int argc, char** argv)
     for (int i = 1; i < argc; ++i)
     {
         std::string_view arg = argv[i];
+
+        DE_DEBUG("argv[",i,"] mode = ",mode)
 
         // If we are collecting -i arguments
         if (mode == READ_I_LIST || mode == READ_O_LIST)
@@ -114,14 +104,14 @@ bool ArgParser::parseBenni(Job* m_job, int argc, char** argv)
         {
             m_job->bUpdate = true;
             mode = NORMAL;
-            break;
+            continue;
         }
 
         if (arg == "-k" || arg == "--killexplorer")
         {
             m_job->bRestartExplorer = true;
             mode = NORMAL;
-            break;
+            continue;
         }
 
         // Todo: Do we need it, IExplorerCommand works without Admin rights.
@@ -129,42 +119,42 @@ bool ArgParser::parseBenni(Job* m_job, int argc, char** argv)
         {
             m_job->bAdmin = true;
             mode = NORMAL;
-            break;
+            continue;
         }
 
         if (arg == "--install")
         {
             m_job->bInstall = true;
             mode = NORMAL;
-            break;
+            continue;
         }
 
         if (arg == "--uninstall" || arg == "--deinstall")
         {
             m_job->bUninstall = true;
             mode = NORMAL;
-            break;
+            continue;
         }
 
         if (arg == "--tree")
         {
-            m_job->bTarTree = true;
+            m_job->bTarInspector = true;
             mode = NORMAL;
-            break;
+            continue;
         }
 
         if (arg == "-c" || arg == "--compress")
         {
             m_job->bCompress = true;
             mode = NORMAL;
-            break;
+            continue;
         }
 
         if (arg == "-e" || arg == "--extract")
         {
             m_job->bExtract = true;
             mode = NORMAL;
-            break;
+            continue;
         }
 
         if (arg == "-g" || arg == "--gui")
@@ -213,8 +203,24 @@ bool ArgParser::parseBenni(Job* m_job, int argc, char** argv)
         // }
 
         // --- positional files ---
+        mode = READ_I_LIST;
         platform_addUniqueFileName(de_wstr(argv[i]), filesIn);
     }
+
+    // =====================================================
+    StringListW explorerSelection = win32_Get_Explorer_Selection();
+    // <debug>
+    DE_BENNI("SelExplorer = ",explorerSelection.size())
+    // </debug>
+    // =====================================================
+    // <trace>
+    for (size_t i = 0; i < explorerSelection.size(); ++i)
+    {
+        DE_DEBUG("SelExplorer[",i,"] ",de_mbstr(explorerSelection[i]))
+    }
+    // </trace>
+
+    platform_addUniqueFileNames(explorerSelection,filesIn);
 
     // =====================================================
     // <debug>
@@ -227,9 +233,9 @@ bool ArgParser::parseBenni(Job* m_job, int argc, char** argv)
     for (size_t i = 0; i < filesIn.size(); ++i)
     {
         auto fileInfo = de::ScanFileInfo(filesIn[i]);
-        if (fileInfo)
+        if (fileInfo.exists())
         {
-            m_job->filesIn.emplace_back( *fileInfo );
+            m_job->filesIn.emplace_back( fileInfo );
         }
         else
         {

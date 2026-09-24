@@ -482,7 +482,7 @@ std::wstring
 StringUtil::to_wstr(const std::string& utf8)
 {
     if (utf8.empty())
-        return std::wstring();
+        return {};
 
     int nChars = MultiByteToWideChar(CP_UTF8, 0,
         utf8.data(), (int)utf8.size(), nullptr, 0);

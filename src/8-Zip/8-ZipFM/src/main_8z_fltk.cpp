@@ -32,17 +32,16 @@ void testScanImpl(de::FileInfos & fileInfos, const std::vector<std::string>& fil
     for (size_t i = 0; i < filesIn.size(); ++i)
     {
         DE_WARN("Scan [",i,"] ",filesIn[i])
-        auto optFileInfo = de::ScanFileInfo(de_wstr(filesIn[i]));
-        if (optFileInfo)
+        de::FileInfo fileInfo = de::ScanFileInfo(de_wstr(filesIn[i]));
+        if (fileInfo.exists())
         {
-            const de::FileInfo& fileInfo = *optFileInfo;
             DE_WARN("Add [",i,"] ",fileInfo.str())
 
             fileInfos.emplace_back( fileInfo );
 
             if (fileInfo.isDir())
             {
-                de::ScanDirectory(fileInfos,fileInfo.uri(),true);
+                de::ScanDirectory(fileInfos, fileInfo.uri(),true);
             }
 
             pollFileCount = fileInfos.size();
@@ -125,7 +124,7 @@ int main(int argc, char** argv)
         EightZip_InstallExePath();
         // EightZip_restartExplorer();
     }
-    else if (job.bCompress || job.bExtract || job.bTarTree)
+    else if (job.bCompress || job.bExtract || job.bTarInspector)
     {
         DE_DEBUG("Fl::screen_scaling_supported() = ",Fl::screen_scaling_supported())
         DE_DEBUG("Fl::screen_scale(0) = ",Fl::screen_scale(0))
@@ -187,16 +186,20 @@ int main(int argc, char** argv)
             set_window_icon_from_resource(W);
             W->show();
         }
-        else if (job.bTarTree)
+        else if (job.bTarInspector)
         {
             std::string uri;
-            if (job.filesIn.empty())
+            if (job.filesIn.size() > 0)
             {
                 uri = job.filesIn[0].uriA();
             }
-            auto W = new TarTree(uri,200,200,600,600);
+            else
+            {
+                DE_ERROR("No TarFile to inspect")
+            }
+            auto W = new TarInspector(uri,200,200,600,600);
             W->resizable(W);
-            //set_window_icon_from_resource(W);
+            set_window_icon_from_resource(W);
             W->show();
         }
         return Fl::run();

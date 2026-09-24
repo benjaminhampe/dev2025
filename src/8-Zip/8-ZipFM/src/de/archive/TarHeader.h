@@ -490,6 +490,23 @@ struct TarUtil
 
     static void tar_compute_checksum(TarHeader& h);
 
+    static
+    uint64_t compute_checksum(const TarHeader& ori)
+    {
+        TarHeader h = ori;
+
+        uint8_t* raw = reinterpret_cast<uint8_t*>(&h);
+
+        // checksum field must be spaces during calculation
+        for (int i = 0; i < 8; i++) h.chksum[i] = ' ';
+
+        uint64_t sum = 0;
+        for (int i = 0; i < 512; i++)
+            sum += raw[i];
+
+        return sum;
+    }
+
     /*
     // 📦 Max = 077777777UL: 8^8 - 1 = 16,777,215 decimal
     static void encode_octal_8(uint8_t (&dst)[8], uint32_t value);

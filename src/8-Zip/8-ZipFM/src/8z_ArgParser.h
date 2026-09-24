@@ -12,7 +12,7 @@ struct Job
     bool bRestartExplorer = false;
     bool bAdmin = false;
     bool bGui = false;
-    bool bTarTree = false;
+    bool bTarInspector = false;
     bool bInstall = false;
     bool bUninstall = false;
     bool bCompress = false;

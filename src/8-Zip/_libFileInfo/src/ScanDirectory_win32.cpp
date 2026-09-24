@@ -134,6 +134,7 @@ void ScanDirectory_win32(FileInfos& fileInfos, std::wstring dir, bool recursive)
         //     nFiles++;
 
         FileInfo fi;
+        fi.m_bExists = true;
         fi.m_dir = posixDir;
         fi.m_name = name;
         fi.m_bDirectory = bDirectory;
