@@ -1,5 +1,6 @@
 #pragma once
 #include <de/FileInfo.h>
+#include <de/CoreUtil.h>
 
 // #include <ctime>
 // #include <string>

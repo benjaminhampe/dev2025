@@ -5295,7 +5295,10 @@ bool dbStrBeginsWith( const std::wstring& txt, const std::wstring& query ) { ret
 bool dbStrBeginsWith( const std::string& txt, char c ) { return de::StringUtil::startsWith(txt,c); }
 bool dbStrBeginsWith( const std::wstring& txt, wchar_t c ) { return de::StringUtil::startsWith(txt,c); }
 
-bool dbStrEndsWith( const std::string& txt, const std::string& query ) { return de::StringUtil::endsWith(txt,query); }
+bool dbStrEndsWith( const std::string& txt, const std::string& query )
+{
+    return de::StringUtil::endsWith(txt,query);
+}
 bool dbStrEndsWith( const std::wstring& txt, const std::wstring& query ) { return de::StringUtil::endsWith(txt,query); }
 bool dbStrEndsWith( const std::string& txt, char c ) { return de::StringUtil::endsWith(txt,c); }
 bool dbStrEndsWith( const std::wstring& txt, wchar_t c ) { return de::StringUtil::endsWith(txt,c); }
