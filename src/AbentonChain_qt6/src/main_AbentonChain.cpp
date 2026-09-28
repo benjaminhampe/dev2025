@@ -25,7 +25,7 @@ inline void enableConsoleOutput()
 }
 
 // ============================================================
-inline void forceForeground(QWidget* w)
+inline void bringToFront_win32(QWidget* w)
 // ============================================================
 {
 #ifdef _WIN32
@@ -150,6 +150,8 @@ int main(int argc, char **argv)
     int w = r_screen.width();
     int h = r_screen.height();
     win.move(0,h-1-120-win.frameGeometry().height());
+
+    bringToFront_win32(&win);
 
     int retVal = app.exec();
 

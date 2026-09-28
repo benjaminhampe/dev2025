@@ -7,17 +7,10 @@ struct TarTree : public Fl_Tree
     Fl_Tree_Item* m_tarRoot;
 
     TarTree(std::string uri, int X, int Y, int W, int H)
-        : Fl_Tree(X,Y,W,H,"TarTree")
+        : Fl_Tree(X,Y,W,H)
         , m_tarRoot{ nullptr }
     {
         begin();
-            add("Flintstones/Fred");
-            add("Flintstones/Wilma");
-            add("Flintstones/Pebbles");
-            add("Simpsons/Homer");
-            add("Simpsons/Marge");
-            add("Simpsons/Bart");
-            add("Simpsons/Lisa");
 
             if (uri.empty())
             {
@@ -216,8 +209,15 @@ struct UI_TarTree
 static UI_TarTree ui;
 
 TarInspector::TarInspector(std::string uri, int X, int Y, int W, int H)
-    : Fl_Double_Window(X,Y,W,H,"TarInspector")
+    : Fl_Double_Window(X,Y,W,H)
 {
+    auto t=
+        dbStr("TarInspector | ",
+            dbFileName(uri)," | ",
+            dbFileDir(uri) );
+
+    label(t.c_str());
+
     ui.window = this;
     begin();
 

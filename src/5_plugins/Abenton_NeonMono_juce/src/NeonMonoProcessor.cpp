@@ -627,7 +627,7 @@ void NeonMonoAudioProcessor::initPresets()
     });
 
     // 5 basses
-    addPreset ("Bass SubPunch", {
+    addPreset ("Bass SubPunch (Bad)", {
         { PID::osc1Wave, 2 }, { PID::osc2Wave, 0 },
         { PID::osc1Level, 0.7f }, { PID::osc2Level, 0.3f },
         { PID::subLevel, 0.9f }, { PID::noiseLevel, 0.02f },
@@ -637,7 +637,7 @@ void NeonMonoAudioProcessor::initPresets()
         { PID::distDrive, 0.5f }, { PID::distMix, 0.6f }
     });
 
-    addPreset ("Bass DirtSaw", {
+    addPreset ("Bass DirtSaw (Bad)", {
         { PID::osc1Wave, 1 }, { PID::osc2Wave, 1 },
         { PID::osc1Level, 0.8f }, { PID::osc2Level, 0.8f },
         { PID::subLevel, 0.6f }, { PID::noiseLevel, 0.1f },

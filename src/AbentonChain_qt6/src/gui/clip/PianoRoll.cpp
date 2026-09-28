@@ -814,10 +814,10 @@ PianoRoll::getKeyIndexFromMousePos() const
 PianoRoll::SelNote
 PianoRoll::computeHoveredNote() const
 {
-//   if ( !m_clip )
-//   {
-//      return {};
-//   }
+    if ( !m_clip )
+    {
+        return {}; // Nothing todo.
+    }
 
     int keyIndex = m_detectedMidiNote;
     if ( keyIndex < 0 || keyIndex > 127 )
@@ -826,7 +826,7 @@ PianoRoll::computeHoveredNote() const
         return {};
     }
 
-    const auto & notes = m_clip->m_notes[ m_detectedMidiNote ];
+    const auto & notes = m_clip->m_notes[ keyIndex ];
     for ( size_t i = 0; i < notes.size(); ++i )
     {
         const auto & note = notes[ i ];
@@ -835,7 +835,7 @@ PianoRoll::computeHoveredNote() const
         if (m_mx >= a && m_mx < b)
         {
             SelNote sel;
-            sel.keyIndex = m_detectedMidiNote;
+            sel.keyIndex = keyIndex;
             sel.noteIndex = i;
             return sel;
         }

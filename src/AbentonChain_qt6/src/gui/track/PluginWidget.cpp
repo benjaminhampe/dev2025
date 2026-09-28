@@ -187,7 +187,7 @@ void PluginWidget::updateLayout()
 
         int lh = h - hHeader - 3*bh - 4*s4 - s6;
         int ly = hHeader + s4;
-        m_rcLabel = QRect(3,ly,wHeader-5,lh);
+        m_rcLabel = QRect(4,ly,wHeader-5,lh);
 
         int pixelSize = computeBestFontHeight(m_headerFont,m_rcLabel.width() - 2);
         m_headerFont.setPixelSize(pixelSize);

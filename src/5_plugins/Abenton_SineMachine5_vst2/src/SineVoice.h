@@ -24,7 +24,6 @@ struct OSC_Partials
     float m_amplitudeSum;
     float m_amplitudeSumInv;
 
-
     de::TAlignedVector<float> m_amplitudes;
     //de::TAlignedVector<float> m_frequencies;
     de::TAlignedVector<float> m_phases;
