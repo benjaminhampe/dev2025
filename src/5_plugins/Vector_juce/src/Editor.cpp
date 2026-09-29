@@ -26,14 +26,10 @@ clampf(juce::Point<float> point)
 } // end namespace.
 
 //====================================================================
-Display::Display()
+Display::Display(VectorSynthesiser& synth)
 //====================================================================
+    : m_synth(synth)
 {
-    attackPoint  = { 0.2f, 0.2f };
-    decayPoint   = { 0.8f, 0.3f };
-    sustainPoint = { 0.7f, 0.8f };
-    releasePoint = { 0.2f, 0.9f };
-
     startTimerHz(60);
 }
 
@@ -43,7 +39,7 @@ Display::~Display()
 
 void Display::resized()
 {
-    displayRect = getLocalBounds().toFloat().reduced(10.0f);
+    m_displayRect = getLocalBounds().toFloat().reduced(10.0f);
 }
 
 void Display::paint(juce::Graphics& g)
@@ -62,7 +58,7 @@ void Display::drawBackground(juce::Graphics& g)
     g.fillAll(juce::Colours::black);
 
     g.setColour(juce::Colours::darkgrey);
-    g.drawRect(displayRect);
+    g.drawRect(m_displayRect);
 
     // g.drawLine(
     //     displayRect.getCentreX(),
@@ -85,24 +81,24 @@ void Display::drawEnvelope(juce::Graphics& g)
     int h = getHeight();
 
     g.drawLine(
-        attackPoint.x * w,
-        attackPoint.y * h,
-        decayPoint.x * w,
-        decayPoint.y * h,
+        m_synth.m_attackPoint.x * w,
+        m_synth.m_attackPoint.y * h,
+        m_synth.m_decayPoint.x * w,
+        m_synth.m_decayPoint.y * h,
         2.0f);
 
     g.drawLine(
-        decayPoint.x * w,
-        decayPoint.y * h,
-        sustainPoint.x * w,
-        sustainPoint.y * h,
+        m_synth.m_decayPoint.x * w,
+        m_synth.m_decayPoint.y * h,
+        m_synth.m_sustainPoint.x * w,
+        m_synth.m_sustainPoint.y * h,
         2.0f);
 
     g.drawLine(
-        sustainPoint.x * w,
-        sustainPoint.y * h,
-        releasePoint.x * w,
-        releasePoint.y * h,
+        m_synth.m_sustainPoint.x * w,
+        m_synth.m_sustainPoint.y * h,
+        m_synth.m_releasePoint.x * w,
+        m_synth.m_releasePoint.y * h,
         2.0f);
 }
 
@@ -122,12 +118,13 @@ void Display::drawHandles(juce::Graphics& g)
                 12.0f);
         };
 
-    drawNode(attackPoint);
-    drawNode(decayPoint);
-    drawNode(sustainPoint);
-    drawNode(releasePoint);
+    drawNode(m_synth.m_attackPoint);
+    drawNode(m_synth.m_decayPoint);
+    drawNode(m_synth.m_sustainPoint);
+    drawNode(m_synth.m_releasePoint);
 }
 
+/*
 juce::Point<float>
 Display::getCursorPosition(const NoteVisualState& voice) const
 {
@@ -163,6 +160,7 @@ Display::getCursorPosition(const NoteVisualState& voice) const
         }
     }
 }
+*/
 
 void Display::drawVoices(juce::Graphics& g)
 {
@@ -173,38 +171,30 @@ void Display::drawVoices(juce::Graphics& g)
     g.drawText(String(s1), 10, 10, w, 30, Justification::topLeft, false);
 
     bool bPrintedVoiceText = false;
-    for (size_t i = 0; i < voiceStates.size(); ++i)
-    {
-        const auto& voice = *voiceStates[i];
 
-        if (!voice.bPlaying)
+    const auto& voices = m_synth.getVoices();
+    for (size_t i = 0; i < voices.size(); ++i)
+    {
+        const auto& voice = *voices[i];
+
+        if (!voice.isVoiceActive())
             continue;
 
         // ==== DrawCursor ====
-        auto cursor = clampf(getCursorPosition(voice));
-
+        auto cursor = voice.getCursorPosition();
+        float cx = cursor.x * w;
+        float cy = cursor.y * h;
         g.setColour(juce::Colours::cyan);
-
-        float cx = cursor.x;
-        float cy = cursor.y;
-
-        g.fillEllipse(
-            (cx * w) - 7.0f,
-            (cy * h) - 7.0f,
-            14.0f,
-            14.0f);
+        g.fillEllipse(cx - 7.0f, cy - 7.0f, 14.0f, 14.0f);
 
         // ==== DrawOrbiter ====
-
-        float ox = std::cos(voice.orbiterAngle) * orbitRadius;
-        float oy = std::sin(voice.orbiterAngle) * orbitRadius;
-        auto orbiter = juce::Point<float>(cx + ox, cy + ox);
-
-        orbiter = clampf(orbiter);
-
+        auto orbiter = voice.getOrbiterPosition();
+        float ox = orbiter.x * w;
+        float oy = orbiter.y * h;
         g.setColour(juce::Colours::white);
-        g.fillEllipse((ox * w) - 10.0f, (oy * h) - 10.0f, 20.0f, 20.0f);
+        g.fillEllipse(ox - 10.0f, oy - 10.0f, 20.0f, 20.0f);
 
+        // ==== DrawVoiceText ====
         if (!bPrintedVoiceText)
         {
             auto s2 = dbStr("Cursor(",cx,",",cy,")");
@@ -223,16 +213,16 @@ Display::hitTestHandle(juce::Point<float> position)
 
     Point<float> scr( getWidth(), getHeight() );
 
-    if (position.getDistanceFrom(attackPoint * scr) < radius)
+    if (position.getDistanceFrom(m_synth.m_attackPoint * scr) < radius)
         return DragPoint::Attack;
 
-    if (position.getDistanceFrom(decayPoint * scr) < radius)
+    if (position.getDistanceFrom(m_synth.m_decayPoint * scr) < radius)
         return DragPoint::Decay;
 
-    if (position.getDistanceFrom(sustainPoint * scr) < radius)
+    if (position.getDistanceFrom(m_synth.m_sustainPoint * scr) < radius)
         return DragPoint::Sustain;
 
-    if (position.getDistanceFrom(releasePoint * scr) < radius)
+    if (position.getDistanceFrom(m_synth.m_releasePoint * scr) < radius)
         return DragPoint::Release;
 
     return DragPoint::None;
@@ -240,7 +230,7 @@ Display::hitTestHandle(juce::Point<float> position)
 
 void Display::mouseDown(const juce::MouseEvent& e)
 {
-    activeHandle = hitTestHandle(e.position);
+    m_activeHandle = hitTestHandle(e.position);
 }
 
 void Display::mouseDrag(const juce::MouseEvent& e)
@@ -250,12 +240,12 @@ void Display::mouseDrag(const juce::MouseEvent& e)
 
     auto p = clampf(ndc);
 
-    switch (activeHandle)
+    switch (m_activeHandle)
     {
-        case DragPoint::Attack: attackPoint = p; break;
-        case DragPoint::Decay: decayPoint = p; break;
-        case DragPoint::Sustain: sustainPoint = p; break;
-        case DragPoint::Release: releasePoint = p; break;
+        case DragPoint::Attack: m_synth.m_attackPoint = p; break;
+        case DragPoint::Decay: m_synth.m_decayPoint = p; break;
+        case DragPoint::Sustain: m_synth.m_sustainPoint = p; break;
+        case DragPoint::Release: m_synth.m_releasePoint = p; break;
         default: break;
     }
 
@@ -264,7 +254,7 @@ void Display::mouseDrag(const juce::MouseEvent& e)
 
 void Display::mouseUp(const juce::MouseEvent&)
 {
-    activeHandle = DragPoint::None;
+    m_activeHandle = DragPoint::None;
 }
 
 void Display::timerCallback()
@@ -277,52 +267,46 @@ void Display::setVisualStates(const std::array<NoteVisualState,32>& states)
 {
     voiceStates = states;
 }
-*/
 
 void Display::setVisualStates(std::vector<NoteVisualState*> states)
 {
     voiceStates = states;
 }
+*/
 
 //====================================================================
 VectorPluginEditor::VectorPluginEditor(VectorPluginProcessor& p)
 //====================================================================
     : AudioProcessorEditor(&p)
-    , processor(p)
+    , m_processor(p)
+    , m_display(p.getSynth())
 {
-    addAndMakeVisible(display);
-    addAndMakeVisible(orbitRadiusSlider);
-    addAndMakeVisible(orbitSpeedSlider);
+    addAndMakeVisible(m_display);
+    addAndMakeVisible(m_orbitRadiusSlider);
+    addAndMakeVisible(m_orbitSpeedSlider);
 
-    display.setVisualStates(p.getVisualStates());
+    m_orbitRadiusSlider.setRange(0.0, 1.0);
+    m_orbitSpeedSlider.setRange(0.001, 1000.0);
 
-    orbitRadiusSlider.setRange(0.0, 1.0);
-    orbitSpeedSlider.setRange(0.001, 50.0);
-
-    orbitRadiusSlider.onValueChange =
+    m_orbitRadiusSlider.onValueChange =
         [this]
         {
-            display.setOrbitRadius(
-                (float) orbitRadiusSlider.getValue());
+            auto& synth = m_processor.getSynth();
+            synth.m_orbRadius = (float)m_orbitRadiusSlider.getValue();
         };
 
-    orbitSpeedSlider.onValueChange =
+    m_orbitSpeedSlider.onValueChange =
         [this]
         {
-            display.setOrbitSpeed(
-                (float) orbitSpeedSlider.getValue());
+            auto& synth = m_processor.getSynth();
+            synth.setOrbiterSpeed((float)m_orbitSpeedSlider.getValue());
         };
 
-    orbitRadiusSlider.setValue(.2);
-    orbitSpeedSlider.setValue(0.05);
+    m_orbitRadiusSlider.setValue(.1);
+    m_orbitSpeedSlider.setValue(1.0);
 
     setSize(900,600);
     startTimerHz(30);
-}
-
-void VectorPluginEditor::paint(juce::Graphics& g)
-{
-    g.fillAll(juce::Colours::darkslategrey);
 }
 
 void VectorPluginEditor::resized()
@@ -331,13 +315,19 @@ void VectorPluginEditor::resized()
 
     auto right = area.removeFromRight(180);
 
-    display.setBounds(area.reduced(10));
+    m_display.setBounds(area.reduced(10));
 
-    orbitRadiusSlider.setBounds(right.removeFromTop(120).reduced(10));
+    m_orbitRadiusSlider.setBounds(right.removeFromTop(120).reduced(10));
 
-    orbitSpeedSlider.setBounds(right.removeFromTop(120).reduced(10));
+    m_orbitSpeedSlider.setBounds(right.removeFromTop(120).reduced(10));
 }
 
 void VectorPluginEditor::timerCallback()
 {
 }
+
+void VectorPluginEditor::paint(juce::Graphics& g)
+{
+    g.fillAll(juce::Colours::darkslategrey);
+}
+

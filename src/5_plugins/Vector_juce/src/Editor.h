@@ -1,11 +1,14 @@
 #pragma once
 #include "Processor.h"
 
-
 //==============================================================================
 // Parameter IDs
 namespace PID
 {
+    // Voice
+    static constexpr const char* orbitRadius   = "orbitRadius";
+    static constexpr const char* orbitSpeed = "orbitSpeed";
+
     // Voice
     static constexpr const char* voiceMode   = "voiceMode";
     static constexpr const char* glideTimeMs = "glideTimeMs";
@@ -82,16 +85,16 @@ namespace PID
 class Display : public juce::Component, private juce::Timer
 {
 public:
-    Display();
+    Display(VectorSynthesiser& synth);
     ~Display() override;
-    void setOrbitRadius(float radius01)
-    {
-        orbitRadius = radius01;
-    }
-    void setOrbitSpeed(float speedHz)
-    {
-        orbitSpeed = speedHz;
-    }
+    // void setOrbitRadius(float radius01)
+    // {
+    //     orbitRadius = radius01;
+    // }
+    // void setOrbitSpeed(float speedHz)
+    // {
+    //     orbitSpeed = speedHz;
+    // }
 
     void paint(juce::Graphics&) override;
     void resized() override;
@@ -101,7 +104,7 @@ public:
     void mouseDrag(const juce::MouseEvent&) override;
 
     //void setVisualStates(const std::array<NoteVisualState,32>& states);
-    void setVisualStates(std::vector<NoteVisualState*> states);
+    //void setVisualStates(std::vector<NoteVisualState*> states);
 private:
     void timerCallback() override;
     void drawBackground(juce::Graphics& g);
@@ -109,8 +112,8 @@ private:
     void drawHandles(juce::Graphics& g);
     void drawVoices(juce::Graphics& g);
 
-    juce::Point<float>
-    getCursorPosition(const NoteVisualState& voice) const;
+    // juce::Point<float>
+    // getCursorPosition(const NoteVisualState& voice) const;
 
     enum class DragPoint
     {
@@ -121,17 +124,13 @@ private:
     hitTestHandle(juce::Point<float> position);
 
 private:
-    DragPoint activeHandle = DragPoint::None;
-    float orbitRadius = .01f; // in range [0,1], will be scaled to actual screen size when drawing
-    float orbitSpeed = 0.05f;
-    juce::Rectangle<float> displayRect;
-    juce::Point<float> attackPoint;
-    juce::Point<float> decayPoint;
-    juce::Point<float> sustainPoint;
-    juce::Point<float> releasePoint;
+    VectorSynthesiser& m_synth;
 
-    //std::array<NoteVisualState,32> voiceStates;
-    std::vector<NoteVisualState*> voiceStates;
+    DragPoint m_activeHandle = DragPoint::None;
+
+    juce::Rectangle<float> m_displayRect;
+
+    std::vector<VectorVoice*> m_voices;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(Display)
 };
@@ -151,15 +150,15 @@ private:
     void timerCallback() override;
 
 private:
-    VectorPluginProcessor& processor;
+    VectorPluginProcessor& m_processor;
 
-    Display display;
+    Display m_display;
 
-    juce::Slider orbitRadiusSlider;
-    juce::Slider orbitSpeedSlider;
+    juce::Slider m_orbitRadiusSlider;
+    juce::Slider m_orbitSpeedSlider;
 
-    juce::Label orbitRadiusLabel;
-    juce::Label orbitSpeedLabel;
+    juce::Label m_orbitRadiusLabel;
+    juce::Label m_orbitSpeedLabel;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(VectorPluginEditor)
 };

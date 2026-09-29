@@ -180,6 +180,13 @@ float Env::getNextSample()
         case Sustain:
         {
             A = m_sustainLevel;
+
+            // New:
+            if (onProgress)
+            {
+                onProgress(Sustain, 0.0f);
+            }
+
             if (m_bTriggeredNoteOff || m_cfg.bSingleShot)
             {
                 m_phase = Release;
@@ -187,6 +194,7 @@ float Env::getNextSample()
                 //m_releaseStart = A;
                 //m_mRelease = -A / float(m_releaseFrames);
             }
+
             break;
         }
         case Release:

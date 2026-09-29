@@ -9,8 +9,6 @@ else()
     set(PLG_SOURCES
         ${PLG_SOURCE_DIR}/JucePluginConfig.h
         ${PLG_SOURCE_DIR}/JuceHeader.h
-        ${PLG_SOURCE_DIR}/VectorSynth.cpp
-        ${PLG_SOURCE_DIR}/VectorSynth.h
         ${PLG_SOURCE_DIR}/Editor.cpp
         ${PLG_SOURCE_DIR}/Editor.h
         ${PLG_SOURCE_DIR}/Processor.cpp
