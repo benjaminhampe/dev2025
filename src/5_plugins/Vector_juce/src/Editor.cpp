@@ -281,29 +281,39 @@ VectorPluginEditor::VectorPluginEditor(VectorPluginProcessor& p)
     , m_processor(p)
     , m_display(p.getSynth())
 {
+    auto& apvts = p.getAPVTS();
+
     addAndMakeVisible(m_display);
-    addAndMakeVisible(m_orbitRadiusSlider);
-    addAndMakeVisible(m_orbitSpeedSlider);
 
-    m_orbitRadiusSlider.setRange(0.0, 1.0);
-    m_orbitSpeedSlider.setRange(0.001, 1000.0);
-
-    m_orbitRadiusSlider.onValueChange =
-        [this]
+    // --- OrbRadius ---
+    m_orbRadiusSlider.setSliderStyle(Slider::RotaryHorizontalVerticalDrag);
+    m_orbRadiusSlider.setTextBoxStyle(Slider::TextBoxBelow, false, 60, 20);
+    m_orbRadiusSlider.setColour(Slider::rotarySliderFillColourId, juce::Colour(255,0,0));
+    addAndMakeVisible(m_orbRadiusSlider);
+    m_orbRadiusAttach.reset (new AudioProcessorValueTreeState::SliderAttachment(apvts, PID::orbitRadius, m_orbRadiusSlider));
+    m_orbRadiusSlider.onValueChange = [this]
         {
             auto& synth = m_processor.getSynth();
-            synth.m_orbRadius = (float)m_orbitRadiusSlider.getValue();
+            synth.m_orbRadius = m_orbRadiusSlider.getValue();
         };
 
-    m_orbitSpeedSlider.onValueChange =
-        [this]
+    m_orbRadiusSlider.setRange(0.0, 1.0);
+    m_orbRadiusSlider.setValue(.1);
+
+    // --- OrbSpeed ---
+    m_orbSpeedSlider.setSliderStyle(Slider::RotaryHorizontalVerticalDrag);
+    m_orbSpeedSlider.setTextBoxStyle(Slider::TextBoxBelow, false, 60, 20);
+    m_orbSpeedSlider.setColour(Slider::rotarySliderFillColourId, juce::Colour(255,0,0));
+    addAndMakeVisible(m_orbSpeedSlider);
+    m_orbSpeedAttach.reset (new AudioProcessorValueTreeState::SliderAttachment(apvts, PID::orbitSpeed, m_orbSpeedSlider));
+    m_orbSpeedSlider.onValueChange = [this]
         {
             auto& synth = m_processor.getSynth();
-            synth.setOrbiterSpeed((float)m_orbitSpeedSlider.getValue());
+            synth.setOrbiterSpeed(m_orbSpeedSlider.getValue());
         };
 
-    m_orbitRadiusSlider.setValue(.1);
-    m_orbitSpeedSlider.setValue(1.0);
+    m_orbSpeedSlider.setRange(0.001, 1000.0);
+    m_orbSpeedSlider.setValue(1.0);
 
     setSize(900,600);
     startTimerHz(30);
@@ -312,18 +322,15 @@ VectorPluginEditor::VectorPluginEditor(VectorPluginProcessor& p)
 void VectorPluginEditor::resized()
 {
     auto area = getLocalBounds();
-
     auto right = area.removeFromRight(180);
-
     m_display.setBounds(area.reduced(10));
-
-    m_orbitRadiusSlider.setBounds(right.removeFromTop(120).reduced(10));
-
-    m_orbitSpeedSlider.setBounds(right.removeFromTop(120).reduced(10));
+    m_orbRadiusSlider.setBounds(right.removeFromTop(120).reduced(10));
+    m_orbSpeedSlider.setBounds(right.removeFromTop(120).reduced(10));
 }
 
 void VectorPluginEditor::timerCallback()
 {
+
 }
 
 void VectorPluginEditor::paint(juce::Graphics& g)

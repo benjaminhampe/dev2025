@@ -253,6 +253,7 @@ public:
 
     juce::AudioProcessorEditor* createEditor() override;
 
+    juce::AudioProcessorValueTreeState& getAPVTS() { return m_apvts; }
 private:
     juce::AudioProcessorValueTreeState m_apvts;
 

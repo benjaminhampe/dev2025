@@ -154,11 +154,15 @@ private:
 
     Display m_display;
 
-    juce::Slider m_orbitRadiusSlider;
-    juce::Slider m_orbitSpeedSlider;
+    juce::Slider m_orbRadiusSlider;
+    juce::Slider m_orbSpeedSlider;
 
-    juce::Label m_orbitRadiusLabel;
-    juce::Label m_orbitSpeedLabel;
+    juce::Label m_orbRadiusLabel;
+    juce::Label m_orbSpeedLabel;
+
+    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> ampAttackAttach, ampDecayAttach,
+        m_orbRadiusAttach, m_orbSpeedAttach;
+
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(VectorPluginEditor)
 };
