@@ -10,7 +10,6 @@
 -->
 
 <assembly xmlns="urn:schemas-microsoft-com:asm.v1" manifestVersion="1.0">
-
   <!--
     Declare which Windows versions this application supports.
     These GUIDs are official Microsoft identifiers.
@@ -66,13 +65,23 @@
     Namespace MUST be SMI/2016 for Win10/11 features.
   -->
   <application xmlns="urn:schemas-microsoft-com:asm.v3">
+  
+    <!-- SIMPLY DOES NOT WORK -->
+    <!-- Enables paths >260 chars WITHOUT needing \\?\ prefix -->
+    <!--
+    <windowsSettings>
+        <longPathAware xmlns="http://microsoft.com">true</longPathAware>
+    </windowsSettings>
+    -->
+    
     <windowsSettings xmlns="http://schemas.microsoft.com/SMI/2016/WindowsSettings">
 
       <!-- Per-monitor DPI awareness (best for multi-DPI setups) -->
       <dpiAware>true/PM</dpiAware>
 
+      <!-- SIMPLY DOES NOT WORK -->
       <!-- Enables paths >260 chars WITHOUT needing \\?\ prefix -->
-      <longPathAware>true</longPathAware>
+      <!-- <longPathAware>true</longPathAware> -->
 
     </windowsSettings>
   </application>

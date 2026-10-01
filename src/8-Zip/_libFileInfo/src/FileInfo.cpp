@@ -218,7 +218,23 @@ FileInfo ScanFileInfo(const std::wstring& uri)
         return {};
     }
 
-    std::filesystem::path p(uri);
+    const size_t C_MAX_PATH = 260;
+
+    std::wstring ntPath;
+
+    if (uri.size() >= C_MAX_PATH)
+    {
+        DE_ERROR("Uri(",uri.size(),") exceeds MAX_PATH=260, ", de_mbstr(uri))
+
+        ntPath = dbMakeNT(uri);
+        // ntPath = std::wstring(L"\\\\?\\") + dbMakeNT(uri);
+    }
+    else
+    {
+        ntPath = dbMakeNT(uri);
+    }
+
+    std::filesystem::path p(ntPath);
 
     if (!std::filesystem::exists( p ))
     {
@@ -230,7 +246,7 @@ FileInfo ScanFileInfo(const std::wstring& uri)
 
     if ( p.is_relative() )
     {
-        DE_ERROR("Relative ", de_mbstr(uri))
+        DE_ERROR("Relative ", de_mbstr(ntPath))
         auto a = std::filesystem::absolute( p, ec );
         if (ec)
         {

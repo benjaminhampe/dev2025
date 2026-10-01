@@ -2234,11 +2234,21 @@ int32_t file64_open(const std::wstring& uri, eFileMode fileMode, int32_t permiss
     {
         permission = 0666; // _S_IWRITE, octal 0666 = rw-rw-rw- (no executable bits)
     }
-    int fd = _wopen(uri.c_str(), nativeMode, permission);
+
+    // Add LongPath Prefix, verhindert MAX_PATH Fehler in C-Runtime
+    std::wstring win32Path = dbMakeNT(uri);
+    if (win32Path.compare(0,4,L"\\\\?\\") != 0)
+    {
+        win32Path = L"\\\\?\\" + win32Path;
+    }
+
+    int fd = _wopen(win32Path.c_str(), nativeMode, permission);
+    // Nutzen Sie die sichere Variante _wsopen_s, da _wopen als veraltet gilt
+    // int fd = _wsopen_s(&fd, win32Path.c_str(), oflag, _SH_DENYNO, pmode);
 
     if (fd < 0)
     {
-        DE_ERROR("Open failed! errno(",errno,"), msg(",errno_to_string(errno),"), uri(",de_mbstr(uri),")")
+        DE_ERROR("Open failed! errno(",errno,"), msg(",errno_to_string(errno),"), uri(",de_mbstr(win32Path),")")
         DE_ERROR("_wopen(",native_openmode_str(nativeMode),",",permission,")")
     }
 
@@ -3200,24 +3210,15 @@ std::wstring
 FileSystem::makeWinPath( const std::wstring & uri )
 {
     auto tmp = uri;
-
     if (tmp.empty()) return tmp;
-
-    // DE_DEBUG("tmp = ", tmp)
-
     tmp = StringUtil::replace( tmp, L"/", L"\\" );
-
-    // DE_DEBUG("tmp = ", tmp)
-
     if ( StringUtil::endsWith( tmp, L"\\.") )
     {
         tmp = tmp.substr(0, tmp.size()-2);
-        //DE_DEBUG("endsWithSlashDot uri = ", uri)
     }
     if ( StringUtil::endsWith( uri, L"\\") )
     {
         tmp = tmp.substr(0, tmp.size()-1);
-        //DE_DEBUG("endsWithSlash uri = ", uri)
     }
 
     return tmp;

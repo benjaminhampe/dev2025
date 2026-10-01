@@ -135,7 +135,7 @@ VectorVoice::VectorVoice(VectorSynthesiser& synth,
     m_bottomLeft.setAmplitude(1.0f);
     m_bottomRight.setAmplitude(1.0f);
 
-    m_orbPhaseIncrement = 2.0 * 3.141592 * m_synth.m_orbSpeed / m_sampleRate;
+    // m_orbPhaseIncrement = 2.0 * 3.141592 * m_synth.m_orbSpeed / m_sampleRate;
 }
 
 VectorVoice::~VectorVoice()
@@ -336,7 +336,7 @@ void VectorVoice::renderNextBlock(
         L[startSample + f] += sample;
         R[startSample + f] += sample;
 
-        m_orbPhase += m_orbPhaseIncrement;
+        m_orbPhase += m_synth.m_orbPhaseIncrement;
 
 #if 0
         visualState.stageProgress += 1.0f / (float(currentSampleRate) * 2.0f);
@@ -431,14 +431,26 @@ VectorSynthesiser::VectorSynthesiser(
     m_orbSpeed = m_apvts.getRawParameterValue(PID::orbitSpeed)->load();
 }
 
+void VectorSynthesiser::updateSynthesizer()
+{
+    m_orbRadius = m_apvts.getRawParameterValue(PID::orbitRadius)->load();
+    m_orbSpeed = m_apvts.getRawParameterValue(PID::orbitSpeed)->load();
+
+    constexpr float TWO_PI = juce::MathConstants<float>::twoPi;
+    m_orbPhaseIncrement = TWO_PI * m_orbSpeed / getSampleRate();
+}
+
+/*
 void VectorSynthesiser::setOrbiterSpeed(float speed_in_Hz)
 {
     m_orbSpeed = speed_in_Hz;
+    m_orbPhaseIncrement = 2.0 * 3.141592 * m_orbSpeed / getSampleRate();
     for (auto& voice : m_voices)
     {
         voice->m_orbPhaseIncrement = 2.0 * 3.141592 * m_orbSpeed / voice->m_sampleRate;
     }
 }
+*/
 
 //=======================================================
 VectorPluginProcessor::VectorPluginProcessor()
@@ -468,11 +480,12 @@ VectorPluginProcessor::VectorPluginProcessor()
     initPresets();
 }
 
-void VectorPluginProcessor::prepareToPlay(double sampleRate, int samplesPerBlock)
+void VectorPluginProcessor::prepareToPlay(double sampleRate, int blockSize)
 {
+    int channels = getTotalNumOutputChannels();
     DE_BENNI("sampleRate(",sampleRate,"), "
-             "blockSize(",samplesPerBlock,"), "
-             "getTotalNumOutputChannels(",getTotalNumOutputChannels(),")")
+             "blockSize(",blockSize,"), "
+             "channels(",channels,")")
 
     m_synth.setCurrentPlaybackSampleRate(sampleRate);
 
@@ -481,46 +494,26 @@ void VectorPluginProcessor::prepareToPlay(double sampleRate, int samplesPerBlock
     for (int i = 0; i < m_synth.getNumVoices(); ++i)
     {
         auto voice = dynamic_cast<VectorVoice*>(m_synth.getVoice(i));
-        if (voice)
+        if (!voice)
         {
-            voice->prepare(sampleRate,samplesPerBlock,
-                        getTotalNumOutputChannels());
+            continue;
         }
+        voice->prepare(sampleRate, blockSize, channels);
     }
 }
 
 void VectorPluginProcessor::processBlock(
-    juce::AudioBuffer<float>& buffer,
-    juce::MidiBuffer& midi)
+    juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midi)
 {
     juce::ScopedNoDenormals noDenormals;
-
     buffer.clear();
-
-    // if (!midi.isEmpty())
-    // {
-    //     DE_DEBUG("midi")
-    // }
-
-    // DE_DEBUG("blockSize(",buffer.getNumSamples(),"), "
-    //          "channel(",buffer.getNumChannels(),"), ")
+    m_synth.updateSynthesizer();
     m_synth.renderNextBlock(buffer, midi, 0, buffer.getNumSamples());
-
-/*
-    for (int i = 0; i < synth.getNumVoices(); ++i)
-    {
-        auto voice = dynamic_cast<MorphVoice*>(synth.getVoice(i));
-        if (voice == nullptr)
-            continue;
-
-        visualStateManager.updateVoiceState(i, voice->getVisualState());
-    }
-*/
 }
 
 void VectorPluginProcessor::releaseResources()
 {
-    // juce::AudioProcessor::releaseResources();
+
 }
 
 bool VectorPluginProcessor::hasEditor() const
@@ -549,11 +542,23 @@ VectorPluginProcessor::createParameterLayout()
     using ChoiceParam = AudioParameterChoice;
     using BoolParam = AudioParameterBool;
 
-    // Voice
+    // Orbiter Radius
     params.push_back(std::make_unique<FloatParam>(PID::orbitRadius, "Orbiter Radius",
         NormalisableRange<float> (0.0f, 1.0f), 0.1f));
-    params.push_back(std::make_unique<FloatParam>(PID::orbitSpeed, "Orbiter Speed Hz",
-        NormalisableRange<float> (0.001f, 1000.0f), .5f));
+
+    // Orbiter Speed
+    params.push_back(std::make_unique<FloatParam>(PID::orbitSpeed, "Orbiter Speed (1/127 .. 1) Hz ",
+        NormalisableRange<float> (1.0 / 127.0f, 1.0f), 1.f));
+    params.push_back(std::make_unique<FloatParam>(PID::orbitSpeed127, "Orbiter Speed (0 .. 127) Hz",
+        NormalisableRange<float> (0.f, 127.0f), .0f));
+    params.push_back(std::make_unique<FloatParam>(PID::orbitSpeed1k, "Orbiter Speed (0 .. 1016) Hz",
+        NormalisableRange<float> (0.f, 1016.0f), .0f));
+
+    // Orbiter Phase
+    params.push_back(std::make_unique<FloatParam>(PID::orbitPhase, "Orbiter Start Phase (0 .. TWO_PI)",
+        NormalisableRange<float> (0.f, 2.0 * M_PI), .0f));
+    params.push_back(std::make_unique<ChoiceParam> (PID::orbitDirMode, "Orbiter Direction Mode",
+        StringArray { "ClockWise", "CCW", "Random", "Random each Block" }, 0));
 
     // Voice
     params.push_back (std::make_unique<ChoiceParam> (PID::voiceMode, "Voice Mode",

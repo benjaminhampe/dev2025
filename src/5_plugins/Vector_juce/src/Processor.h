@@ -178,7 +178,7 @@ public:
     // float orbitRadius = .01f; // in range [0,1], will be scaled to actual screen size when drawing
     // float orbitSpeed = 0.05f;
     float m_orbPhase = 0.0f;
-    float m_orbPhaseIncrement = 0.05f;
+    // float m_orbPhaseIncrement = 0.05f;
 
     // Voice lifetime
     double m_noteOnTimeSeconds = 0.0;
@@ -211,9 +211,12 @@ public:
 
     float m_orbRadius = 0.0f;
     float m_orbSpeed = 0.0f;
+    float m_orbPhaseIncrement = 0.0f;
+
+    void updateSynthesizer();
 
 
-    void setOrbiterSpeed(float speed_in_Hz);
+    // void setOrbiterSpeed(float speed_in_Hz);
 };
 
 class VectorPluginProcessor : public juce::AudioProcessor

@@ -5,6 +5,7 @@
 struct TarTree : public Fl_Tree
 {
     Fl_Tree_Item* m_tarRoot;
+    de::Blob m_blob; // WorkBuffer
 
     TarTree(std::string uri, int X, int Y, int W, int H)
         : Fl_Tree(X,Y,W,H)
@@ -29,10 +30,7 @@ struct TarTree : public Fl_Tree
                 uint64_t blockIndex = 0;
                 while (blockIndex < blockCount)
                 {
-                    std::string blockName = dbStr("block[",blockIndex,"]");
-                    Fl_Tree_Item* blockNode = m_tarRoot->add(this->prefs(),blockName.c_str(), nullptr);
-
-                    uint64_t blocksRead = parseBlock(file, blockNode);
+                    uint64_t blocksRead = parseBlock(file, m_tarRoot, blockIndex);
                     if (blocksRead == 0)
                     {
                         break;
@@ -45,7 +43,7 @@ struct TarTree : public Fl_Tree
 
     // This template automatically grabs the array size 'N' at compile time
     template <size_t N>
-    std::string magicToString(const uint8_t (&magic)[N], bool stop_at_null = false)
+    static std::string magicToString(const uint8_t (&magic)[N], bool stop_at_null = false)
     {
         const char* data_ptr = reinterpret_cast<const char*>(magic);
         size_t length = N;
@@ -65,7 +63,7 @@ struct TarTree : public Fl_Tree
     //static const uint8_t GNU_EXPECTED[8]   = {'u', 's', 't', 'a', 'r', ' ', ' ', 0};
 
     // 1. Standard POSIX ustar ("ustar\0" + "00")
-    bool isPosix(const TarHeader& h)
+    static bool isPosix(const TarHeader& h)
     {
         const bool m = std::memcmp(h.magic, "ustar\0", 6) == 0;
         const bool v = std::memcmp(h.version, "00", 2) == 0;
@@ -73,7 +71,7 @@ struct TarTree : public Fl_Tree
     }
 
     // 2. GNU tar ustar-Variante ("ustar  " + " \0")
-    bool isGNU(const TarHeader& h)
+    static bool isGNU(const TarHeader& h)
     {
         const bool m = std::memcmp(h.magic, "ustar ", 6) == 0;
         const bool v = std::memcmp(h.version, " \0", 2) == 0;
@@ -81,7 +79,7 @@ struct TarTree : public Fl_Tree
     }
 
     // Prüft das kombinierte magic [6] und version [2] Feld (insgesamt 8 Bytes)
-    bool isHeader(const TarHeader& h)
+    static bool isHeader(const TarHeader& h)
     {
         // Offset 257 im TAR-Block ist der Start des magic-Feldes
         //const uint8_t* magic_ptr = tar_header_bytes + 257;
@@ -99,7 +97,19 @@ struct TarTree : public Fl_Tree
         return true;
     }
 
-    uint64_t parseBlock(de::File & file, Fl_Tree_Item* node)
+    static bool isLongLink(uint8_t typeflag)
+    {
+        auto c = char(typeflag);
+        return (c == 'L') || (c == 'l');
+    }
+
+    static bool isPaxHeader(uint8_t typeflag)
+    {
+        auto c = char(typeflag);
+        return (c == 'X') || (c == 'x');
+    }
+
+    uint64_t parseBlock(de::File & file, Fl_Tree_Item* rootNode, uint64_t blockIndex)
     {
         uint64_t nUsedBlocks = 0;
 
@@ -131,24 +141,33 @@ struct TarTree : public Fl_Tree
         std::string devminor = dbStr("devminor[8] = ",magicToString(h.devminor));
         std::string padding = dbStr("padding[12] = ",magicToString(h.padding));
 
-        bool bUstar = isHeader(h);
-        bool bGNU = isGNU(h);
-        bool bPosix = isPosix(h);
-        bool bFile = char(h.typeflag) == '0';
-        bool bDir = char(h.typeflag) == '5';
-        uint64_t fileSize = TarUtil::tar_read_octal(h.size,12);
+        const bool bUstar = isHeader(h);
+        const bool bGNU = isGNU(h);
+        const bool bPosix = isPosix(h);
+        const bool bFile = char(h.typeflag) == '0';
+        const bool bDir = char(h.typeflag) == '5';
+        const bool bLong = isLongLink(h.typeflag);
+        const bool bPax = isPaxHeader(h.typeflag);
+        const uint64_t dataSize = TarUtil::tar_read_octal(h.size,12);
 
+        std::string blockName = dbStr("block[",blockIndex,"]");
         if (bUstar)
         {
-            std::string header = "HEADER [ustar]";
-            if (bGNU) header += " (GNU)";
-            if (bPosix) header += " (POSIX)";
-            node->add(p,header.c_str(), nullptr);
+            blockName += " HEADER [ustar]";
+            if (bGNU) blockName += " (GNU)";
+            if (bPosix) blockName += " (POSIX)";
+            if (bFile) { blockName += " (FILE)"; }
+            if (bDir) { blockName += " (DIR)"; }
+            if (bLong) { blockName += " (LONG-LINK)"; }
+            if (bPax) { blockName += " (PAX-HEADER)"; }
 
             if (bFile) { typeflag += " (FILE)"; }
             if (bDir) { typeflag += " (DIR)"; }
+            if (bLong) { typeflag += " (LONG-LINK)"; }
+            if (bPax) { typeflag += " (PAX-HEADER)"; }
         }
 
+        Fl_Tree_Item* node = rootNode->add(p, blockName.c_str(), nullptr);
         node->add(p,name.c_str(), nullptr);
         node->add(p,prefix.c_str(), nullptr);
         node->add(p,mode.c_str(), nullptr);
@@ -168,10 +187,10 @@ struct TarTree : public Fl_Tree
         node->add(p,padding.c_str(), nullptr);
 
         // Skip Data Blocks
-        if (bUstar && bFile && fileSize)
+        if (bUstar && dataSize)
         {
-            uint64_t dataBlocks = fileSize / 512;
-            uint64_t remain = fileSize % 512;
+            uint64_t dataBlocks = dataSize / 512;
+            uint64_t remain = dataSize % 512;
             uint64_t padding = 0;
             if (remain > 0)
             {
@@ -179,24 +198,72 @@ struct TarTree : public Fl_Tree
                 dataBlocks++;
             }
 
-            auto dataNode = node->add(p,dbStr("FILE-DATA (",dbStrBytes(fileSize),")").c_str(), nullptr);
+            nUsedBlocks += dataBlocks;
+
+            Fl_Tree_Item* dataNode = node->add(p,dbStr("DATA (",dbStrBytes(dataSize),")").c_str(), nullptr);
             dataNode->add(p,dbStr("dataBlocks = ",dataBlocks).c_str(), nullptr);
             dataNode->add(p,dbStr("remainBytes = ",remain).c_str(), nullptr);
             dataNode->add(p,dbStr("paddingBytes = ",padding).c_str(), nullptr);
 
-            TarHeader d;
-            for (uint64_t k = 0; k < dataBlocks; ++k)
+            if (bFile) // Skip file-data
             {
-                int64_t nDataBytes = file.read(&d,512);
-                if (nDataBytes < 1)
+                TarHeader d;
+                for (uint64_t k = 0; k < dataBlocks; ++k)
                 {
-                    return nUsedBlocks;
+                    int64_t realSize = file.read(&d,512);
+                    if (realSize < 1)
+                    {
+                        DE_ERROR("realSize < 1")
+                    }
                 }
-                nUsedBlocks++;
+            }
+            else if (bLong || bPax)
+            {
+                m_blob.resize(dataSize);
+                int64_t got = file.read(m_blob.data(),dataSize);
+                if (got < 1)
+                {
+                    DE_ERROR("got < 1")
+                }
+                else
+                {
+                    if (bLong)
+                    {
+                        parseData_LongLink(p,m_blob,dataNode);
+                    }
+                    else
+                    {
+                        parseData_PaxHeader(p,m_blob,dataNode);
+                    }
+
+                    m_blob.resize(padding);
+                    file.read(m_blob.data(),padding);
+                }
+            }
+            else
+            {
+                int64_t paddedDataSize = dataBlocks * 512;
+                DE_WARN("Unknown header with skipped data ",paddedDataSize)
+                m_blob.resize(paddedDataSize);
+                file.read(m_blob.data(),paddedDataSize);
             }
         }
 
         return nUsedBlocks;
+    }
+
+    static void parseData_LongLink(const Fl_Tree_Prefs& p, de::Blob& blob, Fl_Tree_Item* dataNode)
+    {
+        auto longNode = dataNode->add(p, "LongLink", nullptr);
+        std::string s(reinterpret_cast<char*>(blob.data()),blob.size());
+        longNode->add(p, s.c_str(), nullptr);
+    }
+
+    static void parseData_PaxHeader(const Fl_Tree_Prefs& p, de::Blob& blob, Fl_Tree_Item* dataNode)
+    {
+        auto paxNode = dataNode->add(p, "PaxHeader", nullptr);
+        std::string s(reinterpret_cast<char*>(blob.data()),blob.size());
+        paxNode->add(p, s.c_str(), nullptr);
     }
 };
 

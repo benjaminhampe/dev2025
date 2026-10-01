@@ -91,64 +91,108 @@ struct Util_win32
     }
 };
 
-void ScanDirectory_win32(FileInfos& fileInfos, std::wstring dir, bool recursive)
-{
-    const auto posixDir = de::FileSystem::makePosixPath(dir);
-    const auto win32Dir = de::FileSystem::makeWinPath(dir);
-    const std::wstring pattern = win32Dir + L"\\*";
+/*
+#include <windows.h>
+#include <iostream>
+#include <string>
+#include <functional>
 
-    WIN32_FIND_DATAW fd;
-    HANDLE h = FindFirstFileW(pattern.c_str(), &fd);
+void scanDirectory(const std::wstring& rawPath, std::function<void(const std::wstring&, bool isDir)> callback) {
+    // 1. Intern das korrekte Win32-Präfix anhängen, falls nicht vorhanden
+    std::wstring win32Path = rawPath;
+    if (win32Path.rfind(L"\\\\?\\", 0) != 0) {
+        win32Path = L"\\\\?\\" + win32Path;
+    }
+
+    std::wstring searchPath = win32Path + L"\\*";
+    WIN32_FIND_DATAW findData;
+    HANDLE hFind = FindFirstFileW(searchPath.c_str(), &findData);
+
+    if (hFind == INVALID_HANDLE_VALUE) return;
+
+    do {
+        std::wstring name = findData.cFileName;
+        if (name == L"." || name == L"..") continue;
+
+        // Sauberen Pfad für den Aufrufer bauen (ohne internes Präfix)
+        std::wstring cleanUserPath = rawPath + L"\\" + name;
+        bool isDir = (findData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0;
+
+        // Callback feuern -> Der Aufrufer sieht keinerlei Windows-Quirks
+        callback(cleanUserPath, isDir);
+
+        if (isDir) {
+            // Rekursion mit dem sauberen Pfad (Präfix wird im Unteraufruf neu verarbeitet)
+            scanDirectory(cleanUserPath, callback);
+        }
+    } while (FindNextFileW(hFind, &findData));
+
+    FindClose(hFind);
+}
+
+*/
+
+void ScanDirectory_win32(FileInfos& fileInfos, std::wstring rawPath, bool recursive)
+{
+    std::wstring cleanPath = de::FileSystem::makeWinPath(rawPath);
+
+    // 1. Clean path from prefix
+
+    if (cleanPath.compare(0, 8, L"\\\\?\\UNC\\") == 0)
+    {
+        // Macht aus "\\?\UNC\server\share" wieder "\\server\share"
+        cleanPath = L"\\\\" + cleanPath.substr(8);
+    }
+    else if (cleanPath.compare(0, 4, L"\\\\?\\") == 0)
+    {
+        // Macht aus "\\?\C:\Ordner" wieder "C:\Ordner"
+        cleanPath = cleanPath.substr(4);
+    }
+
+    // 2. Add prefix for longpath call
+    std::wstring searchPath = L"\\\\?\\" + cleanPath + L"\\*";
+
+    WIN32_FIND_DATAW findData;
+    HANDLE h = FindFirstFileW(searchPath.c_str(), &findData);
     if (h == INVALID_HANDLE_VALUE)
     {
-        DE_ERROR("No FindFirstFileW(), dir = ",de_mbstr(win32Dir))
+        DE_ERROR("No FindFirstFileW(), dir = ",de_mbstr(searchPath))
         return;
     }
 
-    // size_t nDiscards = 0;
-    // size_t nDirectories = 0;
-    // size_t nFiles = 0;
     do
     {
-        const std::wstring name = fd.cFileName;
+        const std::wstring name = findData.cFileName;
 
-        if ((name == L".") || (name == L".."))
+        if (name == L"." || name == L"..")
         {
-            // DE_ERROR("Reject: ", de_mbstr(name))
-            //nDiscards++;
             continue;
         }
 
-        if (!Util_win32::is_regular(fd.dwFileAttributes))
+        if (findData.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT)
         {
             DE_ERROR("Reject non regular: ", de_mbstr(name))
-            //nDiscards++;
-            continue;
+            continue; // Reject (symlink, junction, mount, cloud file, etc.)
         }
 
-        const bool bDirectory = fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY;
+        const bool bDir = (findData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0;
 
-        // if (bDirectory)
-        //     nDirectories++;
-        // else
-        //     nFiles++;
-
-        FileInfo fi;
+        fileInfos.emplace_back();
+        FileInfo& fi = fileInfos.back();
         fi.m_bExists = true;
-        fi.m_dir = posixDir;
+        fi.m_dir = de::FileSystem::makePosixPath(cleanPath);
         fi.m_name = name;
-        fi.m_bDirectory = bDirectory;
-        fi.m_fileSize = bDirectory ? 0ull : Util_win32::fileSize_from_win32(fd);
-        fi.m_unixPerm = Util_win32::unixPerms_from_win32(fd.dwFileAttributes);
-        fi.m_unixTime = Util_win32::unixTime_from_win32(fd.ftLastWriteTime);
-        fileInfos.push_back(std::move(fi));
+        fi.m_bDirectory = bDir;
+        fi.m_fileSize = bDir ? 0ull : Util_win32::fileSize_from_win32(findData);
+        fi.m_unixPerm = Util_win32::unixPerms_from_win32(findData.dwFileAttributes);
+        fi.m_unixTime = Util_win32::unixTime_from_win32(findData.ftLastWriteTime);
 
-        if (recursive && fi.m_bDirectory)
+        if (recursive && bDir)
         {
-            ScanDirectory_win32(fileInfos, win32Dir + L"\\" + name, true);
+            ScanDirectory_win32(fileInfos, cleanPath + L"\\" + name, true);
         }
     }
-    while (FindNextFileW(h, &fd));
+    while (FindNextFileW(h, &findData));
 
     FindClose(h);
 

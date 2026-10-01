@@ -482,7 +482,7 @@ TarUtil::make_tar_path(std::string uri, std::string baseDir, std::string archive
     return p3;
 }
 
-// Result bool bNeedLongLink.
+// Result bool <bNeedLongLink|bNeedPaxHeader>.
 /// param[in] uri Trimmed relative unix filename, only '/' and does not start with '/'.
 /// param[out] name Rightmost max. 100 bytes for the 'tar_name' field. (basename.suffix)
 /// param[out] prefix Rightmost max. 155 bytes for the 'tar_prefix' field. (directory without trailing '/')
@@ -494,7 +494,7 @@ TarUtil::split_ustar_path(const std::string& uri, std::string& name, std::string
 #ifdef USE_TAR_HEADER_DEBUG
     DE_TRACE("in[1] uri = ", uri)
 #endif
-    std::string p = uri;
+    std::string p = dbMakePosix(uri);
 
     constexpr uint32_t nameLen = 100;
     constexpr uint32_t prefixLen = 155;
@@ -504,7 +504,7 @@ TarUtil::split_ustar_path(const std::string& uri, std::string& name, std::string
     {
         name = p;
         prefix.clear();
-        return false; // bNeedLongLink == false
+        return false; // bNeedLongLink or bPaxHeader == false
     }
 
     // find last slash
@@ -826,18 +826,21 @@ TarUtil::tar_addFile(
     std::string prefix;
     bool bNeedLongLink = split_ustar_path(tarPath, name, prefix);
 
-if (bDebug)
-{
-    DE_DEBUG("===============================================")
-    DE_TRACE("uri = ", uri)
-    DE_TRACE("fileInfo = ", fileInfo.str())
-    DE_TRACE("makeRelative = ", p1)
-    DE_TRACE("trimLeadingDotDotSlash = ", p2)
-    DE_TRACE("tarPath = ", tarPath)
-    DE_TRACE("name = ", name)
-    DE_TRACE("prefix = ", prefix)
-    DE_DEBUG("bNeedLongLink = ",bNeedLongLink)
-}
+    if (bDebug)
+    {
+        DE_DEBUG("===============================================")
+        DE_TRACE("baseName = ", baseName)
+        DE_TRACE("baseDire = ", baseDir)
+        DE_TRACE("fileInfo = ", fileInfo.str())
+        DE_TRACE("uri = ", uri)
+        DE_TRACE("makeRelative = ", p1)
+        DE_TRACE("trimLeadingDotDotSlash = ", p2)
+        DE_TRACE("tarPath = ", tarPath)
+        DE_TRACE("name = ", name)
+        DE_TRACE("prefix = ", prefix)
+        DE_DEBUG("bNeedLongLink = ",bNeedLongLink)
+    }
+
     uint64_t n = 0; // Global num bytes written.
     uint64_t m = 0; // Local num bytes written.
 
@@ -953,8 +956,7 @@ WriteTarFileSimple(
             cfg.onNextFile(fileInfo);
         }
 
-        bool bDebug = false;
-        if (i < 11) bDebug = true;
+        bool bDebug = (i < 11);
         if (bDebug)
         {
             DE_BENNI("[",i," of ", fileInfos.size(),"] ", fileInfo.str())

@@ -8,6 +8,11 @@ namespace PID
     // Voice
     static constexpr const char* orbitRadius   = "orbitRadius";
     static constexpr const char* orbitSpeed = "orbitSpeed";
+    static constexpr const char* orbitSpeed127 = "orbitSpeed127";
+    static constexpr const char* orbitSpeed1k = "orbitSpeed1k";
+
+    static constexpr const char* orbitPhase = "orbitPhase";
+    static constexpr const char* orbitDirMode = "orbitDirMode";
 
     // Voice
     static constexpr const char* voiceMode   = "voiceMode";
@@ -155,14 +160,32 @@ private:
     Display m_display;
 
     juce::Slider m_orbRadiusSlider;
-    juce::Slider m_orbSpeedSlider;
-
     juce::Label m_orbRadiusLabel;
+
+    juce::Slider m_orbSpeedSlider;
     juce::Label m_orbSpeedLabel;
 
-    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> ampAttackAttach, ampDecayAttach,
-        m_orbRadiusAttach, m_orbSpeedAttach;
+    juce::Slider m_orbSpeedSlider127;
+    juce::Label m_orbSpeedLabel127;
 
+    juce::Slider m_orbSpeedSlider1k;
+    juce::Label m_orbSpeedLabel1k;
+
+    juce::Slider m_orbPhaseSlider;
+    juce::Label m_orbPhaseLabel;
+
+    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment>
+        m_orbRadiusAttach,
+        m_orbSpeedAttach,
+        m_orbSpeedAttach127,
+        m_orbSpeedAttach1k,
+        m_orbPhaseAttach;
+
+    juce::ComboBox m_orbDirModeCombo;
+    juce::Label m_orbDirModeLabel;
+
+    std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment>
+        m_orbDirModeAttach;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(VectorPluginEditor)
 };

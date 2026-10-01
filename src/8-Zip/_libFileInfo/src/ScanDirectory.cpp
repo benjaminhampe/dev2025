@@ -1,5 +1,10 @@
 #include <de/ScanDirectory.h>
+
+#ifdef _WIN32
+#include <de/ScanDirectory_win32.h>
+#else
 #include <filesystem>
+#endif
 
 namespace de {
 
@@ -78,6 +83,9 @@ for (const auto& e : fs::recursive_directory_iterator(root))
 
 void ScanDirectory(FileInfos& fileInfos, std::wstring dir, bool bRecursive)
 {
+#ifdef _WIN32
+    ScanDirectory_win32(fileInfos, dir, bRecursive);
+#else
     std::filesystem::path p(dir);
 
     if (!std::filesystem::exists( p ))
@@ -158,6 +166,7 @@ void ScanDirectory(FileInfos& fileInfos, std::wstring dir, bool bRecursive)
     {
         DE_ERROR("Got ec(",ec.message(),"), ",de_mbstr(dir))
     }
+#endif
 }
 
 } // end namespace de.

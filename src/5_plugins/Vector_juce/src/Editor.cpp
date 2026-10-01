@@ -286,34 +286,63 @@ VectorPluginEditor::VectorPluginEditor(VectorPluginProcessor& p)
     addAndMakeVisible(m_display);
 
     // --- OrbRadius ---
+
     m_orbRadiusSlider.setSliderStyle(Slider::RotaryHorizontalVerticalDrag);
     m_orbRadiusSlider.setTextBoxStyle(Slider::TextBoxBelow, false, 60, 20);
     m_orbRadiusSlider.setColour(Slider::rotarySliderFillColourId, juce::Colour(255,0,0));
     addAndMakeVisible(m_orbRadiusSlider);
     m_orbRadiusAttach.reset (new AudioProcessorValueTreeState::SliderAttachment(apvts, PID::orbitRadius, m_orbRadiusSlider));
-    m_orbRadiusSlider.onValueChange = [this]
-        {
-            auto& synth = m_processor.getSynth();
-            synth.m_orbRadius = m_orbRadiusSlider.getValue();
-        };
-
-    m_orbRadiusSlider.setRange(0.0, 1.0);
-    m_orbRadiusSlider.setValue(.1);
+    // m_orbRadiusSlider.setRange(.0, 1.);
+    // m_orbRadiusSlider.setValue(.1);
 
     // --- OrbSpeed ---
+
     m_orbSpeedSlider.setSliderStyle(Slider::RotaryHorizontalVerticalDrag);
     m_orbSpeedSlider.setTextBoxStyle(Slider::TextBoxBelow, false, 60, 20);
     m_orbSpeedSlider.setColour(Slider::rotarySliderFillColourId, juce::Colour(255,0,0));
     addAndMakeVisible(m_orbSpeedSlider);
     m_orbSpeedAttach.reset (new AudioProcessorValueTreeState::SliderAttachment(apvts, PID::orbitSpeed, m_orbSpeedSlider));
-    m_orbSpeedSlider.onValueChange = [this]
-        {
-            auto& synth = m_processor.getSynth();
-            synth.setOrbiterSpeed(m_orbSpeedSlider.getValue());
-        };
+    // m_orbSpeedSlider.setRange(.01, 60.);
+    // m_orbSpeedSlider.setValue(1.);
 
-    m_orbSpeedSlider.setRange(0.001, 1000.0);
-    m_orbSpeedSlider.setValue(1.0);
+    // --- OrbSpeed127 ---
+
+    m_orbSpeedSlider127.setSliderStyle(Slider::RotaryHorizontalVerticalDrag);
+    m_orbSpeedSlider127.setTextBoxStyle(Slider::TextBoxBelow, false, 60, 20);
+    m_orbSpeedSlider127.setColour(Slider::rotarySliderFillColourId, juce::Colour(255,0,0));
+    addAndMakeVisible(m_orbSpeedSlider127);
+    m_orbSpeedAttach127.reset (new AudioProcessorValueTreeState::SliderAttachment(apvts, PID::orbitSpeed127, m_orbSpeedSlider127));
+    // m_orbSpeedSlider127.setRange(.0, 127.);
+    // m_orbSpeedSlider127.setValue(.0);
+
+    // --- OrbSpeed1k ---
+
+    m_orbSpeedSlider1k.setSliderStyle(Slider::RotaryHorizontalVerticalDrag);
+    m_orbSpeedSlider1k.setTextBoxStyle(Slider::TextBoxBelow, false, 60, 20);
+    m_orbSpeedSlider1k.setColour(Slider::rotarySliderFillColourId, juce::Colour(255,0,0));
+    addAndMakeVisible(m_orbSpeedSlider1k);
+    m_orbSpeedAttach1k.reset (new AudioProcessorValueTreeState::SliderAttachment(apvts, PID::orbitSpeed1k, m_orbSpeedSlider1k));
+    // m_orbSpeedSlider1k.setRange(.0, 1016.);
+    // m_orbSpeedSlider1k.setValue(.0);
+
+    // --- OrbPhaseStart ---
+
+    m_orbPhaseSlider.setSliderStyle(Slider::RotaryHorizontalVerticalDrag);
+    m_orbPhaseSlider.setTextBoxStyle(Slider::TextBoxBelow, false, 60, 20);
+    m_orbPhaseSlider.setColour(Slider::rotarySliderFillColourId, juce::Colour(255,0,0));
+    addAndMakeVisible(m_orbPhaseSlider);
+    m_orbPhaseAttach.reset (new AudioProcessorValueTreeState::SliderAttachment(apvts, PID::orbitPhase, m_orbPhaseSlider));
+    // m_orbPhaseSlider.setRange(.0, 2.0 * M_PI);
+    // m_orbPhaseSlider.setValue(.0);
+
+    // --- OrbPhaseDirMode ---
+
+    m_orbDirModeCombo.setColour (ComboBox::backgroundColourId, Colours::black);
+    m_orbDirModeCombo.setColour (ComboBox::textColourId, Colours::white);
+    //m_orbDirModeCombo.addItemList (StringArray { "LP12", "LP24", "BP12", "HP12", "Notch12" }, 1);
+    addAndMakeVisible(m_orbDirModeCombo);
+    m_orbDirModeAttach.reset(new AudioProcessorValueTreeState::ComboBoxAttachment (apvts, PID::orbitDirMode, m_orbDirModeCombo));
+
 
     setSize(900,600);
     startTimerHz(30);
@@ -321,11 +350,32 @@ VectorPluginEditor::VectorPluginEditor(VectorPluginProcessor& p)
 
 void VectorPluginEditor::resized()
 {
-    auto area = getLocalBounds();
-    auto right = area.removeFromRight(180);
-    m_display.setBounds(area.reduced(10));
-    m_orbRadiusSlider.setBounds(right.removeFromTop(120).reduced(10));
-    m_orbSpeedSlider.setBounds(right.removeFromTop(120).reduced(10));
+    // int x = getLocalBounds().getX();
+    // int y = getLocalBounds().getY();
+    int w = getLocalBounds().getWidth();
+    int h = getLocalBounds().getHeight();
+    // DE_DEBUG("bounds(",x,",",y,",",w,",",h,")")
+
+    int w10 = w / 10;
+    int m = w - 3*w10;
+
+    m_display.setBounds(w10,0,m,h);
+
+    int mt = 10;        // Margin top
+    int h4 = h / 4;
+    int ho = h4 - mt;
+
+    int x = 8 * w10;
+    int y = mt;
+    m_orbRadiusSlider.setBounds(x,y,w10,ho); y += h4;
+    m_orbSpeedSlider.setBounds(x,y,w10,ho); y += h4;
+    m_orbSpeedSlider127.setBounds(x,y,w10,ho); y += h4;
+    m_orbSpeedSlider1k.setBounds(x,y,w10,ho); y += h4;
+
+    x += w10;
+    y = mt;
+    m_orbPhaseSlider.setBounds(x,y,w10,ho); y += h4;
+    m_orbDirModeCombo.setBounds(x,y,w10,ho); y += h4;
 }
 
 void VectorPluginEditor::timerCallback()
