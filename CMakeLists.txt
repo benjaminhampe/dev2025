@@ -32,14 +32,14 @@ set(CMAKE_SYSTEM_NAME Windows)
 
 cmake_minimum_required(VERSION 3.14 FATAL_ERROR)
 
-set(BENNI_USE_QT 1)         # <optional> Build QtSDK Apps and copy runtime
+set(BENNI_USE_QT 0)         # <optional> Build QtSDK Apps and copy runtime
 set(BENNI_USE_DEMOS 0)      # <optional> Build QtSDK Apps and copy runtime
 set(BENNI_USE_OPENCV 0)     # <optional> Build OpenCV and face detection demo app
 set(BENNI_USE_POLYPHONE 0)  # <optional> Big app
 set(BENNI_USE_SFML 0)       # <optional> Build SFML 3.1.0 libs and apps
 set(BENNI_USE_WX 0)         # <optional> Build wxWidgets Apps and copy runtime
 set(BENNI_USE_IRR 0)        # <optional> Builds Irrlicht libs and apps.
-set(BENNI_USE_JUCE 1)       # <optional> Big JUCE lib, Bespoke, Odin2, Surge Rack plugins, etc..
+set(BENNI_USE_JUCE 0)       # <optional> Big JUCE lib, Bespoke, Odin2, Surge Rack plugins, etc..
 set(BENNI_USE_JUCE_EXTRA 0) # <optional> Big JUCE plugins, Odin2, Surge Rack plugins, etc..
 set(BENNI_USE_JUCE_BESPOKE 0) # <optional> Big JUCE plugin Bespoke
 set(BENNI_USE_WHISPER 0)    # <optional> Big speech2text
@@ -169,50 +169,49 @@ endif()
 message("${BoldYellow}[benni] CMAKE_BUILD_TYPE = ${CMAKE_BUILD_TYPE}${ColourReset}")
 
 set(MY_C_FLAGS "")
-set(MY_CXX_FLAGS "")
+set(MY_X_FLAGS "")
 set(MY_LD_FLAGS "")
 
 if (MSVC)
 else()
+    # # # # For any BUILD_TYPE <Debug|Release|etc..> # # # #
 
-    # ### For any BUILD_TYPE <Debug|Release|etc..> ###
+    set(MY_C_FLAGS "${MY_C_FLAGS} -target x86_64-w64-windows-gnu")
+    set(MY_X_FLAGS "${MY_X_FLAGS} -target x86_64-w64-windows-gnu")
 
-    set(MY_C_FLAGS     "${MY_C_FLAGS} -target x86_64-w64-windows-gnu")
-    set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -target x86_64-w64-windows-gnu")
-
-    # ### For any BUILD_TYPE <Debug|Release|etc..> ###
+    # # # # For any BUILD_TYPE <Debug|Release|etc..> # # # #
 
     if (BENNI_USE_NATIVE)
         message("${BoldYellow}[benni] Building Native = Least Compatible${ColourReset}")
-        set(MY_C_FLAGS     "${MY_C_FLAGS} -march=native -mtune=native")
-        set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -march=native -mtune=native")
+        set(MY_C_FLAGS "${MY_C_FLAGS} -march=native -mtune=native")
+        set(MY_X_FLAGS "${MY_X_FLAGS} -march=native -mtune=native")
     elseif(BENNI_USE_CPU_V3)
         message("${BoldYellow}[benni] Building ISA v3 = Only Compatible newer CPUs with AVX2 and BMI${ColourReset}")
-        set(MY_C_FLAGS     "${MY_C_FLAGS} -march=x86-64-v3 -mtune=generic")
-        set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -march=x86-64-v3 -mtune=generic")
+        set(MY_C_FLAGS "${MY_C_FLAGS} -march=x86-64-v3 -mtune=generic")
+        set(MY_X_FLAGS "${MY_X_FLAGS} -march=x86-64-v3 -mtune=generic")
     else() # BENNI_USE_CPU_V2
         message("${BoldYellow}[benni] Building ISA v2 = Highly Compatible with CPUs but probably slow${ColourReset}")
-        set(MY_C_FLAGS     "${MY_C_FLAGS} -march=x86-64-v2 -mtune=generic")
-        set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -march=x86-64-v2 -mtune=generic")
+        set(MY_C_FLAGS "${MY_C_FLAGS} -march=x86-64-v2 -mtune=generic")
+        set(MY_X_FLAGS "${MY_X_FLAGS} -march=x86-64-v2 -mtune=generic")
     endif()
 
     # ### Separate by BUILD_TYPE <Debug|Release|etc..> ###
 
     if (CMAKE_BUILD_TYPE STREQUAL "Debug")
         message(STATUS ">>> Debug mode enabled")
-        set(MY_C_FLAGS     "${MY_C_FLAGS} -g")
-        set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -g")
-        set(MY_C_FLAGS     "${MY_C_FLAGS} -O0")
-        set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -O0")
-        set(MY_C_FLAGS     "${MY_C_FLAGS} -fno-omit-frame-pointer")
-        set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -fno-omit-frame-pointer")
-        set(MY_C_FLAGS     "${MY_C_FLAGS} -fstack-protector-strong")
-        set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -fstack-protector-strong")
-        set(MY_C_FLAGS     "${MY_C_FLAGS} -ftrivial-auto-var-init=pattern")
-        set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -ftrivial-auto-var-init=pattern")
+        set(MY_C_FLAGS "${MY_C_FLAGS} -g")
+        set(MY_X_FLAGS "${MY_X_FLAGS} -g")
+        set(MY_C_FLAGS "${MY_C_FLAGS} -O0")
+        set(MY_X_FLAGS "${MY_X_FLAGS} -O0")
+        set(MY_C_FLAGS "${MY_C_FLAGS} -fno-omit-frame-pointer")
+        set(MY_X_FLAGS "${MY_X_FLAGS} -fno-omit-frame-pointer")
+        set(MY_C_FLAGS "${MY_C_FLAGS} -fstack-protector-strong")
+        set(MY_X_FLAGS "${MY_X_FLAGS} -fstack-protector-strong")
+        set(MY_C_FLAGS "${MY_C_FLAGS} -ftrivial-auto-var-init=pattern")
+        set(MY_X_FLAGS "${MY_X_FLAGS} -ftrivial-auto-var-init=pattern")
 
         # set(MY_C_FLAGS     "${MY_C_FLAGS} -fsanitize=address,undefined")
-        # set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -fsanitize=address,undefined")
+        # set(MY_X_FLAGS "${MY_X_FLAGS} -fsanitize=address,undefined")
 
         # ❌ -lasan → not needed
         # ❌ -lubsan → not needed
@@ -223,20 +222,31 @@ else()
         # clang_rt.ubsan_standalone-x86_64.a
 
         # set(MY_C_FLAGS "${MY_C_FLAGS} -O0 -g2")
-        # set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -O0 -g2")
+        # set(MY_X_FLAGS "${MY_X_FLAGS} -O0 -g2")
         # set(MY_C_FLAGS "${MY_C_FLAGS} -Wl,--demangle")
         # set(MY_LD_FLAGS "${MY_LD_FLAGS} -Wl,--demangle")
         #set(MY_C_FLAGS "${MY_C_FLAGS} -fsanitize=address")
         #set(MY_LD_FLAGS "${MY_LD_FLAGS} -lasan")
     endif()
     if (CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
+        message(STATUS ">>> Profiling enabled.")
         # set(MY_C_FLAGS "${MY_C_FLAGS} -O2 -g2")
         #set(MY_C_FLAGS "${MY_C_FLAGS} -fsanitize=address")
         #set(MY_LD_FLAGS "${MY_LD_FLAGS} -lasan")
+        set(MY_C_FLAGS "${MY_C_FLAGS} -O2")
+        set(MY_X_FLAGS "${MY_X_FLAGS} -O2")
+        set(MY_C_FLAGS "${MY_C_FLAGS} -g")
+        set(MY_X_FLAGS "${MY_X_FLAGS} -g")
+        set(MY_C_FLAGS "${MY_C_FLAGS} -fprofile-instr-generate")
+        set(MY_X_FLAGS "${MY_X_FLAGS} -fprofile-instr-generate")
+        set(MY_C_FLAGS "${MY_C_FLAGS} -fcoverage-mapping")
+        set(MY_X_FLAGS "${MY_X_FLAGS} -fcoverage-mapping")
+
+        set(MY_LD_FLAGS "${MY_LD_FLAGS} -fprofile-instr-generate")
     endif()
 
     if (CMAKE_BUILD_TYPE STREQUAL "Release")
-        # set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -fexpensive-optimizations -ftree-vectorize")
+        # set(MY_X_FLAGS "${MY_X_FLAGS} -fexpensive-optimizations -ftree-vectorize")
 
         # -O3 -Ofast -ffast-math
         # -march=native -mtune=native
@@ -248,16 +258,16 @@ else()
         # -Wl,-O3 -Wl,--gc-sections
         # -ffunction-sections -fdata-sections -fomit-frame-pointer
 
-        set(MY_C_FLAGS     "${MY_C_FLAGS} -Ofast -ffast-math -fstrict-aliasing -fvisibility=hidden")
-        set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -Ofast -ffast-math -fstrict-aliasing -fvisibility=hidden")
-        # set(MY_C_FLAGS     "${MY_C_FLAGS} -O3")
-        # set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -O3")
-        # set(MY_C_FLAGS     "${MY_C_FLAGS} -fno-exceptions")
-        # set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -fno-exceptions")
-        # set(MY_C_FLAGS     "${MY_C_FLAGS} -fno-rtti")
-        # set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -fno-rtti")
-        set(MY_C_FLAGS     "${MY_C_FLAGS} -fomit-frame-pointer -ffunction-sections -fdata-sections")
-        set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -fomit-frame-pointer -ffunction-sections -fdata-sections")
+        set(MY_C_FLAGS "${MY_C_FLAGS} -Ofast -ffast-math -fstrict-aliasing -fvisibility=hidden")
+        set(MY_X_FLAGS "${MY_X_FLAGS} -Ofast -ffast-math -fstrict-aliasing -fvisibility=hidden")
+        # set(MY_C_FLAGS "${MY_C_FLAGS} -O3")
+        # set(MY_X_FLAGS "${MY_X_FLAGS} -O3")
+        # set(MY_C_FLAGS "${MY_C_FLAGS} -fno-exceptions")
+        # set(MY_X_FLAGS "${MY_X_FLAGS} -fno-exceptions")
+        # set(MY_C_FLAGS "${MY_C_FLAGS} -fno-rtti")
+        # set(MY_X_FLAGS "${MY_X_FLAGS} -fno-rtti")
+        set(MY_C_FLAGS "${MY_C_FLAGS} -fomit-frame-pointer -ffunction-sections -fdata-sections")
+        set(MY_X_FLAGS "${MY_X_FLAGS} -fomit-frame-pointer -ffunction-sections -fdata-sections")
 
         set(MY_LD_FLAGS "${MY_LD_FLAGS} -flto")
         set(MY_LD_FLAGS "${MY_LD_FLAGS} -Wl,-O3")
@@ -266,7 +276,7 @@ else()
         # if (BENNI_USE_UNSAFE)
         #     message("[benni] HAVE_FASTMATH -fstrict-aliasing -ffast-math")
         #     set(MY_C_FLAGS "${MY_C_FLAGS} -fstrict-aliasing -ffast-math")
-        #     set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -fstrict-aliasing -ffast-math")
+        #     set(MY_X_FLAGS "${MY_X_FLAGS} -fstrict-aliasing -ffast-math")
         # endif()
 
         #set(MY_C_FLAGS "${MY_C_FLAGS} -mfpmath=sse -msse3 -mmmx -O2")
@@ -280,7 +290,7 @@ else()
         # set(MY_C_FLAGS "${MY_C_FLAGS} -Wno-strict-aliasing")
         # set(MY_C_FLAGS "${MY_C_FLAGS} -Wno-maybe-uninitialized")
 
-        # set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -fno-rtti")
+        # set(MY_X_FLAGS "${MY_X_FLAGS} -fno-rtti")
         # set(MY_C_FLAGS "${MY_C_FLAGS} -fno-exceptions")
         # set(MY_C_FLAGS "${MY_C_FLAGS} -fstrict-aliasing")
         #set(MY_C_FLAGS "${MY_C_FLAGS} -ffast-math")
@@ -290,23 +300,23 @@ else()
 
         # -fms-extensions -fms-compatibility x86_64-w64-mingw32uwp x86_64-w64-windows-gnu
         # set(MY_C_FLAGS "${MY_C_FLAGS} -fvisibility=hidden")
-        # set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -fvisibility=hidden")
+        # set(MY_X_FLAGS "${MY_X_FLAGS} -fvisibility=hidden")
         # set(MY_LD_FLAGS "${MY_LD_FLAGS} -fvisibility=hidden")
 
         # if (BENNI_USE_OPENMP)
         #     message("[benni] HAVE_OPENMP -fopenmp")
         #     set(MY_C_FLAGS "${MY_C_FLAGS} -fopenmp")
-        #     set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -fopenmp")
+        #     set(MY_X_FLAGS "${MY_X_FLAGS} -fopenmp")
         # endif()
 
         # if (BENNI_USE_GPROF)
         #     message("${BoldGreen}[Benni] Using GPROF performance analysis instrumentation!${ColourReset}")
         #     # set(MY_C_FLAGS "${MY_C_FLAGS} -pg") #  -no-pie
-        #     # set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -pg") # -no-pie
+        #     # set(MY_X_FLAGS "${MY_X_FLAGS} -pg") # -no-pie
         #     # set(MY_LD_FLAGS "${MY_LD_FLAGS} -pg -lgmon") # -no-pie
 
         #     set(MY_C_FLAGS "${MY_C_FLAGS} -g2 -gstabs+")
-        #     set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -g2 -gstabs+")
+        #     set(MY_X_FLAGS "${MY_X_FLAGS} -g2 -gstabs+")
         #     # add_compile_options(-pg)
         #     # add_link_options(-pg)
         #     # add_link_libraries(gmon gcrt2.o)
@@ -323,11 +333,11 @@ else()
         #     if (MINGW)
         #         message("[Benni] Using MinGW -fopt-info-vec")
         #         set(MY_C_FLAGS "${MY_C_FLAGS} -fopt-info-vec")
-        #         set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -fopt-info-vec")
+        #         set(MY_X_FLAGS "${MY_X_FLAGS} -fopt-info-vec")
         #     else()
         #         message("[Benni] Using Clang -Rpass=loop-vectorize -Rpass-missed=loop-vectorize -Rpass-analysis=loop-vectorize")
         #         set(MY_C_FLAGS "${MY_C_FLAGS} -Rpass=loop-vectorize -Rpass-missed=loop-vectorize -Rpass-analysis=loop-vectorize")
-        #         set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -Rpass=loop-vectorize -Rpass-missed=loop-vectorize -Rpass-analysis=loop-vectorize")
+        #         set(MY_X_FLAGS "${MY_X_FLAGS} -Rpass=loop-vectorize -Rpass-missed=loop-vectorize -Rpass-analysis=loop-vectorize")
         #     endif()
         # endif()
 
@@ -336,11 +346,11 @@ else()
         # if (BENNI_USE_NATIVE) #  -march=native -mtune=native
         #     message("[benni] HAVE_NATIVE_OPTIM -march=native -mtune=native")
         #     set(MY_C_FLAGS "${MY_C_FLAGS} -march=native -mtune=native")
-        #     set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -march=native -mtune=native")
+        #     set(MY_X_FLAGS "${MY_X_FLAGS} -march=native -mtune=native")
 
         #     # message("[benni] HAVE_NATIVE_OPTIM -O3 -msse2 -msse3 -mssse3 -msse4.1 -msse4.2 -mavx -mavx2 -mfma -mf16c -mbmi -mbmi2 -mlzcnt -mpopcnt -maes -mvaes -mpclmul -mvpclmulqdq -msha -mrdrnd -mrdseed -madx -mgfni")
         #     # set(MY_C_FLAGS "${MY_C_FLAGS} -O3 -msse2 -msse3 -mssse3 -msse4.1 -msse4.2 -mavx -mavx2 -mfma -mf16c -mbmi -mbmi2 -mlzcnt -mpopcnt -maes -mvaes -mpclmul -mvpclmulqdq -msha -mrdrnd -mrdseed -madx -mgfni")
-        #     # set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -O3 -msse2 -msse3 -mssse3 -msse4.1 -msse4.2 -mavx -mavx2 -mfma -mf16c -mbmi -mbmi2 -mlzcnt -mpopcnt -maes -mvaes -mpclmul -mvpclmulqdq -msha -mrdrnd -mrdseed -madx -mgfni")
+        #     # set(MY_X_FLAGS "${MY_X_FLAGS} -O3 -msse2 -msse3 -mssse3 -msse4.1 -msse4.2 -mavx -mavx2 -mfma -mf16c -mbmi -mbmi2 -mlzcnt -mpopcnt -maes -mvaes -mpclmul -mvpclmulqdq -msha -mrdrnd -mrdseed -madx -mgfni")
         #     # set(BENNI_USE_AVX2 1)
         #     # add_compile_definitions(HAVE_FMA3)
         #     # add_compile_definitions(HAVE_AVX2)
@@ -354,7 +364,7 @@ else()
         #     # add_compile_definitions(HAVE_MMX)
         # else()
         #     set(MY_C_FLAGS "${MY_C_FLAGS} -march=haswell")
-        #     set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -march=haswell")
+        #     set(MY_X_FLAGS "${MY_X_FLAGS} -march=haswell")
         # endif()
 
         # if (BENNI_USE_LTO)
@@ -365,17 +375,17 @@ else()
         # if (BENNI_USE_SPEED)
         #     message("[benni] HAVE_EXPENSIVE_OPTIM -ftree-vectorize -funroll-loops") #  -fexpensive-optimizations
         #     set(MY_C_FLAGS "${MY_C_FLAGS} -ftree-vectorize -funroll-loops") #  -fexpensive-optimizations
-        #     set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -ftree-vectorize -funroll-loops") #  -fexpensive-optimizations
+        #     set(MY_X_FLAGS "${MY_X_FLAGS} -ftree-vectorize -funroll-loops") #  -fexpensive-optimizations
         # endif()
 
         # if (BENNI_USE_OMIT_FRAMEPOINTER)
         #     message("[benni] HAVE_OMIT_FRAMEPOINTER -fomit-frame-pointer")
         #     set(MY_C_FLAGS "${MY_C_FLAGS} -fomit-frame-pointer")
-        #     set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -fomit-frame-pointer")
+        #     set(MY_X_FLAGS "${MY_X_FLAGS} -fomit-frame-pointer")
         # else()
         #     message("[benni] HAVE_NO_OMIT_FRAMEPOINTER -fno-omit-frame-pointer")
         #     set(MY_C_FLAGS "${MY_C_FLAGS} -fno-omit-frame-pointer")
-        #     set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -fno-omit-frame-pointer")
+        #     set(MY_X_FLAGS "${MY_X_FLAGS} -fno-omit-frame-pointer")
         # endif()
 
         # 🛠 Key Compiler Flags
@@ -432,7 +442,7 @@ if (BENNI_USE_AVX512)
     message("[benni] HAVE_AVX512DQ -mavx512dq") # Doubleword and Quadword Instructions
     message("[benni] HAVE_AVX512BW -mavx512bw")
     message("[benni] HAVE_AVX512LV -mavx512vl")
-    set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -mavx512f -mavx512dq -mavx512bw -mavx512vl")
+    set(MY_X_FLAGS "${MY_X_FLAGS} -mavx512f -mavx512dq -mavx512bw -mavx512vl")
     set(MY_C_FLAGS "${MY_C_FLAGS} -mavx512f -mavx512dq -mavx512bw -mavx512vl")
     add_compile_definitions(HAVE_AVX512)
     add_compile_definitions(HAVE_AVX512F)
@@ -446,12 +456,12 @@ else()
     add_compile_definitions(HAVE_AVX512VL=0)
     add_compile_definitions(HAVE_AVX512VNNI=0)
     set(MY_C_FLAGS "${MY_C_FLAGS} -mno-avx512f -mno-avx512vl -mno-avx512bw -mno-avx512dq -mno-vpclmulqdq")
-    set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -mno-avx512f -mno-avx512vl -mno-avx512bw -mno-avx512dq -mno-vpclmulqdq")
+    set(MY_X_FLAGS "${MY_X_FLAGS} -mno-avx512f -mno-avx512vl -mno-avx512bw -mno-avx512dq -mno-vpclmulqdq")
 endif()
 
 if (BENNI_USE_FMA3)
     message("[benni] HAVE_FMA3")
-    set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -mfma")
+    set(MY_X_FLAGS "${MY_X_FLAGS} -mfma")
     set(MY_C_FLAGS "${MY_C_FLAGS} -mfma")
     add_compile_definitions(HAVE_FMA3)
     set(BENNI_USE_AVX2 1)
@@ -459,7 +469,7 @@ endif()
 
 if (BENNI_USE_AVX2)
     message("[benni] HAVE_AVX2")
-    set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -mavx2")
+    set(MY_X_FLAGS "${MY_X_FLAGS} -mavx2")
     set(MY_C_FLAGS "${MY_C_FLAGS} -mavx2")
     add_compile_definitions(HAVE_AVX2)
     set(BENNI_USE_AVX 1)
@@ -467,7 +477,7 @@ endif()
 
 if (BENNI_USE_AVX)
     message("[benni] HAVE_AVX")
-    set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -mavx")
+    set(MY_X_FLAGS "${MY_X_FLAGS} -mavx")
     set(MY_C_FLAGS "${MY_C_FLAGS} -mavx")
     add_compile_definitions(HAVE_AVX)
     set(BENNI_USE_SSE42 1)
@@ -475,7 +485,7 @@ endif()
 
 if (BENNI_USE_SSE42)
     message("[benni] HAVE_SSE42")
-    set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -msse4.2")
+    set(MY_X_FLAGS "${MY_X_FLAGS} -msse4.2")
     set(MY_C_FLAGS "${MY_C_FLAGS} -msse4.2")
     add_compile_definitions(HAVE_SSE4_2)
     set(BENNI_USE_SSE41 1)
@@ -483,7 +493,7 @@ endif()
 
 if (BENNI_USE_SSE41)
     message("[benni] HAVE_SSE41")
-    set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -msse4.1")
+    set(MY_X_FLAGS "${MY_X_FLAGS} -msse4.1")
     set(MY_C_FLAGS "${MY_C_FLAGS} -msse4.1")
     add_compile_definitions(HAVE_SSE4_1)
     set(BENNI_USE_SSSE3 1)
@@ -491,7 +501,7 @@ endif()
 
 if (BENNI_USE_SSSE3)
     message("[benni] HAVE_SSSE3")
-    set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -mssse3")
+    set(MY_X_FLAGS "${MY_X_FLAGS} -mssse3")
     set(MY_C_FLAGS "${MY_C_FLAGS} -mssse3")
     add_compile_definitions(HAVE_SSSE3)
     set(BENNI_USE_SSE3 1)
@@ -499,7 +509,7 @@ endif()
 
 if (BENNI_USE_SSE3)
     message("[benni] HAVE_SSE3")
-    set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -msse3")
+    set(MY_X_FLAGS "${MY_X_FLAGS} -msse3")
     set(MY_C_FLAGS "${MY_C_FLAGS} -msse3")
     add_compile_definitions(HAVE_SSE3)
     set(BENNI_USE_SSE2 1)
@@ -507,7 +517,7 @@ endif()
 
 if (BENNI_USE_SSE2)
     message("[benni] HAVE_SSE2")
-    set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -msse2")
+    set(MY_X_FLAGS "${MY_X_FLAGS} -msse2")
     set(MY_C_FLAGS "${MY_C_FLAGS} -msse2")
     add_compile_definitions(HAVE_SSE2)
     add_compile_definitions(HAVE_SSE)
@@ -773,7 +783,7 @@ message("[benni] Final CMAKE_RANLIB = ${CMAKE_RANLIB}")
 message("[benni] Final CMAKE_RC_COMPILER = ${CMAKE_RC_COMPILER}")
 message("[benni] ============================================================================")
 message("[benni] MY_C_FLAGS = ${MY_C_FLAGS}")
-message("[benni] MY_CXX_FLAGS = ${MY_CXX_FLAGS}")
+message("[benni] MY_X_FLAGS = ${MY_X_FLAGS}")
 message("[benni] MY_LD_FLAGS = ${MY_LD_FLAGS}")
 message("[benni] ============================================================================")
 message("[benni] Before CMAKE_C_FLAGS = ${CMAKE_C_FLAGS}")
@@ -797,7 +807,7 @@ message("[benni] Before CMAKE_CXX_FLAGS_DEBUG = ${CMAKE_CXX_FLAGS_DEBUG}")
 message("[benni] Before CMAKE_CXX_FLAGS_RELEASE = ${CMAKE_CXX_FLAGS_RELEASE}")
 message("[benni] Before CMAKE_CXX_FLAGS_RELWITHDEBINFO = ${CMAKE_CXX_FLAGS_RELWITHDEBINFO}")
 message("[benni] Before CMAKE_CXX_FLAGS_MINSIZEREL = ${CMAKE_CXX_FLAGS_MINSIZEREL}")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${MY_CXX_FLAGS}")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${MY_X_FLAGS}")
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} ${CMAKE_CXX_FLAGS}")
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} ${CMAKE_CXX_FLAGS}")
 set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} ${CMAKE_CXX_FLAGS}")

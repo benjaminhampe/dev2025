@@ -72,7 +72,6 @@ void noop_cb(Fl_Widget*, void*)
     // DE_WARN("Not implemented")
 }
 
-
 // ---------------- callback ----------------
 void pause_cb(Fl_Widget*, void*)
 {
@@ -82,6 +81,7 @@ void pause_cb(Fl_Widget*, void*)
         ui.bPauseFlag = false;
         ui.btnPause->label("Pause");
         ui.btnPause->redraw();
+        ui.btnCancel->activate();
     }
     else
     {
@@ -89,6 +89,7 @@ void pause_cb(Fl_Widget*, void*)
         ui.bPauseFlag = true;
         ui.btnPause->label("Resume");
         ui.btnPause->redraw();
+        ui.btnCancel->deactivate();
     }
 }
 
@@ -105,8 +106,8 @@ void cancel_cb(Fl_Widget*, void*)
         "\n"
         "Do you like cancel the operation?\n"
         "\n",
-        "Cancel operation",  // Button 0
-        "Abort this dialog", // Button 1
+        "Abort operation",  // Button 0
+        "Keep running", // Button 1
         nullptr
     );
 
@@ -115,21 +116,38 @@ void cancel_cb(Fl_Widget*, void*)
         DE_OK("Pressed Cancel")
         ui.bAbortFlag = true;
         ui.logBox->show();
+        ui.btnPause->deactivate();
+        ui.btnCancel->deactivate();
     }
     else if (r == 1) // Abort
     {
         DE_OK("Pressed Abort")
+        ui.btnPause->activate();
+        ui.btnCancel->activate();
     }
 }
 
 // ---------------- callback ----------------
 void finish_cb(void*)
 {
+    ui.m_timeFinish = dbTimeInSeconds();
+
     Fl::remove_timeout(timer_update);
 
-    ui.edtTimeLeft->copy_label("00:00:00"); // Reset
-    ui.btnPause->callback(noop_cb);     // Reset
-    ui.btnCancel->callback(noop_cb);    // Reset
+    const double duration = ui.m_timeFinish - ui.m_timeStart;
+    const double speed = ui.pollProcessed / duration;
+
+    // FinalSet
+    ui.edtTimeCurr->copy_label(dbStrSeconds(duration).c_str()); // Set
+    ui.edtSpeed->copy_label(dbStr(dbStrBytes(speed),"/s").c_str()); // Set
+    ui.progressBar->value(1.0);
+
+    // Reset
+    ui.edtTimeLeft->copy_label("00:00:00");
+    ui.btnPause->callback(noop_cb);
+    ui.btnCancel->callback(noop_cb);
+    ui.btnPause->deactivate();
+    ui.btnCancel->deactivate();
 
     if (ui.bAbortFlag)
     {
@@ -146,11 +164,15 @@ void finish_cb(void*)
             ui.window->hide();
         }
     }
+
+    ui.bRunFlag = false;
 }
 
 // ---------------- callback ----------------
 void start_cb(Fl_Widget*, void*)
 {
+    ui.m_timeStart = dbTimeInSeconds();
+
     DE_OK("MainThread ",std::this_thread::get_id())
 
     if (ui.bRunFlag)
@@ -167,6 +189,8 @@ void start_cb(Fl_Widget*, void*)
 
     ui.btnPause->callback(pause_cb);
     ui.btnCancel->callback(cancel_cb);
+    ui.btnPause->activate();
+    ui.btnCancel->activate();
 
     auto ext = dbFileSuffix(ui.job.fileName);
 

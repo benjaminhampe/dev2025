@@ -305,20 +305,41 @@ char TarUtil::tar_typeflag(const de::FileInfo& fileInfo)
 // ============================================================================
 //  ✔️ CHECKSUM (no magic offsets)
 // ============================================================================
+/*
+  {
+    UInt32 sum = (unsigned)(' ') * 8; // we use binary init
+    {
+      for (unsigned i = 0; i < kRecordSize; i++)
+        sum += (Byte)record[i];
+    }
+    // checksum field is formatted differently from the
+    // other fields: it has [6] digits, a null, then a space.
+    // WRITE_OCTAL_8_CHECK(record + 148, sum);
+    const unsigned kNumDigits = 6;
+    for (unsigned i = 0; i < kNumDigits; i++)
+    {
+      record[148 + kNumDigits - 1 - i] = (char)('0' + (sum & 7));
+      sum >>= 3;
+    }
+    // record[148 + 6] = 0; // we need it, if we use memset(' ') init
+    record[148 + 7] = ' '; // we need it, if we use binary init
+  }
 
+  RINOK(Write_Data(record, kRecordSize))
+*/
 // static
 void TarUtil::tar_compute_checksum(TarHeader& h)
 {
     uint8_t* raw = reinterpret_cast<uint8_t*>(&h);
 
     // checksum field must be spaces during calculation
-    for (int i = 0; i < 8; i++) h.chksum[i] = ' ';
+    for (int i = 0; i < 8; ++i) h.chksum[i] = ' ';
 
     uint64_t sum = 0;
-    for (int i = 0; i < 512; i++)
+    for (int i = 0; i < 512; ++i)
         sum += raw[i];
 
-    tar_write_octal(sum, h.chksum, 8);
+    tar_write_octal(sum, h.chksum, 7);
 
     // required: last byte is space
     h.chksum[7] = ' ';
@@ -650,9 +671,28 @@ TarUtil::tar_build_header(TarHeader& h,
     h.magic[4] = 'r';
     h.magic[5] = '\0';
 
+    h.devmajor[0] = '0'; // 7zip does this
+    h.devmajor[1] = '0';
+    h.devmajor[2] = '0';
+    h.devmajor[3] = '0';
+    h.devmajor[4] = '0';
+    h.devmajor[5] = '0';
+    h.devmajor[6] = '0';
+    h.devmajor[7] = '\0';
+
+    h.devminor[0] = '0'; // 7zip does this
+    h.devminor[1] = '0';
+    h.devminor[2] = '0';
+    h.devminor[3] = '0';
+    h.devminor[4] = '0';
+    h.devminor[5] = '0';
+    h.devminor[6] = '0';
+    h.devminor[7] = '\0';
+
     // std::memcpy(h.version, "00", 2);
     h.version[0] = '0';
     h.version[1] = '0';
+
     tar_compute_checksum(h);
 }
 
@@ -815,7 +855,7 @@ TarUtil::tar_addFile(
             bool bDebug)
 {
     std::string uri = de_mbstr( dbMakePosix( fileInfo.uri() ));
-    std::string p1 = makeRelative( uri, baseDir );
+    std::string p1 = dbMakePosix( makeRelative( uri, baseDir ) );
     std::string p2 = trimLeadingDotDotSlash( p1 );
     std::string tarPath = p2;
     if (baseName.size())
@@ -853,7 +893,8 @@ TarUtil::tar_addFile(
     if (bNeedLongLink)
     {
         // Write 'LongLink' header
-        const std::string longname = fileInfo.uriA();
+
+        const std::string& longname = tarPath;
         tar_build_header(h, "././@LongLink", "", 0644, 0, 0, longname.size(), 0, 'L');
         n += file.write(&h,512);
 
@@ -949,6 +990,11 @@ WriteTarFileSimple(
 
     for (size_t i = 0; i < fileInfos.size(); ++i)
     {
+        if (cfg.bAbort && cfg.bAbort->load())
+        {
+            return false;
+        }
+
         const auto& fileInfo = fileInfos[i];
 
         if (cfg.onNextFile)
@@ -956,7 +1002,7 @@ WriteTarFileSimple(
             cfg.onNextFile(fileInfo);
         }
 
-        bool bDebug = (i < 11);
+        bool bDebug = (i < 5);
         if (bDebug)
         {
             DE_BENNI("[",i," of ", fileInfos.size(),"] ", fileInfo.str())

@@ -68,6 +68,9 @@ struct UI_Worker
 
     bool bAutoCloseWindow = false; // TODO: Set to true for Release.
 
+    double m_timeStart = 0.0;
+    double m_timeFinish = 0.0;
+
     Fl_Window* window = nullptr;
 
     // Title: 59% <Entpacken|Komprimieren> C:\Github\__lib_neu\2_demos.zst
@@ -102,7 +105,7 @@ struct UI_Worker
 
     LogBox* logBox = nullptr;
 
-    Fl_Button* btnBackground = nullptr;
+    Fl_Button* btnStart = nullptr;
     Fl_Button* btnPause = nullptr;
     Fl_Button* btnCancel = nullptr;
 

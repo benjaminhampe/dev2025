@@ -60,6 +60,8 @@ struct AutoLibzstdCC
 
 struct ZstCompressFileCfg
 {
+    volatile std::atomic<bool>* bAbort = nullptr;
+
     // int num_threads = 8;
 
     // int64_t blockSize = 8 * 1024 * 1024;
@@ -79,58 +81,26 @@ struct ZstCompressFileCfg
     FN_onProcessed onProcessed;
 };
 
-/**
- * Compresses a file using multi-threaded Zstd.
- *
- * @param source       Path to the input file (e.g., "archive.tar")
- * @param dest         Path to the output file (e.g., "archive.tar.zst")
- * @param compressionLevel The Zstd compression level (1 to 19, 0 for default)
- * @param nbThreads    Number of threads to use (0 auto-detects based on CPU cores)
- * @return             0 on success, 1 on failure
- */
-inline bool
-ZstCompressFileSimple(
-    StringA src, // tar source
-    StringA dst, // zst destination
-    const ZstCompressFileCfg& cfg)
+// // Configure the compression parameters
+// // 1. Set the compression level
+// auto errLevel = ZSTD_CCtx_setParameter(cctx, ZSTD_c_compressionLevel, compressionLevel);
+// if (ZSTD_isError(errLevel))
+// {
+//     DE_ERROR("Cannot set compressionLevel: ", ZSTD_getErrorName(errLevel))
+//     return false;
+// }
+
+// // 2. Enable multithreading by setting the number of workers
+// // Passing 0 tells libzstd to automatically use all available CPU cores.
+// auto errThread = ZSTD_CCtx_setParameter(cctx, ZSTD_c_nbWorkers, nbThreads);
+// if (ZSTD_isError(errThread))
+// {
+//     DE_ERROR("Cannot set threadCount: ", ZSTD_getErrorName(errThread))
+//     return false;
+// }
+
+inline void ZstPresetDefaultOld(ZSTD_CCtx* cctx)
 {
-    // const double timeBeg = dbTimeInSeconds();
-    // double timeNow = 0.0;
-    // double timeLastUpdate = 0.0;
-    // double timeWaitUpdate = 1.0 / 60.0;
-
-    de::File m_fin(src,de::eFileMode::Read);
-    de::File m_fout(dst,de::eFileMode::Write);
-    if (!m_fin.is_open()) { DE_ERROR("Cannot read ",src) return false; }
-    if (!m_fout.is_open()) { DE_ERROR("Cannot write ",dst) return false; }
-
-    AutoLibzstdCC zst;
-    if (!zst.is_open())
-    {
-        DE_ERROR("No ZSTD_createCCtx()")
-        return false;
-    }
-
-    auto cctx = zst.m_ctx;
-
-    // // Configure the compression parameters
-    // // 1. Set the compression level
-    // auto errLevel = ZSTD_CCtx_setParameter(cctx, ZSTD_c_compressionLevel, compressionLevel);
-    // if (ZSTD_isError(errLevel))
-    // {
-    //     DE_ERROR("Cannot set compressionLevel: ", ZSTD_getErrorName(errLevel))
-    //     return false;
-    // }
-
-    // // 2. Enable multithreading by setting the number of workers
-    // // Passing 0 tells libzstd to automatically use all available CPU cores.
-    // auto errThread = ZSTD_CCtx_setParameter(cctx, ZSTD_c_nbWorkers, nbThreads);
-    // if (ZSTD_isError(errThread))
-    // {
-    //     DE_ERROR("Cannot set threadCount: ", ZSTD_getErrorName(errThread))
-    //     return false;
-    // }
-
     int maxThreads = std::thread::hardware_concurrency();
     int compressionLevel = 19;
     int numberOfThreads = std::max<int>(1, maxThreads - 1);
@@ -184,22 +154,168 @@ ZstCompressFileSimple(
     //     DE_ERROR("ZSTD_c_compressionLevel: ", ZSTD_getErrorName(e))
     // }
 
-    // Setup streaming buffers using recommended sizes
-    size_t const buffInSize = ZSTD_CStreamInSize();
-    size_t const buffOutSize = ZSTD_CStreamOutSize();
-    de::Blob iBlob( buffInSize );
-    de::Blob oBlob( buffOutSize );
-    void* const buffIn = iBlob.data();
-    void* const buffOut = oBlob.data();
-
     DE_TRACE("maxThreads = ", maxThreads)
     DE_TRACE("ZSTD_c_nbWorkers = ", numberOfThreads)
     DE_TRACE("ZSTD_c_compressionLevel = ", compressionLevel)
     DE_TRACE("ZSTD_c_jobSize = ", jobSize)
     DE_TRACE("ZSTD_c_windowLog = ", windowLog)
     DE_TRACE("ZSTD_c_enableLongDistanceMatching = ", longDistanceMatching)
+}
+
+/*
+ZSTD_c_compressionLevel	            22	                Enables Ultra level 22, the maximum native preset.
+ZSTD_c_enableLongDistanceMatching	1	Turn on LDM to catch repetitive patterns over immense spans.
+ZSTD_c_windowLog	                31	Sets the history window to 2³¹ (2 GB), maximizing back-references.
+ZSTD_c_hashLog	                    30	Main hash table size (2³⁰ entries).
+ZSTD_c_chainLog	                    30	Match chain size (2³⁰ entries).
+ZSTD_c_searchLog	                29	Search step capacity limit (2²⁹ operations).
+ZSTD_c_targetLength	                9999	Forces deep block matches instead of fast cut-offs.
+ZSTD_c_strategy	                    ZSTD_btultra2	Utilizes the most thorough algorithmic parse engine.
+ZSTD_c_nbWorkers	                14	Spawns exactly 14 worker threads.
+ZSTD_c_overlapLog	                9	Forces a full window size overlap from previous jobs.
+*/
+
+inline void setParam(ZSTD_CCtx* cctx, std::string name, int param, int value)
+{
+    int def_val = 0;
+    ZSTD_CCtx_getParameter(cctx, (ZSTD_cParameter)param, &def_val);
+
+    // Limits abfragen
+    ZSTD_bounds bounds = ZSTD_cParam_getBounds((ZSTD_cParameter)param);
+
+    // Immer zuerst auf Fehler prüfen!
+    if (ZSTD_isError(bounds.error))
+    {
+        DE_ERROR("[",name,"] No bounds: ", ZSTD_getErrorName(bounds.error));
+    }
+
+    DE_BENNI("[",name,"] "
+        "Value(",value,"), "
+        "Default(",def_val,"), "
+        "Min(",bounds.lowerBound,"),"
+        "Max(",bounds.upperBound,")")
+
+    // 1. Drop from level 22 to 19 (19 is the highest standard level)
+    // Level 19 natively allows multi-threading without a master thread bottleneck.
+    auto e = ZSTD_CCtx_setParameter(cctx, (ZSTD_cParameter)param, value);
+    if (ZSTD_isError(e))
+    {
+        DE_ERROR("[",name,"] No setParameter: ", ZSTD_getErrorName(e))
+    }
+};
+
+inline void ZstPresetUltraBad(ZSTD_CCtx* cctx)
+{
+    setParam(cctx,"ZSTD_c_compressionLevel",ZSTD_c_compressionLevel,22); //Enables Ultra level 22, the maximum native preset.
+    setParam(cctx,"ZSTD_c_enableLongDistanceMatching",ZSTD_c_enableLongDistanceMatching,1); //Turn on LDM to catch repetitive patterns over immense spans.
+    setParam(cctx,"ZSTD_c_windowLog",ZSTD_c_windowLog,31); //Sets the history window to 2³¹ (2 GB), maximizing back-references.
+    setParam(cctx,"ZSTD_c_hashLog",ZSTD_c_hashLog,30); //Main hash table size (2³⁰ entries).
+    setParam(cctx,"ZSTD_c_chainLog",ZSTD_c_chainLog,30); //Match chain size (2³⁰ entries).
+    setParam(cctx,"ZSTD_c_searchLog",ZSTD_c_searchLog,29); //Search step capacity limit (2²⁹ operations).
+    setParam(cctx,"ZSTD_c_targetLength",ZSTD_c_targetLength,9999); //Forces deep block matches instead of fast cut-offs.
+    setParam(cctx,"ZSTD_c_strategy",ZSTD_c_strategy,ZSTD_btultra2); //Utilizes the most thorough algorithmic parse engine.
+    setParam(cctx,"ZSTD_c_nbWorkers",ZSTD_c_nbWorkers,12); //Spawns exactly 14 worker threads.
+    setParam(cctx,"ZSTD_c_overlapLog",ZSTD_c_overlapLog,9); //Forces a full window size overlap from previous jobs.
+}
+
+inline void ZstPresetUltra(ZSTD_CCtx* cctx)
+{
+    setParam(cctx,"ZSTD_c_compressionLevel",ZSTD_c_compressionLevel,22); //Enables Ultra level 22, the maximum native preset.
+    //setParam(cctx,"ZSTD_c_strategy",ZSTD_c_strategy,ZSTD_btultra2); //Utilizes the most thorough algorithmic parse engine.
+    setParam(cctx,"ZSTD_c_enableLongDistanceMatching",ZSTD_c_enableLongDistanceMatching,2); //Turn on LDM to catch repetitive patterns over immense spans.
+    setParam(cctx,"ZSTD_c_windowLog",ZSTD_c_windowLog,30); //Sets the history window to 2³¹ (2 GB), maximizing back-references.
+    setParam(cctx,"ZSTD_c_hashLog",ZSTD_c_hashLog,25); //Main hash table size (2³⁰ entries).
+    setParam(cctx,"ZSTD_c_chainLog",ZSTD_c_chainLog,25); //Match chain size (2³⁰ entries).
+    setParam(cctx,"ZSTD_c_searchLog",ZSTD_c_searchLog,30); //Search step capacity limit (2²⁹ operations).
+    setParam(cctx,"ZSTD_c_targetLength",ZSTD_c_targetLength,131072); //Forces deep block matches instead of fast cut-offs.
+    setParam(cctx,"ZSTD_c_nbWorkers",ZSTD_c_nbWorkers,14); //Spawns exactly 14 worker threads.
+    setParam(cctx,"ZSTD_c_overlapLog",ZSTD_c_overlapLog,9); //Forces a full window size overlap from previous jobs.
+    setParam(cctx,"ZSTD_c_jobSize",ZSTD_c_jobSize,2 * 1024 * 1024);
+}
+
+inline void ZstPresetDefault(ZSTD_CCtx* cctx)
+{
+    setParam(cctx,"ZSTD_c_compressionLevel",ZSTD_c_compressionLevel,19); //Enables Ultra level 22, the maximum native preset.
+    setParam(cctx,"ZSTD_c_nbWorkers",ZSTD_c_nbWorkers,13); //Spawns exactly 14 worker threads.
+    setParam(cctx,"ZSTD_c_jobSize",ZSTD_c_jobSize,2 * 1024 * 1024);
+    setParam(cctx,"ZSTD_c_windowLog",ZSTD_c_windowLog,26); //Sets the history window to 2³¹ (2 GB), maximizing back-references.
+    setParam(cctx,"ZSTD_c_enableLongDistanceMatching",ZSTD_c_enableLongDistanceMatching,1); //Turn on LDM to catch repetitive patterns over immense spans.
+
+    //setParam(cctx,"ZSTD_c_strategy",ZSTD_c_strategy,ZSTD_btultra2); //Utilizes the most thorough algorithmic parse engine.
+    // setParam(cctx,"ZSTD_c_hashLog",ZSTD_c_hashLog,25); //Main hash table size (2³⁰ entries).
+    // setParam(cctx,"ZSTD_c_chainLog",ZSTD_c_chainLog,25); //Match chain size (2³⁰ entries).
+    // setParam(cctx,"ZSTD_c_searchLog",ZSTD_c_searchLog,30); //Search step capacity limit (2²⁹ operations).
+    // setParam(cctx,"ZSTD_c_targetLength",ZSTD_c_targetLength,131072); //Forces deep block matches instead of fast cut-offs.
+    // setParam(cctx,"ZSTD_c_overlapLog",ZSTD_c_overlapLog,9); //Forces a full window size overlap from previous jobs.
+}
+
+
+inline void ZstPresetExtreme(ZSTD_CCtx* cctx)
+{
+    setParam(cctx,"ZSTD_c_compressionLevel",ZSTD_c_compressionLevel,19); //Enables Ultra level 22, the maximum native preset.
+    setParam(cctx,"ZSTD_c_nbWorkers",ZSTD_c_nbWorkers,13); //Spawns exactly 14 worker threads.
+    setParam(cctx,"ZSTD_c_jobSize",ZSTD_c_jobSize,2 * 1024 * 1024);
+    setParam(cctx,"ZSTD_c_windowLog",ZSTD_c_windowLog,26); //Sets the history window to 2³¹ (2 GB), maximizing back-references.
+    setParam(cctx,"ZSTD_c_enableLongDistanceMatching",ZSTD_c_enableLongDistanceMatching,1); //Turn on LDM to catch repetitive patterns over immense spans.
+
+    //setParam(cctx,"ZSTD_c_strategy",ZSTD_c_strategy,ZSTD_btultra2); //Utilizes the most thorough algorithmic parse engine.
+    // setParam(cctx,"ZSTD_c_hashLog",ZSTD_c_hashLog,25); //Main hash table size (2³⁰ entries).
+    // setParam(cctx,"ZSTD_c_chainLog",ZSTD_c_chainLog,25); //Match chain size (2³⁰ entries).
+    // setParam(cctx,"ZSTD_c_searchLog",ZSTD_c_searchLog,30); //Search step capacity limit (2²⁹ operations).
+    // setParam(cctx,"ZSTD_c_targetLength",ZSTD_c_targetLength,131072); //Forces deep block matches instead of fast cut-offs.
+    // setParam(cctx,"ZSTD_c_overlapLog",ZSTD_c_overlapLog,9); //Forces a full window size overlap from previous jobs.
+}
+/**
+ * Compresses a file using multi-threaded Zstd.
+ *
+ * @param source       Path to the input file (e.g., "archive.tar")
+ * @param dest         Path to the output file (e.g., "archive.tar.zst")
+ * @param compressionLevel The Zstd compression level (1 to 19, 0 for default)
+ * @param nbThreads    Number of threads to use (0 auto-detects based on CPU cores)
+ * @return             0 on success, 1 on failure
+ */
+inline bool
+ZstCompressFileSimple(
+    StringA src, // tar source
+    StringA dst, // zst destination
+    const ZstCompressFileCfg& cfg)
+{
+    // const double timeBeg = dbTimeInSeconds();
+    // double timeNow = 0.0;
+    // double timeLastUpdate = 0.0;
+    // double timeWaitUpdate = 1.0 / 60.0;
+
+    de::File m_fin(src,de::eFileMode::Read);
+    de::File m_fout(dst,de::eFileMode::Write);
+    if (!m_fin.is_open()) { DE_ERROR("Cannot read ",src) return false; }
+    if (!m_fout.is_open()) { DE_ERROR("Cannot write ",dst) return false; }
+
+    AutoLibzstdCC zst;
+    if (!zst.is_open())
+    {
+        DE_ERROR("No ZSTD_createCCtx()")
+        return false;
+    }
+
+    auto cctx = zst.m_ctx;
+
+    //ZstPresetDefault(cctx);
+    //ZstPresetUltra(cctx);
+    ZstPresetExtreme(cctx);
+
+    ZSTD_CCtx_setPledgedSrcSize(cctx, static_cast<uint64_t>(m_fin.size()) );
+
+    // Setup streaming buffers using recommended sizes
+    size_t const buffInSize = ZSTD_CStreamInSize();
+    size_t const buffOutSize = ZSTD_CStreamOutSize();
     DE_TRACE("ZSTD_CStreamInSize = ", buffInSize)
     DE_TRACE("ZSTD_CStreamOutSize = ", buffOutSize)
+
+    de::Blob iBlob( buffInSize );
+    de::Blob oBlob( buffOutSize );
+    void* const buffIn = iBlob.data();
+    void* const buffOut = oBlob.data();
+
 
     size_t readLen;
     bool ok = true; // Tracks overall streaming success
@@ -207,6 +323,11 @@ ZstCompressFileSimple(
     // Main streaming loop
     while ((readLen = m_fin.read(buffIn, buffInSize)) > 0)
     {
+        if (cfg.bAbort && cfg.bAbort->load())
+        {
+            return false;
+        }
+
         ZSTD_inBuffer input = { buffIn, readLen, 0 };
 
         // Push data to the compressor until the input buffer is fully consumed
@@ -255,6 +376,11 @@ ZstCompressFileSimple(
 
         do
         {
+            if (cfg.bAbort && cfg.bAbort->load())
+            {
+                return false;
+            }
+
             ZSTD_outBuffer output = { buffOut, buffOutSize, 0 };
             // ZSTD_e_end signs off the frame, creating the final Zstd file trailer
             remainingToFlush = ZSTD_compressStream2(zst.m_ctx, &output, &input, ZSTD_e_end);
@@ -283,8 +409,8 @@ ZstCompressFileSimple(
     // <gui>
     if (cfg.onProcessed)
     {
-                    cfg.onProcessed(static_cast<uint64_t>(m_fin.tell()),
-                                    static_cast<uint64_t>(m_fout.tell()));
+        cfg.onProcessed(static_cast<uint64_t>(m_fin.tell()),
+                        static_cast<uint64_t>(m_fout.tell()));
     }
     // </gui>
 

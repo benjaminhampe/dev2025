@@ -135,7 +135,7 @@ Worker::Worker(const Job& job, int W, int H, const char* title)
 
     // Row[11]
     x = ml;
-    ui.btnBackground = new Button(x,y,wBackG,h2,"Background"); x += wBackG + sx;
+    ui.btnStart = new Button(x,y,wBackG,h2,"Start"); x += wBackG + sx;
     ui.btnPause = new Button(x,y,wPause,h2,"Pause"); x += wPause + sx;
     ui.btnCancel = new Button(x,y,wCancel,h2,"Cancel");
 
@@ -144,7 +144,9 @@ Worker::Worker(const Job& job, int W, int H, const char* title)
     //     DE_OK("Selected[",index,"] ", text)
     // };
 
-    ui.btnBackground->callback(start_cb);
+    ui.btnStart->callback(start_cb);
+    ui.btnPause->deactivate();
+    ui.btnCancel->deactivate();
 
     end();
 
@@ -253,7 +255,7 @@ void Worker::resize(int X, int Y, int W, int H)
 
     // Row[11]
     x = ml;
-    ui.btnBackground->resize(x,y,wBackG,h2); x += wBackG + sx;
+    ui.btnStart->resize(x,y,wBackG,h2); x += wBackG + sx;
     ui.btnPause->resize(x,y,wPause,h2); x += wPause + sx;
     ui.btnCancel->resize(x,y,wCancel,h2);
 }

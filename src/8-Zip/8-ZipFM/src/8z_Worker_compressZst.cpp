@@ -10,7 +10,7 @@ void workerThread_CompressZst()
 {
     const double timeStart = dbTimeInSeconds();
     double timeElapsed = 0;
-    double speed = 0.0;
+    // double speed = 0.0;
     //uint64_t totalBytes = TOTAL_FILE_SIZE(ui.fileInfos);
     //uint64_t processedBytes = 0;
     const int maxItersBeforeAbort = 100;
@@ -132,48 +132,28 @@ void workerThread_CompressZst()
         const double timeTarBeg = dbTimeInSeconds();
 
         WriteTarFileSimpleCfg m_tarCfg;
+        m_tarCfg.bAbort = &ui.bAbortFlag;
+
         m_tarCfg.onNextFile =
             [&] (const de::FileInfo& fileInfo)
             {
-                if (fileInfo.isFile())
-                {
-                    fileIndex++;
-                }
-                if (fileInfo.isDir())
-                {
-                    dirIndex++;
-                }
-
+                if (fileInfo.isFile()) { fileIndex++; }
+                if (fileInfo.isDir()) { dirIndex++; }
                 ui.pollFileIndex = fileIndex;
                 ui.pollDirIndex = dirIndex;
                 ui.pollProgress = 0.01 + (0.98*double(fileIndex+1) / double(num_files));
                 ui.pollFile = fileInfo.fileNameA();
                 ui.pollDir = fileInfo.dirA();
-                // processedBytes += fileInfo.fileSize();
-                // timeElapsed = dbTimeInSeconds() - timeStart;
-                // speed = double(processedBytes) / timeElapsed;
-                // ui.pollProcessed = processedBytes;
-                // ui.pollSpeed = speed;
-                // ui.pollTimeElapsed = timeElapsed;
-                // ui.pollTimeRemain = double(totalBytes - processedBytes) / speed;  // v = s/t -> t = s / v
             };
 
         m_tarCfg.onProcessed =
             [&] (uint64_t processedBytes)
             {
-                // ui.pollFileIndex = fileIndex+1;
-                // ui.pollProgress = 0.01 + (0.98*double(fileIndex+1) / double(ui.fileInfos.size()));
-                // ui.pollFile = de_mbstr(fileInfo.fileName());
-                // ui.pollDir = de_mbstr(fileInfo.dir());
-                // processedBytes += fileInfo.fileSize();
-                // processedBytes = onProcessedBytes;
-
                 const double timeNow = dbTimeInSeconds();
                 ui.pollTimeElapsed = timeNow - timeStart;
-
                 const double timeTar = timeNow - timeTarBeg;
                 ui.pollProcessed = processedBytes;
-                speed = double(processedBytes) / timeTar;
+                double speed = double(processedBytes) / timeTar;
                 ui.pollSpeed = speed;
                 ui.pollTimeRemain = double(num_bytes - processedBytes) / speed;  // v = s/t -> t = s / v
                 ui.pollProgress = double(processedBytes) / double(num_bytes);
@@ -185,7 +165,7 @@ void workerThread_CompressZst()
         //DE_BENNI("TAR Uri = ",tarUri)
         //DE_BENNI("TMP Uri = ",tmpUri)
 
-        WriteTarFileSimple(zstInputFile, m_tarCfg, ui.fileInfos);
+        bool ok = WriteTarFileSimple(zstInputFile, m_tarCfg, ui.fileInfos);
 
         const auto t = dbStrSeconds(dbTimeInSeconds() - timeTarBeg);
         const auto s = dbStr("[tar] Needed ",t,", "
@@ -193,6 +173,13 @@ void workerThread_CompressZst()
                             "Thread(",std::this_thread::get_id(),")");
         async_log_ok(s.c_str());
         DE_OK(s)
+
+
+        if (!ok)
+        {
+            Fl::awake(finish_cb,&ui);
+            return;
+        }
     }
 
     ui.pollProgress = 0.1;
@@ -212,28 +199,23 @@ void workerThread_CompressZst()
     const double timeZstBeg = dbTimeInSeconds();
 
     ZstCompressFileCfg m_zstCfg;
+    m_zstCfg.bAbort = &ui.bAbortFlag;
+
     m_zstCfg.onProcessed =
         [&] (uint64_t processedBytes, uint64_t compressedBytes)
         {
             const double timeNow = dbTimeInSeconds();
             ui.pollTimeElapsed = timeNow - timeStart;
-
             const double timeZst = timeNow - timeZstBeg;
-            speed = double(processedBytes) / timeZst;
+            const double speed = double(processedBytes) / timeZst;
             ui.pollSpeed = speed;
             ui.pollTimeRemain = double(num_bytes - processedBytes) / speed;  // v = s/t -> t = s / v
-
             ui.pollCompressed = compressedBytes;
             ui.pollCompressRatio = double(compressedBytes) / double(processedBytes);
-
-            ui.pollProgress = double(processedBytes) / double(num_bytes);
+            ui.pollProgress = 0.98 * double(processedBytes) / double(num_bytes);
         };
 
     ZstCompressFileSimple(zstInputFile,zstOutputFile,m_zstCfg);
-
-    ui.bRunFlag = false;
-    ui.pollProgress = 1.0;
-    std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
     { // Log
         const auto t = dbStrSeconds(dbTimeInSeconds() - timeZstBeg);

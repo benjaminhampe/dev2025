@@ -665,10 +665,10 @@ StringUtil::nanoseconds( double nSeconds )
 std::string
 StringUtil::seconds( double nSeconds )
 {
-    int ms = int( 0.5 + ( 1000.0 * std::abs( nSeconds ) ) );
-    int hh = ms / 3600000; ms -= (hh * 3600000);
-    int mm = ms / 60000; ms -= (mm * 60000);
-    int ss = ms / 1000; ms -= (ss * 1000);
+    int64_t ms = std::llround(1000.0 * std::abs( nSeconds ));
+    int64_t hh = ms / 3600000; ms -= (hh * 3600000);
+    int64_t mm = ms / 60000; ms -= (mm * 60000);
+    int64_t ss = ms / 1000; ms -= (ss * 1000);
 
     std::stringstream s;
     if (nSeconds < 0.0) s << "-";
@@ -2417,12 +2417,7 @@ File::open(const std::string& utf8_uri, eFileMode fileMode, int permission)
 
 void File::close()
 {
-    if ( m_fd < 0 )
-    {
-        // DE_WARN("Already closed. ",m_uri)
-        return;
-    }
-
+    if ( m_fd < 0 ) { return; }
     file64_close( m_fd );
     m_fd = -1;
 }

@@ -1,0 +1,37 @@
+/*
+To achieve the absolute highest compression ratio 
+using libzstd with 14 threads and 32GB RAM, 
+
+you must go beyond the standard compression levels 
+and unlock the ultimate ultra settings.
+
+The single best way to optimize your system resources 
+is to use the following parameter configurations:
+
+1. The Command-Line Argument (Ultimate Mode)
+
+zstd --ultra -22 --long=31 --zstd=hlog=30,clog=30,slog=29,tlen=9999 -T14 <input_file>
+
+2. The libzstd C API Fine-Tuning Parameters
+
+If you are calling the library natively through the C API, 
+you must configure the compression context (ZSTD_CCtx) 
+using ZSTD_CCtx_setParameter(). 
+Use these precise advanced keys:
+
+API Parameter Enum	                Configured Value	Description
+ZSTD_c_compressionLevel	            22	                Enables Ultra level 22, the maximum native preset.
+ZSTD_c_enableLongDistanceMatching	1	Turn on LDM to catch repetitive patterns over immense spans.
+ZSTD_c_windowLog	                31	Sets the history window to 2³¹ (2 GB), maximizing back-references.
+ZSTD_c_hashLog	                    30	Main hash table size (2³⁰ entries).
+ZSTD_c_chainLog	                    30	Match chain size (2³⁰ entries).
+ZSTD_c_searchLog	                29	Search step capacity limit (2²⁹ operations).
+ZSTD_c_targetLength	                9999	Forces deep block matches instead of fast cut-offs.
+ZSTD_c_strategy	                    ZSTD_btultra2	Utilizes the most thorough algorithmic parse engine.
+ZSTD_c_nbWorkers	                14	Spawns exactly 14 worker threads.
+ZSTD_c_overlapLog	                9	Forces a full window size overlap from previous jobs.
+🛠️ Resource & Memory Impact Checklist
+With 32GB RAM, this configuration will comfortably pass without triggering an Out-Of-Memory (OOM) crash, but you must keep the following constraints in mind:
+• Memory Math: Each thread under these advanced settings will consume up to ~1.5 GB to 2 GB of workspace. Multiplying by 14 threads puts your peak compression memory usage at roughly 21 GB to 28 GB, which sits safely inside your 32 GB ceiling.
+• Decompression Note: Using --long=31 means anyone decompressing this file later must have at least 2 GB of RAM available, as decompression requires allocating the full window size.
+Would you like the code snippet to initialize these parameters in C/C++, or are you wrapping the library via a different ecosystem like Python or Rust?

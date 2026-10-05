@@ -600,6 +600,8 @@ struct TarUtil
 
 struct WriteTarFileSimpleCfg
 {
+    volatile std::atomic<bool>* bAbort = nullptr;
+
     bool bDebug = false;
 
     const de::FileInfos* fileInfos = nullptr;

@@ -1,0 +1,12 @@
+3. Convert Raw Data into a Readable Format
+
+llvm-profdata merge -output=app.profdata default.profraw
+
+4. View the Expensive Functions
+Now, use llvm-prof or llvm-cov to generate a clear, human-readable breakdown of function execution counts:
+
+llvm-profdata show --topn=20 app.profdata
+
+This prints the top 20 functions ranked by how frequently they were called. Alternatively, to see line-by-line execution counts directly inside your source code, run:
+
+llvm-cov show .\my_program.exe -instr-profile=app.profdata

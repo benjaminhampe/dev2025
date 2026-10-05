@@ -1,0 +1,38 @@
+//#include "wx/msw/wx.rc"
+#include <windows.h>
+#include "resource.h"
+
+// Application icon(s)
+aaaa ICON "8ball_64.ico"
+
+//IDI_APPICON ICON  DISCARDABLE  "benni.ico"
+
+// Application manifest for DPI awareness (xml)!
+CREATEPROCESS_MANIFEST_RESOURCE_ID RT_MANIFEST "app.manifest"
+
+1 VERSIONINFO
+FILEVERSION     3,1,5,4
+PRODUCTVERSION  3,1,5,4
+BEGIN
+  BLOCK "StringFileInfo"
+  BEGIN
+    BLOCK "080904E4"
+    BEGIN
+      VALUE "CompanyName", "(c) 2026 by <BenjaminHampe@gmx.de>"
+      VALUE "LegalCopyright", "(c) 2026 by <BenjaminHampe@gmx.de>"
+      VALUE "FileDescription", "bzip3"
+      VALUE "InternalName", "bzip3"
+      VALUE "OriginalFilename", "bzip3"
+      VALUE "ProductName", "bzip3"
+      VALUE "FileVersion", "v3.1.5.4"
+      VALUE "ProductVersion", "v3.1.5.4"
+    END
+  END
+
+    // 0x0809 = Englisch (UK), 1252 = Latin‑1 Codepage
+    // 0x0407 = German, 1252
+  BLOCK "VarFileInfo"
+  BEGIN
+    VALUE "Translation", 0x809, 1252
+  END
+END

@@ -46,13 +46,7 @@ struct TarTree : public Fl_Tree
     static std::string magicToString(const uint8_t (&magic)[N], bool stop_at_null = false)
     {
         const char* data_ptr = reinterpret_cast<const char*>(magic);
-        size_t length = N;
-
-        if (stop_at_null)
-        {
-            length = strnlen(data_ptr, length);
-        }
-
+        size_t length = strnlen(data_ptr, N);
         return std::string(data_ptr, length);
     }
 
@@ -140,6 +134,22 @@ struct TarTree : public Fl_Tree
         std::string devmajor = dbStr("devmajor[8] = ",magicToString(h.devmajor));
         std::string devminor = dbStr("devminor[8] = ",magicToString(h.devminor));
         std::string padding = dbStr("padding[12] = ",magicToString(h.padding));
+
+        devmajor += " [";
+        for (int i = 0; i < 8; ++i)
+        {
+            if (i > 0) devmajor += " ";
+            devmajor += dbHex(h.devmajor[i]);
+        }
+        devmajor += "]";
+
+        devminor += " [";
+        for (int i = 0; i < 8; ++i)
+        {
+            if (i > 0) devminor += " ";
+            devminor += dbHex(h.devminor[i]);
+        }
+        devminor += "]";
 
         const bool bUstar = isHeader(h);
         const bool bGNU = isGNU(h);

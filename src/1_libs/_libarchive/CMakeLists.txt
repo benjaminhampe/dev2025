@@ -6,6 +6,8 @@ add_subdirectory(de-deflate-1.25) # no AVX512 error
 add_subdirectory(de-zlib-1.3.1) # opencv
 
 add_subdirectory(de-bzip2-1.0.5)
+add_subdirectory(de-bzip3-1.5.4) # New 2026.10.05 for 8-ZipFM.exe
+
 # add_subdirectory(de-lzma-4.32.7)
 add_subdirectory(de-minizip-1.15)
 add_subdirectory(de-unzip-1.01e)
