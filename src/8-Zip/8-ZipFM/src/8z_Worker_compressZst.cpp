@@ -1,6 +1,7 @@
 #include "8z_Worker_compressZst.h"
 #include "8z_Worker_private.h"
 #include "8z_Worker_compress.h"
+#include <de/archive/TarWriter.h>
 #include <de/archive/ZstWriter.h>
 
 namespace EightZip {
@@ -33,6 +34,10 @@ void workerThread_CompressZst()
 
     const std::string zstOutputFile = dbMakePosix( ui.job.uri() );
     DE_BENNI("zstOutputFile = ",zstOutputFile)
+
+    DE_BENNI("zstPresetIndex = ",ui.job.iPreset)
+    // const ZstPreset& zstPreset = ZstPresets::getInstance()->getPreset(ui.job.iPreset);
+    // DE_DEBUG("zstPreset = ", zstPreset.str())
 
     std::string zstInputFile;
 
@@ -198,10 +203,10 @@ void workerThread_CompressZst()
     // ==========================================
     const double timeZstBeg = dbTimeInSeconds();
 
-    ZstCompressFileCfg m_zstCfg;
-    m_zstCfg.bAbort = &ui.bAbortFlag;
-
-    m_zstCfg.onProcessed =
+    ZstCompressFileCfg cfg_zst;
+    cfg_zst.bAbort = &ui.bAbortFlag;
+    cfg_zst.iPreset = ui.job.iPreset;
+    cfg_zst.onProcessed =
         [&] (uint64_t processedBytes, uint64_t compressedBytes)
         {
             const double timeNow = dbTimeInSeconds();
@@ -215,7 +220,7 @@ void workerThread_CompressZst()
             ui.pollProgress = 0.98 * double(processedBytes) / double(num_bytes);
         };
 
-    ZstCompressFileSimple(zstInputFile,zstOutputFile,m_zstCfg);
+    ZstCompressFileSimple(zstInputFile,zstOutputFile,cfg_zst);
 
     { // Log
         const auto t = dbStrSeconds(dbTimeInSeconds() - timeZstBeg);

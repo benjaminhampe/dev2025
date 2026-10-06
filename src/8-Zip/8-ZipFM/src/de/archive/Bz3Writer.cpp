@@ -26,13 +26,13 @@ struct AsyncBlockResult
     int32_t index;
     int32_t original_size;
     int32_t compressed_size;
-    std::vector<uint8_t> buffer;
+    de::Blob buffer;
 };
 
 // Worker-Funktion: Läuft komplett isoliert und ohne Locks in einem eigenen Thread.
 
 AsyncBlockResult
-Bz3_compress_worker(int32_t index, std::vector<uint8_t> block_buffer, int32_t block_size_bytes)
+Bz3_compress_worker(int32_t index, de::Blob block_buffer, int32_t block_size_bytes)
 {
     bz3_state* thread_state = bz3_new(block_size_bytes);
     if (!thread_state)
@@ -74,7 +74,7 @@ bool Bz3_compress_file_max_speed(const std::string& src, const std::string& dst,
 
     // 1. Offiziellen Bzip3-Header schreiben
     m_fout.write("bz3v1", 5);
-    m_fout.write(reinterpret_cast<const char*>(&block_size_bytes), sizeof(block_size_bytes));
+    m_fout.write(&block_size_bytes, sizeof(block_size_bytes));
 
     // Pipeline-Limit: Anzahl der CPU-Kerne mal 2 (Doppel-Pufferung gegen I/O-Latenz)
     size_t max_threads = std::max(1u, std::thread::hardware_concurrency());
@@ -92,7 +92,7 @@ bool Bz3_compress_file_max_speed(const std::string& src, const std::string& dst,
         while (pipeline.size() < max_pipeline_depth)
         {
             // Buffer direkt mit maximaler bz3_bound Größe vorallokieren (Zero-Allocation im Thread)
-            std::vector<uint8_t> read_buffer(max_out_size);
+            de::Blob read_buffer(max_out_size);
             // memset(read_buffer.data(),0,read_buffer.size());
 
             int32_t bytes_read = m_fin.read(read_buffer.data(), block_size_bytes);

@@ -188,14 +188,14 @@ public:
 */
 
 // =============================================================
-class LineEdit : public Fl_Input
+class EditBox : public Fl_Input
 // =============================================================
 {
 public:
     bool hover = false;
     bool pressed = false;
 
-    LineEdit(int X, int Y, int W, int H, const char* L = 0)
+    EditBox(int X, int Y, int W, int H, const char* L = 0)
         : Fl_Input(X, Y, W, H, L)
     {
         // box(FL_NO_BOX);     // wir zeichnen alles selbst

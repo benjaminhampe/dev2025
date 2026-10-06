@@ -46,3 +46,15 @@ std::string strip_path(std::string uri)
 
     return uri.substr(pos + 1);
 }
+
+int64_t de_powi(int32_t base, int32_t exponent)
+{
+    int64_t y;
+    y = 1;
+    while (exponent > 0)
+    {
+        y *= base;
+        exponent--;
+    }
+    return y;
+}

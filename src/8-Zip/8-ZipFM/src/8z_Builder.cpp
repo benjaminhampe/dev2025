@@ -2,8 +2,9 @@
 #include "8z_App.h"
 #include <gui/AB/Win11Combo.h>
 #include <gui/ComboBox.h>
-#include <de/archive/ZstHeader.h>
-#include <filesystem>
+#include <de/archive/ZstWriter.h>
+#include <de/CoreUtil.h> // de_powi()
+// #include <filesystem>
 
 namespace EightZip {
 namespace builder {
@@ -89,9 +90,31 @@ struct UI
 
     Fl_Box* lblPreset = nullptr;
     ComboBox* cbxPreset = nullptr;
+
 /*
-    Fl_Box* lblAlgorithm = nullptr;
-    ComboBox* cbxAlgorithm = nullptr;
+    preset.data[ZSTD_c_compressionLevel] = 19;
+    preset.data[ZSTD_c_nbWorkers] = numThreads;
+    preset.data[ZSTD_c_jobSize] = 2 * 1024 * 1024;
+    preset.data[ZSTD_c_windowLog] = 26;
+    preset.data[ZSTD_c_enableLongDistanceMatching] = 1;
+*/
+
+    Fl_Box* lblCompressLevel = nullptr;
+    ComboBox* edtCompressLevel = nullptr;
+
+    Fl_Box* lblCpuThreads = nullptr;
+    ComboBox* edtCpuThreads = nullptr;
+
+    Fl_Box* lblJobSize = nullptr;
+    ComboBox* edtJobSize = nullptr;
+
+    Fl_Box* lblWindowLog = nullptr;
+    ComboBox* edtWindowLog = nullptr;
+
+    Fl_Box* lblLongDistMatching = nullptr;
+    ComboBox* edtLongDistMatching = nullptr;
+
+/*
 
     Fl_Box* lblDictSize = nullptr;
     ComboBox* cbxDictSize = nullptr;
@@ -102,8 +125,6 @@ struct UI
     Fl_Box* lblBlockSize = nullptr;
     ComboBox* cbxBlockSize = nullptr;
 
-    Fl_Box* lblCpuThreads = nullptr;
-    ComboBox* cbxCpuThreads = nullptr;
 
     Fl_Box* lblCompressRamMax = nullptr;
     ComboBox* cbxCompressRamMax = nullptr;
@@ -171,6 +192,7 @@ struct UI
         return formats[i];
     }
 
+/*
     ZstPreset selectedPresetZst() const
     {
         const auto& presets = ZstPresets::get();
@@ -183,6 +205,7 @@ struct UI
         }
         return presets[i];
     }
+*/
 
     // int getQuality()
     // {
@@ -342,6 +365,26 @@ struct UI
 
 static UI ui;
 
+static void populateTarPresets()
+{
+    ui.cbxPreset->clear();
+    ui.cbxPreset->add("0 - Save all files and dirs uncompressed.");
+    ui.cbxPreset->value(0);
+}
+
+static void populateZstPresets()
+{
+    ui.cbxPreset->clear();
+
+    auto zstPresets = ZstPresets::getInstance();
+    auto zstDefaultPreset = zstPresets->getDefaultIndex();
+    for (size_t i = 0; i < zstPresets->getPresetCount(); ++i)
+    {
+        const auto& zstPreset = zstPresets->getPreset(i);
+        ui.cbxPreset->add(zstPreset.name.c_str());
+    }
+    ui.cbxPreset->value(zstDefaultPreset);
+}
 
 static void cbxFormat_cb(Fl_Widget* widget, void* data)
 {
@@ -355,21 +398,14 @@ static void cbxFormat_cb(Fl_Widget* widget, void* data)
 
     ui.produceFileName();
 
-/*
-    ui.edtFile->value(s.c_str());
-
-    if (ext == "tar")
+    if (index == 1)
     {
-        ui.iLastPreset = ui.cbxPreset->value();
-        ui.cbxPreset->value(0);
-        ui.cbxPreset->deactivate();
+        populateZstPresets();
     }
-    else if (ext == "zst")
+    else
     {
-        ui.cbxPreset->activate();
-        ui.cbxPreset->value(ui.iLastPreset);
+        populateTarPresets();
     }
-*/
 }
 
 static void cbxPreset_cb(Fl_Widget* widget, void* data)
@@ -382,11 +418,13 @@ static void cbxPreset_cb(Fl_Widget* widget, void* data)
     // Den Text des ausgewählten Elements abrufen
     const char* label = self->text();
 
-    DE_DEBUG("[Preset] "
-                "index(",index,"), "
-                "label(", (label ? label : "nullptr"), "), "
-                "algo(", ui.selectedPresetZst().algo,"), "
-                "level(", ui.selectedPresetZst().level,")")
+    // ZstPresets::getInstance()
+
+    // DE_DEBUG("[Preset] "
+    //             "index(",index,"), "
+    //             "label(", (label ? label : "nullptr"), "), "
+    //             "algo(", ui.selectedPresetZst().algo,"), "
+    //             "level(", ui.selectedPresetZst().level,")")
 }
 
 void Builder::setCallback_onOk(const FN_onOk& onOk)
@@ -585,8 +623,60 @@ Builder::Builder(int W, int H, const char* title)
     ui.lblPreset = new Label(x,y,mw,h1,"Preset:");
     ui.cbxPreset = new ComboBox(x,y,mw,h1);
 
-    // ui.lblQuality = new Label(x,y,mw,h1,"Compress-Quality:");
-    // ui.cbxQuality = new ComboBox(x,y,mw,h1);
+    // ZstPreset:
+
+    ui.lblCompressLevel = new Label(x,y,mw,h1,"Compress Level:");
+    ui.edtCompressLevel = new ComboBox(x,y,mw,h1);
+    ui.edtCompressLevel->copy_tooltip(ZstUtil::cpHelpStr(100).c_str());
+    // ui.edtCompressLevel->add(dbStr(ZstUtil::cpMin(100)).c_str());
+    // ui.edtCompressLevel->add(dbStr(ZstUtil::cpMax(100)).c_str());
+    for (int i = 0; i <= 22; ++i)
+    {
+        ui.edtCompressLevel->add(dbStr(i).c_str());
+    }
+
+    ui.lblCpuThreads = new Label(x,y,mw,h1,"CPU Threads:");
+    ui.edtCpuThreads = new ComboBox(x,y,mw,h1);
+    ui.edtCpuThreads->copy_tooltip(ZstUtil::cpHelpStr(400).c_str());
+    for (int i = ZstUtil::cpMin(400); i <= ZstUtil::cpMax(400); ++i)
+    {
+        ui.edtCpuThreads->add(dbStr(i).c_str());
+    }
+
+    ui.lblJobSize = new Label(x,y,mw,h1,"JobSize in kB:");
+    ui.edtJobSize = new ComboBox(x,y,mw,h1);
+    ui.edtJobSize->copy_tooltip(ZstUtil::cpHelpStr(401).c_str());
+
+    ui.edtJobSize->add("0 - Auto");
+    int i = 0;
+    do
+    {
+        i++;
+        int64_t po2 = de_powi(2,i+8);
+        if (po2 > ZstUtil::cpMax(401))
+        {
+            break;
+        }
+        ui.edtJobSize->add(dbStr(i," = ",dbStrBytes(po2)).c_str());
+
+    } while (i < 30);
+    ui.edtJobSize->add(dbStr(i," = ",dbStrBytes(ZstUtil::cpMax(401))).c_str());
+
+    ui.lblWindowLog = new Label(x,y,mw,h1,"WindowLog:");
+    ui.edtWindowLog = new ComboBox(x,y,mw,h1);
+    ui.edtWindowLog->copy_tooltip(ZstUtil::cpHelpStr(101).c_str());
+    for (int i = ZstUtil::cpMin(101); i <= ZstUtil::cpMax(101); ++i)
+    {
+        ui.edtWindowLog->add(dbStr(i," = ", dbStrBytes(de_powi(2,i))).c_str());
+    }
+
+    ui.lblLongDistMatching = new Label(x,y,mw,h1,"LongDistMatching:");
+    ui.edtLongDistMatching = new ComboBox(x,y,mw,h1);
+    ui.edtLongDistMatching->copy_tooltip(ZstUtil::cpHelpStr(160).c_str());
+    for (int i = ZstUtil::cpMin(160); i <= ZstUtil::cpMax(160); ++i)
+    {
+        ui.edtLongDistMatching->add(dbStr(i).c_str());
+    }
 
 #if 0
     ui.lblAlgorithm = new Label(x,y,mw,h1,"Compress Algorithm:");
@@ -699,12 +789,7 @@ Builder::Builder(int W, int H, const char* title)
     ui.cbxFormat->value(1);
     ui.cbxFormat->callback(cbxFormat_cb);
     // ========================================================
-    const auto & zstPresets = ZstPresets::get();
-    for (size_t i = 0; i < zstPresets.size(); ++i)
-    {
-        ui.cbxPreset->add(zstPresets[i].name.c_str());
-    }
-    ui.cbxPreset->value(10);
+    populateZstPresets();
     ui.cbxPreset->callback(cbxPreset_cb);
     // ========================================================
     end();
@@ -730,7 +815,8 @@ void Builder::resize(int X, int Y, int W, int H)
 
     const int wM = 30 * zoom;
     const int w2 = (mw - wM) / 2;
-    const int w4 = w2 / 2;
+    const int wE = 3 * w2 / 5;  // Left Edit/Combo width
+    const int wL = w2 - wE;     // Left Label width
 
     const int s = 4 * zoom;
 
@@ -750,13 +836,36 @@ void Builder::resize(int X, int Y, int W, int H)
     y += ln + ln;
 
     // Body Column[0]
-    ui.lblFormat->resize(x,   y,w4,h1);
-    ui.cbxFormat->resize(x+w4,y,w4,h1);
+    int x1 = ml;
+    int x2 = ml + wL;
+    ui.lblFormat->resize(x1,y,wL,h1);
+    ui.cbxFormat->resize(x2,y,wE,h1);
     y += ln;
 
-    ui.lblPreset->resize(x,   y,w4,h1);
-    ui.cbxPreset->resize(x+w4,y,w4,h1);
+    ui.lblPreset->resize(x1,y,wL,h1);
+    ui.cbxPreset->resize(x2,y,wE,h1);
     y += ln;
+
+    ui.lblCompressLevel->resize(x1,y,wL,h1);
+    ui.edtCompressLevel->resize(x2,y,wE,h1);
+    y += ln;
+
+    ui.lblCpuThreads->resize(x1,y,wL,h1);
+    ui.edtCpuThreads->resize(x2,y,wE,h1);
+    y += ln;
+
+    ui.lblJobSize->resize(x1,y,wL,h1);
+    ui.edtJobSize->resize(x2,y,wE,h1);
+    y += ln;
+
+    ui.lblWindowLog->resize(x1,y,wL,h1);
+    ui.edtWindowLog->resize(x2,y,wE,h1);
+    y += ln;
+
+    ui.lblLongDistMatching->resize(x1,y,wL,h1);
+    ui.edtLongDistMatching->resize(x2,y,wE,h1);
+    y += ln;
+
 #if 0
     ui.lblAlgorithm->resize(x,   y,w4,h1);
     ui.cbxAlgorithm->resize(x+w4,y,w4,h1);

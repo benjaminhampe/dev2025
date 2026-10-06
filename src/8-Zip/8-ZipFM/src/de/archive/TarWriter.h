@@ -2,8 +2,6 @@
 #include <de/FileInfo.h>
 #include <de/archive/TarHeader.h>
 
-
-
 struct TarWriter
 {
     struct Cfg

@@ -1,167 +1,220 @@
 #pragma once
-#include "TarWriter.h"
-#include "ZstHeader.h"
+#include "ZstPreset.h"
 
-// =====================================================
-struct ZstWriter
-// =====================================================
+struct ZstCompressFileCfg
 {
-    struct Cfg
-    {
-        int num_threads = 8;
+    volatile std::atomic<bool>* bAbort = nullptr;
 
-        int64_t blockSize = 8 * 1024 * 1024;
+    int iPreset = -1; // Auto selects (default) preset.
 
-        // ZstPreset preset;
+    typedef std::function<void(uint64_t /* processedBytes */,
+                               uint64_t /* compressedBytes */)>
+        FN_onProcessed;
 
-        int32_t compressionLevel = 3;
-
-        // typedef std::function<void(const de::FileInfo& /* fileInfo */, uint32_t)> FN_onNextFile;
-
-        // FN_onNextFile onNextFile;
-
-        typedef std::function<void(const uint64_t /* byteCount */)> FN_onProcessed;
-
-        FN_onProcessed onProcessed;
-    };
-
-    Cfg m_cfg;
-
-    int64_t m_byteIndex = 0;
-    int64_t m_byteCount = 0;
-    int64_t m_callCount = 0;
-
-    enum eState
-    {
-        STATE_TAR = 0, // → TAR liefert Daten
-        STATE_ZSTD_FLUSH, // → TAR ist fertig, ZSTD muss noch flushen
-        STATE_DONE, // → alles fertig
-    };
-
-    int m_state = 0;
-
-    TarWriter* m_tarWriter;
-    ZSTD_CCtx* m_ctx;
-
-    de::Blob m_iBlob;
-    de::Blob m_oBlob;
-
-    ZSTD_inBuffer m_zin;
-    ZSTD_outBuffer m_zout;
-
-    ZstWriter();
-    ~ZstWriter();
-    void close();
-    bool init(const Cfg& cfg, TarWriter* tarWriter);
-    int64_t process(uint8_t* __restrict out, int64_t outSize);
+    FN_onProcessed onProcessed;
 };
 
-/*
+/**
+ * Compresses a file using multi-threaded Zstd.
+ *
+ * @param source       Path to the input file (e.g., "archive.tar")
+ * @param dest         Path to the output file (e.g., "archive.tar.zst")
+ * @param compressionLevel The Zstd compression level (1 to 19, 0 for default)
+ * @param nbThreads    Number of threads to use (0 auto-detects based on CPU cores)
+ * @return             0 on success, 1 on failure
+ */
+bool
+ZstCompressFileSimple(
+    StringA src, // tar source
+    StringA dst, // zst destination
+    const ZstCompressFileCfg& cfg);
+
+#if 0
+
+
+/**
+ * Compresses a file using multi-threaded Zstd.
+ *
+ * @param source       Path to the input file (e.g., "archive.tar")
+ * @param dest         Path to the output file (e.g., "archive.tar.zst")
+ * @param compressionLevel The Zstd compression level (1 to 19, 0 for default)
+ * @param nbThreads    Number of threads to use (0 auto-detects based on CPU cores)
+ * @return             0 on success, 1 on failure
+ */
 inline bool
-compress_zstd( const std::string& input_tar,
-            const std::string& output_zst)
+zst_compress_file_mt(
+    StringA src,
+    StringA dst,
+    int compressionLevel,
+    int numberOfThreads)
 {
-    de::File tarFile(input_tar, de::eFileMode::Read);
-    if (!tarFile.is_open())
+    de::File m_fin(src,de::eFileMode::Read);
+    de::File m_fout(dst,de::eFileMode::Write);
+    if (!m_fin.is_open()) { DE_ERROR("Cannot read ",src) return false; }
+    if (!m_fout.is_open()) { DE_ERROR("Cannot write ",dst) return false; }
+
+    AutoLibzstdCC zst;
+    if (!zst.is_open())
     {
-        DE_ERROR("TAR file not readable. ", input_tar)
+        DE_ERROR("No ZSTD_createCCtx()")
         return false;
     }
 
-    de::File zstFile(output_zst, de::eFileMode::Write);
-    if (!zstFile.is_open())
+    auto cctx = zst.m_ctx;
+
+    // // Configure the compression parameters
+    // // 1. Set the compression level
+    // auto errLevel = ZSTD_CCtx_setParameter(cctx, ZSTD_c_compressionLevel, compressionLevel);
+    // if (ZSTD_isError(errLevel))
+    // {
+    //     DE_ERROR("Cannot set compressionLevel: ", ZSTD_getErrorName(errLevel))
+    //     return false;
+    // }
+
+    // // 2. Enable multithreading by setting the number of workers
+    // // Passing 0 tells libzstd to automatically use all available CPU cores.
+    // auto errThread = ZSTD_CCtx_setParameter(cctx, ZSTD_c_nbWorkers, nbThreads);
+    // if (ZSTD_isError(errThread))
+    // {
+    //     DE_ERROR("Cannot set threadCount: ", ZSTD_getErrorName(errThread))
+    //     return false;
+    // }
+
+int maxThreads = std::thread::hardware_concurrency();
+compressionLevel = 19;
+numberOfThreads = std::max<int>(1, maxThreads - 1);
+int jobSize = 2 * 1024 * 1024;
+int windowLog = 26; // 2^26 = 64MB window
+int longDistanceMatching = 1;
+
+// 1. Drop from level 22 to 19 (19 is the highest standard level)
+// Level 19 natively allows multi-threading without a master thread bottleneck.
+auto e = ZSTD_CCtx_setParameter(cctx, ZSTD_c_compressionLevel, compressionLevel);
+if (ZSTD_isError(e))
+{
+    DE_ERROR("ZSTD_c_compressionLevel: ", ZSTD_getErrorName(e))
+}
+
+// 2. Enable your 8 worker threads
+e = ZSTD_CCtx_setParameter(cctx, ZSTD_c_nbWorkers, numberOfThreads);
+if (ZSTD_isError(e))
+{
+    DE_ERROR("ZSTD_c_nbWorkers: ", ZSTD_getErrorName(e))
+}
+
+// 3. FORCE smaller job sizes (e.g., 2MB chunks)
+// This overrides the massive default 19-level block and forces data
+// to be distributed to all 8 threads instantly.
+e = ZSTD_CCtx_setParameter(cctx, ZSTD_c_jobSize, jobSize);
+if (ZSTD_isError(e))
+{
+    DE_ERROR("ZSTD_c_jobSize: ", ZSTD_getErrorName(e))
+}
+
+// 4. Force a matching window size (e.g., 64MB or 128MB)
+// This acts as a replacement for LDM, ensuring high compression ratios.
+e = ZSTD_CCtx_setParameter(cctx, ZSTD_c_windowLog, windowLog); // 2^26 = 64MB window
+if (ZSTD_isError(e))
+{
+    DE_ERROR("ZSTD_c_windowLog: ", ZSTD_getErrorName(e))
+}
+
+// 5. Set maximum ultra compression level
+e = ZSTD_CCtx_setParameter(cctx, ZSTD_c_enableLongDistanceMatching, longDistanceMatching);
+if (ZSTD_isError(e))
+{
+    DE_ERROR("ZSTD_c_enableLongDistanceMatching: ", ZSTD_getErrorName(e))
+}
+
+// 6. Set the LDM window size to maintain high compression ratio (e.g., 128MB)
+//e = ZSTD_CCtx_setParameter(cctx, ZSTD_c_ldmWindowLog, 27);
+// if (ZSTD_isError(e))
+// {
+//     DE_ERROR("ZSTD_c_compressionLevel: ", ZSTD_getErrorName(e))
+// }
+
+DE_TRACE("maxThreads = ", maxThreads)
+DE_TRACE("ZSTD_c_nbWorkers = ", numberOfThreads)
+DE_TRACE("ZSTD_c_compressionLevel = ", compressionLevel)
+DE_TRACE("ZSTD_c_jobSize = ", jobSize)
+DE_TRACE("ZSTD_c_windowLog = ", windowLog)
+DE_TRACE("ZSTD_c_enableLongDistanceMatching = ", longDistanceMatching)
+
+    // Setup streaming buffers using recommended sizes
+    size_t const buffInSize = ZSTD_CStreamInSize();
+    size_t const buffOutSize = ZSTD_CStreamOutSize();
+    de::Blob iBlob( buffInSize );
+    de::Blob oBlob( buffOutSize );
+
+    void* const buffIn = iBlob.data();
+    void* const buffOut = oBlob.data();
+
+    DE_TRACE("ZSTD_CStreamInSize = ", buffInSize)
+    DE_TRACE("ZSTD_CStreamOutSize = ", buffOutSize)
+
+    size_t readLen;
+    bool ok = true; // Tracks overall streaming success
+
+    // Main streaming loop
+    while ((readLen = m_fin.read(buffIn, buffInSize)) > 0)
     {
-        DE_ERROR("ZStd File not writable. ", output_zst)
-        return false;
-    }
+        ZSTD_inBuffer input = { buffIn, readLen, 0 };
 
-    ZSTD_CCtx* cctx = ZSTD_createCCtx();
-    if (!cctx)
-    {
-        DE_ERROR("No ZStd context. ", output_zst)
-        return false;
-    }
-
-    size_t ret = ZSTD_CCtx_setParameter(cctx, ZSTD_c_compressionLevel, 5);
-    if (ZSTD_isError(ret))
-    {
-        DE_ERROR("Invalid ZStd compression level")
-        ZSTD_freeCCtx(cctx);
-        return false;
-    }
-
-    ZSTD_inBuffer zin;
-    ZSTD_outBuffer zout;
-
-    de::Blob outBuf(1 << 20); // 1MB
-    de::Blob inBlob(1 << 20);
-
-    // Header schreiben:
-    // U32 path length
-    // VAR path
-    // U64 data length -> so files are limited to 4GB each.
-    uint32_t tarNameSize = input_tar.size();
-    zstFile.write(&tarNameSize, sizeof(uint32_t));
-    zstFile.write(input_tar.data(), input_tar.size());
-    uint64_t tarDataSize = static_cast<uint64_t>(tarFile.size());
-    zstFile.write(&tarDataSize, sizeof(uint64_t));
-
-    int64_t readBytes = 0;
-    while (readBytes < tarDataSize)
-    {
-        int64_t has = std::min<int64_t>(tarDataSize - readBytes, inBlob.size());
-        int64_t got = tarFile.read(inBlob.data(), has);
-
-        readBytes += got;
-
-        options.onProgress( 100.0 * double(readBytes) / double(tarDataSize) );
-
-        // Input setzen
-        zin.src = inBlob.data();
-        zin.size = got;
-        zin.pos = 0;
-
-        // Streamen
-        while (zin.pos < zin.size)
+        // Push data to the compressor until the input buffer is fully consumed
+        while (input.pos < input.size)
         {
-            zout.dst = outBuf.data();
-            zout.size = outBuf.size();
-            zout.pos = 0;
+            ZSTD_outBuffer output = { buffOut, buffOutSize, 0 };
 
-            size_t ret = ZSTD_compressStream2(
-                            cctx,
-                            &zout,
-                            &zin,
-                            ZSTD_e_continue);
-
-            if (ZSTD_isError(ret))
+            size_t const toRead = ZSTD_compressStream2(zst.m_ctx, &output, &input, ZSTD_e_continue);
+            if (ZSTD_isError(toRead))
             {
-                DE_ERROR("ZSTD: ", ZSTD_getErrorName(ret))
-                return false;
+                DE_ERROR(ZSTD_getErrorName(toRead))
+                ok = false;
+                break;
             }
 
-            // out.write(reinterpret_cast<char*>(outBuf.data()), zout.pos);
-            zstFile.write(outBuf.data(), zout.pos);
+            // Write out the compressed data chunk
+            if (output.pos > 0)
+            {
+                m_fout.write(buffOut, output.pos);
+            }
         }
+        if (!ok) break;
     }
 
-    // Final flush
+    // Flush and finish the frame
+    if (ok)
     {
-        ZSTD_inBuffer empty = { nullptr, 0, 0 };
-        size_t remaining = 1;
-        while (remaining)
-        {
-            zout.dst = outBuf.data();
-            zout.size = outBuf.size();
-            zout.pos = 0;
+        ZSTD_inBuffer input = { NULL, 0, 0 };
+        size_t remainingToFlush;
 
-            remaining = ZSTD_compressStream2(cctx, &zout, &empty, ZSTD_e_end);
-            //out.write(reinterpret_cast<char*>(outBuf.data()), zout.pos);
-            zstFile.write(outBuf.data(), zout.pos);
+        do
+        {
+            ZSTD_outBuffer output = { buffOut, buffOutSize, 0 };
+            // ZSTD_e_end signs off the frame, creating the final Zstd file trailer
+            remainingToFlush = ZSTD_compressStream2(zst.m_ctx, &output, &input, ZSTD_e_end);
+
+            if (ZSTD_isError(remainingToFlush))
+            {
+                DE_ERROR("Flush error: ", ZSTD_getErrorName(remainingToFlush))
+                ok = false;
+                break;
+            }
+
+            if (output.pos > 0)
+            {
+                m_fout.write(buffOut, output.pos);
+            }
         }
+        while (remainingToFlush > 0); // Keep flushing until 0 tokens remain
     }
 
-    ZSTD_freeCCtx(cctx);
-    return true;
+    // Cleanup resources
+    DE_DEBUG("Return Ok = ",ok)
+    return ok;
 }
-*/
+
+#endif
+
+
+
