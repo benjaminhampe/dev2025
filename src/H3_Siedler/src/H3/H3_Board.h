@@ -5,7 +5,8 @@
 //#include <deque>
 //#include <array>
 //#include <optional>
-#include <de/IrrlichtDevice.h>
+//#include <de/IrrlichtDevice.h>
+#include <de/gpu/VideoDriver.h>
 #include <de/gui/Env.h>
 
 typedef uint32_t u32;

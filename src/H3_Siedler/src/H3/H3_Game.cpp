@@ -12,76 +12,9 @@
 #include <de/gpu/GL_debug_layer.h>
 #include "../res/resource.h" // setWindowIcon(aaaa)
 
-// ===========================================================================
-H3_Game::H3_Game()
-// ===========================================================================
-    : m_device(nullptr)
-    //, m_window(nullptr)
-    , m_uiHelpWindow(nullptr)
-    , m_uiMainmenu(nullptr)
-    , m_uiActions(nullptr)
-    , m_uiThiefIntroPanel(nullptr)
-    , m_uiWinnerScreen(nullptr)
-    , m_uiWorldCreator(nullptr)
-// , m_fpsTimerId(0)
-// , m_capTimerId(0)
-{
-    //m_audioEngine.play();
-}
+#include "H3_Window_wgl.h"
 
-H3_Game::~H3_Game()
-{
-    //m_audioEngine.stop();
-}
 
-de::gpu::TexRef H3_Game::getTex( H3_Tex::eID id, const std::string & caller ) const
-{
-    const auto it = m_tex.m_refs.find(id);
-    if (it == m_tex.m_refs.end())
-    {
-        std::ostringstream o;
-        o << "No texRef with id " << static_cast<uint32_t>(id) << ", caller("<<caller<<")";
-        throw std::runtime_error(o.str());
-    }
-
-    if (it->second.empty())
-    {
-        std::ostringstream o;
-        o << "Got empty texRef with id " << static_cast<uint32_t>(id);
-        throw std::runtime_error(o.str());
-    }
-
-    return it->second;
-}
-
-void H3_Game::exitProgram()
-{
-    if (isRunning())
-    {
-        bool wannaExit = H3_MessageBox("Exit Game",
-                                       "Do you want to exit the running Game?");
-
-        if (!wannaExit)
-        {
-            return;
-        }
-    }
-
-    if (m_device)
-    {
-        m_device->requestClose();
-    }
-}
-
-void H3_Game::exitGame()
-{
-
-}
-
-bool H3_Game::run()
-{
-    return (m_device != nullptr) && m_device->run();
-}
 
 void createSMeshTile( de::smesh::SMeshBuffer & o, de::gpu::VideoDriver* driver,
     glm::vec3 tileSize, de::Image bumpMap, const de::gpu::TexRef& diffuseMap )
@@ -139,18 +72,142 @@ void createSMeshTile( de::smesh::SMeshBuffer & o, de::gpu::VideoDriver* driver,
     DE_OK( o.str() )
 }
 
-void H3_Game::init(de::IrrlichtDevice* device)
+
+// ===========================================================================
+H3_Game::H3_Game()
+// ===========================================================================
+    : m_window(nullptr)
+    , m_driver(nullptr)
+    , m_uiHelpWindow(nullptr)
+    , m_uiMainmenu(nullptr)
+    , m_uiActions(nullptr)
+    , m_uiThiefIntroPanel(nullptr)
+    , m_uiWinnerScreen(nullptr)
+    , m_uiWorldCreator(nullptr)
+// , m_fpsTimerId(0)
+// , m_capTimerId(0)
+{
+    //m_audioEngine.play();
+    DE_OK()
+}
+
+H3_Game::~H3_Game()
+{
+    //m_audioEngine.stop();
+    DE_OK()
+}
+
+void H3_Game::requestClose()
+{
+    DE_OK()
+    m_bShouldRun = false;
+}
+
+void H3_Game::destroy()
+{
+    DE_OK()
+
+    requestClose();
+
+    // killTimers();
+
+    if (m_driver)
+    {
+        m_driver->close();
+        delete m_driver;
+        m_driver = nullptr;
+        DE_INFO("Closed driver.")
+    }
+
+    if (m_window)
+    {
+        m_window->destroy();
+        delete m_window;
+        m_window = nullptr;
+        DE_INFO("Closed window.")
+    }
+}
+
+bool H3_Game::run()
+{
+    if (!m_window) return 0;
+    if (!m_driver) return 0;
+
+    // MainLoop:
+    //double m_timeStart = dbTimeInSeconds();
+    //double m_timeNow = 0.0;
+    // m_timeLastCameraUpdate = 0.0;
+    // m_timeLastRenderUpdate = 0.0;
+    // m_timeLastWindowTitleUpdate = 0.0;
+    // fpsComputer.reset();
+
+    //m_bShouldRun = true;
+
+    return m_bShouldRun && m_window && m_window->run();
+
+/*
+    while (m_bShouldRun && m_window && m_window->run())
+    {
+        // fpsComputer.tick();
+        m_timeNow = dbTimeInSeconds() - m_timeStart;
+
+        // // update window title 2-3x per second
+        // double dtWindowTitleUpdate = m_timeNow - m_timeLastWindowTitleUpdate;
+        // if ( dtWindowTitleUpdate >= 0.25 )
+        // {
+        //     m_timeLastWindowTitleUpdate = m_timeNow;
+
+        //     updateWindowTitle();
+        // }
+    }
+
+    return 0;
+*/
+
+}
+
+bool H3_Game::init()
 {
     DE_OK("")
     dbRandomize();
 
-    m_device = device;
-    m_device->setEventReceiver( this );
-    m_device->getWindow()->setWindowIcon( aaaa );
-    m_device->getWindow()->setWindowTitle( "Die Siedler von Satan 3D | <benjaminhampe@gmx.de>" );
-    m_device->run();
-    m_device->getWindow()->bringToFront();
-    m_device->run();
+    m_window = new H3_Window(*this);
+
+    de::WindowOptions wo;
+    wo.width = 1024;
+    wo.height = 768;
+    if ( !m_window->create( wo ) )
+    {
+        DE_ERROR("Cant create window, abort main().")
+        delete m_window;
+        m_window = nullptr;
+        return false;
+    }
+
+    m_window->setResizable(true);
+    m_window->setWindowIcon( aaaa );
+    m_window->setWindowTitle( "Die Siedler von Satan 3D | <benjaminhampe@gmx.de>" );
+    m_window->run();
+    m_window->bringToFront();
+    m_window->run();
+
+    DE_INFO("Create opengl video driver.")
+
+    m_driver = new de::gpu::VideoDriver();
+
+    int w = m_window->getClientRect().w;
+    int h = m_window->getClientRect().h;
+    DE_INFO("Got client size(",w,",",h,").")
+
+    if ( !m_driver->open( w, h ) )
+    {
+        DE_ERROR("Cant create opengl video driver, abort app!")
+        delete m_window;
+        delete m_driver;
+        m_window = nullptr;
+        m_driver = nullptr;
+        return false;
+    }
 
     // =======================
     // === Draw LoadScreen ===
@@ -158,15 +215,14 @@ void H3_Game::init(de::IrrlichtDevice* device)
     //m_img.initLoadScreen();
     m_img.loadLoadScreen();
     m_tex.initLoadScreen( *this );
-    m_device->run();
-    auto driver = m_device->getVideoDriver();
-    driver->beginRender();
-    int w = driver->getScreenWidth();
-    int h = driver->getScreenHeight();
-    driver->getScreenRenderer()->draw2DRect( de::Recti(0,0,w,h), 0xFFFFFFFF, getTex( H3_Tex::Satan, "LoadScreen" ) );
-    driver->endRender();
-    m_device->getWindow()->swapBuffers();
-    m_device->run();
+    run();
+    m_driver->beginRender();
+    w = m_driver->getScreenWidth();
+    h = m_driver->getScreenHeight();
+    m_driver->getScreenRenderer()->draw2DRect( de::Recti(0,0,w,h), 0xFFFFFFFF, getTex( H3_Tex::Satan, "LoadScreen" ) );
+    m_driver->endRender();
+    m_window->swapBuffers();
+    run();
 
     // ======================
     // === Load images ===
@@ -182,12 +238,12 @@ void H3_Game::init(de::IrrlichtDevice* device)
     //m_font.save("media/H3/font_atlas");
     m_font.load();
 
-    m_guienv.init( driver );
+    m_guienv.init( m_driver );
 
     // ===================
     // === init camera ===
     // ===================
-    auto camera = driver->getCamera();
+    auto camera = m_driver->getCamera();
     camera->lookAt( glm::vec3(10,100,-100),
                    glm::vec3(0,0,0) );
     camera->setMoveSpeed(1.0);
@@ -204,7 +260,7 @@ void H3_Game::init(de::IrrlichtDevice* device)
     auto py = H3_getImg( *this, H3_Img::Sky1PosY);
     auto nz = H3_getImg( *this, H3_Img::Sky1NegZ);
     auto pz = H3_getImg( *this, H3_Img::Sky1PosZ);
-    driver->getSkyboxRenderer()->load( nx, px, ny, py, nz, pz);
+    m_driver->getSkyboxRenderer()->load( nx, px, ny, py, nz, pz);
 
     // ======================
     // === init textures ===
@@ -214,7 +270,7 @@ void H3_Game::init(de::IrrlichtDevice* device)
     // =========================
     // === init lights (sun) ===
     // =========================
-    driver->addLight(
+    m_driver->addLight(
         glm::vec3(0,300,0),
         glm::vec3(1,1,0.9));
 
@@ -323,12 +379,12 @@ void H3_Game::init(de::IrrlichtDevice* device)
     de::smesh::SMeshBuffer m_meshTileD; // Italia
     de::smesh::SMeshBuffer m_meshTileE; // Alpen
 
-    createSMeshTile( m_meshTileDesert, driver, m_tileSize, getImg(H3_Img::TileDesert_H), getTex(H3_Tex::TileDesert_D, "m_meshTileDesert"));
-    createSMeshTile( m_meshTileA, driver, m_tileSize, getImg(H3_Img::TileA_H), getTex(H3_Tex::TileA_D, "m_meshTileA"));
-    createSMeshTile( m_meshTileB, driver, m_tileSize, getImg(H3_Img::TileB_H), getTex(H3_Tex::TileB_D, "m_meshTileB"));
-    createSMeshTile( m_meshTileC, driver, m_tileSize, getImg(H3_Img::TileC_H), getTex(H3_Tex::TileC_D, "m_meshTileC"));
-    createSMeshTile( m_meshTileD, driver, m_tileSize, getImg(H3_Img::TileD_H), getTex(H3_Tex::TileD_D, "m_meshTileD"));
-    createSMeshTile( m_meshTileE, driver, m_tileSize, getImg(H3_Img::TileE_H), getTex(H3_Tex::TileE_D, "m_meshTileE"));
+    createSMeshTile( m_meshTileDesert, m_driver, m_tileSize, getImg(H3_Img::TileDesert_H), getTex(H3_Tex::TileDesert_D, "m_meshTileDesert"));
+    createSMeshTile( m_meshTileA, m_driver, m_tileSize, getImg(H3_Img::TileA_H), getTex(H3_Tex::TileA_D, "m_meshTileA"));
+    createSMeshTile( m_meshTileB, m_driver, m_tileSize, getImg(H3_Img::TileB_H), getTex(H3_Tex::TileB_D, "m_meshTileB"));
+    createSMeshTile( m_meshTileC, m_driver, m_tileSize, getImg(H3_Img::TileC_H), getTex(H3_Tex::TileC_D, "m_meshTileC"));
+    createSMeshTile( m_meshTileD, m_driver, m_tileSize, getImg(H3_Img::TileD_H), getTex(H3_Tex::TileD_D, "m_meshTileD"));
+    createSMeshTile( m_meshTileE, m_driver, m_tileSize, getImg(H3_Img::TileE_H), getTex(H3_Tex::TileE_D, "m_meshTileE"));
 
     // de::gpu::BumpMapUtil::testNevada( m_meshTileDesert, m_driver );
     // de::gpu::BumpMapUtil::testMountWilder( m_meshTileA, m_driver );
@@ -344,7 +400,7 @@ void H3_Game::init(de::IrrlichtDevice* device)
     m_hmeshTileD = de::gpu::HMesh::fromSMesh( m_meshTileD );
     m_hmeshTileE = de::gpu::HMesh::fromSMesh( m_meshTileE );
 
-    m_hmeshRenderer.init( driver );
+    m_hmeshRenderer.init( m_driver );
     m_waterTileRenderer.init( *this );
     //m_tileRenderer.init( *this );
     m_chipRenderer.init( *this );
@@ -373,12 +429,56 @@ void H3_Game::init(de::IrrlichtDevice* device)
 
     m_uiWorldCreator->setPreset( H3_Cfg::createStandard() );
 
-    m_fpsTimerId = m_device->startTimer(33);
-    m_capTimerId = m_device->startTimer(200);
-    m_acceptPaintEvents = true;
+    // m_fpsTimerId = m_device->startTimer(33);
+    m_capTimerId = m_window->startTimer(200);
+    m_bPaintEvents = true;
 
     enterStartMenu();
+    return true;
 }
+
+de::gpu::TexRef H3_Game::getTex( H3_Tex::eID id, const std::string & caller ) const
+{
+    const auto it = m_tex.m_refs.find(id);
+    if (it == m_tex.m_refs.end())
+    {
+        std::ostringstream o;
+        o << "No texRef with id " << static_cast<uint32_t>(id) << ", caller("<<caller<<")";
+        throw std::runtime_error(o.str());
+    }
+
+    if (it->second.empty())
+    {
+        std::ostringstream o;
+        o << "Got empty texRef with id " << static_cast<uint32_t>(id);
+        throw std::runtime_error(o.str());
+    }
+
+    return it->second;
+}
+
+void H3_Game::exitProgram()
+{
+    if (isRunning())
+    {
+        bool wannaExit = H3_MessageBox("Exit Game",
+                                       "Do you want to exit the running Game?");
+
+        if (!wannaExit)
+        {
+            return;
+        }
+    }
+
+
+    requestClose();
+}
+
+void H3_Game::exitGame()
+{
+
+}
+
 
 void H3_Game::setPreset(const H3_Cfg& preset)
 {
@@ -1984,21 +2084,16 @@ void H3_Game::UI_updateActions()
 
 void H3_Game::updateWindowTitle()
 {
-    if (!m_device) return;
+    if (!m_window) return;
 
     const int desktopW = dbDesktopWidth();
     const int desktopH = dbDesktopHeight();
-    const de::Recti r1 = m_device->getWindow()->getWindowRect();
-    const de::Recti r2 = m_device->getWindow()->getClientRect();
+    const de::Recti r1 = m_window->getWindowRect();
+    const de::Recti r2 = m_window->getClientRect();
 
     int zoom = m_guienv.getScalePc();
 
-    int fps = 0;
-    auto driver = getDriver();
-    if (driver)
-    {
-        fps = driver->getFPS();
-    }
+    int fps = (m_driver) ? m_driver->getFPS() : 0;
 
     std::ostringstream o; o <<
         "Siedler 3D (c) 2025 by BenjaminHampe@gmx.de | "
@@ -2008,7 +2103,7 @@ void H3_Game::updateWindowTitle()
         "Window("<<r1.str()<<"), "
         "Client("<<r2.str()<<")";
 
-    m_device->getWindow()->setWindowTitle( o.str().c_str() );
+    m_window->setWindowTitle( o.str().c_str() );
 }
 
 void H3_Game::drawSkybox()
@@ -2514,7 +2609,7 @@ void H3_Game::drawHoveredTile()
 
 void H3_Game::draw()
 {
-    if (!m_acceptPaintEvents)
+    if (!m_bPaintEvents)
     {
         DE_WARN("No m_acceptPaintEvents")
         return;
@@ -2523,10 +2618,6 @@ void H3_Game::draw()
     //DE_OK("")
     auto driver = getDriver();
     if (!driver) { DE_ERROR("No driver") return; }
-
-    // Time:
-    static double tStart = dbTimeInSeconds();
-    double t = dbTimeInSeconds() - tStart;
 
     driver->beginRender();
 
@@ -2610,347 +2701,7 @@ void H3_Game::draw()
 
     driver->endRender();
 
-    m_device->getWindow()->swapBuffers();
-}
-
-void H3_Game::onEvent( const de::Event& event )
-{
-    m_guienv.onEvent( event );
-
-    if ( event.type == de::EventType::TIMER )
-    {
-        auto const& evt = event.timerEvent;
-        if ( evt.id == m_fpsTimerId )
-        {
-            if (m_device) m_device->getWindow()->update();
-        }
-        else if ( evt.id == m_capTimerId )
-        {
-            updateWindowTitle();
-        }
-    }
-    else if ( event.type == de::EventType::RESIZE )
-    {
-        UI_resizeLayouts();
-    }
-    else if ( event.type == de::EventType::PAINT )
-    {
-        draw();
-    }
-    else if ( event.type == de::EventType::KEY_PRESS )
-    {
-        const auto key = event.keyPressEvent.key;
-        // Toggle visibility of MainMenu:
-        if (key == de::KEY_ESCAPE)
-        {
-            if (m_uiMainmenu)
-            {
-                bool bVisible = m_uiMainmenu->isVisible();
-                m_uiMainmenu->setVisible( !bVisible );
-            }
-        }
-
-        // F11 - Toggle window resizable
-        if (key == de::KEY_F11)
-        {
-            auto window = m_device->getWindow();
-            if (window)
-            {
-                window->setResizable( !window->isResizable() );
-            }
-        }
-        // F12|F - Toggle window fullscreen
-        if (key == de::KEY_F12 || key == de::KEY_F )
-        {
-            auto window = m_device->getWindow();
-            if (window)
-            {
-                window->setFullScreen( !window->isFullScreen() );
-            }
-        }
-
-
-        // SPACE - Toggle help overlay
-        if (key == de::KEY_SPACE) // SPACE - Toggle overlay
-        {
-            m_isCameraMouseInputEnabled = !m_isCameraMouseInputEnabled;
-            if (m_isCameraMouseInputEnabled)
-            {
-                m_firstMouse = true;
-            }
-            //m_camera.setInputEnabled( !m_camera.isInputEnabled() );
-            // m_showHelpOverlay = !m_showHelpOverlay;
-        }
-        // PAGE_UP - Increase font size
-        if (key == de::KEY_PAGE_UP)
-        {
-            setScalePc( std::min( 400, getScalePc() + 10 ) );
-            UI_resizeLayouts();
-        }
-        // PAGE_DOWN - decrease font size
-        if (key == de::KEY_PAGE_DOWN)
-        {
-            setScalePc( std::max( 50, getScalePc() - 10 ) );
-            UI_resizeLayouts();
-        }
-        // ARROW_UP - Increase frame wait time in ms - lower FPS
-        if (key == de::KEY_UP)
-        {
-        }
-
-        // ARROW_DOWN - Decrease frame wait time in ms - increase FPS
-        if (key == de::KEY_DOWN)
-        {
-        }
-
-        // // Move camera
-        // auto camera = getCamera();
-        // if (camera)
-        // {
-        //     if (key == de::KEY_UP)   { camera->move( 2.0f ); }
-        //     if (key == de::KEY_DOWN) { camera->move( -1.0f ); }
-        //     if (key == de::KEY_LEFT) { camera->strafe( -1.0f ); }
-        //     if (key == de::KEY_RIGHT) { camera->strafe( 1.0f ); }
-        //     if (key == de::KEY_W) { camera->move( 2.0f ); }
-        //     if (key == de::KEY_S) { camera->move( -1.0f ); }
-        //     if (key == de::KEY_A) { camera->strafe( -1.0f ); }
-        //     if (key == de::KEY_D) { camera->strafe( 1.0f ); }
-        // }
-    }
-    else if ( event.type == de::EventType::KEY_RELEASE )
-    {
-    }
-    else if ( event.type == de::EventType::MOUSE_DBLCLICK )
-    {
-        // if (event.mouseDblClickEvent.isLeft())
-        // {
-        //     H3_MessageBox("Left DoubleClick","New MouseEvents");
-        // }
-    }
-    else if ( event.type == de::EventType::MOUSE_PRESS )
-    {
-        //DE_BENNI("MousePressEvent = ", event.mousePressEvent.str())
-        if (event.mousePressEvent.isLeft())
-        {
-            m_isMouseLeftPressed = true;
-            m_leftDragStartX = event.mousePressEvent.x;
-            m_leftDragStartY = event.mousePressEvent.y;
-            m_leftDragLastX = event.mousePressEvent.x;
-            m_leftDragLastY = event.mousePressEvent.y;
-        }
-        else if (event.mousePressEvent.isRight())
-        {
-            m_isMouseRightPressed = true;
-        }
-        else if (event.mousePressEvent.isMiddle())
-        {
-            m_isMouseMiddlePressed = true;
-        }
-
-    }
-    else if ( event.type == de::EventType::MOUSE_RELEASE )
-    {
-        //DE_BENNI("MouseReleaseEvent = ", event.mouseReleaseEvent.str())
-        if (event.mouseReleaseEvent.isLeft())
-        {
-            if (m_isMouseLeftPressed)
-            {
-                if (m_state == H3_State::PlaceRoad && m_hoverEdgeId)
-                {
-                    H3_Edge & edge = H3_getEdge(*this, __func__, m_hoverEdgeId);
-                    finalizeBuyRoad( edge );
-                }
-                else if (m_state == H3_State::PlaceFarm && m_hoverCornerId)
-                {
-                    H3_Corner & corner = H3_getCorner(*this, __func__, m_hoverCornerId);
-                    finalizeBuyFarm( corner );
-                }
-                else if (m_state == H3_State::PlaceCity && m_hoverFarmId)
-                {
-                    H3_Farm & farm = H3_getFarm(*this, __func__, m_hoverFarmId);
-                    finalizeBuyCity( farm );
-                }
-                else if (m_state == H3_State::PlaceThief && m_hoverTileId)
-                {
-                    H3_Tile & tile = H3_getTile(*this, __func__, m_hoverTileId);
-                    leaveThiefPlacement( tile );
-                }
-                else if (m_state == H3_State::StealRandomCard)
-                {
-                    if (m_hoverRoadId)
-                    {
-                        H3_Road & road = H3_getRoad(*this, __func__, m_hoverRoadId);
-                        H3_Edge & edge = H3_getEdge(*this, __func__, road.edgeId);
-                        leaveThiefOutro( edge );
-                    }
-                    else if (m_hoverFarmId)
-                    {
-                        H3_Farm & farm = H3_getFarm(*this, __func__, m_hoverFarmId);
-                        H3_Corner & corner = H3_getCorner(*this, __func__, farm.cornerId);
-                        leaveThiefOutro( corner );
-                    }
-                    else if (m_hoverCityId)
-                    {
-                        H3_City & city = H3_getCity(*this, __func__, m_hoverCityId);
-                        H3_Corner & corner = H3_getCorner(*this, __func__, city.cornerId);
-                        leaveThiefOutro( corner );
-                    }
-                }
-                else
-                {
-
-                }
-            }
-            m_isMouseLeftPressed = false;
-        }
-        else if (event.mouseReleaseEvent.isRight())
-        {
-            m_isMouseRightPressed = false;
-        }
-        else if (event.mouseReleaseEvent.isMiddle())
-        {
-            if (m_isMouseMiddlePressed &&
-                m_hoverTileId &&
-                (m_state == H3_State::Idle))
-            {
-                auto driver = getDriver();
-                auto camera = driver->getCamera();
-
-                H3_Tile & tile = H3_getTile(*this, __func__, m_hoverTileId);
-
-                glm::dvec3 A = camera->getPos();
-                glm::dvec3 B = camera->getTarget();
-                glm::dvec3 AB = B - A;
-
-                glm::dvec3 D = tile.pos;
-                glm::dvec3 C = D - AB;
-
-                camera->lookAt( C, D );
-            }
-
-            m_isMouseMiddlePressed = false;
-        }
-    }
-    else if ( event.type == de::EventType::MOUSE_WHEEL )
-    {
-        auto camera = getCamera();
-        if (camera)
-        {
-            if ( m_isCameraMouseInputEnabled )
-            {
-                if ( event.mouseWheelEvent.y < 0.0f )
-                {
-                    camera->move( -2.5f );
-                }
-                else if ( event.mouseWheelEvent.y > 0.0f )
-                {
-                    camera->move( 2.5f );
-                }
-            }
-            else
-            {
-                if ( event.mouseWheelEvent.y < 0.0f )
-                {
-                    cylinderCamRadius += 5.f;
-                }
-                else if ( event.mouseWheelEvent.y > 0.0f )
-                {
-                    cylinderCamRadius -= 5.f;
-                }
-
-                if (cylinderCamRadius < 1.0)
-                    cylinderCamHeight = 1.0;
-
-                if (cylinderCamRadius > 2000.0)
-                    cylinderCamRadius = 2000.0;
-
-                DE_DEBUG("CylinderCam: "
-                        "phi(",cylinderCamAngleY,"), "
-                        "radius(",cylinderCamRadius,"), "
-                        "height(",cylinderCamHeight,")")
-
-                auto camPos = glm::dvec3( cylinderCamRadius * sin(cylinderCamAngleY),
-                                     cylinderCamHeight,
-                                     cylinderCamRadius * cos(cylinderCamAngleY));
-
-                auto camTar = glm::dvec3(0,0,0);
-                camera->lookAt( camPos, camTar );
-
-            }
-        }
-    }
-    else if ( event.type == de::EventType::MOUSE_MOVE )
-    {
-        const int mx = event.mouseMoveEvent.x;
-        const int my = event.mouseMoveEvent.y;
-
-        if ( m_isCameraMouseInputEnabled )
-        {
-            if (m_firstMouse)
-            {
-                m_firstMouse = false;
-            }
-            else
-            {
-                m_mouseMoveX = mx - m_mouseX;
-                m_mouseMoveY = my - m_mouseY;
-
-                auto camera = getCamera();
-                if (camera)
-                {
-                    camera->yaw( 0.003f * m_mouseMoveX );
-                    camera->pitch( 0.003f * m_mouseMoveY );
-                }
-            }
-        }
-        else
-        {
-            if (m_isMouseLeftPressed)
-            {
-                int mouseDragDeltaX = mx - m_leftDragLastX;
-                int mouseDragDeltaY = my - m_leftDragLastY;
-                m_leftDragLastX = mx;
-                m_leftDragLastY = my;
-                auto camera = getCamera();
-                if (camera)
-                {
-                    auto camPos = camera->getPos();
-                    auto camTar = glm::dvec3(0,0,0);
-
-                    auto camDir = camTar - camPos;
-                    //cylinderCamRadius = glm::length( glm::dvec2(camDir.x, camDir.z) );
-                    //cylinderCamHeight = camDir.y;
-                    //cylinderCamAngleY = atan2(camDir.z, camDir.x) * de::Math::RAD2DEG;
-                    DE_DEBUG("CylinderCam: "
-                            "phi(",cylinderCamAngleY,"), "
-                            "radius(",cylinderCamRadius,"), "
-                            "height(",cylinderCamHeight,")")
-
-                    cylinderCamAngleY += 0.01f * mouseDragDeltaX;
-                    cylinderCamHeight += mouseDragDeltaY;
-
-                    if (cylinderCamHeight < 0.0)
-                        cylinderCamHeight = 0.0;
-
-                    if (cylinderCamHeight > 1000.0)
-                        cylinderCamHeight = 1000.0;
-
-                    camPos = glm::dvec3( cylinderCamRadius * sin(cylinderCamAngleY),
-                                         cylinderCamHeight,
-                                         cylinderCamRadius * cos(cylinderCamAngleY));
-
-                    camera->lookAt( camPos, camTar );
-                }
-
-            }
-        }
-        m_mouseMoveX = 0; // Reset
-        m_mouseMoveY = 0; // Reset
-        m_mouseX = mx; // Store current value
-        m_mouseY = my; // Store current value
-
-        pick();
-    }
+    m_window->swapBuffers();
 }
 
 

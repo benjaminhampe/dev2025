@@ -13,6 +13,8 @@
 #include <de/terrain/Hillplane.h>
 #include <de/terrain/HTerrain.h>
 
+#include <de/os/Window_WGL.h>
+
 #ifdef HAVE_DE_AUDIO
     #include <de/audio/AudioEngine.h>
 #endif
@@ -117,7 +119,7 @@ struct UI_Marquee
 };
 
 // ===========================================================================
-struct H3_Game : public de::IEventReceiver
+struct H3_Game
 // ===========================================================================
 {
     H3_Game();
@@ -128,7 +130,11 @@ struct H3_Game : public de::IEventReceiver
     int getScalePc() const { return m_guienv.getScalePc(); }
     void setScalePc( int iScalePc ) { m_guienv.setScalePc( iScalePc ); }
 
-    void init(de::IrrlichtDevice* device);
+    bool init();
+    void destroy();
+    void requestClose();
+    bool run();
+
     void setPreset(const H3_Cfg& preset);
     void exitProgram();
     void exitGame();
@@ -175,11 +181,11 @@ struct H3_Game : public de::IEventReceiver
 
     bool isRunning() const { return m_round > 0; }
 
-    de::Window* getWindow() { return m_device->getWindow(); }
+    de::Window* getWindow() { return m_window; }
 
-    de::gpu::VideoDriver* getDriver() { return m_device->getVideoDriver(); }
+    de::gpu::VideoDriver* getDriver() { return m_driver; }
 
-    de::gpu::Camera* getCamera() { return m_device->getVideoDriver()->getCamera(); }
+    de::gpu::Camera* getCamera() { return m_driver->getCamera(); }
 
     void draw();
     void drawSkybox();
@@ -203,7 +209,7 @@ struct H3_Game : public de::IEventReceiver
     void marqueeH1( std::wstring msg, int durationMs, uint32_t color = 0xFFFFFFFF );
     void marqueeH3( std::wstring msg, int durationMs, uint32_t color = 0xFFFFFFFF );
 
-    bool run();
+    // bool run();
 
     void updateWindowTitle();
 
@@ -211,8 +217,6 @@ struct H3_Game : public de::IEventReceiver
 
     void UI_resizeLayouts();
     void UI_updateActions();
-
-    void onEvent( const de::Event& event ) override;
 
     uint32_t
     getPlayerColor( uint32_t i ) const
@@ -248,11 +252,14 @@ struct H3_Game : public de::IEventReceiver
     //de::audio::AudioEngine m_audioEngine;
     H3_Cfg m_cfg;
 
-    de::IrrlichtDevice* m_device;
+    // de::IrrlichtDevice* m_device;
+    de::Window* m_window;
+    de::gpu::VideoDriver* m_driver;
     de::gpu::Camera m_camera;
     de::gui::Env m_guienv;
 
-    bool m_acceptPaintEvents = false;
+    bool m_bPaintEvents = false;
+    bool m_bShouldRun = true;
     uint32_t m_fpsTimerId;  // Screen FPS...
     uint32_t m_capTimerId;  // Window title update...
 

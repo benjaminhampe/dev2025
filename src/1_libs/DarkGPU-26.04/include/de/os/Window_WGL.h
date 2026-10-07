@@ -13,16 +13,16 @@ class Window_WGL : public Window
 // ===================================================================
 {
 public:
-    Window_WGL( IEventReceiver* receiver = nullptr );
+    Window_WGL();
     ~Window_WGL() override;
 
-    IEventReceiver* getEventReceiver() override;
-    void setEventReceiver( IEventReceiver* receiver ) override;
+    // IEventReceiver* getEventReceiver() override;
+    // void setEventReceiver( IEventReceiver* receiver ) override;
 
     bool getKeyState( const EKEY key ) const override;
     void setKeyState( const EKEY key, bool checked ) override;
 
-    void onEvent( const Event& event ) override;
+    // void onEvent( const Event& event ) override;
 
     void update() override;
 
@@ -75,11 +75,11 @@ public:
 
     // Non virtual
 
-    void InitializeOpenGL();
+    // void InitializeOpenGL();
 
 
 
-    void killTimers() override;
+    // void killTimers() override;
 
     uint32_t startTimer( uint32_t ms, bool singleShot = false ) override;
 

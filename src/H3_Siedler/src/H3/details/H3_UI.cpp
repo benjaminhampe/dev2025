@@ -106,14 +106,14 @@ void H3_drawText( H3_Game & game, int x, int y, const std::string& msg, const ui
 
 void UI_drawRoundStats( H3_Game & game)
 {
-    auto device = game.m_device;
-    if ( !device ) { DE_ERROR("No device") return; }
+    // auto device = game.m_window;
+    // if ( !device ) { DE_ERROR("No device") return; }
 
     auto driver = game.getDriver();
     if ( !driver ) { DE_ERROR("No driver") return; }
 
-    const int mx = device->getMouseX();
-    const int my = device->getMouseY();
+    const int mx = game.m_mouseX;
+    const int my = game.m_mouseY;
     const int fps = driver->getFPS();
     const int w = driver->getScreenWidth();
     const int h = driver->getScreenHeight();

@@ -4,14 +4,14 @@
 namespace de {
 
 // =======================================================================
-class Window
+class Window : public IEventReceiver
 // =======================================================================
 {
 public:
     virtual ~Window() = default;
 
-    virtual IEventReceiver* getEventReceiver() = 0;
-    virtual void setEventReceiver( IEventReceiver* receiver ) = 0;
+    // virtual IEventReceiver* getEventReceiver() = 0;
+    // virtual void setEventReceiver( IEventReceiver* receiver ) = 0;
 
     virtual bool getKeyState( const EKEY key ) const = 0;
     virtual void setKeyState( const EKEY key, const bool checked ) = 0;
@@ -59,10 +59,10 @@ public:
     virtual Recti getClientRect() const = 0;
 
     virtual uint32_t startTimer( uint32_t ms, bool singleShot = false ) = 0;
-    virtual void killTimers() = 0;
     virtual void killTimer( uint32_t id ) = 0;
 
-    virtual void onEvent( Event const & event ) = 0;
+    // virtual void killTimers() = 0;
+    // virtual void onEvent( Event const & event ) = 0;
 };
 
 } // end namespace de.

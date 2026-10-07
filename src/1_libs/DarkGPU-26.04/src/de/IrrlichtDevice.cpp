@@ -1,12 +1,15 @@
 #include <de/IrrlichtDevice.h>
+
+#if 0
+
 #include <de/os/Window_WGL.h>
 //#include <de_opengl.h>
 #include "../res/de_resource.h" // setWindowIcon(aaaa)
 namespace de {
 
 IrrlichtDevice::IrrlichtDevice()
-	: m_window(nullptr)
-	, m_driver(nullptr)
+    : m_window(nullptr)
+    , m_driver(nullptr)
     , m_receiver(nullptr)
     //, m_fpsTimerId(0)
     //, m_capTimerId(0)
@@ -24,12 +27,12 @@ IrrlichtDevice::IrrlichtDevice()
     m_mouseY = 0;
     //m_mouseMoveX = 0;
     //m_mouseMoveY = 0;
-	//m_audioEngine.play();
+    //m_audioEngine.play();
 }
 
 IrrlichtDevice::~IrrlichtDevice()
 {
-	//m_audioEngine.stop();
+    //m_audioEngine.stop();
 }
 
 //  auto name = dbPromtStrA("Schreibe deinen Namen...", "User-input:");
@@ -44,7 +47,7 @@ bool IrrlichtDevice::open( int dst_w, int dst_h )
 {
     DE_INFO("Create device(",dst_w,".",dst_h,")...")
 
-	//  auto name = dbPromtStrA("Schreibe deinen Namen...", "User-input:");
+    //  auto name = dbPromtStrA("Schreibe deinen Namen...", "User-input:");
 #ifdef DEMO_AUDIO
     audio::AudioEngine m_audioEngine;
     m_audioEngine.play();
@@ -63,7 +66,7 @@ bool IrrlichtDevice::open( int dst_w, int dst_h )
     {
         DE_ERROR("Cant create window, abort main().")
         delete m_window;
-		m_window = nullptr;
+        m_window = nullptr;
         return false;
     }
 
@@ -85,8 +88,8 @@ bool IrrlichtDevice::open( int dst_w, int dst_h )
         DE_ERROR("Cant create opengl video driver, abort app!")
         delete m_window;
         delete m_driver;
-		m_window = nullptr;
-		m_driver = nullptr;
+        m_window = nullptr;
+        m_driver = nullptr;
         return false;
     }
 
@@ -114,8 +117,8 @@ bool IrrlichtDevice::open( int dst_w, int dst_h )
     // === setup UI ===
     // ======================
     // UI_create( *this );
-    
-	// ======================
+
+    // ======================
     // === setup materials ===
     // ======================
     //std::vector<MTL> mtl_liste;
@@ -351,7 +354,7 @@ void IrrlichtDevice::onEvent( const Event& event )
         //DE_BENNI("MouseReleaseEvent = ", event.mouseReleaseEvent.str())
     }
     else if (event.type == EventType::MOUSE_MOVE)
-    {        
+    {
         const int mx = event.mouseMoveEvent.x;
         const int my = event.mouseMoveEvent.y;
 
@@ -644,3 +647,6 @@ void IrrlichtDevice::mouseWheelEvent(const MouseWheelEvent& event )
 */
 
 } // end namespace de
+
+
+#endif

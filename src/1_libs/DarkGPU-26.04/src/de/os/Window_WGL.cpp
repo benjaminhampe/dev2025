@@ -18,89 +18,6 @@
 
 namespace de {
 
-LRESULT CALLBACK Window_WGL_Proc( HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam );
-
-// ===================================================================
-struct Window_WGL_Internals
-// ===================================================================
-{
-    int m_screenWidth = 600;
-    int m_screenHeight = 480;
-    bool focused = false;
-    bool m_bPaintEventEnabled = false;
-
-    IEventReceiver* m_receiver;
-
-    std::array<bool, 1024> m_keyStates;
-
-    std::vector<uint32_t> m_timerIds;
-
-    WindowOptions m_params;
-
-    HINSTANCE m_hInstance;
-    HWND m_hWnd;
-    HDC m_hDC;
-    HGLRC m_hRC;
-
-    HBITMAP m_hBackgroundBitmap;
-
-    bool m_shouldRun;
-
-    bool m_hideOnClose; // On WM_CLOSE we hide the window instead of calling DestroyWindow, which would call WM_DESTROY.
-
-    bool m_postQuitMessage;
-
-    DWORD m_windowStyle;
-    DWORD m_windowedStyle;
-    DWORD m_fullscreenStyle;
-
-    DEVMODE m_desktopMode;
-
-
-
-    HWND m_dummyWnd;
-    HDC m_dummyDC;
-    HGLRC m_dummyRC;
-
-    //HMODULE m_opengl32;
-
-    PIXELFORMATDESCRIPTOR m_pfd;
-
-    //std::string m_wglExtensionString;
-
-    //   float m_clearColorR = 0.1f;
-    //   float m_clearColorG = 0.1f;
-    //   float m_clearColorB = 0.1f;
-    //   float m_clearColorA = 1.0f;
-
-    HKL m_KEYBOARD_INPUT_HKL;
-    uint32_t m_KEYBOARD_INPUT_CODEPAGE; // default: 1252 (Portuguese?)
-
-    Window_WGL_Internals()
-        : m_receiver( nullptr )
-        , m_hInstance( nullptr )
-        , m_hWnd( nullptr )
-        , m_hDC( nullptr )
-        , m_hRC( nullptr )
-        , m_hBackgroundBitmap( nullptr )
-        , m_shouldRun( true )
-        , m_hideOnClose( false )
-        , m_postQuitMessage( true )
-        , m_dummyWnd( nullptr )
-        , m_dummyDC( nullptr )
-        , m_dummyRC( nullptr )
-        //, m_opengl32( nullptr )
-        , m_KEYBOARD_INPUT_HKL( nullptr )
-        , m_KEYBOARD_INPUT_CODEPAGE( 1252 )
-    {
-
-        // ======================
-        // === Reset keyboard ===
-        // ======================
-        for ( bool & bValue : m_keyStates ) { bValue = false; }
-    }
-};
-
 namespace {
 
 static bool g_isTimerValid = true;
@@ -170,26 +87,144 @@ uint32_t de_startTimer( uint32_t ms = 10, LPTIMECALLBACK timeCallback = nullptr,
 
 } // end namespace
 
-Window_WGL::Window_WGL( IEventReceiver* receiver )
+// LRESULT CALLBACK Window_WGL_Proc( HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam );
+
+// ===================================================================
+struct Window_WGL_Internals
+// ===================================================================
+{
+    // IEventReceiver* m_receiver;
+
+    std::array<bool, 1024> m_keyStates;
+
+    std::vector<uint32_t> m_timerIds;
+
+    WindowOptions m_params;
+
+    HINSTANCE m_hInstance;
+    HWND m_hWnd;
+    HDC m_hDC;
+    HGLRC m_hRC;
+    HBITMAP m_hBackgroundBitmap;
+
+    bool m_shouldRun;
+
+    bool m_hideOnClose; // On WM_CLOSE we hide the window instead of calling DestroyWindow, which would call WM_DESTROY.
+
+    bool m_postQuitMessage;
+
+    DWORD m_windowStyle;
+    DWORD m_windowedStyle;
+    DWORD m_fullscreenStyle;
+
+    DEVMODE m_desktopMode;
+
+    HWND m_dummyWnd;
+    HDC m_dummyDC;
+    HGLRC m_dummyRC;
+
+    //HMODULE m_opengl32;
+
+    PIXELFORMATDESCRIPTOR m_pfd;
+
+    //std::string m_wglExtensionString;
+
+    //   float m_clearColorR = 0.1f;
+    //   float m_clearColorG = 0.1f;
+    //   float m_clearColorB = 0.1f;
+    //   float m_clearColorA = 1.0f;
+
+    HKL m_KEYBOARD_INPUT_HKL;
+    uint32_t m_KEYBOARD_INPUT_CODEPAGE; // default: 1252 (Portuguese?)
+
+    int m_screenWidth = 600;
+    int m_screenHeight = 480;
+    bool m_bFocused = false;
+    bool m_bPaintEventEnabled = false;
+
+    Window_WGL_Internals()
+        : m_hInstance( nullptr )
+        , m_hWnd( nullptr )
+        , m_hDC( nullptr )
+        , m_hRC( nullptr )
+        , m_hBackgroundBitmap( nullptr )
+        , m_shouldRun( true )
+        , m_hideOnClose( false )
+        , m_postQuitMessage( true )
+        , m_dummyWnd( nullptr )
+        , m_dummyDC( nullptr )
+        , m_dummyRC( nullptr )
+        //, m_opengl32( nullptr )
+        , m_KEYBOARD_INPUT_HKL( nullptr )
+        , m_KEYBOARD_INPUT_CODEPAGE( 1252 )
+        , m_screenWidth{ 600 }
+        , m_screenHeight{ 480 }
+        , m_bFocused{ false }
+        , m_bPaintEventEnabled{ false }
+    {
+
+        // ======================
+        // === Reset keyboard ===
+        // ======================
+        for ( bool & bValue : m_keyStates ) { bValue = false; }
+    }
+
+    void killTimers()
+    {
+        g_isTimerValid = false;
+        for (uint32_t id : m_timerIds) { de_killTimer( id ); }
+        m_timerIds.clear();
+        Sleep(100);
+        DE_DEBUG("")
+    }
+
+    void destroy()
+    {
+        DE_DEBUG("")
+
+        killTimers();
+
+        m_bPaintEventEnabled = false;
+
+        Sleep(100);
+
+        if (m_hBackgroundBitmap)
+        {
+            DeleteObject(m_hBackgroundBitmap);
+            m_hBackgroundBitmap = nullptr; // Optional but good practice
+        }
+
+        // if (m_vg)
+        // {
+        //     wglMakeCurrent(_d->hDC, _d->hGL);
+        //     nvgDeleteGL3(m_vg);
+        //     m_vg = nullptr;
+        // }
+
+        HGLRC current = wglGetCurrentContext();
+        if (current == m_hRC)
+            wglMakeCurrent(nullptr, nullptr); // nur deinen Kontext entbinden
+
+        wglDeleteContext(m_hRC);
+        m_hRC = nullptr;
+
+        ReleaseDC(m_hWnd, m_hDC);
+        m_hDC = nullptr;
+
+        DestroyWindow(m_hWnd);
+        m_hWnd = nullptr;
+    }
+};
+
+Window_WGL::Window_WGL()
     : _d( new Window_WGL_Internals() )
 {
-    _d->m_receiver = receiver;
 }
 
 Window_WGL::~Window_WGL()
 {
-    destroy();
-
+    _d->destroy();
     delete _d;
-}
-
-void Window_WGL::killTimers()
-{
-    g_isTimerValid = false;
-    for (uint32_t id : _d->m_timerIds) { killTimer( id ); }
-    _d->m_timerIds.clear();
-    Sleep(100);
-    DE_DEBUG("")
 }
 
 void Window_WGL::killTimer( uint32_t id )
@@ -216,6 +251,7 @@ Window_WGL::startTimer( uint32_t ms, bool singleShot )
         DWORD_PTR( this ), singleShot );
 }
 
+/*
 IEventReceiver* Window_WGL::getEventReceiver()
 {
     return _d->m_receiver;
@@ -225,6 +261,7 @@ void Window_WGL::setEventReceiver( IEventReceiver* receiver )
 {
     _d->m_receiver = receiver;
 }
+*/
 
 bool Window_WGL::getKeyState( const EKEY ekey ) const
 {
@@ -240,6 +277,7 @@ void Window_WGL::setKeyState( const EKEY ekey, const bool bPressed )
     //return 0 != GetKeyState( winKey );
 }
 
+/*
 void Window_WGL::onEvent( const Event& event )
 {
     if (event.type == EventType::KEY_PRESS)
@@ -262,9 +300,11 @@ void Window_WGL::onEvent( const Event& event )
         DE_WARN("No _d->m_receiver")
     }
 }
+*/
 
 void Window_WGL::destroy()
 {
+/*
     DE_DEBUG("")
 
     killTimers();
@@ -298,6 +338,7 @@ void Window_WGL::destroy()
 
     DestroyWindow(_d->m_hWnd);
     _d->m_hWnd = nullptr;
+*/
 }
 
 void Window_WGL::yield( int ms )
@@ -317,13 +358,25 @@ void Window_WGL::requestClose()
 
 void Window_WGL::makeCurrent()
 {
+    // Done in WndProc
+/*
     // wglMakeCurrent(ps.hdc, self->_d->glrc);
+    if (!_d->m_hDC)
+    {
+        DE_ERROR("No _d->m_hDC")
+        return;
+    }
+    if (!_d->m_hRC)
+    {
+        DE_ERROR("No _d->m_hRC")
+        return;
+    }
     wglMakeCurrent(_d->m_hDC, _d->m_hRC);
-
+*/
 }
 void Window_WGL::swapBuffers()
 {
-    glFlush();
+    // glFlush();
 #if 0
     // TODO: rework this. Seems like enabled vsync = 1 leads to 30 fps, not 60
     //       which should mean we swapped one time too often.
@@ -354,7 +407,7 @@ void Window_WGL::swapBuffers()
     }
     //}
 #endif
-    bool ok = (SwapBuffers( _d->m_hDC ) == TRUE);
+    // bool ok = (SwapBuffers( _d->m_hDC ) == TRUE);
 }
 
 void Window_WGL::update()
@@ -362,6 +415,7 @@ void Window_WGL::update()
     InvalidateRect(_d->m_hWnd, nullptr, FALSE);
 }
 
+/*
 static HGLRC InitGL (HWND Wnd)
 {
     //  We need to make sure the window create in a suitable DC format
@@ -406,6 +460,7 @@ static HGLRC InitGL (HWND Wnd)
     ReleaseDC(Wnd, ourWindowHandleToDeviceContext); // Release the window device context we are done
     return ourOpenGLRC; // Return the render context
 }
+*/
 
 LRESULT CALLBACK
 WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
@@ -587,24 +642,63 @@ WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
         // {
         //     return 0;
         // }
+case WM_NCCREATE:
+        {
+            DE_TRACE("WM_NCCREATE ", hwnd)
+            break;
+        }
+        case WM_CREATE:
+        {
+            DE_TRACE("WM_CREATE ", hwnd)
+            //setWindowIcon( u64(hwnd), aaaa );
+            //setResizable( hwnd, true, 800, 600 );
+            //createMenu( hwnd );
+            break;
+        }
+        case WM_DESTROY:
+        {
+            DE_OK("WM_DESTROY ", hwnd)
+            KillTimer(hwnd, 123);
+            //PostQuitMessage(0);
+
+            if (self->_d->m_postQuitMessage)
+            {
+                PostQuitMessage(0);
+                return 0;
+            }
+            else
+            {
+                return DefWindowProc(hwnd, msg, wParam, lParam);
+            }
+        }
+        case WM_CLOSE:
+        {
+            DE_TRACE("WM_CLOSE ", hwnd)
+            /*
+            if (self->_d->m_hideOnClose)
+            {
+                // Instead of destroying, just hide the window
+                ShowWindow(hwnd, SW_HIDE);
+                return 0;
+            }
+            else
+            {
+                return DefWindowProc(hwnd, msg, wParam, lParam);
+            }
+            */
+            break;
+        }
         case WM_SETFOCUS:
         {
             DE_OK("WM_SETFOCUS")
-            self->_d->focused = true;
+            self->_d->m_bFocused = true;
             break;
         }
         case WM_KILLFOCUS:
         {
             DE_OK("WM_KILLFOCUS")
-            self->_d->focused = false;
+            self->_d->m_bFocused = false;
             break;
-        }
-        case WM_DESTROY:
-        {
-            DE_OK("WM_DESTROY")
-            KillTimer(hwnd, 123);
-            //PostQuitMessage(0);
-            return 0;
         }
         case WM_TIMER:
         {
@@ -612,6 +706,11 @@ WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
             {
                 InvalidateRect(hwnd, NULL, TRUE); // force redraw
             }
+
+            de::TimerEvent event;
+            event.id = wParam;
+            self->timerEvent(event);
+
             return 0;
         }
         case WM_ERASEBKGND:
@@ -633,7 +732,7 @@ WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
                 de::PaintEvent event;
                 event.w = r.right - r.left;
                 event.h = r.bottom - r.top;
-                self->_d->m_receiver->paintEvent(event);
+                self->paintEvent(event);
 
                 SwapBuffers( ps.hdc );
             }
@@ -652,34 +751,34 @@ WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
             de::ResizeEvent event;
             event.w = w;
             event.h = h;
-            self->_d->m_receiver->resizeEvent(event);
+            self->resizeEvent(event);
             return 0;
         }
         case WM_LBUTTONDBLCLK:
         {
-            if (!self->_d->focused)
+            if (!self->_d->m_bFocused)
             {
                 SetFocus(hwnd);
             }
-            self->_d->m_receiver->mouseDblClickEvent( createMouseDblClickEvent(msg, wParam, lParam) );
+            self->mouseDblClickEvent( createMouseDblClickEvent(msg, wParam, lParam) );
             return 0;
         }
         case WM_RBUTTONDBLCLK:
         {
-            if (!self->_d->focused)
+            if (!self->_d->m_bFocused)
             {
                 SetFocus(hwnd);
             }
-            self->_d->m_receiver->mouseDblClickEvent( createMouseDblClickEvent(msg, wParam, lParam) );
+            self->mouseDblClickEvent( createMouseDblClickEvent(msg, wParam, lParam) );
             return 0;
         }
         case WM_MBUTTONDBLCLK:
         {
-            if (!self->_d->focused)
+            if (!self->_d->m_bFocused)
             {
                 SetFocus(hwnd);
             }
-            self->_d->m_receiver->mouseDblClickEvent( createMouseDblClickEvent(msg, wParam, lParam) );
+            self->mouseDblClickEvent( createMouseDblClickEvent(msg, wParam, lParam) );
             return 0;
         }
         case WM_MOUSEMOVE:
@@ -691,73 +790,73 @@ WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
             de::MouseMoveEvent event;
             event.x = int( LOWORD( lParam ) );
             event.y = int( HIWORD( lParam ) );
-            self->_d->m_receiver->mouseMoveEvent( event );
+            self->mouseMoveEvent( event );
             return 0;
         }
         case WM_MOUSEWHEEL:
         {
-            if (!self->_d->focused)
+            if (!self->_d->m_bFocused)
             {
                 SetFocus(hwnd);
             }
             de::MouseWheelEvent event;
             event.x = 0.0f;
             event.y = float( int16_t( HIWORD( wParam ) ) ) / float( WHEEL_DELTA );
-            self->_d->m_receiver->mouseWheelEvent( event );
+            self->mouseWheelEvent( event );
             return 0;
         }
         case WM_LBUTTONDOWN:
         {
-            if (!self->_d->focused)
+            if (!self->_d->m_bFocused)
             {
                 SetFocus(hwnd);
             }
-            self->_d->m_receiver->mousePressEvent( createMousePressEvent(msg, wParam, lParam) );
+            self->mousePressEvent( createMousePressEvent(msg, wParam, lParam) );
             return 0;
         }
         case WM_RBUTTONDOWN:
         {
-            if (!self->_d->focused)
+            if (!self->_d->m_bFocused)
             {
                 SetFocus(hwnd);
             }
-            self->_d->m_receiver->mousePressEvent( createMousePressEvent(msg, wParam, lParam) );
+            self->mousePressEvent( createMousePressEvent(msg, wParam, lParam) );
             return 0;
         }
         case WM_MBUTTONDOWN:
         {
-            if (!self->_d->focused)
+            if (!self->_d->m_bFocused)
             {
                 SetFocus(hwnd);
             }
-            self->_d->m_receiver->mousePressEvent( createMousePressEvent(msg, wParam, lParam) );
+            self->mousePressEvent( createMousePressEvent(msg, wParam, lParam) );
             return 0;
         }
         case WM_LBUTTONUP:
         {
-            if (!self->_d->focused)
+            if (!self->_d->m_bFocused)
             {
                 SetFocus(hwnd);
             }
-            self->_d->m_receiver->mouseReleaseEvent( createMouseReleaseEvent(msg, wParam, lParam) );
+            self->mouseReleaseEvent( createMouseReleaseEvent(msg, wParam, lParam) );
             return 0;
         }
         case WM_RBUTTONUP:
         {
-            if (!self->_d->focused)
+            if (!self->_d->m_bFocused)
             {
                 SetFocus(hwnd);
             }
-            self->_d->m_receiver->mouseReleaseEvent( createMouseReleaseEvent(msg, wParam, lParam) );
+            self->mouseReleaseEvent( createMouseReleaseEvent(msg, wParam, lParam) );
             return 0;
         }
         case WM_MBUTTONUP:
         {
-            if (!self->_d->focused)
+            if (!self->_d->m_bFocused)
             {
                 SetFocus(hwnd);
             }
-            self->_d->m_receiver->mouseReleaseEvent( createMouseReleaseEvent(msg, wParam, lParam) );
+            self->mouseReleaseEvent( createMouseReleaseEvent(msg, wParam, lParam) );
             return 0;
         }
 
@@ -773,28 +872,48 @@ WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
             self->_d->m_KEYBOARD_INPUT_CODEPAGE = de::convertLocaleIdToCodepage( LOWORD( hkl ) );
             return 0;
         }
+/*
+if (event.type == EventType::KEY_PRESS)
+{
+    auto evt = event.keyPressEvent;
+    setKeyState( (EKEY)evt.key, true);
+}
+else if (event.type == EventType::KEY_RELEASE)
+{
+    auto evt = event.keyReleaseEvent;
+    setKeyState( (EKEY)evt.key, false);
+}
+*/
         case WM_KEYDOWN:
         {
             //DE_OK("WM_KEYDOWN")
-            self->_d->m_receiver->keyPressEvent( createKeyPressEvent(self, msg, wParam, lParam) );
+            auto event = createKeyPressEvent(self, msg, wParam, lParam);
+            self->setKeyState( (de::EKEY)event.key, true);
+            self->keyPressEvent( event );
             return 0;
         }
         case WM_KEYUP:
         {
             //DE_OK("WM_KEYUP")
-            self->_d->m_receiver->keyReleaseEvent( createKeyReleaseEvent(self, msg, wParam, lParam) );
+            auto event = createKeyReleaseEvent(self, msg, wParam, lParam);
+            self->setKeyState( (de::EKEY)event.key, false);
+            self->keyReleaseEvent( event );
             return 0;
         }
         case WM_SYSKEYDOWN:
         {
             //DE_OK("WM_SYSKEYDOWN")
-            self->_d->m_receiver->keyPressEvent( createKeyPressEvent(self, msg, wParam, lParam) );
+            auto event = createKeyPressEvent(self, msg, wParam, lParam);
+            self->setKeyState( (de::EKEY)event.key, true);
+            self->keyPressEvent( event );
             return 0;
         }
         case WM_SYSKEYUP:
         {
             //DE_OK("WM_SYSKEYUP")
-            self->_d->m_receiver->keyReleaseEvent( createKeyReleaseEvent(self, msg, wParam, lParam) );
+            auto event = createKeyReleaseEvent(self, msg, wParam, lParam);
+            self->setKeyState( (de::EKEY)event.key, false);
+            self->keyReleaseEvent( event );
             return 0;
         }
 /*
@@ -852,40 +971,41 @@ std::wstring makeUniqueWindowTitle() {
 
 bool Window_WGL::create( WindowOptions params )
 {
-    static const auto lpszClassName = L"DarkGPU_Window_WGL_Class";
-
-    const auto hInstance = GetModuleHandle(0);
-
     int desktopW = GetSystemMetrics( SM_CXSCREEN );
     int desktopH = GetSystemMetrics( SM_CYSCREEN );
-    DE_DEBUG("desktopSize(",desktopW,",",desktopH,")")
 
-    _d->m_screenWidth = desktopW / 2 - 100;
-    _d->m_screenHeight = desktopH - 300;
+    int w = desktopW / 2 - 100;
+    int h = desktopH - 300;
 
-    int w = _d->m_screenWidth;
-    int h = _d->m_screenHeight;
+    _d->m_screenWidth = w;
+    _d->m_screenHeight = h;
 
+    DE_DEBUG("DesktopSize(",desktopW,",",desktopH,"), "
+                "WindowSize(",w,",",h,")")
 
-    DE_DEBUG("windowSize(",w,",",h,")")
+    const HMODULE hInstance = GetModuleHandle(nullptr);
+    const HWND parentHwnd = (HWND)params.parent; //(HWND)parent;
 
-    WNDCLASSW wc = {0};
-    wc.lpfnWndProc = WndProc;
-    wc.hInstance = hInstance;
-    wc.lpszClassName = lpszClassName;
-    ATOM a = RegisterClassW(&wc);
-
-    if (a == 0)
+    static const auto lpszClassName = L"DarkGPU_WGL_Class";
+    static bool reg = false;
+    if (!reg)
     {
-        DWORD err = GetLastError();
-        if (err != ERROR_CLASS_ALREADY_EXISTS)
+        WNDCLASSW wc = {0};
+        wc.lpfnWndProc = WndProc;
+        wc.hInstance = hInstance;
+        wc.lpszClassName = lpszClassName;
+        ATOM a = RegisterClassW(&wc);
+
+        if (a == 0)
         {
-            DE_ERROR("Cannot register class, err = ",err)
-            return false;
+            DWORD err = GetLastError();
+            if (err != ERROR_CLASS_ALREADY_EXISTS)
+            {
+                DE_ERROR("Cannot register class, err = ",err)
+                return false;
+            }
         }
     }
-
-    HWND parentHwnd = (HWND)params.parent; //(HWND)parent;
 
     DWORD dwStyle = WS_VISIBLE | WS_TABSTOP;//  | WS_CLIPCHILDREN
     if (parentHwnd) dwStyle |= WS_CHILD;
@@ -927,8 +1047,13 @@ bool Window_WGL::create( WindowOptions params )
     _d->m_hRC = wglCreateContext(_d->m_hDC);
     wglMakeCurrent(_d->m_hDC, _d->m_hRC);
 
-    glewExperimental = GL_TRUE;
-    glewInit();
+    ensureDesktopOpenGL();
+
+    // glewExperimental = GL_TRUE;
+    // glewInit();
+
+    // glViewport(0, 0, w, h);
+    // glClearColor(0.11f, 0.03f, 0.12f, 1.0f);
 
     _d->m_bPaintEventEnabled = true;
 
@@ -1573,509 +1698,6 @@ bool Window_WGL::create( WindowOptions params )
    return true;
 }
 
-LRESULT CALLBACK
-Window_WGL_Proc( HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam )
-{
-    Window_WGL* self = reinterpret_cast<Window_WGL*>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
-    if (msg == WM_CREATE)
-    {
-        CREATESTRUCT* cs = (CREATESTRUCT*)lParam;
-        SetWindowLongPtr(hwnd, GWLP_USERDATA, (LONG_PTR)cs->lpCreateParams);
-
-        DE_OK("WM_CREATE")
-        //SetTimer(hwnd, 123, 1000 / 60, NULL); // 1/10th-second timer
-        return 0;
-    }
-
-    if (!self) return DefWindowProc(hwnd, msg, wParam, lParam);
-
-#if 0
-    Window_WGL* glwin = nullptr;
-    if ( message == WM_NCCREATE )
-    {
-        glwin = static_cast< Window_WGL* >(
-            reinterpret_cast< CREATESTRUCT* >( lParam )->lpCreateParams ); // MinGW wraps nicely
-
-        SetLastError( 0 );
-        if ( !SetWindowLongPtr( hwnd, GWL_USERDATA, reinterpret_cast< LONG_PTR >( glwin ) ) )
-        {
-            DWORD const e = ::GetLastError();
-            if ( e != 0 )
-            {
-                DE_ERROR("Async SetUserData failed. ") //, getErrorString( e ))
-                //return FALSE;
-            }
-        }
-    }
-    else
-    {
-        glwin = reinterpret_cast< Window_WGL* >( GetWindowLongPtr( hwnd, GWL_USERDATA ) );
-    }
-#endif
-
-    auto createMouseDblClickEvent = [](UINT msg, WPARAM wParam, LPARAM lParam)
-    {
-        const int mx = GET_X_LPARAM(lParam);
-        const int my = GET_Y_LPARAM(lParam);
-        const bool bCtrl = (wParam & MK_CONTROL) != 0;
-        const bool bShift = (wParam & MK_SHIFT) != 0;
-        const bool bAlt = (wParam & MK_ALT) != 0;
-
-        MouseDblClickEvent e;
-        e.x = mx;
-        e.y = my;
-
-        e.flags = MouseFlag::DoubleClick;
-        if (bCtrl) { e.flags |= MouseFlag::WithCtrl; }
-        if (bShift) { e.flags |= MouseFlag::WithShift; }
-        if (bAlt) { e.flags |= MouseFlag::WithAlt; }
-
-        switch (msg)
-        {
-            case WM_LBUTTONDBLCLK: e.buttons = MouseButton::Left; break;
-            case WM_RBUTTONDBLCLK: e.buttons = MouseButton::Right; break;
-            case WM_MBUTTONDBLCLK: e.buttons = MouseButton::Middle; break;
-            default: DE_ERROR("Unsupported mouse button double click.") break;
-        }
-
-        return e;
-    };
-
-    auto createMousePressEvent = [](UINT msg, WPARAM wParam, LPARAM lParam)
-    {
-        MousePressEvent e;
-        e.x = LOWORD(lParam);
-        e.y = HIWORD(lParam);
-        e.flags = MouseFlag::Pressed;
-        //e.flags.Shift = ((LOWORD(wParam) & MK_SHIFT) != 0);
-        //e.flags.Control = ((LOWORD(wParam) & MK_CONTROL) != 0);
-
-        switch (msg)
-        {
-            case WM_LBUTTONDOWN: e.buttons = MouseButton::Left; break;
-            case WM_RBUTTONDOWN: e.buttons = MouseButton::Right; break;
-            case WM_MBUTTONDOWN: e.buttons = MouseButton::Middle; break;
-            default: DE_ERROR("Unsupported mouse press event.") break;
-        }
-        return e;
-    };
-
-    auto createMouseReleaseEvent = [](UINT msg, WPARAM wParam, LPARAM lParam)
-    {
-        MouseReleaseEvent e;
-        e.x = LOWORD(lParam);
-        e.y = HIWORD(lParam);
-        e.flags = MouseFlag::Released;
-        //e.flags.Shift = ((LOWORD(wParam) & MK_SHIFT) != 0);
-        //e.flags.Control = ((LOWORD(wParam) & MK_CONTROL) != 0);
-
-        switch (msg)
-        {
-            case WM_LBUTTONUP: e.buttons = MouseButton::Left; break;
-            case WM_RBUTTONUP: e.buttons = MouseButton::Right; break;
-            case WM_MBUTTONUP: e.buttons = MouseButton::Middle; break;
-            default: DE_ERROR("Unsupported mouse release event.") break;
-        }
-        return e;
-    };
-
-    auto createKeyPressEvent = [](Window_WGL* self, UINT msg, WPARAM wParam, LPARAM lParam)
-    {
-        BYTE allKeys[ 256 ];
-        GetKeyboardState( allKeys );
-        bool const isShift = ( ( allKeys[ VK_SHIFT ] & 0x80 ) != 0 );
-        bool const isCtrl = ( ( allKeys[ VK_CONTROL ] & 0x80 ) != 0 );
-
-        // Handle unicode and deadkeys in a way that works since Windows 95 and nt4.0
-        // Using ToUnicode instead would be shorter, but would to my knowledge not run on 95 and 98.
-        UINT32 unicode = 0;
-        wchar_t singleChar = 0;
-        WORD keyChars[ 2 ];
-        UINT scanCode = HIWORD( lParam );
-        int conversionResult = ::ToAsciiEx( UINT(wParam),
-                                           scanCode,
-                                           allKeys,
-                                           keyChars,
-                                           0,
-                                           self->_d->m_KEYBOARD_INPUT_HKL );
-        if (conversionResult == 1)
-        {
-            WORD unicodeChar;
-            ::MultiByteToWideChar( self->_d->m_KEYBOARD_INPUT_CODEPAGE,
-                                  MB_PRECOMPOSED, // default
-                                  reinterpret_cast<LPCSTR>(keyChars),
-                                  sizeof( keyChars ),
-                                  reinterpret_cast<WCHAR*>(&unicodeChar),
-                                  1 );
-            singleChar = unicodeChar;
-            unicode = unicodeChar;
-        }
-        else
-        {
-            DE_ERROR("Conversion Error in keyPressEvent")
-        }
-
-        KeyPressEvent e;
-        e.key = translateWinKey( UINT(wParam) );
-        e.unicode = unicode;
-        e.scancode = UINT(wParam);
-        e.modifiers = 0;
-        if ( isShift ) e.modifiers |= KeyModifier::Shift;
-        if ( isCtrl ) e.modifiers |= KeyModifier::Ctrl;
-        return e;
-    };
-
-    auto createKeyReleaseEvent = [](Window_WGL* self, UINT msg, WPARAM wParam, LPARAM lParam)
-    {
-        BYTE allKeys[ 256 ];
-        GetKeyboardState( allKeys );
-        bool const isShift = ( ( allKeys[ VK_SHIFT ] & 0x80 ) != 0 );
-        bool const isCtrl = ( ( allKeys[ VK_CONTROL ] & 0x80 ) != 0 );
-
-        // Handle unicode and deadkeys in a way that works since Windows 95 and nt4.0
-        // Using ToUnicode instead would be shorter, but would to my knowledge not run on 95 and 98.
-        UINT32 unicode = 0;
-        wchar_t singleChar = 0;
-        WORD keyChars[ 2 ];
-        UINT scanCode = HIWORD( lParam );
-        int conversionResult = ::ToAsciiEx( UINT(wParam),
-                                           scanCode,
-                                           allKeys,
-                                           keyChars,
-                                           0,
-                                           self->_d->m_KEYBOARD_INPUT_HKL );
-        if (conversionResult == 1)
-        {
-            WORD unicodeChar;
-            ::MultiByteToWideChar( self->_d->m_KEYBOARD_INPUT_CODEPAGE,
-                                  MB_PRECOMPOSED, // default
-                                  reinterpret_cast<LPCSTR>(keyChars),
-                                  sizeof( keyChars ),
-                                  reinterpret_cast<WCHAR*>(&unicodeChar),
-                                  1 );
-            singleChar = unicodeChar;
-            unicode = unicodeChar;
-        }
-        else
-        {
-            DE_ERROR("Conversion Error in keyReleaseEvent")
-        }
-
-        KeyReleaseEvent e;
-        e.key = translateWinKey( UINT(wParam) );
-        e.unicode = unicode;
-        e.scancode = UINT(wParam);
-        e.modifiers = 0;
-        if ( isShift ) e.modifiers |= KeyModifier::Shift;
-        if ( isCtrl ) e.modifiers |= KeyModifier::Ctrl;
-        return e;
-    };
-
-    switch (msg)
-    {
-        case WM_NCCREATE:
-        {
-            DE_TRACE("WM_NCCREATE ", hwnd)
-            break;
-        }
-        case WM_CREATE:
-        {
-            DE_TRACE("WM_CREATE ", hwnd)
-            //setWindowIcon( u64(hwnd), aaaa );
-            //setResizable( hwnd, true, 800, 600 );
-            //createMenu( hwnd );
-            break;
-        }
-        case WM_CLOSE:
-        {
-            DE_TRACE("WM_CLOSE ", hwnd)
-            if (self->_d->m_hideOnClose)
-            {
-                // Instead of destroying, just hide the window
-                ShowWindow(hwnd, SW_HIDE);
-                return 0;
-            }
-            else
-            {
-                return DefWindowProc(hwnd, msg, wParam, lParam);
-            }
-        }
-        case WM_DESTROY:
-        {
-            self->_d->m_receiver = nullptr;
-            DE_TRACE("WM_DESTROY ", hwnd)
-
-            if (self->_d->m_postQuitMessage)
-            {
-                PostQuitMessage(0);
-                return 0;
-            }
-            else
-            {
-                return DefWindowProc(hwnd, msg, wParam, lParam);
-            }
-        }
-        case WM_ERASEBKGND:
-        {
-           return 0;
-        }
-        case WM_PAINT:
-        {
-            PAINTSTRUCT ps;
-            BeginPaint(hwnd, &ps);
-
-            if ( self && self->_d->m_bPaintEventEnabled)
-            {
-                wglMakeCurrent(ps.hdc, self->_d->m_hRC);
-
-                PaintEvent event;
-                Recti r = self->getClientRect();
-                event.w = r.w;
-                event.h = r.h;
-                //std::lock_guard< std::mutex > guard( os::win32::s_Mutex );
-                self->onEvent( event );
-                //self->swapBuffers();
-
-                //SwapBuffers( self->_d->m_hDC );
-
-                SwapBuffers( ps.hdc );
-
-                //ValidateRect( hwnd, nullptr );
-            }
-
-            EndPaint(hwnd, &ps);
-
-        /*
-            int dstW = self->_d->m_screenWidth;
-            int dstH = self->_d->m_screenHeight;
-
-            HBITMAP hBmp = self->_d->m_hBackgroundBitmap;
-            if (hBmp)
-            {
-               HDC hMemDC = CreateCompatibleDC(hDC);
-               HBITMAP hOld = (HBITMAP)SelectObject(hMemDC, hBmp);
-
-               BITMAP bm;
-               GetObject(hBmp, sizeof(bm), &bm);
-
-               SetStretchBltMode(hDC, HALFTONE); // Or other stretch mode
-               StretchBlt(hDC, 0, 0, dstW, dstH, hMemDC, 0, 0, bm.bmWidth, bm.bmHeight, SRCCOPY);
-
-               SelectObject(hMemDC, hOld);
-               DeleteDC(hMemDC);
-            }
-            else
-            {
-                HBRUSH solidBrush = CreateSolidBrush(RGB(0x3C, 0x43, 0x54));
-                SelectObject(hDC, solidBrush);
-                Rectangle(hDC, -1, -1, dstW+1, dstH+1);
-                DeleteObject(solidBrush);
-            }
-        */
-            return 0;
-        }
-        case WM_MOVE:
-        {
-            if ( self )
-            {
-                MoveEvent moveEvent;
-                moveEvent.x = GET_X_LPARAM( lParam );
-                moveEvent.y = GET_Y_LPARAM( lParam );
-                //DE_WARN("MoveEvent = ", moveEvent.str())
-                self->onEvent( moveEvent );
-            }
-            return 0;
-        }
-        case WM_SIZE:
-        {
-            if ( self )
-            {
-                ResizeEvent resizeEvent;
-                resizeEvent.w = GET_X_LPARAM( lParam );
-                resizeEvent.h = GET_Y_LPARAM( lParam );
-                //DE_WARN("ResizeEvent = ", resizeEvent.str())
-                self->onEvent( resizeEvent );
-            }
-            return 0;
-        }
-        case WM_LBUTTONDBLCLK:
-        {
-            if ( self )
-            {
-                self->onEvent( createMouseDblClickEvent(msg, wParam, lParam) );
-            }
-            return 0;
-        }
-        case WM_RBUTTONDBLCLK:
-        {
-            if ( self )
-            {
-                self->onEvent( createMouseDblClickEvent(msg, wParam, lParam) );
-            }
-            return 0;
-        }
-        case WM_MBUTTONDBLCLK:
-        {
-            if ( self )
-            {
-                self->onEvent( createMouseDblClickEvent(msg, wParam, lParam) );
-            }
-            return 0;
-        }
-        case WM_MOUSEMOVE:
-        {
-            if ( self )
-            {
-               MouseMoveEvent mouseMoveEvent;
-               mouseMoveEvent.x = int( LOWORD( lParam ) );
-               mouseMoveEvent.y = int( HIWORD( lParam ) );
-               //DE_OK("MouseMoveEvent = ", mouseMoveEvent.str())
-               //std::lock_guard< std::mutex > guard( os::win32::s_Mutex );
-               self->onEvent( mouseMoveEvent );
-            }
-            return 0;
-        }
-        case WM_MOUSEWHEEL:
-        {
-            if ( self )
-            {
-                MouseWheelEvent mouseWheelEvent;
-                mouseWheelEvent.x = 0.0f;
-                mouseWheelEvent.y = float( int16_t( HIWORD( wParam ) ) ) / float( WHEEL_DELTA );
-                self->onEvent( mouseWheelEvent );
-            }
-            return 0;
-        }
-        case WM_LBUTTONDOWN:
-        {
-            if ( self ) { self->onEvent( createMousePressEvent(msg, wParam, lParam) ); }
-            return 0;
-        }
-        case WM_RBUTTONDOWN:
-        {
-            if ( self ) { self->onEvent( createMousePressEvent(msg, wParam, lParam) ); }
-            return 0;
-        }
-        case WM_MBUTTONDOWN:
-        {
-            if ( self ) { self->onEvent( createMousePressEvent(msg, wParam, lParam) ); }
-            return 0;
-        }
-        case WM_LBUTTONUP:
-        {
-            if ( self ) { self->onEvent( createMouseReleaseEvent(msg, wParam, lParam) ); }
-            return 0;
-        }
-        case WM_RBUTTONUP:
-        {
-            if ( self ) { self->onEvent( createMouseReleaseEvent(msg, wParam, lParam) ); }
-            return 0;
-        }
-        case WM_MBUTTONUP:
-        {
-            if ( self ) { self->onEvent( createMouseReleaseEvent(msg, wParam, lParam) ); }
-            return 0;
-        }
-
-        //case WM_XBUTTONDOWN:
-        //case WM_XBUTTONUP:
-
-        // === KeyboardEvents: ===
-
-        case WM_INPUTLANGCHANGE:
-        {
-            if ( self )
-            {
-                auto hkl = GetKeyboardLayout( 0 ); // get the new codepage used for keyboard input
-                self->_d->m_KEYBOARD_INPUT_HKL = hkl; // get the new codepage used for keyboard input
-                self->_d->m_KEYBOARD_INPUT_CODEPAGE = convertLocaleIdToCodepage( LOWORD( hkl ) );
-            }
-            return 0;
-        }
-        case WM_SYSKEYDOWN:
-        {
-            if ( self ) { self->onEvent( createKeyPressEvent(self, msg, wParam, lParam) ); }
-            return 0;
-        }
-        case WM_KEYDOWN:
-        {
-            if ( self ) { self->onEvent( createKeyPressEvent(self, msg, wParam, lParam) ); }
-            return 0;
-        }
-        case WM_SYSKEYUP:
-        {
-            if ( self ) { self->onEvent( createKeyReleaseEvent(self, msg, wParam, lParam) ); }
-            return 0;
-        }
-        case WM_KEYUP:
-        {
-            if ( self ) { self->onEvent( createKeyReleaseEvent(self, msg, wParam, lParam) ); }
-            return 0;
-        }
-
-        case WM_SYSCOMMAND:
-        {
-            // if ( ( wParam & 0xFFF0 ) == SC_SCREENSAVE ||
-            //      ( wParam & 0xFFF0 ) == SC_MONITORPOWER ||
-            //      ( wParam & 0xFFF0 ) == SC_KEYMENU )
-            // {
-            //    return 0; // prevent screensaver or monitor powersave mode from starting
-            // }
-            break;
-        }
-
-        case WM_USER:
-            //event.UserEvent.UserData1 = (irr::s32)wParam;
-            //event.UserEvent.UserData2 = (irr::s32)lParam;
-            return 0;
-        case WM_SETCURSOR:
-#if 0
-   dev = getDeviceFromHWnd(hWnd); // because Windows forgot about that in the meantime
-      if (dev)
-      {
-         dev->getCursorControl()->setActiveIcon( dev->getCursorControl()->getActiveIcon() );
-         dev->getCursorControl()->setVisible( dev->getCursorControl()->isVisible() );
-      }
-#endif
-            break;
-        case WM_COMMAND:
-        {
-            /*
-            switch( wParam )
-            {
-                case ID_FILE_EXIT:
-                {
-                    DestroyWindow( hwnd );
-                    break;
-                }
-                case ID_FILE_LOAD:
-                {
-                    std::string uri = dbOpenFileA();
-                    break;
-                }
-                case ID_FILE_SAVE:
-                {
-                    break;
-                }
-                case ID_HELP_ABOUT:
-                {
-                    // doModalAboutDialog(m_hWindow);
-                    break;
-                }
-                default:
-                    break;
-            }
-            */
-            break;
-        }
-        case WM_SETFOCUS:
-            return 0;
-        default:
-            break;
-    }
-    return DefWindowProc(hwnd, msg, wParam, lParam);
-}
-
 Recti Window_WGL::getWindowRect() const
 {
     RECT r;
@@ -2615,3 +2237,545 @@ void UpdateFrameRate(HWND hwnd) {
 
 
 } // end namespace de.
+
+#if 0
+
+LRESULT CALLBACK
+Window_WGL_Proc( HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam )
+{
+    Window_WGL* self = reinterpret_cast<Window_WGL*>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
+    if (msg == WM_CREATE)
+    {
+        CREATESTRUCT* cs = (CREATESTRUCT*)lParam;
+        SetWindowLongPtr(hwnd, GWLP_USERDATA, (LONG_PTR)cs->lpCreateParams);
+
+        DE_OK("WM_CREATE")
+        SetTimer(hwnd, 123, 1000 / 60, NULL);
+        return 0;
+    }
+
+    if (!self) return DefWindowProc(hwnd, msg, wParam, lParam);
+
+#if 0
+    Window_WGL* glwin = nullptr;
+    if ( message == WM_NCCREATE )
+    {
+        glwin = static_cast< Window_WGL* >(
+            reinterpret_cast< CREATESTRUCT* >( lParam )->lpCreateParams ); // MinGW wraps nicely
+
+        SetLastError( 0 );
+        if ( !SetWindowLongPtr( hwnd, GWL_USERDATA, reinterpret_cast< LONG_PTR >( glwin ) ) )
+        {
+            DWORD const e = ::GetLastError();
+            if ( e != 0 )
+            {
+                DE_ERROR("Async SetUserData failed. ") //, getErrorString( e ))
+                //return FALSE;
+            }
+        }
+    }
+    else
+    {
+        glwin = reinterpret_cast< Window_WGL* >( GetWindowLongPtr( hwnd, GWL_USERDATA ) );
+    }
+#endif
+
+    auto createMouseDblClickEvent = [](UINT msg, WPARAM wParam, LPARAM lParam)
+    {
+        const int mx = GET_X_LPARAM(lParam);
+        const int my = GET_Y_LPARAM(lParam);
+        const bool bCtrl = (wParam & MK_CONTROL) != 0;
+        const bool bShift = (wParam & MK_SHIFT) != 0;
+        const bool bAlt = (wParam & MK_ALT) != 0;
+
+        MouseDblClickEvent e;
+        e.x = mx;
+        e.y = my;
+
+        e.flags = MouseFlag::DoubleClick;
+        if (bCtrl) { e.flags |= MouseFlag::WithCtrl; }
+        if (bShift) { e.flags |= MouseFlag::WithShift; }
+        if (bAlt) { e.flags |= MouseFlag::WithAlt; }
+
+        switch (msg)
+        {
+            case WM_LBUTTONDBLCLK: e.buttons = MouseButton::Left; break;
+            case WM_RBUTTONDBLCLK: e.buttons = MouseButton::Right; break;
+            case WM_MBUTTONDBLCLK: e.buttons = MouseButton::Middle; break;
+            default: DE_ERROR("Unsupported mouse button double click.") break;
+        }
+
+        return e;
+    };
+
+    auto createMousePressEvent = [](UINT msg, WPARAM wParam, LPARAM lParam)
+    {
+        MousePressEvent e;
+        e.x = LOWORD(lParam);
+        e.y = HIWORD(lParam);
+        e.flags = MouseFlag::Pressed;
+        //e.flags.Shift = ((LOWORD(wParam) & MK_SHIFT) != 0);
+        //e.flags.Control = ((LOWORD(wParam) & MK_CONTROL) != 0);
+
+        switch (msg)
+        {
+            case WM_LBUTTONDOWN: e.buttons = MouseButton::Left; break;
+            case WM_RBUTTONDOWN: e.buttons = MouseButton::Right; break;
+            case WM_MBUTTONDOWN: e.buttons = MouseButton::Middle; break;
+            default: DE_ERROR("Unsupported mouse press event.") break;
+        }
+        return e;
+    };
+
+    auto createMouseReleaseEvent = [](UINT msg, WPARAM wParam, LPARAM lParam)
+    {
+        MouseReleaseEvent e;
+        e.x = LOWORD(lParam);
+        e.y = HIWORD(lParam);
+        e.flags = MouseFlag::Released;
+        //e.flags.Shift = ((LOWORD(wParam) & MK_SHIFT) != 0);
+        //e.flags.Control = ((LOWORD(wParam) & MK_CONTROL) != 0);
+
+        switch (msg)
+        {
+            case WM_LBUTTONUP: e.buttons = MouseButton::Left; break;
+            case WM_RBUTTONUP: e.buttons = MouseButton::Right; break;
+            case WM_MBUTTONUP: e.buttons = MouseButton::Middle; break;
+            default: DE_ERROR("Unsupported mouse release event.") break;
+        }
+        return e;
+    };
+
+    auto createKeyPressEvent = [](Window_WGL* self, UINT msg, WPARAM wParam, LPARAM lParam)
+    {
+        BYTE allKeys[ 256 ];
+        GetKeyboardState( allKeys );
+        bool const isShift = ( ( allKeys[ VK_SHIFT ] & 0x80 ) != 0 );
+        bool const isCtrl = ( ( allKeys[ VK_CONTROL ] & 0x80 ) != 0 );
+
+        // Handle unicode and deadkeys in a way that works since Windows 95 and nt4.0
+        // Using ToUnicode instead would be shorter, but would to my knowledge not run on 95 and 98.
+        UINT32 unicode = 0;
+        wchar_t singleChar = 0;
+        WORD keyChars[ 2 ];
+        UINT scanCode = HIWORD( lParam );
+        int conversionResult = ::ToAsciiEx( UINT(wParam),
+                                           scanCode,
+                                           allKeys,
+                                           keyChars,
+                                           0,
+                                           self->_d->m_KEYBOARD_INPUT_HKL );
+        if (conversionResult == 1)
+        {
+            WORD unicodeChar;
+            ::MultiByteToWideChar( self->_d->m_KEYBOARD_INPUT_CODEPAGE,
+                                  MB_PRECOMPOSED, // default
+                                  reinterpret_cast<LPCSTR>(keyChars),
+                                  sizeof( keyChars ),
+                                  reinterpret_cast<WCHAR*>(&unicodeChar),
+                                  1 );
+            singleChar = unicodeChar;
+            unicode = unicodeChar;
+        }
+        else
+        {
+            DE_ERROR("Conversion Error in keyPressEvent")
+        }
+
+        KeyPressEvent e;
+        e.key = translateWinKey( UINT(wParam) );
+        e.unicode = unicode;
+        e.scancode = UINT(wParam);
+        e.modifiers = 0;
+        if ( isShift ) e.modifiers |= KeyModifier::Shift;
+        if ( isCtrl ) e.modifiers |= KeyModifier::Ctrl;
+        return e;
+    };
+
+    auto createKeyReleaseEvent = [](Window_WGL* self, UINT msg, WPARAM wParam, LPARAM lParam)
+    {
+        BYTE allKeys[ 256 ];
+        GetKeyboardState( allKeys );
+        bool const isShift = ( ( allKeys[ VK_SHIFT ] & 0x80 ) != 0 );
+        bool const isCtrl = ( ( allKeys[ VK_CONTROL ] & 0x80 ) != 0 );
+
+        // Handle unicode and deadkeys in a way that works since Windows 95 and nt4.0
+        // Using ToUnicode instead would be shorter, but would to my knowledge not run on 95 and 98.
+        UINT32 unicode = 0;
+        wchar_t singleChar = 0;
+        WORD keyChars[ 2 ];
+        UINT scanCode = HIWORD( lParam );
+        int conversionResult = ::ToAsciiEx( UINT(wParam),
+                                           scanCode,
+                                           allKeys,
+                                           keyChars,
+                                           0,
+                                           self->_d->m_KEYBOARD_INPUT_HKL );
+        if (conversionResult == 1)
+        {
+            WORD unicodeChar;
+            ::MultiByteToWideChar( self->_d->m_KEYBOARD_INPUT_CODEPAGE,
+                                  MB_PRECOMPOSED, // default
+                                  reinterpret_cast<LPCSTR>(keyChars),
+                                  sizeof( keyChars ),
+                                  reinterpret_cast<WCHAR*>(&unicodeChar),
+                                  1 );
+            singleChar = unicodeChar;
+            unicode = unicodeChar;
+        }
+        else
+        {
+            DE_ERROR("Conversion Error in keyReleaseEvent")
+        }
+
+        KeyReleaseEvent e;
+        e.key = translateWinKey( UINT(wParam) );
+        e.unicode = unicode;
+        e.scancode = UINT(wParam);
+        e.modifiers = 0;
+        if ( isShift ) e.modifiers |= KeyModifier::Shift;
+        if ( isCtrl ) e.modifiers |= KeyModifier::Ctrl;
+        return e;
+    };
+
+    switch (msg)
+    {
+        case WM_NCCREATE:
+        {
+            DE_TRACE("WM_NCCREATE ", hwnd)
+            break;
+        }
+        case WM_CREATE:
+        {
+            DE_TRACE("WM_CREATE ", hwnd)
+            //setWindowIcon( u64(hwnd), aaaa );
+            //setResizable( hwnd, true, 800, 600 );
+            //createMenu( hwnd );
+            break;
+        }
+        case WM_SETFOCUS:
+        {
+            DE_OK("WM_SETFOCUS")
+            self->_d->focused = true;
+            break;
+        }
+        case WM_KILLFOCUS:
+        {
+            DE_OK("WM_KILLFOCUS")
+            self->_d->focused = false;
+            break;
+        }
+        case WM_DESTROY:
+        {
+            DE_OK("WM_DESTROY ", hwnd)
+            KillTimer(hwnd, 123);
+            //PostQuitMessage(0);
+            return 0;
+
+            self->_d->m_receiver = nullptr;
+
+
+            if (self->_d->m_postQuitMessage)
+            {
+                PostQuitMessage(0);
+                return 0;
+            }
+            else
+            {
+                return DefWindowProc(hwnd, msg, wParam, lParam);
+            }
+        }
+        case WM_CLOSE:
+        {
+            DE_TRACE("WM_CLOSE ", hwnd)
+            /*
+            if (self->_d->m_hideOnClose)
+            {
+                // Instead of destroying, just hide the window
+                ShowWindow(hwnd, SW_HIDE);
+                return 0;
+            }
+            else
+            {
+                return DefWindowProc(hwnd, msg, wParam, lParam);
+            }
+            */
+            break;
+        }
+        case WM_TIMER:
+        {
+            if (wParam == 123)
+            {
+                InvalidateRect(hwnd, NULL, TRUE); // force redraw
+            }
+            return 0;
+        }
+        case WM_ERASEBKGND:
+        {
+           return 0;
+        }
+        case WM_PAINT:
+        {
+            PAINTSTRUCT ps;
+            BeginPaint(hwnd, &ps);
+
+            if ( self && self->_d->m_bPaintEventEnabled)
+            {
+                wglMakeCurrent(ps.hdc, self->_d->m_hRC);
+
+                RECT r;
+                GetClientRect(hwnd, &r);
+
+                de::PaintEvent event;
+                event.w = r.right - r.left;
+                event.h = r.bottom - r.top;
+                self->paintEvent(event);
+
+                // PaintEvent event;
+                // Recti r = self->getClientRect();
+                // event.w = r.w;
+                // event.h = r.h;
+                //std::lock_guard< std::mutex > guard( os::win32::s_Mutex );
+                self->onEvent( event );
+                //self->swapBuffers();
+
+                //SwapBuffers( self->_d->m_hDC );
+
+                SwapBuffers( ps.hdc );
+
+                //ValidateRect( hwnd, nullptr );
+            }
+
+            EndPaint(hwnd, &ps);
+
+        /*
+            int dstW = self->_d->m_screenWidth;
+            int dstH = self->_d->m_screenHeight;
+
+            HBITMAP hBmp = self->_d->m_hBackgroundBitmap;
+            if (hBmp)
+            {
+               HDC hMemDC = CreateCompatibleDC(hDC);
+               HBITMAP hOld = (HBITMAP)SelectObject(hMemDC, hBmp);
+
+               BITMAP bm;
+               GetObject(hBmp, sizeof(bm), &bm);
+
+               SetStretchBltMode(hDC, HALFTONE); // Or other stretch mode
+               StretchBlt(hDC, 0, 0, dstW, dstH, hMemDC, 0, 0, bm.bmWidth, bm.bmHeight, SRCCOPY);
+
+               SelectObject(hMemDC, hOld);
+               DeleteDC(hMemDC);
+            }
+            else
+            {
+                HBRUSH solidBrush = CreateSolidBrush(RGB(0x3C, 0x43, 0x54));
+                SelectObject(hDC, solidBrush);
+                Rectangle(hDC, -1, -1, dstW+1, dstH+1);
+                DeleteObject(solidBrush);
+            }
+        */
+            return 0;
+        }
+        case WM_MOVE:
+        {
+            if ( self )
+            {
+                MoveEvent moveEvent;
+                moveEvent.x = GET_X_LPARAM( lParam );
+                moveEvent.y = GET_Y_LPARAM( lParam );
+                //DE_WARN("MoveEvent = ", moveEvent.str())
+                self->onEvent( moveEvent );
+            }
+            return 0;
+        }
+        case WM_SIZE:
+        {
+            if ( self )
+            {
+                ResizeEvent resizeEvent;
+                resizeEvent.w = GET_X_LPARAM( lParam );
+                resizeEvent.h = GET_Y_LPARAM( lParam );
+                //DE_WARN("ResizeEvent = ", resizeEvent.str())
+                self->onEvent( resizeEvent );
+            }
+            return 0;
+        }
+        case WM_LBUTTONDBLCLK:
+        {
+            if ( self )
+            {
+                self->onEvent( createMouseDblClickEvent(msg, wParam, lParam) );
+            }
+            return 0;
+        }
+        case WM_RBUTTONDBLCLK:
+        {
+            if ( self )
+            {
+                self->onEvent( createMouseDblClickEvent(msg, wParam, lParam) );
+            }
+            return 0;
+        }
+        case WM_MBUTTONDBLCLK:
+        {
+            if ( self )
+            {
+                self->onEvent( createMouseDblClickEvent(msg, wParam, lParam) );
+            }
+            return 0;
+        }
+        case WM_MOUSEMOVE:
+        {
+            if ( self )
+            {
+               MouseMoveEvent mouseMoveEvent;
+               mouseMoveEvent.x = int( LOWORD( lParam ) );
+               mouseMoveEvent.y = int( HIWORD( lParam ) );
+               //DE_OK("MouseMoveEvent = ", mouseMoveEvent.str())
+               //std::lock_guard< std::mutex > guard( os::win32::s_Mutex );
+               self->onEvent( mouseMoveEvent );
+            }
+            return 0;
+        }
+        case WM_MOUSEWHEEL:
+        {
+            if ( self )
+            {
+                MouseWheelEvent mouseWheelEvent;
+                mouseWheelEvent.x = 0.0f;
+                mouseWheelEvent.y = float( int16_t( HIWORD( wParam ) ) ) / float( WHEEL_DELTA );
+                self->onEvent( mouseWheelEvent );
+            }
+            return 0;
+        }
+        case WM_LBUTTONDOWN:
+        {
+            if ( self ) { self->onEvent( createMousePressEvent(msg, wParam, lParam) ); }
+            return 0;
+        }
+        case WM_RBUTTONDOWN:
+        {
+            if ( self ) { self->onEvent( createMousePressEvent(msg, wParam, lParam) ); }
+            return 0;
+        }
+        case WM_MBUTTONDOWN:
+        {
+            if ( self ) { self->onEvent( createMousePressEvent(msg, wParam, lParam) ); }
+            return 0;
+        }
+        case WM_LBUTTONUP:
+        {
+            if ( self ) { self->onEvent( createMouseReleaseEvent(msg, wParam, lParam) ); }
+            return 0;
+        }
+        case WM_RBUTTONUP:
+        {
+            if ( self ) { self->onEvent( createMouseReleaseEvent(msg, wParam, lParam) ); }
+            return 0;
+        }
+        case WM_MBUTTONUP:
+        {
+            if ( self ) { self->onEvent( createMouseReleaseEvent(msg, wParam, lParam) ); }
+            return 0;
+        }
+
+        //case WM_XBUTTONDOWN:
+        //case WM_XBUTTONUP:
+
+        // === KeyboardEvents: ===
+
+        case WM_INPUTLANGCHANGE:
+        {
+            if ( self )
+            {
+                auto hkl = GetKeyboardLayout( 0 ); // get the new codepage used for keyboard input
+                self->_d->m_KEYBOARD_INPUT_HKL = hkl; // get the new codepage used for keyboard input
+                self->_d->m_KEYBOARD_INPUT_CODEPAGE = convertLocaleIdToCodepage( LOWORD( hkl ) );
+            }
+            return 0;
+        }
+        case WM_SYSKEYDOWN:
+        {
+            if ( self ) { self->onEvent( createKeyPressEvent(self, msg, wParam, lParam) ); }
+            return 0;
+        }
+        case WM_KEYDOWN:
+        {
+            if ( self ) { self->onEvent( createKeyPressEvent(self, msg, wParam, lParam) ); }
+            return 0;
+        }
+        case WM_SYSKEYUP:
+        {
+            if ( self ) { self->onEvent( createKeyReleaseEvent(self, msg, wParam, lParam) ); }
+            return 0;
+        }
+        case WM_KEYUP:
+        {
+            if ( self ) { self->onEvent( createKeyReleaseEvent(self, msg, wParam, lParam) ); }
+            return 0;
+        }
+
+        case WM_SYSCOMMAND:
+        {
+            // if ( ( wParam & 0xFFF0 ) == SC_SCREENSAVE ||
+            //      ( wParam & 0xFFF0 ) == SC_MONITORPOWER ||
+            //      ( wParam & 0xFFF0 ) == SC_KEYMENU )
+            // {
+            //    return 0; // prevent screensaver or monitor powersave mode from starting
+            // }
+            break;
+        }
+
+        case WM_USER:
+            //event.UserEvent.UserData1 = (irr::s32)wParam;
+            //event.UserEvent.UserData2 = (irr::s32)lParam;
+            return 0;
+        case WM_SETCURSOR:
+#if 0
+   dev = getDeviceFromHWnd(hWnd); // because Windows forgot about that in the meantime
+      if (dev)
+      {
+         dev->getCursorControl()->setActiveIcon( dev->getCursorControl()->getActiveIcon() );
+         dev->getCursorControl()->setVisible( dev->getCursorControl()->isVisible() );
+      }
+#endif
+            break;
+        case WM_COMMAND:
+        {
+            /*
+            switch( wParam )
+            {
+                case ID_FILE_EXIT:
+                {
+                    DestroyWindow( hwnd );
+                    break;
+                }
+                case ID_FILE_LOAD:
+                {
+                    std::string uri = dbOpenFileA();
+                    break;
+                }
+                case ID_FILE_SAVE:
+                {
+                    break;
+                }
+                case ID_HELP_ABOUT:
+                {
+                    // doModalAboutDialog(m_hWindow);
+                    break;
+                }
+                default:
+                    break;
+            }
+            */
+            break;
+        }
+
+        default:
+            break;
+    }
+    return DefWindowProc(hwnd, msg, wParam, lParam);
+}
+
+#endif

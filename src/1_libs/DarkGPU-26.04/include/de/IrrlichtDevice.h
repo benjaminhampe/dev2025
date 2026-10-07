@@ -4,6 +4,8 @@
 #include <de/cpu/RAM.h>
 #include <de/Math3D_Intersection.h>
 
+#if 0
+
 // #include <cstdint>
 // #include <sstream>
 // #include <vector>
@@ -22,7 +24,7 @@
 // #include <de/gpu/mtl/MTL.h>
 
 namespace de {
-	
+
 // ===========================================================================
 struct IrrlichtDevice : public IEventReceiver
 // ===========================================================================
@@ -81,51 +83,51 @@ public:
     double m_timeLastCameraUpdate; // in [s]
     double m_timeLastRenderUpdate; // in [s]
     double m_timeLastWindowTitleUpdate; // in [s]
-	//   int m_dummy = (0);
+    //   int m_dummy = (0);
 
 
-	
+
     // =======================================================================
     // struct H0_Camera // SceneNode
     // =======================================================================
-	//{	
-	bool m_cameraMovable = false;
-	de::gpu::Camera m_camera;
-	//};
-	
-	// =======================================================================
+    //{
+    bool m_cameraMovable = false;
+    de::gpu::Camera m_camera;
+    //};
+
+    // =======================================================================
     // struct H0_Renderer
     // =======================================================================
-	//{	
-	// de::gpu::SkyboxRenderer m_skyboxRenderer;
-	// de::gpu::SMaterialRenderer m_smeshRenderer;
-	// de::Font m_fontAwesome20;
-	// de::Font m_fontGarton32;
-	// de::Font m_fontCarib48;
-	// de::gpu::FontRenderer m_fontRenderer;
-	// de::BillboardRenderer m_billboardRenderer;
-	// de::RainbowRenderer m_rainbowRenderer;
-	//};
-	
-	// =======================================================================
+    //{
+    // de::gpu::SkyboxRenderer m_skyboxRenderer;
+    // de::gpu::SMaterialRenderer m_smeshRenderer;
+    // de::Font m_fontAwesome20;
+    // de::Font m_fontGarton32;
+    // de::Font m_fontCarib48;
+    // de::gpu::FontRenderer m_fontRenderer;
+    // de::BillboardRenderer m_billboardRenderer;
+    // de::RainbowRenderer m_rainbowRenderer;
+    //};
+
+    // =======================================================================
     // struct H0_Meshes
     // =======================================================================
-	//{	
-	// de::OBJ m_obj;
-	// Needed here to compute collision triangles (collision detection)
-	// TODO: Somehow move to renderer?
-	// de::gpu::SMeshBuffer m_tileMesh; // Unit hexagon, used for tiles.
-	// de::gpu::SMeshBuffer m_chipMesh; // Unit cylinder, used for chips and waypoints (corners, edges)
-	// de::gpu::SMeshBuffer m_cubeMesh; // Unit cube, used to compose dice, roads, farms and cities.
-	// de::gpu::SMeshBuffer m_coneMesh; // Unit cone, used to compose players, thief.
-	// de::gpu::SMeshBuffer m_sphereMesh; // Unit sphere, used to compose players, thief, sun, mouse pointer, etc...
-	// de::gpu::SMeshBuffer m_cardMesh; // Unit rounded-rect, used to compose cards.
-	// de::gpu::SMeshBuffer m_roadMesh; // Composed mesh for roads.
-	// de::gpu::SMeshBuffer m_farmMesh; // Composed mesh for farms.
-	// de::gpu::SMeshBuffer m_cityMesh; // Composed mesh for cities.
-	// de::gpu::SMeshBuffer m_thiefMesh; // Composed mesh for thief.
-	//};
-*/	
+    //{
+    // de::OBJ m_obj;
+    // Needed here to compute collision triangles (collision detection)
+    // TODO: Somehow move to renderer?
+    // de::gpu::SMeshBuffer m_tileMesh; // Unit hexagon, used for tiles.
+    // de::gpu::SMeshBuffer m_chipMesh; // Unit cylinder, used for chips and waypoints (corners, edges)
+    // de::gpu::SMeshBuffer m_cubeMesh; // Unit cube, used to compose dice, roads, farms and cities.
+    // de::gpu::SMeshBuffer m_coneMesh; // Unit cone, used to compose players, thief.
+    // de::gpu::SMeshBuffer m_sphereMesh; // Unit sphere, used to compose players, thief, sun, mouse pointer, etc...
+    // de::gpu::SMeshBuffer m_cardMesh; // Unit rounded-rect, used to compose cards.
+    // de::gpu::SMeshBuffer m_roadMesh; // Composed mesh for roads.
+    // de::gpu::SMeshBuffer m_farmMesh; // Composed mesh for farms.
+    // de::gpu::SMeshBuffer m_cityMesh; // Composed mesh for cities.
+    // de::gpu::SMeshBuffer m_thiefMesh; // Composed mesh for thief.
+    //};
+*/
 };
 
 }// end namespace de
@@ -208,3 +210,5 @@ struct DeviceConfig
 };
 
 */
+
+#endif

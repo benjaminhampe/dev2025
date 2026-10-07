@@ -28,7 +28,7 @@
 
 namespace de {
 
-struct IrrlichtDevice;
+// struct IrrlichtDevice;
 
 namespace gpu {
 
@@ -453,8 +453,8 @@ struct VideoDriver
     VideoDriver();
     ~VideoDriver();
 
-    void                setIrrlichtDevice(IrrlichtDevice* device);
-    IrrlichtDevice*     getIrrlichtDevice();
+    // void                setIrrlichtDevice(IrrlichtDevice* device);
+    // IrrlichtDevice*     getIrrlichtDevice();
 
     bool                open(int w, int h);
     void                close();
@@ -654,7 +654,7 @@ struct VideoDriver
                             const uint32_t color = 0xFFFFFFFF, const Align align = Align::Default,
                             const Font & font = Font("Arial",16), uint32_t bgColor = dbRGB(0,0,0,200), int padding = 1);
 
-    void draw2DPerfOverlay();
+    void draw2DPerfOverlay(int mx, int my);
 
     /* typ = 0 is a point light like the sun, dir is computed by pos only
     * typ = 1 is a directional cone light like a Taschenlampe,
@@ -748,7 +748,7 @@ struct VideoDriver
 
 
 protected:
-    IrrlichtDevice* m_device;
+    // IrrlichtDevice* m_device;
 
     // ####################
     // ### StateManager ###

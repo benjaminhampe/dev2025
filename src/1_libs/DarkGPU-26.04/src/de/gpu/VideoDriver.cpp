@@ -385,8 +385,7 @@ bool RT_HDR::toImage(Image & img)
 // ===========================================================================
 VideoDriver::VideoDriver()
 // ===========================================================================
-    : m_device(nullptr)
-    , m_screenWidth(800)
+    : m_screenWidth(800)
     , m_screenHeight(600)
     , m_modelMatrix( 1.0 )
 {
@@ -398,6 +397,7 @@ VideoDriver::~VideoDriver()
     close();
 }
 
+/*
 void VideoDriver::setIrrlichtDevice(IrrlichtDevice* device)
 {
     m_device = device;
@@ -407,6 +407,7 @@ IrrlichtDevice* VideoDriver::getIrrlichtDevice()
 {
     return m_device;
 }
+*/
 
 bool VideoDriver::open(int w, int h)
 {
@@ -1106,12 +1107,10 @@ void VideoDriver::draw2DText( int x, int y, const std::string& msg, const uint32
     getFontRenderer()->draw2DText( x,y, msg, color, align, font, bgColor, padding ); // Has overload for string
 }
 
-void VideoDriver::draw2DPerfOverlay()
+void VideoDriver::draw2DPerfOverlay(int mx, int my)
 {
     const int w = getScreenWidth();
     const int h = getScreenHeight();
-    const int mx = getIrrlichtDevice() ? getIrrlichtDevice()->getMouseX() : -1;
-    const int my = getIrrlichtDevice() ? getIrrlichtDevice()->getMouseY() : -1;
     const int p = 10;
 
     uint32_t bgColor = dbRGB(0,0,0,200);

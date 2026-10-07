@@ -1,7 +1,5 @@
 #include <H3/H3_Game.h>
 
-
-
 int main(int argc, char** argv)
 {
     //auto name = dbPromtStrA("Schreibe deinen Namen...", "User-input:");
@@ -13,15 +11,8 @@ int main(int argc, char** argv)
 #endif
 
 #if 1
-    auto device = new de::IrrlichtDevice();
-    if ( !device->open( 1024, 768 ) )
-    {
-        DE_ERROR("Cant create window, abort main().")
-        return 0;
-    }
-
-    H3_Game m_game;    
-    m_game.init(device);
+    H3_Game m_game;
+    m_game.init();
 
     // MainLoop:
     double m_timeStart = dbTimeInSeconds();
@@ -47,7 +38,7 @@ int main(int argc, char** argv)
             auto window = m_game.getWindow();
             auto driver = m_game.getDriver();
             if (driver)
-            {                
+            {
                 // Move camera
                 auto camera = driver->getCamera();
                 if (camera)
@@ -98,7 +89,7 @@ int main(int argc, char** argv)
         // }
     }
 
-    delete device;
+    m_game.destroy();
     DE_INFO("Destroyed device.")
 
 #endif

@@ -659,7 +659,7 @@ Builder::Builder(int W, int H, const char* title)
         }
         ui.edtJobSize->add(dbStr(i," = ",dbStrBytes(po2)).c_str());
 
-    } while (i < 30);
+    } while (i < 40);
     ui.edtJobSize->add(dbStr(i," = ",dbStrBytes(ZstUtil::cpMax(401))).c_str());
 
     ui.lblWindowLog = new Label(x,y,mw,h1,"WindowLog:");
