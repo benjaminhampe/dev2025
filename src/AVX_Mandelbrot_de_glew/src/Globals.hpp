@@ -8,9 +8,9 @@
 #include <de/gpu/VideoDriver.h>
 #include <de/os/Window_WGL.h>
 
-static de::IrrlichtDevice* m_device = nullptr;
-static de::Window* m_window = nullptr;
-static de::gpu::VideoDriver* m_driver = nullptr;
+//static de::IrrlichtDevice* m_device = nullptr;
+//static std::unique_ptr<de::Window> m_window;
+static std::unique_ptr<de::gpu::VideoDriver> m_driver;
 static int m_currentShader = 0;
 static int m_fontSize = 2;
 static int m_controlFps = 60; // controls FPS
@@ -23,17 +23,18 @@ int g_max_iterations_limit = 64*1024;
 DE_FORCE_INLINE
 void recalculateRangeX()
 {
-   int w = 800;
-   int h = 600;
-   if ( m_driver )
-   {
-      w = m_driver->getScreenWidth();
-      h = m_driver->getScreenHeight();
-   }
-   double aspect = double(w) / double(h);
-   z_range.x = aspect * z_range.y;
+    int w = 800;
+    int h = 600;
+    if ( m_driver )
+    {
+        w = m_driver->getScreenWidth();
+        h = m_driver->getScreenHeight();
+    }
+    double aspect = double(w) / double(h);
+    z_range.x = aspect * z_range.y;
 }
 
+#if 0
 DE_FORCE_INLINE
 uint32_t mkColor( int n_iterations, int maxIter )
 {
@@ -65,3 +66,4 @@ uint32_t mkColor( int n_iterations, int maxIter )
 
    return color;
 }
+#endif

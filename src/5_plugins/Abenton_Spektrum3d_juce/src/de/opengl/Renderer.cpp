@@ -221,7 +221,7 @@ void Renderer::paintGL()
 
     if (m_bShowPerfOverlay)
     {
-        m_driver->draw2DPerfOverlay();
+        m_driver->draw2DPerfOverlay(m_mouseX,m_mouseY);
         draw2DFftOverlay();
 
         int tw = 128; // m_texJuceIcon->w();

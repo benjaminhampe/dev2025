@@ -556,6 +556,7 @@ void Editor::requestClose()
 LRESULT CALLBACK
 WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
+/*
     Editor* self = reinterpret_cast<Editor*>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
     if (msg == WM_CREATE)
     {
@@ -568,6 +569,34 @@ WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
     }
 
     if (!self) return DefWindowProc(hwnd, msg, wParam, lParam);
+*/
+    // 1. Zuerst den Zeiger als nullptr initialisieren
+    Editor* self = reinterpret_cast<Editor*>(GetWindowLongPtrW(hwnd, GWLP_USERDATA));
+
+    // 2. Die allererste Nachricht abfangen, um den "this"-Zeiger zu speichern
+    if (msg == WM_NCCREATE)
+    {
+        CREATESTRUCTW* cs = reinterpret_cast<CREATESTRUCTW*>(lParam);
+        self = reinterpret_cast<Editor*>(cs->lpCreateParams);
+        SetWindowLongPtrW(hwnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(self));
+    }
+
+    // 3. Erst JETZT prüfen wir WM_CREATE. Hier ist "self" bereits garantiert gültig!
+    if (msg == WM_CREATE)
+    {
+        DE_OK("WM_CREATE")
+        SetTimer(hwnd, 123, 1000 / 60, NULL); // ~60 FPS Timer (16.6ms)
+        return 0;
+    }
+
+    // 4. Wichtig: Falls vor/während WM_NCCREATE andere Systemnachrichten kommen,
+    // leiten wir sie sicher an DefWindowProc weiter.
+    if (!self)
+    {
+        return DefWindowProcW(hwnd, msg, wParam, lParam);
+    }
+
+    // Ab hier kannst du sicher sein, dass "self" existiert und du mit "switch(msg)"
 
     auto createMouseDblClickEvent = [](UINT msg, WPARAM wParam, LPARAM lParam)
     {

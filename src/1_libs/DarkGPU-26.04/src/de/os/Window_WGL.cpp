@@ -102,9 +102,9 @@ struct Window_WGL_Internals
     WindowOptions m_params;
 
     HINSTANCE m_hInstance;
-    HWND m_hWnd;
-    HDC m_hDC;
-    HGLRC m_hRC;
+    HWND hWnd;
+    HDC hDC;
+    HGLRC hGL;
     HBITMAP m_hBackgroundBitmap;
 
     bool m_shouldRun;
@@ -137,16 +137,16 @@ struct Window_WGL_Internals
     HKL m_KEYBOARD_INPUT_HKL;
     uint32_t m_KEYBOARD_INPUT_CODEPAGE; // default: 1252 (Portuguese?)
 
-    int m_screenWidth = 600;
-    int m_screenHeight = 480;
+    // int m_screenWidth = 600;
+    // int m_screenHeight = 480;
     bool m_bFocused = false;
     bool m_bPaintEventEnabled = false;
 
     Window_WGL_Internals()
         : m_hInstance( nullptr )
-        , m_hWnd( nullptr )
-        , m_hDC( nullptr )
-        , m_hRC( nullptr )
+        , hWnd( nullptr )
+        , hDC( nullptr )
+        , hGL( nullptr )
         , m_hBackgroundBitmap( nullptr )
         , m_shouldRun( true )
         , m_hideOnClose( false )
@@ -157,8 +157,8 @@ struct Window_WGL_Internals
         //, m_opengl32( nullptr )
         , m_KEYBOARD_INPUT_HKL( nullptr )
         , m_KEYBOARD_INPUT_CODEPAGE( 1252 )
-        , m_screenWidth{ 600 }
-        , m_screenHeight{ 480 }
+        // , m_screenWidth{ 600 }
+        // , m_screenHeight{ 480 }
         , m_bFocused{ false }
         , m_bPaintEventEnabled{ false }
     {
@@ -202,17 +202,17 @@ struct Window_WGL_Internals
         // }
 
         HGLRC current = wglGetCurrentContext();
-        if (current == m_hRC)
+        if (current == hGL)
             wglMakeCurrent(nullptr, nullptr); // nur deinen Kontext entbinden
 
-        wglDeleteContext(m_hRC);
-        m_hRC = nullptr;
+        wglDeleteContext(hGL);
+        hGL = nullptr;
 
-        ReleaseDC(m_hWnd, m_hDC);
-        m_hDC = nullptr;
+        ReleaseDC(hWnd, hDC);
+        hDC = nullptr;
 
-        DestroyWindow(m_hWnd);
-        m_hWnd = nullptr;
+        DestroyWindow(hWnd);
+        hWnd = nullptr;
     }
 };
 
@@ -350,9 +350,9 @@ void Window_WGL::yield( int ms )
 
 void Window_WGL::requestClose()
 {
-    if ( _d->m_hWnd )
+    if ( _d->hWnd )
     {
-        PostMessage( _d->m_hWnd, WM_DESTROY, 0, 0 );
+        PostMessage( _d->hWnd, WM_DESTROY, 0, 0 );
     }
 }
 
@@ -412,7 +412,7 @@ void Window_WGL::swapBuffers()
 
 void Window_WGL::update()
 {
-    InvalidateRect(_d->m_hWnd, nullptr, FALSE);
+    InvalidateRect(_d->hWnd, nullptr, FALSE);
 }
 
 /*
@@ -463,20 +463,76 @@ static HGLRC InitGL (HWND Wnd)
 */
 
 LRESULT CALLBACK
+WndProcTest(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+{
+    Window_WGL* self = nullptr;
+
+    if (uMsg == WM_NCCREATE)
+    {
+        LPCREATESTRUCTW cs = reinterpret_cast<LPCREATESTRUCTW>(lParam);
+        self = reinterpret_cast<Window_WGL*>(cs->lpCreateParams);
+        SetWindowLongPtrW(hwnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(self));
+        DE_DEBUG("WM_NCCREATE")
+
+         // WICHTIG: Erst Windows die Standardarbeit machen lassen!
+        if (!DefWindowProcW(hwnd, uMsg, wParam, lParam))
+        {
+            DE_ERROR("DefWindowProc error")
+            return FALSE; // Windows sagt Nein -> Erstellung abbrechen
+        }
+
+        return TRUE; // Explizit TRUE zurückgeben, damit CreateWindow weiterläuft!
+    }
+    else
+    {
+        DE_DEBUG("Other WM_Message ",uMsg)
+        self = reinterpret_cast<Window_WGL*>(GetWindowLongPtrW(hwnd, GWLP_USERDATA));
+    }
+
+    // ACHTUNG: Bei den allerersten Nachrichten ist self noch NULL!
+    if (self)
+    {
+        DE_DEBUG("self ",(void*)self)
+        // Hier sind Instanz-Zugriffe sicher
+    }
+
+    return DefWindowProc(hwnd, uMsg, wParam, lParam);
+}
+
+LRESULT CALLBACK
 WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
-    auto self = reinterpret_cast<Window_WGL*>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
+    // 1. Zuerst den Zeiger als nullptr initialisieren
+    Window_WGL* self = reinterpret_cast<Window_WGL*>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
+
+    if (msg == WM_NCCREATE)
+    {
+        DE_OK("WM_NCCREATE")
+        // CREATESTRUCT* cs = (CREATESTRUCT*)lParam;
+        // SetWindowLongPtr(hwnd, GWLP_USERDATA, (LONG_PTR)cs->lpCreateParams);
+
+        CREATESTRUCTW* cs = reinterpret_cast<CREATESTRUCTW*>(lParam);
+        self = reinterpret_cast<Window_WGL*>(cs->lpCreateParams);
+        SetWindowLongPtrW(hwnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(self));
+    }
+
+    // 3. Erst JETZT prüfen wir WM_CREATE. Hier ist "self" bereits garantiert gültig!
     if (msg == WM_CREATE)
     {
-        CREATESTRUCT* cs = (CREATESTRUCT*)lParam;
-        SetWindowLongPtr(hwnd, GWLP_USERDATA, (LONG_PTR)cs->lpCreateParams);
-
         DE_OK("WM_CREATE")
-        SetTimer(hwnd, 123, 1000 / 60, NULL); // 1/10th-second timer
+        SetTimer(hwnd, 123, 1000 / 60, NULL); // ~60 FPS Timer (16.6ms)
         return 0;
     }
 
-    if (!self) return DefWindowProc(hwnd, msg, wParam, lParam);
+    // 4. Wichtig: Falls vor/während WM_NCCREATE andere Systemnachrichten kommen,
+    // leiten wir sie sicher an DefWindowProc weiter.
+    if (!self)
+    {
+        DE_ERROR("No self")
+        return DefWindowProc(hwnd, msg, wParam, lParam);
+    }
+
+    // Ab hier kannst du sicher sein, dass "self" existiert und du mit "switch(msg)"
 
     auto createMouseDblClickEvent = [](UINT msg, WPARAM wParam, LPARAM lParam)
     {
@@ -640,54 +696,17 @@ WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
     {
         // case WM_CREATE:
         // {
-        //     return 0;
+        //     DE_TRACE("WM_CREATE ", hwnd)
+        //     //setWindowIcon( u64(hwnd), aaaa );
+        //     //setResizable( hwnd, true, 800, 600 );
+        //     //createMenu( hwnd );
+        //     break;
         // }
-case WM_NCCREATE:
-        {
-            DE_TRACE("WM_NCCREATE ", hwnd)
-            break;
-        }
-        case WM_CREATE:
-        {
-            DE_TRACE("WM_CREATE ", hwnd)
-            //setWindowIcon( u64(hwnd), aaaa );
-            //setResizable( hwnd, true, 800, 600 );
-            //createMenu( hwnd );
-            break;
-        }
-        case WM_DESTROY:
-        {
-            DE_OK("WM_DESTROY ", hwnd)
-            KillTimer(hwnd, 123);
-            //PostQuitMessage(0);
-
-            if (self->_d->m_postQuitMessage)
-            {
-                PostQuitMessage(0);
-                return 0;
-            }
-            else
-            {
-                return DefWindowProc(hwnd, msg, wParam, lParam);
-            }
-        }
-        case WM_CLOSE:
-        {
-            DE_TRACE("WM_CLOSE ", hwnd)
-            /*
-            if (self->_d->m_hideOnClose)
-            {
-                // Instead of destroying, just hide the window
-                ShowWindow(hwnd, SW_HIDE);
-                return 0;
-            }
-            else
-            {
-                return DefWindowProc(hwnd, msg, wParam, lParam);
-            }
-            */
-            break;
-        }
+        // case WM_CREATE:
+        // {
+        //     DE_TRACE("WM_CREATE ", hwnd)
+        //     break;
+        // }
         case WM_SETFOCUS:
         {
             DE_OK("WM_SETFOCUS")
@@ -699,6 +718,75 @@ case WM_NCCREATE:
             DE_OK("WM_KILLFOCUS")
             self->_d->m_bFocused = false;
             break;
+        }
+        case WM_CLOSE:
+        {
+            DE_TRACE("WM_CLOSE ", hwnd)
+
+            if (self->_d->m_hideOnClose)
+            {
+                DE_TRACE("HideOnClose is active")
+                // Instead of destroying, just hide the window
+                ShowWindow(hwnd, SW_HIDE);
+                return 0;
+            }
+            else
+            {
+                KillTimer(hwnd, 123);
+
+                // Fensterzerstörung einleiten
+                DestroyWindow(hwnd);
+                return 0;
+
+                // Calls DestroyWindow(hwnd)
+                // return DefWindowProc(hwnd, msg, wParam, lParam);
+            }
+
+        }
+        case WM_DESTROY:
+        {
+            DE_OK("WM_DESTROY ", hwnd)
+
+            // 1. Eigene Ressourcen freigeben (z. B. OpenGL)
+            if (self)
+            {
+                self->_d->m_bPaintEventEnabled = false;
+
+                wglMakeCurrent(nullptr, nullptr);
+                if (self->_d->hGL)
+                {
+                    wglDeleteContext(self->_d->hGL);
+                    self->_d->hGL = nullptr;
+                }
+                if (self->_d->hDC)
+                {
+                    ReleaseDC(hwnd, self->_d->hDC);
+                    self->_d->hDC = nullptr;
+                }
+            }
+
+            // 2. WM_QUIT in die Nachrichtenschleife posten
+            PostQuitMessage(0);
+            return 0;
+
+            //KillTimer(hwnd, 123);
+            //PostQuitMessage(0);
+
+            // if (self->_d->m_postQuitMessage)
+            // {
+            //     PostQuitMessage(0);
+            //     return 0;
+            // }
+            // else
+            // {
+            //     return DefWindowProc(hwnd, msg, wParam, lParam);
+            // }
+            // return DefWindowProc(hwnd, msg, wParam, lParam);
+        }
+        case WM_QUIT:
+        {
+            DE_OK("WM_QUIT ", hwnd)
+            return DefWindowProc(hwnd, msg, wParam, lParam);
         }
         case WM_TIMER:
         {
@@ -722,9 +810,10 @@ case WM_NCCREATE:
             PAINTSTRUCT ps;
             BeginPaint(hwnd, &ps);
 
-            if ( self )
+            if ( self && self->_d->m_bPaintEventEnabled )
             {
-                wglMakeCurrent(ps.hdc, self->_d->m_hRC);
+                // wglMakeCurrent(ps.hdc, self->_d->hGL);
+                wglMakeCurrent(self->_d->hDC, self->_d->hGL);
 
                 RECT r;
                 GetClientRect(hwnd, &r);
@@ -734,10 +823,13 @@ case WM_NCCREATE:
                 event.h = r.bottom - r.top;
                 self->paintEvent(event);
 
-                SwapBuffers( ps.hdc );
+                // SwapBuffers( ps.hdc );
+                SwapBuffers( self->_d->hDC );
             }
 
             EndPaint(hwnd, &ps);
+
+            // SIGNAL an Windows: "Alles erledigt, nicht mehr anfassen!"
             return 0;
         }
 
@@ -745,9 +837,17 @@ case WM_NCCREATE:
         {
             //int w = LOWORD(lParam);
             //int h = HIWORD(lParam);
-            int w = GET_X_LPARAM( lParam );
-            int h = GET_Y_LPARAM( lParam );
-            DE_OK("WM_SIZE(",w,",",h,")");
+            int sw = GET_X_LPARAM( lParam );
+            int sh = GET_Y_LPARAM( lParam );
+
+            RECT r;
+            GetClientRect(hwnd, &r);
+            int x = r.left;
+            int y = r.top;
+            int w = r.right - x;
+            int h = r.bottom - y;
+
+            DE_OK("WM_SIZE(",sw,",",sh,"), ClientRect(",x,",",y,",",w,",",h,")")
             de::ResizeEvent event;
             event.w = w;
             event.h = h;
@@ -872,18 +972,7 @@ case WM_NCCREATE:
             self->_d->m_KEYBOARD_INPUT_CODEPAGE = de::convertLocaleIdToCodepage( LOWORD( hkl ) );
             return 0;
         }
-/*
-if (event.type == EventType::KEY_PRESS)
-{
-    auto evt = event.keyPressEvent;
-    setKeyState( (EKEY)evt.key, true);
-}
-else if (event.type == EventType::KEY_RELEASE)
-{
-    auto evt = event.keyReleaseEvent;
-    setKeyState( (EKEY)evt.key, false);
-}
-*/
+
         case WM_KEYDOWN:
         {
             //DE_OK("WM_KEYDOWN")
@@ -955,6 +1044,7 @@ bool ensureClassRegistered(HINSTANCE hInst, const wchar_t* className) {
 }
 */
 
+
 std::wstring makeUniqueWindowTitle() {
     // 64‑bit RNG
     static thread_local std::mt19937_64 rng{ std::random_device{}() };
@@ -969,32 +1059,48 @@ std::wstring makeUniqueWindowTitle() {
     return std::wstring(buf);
 }
 
+std::wstring makeUniqueWindowClass() {
+    // 64‑bit RNG
+    static thread_local std::mt19937_64 rng{ std::random_device{}() };
+    uint64_t r = rng();
+
+    // Combine timestamp + random
+    uint64_t t = static_cast<uint64_t>(GetTickCount64());
+
+    wchar_t buf[64];
+    swprintf(buf, 64, L"WGL_class_%016llX_%016llX", r, t);
+
+    return std::wstring(buf);
+}
+
+
 bool Window_WGL::create( WindowOptions params )
 {
     int desktopW = GetSystemMetrics( SM_CXSCREEN );
     int desktopH = GetSystemMetrics( SM_CYSCREEN );
 
-    int w = desktopW / 2 - 100;
-    int h = desktopH - 300;
+    int windowW = desktopW / 2 - 100;
+    int windowH = desktopH - 300;
 
-    _d->m_screenWidth = w;
-    _d->m_screenHeight = h;
-
-    DE_DEBUG("DesktopSize(",desktopW,",",desktopH,"), "
-                "WindowSize(",w,",",h,")")
-
-    const HMODULE hInstance = GetModuleHandle(nullptr);
+    const HMODULE hInstance = GetModuleHandleW(nullptr);
     const HWND parentHwnd = (HWND)params.parent; //(HWND)parent;
+    DE_DEBUG("Created parentHwnd ",(void*)parentHwnd)
 
-    static const auto lpszClassName = L"DarkGPU_WGL_Class";
+    static const std::wstring className = makeUniqueWindowClass();
+    //static const auto lpszClassName = L"DarkGPU_WGL_Class";
     static bool reg = false;
     if (!reg)
     {
-        WNDCLASSW wc = {0};
-        wc.lpfnWndProc = WndProc;
+        WNDCLASSEXW wc = {0};
+        wc.cbSize = sizeof(WNDCLASSEXW);
+        wc.style = CS_HREDRAW | CS_VREDRAW | CS_DBLCLKS | CS_OWNDC; //  | CS_OWNDC
+        wc.cbClsExtra = 0;
+        wc.cbWndExtra = 0;
         wc.hInstance = hInstance;
-        wc.lpszClassName = lpszClassName;
-        ATOM a = RegisterClassW(&wc);
+        wc.lpszClassName = className.c_str(); // lpszClassName;
+        wc.lpfnWndProc = WndProc; // WndProcTest; // WndProc; DefWindowProc;
+
+        ATOM a = RegisterClassExW(&wc);
 
         if (a == 0)
         {
@@ -1005,35 +1111,73 @@ bool Window_WGL::create( WindowOptions params )
                 return false;
             }
         }
+
+        DE_DEBUG("Registered window class ",de_mbstr(className))
+        reg = true;
     }
 
-    DWORD dwStyle = WS_VISIBLE | WS_TABSTOP;//  | WS_CLIPCHILDREN
-    if (parentHwnd) dwStyle |= WS_CHILD;
+    // DWORD dwStyle = WS_VISIBLE | WS_TABSTOP;//  | WS_CLIPCHILDREN
+    // if (parentHwnd) dwStyle |= WS_CHILD;
+    // DWORD dwExStyle = (parentHwnd)
+    //                 ? WS_EX_CONTROLPARENT
+    //                 : WS_EX_OVERLAPPEDWINDOW;
 
-    std::wstring winTitle = params.title.empty() ?
-        makeUniqueWindowTitle() : params.title;
+    // 1. Definiere die normalen Window Styles (dwStyle)
+    DWORD dwStyle = WS_VISIBLE | WS_TABSTOP;
 
-    _d->m_hWnd = CreateWindowExW(
-        WS_EX_CONTROLPARENT,
-        lpszClassName,
+    if (parentHwnd)
+    {
+        dwStyle |= WS_CHILD;
+    }
+    else
+    {
+        // WICHTIG: Das Hauptfenster benötigt Rahmen, Titelleiste, etc.
+        // WS_CLIPCHILDREN und WS_CLIPSIBSIGNALS sind für OpenGL zwingend erforderlich!
+        dwStyle |= WS_OVERLAPPEDWINDOW | WS_CLIPCHILDREN | WS_CLIPSIBLINGS;
+    }
+
+    // 2. Definiere die erweiterten Window Styles (dwExStyle)
+    DWORD dwExStyle = 0;
+    if (parentHwnd)
+    {
+        dwExStyle |= WS_EX_CONTROLPARENT;
+    }
+    else
+    {
+        dwExStyle |= WS_EX_APPWINDOW; // Zeigt das Fenster korrekt in der Taskleiste an
+    }
+
+    std::wstring winTitle = makeUniqueWindowTitle();
+        //  : params.title;
+
+    _d->hWnd = CreateWindowExW(
+        dwExStyle,
+        className.c_str(), // lpszClassName,
         winTitle.c_str(),
         dwStyle,
-        0, 0, w, h,
+        0, 0, windowW, windowH,
         parentHwnd,
         nullptr,
         hInstance,
         this);
 
-    if (!_d->m_hWnd)
+    if (!_d->hWnd)
     {
         DE_ERROR("No WGL window created")
         return false;
     }
 
-    SetFocus( _d->m_hWnd );
+    DE_DEBUG("Created hWnd ",(void*)_d->hWnd)
+    SetFocus( _d->hWnd );
 
     _d->m_hInstance = hInstance;
-    _d->m_hDC = GetDC(_d->m_hWnd);
+    _d->hDC = GetDC(_d->hWnd);
+    if (!_d->hDC)
+    {
+        DE_ERROR("No hDC")
+    }
+
+    DE_DEBUG("Created hDC ",(void*)_d->hDC)
     PIXELFORMATDESCRIPTOR pfd = {
         sizeof(PIXELFORMATDESCRIPTOR),
         1,
@@ -1041,11 +1185,25 @@ bool Window_WGL::create( WindowOptions params )
         PFD_TYPE_RGBA,
         32 };
 
-    int pf = ChoosePixelFormat(_d->m_hDC, &pfd);
-    SetPixelFormat(_d->m_hDC, pf, &pfd);
+    int pf = ChoosePixelFormat(_d->hDC, &pfd);
+    if (pf < 0)
+    {
+        DE_ERROR("pf = ",pf)
+        return false;
+    }
 
-    _d->m_hRC = wglCreateContext(_d->m_hDC);
-    wglMakeCurrent(_d->m_hDC, _d->m_hRC);
+    DE_DEBUG("pf = ",pf)
+    SetPixelFormat(_d->hDC, pf, &pfd);
+
+    _d->hGL = wglCreateContext(_d->hDC);
+    if (!_d->hGL)
+    {
+        DE_ERROR("No hRC")
+        return false;
+    }
+
+    DE_DEBUG("Created hGL")
+    wglMakeCurrent(_d->hDC, _d->hGL);
 
     ensureDesktopOpenGL();
 
@@ -1054,6 +1212,8 @@ bool Window_WGL::create( WindowOptions params )
 
     // glViewport(0, 0, w, h);
     // glClearColor(0.11f, 0.03f, 0.12f, 1.0f);
+
+    DE_DEBUG("Desktop(",desktopW,",",desktopH,"), Window(",windowW,",",windowH,")")
 
     _d->m_bPaintEventEnabled = true;
 
@@ -1701,36 +1861,36 @@ bool Window_WGL::create( WindowOptions params )
 Recti Window_WGL::getWindowRect() const
 {
     RECT r;
-    GetWindowRect( _d->m_hWnd, &r );
-    DE_DEBUG("hWnd(",_d->m_hWnd,"), "
-             "r.left(",r.left,"), "
-             "r.top(",r.top,"), "
-             "r.right(",r.right,"), "
-             "r.bottom(",r.bottom,")")
+    GetWindowRect( _d->hWnd, &r );
+    // DE_DEBUG("hWnd(",_d->hWnd,"), "
+    //          "r.left(",r.left,"), "
+    //          "r.top(",r.top,"), "
+    //          "r.right(",r.right,"), "
+    //          "r.bottom(",r.bottom,")")
     return Recti(r.left, r.top, r.right - r.left, r.bottom - r.top );
 }
 
 Recti Window_WGL::getClientRect() const
 {
     RECT r;
-    GetClientRect( _d->m_hWnd, &r );
-    DE_DEBUG("hWnd(",_d->m_hWnd,"), "
-             "r.left(",r.left,"), "
-             "r.top(",r.top,"), "
-             "r.right(",r.right,"), "
-             "r.bottom(",r.bottom,")")
+    GetClientRect( _d->hWnd, &r );
+    // DE_DEBUG("hWnd(",_d->hWnd,"), "
+    //          "r.left(",r.left,"), "
+    //          "r.top(",r.top,"), "
+    //          "r.right(",r.right,"), "
+    //          "r.bottom(",r.bottom,")")
     return Recti(r.left, r.top, r.right - r.left, r.bottom - r.top );
 }
 
 void Window_WGL::bringToFront()
 {
-    ShowWindow(_d->m_hWnd, SW_SHOWNORMAL);  // Or SW_RESTORE if minimized
-    SetWindowPos(_d->m_hWnd, HWND_TOP, 0, 0, 0, 0,
+    ShowWindow(_d->hWnd, SW_SHOWNORMAL);  // Or SW_RESTORE if minimized
+    SetWindowPos(_d->hWnd, HWND_TOP, 0, 0, 0, 0,
                  SWP_NOMOVE | SWP_NOSIZE);
 
     AllowSetForegroundWindow(ASFW_ANY);
 
-    SetForegroundWindow(_d->m_hWnd);
+    SetForegroundWindow(_d->hWnd);
 }
 
 bool Window_WGL::isHideOnClose() const
@@ -1755,20 +1915,20 @@ void Window_WGL::setPostQuitMessage( bool bPostQuitMessage )
 
 bool Window_WGL::isVisible() const
 {
-    return IsWindowVisible(_d->m_hWnd);
+    return IsWindowVisible(_d->hWnd);
 }
 
 void Window_WGL::setVisible( bool bVisible )
 {
     if (bVisible)
     {
-        ShowWindow(_d->m_hWnd, SW_SHOW);
-        DE_DEBUG("Show Window ", (void*)_d->m_hWnd)
+        ShowWindow(_d->hWnd, SW_SHOW);
+        DE_DEBUG("Show Window ", (void*)_d->hWnd)
     }
     else
     {
-        ShowWindow(_d->m_hWnd, SW_HIDE);
-        DE_DEBUG("Hide Window ", (void*)_d->m_hWnd)
+        ShowWindow(_d->hWnd, SW_HIDE);
+        DE_DEBUG("Hide Window ", (void*)_d->hWnd)
     }
 }
 
@@ -1777,7 +1937,7 @@ void Window_WGL::setWindowTitle( char const* title )
     // SendMessage instead of SetText for cases where HWND was created in a different thread
     DWORD_PTR dwResult;
     SendMessageTimeoutA(
-        _d->m_hWnd,
+        _d->hWnd,
         WM_SETTEXT,
         0,
         reinterpret_cast< LPARAM >( title ),
@@ -1790,7 +1950,7 @@ void Window_WGL::setWindowTitle( char const* title )
 void
 Window_WGL::setWindowIcon( int iRessourceID )
 {
-    if ( !_d->m_hWnd ) { return; }
+    if ( !_d->hWnd ) { return; }
 
     if ( !_d->m_hInstance ) { _d->m_hInstance = GetModuleHandle( nullptr ); }
 
@@ -1801,11 +1961,11 @@ Window_WGL::setWindowIcon( int iRessourceID )
     if ( hIcon )
     {
         LONG_PTR ptr = reinterpret_cast<LONG_PTR>( hIcon );
-        SetClassLongPtr( _d->m_hWnd, GCLP_HICON, ptr );
-        SetClassLongPtr( _d->m_hWnd, GCLP_HICONSM, ptr );
+        SetClassLongPtr( _d->hWnd, GCLP_HICON, ptr );
+        SetClassLongPtr( _d->hWnd, GCLP_HICONSM, ptr );
 
-        SendMessage(_d->m_hWnd, WM_SETICON, ICON_BIG, (LPARAM)hIcon);
-        SendMessage(_d->m_hWnd, WM_SETICON, ICON_SMALL, (LPARAM)hIcon);
+        SendMessage(_d->hWnd, WM_SETICON, ICON_BIG, (LPARAM)hIcon);
+        SendMessage(_d->hWnd, WM_SETICON, ICON_SMALL, (LPARAM)hIcon);
     }
 }
 
@@ -1820,7 +1980,7 @@ HBITMAP LoadBitmapFromResource(HINSTANCE hInstance, LPCWSTR lpBitmapName)
 void
 Window_WGL::setWindowBackgroundImage( int iRessourceID )
 {
-    if ( !_d->m_hWnd ) { return; }
+    if ( !_d->hWnd ) { return; }
 
     if ( !_d->m_hInstance ) { _d->m_hInstance = GetModuleHandle( nullptr ); }
 
@@ -1844,9 +2004,10 @@ bool Window_WGL::isResizable() const
     return _d->m_params.isResizable;
 }
 
+/*
 void Window_WGL::setResizable( bool resizable )
 {
-   if ( !_d->m_hWnd ) { return; }
+   if ( !_d->hWnd ) { return; }
 
    int screenWidth = getClientRect().w; // TODO: Change GetClientRect() to m_screenWidth;
    int screenHeight = getClientRect().h;// TODO: Change GetClientRect() to m_screenHeight;
@@ -1871,7 +2032,7 @@ void Window_WGL::setResizable( bool resizable )
    if ( _d->m_params.isFullscreen ) { return; }
 
    // TODO: Separate this code into a reusable function setWindowStyle().
-   if ( !SetWindowLongPtr( _d->m_hWnd, GWL_STYLE, LONG_PTR(style) ) )
+   if ( !SetWindowLongPtr( _d->hWnd, GWL_STYLE, LONG_PTR(style) ) )
    {
       DE_ERROR("Cant change window style.")
       return;
@@ -1897,8 +2058,63 @@ void Window_WGL::setResizable( bool resizable )
    winX = std::max( winX, 0 );
    winY = std::max( winY, 0 );
 
-   SetWindowPos( _d->m_hWnd, HWND_TOP, winX, winY, winW, winH,
+   SetWindowPos( _d->hWnd, HWND_TOP, winX, winY, winW, winH,
                   SWP_FRAMECHANGED | SWP_SHOWWINDOW); //  | SWP_NOMOVE
+}
+*/
+
+void Window_WGL::setResizable( bool resizable )
+{
+    if ( !_d->hWnd ) { return; }
+
+    // 1. Hole den AKTUELLEN Stil direkt vom Windows-Fenster,
+    // damit Stile wie WS_CLIPCHILDREN / WS_CLIPSIBLINGS NICHT verloren gehen!
+    DWORD style = GetWindowLong( _d->hWnd, GWL_STYLE );
+
+    if (resizable)
+    {
+        style |= (WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_THICKFRAME);
+    }
+    else
+    {
+        style &= ~(WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_THICKFRAME);
+    }
+
+    _d->m_windowedStyle = style;
+    _d->m_params.isResizable = resizable;
+
+    if ( _d->m_params.isFullscreen ) { return; }
+
+    // 2. Stil sicher anwenden
+    if ( !SetWindowLongPtr( _d->hWnd, GWL_STYLE, LONG_PTR(style) ) )
+    {
+        DE_ERROR("Cant change window style.")
+        return;
+    }
+
+    _d->m_windowStyle = style;
+
+    // 3. Richtige Fenstergröße inklusive Titelleiste berechnen
+    RECT r_window;
+    GetClientRect(_d->hWnd, &r_window); // Holt die echten, aktuellen Client-Maße (0, 0, W, H)
+
+    // Berechnet die benötigte Gesamtfenstergröße basierend auf dem NEUEN Stil
+    AdjustWindowRect( &r_window, style, FALSE );
+
+    int winW = r_window.right - r_window.left;
+    int winH = r_window.bottom - r_window.top;
+
+    // Zentrieren auf dem Bildschirm
+    int winX = (GetSystemMetrics(SM_CXSCREEN) - winW) / 2;
+    int winY = (GetSystemMetrics(SM_CYSCREEN) - winH) / 2;
+
+    winX = std::max( winX, 0 );
+    winY = std::max( winY, 0 );
+
+    // 4. WICHTIG: SWP_FRAMECHANGED zwingt Windows, den Rahmen und die Titelleiste
+    // basierend auf dem neuen Stil komplett neu und sauber zu zeichnen!
+    SetWindowPos( _d->hWnd, HWND_TOP, winX, winY, winW, winH,
+              SWP_FRAMECHANGED | SWP_SHOWWINDOW | SWP_NOACTIVATE);
 }
 
 bool Window_WGL::isFullScreen() const
@@ -1920,7 +2136,7 @@ void Window_WGL::setFullScreen( bool fullscreen )
    }
 
    // TODO: Separate this code into a reusable function setWindowStyle().
-   if ( !SetWindowLongPtr( _d->m_hWnd, GWL_STYLE, LONG_PTR(style) ) )
+   if ( !SetWindowLongPtr( _d->hWnd, GWL_STYLE, LONG_PTR(style) ) )
    {
       printf("Cant change window style.\n");
       //std::cout << "Could not change window style." << std::endl;
@@ -1967,7 +2183,7 @@ void Window_WGL::setFullScreen( bool fullscreen )
       winX = std::max( winX, 0 ); // Thick Border
       winY = std::max( winY, 0 );
    }
-   SetWindowPos( _d->m_hWnd, HWND_TOP, winX, winY, winW, winH,
+   SetWindowPos( _d->hWnd, HWND_TOP, winX, winY, winW, winH,
                   SWP_FRAMECHANGED | SWP_SHOWWINDOW); //  | SWP_NOMOVE
 }
 

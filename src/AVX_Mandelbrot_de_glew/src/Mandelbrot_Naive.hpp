@@ -1,5 +1,5 @@
 #pragma once
-#include <Globals.hpp>
+#include <DarkImage.h>
 
 void mandelbrotImage_Naive( de::Image & img,
                             de::Recti const & imgRect,

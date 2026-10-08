@@ -130,40 +130,10 @@ void H3_Game::destroy()
 
 bool H3_Game::run()
 {
-    if (!m_window) return 0;
-    if (!m_driver) return 0;
-
-    // MainLoop:
-    //double m_timeStart = dbTimeInSeconds();
-    //double m_timeNow = 0.0;
-    // m_timeLastCameraUpdate = 0.0;
-    // m_timeLastRenderUpdate = 0.0;
-    // m_timeLastWindowTitleUpdate = 0.0;
-    // fpsComputer.reset();
-
-    //m_bShouldRun = true;
+    if (!m_window) return false;
+    if (!m_driver) return false;
 
     return m_bShouldRun && m_window && m_window->run();
-
-/*
-    while (m_bShouldRun && m_window && m_window->run())
-    {
-        // fpsComputer.tick();
-        m_timeNow = dbTimeInSeconds() - m_timeStart;
-
-        // // update window title 2-3x per second
-        // double dtWindowTitleUpdate = m_timeNow - m_timeLastWindowTitleUpdate;
-        // if ( dtWindowTitleUpdate >= 0.25 )
-        // {
-        //     m_timeLastWindowTitleUpdate = m_timeNow;
-
-        //     updateWindowTitle();
-        // }
-    }
-
-    return 0;
-*/
-
 }
 
 bool H3_Game::init()

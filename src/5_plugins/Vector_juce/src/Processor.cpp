@@ -434,7 +434,10 @@ VectorSynthesiser::VectorSynthesiser(
 void VectorSynthesiser::updateSynthesizer()
 {
     m_orbRadius = m_apvts.getRawParameterValue(PID::orbitRadius)->load();
-    m_orbSpeed = m_apvts.getRawParameterValue(PID::orbitSpeed)->load();
+    m_orbSpeed = m_apvts.getRawParameterValue(PID::orbitSpeed)->load()
+               + m_apvts.getRawParameterValue(PID::orbitSpeed127)->load()
+               + m_apvts.getRawParameterValue(PID::orbitSpeed1k)->load();
+
 
     constexpr float TWO_PI = juce::MathConstants<float>::twoPi;
     m_orbPhaseIncrement = TWO_PI * m_orbSpeed / getSampleRate();

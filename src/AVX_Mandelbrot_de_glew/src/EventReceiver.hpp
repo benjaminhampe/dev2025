@@ -1,76 +1,76 @@
 #pragma once
 #include <Globals.hpp>
 
-void updateWindowTitle()
+struct MandelbrotWindow : public de::Window_WGL
 {
-   if ( !m_window )
-   {
-      return;
-   }
+    bool m_firstMouse;
+    bool m_showHelpOverlay;
+    bool m_isMouseLeftPressed;
+    bool m_isMouseRightPressed;
+    bool m_isMouseMiddlePressed;
+    bool m_isDragging;
+    int m_mouseX;
+    int m_mouseY;
+    int m_lastMouseX;
+    int m_lastMouseY;
+    int m_mouseMoveX;
+    int m_mouseMoveY;
 
-   int desktopW = dbDesktopWidth();
-   int desktopH = dbDesktopHeight();
-   int winW = m_window->getClientRect().w;
-   int winH = m_window->getClientRect().h;
-   int winX = m_window->getWindowRect().x;
-   int winY = m_window->getWindowRect().y;
+    int m_dragStartX;
+    int m_dragStartY;
 
-   int screenW = 800;
-   int screenH = 600;
-   double fps = 0.0;
-   if ( m_driver )
-   {
-      screenW = m_driver->getScreenWidth();
-      screenH = m_driver->getScreenHeight();
-      fps = m_driver->getFPS();
-   }
+    //   int m_dummy;
+    MandelbrotWindow()
+        : m_firstMouse(true)
+        , m_showHelpOverlay(true)
+        , m_isMouseLeftPressed(false)
+        , m_isMouseRightPressed(false)
+        , m_isMouseMiddlePressed(false)
+        , m_isDragging(false)
+        , m_mouseX(0)
+        , m_mouseY(0)
+        , m_lastMouseX(0)
+        , m_lastMouseY(0)
+        , m_mouseMoveX(0)
+        , m_mouseMoveY(0)
+        , m_dragStartX(0)
+        , m_dragStartY(0)
+    {}
 
-   std::ostringstream o;
-   o << "AVX_Mandelbrot (c) 2023 by BenjaminHampe@gmx.de | "
+
+    void updateWindowTitle()
+    {
+        // if ( !m_window )
+        // {
+        // return;
+        // }
+
+        int desktopW = dbDesktopWidth();
+        int desktopH = dbDesktopHeight();
+        int winW = getClientRect().w;
+        int winH = getClientRect().h;
+        int winX = getWindowRect().x;
+        int winY = getWindowRect().y;
+
+        int screenW = 800;
+        int screenH = 600;
+        double fps = 0.0;
+        if ( m_driver )
+        {
+        screenW = m_driver->getScreenWidth();
+        screenH = m_driver->getScreenHeight();
+        fps = m_driver->getFPS();
+        }
+
+        std::ostringstream o;
+        o << "AVX_Mandelbrot (c) 2023 by BenjaminHampe@gmx.de | "
         "FPS("<< fps << "), "
         "Desktop("<<desktopW<<","<<desktopH<<"), "
         "Window("<<winX<<","<<winY<<","<<winW<<","<<winH<<"), "
         "Screen("<<screenW<<","<<screenH<<")";
 
-   m_window->setWindowTitle( o.str().c_str() );
-}
-
-struct EventReceiver : public de::IEventReceiver
-{
-   bool m_firstMouse;
-   bool m_showHelpOverlay;
-   bool m_isMouseLeftPressed;
-   bool m_isMouseRightPressed;
-   bool m_isMouseMiddlePressed;
-   bool m_isDragging;
-   int m_mouseX;
-   int m_mouseY;
-   int m_lastMouseX;
-   int m_lastMouseY;
-   int m_mouseMoveX;
-   int m_mouseMoveY;
-
-   int m_dragStartX;
-   int m_dragStartY;
-
-//   int m_dummy;
-   EventReceiver()
-      : m_firstMouse(true)
-      , m_showHelpOverlay(true)
-      , m_isMouseLeftPressed(false)
-      , m_isMouseRightPressed(false)
-      , m_isMouseMiddlePressed(false)
-      , m_isDragging(false)
-      , m_mouseX(0)
-      , m_mouseY(0)
-      , m_lastMouseX(0)
-      , m_lastMouseY(0)
-      , m_mouseMoveX(0)
-      , m_mouseMoveY(0)
-      , m_dragStartX(0)
-      , m_dragStartY(0)
-   {}
-
+        setWindowTitle( o.str().c_str() );
+    }
 
    void moveEvent( de::MoveEvent const & event ) override
    {
@@ -98,10 +98,7 @@ struct EventReceiver : public de::IEventReceiver
       // ESC|Q - Exit program, no warn.
       if (event.key == de::KEY_ESCAPE) //  || event.key == de::KEY_Q
       {
-         if ( m_window )
-         {
-            m_window->requestClose();
-         }
+         requestClose();
 
       }
 
@@ -196,18 +193,12 @@ struct EventReceiver : public de::IEventReceiver
       // F11 - Toggle window resizable
       if (event.key == de::KEY_F11)
       {
-         if ( m_window )
-         {
-            m_window->setResizable( !m_window->isResizable() );
-         }
+         setResizable( !isResizable() );
       }
       // F12|F - Toggle window fullscreen
       if (event.key == de::KEY_F12 || event.key == de::KEY_F )
       {
-         if ( m_window )
-         {
-            m_window->setFullScreen( !m_window->isFullScreen() );
-         }
+            setFullScreen( !isFullScreen() );
       }
       // SPACE - Toggle help overlay
       if (event.key == de::KEY_SPACE) // SPACE - Toggle overlay

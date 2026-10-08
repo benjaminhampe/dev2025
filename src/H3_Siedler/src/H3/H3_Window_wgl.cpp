@@ -24,6 +24,15 @@ void H3_Window::timerEvent( const de::TimerEvent& event )
 }
 void H3_Window::resizeEvent( const de::ResizeEvent& event )
 {
+    auto driver = m_game.getDriver();
+    if (driver)
+    {
+        driver->resize(event.w,event.h);
+    }
+    else
+    {
+        DE_ERROR("No driver")
+    }
     m_game.UI_resizeLayouts();
 }
 

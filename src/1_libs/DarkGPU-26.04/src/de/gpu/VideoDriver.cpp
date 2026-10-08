@@ -564,6 +564,7 @@ void VideoDriver::close()
 
 void VideoDriver::resize( int w, int h )
 {
+    DE_DEBUG("Screen(",w,",",h,")")
     // if (w < 1 || h < 1)
     // {
     //     DE_ERROR("")
@@ -584,6 +585,8 @@ bool VideoDriver::beginRender(const glm::vec4& clearColor)
 {
     const int w = getScreenWidth();
     const int h = getScreenHeight();
+    // DE_DEBUG("Screen(",w,",",h,")")
+
     if (w < 1 || h < 1) return false;
 
     if (getCamera())
