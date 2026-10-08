@@ -211,16 +211,8 @@ void GL_Renderer::paintGL()
     const auto& d = s->getL();
     if (d.size() < 8) { return; }
 
-    // glEnable(GL_DEPTH_TEST);
-    // glDepthFunc(GL_LESS);          // Default depth comparison
-    // glDepthMask(GL_TRUE);          // Allow depth writes
-    // glClearDepth(1.0);             // Depth buffer clear value
-    m_driver->setDepth(de::gpu::Depth());
-
-    // glEnable(GL_CULL_FACE);
-    // glCullFace(GL_BACK);           // Cull back-facing triangles
-    // glFrontFace(GL_CCW);           // Counter-clockwise = front
-    m_driver->setCulling(de::gpu::Culling());
+    de::gpu::State state;
+    m_driver->setState(state);
 
     // m_lineShader.resetModelMat();
     // m_lineShader.draw( bks_lines );

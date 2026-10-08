@@ -1,4 +1,5 @@
 #include <de/IrrlichtDevice.h>
+#include <de/os/Window_WGL.h>
 #include <de/gui/Env.h>
 #include <de_opengl.h>
 #ifdef HAVE_DE_AUDIO
@@ -7,14 +8,13 @@
 #include "../res/resource.h" // setWindowIcon(aaaa)
 
 // ===========================================================================
-class F3_Game : public de::IEventReceiver
+class F3_Game : public de::Window_WGL
 // ===========================================================================
 {
 public:
     F3_Game();
     ~F3_Game();
     bool init();
-    bool run();
     void onEvent( const de::Event& event ) override;
     void draw();
     void updateWindowTitle();
@@ -28,11 +28,13 @@ public:
 
     bool isRunning() const { return m_bShouldRun; }
 
-    de::Window* getWindow() { return m_device->getWindow(); }
-    de::gpu::VideoDriver* getDriver() { return m_device->getVideoDriver(); }
-    de::gpu::Camera* getCamera() { return m_device->getVideoDriver()->getCamera(); }
+    de::Window* getWindow() { return m_window; }
+    de::gpu::VideoDriver* getDriver() { return m_driver; }
+    de::gpu::Camera* getCamera() { return m_driver->getCamera(); }
 
-    de::IrrlichtDevice* m_device;
+    //de::IrrlichtDevice* m_device;
+    de::Window* m_window;
+    de::gpu::VideoDriver* m_driver;
     de::gpu::Camera m_camera;
     de::gui::Env m_guienv;
     bool m_bShouldRun;
@@ -95,7 +97,8 @@ public:
 };
 
 F3_Game::F3_Game()
-    : m_device(nullptr)
+    : m_window(nullptr)
+    , m_driver(nullptr)
 {
     dbRandomize();
 
@@ -108,7 +111,8 @@ F3_Game::~F3_Game()
 {
     //m_audioEngine.stop();
 
-    delete m_device;
+    delete m_driver;
+    delete m_window;
     DE_INFO("Destroyed device.")
 }
 
@@ -116,19 +120,20 @@ bool F3_Game::init()
 {
     DE_OK("")
 
-    m_device = new de::IrrlichtDevice();
-    if ( !m_device->open( 1024, 768 ) )
+    de::WindowOptions opts;
+    opts.width = 1024;
+    opts.height = 768;
+    if ( !create(opts) )
     {
         DE_ERROR("Cant create window, abort main().")
         return false;
     }
 
-    m_device->setEventReceiver( this );
-    m_device->getWindow()->setWindowIcon( aaaa );
-    m_device->getWindow()->setWindowTitle( "Die Siedler von Satan 3D | <benjaminhampe@gmx.de>" );
-    m_device->run();
-    m_device->getWindow()->bringToFront();
-    m_device->run();
+    setWindowIcon( aaaa );
+    setWindowTitle( "Die Siedler von Satan 3D | <benjaminhampe@gmx.de>" );
+    run();
+    bringToFront();
+    run();
 
     // =======================
     // === Draw LoadScreen ===
@@ -136,16 +141,24 @@ bool F3_Game::init()
     //m_img.initLoadScreen();
     //m_img.loadLoadScreen();
     //m_tex.initLoadScreen( *this );
-    m_device->run();
-    auto driver = m_device->getVideoDriver();
-    driver->beginRender();
-    int w = driver->getScreenWidth();
-    int h = driver->getScreenHeight();
+    run();
+    m_driver = new de::gpu::VideoDriver();
+
+    auto r = m_window->getClientRect();
+    if (!m_driver->open(r.w,r.h))
+    {
+        DE_ERROR("No driver")
+        return false;
+    }
+
+    m_driver->beginRender();
+    int w = m_driver->getScreenWidth();
+    int h = m_driver->getScreenHeight();
     auto texLoadScreen = nullptr; // getTex( H3_Tex::Satan, "LoadScreen" )
-    driver->getScreenRenderer()->draw2DRect( de::Recti(0,0,w,h), 0xFFFFFFFF, texLoadScreen );
-    driver->endRender();
-    m_device->getWindow()->swapBuffers();
-    m_device->run();
+    m_driver->getScreenRenderer()->draw2DRect( de::Recti(0,0,w,h), 0xFFFFFFFF, texLoadScreen );
+    m_driver->endRender();
+    m_window->swapBuffers();
+    run();
 
     // ======================
     // === Load images ===
@@ -160,7 +173,7 @@ bool F3_Game::init()
     // dbSaveImage(imgBackground, "../../media/FreeLancer/z_starmap_2020_8k.webp");
 
     dbLoadImage(imgBackground, "../../media/FreeLancer/z_starmap_2020_8k_gal.webp");
-    m_backgroundTex = driver->createTexture2D("background", imgBackground);
+    m_backgroundTex = m_driver->createTexture2D("background", imgBackground);
 
     de::smesh::SMeshSphere::add(m_backgroundMesh,glm::vec3(3000), 0xFFFFFFFF, 32,32);
     de::smesh::SMeshBufferTool::flipNormals( m_backgroundMesh );
@@ -174,12 +187,12 @@ bool F3_Game::init()
     //m_font.save("media/H3/font_atlas");
     //m_font.load();
 
-    m_guienv.init( driver );
+    m_guienv.init( m_driver );
 
     // ===================
     // === init camera ===
     // ===================
-    auto camera = driver->getCamera();
+    auto camera = m_driver->getCamera();
     camera->setNearValue( 1.0f );
     camera->setFarValue( 38000.0f );
     camera->lookAt( glm::vec3(10,100,-100),
@@ -203,12 +216,6 @@ bool F3_Game::init()
     m_bAcceptPaintEvents = true;
     return true;
 }
-
-bool F3_Game::run()
-{
-    return (m_device != nullptr) && m_device->run();
-}
-
 
 void F3_Game::draw()
 {

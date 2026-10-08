@@ -33,7 +33,7 @@ set(CMAKE_SYSTEM_NAME Windows)
 cmake_minimum_required(VERSION 3.14 FATAL_ERROR)
 
 set(BENNI_USE_QT 1)         # <optional> Build QtSDK Apps and copy runtime
-set(BENNI_USE_DEMOS 0)      # <optional> Build QtSDK Apps and copy runtime
+set(BENNI_USE_DEMOS 1)      # <optional> Build QtSDK Apps and copy runtime
 set(BENNI_USE_OPENCV 0)     # <optional> Build OpenCV and face detection demo app
 set(BENNI_USE_POLYPHONE 0)  # <optional> Big app
 set(BENNI_USE_SFML 0)       # <optional> Build SFML 3.1.0 libs and apps

@@ -204,7 +204,7 @@ GL_Canvas::paintGL()
 
         if (m_bShowPerfOverlay)
         {
-            m_driver->draw2DPerfOverlay();
+            m_driver->draw2DPerfOverlay(-1,-1);
             draw2DFftOverlay();
         }
         m_driver->endRender();

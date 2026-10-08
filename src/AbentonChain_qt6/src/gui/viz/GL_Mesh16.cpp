@@ -453,7 +453,9 @@ void GL_Mesh16_Shader3D::setMaterial( const GL_Mesh16_Material & material, const
     // }
     // else
     // {
-         m_driver->setBlend( de::gpu::Blend::disabled() );
+    de::gpu::State state;
+    state.blend = de::gpu::Blend::disabled();
+    m_driver->setState(state);
     // }
 }
 
@@ -586,7 +588,9 @@ void GL_Mesh16_Shader2D::setMaterial(
     // }
     // else
     // {
-        m_driver->setBlend( de::gpu::Blend::disabled() );
+    de::gpu::State state;
+    state.blend = de::gpu::Blend::disabled();
+    m_driver->setState(state);
     //}
 }
 

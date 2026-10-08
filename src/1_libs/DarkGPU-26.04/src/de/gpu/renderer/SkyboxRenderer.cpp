@@ -360,10 +360,10 @@ SkyboxRenderer::initGeometry()
             glm::vec3( 1.0f, -1.0f,  1.0f)); // top-left
 
     // ny = bottom face
-    addQuad(glm::vec3(-1.0f, -1.0f, -1.0f),  // top-right
-            glm::vec3( 1.0f, -1.0f, -1.0f),  // top-left
-            glm::vec3( 1.0f, -1.0f,  1.0f),  // bottom-left
-            glm::vec3(-1.0f, -1.0f,  1.0f)); // bottom-right
+    addQuad(glm::vec3(-1.0f, -1.0f,  1.0f),  // top-right
+            glm::vec3( 1.0f, -1.0f,  1.0f),  // top-left
+            glm::vec3( 1.0f, -1.0f, -1.0f),  // bottom-left
+            glm::vec3(-1.0f, -1.0f, -1.0f)); // bottom-right
 
     // py = top face
     addQuad(glm::vec3(-1.0f,  1.0f, -1.0f),  // top-left
