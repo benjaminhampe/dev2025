@@ -12,6 +12,8 @@ public:
 
     // virtual IEventReceiver* getEventReceiver() = 0;
     // virtual void setEventReceiver( IEventReceiver* receiver ) = 0;
+    virtual void setPaintEnabled(bool enabled) = 0;
+    virtual bool isPaintEnabled() const = 0;
 
     virtual bool getKeyState( const EKEY key ) const = 0;
     virtual void setKeyState( const EKEY key, const bool checked ) = 0;

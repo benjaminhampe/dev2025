@@ -124,7 +124,7 @@ void dbLogMessage( int logLevel, const std::string& msg,
     g_lineCount++;
 
     static double m_TimeStart = dbTimeInSeconds();
-    double m_Time = dbTimeInSeconds() - m_TimeStart;
+    double m_Time = std::fabs(dbTimeInSeconds() - m_TimeStart);
 
     const size_t BUFFER_SIZE = 32;
     char txt_time[BUFFER_SIZE];

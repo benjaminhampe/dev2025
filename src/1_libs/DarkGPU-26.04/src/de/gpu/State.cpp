@@ -1164,10 +1164,10 @@ State::apply( State const & alt, State const & neu )
 {
     State state;
     //state.viewport = Viewport::apply( alt.viewport, neu.viewport );
-    //state.scissor = Scissor::apply( alt.scissor, neu.scissor );
+    state.scissor = Scissor::apply( alt.scissor, neu.scissor );
     state.culling = Culling::apply( alt.culling, neu.culling );
     state.depth = Depth::apply( alt.depth, neu.depth );
-    //state.stencil = Stencil::apply( alt.stencil, neu.stencil );
+    state.stencil = Stencil::apply( alt.stencil, neu.stencil );
     state.blend = Blend::apply( alt.blend, neu.blend );
     //state.pointSize = PointSize::apply( alt.pointSize, neu.pointSize );
     //state.lineWidth = LineWidth::apply( alt.lineWidth, neu.lineWidth );

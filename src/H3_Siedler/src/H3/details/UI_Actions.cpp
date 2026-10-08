@@ -126,12 +126,12 @@ UI_Actions::UI_Actions( H3_Game* game, de::gui::Env* env, de::gui::Widget* paren
 
 UI_Actions::~UI_Actions()
 {
-    DE_WARN("")
+    // DE_WARN("")
 }
 
 void UI_Actions::resizeLayout()
 {
-    DE_WARN("")
+    // DE_WARN("")
 
     const auto fScale = 0.01f * m_env->getScalePc();
     const auto scr_w = m_env->getScreenWidth();
@@ -169,8 +169,8 @@ void UI_Actions::resizeLayout()
     y = scr_h - 1 - p - h4;
     m_btnBuyCard->setRect(x,y,w4,h4);
 
-    DE_DEBUG("this = ", this->getRect().str())
-    DE_DEBUG("m_btnDice = ", m_btnDice->getRect().str(), ", visible = ", m_btnDice->isVisible())
+    //DE_DEBUG("this = ", this->getRect().str())
+    //DE_DEBUG("m_btnDice = ", m_btnDice->getRect().str(), ", visible = ", m_btnDice->isVisible())
 }
 
 void UI_Actions::hideActions()

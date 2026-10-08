@@ -56,8 +56,9 @@ void createSMeshTile( de::smesh::SMeshBuffer & o, de::gpu::VideoDriver* driver,
     o.name = de::FileSystem::fileBase(bumpMap.uri());
     o.material.Lighting = 0;
     o.material.FogEnable = false;
+    o.material.state = de::gpu::State();
     o.material.state.blend = de::gpu::Blend::alphaBlend();
-    o.material.state.culling = de::gpu::Culling::disabled();
+    // o.material.state.culling = de::gpu::Culling::disabled();
     de::gpu::BumpMapUtil::addTriangles( o, out_triangles );
 
     DE_OK("After SMeshBuffer has ", o.vertices.size(), " vertices")
@@ -65,7 +66,7 @@ void createSMeshTile( de::smesh::SMeshBuffer & o, de::gpu::VideoDriver* driver,
 
     de::gpu::BumpMapUtil::windowVertices( o );
 
-    de::smesh::SMeshBufferTool::computeNormals( o );
+    //de::smesh::SMeshBufferTool::computeNormals( o );
 
     //o.upload();
 
@@ -178,6 +179,8 @@ bool H3_Game::init()
         m_driver = nullptr;
         return false;
     }
+
+    m_window->setPaintEnabled(true);
 
     // =======================
     // === Draw LoadScreen ===
@@ -426,6 +429,105 @@ de::gpu::TexRef H3_Game::getTex( H3_Tex::eID id, const std::string & caller ) co
 
     return it->second;
 }
+
+
+void H3_Game::draw()
+{
+    if (!m_bPaintEvents)
+    {
+        DE_WARN("No m_acceptPaintEvents")
+        return;
+    }
+
+    //DE_OK("")
+    auto driver = getDriver();
+    if (!driver) { DE_ERROR("No driver") return; }
+
+    driver->beginRender();
+
+    const int w = driver->getScreenWidth();
+    const int h = driver->getScreenHeight();
+
+    if ( isRunning() )
+    {
+        drawSkybox();
+        drawSun();
+        drawTiles();
+        drawPortBridges();
+        drawChips();
+        drawCorners();
+        drawEdges();
+        drawRoads();
+        drawFarms();
+        drawCitys();
+        drawThief();
+        //drawDice();
+        drawHoveredTile();
+        drawHoveredEdge();
+        drawHoveredCorner();
+
+        driver->beginPerf("UI_Stats");
+        UI_Stats_render( *this );
+        driver->endPerf();
+
+        driver->beginPerf("UI_PlayerStats");
+        for ( int i = 0; i < m_players.size(); ++i )
+        {
+            UI_drawPlayerStats( *this, 20, 20+100*i, m_players[ i ].id );
+        }
+        driver->endPerf();
+
+        driver->beginPerf("UI_RoundStats");
+        UI_drawRoundStats( *this );
+        driver->endPerf();
+
+        auto fScale = 0.01f * getScalePc();
+        auto p = de::Recti( 20, h/2-100, fScale * 200, fScale * 300 );
+
+        driver->beginPerf("UI_Info");
+        UI_drawInfoPanelTile( *this, p, m_hoverTileId );
+        UI_drawInfoPanelCorner( *this, p, m_hoverCornerId );
+        UI_drawInfoPanelEdge( *this, p, m_hoverEdgeId );
+        driver->endPerf();
+
+        driver->beginPerf("UI_Log");
+        UI_drawLog( *this );
+        driver->endPerf();
+
+        //auto fontGarton = m_fontGarton32;
+        //fontGarton.pixelSize = 2.0f * fScale * fontGarton.pixelSize;
+        //H3_drawText( game, w/2, 0, "Hello Marquee text!!!", 0xFFFFFFFF,
+        //             de::Align::TopCenter, fontGarton);
+
+        /*
+        if ( m_ui.m_hoverElement > -1 )
+        {
+            auto & elem = m_ui.m_elements[ m_ui.m_hoverElement ];
+            H3_draw2DRect( game, elem.pos, 0x6F0000FF );
+        }
+        */
+
+        drawMarquee();
+        driver->endPerf();
+
+
+        driver->drawPerf( de::Recti( w- 300, 500, 300, 300));
+    }
+    else
+    {
+        auto wallpaper = getTex(H3_Tex::Satan, "draw().wallpaper");
+        driver->getScreenRenderer()->draw2DRect(de::Recti(0,0,w,h),0xFFFFFFFF, wallpaper);
+    }
+
+    driver->beginPerf("GUIEnv");
+    m_guienv.draw();
+    driver->endPerf();
+
+    driver->endRender();
+
+    // m_window->swapBuffers();
+}
+
 
 void H3_Game::exitProgram()
 {
@@ -2133,6 +2235,7 @@ void H3_Game::drawTiles()
     auto driver = getDriver();
     driver->beginPerf("Tiles");
 
+    // m_bUpdateDrawCall_Tiles = true;
     if (m_bUpdateDrawCall_Tiles)
     {
         // ========================
@@ -2575,103 +2678,6 @@ void H3_Game::drawHoveredTile()
 
     driver->resetModelMatrix();
     rend->draw3DLineBox( bbox, 0xFFC0C0C0 );
-}
-
-void H3_Game::draw()
-{
-    if (!m_bPaintEvents)
-    {
-        DE_WARN("No m_acceptPaintEvents")
-        return;
-    }
-
-    //DE_OK("")
-    auto driver = getDriver();
-    if (!driver) { DE_ERROR("No driver") return; }
-
-    driver->beginRender();
-
-    const int w = driver->getScreenWidth();
-    const int h = driver->getScreenHeight();
-
-    if ( isRunning() )
-    {
-        drawSkybox();
-        drawSun();
-        drawTiles();
-        drawPortBridges();
-        drawChips();
-        drawCorners();
-        drawEdges();
-        drawRoads();
-        drawFarms();
-        drawCitys();
-        drawThief();
-        //drawDice();
-        drawHoveredTile();
-        drawHoveredEdge();
-        drawHoveredCorner();
-
-        driver->beginPerf("UI_Stats");
-        UI_Stats_render( *this );
-        driver->endPerf();
-
-        driver->beginPerf("UI_PlayerStats");
-        for ( int i = 0; i < m_players.size(); ++i )
-        {
-            UI_drawPlayerStats( *this, 20, 20+100*i, m_players[ i ].id );
-        }
-        driver->endPerf();
-
-        driver->beginPerf("UI_RoundStats");
-        UI_drawRoundStats( *this );
-        driver->endPerf();
-
-        auto fScale = 0.01f * getScalePc();
-        auto p = de::Recti( 20, h/2-100, fScale * 200, fScale * 300 );
-
-        driver->beginPerf("UI_Info");
-        UI_drawInfoPanelTile( *this, p, m_hoverTileId );
-        UI_drawInfoPanelCorner( *this, p, m_hoverCornerId );
-        UI_drawInfoPanelEdge( *this, p, m_hoverEdgeId );
-        driver->endPerf();
-
-        driver->beginPerf("UI_Log");
-        UI_drawLog( *this );
-        driver->endPerf();
-
-        //auto fontGarton = m_fontGarton32;
-        //fontGarton.pixelSize = 2.0f * fScale * fontGarton.pixelSize;
-        //H3_drawText( game, w/2, 0, "Hello Marquee text!!!", 0xFFFFFFFF,
-        //             de::Align::TopCenter, fontGarton);
-
-        /*
-        if ( m_ui.m_hoverElement > -1 )
-        {
-            auto & elem = m_ui.m_elements[ m_ui.m_hoverElement ];
-            H3_draw2DRect( game, elem.pos, 0x6F0000FF );
-        }
-        */
-
-        drawMarquee();
-        driver->endPerf();
-
-
-        driver->drawPerf( de::Recti( w- 300, 500, 300, 300));
-    }
-    else
-    {
-        auto wallpaper = getTex(H3_Tex::Satan, "draw().wallpaper");
-        driver->getScreenRenderer()->draw2DRect(de::Recti(0,0,w,h),0xFFFFFFFF, wallpaper);
-    }
-
-    driver->beginPerf("GUIEnv");
-    m_guienv.draw();
-    driver->endPerf();
-
-    driver->endRender();
-
-    m_window->swapBuffers();
 }
 
 

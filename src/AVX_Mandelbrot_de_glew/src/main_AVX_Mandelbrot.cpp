@@ -1,8 +1,4 @@
 #include "EventReceiver.hpp"
-#include <DarkImage.h>
-//#include <de/IrrlichtDevice.h>
-#include <de/gpu/VideoDriver.h>
-#include <de/os/Window_WGL.h>
 
 // #include <de_gpu/de_IVideoDriver.h>
 // #include <de_image/de_Image.h>
@@ -17,13 +13,41 @@
 #include "Mandelbrot_AVX2.hpp"
 #include "Mandelbrot_Threads.hpp"
 //#include "Mandelbrot_ThreadPool.hpp" // unfinished broken
-#include "Mandelbrot_ThreadPoolWithTasks.hpp"
+
 
 // #include <de_gpu/de_GL_Texture2D.h>
 // #include <de_gpu/de_GL_ScreenQuadRenderer.h>
 
+void checkCompileTimeAVX2()
+{
+#if defined(__AVX2__)
+    DE_OK("[Compile-Time] AVX2 ist im Compiler AKTIVIERT! (/arch:AVX2 oder -mavx2)")
+#else
+    DE_ERROR("[Compile-Time] AVX2 ist im Compiler DEAKTIVIERT (Standard-SSE2-Fallback).")
+#endif
+}
+
+bool checkRunTimeAVX2()
+{
+    __builtin_cpu_init();
+
+    if (__builtin_cpu_supports("avx2"))
+    {
+        DE_OK("[Runtime] This CPU supports AVX2!")
+        return true;
+    }
+    else
+    {
+        DE_OK("[Runtime] No AVX2 support for this CPU!")
+        return false;
+    }
+}
+
 int main( int argc, char* argv[] )
 {
+    checkCompileTimeAVX2();
+    checkRunTimeAVX2();
+
     auto m_window = std::make_unique<MandelbrotWindow>();
 
     de::WindowOptions opts;
@@ -35,66 +59,18 @@ int main( int argc, char* argv[] )
         return 0;
     }
     m_window->setWindowIcon( aaaa );
-    m_window->setResizable( true );
+    //m_window->setResizable( true );
+
+    // 2. Rufe hier dein Custom-Init auf
+    m_window->createEvent(m_window->getClientRect());
+    m_window->setPaintEnabled(true);
 
     // de::CreateParams params;
     // params.receiver = &eventReceiver;
     // //params.isDoubleBuffered = false;
     // //params.vsync = 1;
 
-    auto r = m_window->getClientRect();
 
-    m_driver = std::make_unique<de::gpu::VideoDriver>();
-    if (!m_driver->open(r.w,r.h))
-    {
-        DE_ERROR("No driver")
-        return 0;
-    }
-
-    int w = m_driver->getScreenWidth();
-    int h = m_driver->getScreenHeight();
-    DE_DEBUG("Screen(",w,",",h,")")
-
-    z_center.x = -1.67376;
-    z_center.y = 0.000526575;
-    z_range.y = 2.84;
-    recalculateRangeX();
-
-    // Just for finding out if rendering an image got flipped, and it was so.
-    // Repaired by flipping tex coords in shader de_GL_ScreenQuadRenderer.h
-    // de::Image m_wallpaperImg;
-    // dbLoadImage( m_wallpaperImg, "../../media/sunrise.jpg" );
-    // de::GL_Texture2D m_wallpaperTex;
-    // m_wallpaperTex.upload( m_wallpaperImg.getWidth(),
-    //                        m_wallpaperImg.getHeight(),
-    //                        m_wallpaperImg.data(),
-    //                        m_wallpaperImg.getFormat() );
-
-    g_mandelbrotImg = de::Image( w,h, de::PixelFormat::R8G8B8A8 );
-    g_mandelbrotImg.fill( 0xFFFF00FF );
-
-    InitialiseThreadPoolWithTasks();
-
-    // de::GL_Texture2D m_mandelbrotTex;
-    de::gpu::Texture* m_mandelbrotTex = m_driver->createTexture2D("mandel", g_mandelbrotImg);
-    if (!m_mandelbrotTex)
-    {
-        DE_ERROR("No mandelbrot tex")
-    }
-    // m_mandelbrotTex.upload( g_mandelbrotImg.getWidth(),
-    //                         g_mandelbrotImg.getHeight(),
-    //                         g_mandelbrotImg.data(),
-    //                         g_mandelbrotImg.getFormat() );
-
-
-    // de::GL_ScreenQuadRenderer m_quadRenderer;
-
-    // m_quadRenderer.init( m_driver );
-
-    double m_timeNow = de::HighResolutionClock::GetTimeInSeconds();
-    double m_timeLastCameraUpdate = m_timeNow;
-    double m_timeLastRenderUpdate = m_timeNow;
-    double m_timeLastWindowTitleUpdate = m_timeNow;
 
     // shaderArt_000.init( &shaderManager );
     //std::string s_GL_EXTENSIONS = (char const*)glGetString(GL_EXTENSIONS);
@@ -105,10 +81,16 @@ int main( int argc, char* argv[] )
 
     // de::printVideoModes();
 
+    double m_timeNow = de::HighResolutionClock::GetTimeInSeconds();
+    double m_timeLastCameraUpdate = m_timeNow;
+    double m_timeLastRenderUpdate = m_timeNow;
+    double m_timeLastWindowTitleUpdate = m_timeNow;
+
     while (m_window->run())
     {
-        m_timeNow = de::HighResolutionClock::GetTimeInSeconds();
+        // m_timeNow = de::HighResolutionClock::GetTimeInSeconds();
 
+        /*
         // render
         // -----
         double dtRenderUpdate = m_timeNow - m_timeLastRenderUpdate;
@@ -126,11 +108,11 @@ int main( int argc, char* argv[] )
 
             // ======== Now draw image with CPU (using ThreadPool and many tasks) =========
             mandelbrotImage_ThreadPoolWithTasks(
-            g_mandelbrotImg,
-            g_mandelbrotImg.rect(),
-            z_center,
-            z_range,
-            max_iterations );
+                g_mandelbrotImg,
+                g_mandelbrotImg.rect(),
+                z_center,
+                z_range,
+                max_iterations );
 
             // ======== Now upload image to GPU ================
             //m_mandelbrotTex.unbind();
@@ -144,7 +126,11 @@ int main( int argc, char* argv[] )
 
             m_window->makeCurrent();
 
-            m_driver->uploadTexture2D(m_mandelbrotTex,g_mandelbrotImg);
+            if (!m_driver->uploadTexture2D(m_mandelbrotTex,g_mandelbrotImg))
+            {
+                DE_ERROR("TexUpload failed")
+                break;
+            }
 
             // ======== Now start rendering with GPU ================
             m_driver->beginRender( glm::vec4(0.1f,0.1f,0.1f,1.0f) );
@@ -277,6 +263,7 @@ int main( int argc, char* argv[] )
         {
             m_window->yield(); // Save power
         }
+        */
 
         // update window title 2-3x per second
         double dtWindowTitleUpdate = m_timeNow - m_timeLastWindowTitleUpdate;
@@ -291,7 +278,6 @@ int main( int argc, char* argv[] )
     //m_mandelbrotTex.destroy();
     //delete m_driver;
     //delete m_window;
-    m_driver->close();
     m_window->destroy();
     return 0;
 }

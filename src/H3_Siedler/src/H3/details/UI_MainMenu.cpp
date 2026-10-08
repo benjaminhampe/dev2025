@@ -11,11 +11,19 @@ UI_MainMenu::UI_MainMenu( H3_Game* game, de::gui::Env* env, de::gui::Widget* par
 {
     auto scr_w = m_env->getScreenWidth();
     auto scr_h = m_env->getScreenHeight();
-
+    auto h3tex = m_game->getTex(H3_Tex::Scroll, __func__);
+    if (h3tex.tex)
+    {
+        DE_OK("Got tex ", h3tex.str())
+    }
+    else
+    {
+        DE_ERROR("No tex")
+    }
     int pw = 400;
     int ph = scr_h;
     setRect(0, 0, pw, ph);
-    setTexture( m_game->getTex(H3_Tex::Scroll, __func__) );
+    setTexture( h3tex );
     setFillColor( 0xffffffff );
 
     m_btnNewGame = createButton("New Game", 0.23 * pw, 0.13 * ph);
@@ -50,7 +58,17 @@ UI_MainMenu::createButton(std::string txt, int x, int y )
     const int ph = getSize().h;
     auto btn = new de::gui::Button(txt, m_env, this, 0, de::Recti(x, y, 0.60 * pw, 0.1 * ph));
 
-    btn->setTexture(m_game->getTex(H3_Tex::Scroll1, __func__));
+    auto h3tex = m_game->getTex(H3_Tex::Scroll1, __func__);
+    if (h3tex.tex)
+    {
+        DE_OK("Got tex ", h3tex.str())
+    }
+    else
+    {
+        DE_ERROR("No tex")
+    }
+
+    btn->setTexture(h3tex);
     btn->setFillColor(dbRGB(255,255,255,200),0);
     btn->setFillColor(dbRGB(255,255,255,255),1);
     btn->setTextColor(dbRGB(0,0,0,150),0);

@@ -63,6 +63,38 @@ getEventTypeStr( EventType const eventType )
     }
 }
 
+/*
+// ========================================================================
+struct CreateEvent
+// ========================================================================
+{
+    // Viewport/ClipRectRegion
+    //Recti rect;
+    int x = 0;
+    int y = 0;
+    int w = 0;
+    int h = 0;
+    std::string str() const
+    {
+        std::ostringstream o;
+        o << x << "," << y << "," << w << "," << h;
+        return o.str();
+    }
+};
+
+// ========================================================================
+struct DestroyEvent
+// ========================================================================
+{
+    std::string str() const
+    {
+        std::ostringstream o;
+        // o << x << "," << y << "," << w << "," << h;
+        return o.str();
+    }
+};
+*/
+
 // ========================================================================
 struct TimerEvent
 // ========================================================================
@@ -1570,6 +1602,9 @@ struct IEventReceiver
 {
     virtual ~IEventReceiver() {}
 
+    virtual void createEvent(const de::Recti& r_client) {}
+    virtual void destroyEvent() {}
+
     // EventHandling in the style of QtSDK for big convenience.
     // Override if you want to implement functionality. Default is no-op.
     virtual void timerEvent( const TimerEvent& event ) {}
@@ -1595,6 +1630,8 @@ struct IEventReceiver
     virtual void focusOutEvent( const FocusOutEvent& event ) {}
 
     virtual void joystickEvent( const JoystickEvent& event ) {}
+
+    virtual void pinchZoomEvent( float zoomFactor, float centerX, float centerY ) {}
 
     //virtual void dropEvent( const DropEvent& event ) {}
     //virtual void dragStartEvent( const DragStartEvent& event ) {}

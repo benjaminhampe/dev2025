@@ -197,13 +197,14 @@ void H3_WaterTileRenderer::render()
 
     // [RenderStates]
     de::gpu::State state;
-    state.culling = de::gpu::Culling::disabled();
+    // state.culling = de::gpu::Culling::disabled();
     state.blend = de::gpu::Blend::alphaBlend();
     m_driver->setState( state );
 
     // [Render]
     glBindVertexArray(m_vao);
     glDrawArraysInstanced(GL_TRIANGLES, 0, 12, m_instanceMat.size());
+    // glDrawArraysInstanced(GL_TRIANGLE_FAN, 0, 6, m_instanceMat.size());
 
     // [CleanUp]
     glBindVertexArray(0);
@@ -266,13 +267,21 @@ void H3_WaterTileRenderer::initShader()
             vec2( 1.00, 0.75)   // F=5
         );
 
+        // GL_TRIANGLES
         const uint a_indices[12] = uint[](
-            1, 5, 0, // BFA
+            0, 1, 5, // ABF
             1, 4, 5, // BEF
             1, 2, 4, // BCE
             2, 3, 4  // CDE
         );
 
+/*
+        // GL_TRIANGLE_FAN
+        const uint a_indices[6] = uint[](
+            0, 1, 2, // ABC
+            3, 4, 5, // DEF
+        );
+*/
         void main() {
             const uint i = a_indices[gl_VertexID];
 

@@ -432,27 +432,6 @@ struct SMeshBuffer
       indices.push_back( index );
     }
 
-    void addTriangle( S3DVertex const & a, S3DVertex const & b, S3DVertex const & c, bool flip = false )
-    {
-      size_t const v = getVertexCount();
-      if ( flip )
-      {
-         addVertex( a );
-         addVertex( c );
-         addVertex( b );
-      }
-      else
-      {
-         addVertex( a );
-         addVertex( b );
-         addVertex( c );
-      }
-
-      addIndex( v );
-      addIndex( v+1 );
-      addIndex( v+2 );
-    }
-
     void addQuad( S3DVertex const & a, S3DVertex const & b, S3DVertex const & c, S3DVertex const & d, bool flip = false )
     {
       addVertex( a );
@@ -482,6 +461,43 @@ struct SMeshBuffer
          addVertex( c );
          addVertex( d );
       }
+    }
+
+    void addTriangle( S3DVertex const & a, S3DVertex const & b, S3DVertex const & c, bool flip = false )
+    {
+      size_t const v = getVertexCount();
+      if ( flip )
+      {
+         addVertex( a );
+         addVertex( c );
+         addVertex( b );
+      }
+      else
+      {
+         addVertex( a );
+         addVertex( b );
+         addVertex( c );
+      }
+
+      addIndex( v );
+      addIndex( v+1 );
+      addIndex( v+2 );
+    }
+
+    void addVertexTriangle( const S3DVertex& a, const S3DVertex & b, const S3DVertex & c, bool flip = false )
+    {
+        if ( flip )
+        {
+            addVertex( a );
+            addVertex( c );
+            addVertex( b );
+        }
+        else
+        {
+            addVertex( a );
+            addVertex( b );
+            addVertex( c );
+        }
     }
 
     void addIndexedTriangle( uint32_t a, uint32_t b, uint32_t c, bool flip = false )

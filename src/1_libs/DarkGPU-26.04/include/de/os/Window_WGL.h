@@ -16,6 +16,8 @@ public:
     Window_WGL();
     ~Window_WGL() override;
 
+    void setPaintEnabled(bool enabled) override;
+    bool isPaintEnabled() const override;
     // IEventReceiver* getEventReceiver() override;
     // void setEventReceiver( IEventReceiver* receiver ) override;
 

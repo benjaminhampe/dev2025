@@ -1,11 +1,14 @@
 #include <de/os/Window_WGL.h>
 #include <de/os/win32/TranslateKey.h>
 #include <vector> // for iAttributes in CreateContext
-#include <de_opengl.h>
+
 #include <dwmapi.h>
 #include <tchar.h>
-#include <mmsystem.h> // For JOYCAPS
-#include <random>
+#include <mmsystem.h> // For Joystick JOYCAPS
+#include <random> // For randomClassName() and randomWindowName()
+#include <map> // For TouchEvents
+
+#include <de_opengl.h> // Glew ensureDesktopOpenGL()
 
 // ===================================================================
 // INCLUDE: WGL
@@ -18,9 +21,9 @@
 
 namespace de {
 
-namespace {
-
 static bool g_isTimerValid = true;
+
+namespace {
 
 void de_killTimer( uint32_t timerId )
 {
@@ -85,9 +88,18 @@ uint32_t de_startTimer( uint32_t ms = 10, LPTIMECALLBACK timeCallback = nullptr,
     return timerId;
 }
 
-} // end namespace
+} // end namespace.
 
-// LRESULT CALLBACK Window_WGL_Proc( HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam );
+// Struktur zum Speichern der aktuellen Finger-Positionen
+struct TouchPoint
+{
+    float x;
+    float y;
+
+    // Diese beiden Zeilen reparieren den Compilerfehler von vorhin:
+    TouchPoint() : x(0.f), y(0.f) {}
+    TouchPoint(float _x, float _y) : x(_x), y(_y) {}
+};
 
 // ===================================================================
 struct Window_WGL_Internals
@@ -141,6 +153,16 @@ struct Window_WGL_Internals
     // int m_screenHeight = 480;
     bool m_bFocused = false;
     bool m_bPaintEventEnabled = false;
+
+
+    // // In deiner Klasse (z.B. im privaten Bereich von Window_WGL oder _d):
+    // std::map<DWORD, TouchPoint> m_activeTouches;
+    // float m_lastTouchDistance = -1.0f; // -1 bedeutet: Keine Geste aktiv
+
+    // In deiner privaten Struktur _d oder Klasse Window_WGL:
+    std::vector<TOUCHINPUT> m_touchBuffer;
+    std::map<DWORD, TouchPoint> m_activeTouches;
+    float m_lastTouchDistance = -1.0f;
 
     Window_WGL_Internals()
         : m_hInstance( nullptr )
@@ -216,6 +238,9 @@ struct Window_WGL_Internals
     }
 };
 
+
+// LRESULT CALLBACK Window_WGL_Proc( HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam );
+
 Window_WGL::Window_WGL()
     : _d( new Window_WGL_Internals() )
 {
@@ -262,6 +287,15 @@ void Window_WGL::setEventReceiver( IEventReceiver* receiver )
     _d->m_receiver = receiver;
 }
 */
+void Window_WGL::setPaintEnabled(bool enabled)
+{
+    _d->m_bPaintEventEnabled = enabled;
+}
+
+bool Window_WGL::isPaintEnabled() const
+{
+    return _d->m_bPaintEventEnabled;
+}
 
 bool Window_WGL::getKeyState( const EKEY ekey ) const
 {
@@ -516,20 +550,12 @@ WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
         SetWindowLongPtrW(hwnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(self));
     }
 
-    // 3. Erst JETZT prüfen wir WM_CREATE. Hier ist "self" bereits garantiert gültig!
-    if (msg == WM_CREATE)
-    {
-        DE_OK("WM_CREATE")
-        SetTimer(hwnd, 123, 1000 / 60, NULL); // ~60 FPS Timer (16.6ms)
-        return 0;
-    }
-
     // 4. Wichtig: Falls vor/während WM_NCCREATE andere Systemnachrichten kommen,
     // leiten wir sie sicher an DefWindowProc weiter.
     if (!self)
     {
         DE_ERROR("No self")
-        return DefWindowProc(hwnd, msg, wParam, lParam);
+        //return DefWindowProc(hwnd, msg, wParam, lParam);
     }
 
     // Ab hier kannst du sicher sein, dass "self" existiert und du mit "switch(msg)"
@@ -702,28 +728,70 @@ WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
         //     //createMenu( hwnd );
         //     break;
         // }
-        // case WM_CREATE:
-        // {
-        //     DE_TRACE("WM_CREATE ", hwnd)
-        //     break;
-        // }
+        case WM_CREATE:
+        {
+            DE_OK("WM_CREATE ", hwnd)
+            // FPS-Timer
+            SetTimer(hwnd, 123, 1000 / 60, NULL); // ~60 FPS Timer (16.6ms)
+            break;
+        }
+        case WM_SHOWWINDOW:
+        {
+            // static oder als Member-Variable in deiner Klasse
+            static bool isInitialized = false;
+
+            // wParam ist TRUE, wenn das Fenster sichtbar gemacht wird
+            if (wParam && !isInitialized)
+            {
+                isInitialized = true;
+
+                DE_OK("WM_SHOWWINDOW - Das Fenster ist zu 100% fertig und sichtbar!")
+/*
+                // 1. Hole die echten finalen Maße
+                RECT r;
+                GetClientRect(hwnd, &r);
+                int x = r.left;
+                int y = r.top;
+                int w = r.right - r.left;
+                int h = r.bottom - r.top;
+
+                // 2. Rufe hier dein Custom-Init auf
+                if (self)
+                {
+                    self->createEvent(de::Recti(x,y,w,h));
+                    self->_d->m_bPaintEventEnabled = true;
+                }
+                else
+                {
+                    DE_ERROR("No self")
+                }
+*/
+            }
+            break;
+        }
         case WM_SETFOCUS:
         {
             DE_OK("WM_SETFOCUS")
-            self->_d->m_bFocused = true;
+            if (self)
+            {
+                self->_d->m_bFocused = true;
+            }
             break;
         }
         case WM_KILLFOCUS:
         {
             DE_OK("WM_KILLFOCUS")
-            self->_d->m_bFocused = false;
+            if (self)
+            {
+                self->_d->m_bFocused = false;
+            }
             break;
         }
         case WM_CLOSE:
         {
             DE_TRACE("WM_CLOSE ", hwnd)
 
-            if (self->_d->m_hideOnClose)
+            if (self && self->_d->m_hideOnClose)
             {
                 DE_TRACE("HideOnClose is active")
                 // Instead of destroying, just hide the window
@@ -750,6 +818,13 @@ WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
             // 1. Eigene Ressourcen freigeben (z. B. OpenGL)
             if (self)
             {
+                // 2. Sicherstellen, dass der OpenGL-Kontext für diesen Thread AKTIV ist
+                wglMakeCurrent(self->_d->hDC, self->_d->hGL);
+
+                // 3. GL cleanup user callback
+                self->destroyEvent();
+
+                // 4. WGL cleanup
                 self->_d->m_bPaintEventEnabled = false;
 
                 wglMakeCurrent(nullptr, nullptr);
@@ -765,7 +840,7 @@ WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
                 }
             }
 
-            // 2. WM_QUIT in die Nachrichtenschleife posten
+            // 5. WM_QUIT in die Nachrichtenschleife posten
             PostQuitMessage(0);
             return 0;
 
@@ -795,10 +870,12 @@ WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
                 InvalidateRect(hwnd, NULL, TRUE); // force redraw
             }
 
-            de::TimerEvent event;
-            event.id = wParam;
-            self->timerEvent(event);
-
+            if (self)
+            {
+                de::TimerEvent event;
+                event.id = wParam;
+                self->timerEvent(event);
+            }
             return 0;
         }
         case WM_ERASEBKGND:
@@ -835,174 +912,375 @@ WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 
         case WM_SIZE:
         {
-            //int w = LOWORD(lParam);
-            //int h = HIWORD(lParam);
-            int sw = GET_X_LPARAM( lParam );
-            int sh = GET_Y_LPARAM( lParam );
+            if (self)
+            {
+                //int w = LOWORD(lParam);
+                //int h = HIWORD(lParam);
+                int sw = GET_X_LPARAM( lParam );
+                int sh = GET_Y_LPARAM( lParam );
 
-            RECT r;
-            GetClientRect(hwnd, &r);
-            int x = r.left;
-            int y = r.top;
-            int w = r.right - x;
-            int h = r.bottom - y;
+                RECT r;
+                GetClientRect(hwnd, &r);
+                int x = r.left;
+                int y = r.top;
+                int w = r.right - x;
+                int h = r.bottom - y;
 
-            DE_OK("WM_SIZE(",sw,",",sh,"), ClientRect(",x,",",y,",",w,",",h,")")
-            de::ResizeEvent event;
-            event.w = w;
-            event.h = h;
-            self->resizeEvent(event);
+                // DE_OK("WM_SIZE(",sw,",",sh,"), ClientRect(",x,",",y,",",w,",",h,")")
+                de::ResizeEvent event;
+                event.w = w;
+                event.h = h;
+                self->resizeEvent(event);
+            }
             return 0;
         }
         case WM_LBUTTONDBLCLK:
         {
-            if (!self->_d->m_bFocused)
+            if (self)
             {
-                SetFocus(hwnd);
+                if (!self->_d->m_bFocused)
+                {
+                    SetFocus(hwnd);
+                }
+                self->mouseDblClickEvent( createMouseDblClickEvent(msg, wParam, lParam) );
             }
-            self->mouseDblClickEvent( createMouseDblClickEvent(msg, wParam, lParam) );
             return 0;
         }
         case WM_RBUTTONDBLCLK:
         {
-            if (!self->_d->m_bFocused)
+            if (self)
             {
-                SetFocus(hwnd);
+                if (!self->_d->m_bFocused)
+                {
+                    SetFocus(hwnd);
+                }
+                self->mouseDblClickEvent( createMouseDblClickEvent(msg, wParam, lParam) );
             }
-            self->mouseDblClickEvent( createMouseDblClickEvent(msg, wParam, lParam) );
             return 0;
         }
         case WM_MBUTTONDBLCLK:
         {
-            if (!self->_d->m_bFocused)
+            if (self)
             {
-                SetFocus(hwnd);
+                if (!self->_d->m_bFocused)
+                {
+                    SetFocus(hwnd);
+                }
+                self->mouseDblClickEvent( createMouseDblClickEvent(msg, wParam, lParam) );
             }
-            self->mouseDblClickEvent( createMouseDblClickEvent(msg, wParam, lParam) );
             return 0;
         }
         case WM_MOUSEMOVE:
         {
+            if (self)
+            {
             // if (!self->_d->focused)
             // {
             //     SetFocus(hwnd);
             // }
-            de::MouseMoveEvent event;
-            event.x = int( LOWORD( lParam ) );
-            event.y = int( HIWORD( lParam ) );
-            self->mouseMoveEvent( event );
+                de::MouseMoveEvent event;
+                event.x = int( LOWORD( lParam ) );
+                event.y = int( HIWORD( lParam ) );
+                self->mouseMoveEvent( event );
+            }
             return 0;
         }
         case WM_MOUSEWHEEL:
         {
-            if (!self->_d->m_bFocused)
+            if (self)
             {
-                SetFocus(hwnd);
+                if (!self->_d->m_bFocused)
+                {
+                    SetFocus(hwnd);
+                }
+                de::MouseWheelEvent event;
+                event.x = 0.0f;
+                event.y = float( int16_t( HIWORD( wParam ) ) ) / float( WHEEL_DELTA );
+                self->mouseWheelEvent( event );
             }
-            de::MouseWheelEvent event;
-            event.x = 0.0f;
-            event.y = float( int16_t( HIWORD( wParam ) ) ) / float( WHEEL_DELTA );
-            self->mouseWheelEvent( event );
             return 0;
         }
         case WM_LBUTTONDOWN:
         {
-            if (!self->_d->m_bFocused)
+            if (self)
             {
-                SetFocus(hwnd);
+                if (!self->_d->m_bFocused)
+                {
+                    SetFocus(hwnd);
+                }
+                self->mousePressEvent( createMousePressEvent(msg, wParam, lParam) );
             }
-            self->mousePressEvent( createMousePressEvent(msg, wParam, lParam) );
             return 0;
         }
         case WM_RBUTTONDOWN:
         {
-            if (!self->_d->m_bFocused)
+            if (self)
             {
-                SetFocus(hwnd);
+                if (!self->_d->m_bFocused)
+                {
+                    SetFocus(hwnd);
+                }
+                self->mousePressEvent( createMousePressEvent(msg, wParam, lParam) );
             }
-            self->mousePressEvent( createMousePressEvent(msg, wParam, lParam) );
             return 0;
         }
         case WM_MBUTTONDOWN:
         {
-            if (!self->_d->m_bFocused)
+            if (self)
             {
-                SetFocus(hwnd);
+                if (!self->_d->m_bFocused)
+                {
+                    SetFocus(hwnd);
+                }
+                self->mousePressEvent( createMousePressEvent(msg, wParam, lParam) );
             }
-            self->mousePressEvent( createMousePressEvent(msg, wParam, lParam) );
             return 0;
         }
         case WM_LBUTTONUP:
         {
-            if (!self->_d->m_bFocused)
+            if (self)
             {
-                SetFocus(hwnd);
+                if (!self->_d->m_bFocused)
+                {
+                    SetFocus(hwnd);
+                }
+                self->mouseReleaseEvent( createMouseReleaseEvent(msg, wParam, lParam) );
             }
-            self->mouseReleaseEvent( createMouseReleaseEvent(msg, wParam, lParam) );
             return 0;
         }
         case WM_RBUTTONUP:
         {
-            if (!self->_d->m_bFocused)
+            if (self)
             {
-                SetFocus(hwnd);
+                if (!self->_d->m_bFocused)
+                {
+                    SetFocus(hwnd);
+                }
+                self->mouseReleaseEvent( createMouseReleaseEvent(msg, wParam, lParam) );
             }
-            self->mouseReleaseEvent( createMouseReleaseEvent(msg, wParam, lParam) );
             return 0;
         }
         case WM_MBUTTONUP:
         {
-            if (!self->_d->m_bFocused)
+            if (self)
             {
-                SetFocus(hwnd);
+                if (!self->_d->m_bFocused)
+                {
+                    SetFocus(hwnd);
+                }
+                self->mouseReleaseEvent( createMouseReleaseEvent(msg, wParam, lParam) );
             }
-            self->mouseReleaseEvent( createMouseReleaseEvent(msg, wParam, lParam) );
             return 0;
         }
 
         //case WM_XBUTTONDOWN:
         //case WM_XBUTTONUP:
 
+/*
+1. Koordinaten-Skalierung (ti.x / 100): Windows Touch-Digitizer arbeiten hochauflösend. Ein Wert von ti.x = 50000 entspricht 500 Pixeln auf dem Bildschirm. Vergiss das Teilen durch 100 nicht, sonst zeichnet deine Engine außerhalb des sichtbaren Bereichs.
+2. ScreenToClient: Die Rohdaten kommen als globale Desktop-Koordinaten. Mit ScreenToClient(hwnd, &pt) konvertierst du sie exakt in die lokalen Pixelkoordinaten deines OpenGL-Fensters (wobei 0,0 oben links in deinem Zeichenbereich ist).
+3. Die ti.dwID: Das ist die wichtigste Variable für Multi-Touch. Wenn der Nutzer zwei Finger aufsetzt, bekommt Finger 1 z.B. die ID 1 und Finger 2 die ID 2. Windows behält diese IDs so lange bei, wie die Finger den Bildschirm berühren. Dadurch kannst du in deiner Engine Gesten wie Pinch-to-Zoom (Abstandsberechnung zwischen ID 1 und ID 2) berechnen.
+4. Maus-Emulation verhindern (Optional): Sobald du RegisterTouchWindow aufrufst, schickt Windows für den ersten Finger (Primary Contact) standardmäßig trotzdem noch zusätzlich WM_LBUTTONDOWN und WM_MOUSEMOVE hinterher, damit alte GUIs bedienbar bleiben. Wenn dich das stört, kannst du das im Touch-Event über das Flag TOUCHEVENTF_PRIMARY abfangen und filtern.
+*/
+
+        case WM_TOUCH:
+        {
+            UINT cInputs = LOWORD(wParam);
+            if (cInputs == 0) return 0;
+
+            // Speicher im Member-Vector anpassen (allokiert nur, wenn die Fingeranzahl wächst)
+            self->_d->m_touchBuffer.resize(cInputs);
+
+            // DE_DEBUG("WM_TOUCH, points = ", cInputs)
+
+            // Daten direkt in das interne Vector-Array schreiben
+            if (GetTouchInputInfo(
+                    reinterpret_cast<HTOUCHINPUT>(lParam),
+                    cInputs,
+                    self->_d->m_touchBuffer.data(),
+                    sizeof(TOUCHINPUT)))
+            {
+                for (UINT i = 0; i < cInputs; ++i)
+                {
+                    const TOUCHINPUT& ti = self->_d->m_touchBuffer[i];
+                    DWORD fingerId = ti.dwID;
+
+                    // Koordinaten umrechnen (Hundertstel-Pixel -> Fenster-Pixel)
+                    POINT pt;
+                    pt.x = ti.x / 100;
+                    pt.y = ti.y / 100;
+                    ScreenToClient(hwnd, &pt);
+
+                    // Finger in der Map verwalten
+                    if (ti.dwFlags & (TOUCHEVENTF_DOWN | TOUCHEVENTF_MOVE))
+                    {
+                        TouchPoint tp{ static_cast<float>(pt.x),
+                                       static_cast<float>(pt.y) };
+                        self->_d->m_activeTouches[fingerId] = tp;
+
+                        //DE_DEBUG("WM_TOUCH point[",i,"] fingerId(", fingerId, "), coords(",int(tp.x),",",int(tp.y),")")
+                    }
+                    else if (ti.dwFlags & TOUCHEVENTF_UP)
+                    {
+                        self->_d->m_activeTouches.erase(fingerId);
+                        self->_d->m_lastTouchDistance = -1.0f;
+                    }
+                }
+
+                // Zoom-Geste auswerten (Nur bei exakt 2 Fingern)
+                if (self->_d->m_activeTouches.size() == 2)
+                {
+                    auto it = self->_d->m_activeTouches.begin();
+                    TouchPoint f1 = it->second;
+                    TouchPoint f2 = (++it)->second;
+
+                    float dx = f1.x - f2.x;
+                    float dy = f1.y - f2.y;
+                    float currentDistance = std::sqrt(dx * dx + dy * dy);
+
+                    if (self->_d->m_lastTouchDistance >= 0.0f)
+                    {
+                        float zoomFactor = currentDistance / self->_d->m_lastTouchDistance;
+
+                        if (std::abs(currentDistance - self->_d->m_lastTouchDistance) > 2.0f)
+                        {
+                            // Hier das Event an deine Engine abfeuern
+                            // self->zoomEvent(zoomFactor);
+                            //DE_DEBUG("Zoom-Faktor: ", zoomFactor)
+                            if (self)
+                            {
+                                float cx = f2.x + 0.5f * dx;
+                                float cy = f2.y + 0.5f * dy;
+                                self->pinchZoomEvent(zoomFactor,cx,cy);
+                            }
+
+                        }
+                    }
+                    self->_d->m_lastTouchDistance = currentDistance;
+                }
+                else
+                {
+                    self->_d->m_lastTouchDistance = -1.0f;
+                }
+
+                // WICHTIG: Das Windows-Handle muss trotzdem geschlossen werden!
+                CloseTouchInputHandle(reinterpret_cast<HTOUCHINPUT>(lParam));
+                return 0;
+            }
+            break;
+        }
+
+#if 0
+        case WM_TOUCH:
+        {
+            UINT cInputs = LOWORD(wParam); // Anzahl der Berührungspunkte
+            PTOUCHINPUT pInputs = new TOUCHINPUT[cInputs]; // Array für die Daten erzeugen
+
+            DE_DEBUG("WM_TOUCH, points = ", cInputs)
+
+            // Daten vom Betriebssystem abholen
+            if (GetTouchInputInfo(reinterpret_cast<HTOUCHINPUT>(lParam), cInputs, pInputs, sizeof(TOUCHINPUT)))
+            {
+                for (UINT i = 0; i < cInputs; ++i)
+                {
+                    TOUCHINPUT ti = pInputs[i];
+
+                    // WICHTIG: Die Touch-Koordinaten kommen in HUNDERTSTEL-PIXELN!
+                    // Wir müssen sie in echte Bildschirm-Pixel umrechnen:
+                    POINT pt;
+                    pt.x = ti.x / 100;
+                    pt.y = ti.y / 100;
+
+                    // Da dies globale Bildschirmkoordinaten sind, rechnen wir sie in Fensterpixel um:
+                    ScreenToClient(hwnd, &pt);
+
+                    // Eindeutige ID des Fingers (wichtig für Multi-Touch-Tracking)
+                    DWORD fingerId = ti.dwID;
+
+                    // Status des Fingers auswerten:
+                    if (ti.dwFlags & TOUCHEVENTF_DOWN)
+                    {
+                        DE_DEBUG("Finger ", fingerId, " gedrückt bei: ", pt.x, "x", pt.y)
+                        // self->touchDownEvent(fingerId, pt.x, pt.y);
+                    }
+                    else if (ti.dwFlags & TOUCHEVENTF_MOVE)
+                    {
+                        // Finger bewegt sich
+                        // self->touchMoveEvent(fingerId, pt.x, pt.y);
+                    }
+                    else if (ti.dwFlags & TOUCHEVENTF_UP)
+                    {
+                        DE_DEBUG("Finger ", fingerId, " abgehoben.")
+                        // self->touchUpEvent(fingerId, pt.x, pt.y);
+                    }
+                }
+
+                // ZWINGEND: Das Touch-Handle schließen, wenn wir die Nachricht verarbeitet haben!
+                CloseTouchInputHandle(reinterpret_cast<HTOUCHINPUT>(lParam));
+                delete[] pInputs;
+                return 0; // Nachricht erfolgreich verarbeitet
+            }
+
+            delete[] pInputs;
+            break; // Falls GetTouchInputInfo fehlschlägt, an DefWindowProc weiterleiten
+        }
+#endif
+
         // === KeyboardEvents: ===
 
         case WM_INPUTLANGCHANGE:
         {
-            auto hkl = GetKeyboardLayout( 0 ); // get the new codepage used for keyboard input
-            self->_d->m_KEYBOARD_INPUT_HKL = hkl; // get the new codepage used for keyboard input
-            self->_d->m_KEYBOARD_INPUT_CODEPAGE = de::convertLocaleIdToCodepage( LOWORD( hkl ) );
+            if (self)
+            {
+                auto hkl = GetKeyboardLayout( 0 ); // get the new codepage used for keyboard input
+                self->_d->m_KEYBOARD_INPUT_HKL = hkl; // get the new codepage used for keyboard input
+                self->_d->m_KEYBOARD_INPUT_CODEPAGE = de::convertLocaleIdToCodepage( LOWORD( hkl ) );
+            }
             return 0;
         }
 
         case WM_KEYDOWN:
         {
-            //DE_OK("WM_KEYDOWN")
-            auto event = createKeyPressEvent(self, msg, wParam, lParam);
-            self->setKeyState( (de::EKEY)event.key, true);
-            self->keyPressEvent( event );
+            if (self)
+            {
+                //DE_OK("WM_KEYDOWN")
+                auto event = createKeyPressEvent(self, msg, wParam, lParam);
+                self->setKeyState( (de::EKEY)event.key, true);
+                self->keyPressEvent( event );
+            }
             return 0;
         }
         case WM_KEYUP:
         {
-            //DE_OK("WM_KEYUP")
-            auto event = createKeyReleaseEvent(self, msg, wParam, lParam);
-            self->setKeyState( (de::EKEY)event.key, false);
-            self->keyReleaseEvent( event );
+            if (self)
+            {
+                //DE_OK("WM_KEYUP")
+                auto event = createKeyReleaseEvent(self, msg, wParam, lParam);
+                self->setKeyState( (de::EKEY)event.key, false);
+                self->keyReleaseEvent( event );
+            }
             return 0;
         }
         case WM_SYSKEYDOWN:
         {
-            //DE_OK("WM_SYSKEYDOWN")
-            auto event = createKeyPressEvent(self, msg, wParam, lParam);
-            self->setKeyState( (de::EKEY)event.key, true);
-            self->keyPressEvent( event );
+            if (self)
+            {
+                //DE_OK("WM_SYSKEYDOWN")
+                auto event = createKeyPressEvent(self, msg, wParam, lParam);
+                self->setKeyState( (de::EKEY)event.key, true);
+                self->keyPressEvent( event );
+            }
             return 0;
         }
         case WM_SYSKEYUP:
         {
-            //DE_OK("WM_SYSKEYUP")
-            auto event = createKeyReleaseEvent(self, msg, wParam, lParam);
-            self->setKeyState( (de::EKEY)event.key, false);
-            self->keyReleaseEvent( event );
+            if (self)
+            {
+                //DE_OK("WM_SYSKEYUP")
+                auto event = createKeyReleaseEvent(self, msg, wParam, lParam);
+                self->setKeyState( (de::EKEY)event.key, false);
+                self->keyReleaseEvent( event );
+            }
             return 0;
         }
 /*
@@ -1163,21 +1441,22 @@ bool Window_WGL::create( WindowOptions params )
 
     if (!_d->hWnd)
     {
-        DE_ERROR("No WGL window created")
+        DE_ERROR("No window created")
         return false;
     }
 
-    DE_DEBUG("Created hWnd ",(void*)_d->hWnd)
-    SetFocus( _d->hWnd );
+    DE_DEBUG("Created window.")
+    SetFocus(_d->hWnd);
 
     _d->m_hInstance = hInstance;
     _d->hDC = GetDC(_d->hWnd);
     if (!_d->hDC)
     {
         DE_ERROR("No hDC")
+        return false;
     }
 
-    DE_DEBUG("Created hDC ",(void*)_d->hDC)
+    DE_DEBUG("Created hDC.")
     PIXELFORMATDESCRIPTOR pfd = {
         sizeof(PIXELFORMATDESCRIPTOR),
         1,
@@ -1213,11 +1492,31 @@ bool Window_WGL::create( WindowOptions params )
     // glViewport(0, 0, w, h);
     // glClearColor(0.11f, 0.03f, 0.12f, 1.0f);
 
+
+    // Fenster für Multi-Touch-Nachrichten registrieren
+    if (!RegisterTouchWindow(_d->hWnd, 0))
+    {
+        DE_ERROR("Failed RegisterTouchWindow().");
+    }
+    else
+    {
+        DE_OK("Multi-Touch gestures activated.");
+    }
+
     DE_DEBUG("Desktop(",desktopW,",",desktopH,"), Window(",windowW,",",windowH,")")
 
-    _d->m_bPaintEventEnabled = true;
+    // customInit():
+    /*
+    RECT r;
+    GetClientRect(_d->hWnd, &r);
+    int w = r.right - r.left;
+    int h = r.bottom - r.top;
+    de::Recti r_client(r.left,r.top,w,h);
+    createEvent(r_client);
 
-    //GetWindowRect(_d->m_hWnd,_d-
+    _d->m_bPaintEventEnabled = true;
+*/
+
 #if 0
     // =============================================================
     // DEVMODE

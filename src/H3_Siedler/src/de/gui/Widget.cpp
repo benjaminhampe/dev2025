@@ -146,6 +146,8 @@ Widget* Widget::pick( int mx, int my )
         return nullptr;
     }
 
+    // DE_DEBUG("Pick(",mx,",",my,") contains(",getAbsoluteRect().str(),")")
+
     // Loop children, if any, and hit test them...
     for (auto child : m_children)
     {
@@ -156,15 +158,17 @@ Widget* Widget::pick( int mx, int my )
         }
     }
 
+
+
     // No child was picked, but we are still inside this widget
     // So return this pointer when we are pickable, else nullptr.
     if (isPickable())
     {
-        return this;
+        return this;    // A button
     }
     else
     {
-        return nullptr;
+        return nullptr; // A panel
     }
 }
 

@@ -12,6 +12,7 @@ Button::Button( std::string text, Env* env, Widget* parent, u32 id, const Recti&
     , m_text(text)
     , m_fnOnClicked( [] () {} )
 {
+    DE_DEBUG("Rect(",r.str(),")")
     setPickable(true);
 
     setFillColor(0xFFFFFFFF, eWS_Idle);
@@ -68,6 +69,7 @@ Button::draw()
     }
 
     const auto pos = getAbsoluteRect();
+    // DE_DEBUG("AbsolutePos(",pos.str(),")")
 
     // --- [Draw] Fill ---
     if (dbRGB_A(fillColor) > 0)

@@ -57,6 +57,7 @@ void ScreenRenderer::draw2DHexagon( const Recti& pos, const uint32_t color, cons
     m.addTriangle( A,B,F ); // Bottom
     m.upload();
 
+    m.setDepth( Depth::alwaysPass() );
     m.setCulling( Culling::disabled() );
     m.setBlend( Blend::alphaBlend() );
     m.setTexture( 0, tex );
@@ -103,6 +104,7 @@ void ScreenRenderer::draw2DCircle( const Recti& pos, const uint32_t color, const
 
     m.upload();
 
+    m.setDepth( Depth::alwaysPass() );
     m.setCulling( Culling::disabled() );
     m.setBlend( Blend::alphaBlend() );
     m.setTexture( 0, tex );
@@ -135,6 +137,8 @@ ScreenRenderer::draw2DLine( int x1, int y1, int x2, int y2,
     m.addVertex( S3DVertex(x2,y2,0, 0,0,1, c2, 1,0) );
     m.upload();
 
+    m.setDepth( Depth::alwaysPass() );
+    m.setCulling( Culling::disabled() );
     draw2D( m );
 
     m.destroy();
@@ -145,8 +149,8 @@ ScreenRenderer::draw2DRect( const Recti& pos, const uint32_t color, const TexRef
 {
     SMeshBuffer m( PrimitiveType::Triangles );
     const int x1 = pos.x1();
-    const int x2 = pos.x2();
     const int y1 = pos.y1();
+    const int x2 = pos.x2();
     const int y2 = pos.y2();
 
     const S3DVertex A( x1, y1, 0, 0,0,1, color, 0, 0 );
@@ -162,6 +166,7 @@ ScreenRenderer::draw2DRect( const Recti& pos, const uint32_t color, const TexRef
     m.addVertex( D );
     m.upload();
 
+    m.setDepth( Depth::alwaysPass() );
     m.setCulling( Culling::disabled() );
     m.setBlend( Blend::alphaBlend() );
     m.setTexture( 0, tex );
@@ -191,6 +196,7 @@ ScreenRenderer::draw2DRectLine( const Recti& pos, const uint32_t color, const Te
     m.addVertex( D ); m.addVertex( A ); // Line DA
     m.upload();
 
+    m.setDepth( Depth::alwaysPass() );
     m.setCulling( Culling::disabled() );
     m.setBlend( Blend::alphaBlend() );
     m.setTexture( 0, tex );
@@ -214,6 +220,7 @@ ScreenRenderer::draw2DRoundRect( const Recti& pos, const glm::ivec2& r, const ui
                            color, color);
     m.upload();
 
+    m.setDepth( Depth::alwaysPass() );
     m.setCulling( Culling::disabled() );
     m.setBlend( Blend::alphaBlend() );
     m.setTexture( 0, tex );

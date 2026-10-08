@@ -95,6 +95,22 @@ SMeshHexagon::addM4( SMeshBuffer & mb, float w, float h, uint32_t color,
     //mb.recalculateBoundingBox();
 }
 
+// =========================================================================
+/// @brief The Hexagon ( ver_2018 ):
+// =========================================================================
+///
+///               M| x=0 | y=0 | z=0 | u=.5| v=.5|
+///       D       -|-----|-----|-----|-----|-----|
+///      / \      A|   0 |  0  | -.5 | .5  | 0   |
+///   C /   \ E   B| -.5 |  0  |-.25 |  0  | 0.25|
+///    |-----|    C| -.5 |  0  | .25 |  0  | 0.75|
+///    |  M  |    D| 0.0 |  0  |  .5 |  .5 | 1   |
+///    |-----|    E| 0.5 |  0  | .25 |  1  | 0.75|
+///   B \   / F   F| 0.5 |  0  |-.25 |  1  | 0.25|
+///      \ /
+///       A       triangles: ABF, BCE, BEF, CDE
+///
+
 // static
 void
 SMeshHexagon::add( SMeshBuffer & mb, float w, float h, uint32_t color,
@@ -108,36 +124,33 @@ SMeshHexagon::add( SMeshBuffer & mb, float w, float h, uint32_t color,
     S3DVertex const D( pos+V3(     0,0, .5f*h ), n, color, V2(.5f, 0 ) );
     S3DVertex const E( pos+V3(0.5f*w,0, .25f*h), n, color, V2(1, .25f ));
     S3DVertex const F( pos+V3(0.5f*w,0,-.25f*h), n, color, V2(1, .75f ));
+
+    bool bFlip = false;
     if ( useIndices )
     {
         size_t v = mb.getVertexCount();
-        mb.addVertex( A ); mb.addVertex( B ); mb.addVertex( C );
-        mb.addVertex( D ); mb.addVertex( E ); mb.addVertex( F );
-        //mb.addIndexedTriangle( B, A, F );
-        mb.addIndexedTriangle( v+1, v+5, v+0 );
-        //mb.addIndexedTriangle( B, F, E );
-        //mb.addIndex( v+1 ); mb.addIndex( v+5 ); mb.addIndex( v+4 );
-        mb.addIndexedTriangle( v+1, v+4, v+5 );
-        //mb.addIndexedTriangle( B, E, C );
-        //mb.addIndex( v+1 ); mb.addIndex( v+4 ); mb.addIndex( v+2 );
-        mb.addIndexedTriangle( v+1, v+2, v+4 );
-        //mb.addIndexedTriangle( C, E, D );
-        //mb.addIndex( v+2 ); mb.addIndex( v+4 ); mb.addIndex( v+3 );
-        mb.addIndexedTriangle( v+2, v+3, v+4 );
+        mb.addVertex( A );
+        mb.addVertex( B );
+        mb.addVertex( C );
+        mb.addVertex( D );
+        mb.addVertex( E );
+        mb.addVertex( F );
+
+        mb.addIndexedTriangle( v+0, v+1, v+5, bFlip ); // ( A, B, F );
+        mb.addIndexedTriangle( v+1, v+4, v+5, bFlip ); // ( B, E, F );
+        mb.addIndexedTriangle( v+1, v+2, v+4, bFlip ); // ( B, C, E );
+        mb.addIndexedTriangle( v+2, v+3, v+4, bFlip ); // ( C, D, E );
+
     }
     else
     {
-        //mb.addVertexTriangle( B, A, F );
-        mb.addVertex( B ); mb.addVertex( F ); mb.addVertex( A );
-        // mb.addVertexTriangle( B, F, E );
-        mb.addVertex( B ); mb.addVertex( E ); mb.addVertex( F );
-        // mb.addVertexTriangle( B, E, C );
-        mb.addVertex( B ); mb.addVertex( C ); mb.addVertex( E );
-        // mb.addVertexTriangle( C, E, D );
-        mb.addVertex( C ); mb.addVertex( D ); mb.addVertex( E );
+        mb.addVertexTriangle( A, B, F, bFlip );
+        mb.addVertexTriangle( B, E, F, bFlip );
+        mb.addVertexTriangle( B, C, E, bFlip );
+        mb.addVertexTriangle( C, D, E, bFlip );
     }
 
-    //mb.recalculateBoundingBox();
+    mb.recalculateBoundingBox();
 }
 
 // static

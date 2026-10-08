@@ -458,10 +458,11 @@ void Mesh16_Shader3D::setMaterial( const Mesh16_Material & material, const glm::
     // }
     // else
     // {
-         m_driver->setBlend( de::gpu::Blend::disabled() );
-    // }
-
-    GL_VALIDATE
+    de::gpu::State state;
+    state.depth = de::gpu::Depth();
+    state.culling = de::gpu::Culling();
+    state.blend = de::gpu::Blend::disabled();
+    m_driver->setState( state );
 }
 
 
@@ -607,9 +608,12 @@ void Mesh16_Shader2D::setMaterial(
     // }
     // else
     // {
-        m_driver->setBlend( de::gpu::Blend::disabled() );
+    de::gpu::State state;
+    state.depth = de::gpu::Depth();
+    state.culling = de::gpu::Culling();
+    state.blend = de::gpu::Blend::disabled();
+    m_driver->setState( state );
     //}
-    GL_VALIDATE
 }
 
 

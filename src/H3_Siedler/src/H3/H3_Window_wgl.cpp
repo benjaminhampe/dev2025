@@ -158,6 +158,8 @@ void H3_Window::mousePressEvent( const de::MousePressEvent& event )
     {
         m_game.m_isMouseMiddlePressed = true;
     }
+
+    m_game.m_guienv.onEvent(event);
 }
 
 void H3_Window::mouseReleaseEvent( const de::MouseReleaseEvent& event )
@@ -242,6 +244,8 @@ void H3_Window::mouseReleaseEvent( const de::MouseReleaseEvent& event )
 
         m_game.m_isMouseMiddlePressed = false;
     }
+
+    m_game.m_guienv.onEvent(event);
 }
 
 void H3_Window::mouseDblClickEvent( const de::MouseDblClickEvent& event )
@@ -250,6 +254,8 @@ void H3_Window::mouseDblClickEvent( const de::MouseDblClickEvent& event )
     // {
     //     H3_MessageBox("Left DoubleClick","New MouseEvents");
     // }
+
+    m_game.m_guienv.onEvent(event);
 }
 
 
@@ -295,10 +301,10 @@ void H3_Window::mouseMoveEvent( const de::MouseMoveEvent& event )
                 //cylinderCamRadius = glm::length( glm::dvec2(camDir.x, camDir.z) );
                 //cylinderCamHeight = camDir.y;
                 //cylinderCamAngleY = atan2(camDir.z, camDir.x) * de::Math::RAD2DEG;
-                DE_DEBUG("CylinderCam: "
-                        "phi(",m_game.cylinderCamAngleY,"), "
-                        "radius(",m_game.cylinderCamRadius,"), "
-                        "height(",m_game.cylinderCamHeight,")")
+                // DE_DEBUG("CylinderCam: "
+                //         "phi(",m_game.cylinderCamAngleY,"), "
+                //         "radius(",m_game.cylinderCamRadius,"), "
+                //         "height(",m_game.cylinderCamHeight,")")
 
                 m_game.cylinderCamAngleY += 0.01f * mouseDragDeltaX;
                 m_game.cylinderCamHeight += mouseDragDeltaY;
@@ -322,6 +328,8 @@ void H3_Window::mouseMoveEvent( const de::MouseMoveEvent& event )
     m_game.m_mouseMoveY = 0; // Reset
     m_game.m_mouseX = mx;
     m_game.m_mouseY = my;
+
+    m_game.m_guienv.onEvent(event);
 
     m_game.pick();
 }
@@ -372,6 +380,8 @@ void H3_Window::mouseWheelEvent( const de::MouseWheelEvent& event )
             camera->lookAt( camPos, camTar );
         }
     }
+
+    m_game.m_guienv.onEvent(event);
 }
 
 void H3_Window::showEvent( const de::ShowEvent& event )

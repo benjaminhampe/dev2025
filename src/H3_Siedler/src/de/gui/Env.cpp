@@ -3,7 +3,7 @@
 
 namespace de {
 namespace gui {
-    
+
 // =====================================================================
 Env::Env()
     : m_driver( nullptr )
@@ -22,15 +22,15 @@ Env::~Env()
 }
 
 void Env::init( gpu::VideoDriver* driver )
-{ 
-	m_driver = driver; 
+{
+    m_driver = driver;
 }
 
 void Env::draw()
 {
-    for (auto & child : m_topLevelWidgets)
+    for (auto & topLevelWidget : m_topLevelWidgets)
     {
-        child->draw();
+        topLevelWidget->draw();
     }
 }
 

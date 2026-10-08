@@ -507,17 +507,17 @@ struct VideoDriver
     State               getState() const;
     void                setState( State const & state );
 
-    Culling const &     getCulling() const;
-    void                setCulling( Culling const & state );
+    // Culling const &     getCulling() const;
+    // void                setCulling( Culling const & state );
 
-    Depth const &       getDepth() const;
-    void                setDepth( Depth const & state );
+    // Depth const &       getDepth() const;
+    // void                setDepth( Depth const & state );
 
-    Stencil const &     getStencil() const;
-    void                setStencil( Stencil const & state );
+    // Stencil const &     getStencil() const;
+    // void                setStencil( Stencil const & state );
 
-    Blend const &       getBlend() const;
-    void                setBlend( Blend const & state );
+    // Blend const &       getBlend() const;
+    // void                setBlend( Blend const & state );
 
     // double getFPS() const { return m_fpsComputer.getFPS();   }
     // uint64_t getFrameCount() const { return m_fpsComputer.getFrameCount(); }
@@ -761,10 +761,11 @@ protected:
 
     //SM3<Viewport> m_viewport;
     //SM3<Scissor> m_scissor;
-    SM3<Culling> m_culling;
-    SM3<Depth> m_depth;
-    SM3<Stencil> m_stencil;
-    SM3<Blend> m_blend;
+    State m_state;
+    // SM3<Culling> m_culling;
+    // SM3<Depth> m_depth;
+    // SM3<Stencil> m_stencil;
+    // SM3<Blend> m_blend;
     //SM3<RasterizerDiscard> m_rasterizerDiscard;
     //SM3<LineWidth> m_lineWidth;
     //SM3<PointSize> m_pointSize;

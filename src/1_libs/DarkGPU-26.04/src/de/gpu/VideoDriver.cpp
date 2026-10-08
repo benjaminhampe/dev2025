@@ -475,22 +475,25 @@ GL_VALIDATE
     // createRenderTarget_HDR("hdr",1024,768);
 
     // RenderStates
-    m_culling = Culling::query();
-GL_VALIDATE
-    m_depth = Depth::query();
-GL_VALIDATE
-    m_stencil = Stencil::query();
-GL_VALIDATE
-    m_blend = Blend::query();
-GL_VALIDATE
-    setCulling( Culling() );
-GL_VALIDATE
-    setDepth( Depth() );
-GL_VALIDATE
-    setStencil( Stencil() );
-GL_VALIDATE
-    setBlend( Blend::disabled() );
-GL_VALIDATE
+    m_state = State::query();
+
+    DE_DEBUG("Initial CullMode: ",m_state.culling.toString())
+    DE_DEBUG("Initial DepthTest: ",m_state.depth.toString())
+    DE_DEBUG("Initial StencilTest: ",m_state.stencil.toString())
+    DE_DEBUG("Initial BlendMode: ",m_state.blend.toString())
+
+    State state;
+    state.culling = Culling();
+    state.depth = Depth();
+    state.stencil = Stencil::disabled();
+    state.blend = Blend::disabled();
+    setState(state);
+
+    DE_DEBUG("Current CullMode: ",m_state.culling.toString())
+    DE_DEBUG("Current DepthTest: ",m_state.depth.toString())
+    DE_DEBUG("Current StencilTest: ",m_state.stencil.toString())
+    DE_DEBUG("Current BlendMode: ",m_state.blend.toString())
+
     // // Enable depth testing
     // glEnable(GL_DEPTH_TEST);
     // glDepthFunc(GL_LESS);
@@ -564,7 +567,7 @@ void VideoDriver::close()
 
 void VideoDriver::resize( int w, int h )
 {
-    DE_DEBUG("Screen(",w,",",h,")")
+    // DE_DEBUG("Screen(",w,",",h,")")
     // if (w < 1 || h < 1)
     // {
     //     DE_ERROR("")
@@ -726,71 +729,14 @@ double VideoDriver::getFPS() const
 State
 VideoDriver::getState() const
 {
-    State state;
-    state.culling = m_culling.curr;
-    state.depth = m_depth.curr;
-    state.stencil = m_stencil.curr;
-    state.blend = m_blend.curr;
-    // state.viewport = Viewport::query();
-    // state.scissor = Scissor::query();
-    // state.culling = Culling::query();
-    // state.depth = Depth::query();
-    // state.stencil = Stencil::query();
-    // state.blend = Blend::query();
-    // state.pointSize = PointSize::query();
-    // state.lineWidth = LineWidth::query();
-    // state.rasterizerDiscard = RasterizerDiscard::query();
-    // state.polygonOffset = PolygonOffset::query();
-    //state.clear = Clear::query();
-    return state;
+    return m_state;
 }
 
 void
-VideoDriver::setState( State const & state )
+VideoDriver::setState( const State & state )
 {
-    //State state;
-    //state.viewport = Viewport::apply( alt.viewport, neu.viewport );
-    //state.scissor = Scissor::apply( alt.scissor, neu.scissor );
-    m_culling.curr = Culling::apply( m_culling.last, state.culling );
-    m_depth.curr = Depth::apply( m_depth.last, state.depth );
-    m_stencil.curr = Stencil::apply( m_stencil.last, state.stencil );
-    m_blend.curr = Blend::apply( m_blend.last, state.blend );
-    //state.pointSize = PointSize::apply( alt.pointSize, neu.pointSize );
-    //state.lineWidth = LineWidth::apply( alt.lineWidth, neu.lineWidth );
-    //state.rasterizerDiscard = RasterizerDiscard::apply( alt.rasterizerDiscard, neu.rasterizerDiscard );
-    //state.polygonOffset = PolygonOffset::apply( alt.polygonOffset, neu.polygonOffset );
-    //state.clear = Clear::apply( alt.clear, neu.clear );
-    //state.depthRange = DepthRange::apply( alt.depthRange, neu.depthRange );
+    m_state = State::apply( m_state, state );
 }
-
-Culling const &
-VideoDriver::getCulling() const { return m_culling.curr; }
-
-void
-VideoDriver::setCulling( Culling const & state )
-{
-    m_culling.curr = Culling::apply( m_culling.last, state );
-}
-
-Depth const &
-VideoDriver::getDepth() const { return m_depth.curr; }
-void
-VideoDriver::setDepth( Depth const & state ) {
-    m_depth.curr = Depth::apply( m_depth.last, state );
-}
-
-Stencil const &
-VideoDriver::getStencil() const { return m_stencil.curr; }
-void
-VideoDriver::setStencil( Stencil const & state )
-{
-    m_stencil.curr = Stencil::apply( m_stencil.last, state );
-}
-
-Blend const &
-VideoDriver::getBlend() const { return m_blend.curr; }
-void
-VideoDriver::setBlend( Blend const & state ) { m_blend.curr = Blend::apply( m_blend.last, state ); }
 
 // ##################
 // ### PerfTracer ###

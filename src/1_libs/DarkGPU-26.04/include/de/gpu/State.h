@@ -180,7 +180,7 @@ struct Culling
     // glCullFace(GL_BACK);           // Cull back-facing triangles
     // glFrontFace(GL_CCW);           // Counter-clockwise = front
 
-    Culling( ECullMode mode = Back, EWinding wind = CCW )
+    Culling( ECullMode mode = Back, EWinding wind = CW )
         : cullMode( mode )
         , winding( wind )
     {}
