@@ -94,7 +94,7 @@ Button::draw()
     }
 
     // --- [Draw] Text ---
-    if (dbRGB_A(textColor) > 0 && !m_text.empty())
+    if (m_text.size() && dbRGB_A(textColor))
     {
         const int cx = pos.centerX();
         const int cy = pos.centerY();
@@ -104,6 +104,7 @@ Button::draw()
                             0x00000000, 10 );
     }
 
+/*
     // --- [Draw] Border ---
     if (dbRGB_A(borderColor) > 0 && m_borderWidth > 0)
     {
@@ -118,6 +119,7 @@ Button::draw()
             r_screen->draw2DRoundRectLine( pos, r, borderColor, m_tex, 24 );
         }
     }
+*/
 }
 
 void Button::onEvent( const Event& event )

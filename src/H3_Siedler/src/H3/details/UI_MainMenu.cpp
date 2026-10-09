@@ -91,5 +91,16 @@ UI_MainMenu::createButton(std::string txt, int x, int y )
 
 void UI_MainMenu::resizeLayout()
 {
+    auto scr_w = m_env->getScreenWidth();
+    auto scr_h = m_env->getScreenHeight();
 
+    int pw = 400;
+    int ph = scr_h;
+    setRect(0, 0, pw, ph);
+
+    m_btnNewGame->setPos(0.23 * pw, 0.13 * ph);
+    m_btnRestart->setPos(0.21 * pw, 0.28 * ph);
+    m_btnOptions->setPos(0.19 * pw, 0.43 * ph);
+    m_btnHelp->setPos(0.17 * pw, 0.58 * ph);
+    m_btnExit->setPos(0.15 * pw, 0.73 * ph);
 }

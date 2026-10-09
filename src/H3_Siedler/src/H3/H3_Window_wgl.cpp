@@ -297,7 +297,7 @@ void H3_Window::mouseMoveEvent( const de::MouseMoveEvent& event )
                 auto camPos = camera->getPos();
                 auto camTar = glm::dvec3(0,0,0);
 
-                auto camDir = camTar - camPos;
+                // auto camDir = camTar - camPos;
                 //cylinderCamRadius = glm::length( glm::dvec2(camDir.x, camDir.z) );
                 //cylinderCamHeight = camDir.y;
                 //cylinderCamAngleY = atan2(camDir.z, camDir.x) * de::Math::RAD2DEG;
@@ -307,19 +307,22 @@ void H3_Window::mouseMoveEvent( const de::MouseMoveEvent& event )
                 //         "height(",m_game.cylinderCamHeight,")")
 
                 m_game.cylinderCamAngleY += 0.01f * mouseDragDeltaX;
-                m_game.cylinderCamHeight += mouseDragDeltaY;
 
-                if (m_game.cylinderCamHeight < 0.0)
-                    m_game.cylinderCamHeight = 0.0;
+                float a = m_game.cylinderCamAngleY;
 
-                if (m_game.cylinderCamHeight > 1000.0)
-                    m_game.cylinderCamHeight = 1000.0;
+                float h = m_game.cylinderCamHeight;
 
-                camPos = glm::dvec3( m_game.cylinderCamRadius * sin(m_game.cylinderCamAngleY),
-                                     m_game.cylinderCamHeight,
-                                     m_game.cylinderCamRadius * cos(m_game.cylinderCamAngleY));
+                h += mouseDragDeltaY;
+
+                h = de::clampf(h, 0.0f, 1000.0f);
+
+                float r = m_game.cylinderCamRadius;
+
+                camPos = glm::dvec3( r * sin(a), h, r * cos(a));
 
                 camera->lookAt( camPos, camTar );
+
+                m_game.cylinderCamHeight = h;
             }
 
         }
@@ -352,32 +355,22 @@ void H3_Window::mouseWheelEvent( const de::MouseWheelEvent& event )
         }
         else
         {
-            if ( event.y < 0.0f )
-            {
-                m_game.cylinderCamRadius += 5.f;
-            }
-            else if ( event.y > 0.0f )
-            {
-                m_game.cylinderCamRadius -= 5.f;
-            }
+            float r = m_game.cylinderCamRadius;
 
-            if (m_game.cylinderCamRadius < 1.0)
-                m_game.cylinderCamHeight = 1.0;
+            if ( event.y < 0.0f ) { r += 5.f; }
+            else if ( event.y > 0.0f ) { r -= 5.f; }
 
-            if (m_game.cylinderCamRadius > 2000.0)
-                m_game.cylinderCamRadius = 2000.0;
+            r = de::clampf(r, 1.0f, 2000.0f);
 
-            DE_DEBUG("CylinderCam: "
-                    "phi(",m_game.cylinderCamAngleY,"), "
-                    "radius(",m_game.cylinderCamRadius,"), "
-                    "height(",m_game.cylinderCamHeight,")")
+            // DE_DEBUG("Camera: phi(",a,"), r(",r,"), h(",h,")")
 
-            auto camPos = glm::dvec3( m_game.cylinderCamRadius * sin(m_game.cylinderCamAngleY),
-                                 m_game.cylinderCamHeight,
-                                 m_game.cylinderCamRadius * cos(m_game.cylinderCamAngleY));
-
-            auto camTar = glm::dvec3(0,0,0);
+            float a = m_game.cylinderCamAngleY;
+            float h = m_game.cylinderCamHeight;
+            glm::dvec3 camPos(r * sin(a), h, r * cos(a));
+            glm::dvec3 camTar(0,0,0);
             camera->lookAt( camPos, camTar );
+
+            m_game.cylinderCamRadius = r;
         }
     }
 
