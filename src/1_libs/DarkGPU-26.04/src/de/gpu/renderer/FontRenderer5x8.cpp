@@ -257,9 +257,6 @@ FontRenderer5x8::draw2DText( int x, int y, std::string const & msg, uint32_t col
     m_driver->useShader( m_shader );
     glUniform1f(m_screenWidthLoc, screenWidth);
     glUniform1f(m_screenHeightLoc, screenHeight);
-    //glUseProgram(m_shader->id);
-    //m_shader->setVec1f( "u_screenW", screenWidth );
-    //m_shader->setVec1f( "u_screenH", screenHeight );
 
     glBindVertexArray(m_vao);
     glDrawArrays( GL_TRIANGLES, 0, GLsizei( m_vertices.size() ) );

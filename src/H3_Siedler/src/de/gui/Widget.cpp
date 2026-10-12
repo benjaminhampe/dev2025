@@ -10,18 +10,9 @@ Widget::Widget( Env* env, Widget* parent, u32 id, const Recti& r )
     // =====================================================================
     : m_flags(eWF_Visible | eWF_Enabled)
     , m_id(id)
-    , m_pos(r.x,r.y)
-    , m_size(r.w,r.h)
-    , m_minimumSize(r.w,r.h)
+    , m_rect(r)
     , m_env(env)
     , m_parent(parent)
-    // --- Fill ---
-    , m_radius(0)
-    , m_tex()
-    , m_fillColors{ 0,0,0,0 }
-    // --- Border ---
-    , m_borderWidth(1)
-    , m_borderColors{ 0,0,0,0 }
     // --- Text ---
     , m_font("Postamt",16)
 {
@@ -38,7 +29,7 @@ Widget::Widget( Env* env, Widget* parent, u32 id, const Recti& r )
     }
     else
     {
-        m_env->addTopLevelWidget( this );
+        m_env->addTopLevelWidget(this);
     }
 }
 
@@ -47,66 +38,28 @@ Widget::~Widget()
     clearChildren();
 }
 
+void Widget::resize(int x, int y, int w, int h)
+{
+    m_rect = Recti(x,y,w,h);
+
+    // for (auto & child : m_children)
+    // {
+    //     child->resize(x,y,w,h);
+    // }
+}
+
 void Widget::draw()
 {
     if (!isVisible()) return;
-    if (!m_env) { DE_ERROR("No env") return; }
-    auto driver = m_env->getVideoDriver();
-    if (!driver) { DE_ERROR("No driver") return; }
-    auto r_screen = driver->getScreenRenderer();
 
-    u32 fillColor = m_fillColors[eWS_Idle];
-    u32 borderColor = m_borderColors[eWS_Idle];
-
-    if (hasFlags(eWF_Pressed))
-    {
-        fillColor = m_fillColors[eWS_Pressed];
-        borderColor = m_fillColors[eWS_Pressed];
-    }
-    else if (hasFlags(eWS_Released))
-    {
-        fillColor = m_fillColors[eWS_Released];
-        borderColor = m_fillColors[eWS_Released];
-    }
-    else if (hasFlags(eWS_Hovered))
-    {
-        fillColor = m_fillColors[eWS_Hovered];
-        borderColor = m_fillColors[eWS_Hovered];
-    }
-
-    const auto pos = getAbsoluteRect();
-
-    // --- [Draw] Fill ---
-    if (dbRGB_A(fillColor) > 0)
-    {
-        if ( m_radius < 1 )
-        {
-            r_screen->draw2DRect( pos, fillColor, m_tex );
-        }
-        else
-        {
-            const auto r = glm::ivec2(m_radius,m_radius);
-            r_screen->draw2DRoundRect( pos, r, fillColor, m_tex, 24 );
-        }
-    }
-
-    // --- [Draw] Border ---
-    if (dbRGB_A(borderColor) > 0 && m_borderWidth > 0)
-    {
-        if ( m_radius < 1 )
-        {
-            r_screen->draw2DRectLine( pos, borderColor );
-        }
-        else
-        {
-            const auto r = glm::ivec2(m_radius,m_radius);
-            r_screen->draw2DRoundRectLine( pos, r, borderColor, m_tex, 24 );
-        }
-    }
-
-    // --- [Draw] Child widgets ---
     for (auto & child : m_children)
     {
+        if (!child)
+        {
+            DE_ERROR("Nullptr child ", m_id)
+            continue;
+        }
+
         child->draw();
     }
 }
@@ -158,8 +111,6 @@ Widget* Widget::pick( int mx, int my )
         }
     }
 
-
-
     // No child was picked, but we are still inside this widget
     // So return this pointer when we are pickable, else nullptr.
     if (isPickable())
@@ -172,6 +123,19 @@ Widget* Widget::pick( int mx, int my )
     }
 }
 
+Recti Widget::getAbsoluteRect() const
+{
+    Posi pos = m_rect.pos();
+
+    if (m_parent)
+    {
+        pos += m_parent->getAbsoluteRect().pos();
+    }
+
+    return Recti( pos.x, pos.y, m_rect.w, m_rect.h );
+}
+
+/*
 Posi Widget::getAbsolutePos() const
 {
     if (m_parent)
@@ -183,6 +147,7 @@ Posi Widget::getAbsolutePos() const
         return m_pos;
     }
 }
+*/
 
 void Widget::clearChildren()
 {

@@ -44,6 +44,8 @@ protected:
     static std::string createFS( smesh::SMaterial const& material );
 
     VideoDriver* m_driver;
+
+
     smesh::SMaterial m_material;
     float m_zIndex;
     bool m_isDirty;

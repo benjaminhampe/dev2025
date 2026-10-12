@@ -72,8 +72,12 @@ App::createPlugin(std::string uri)
     else if (suffix == "clap") { plugin = new de::audio::CLAP_Plugin; }
 #endif
     else if (
-        (suffix == "mp4") || (suffix == "m4a") ||
+        (suffix == "mp4") ||
+        (suffix == "m4a") ||
         (suffix == "mp3") ||
+        (suffix == "ogg") ||
+        (suffix == "opus") ||
+        (suffix == "flac") ||
         (suffix == "wav"))
     {
         plugin = new de::audio::Player;

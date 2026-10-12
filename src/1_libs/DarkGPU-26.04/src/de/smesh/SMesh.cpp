@@ -534,6 +534,11 @@ SMeshBuffer::destroy()
 void
 SMeshBuffer::upload( bool bForceUpload )
 {
+    if (vertices.empty())
+    {
+        return;
+    }
+
     bool bNeedUpload = bShouldUpload | bForceUpload;
 
     if ( !vao )

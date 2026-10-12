@@ -6,6 +6,7 @@
 
 namespace de {
 namespace gpu {
+
 // static
 uint32_t
 SkyboxRenderer::loadCubemap( std::array<const Image*,6> const & faces )
@@ -47,6 +48,7 @@ SkyboxRenderer::loadCubemap( std::array<const Image*,6> const & faces )
             DE_ERROR("Cubemap[",i,"] failed to load, ",faces[i])
         }
     }
+
     glBindTexture(GL_TEXTURE_CUBE_MAP, 0); GL_VALIDATE;
     return textureID;
 }
@@ -257,6 +259,8 @@ SkyboxRenderer::render()
     // === Render geometry ===
     glBindVertexArray(m_vao); GL_VALIDATE
     glDrawArrays(GL_TRIANGLES, 0, 36); GL_VALIDATE
+
+    glBindTexture(GL_TEXTURE_CUBE_MAP,0);
 
     glBindVertexArray(0); GL_VALIDATE
     glBindTextureUnit(0, 0); GL_VALIDATE

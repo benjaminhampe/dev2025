@@ -1,4 +1,6 @@
 #include <H3/H3_Game.h>
+#include <H3/H3_Window_wgl.h>
+#include "../res/resource.h" // setWindowIcon(aaaa)
 
 int main(int argc, char** argv)
 {
@@ -11,8 +13,30 @@ int main(int argc, char** argv)
 #endif
 
 #if 1
+
+DE_OK("")
+    dbRandomize();
+
     H3_Game m_game;
-    m_game.init();
+    auto window = new H3_Window(m_game);
+
+    de::WindowOptions wo;
+    wo.width = 1024;
+    wo.height = 768;
+    if ( !window->create( wo ) )
+    {
+        DE_ERROR("Cant create window, abort main().")
+        delete window;
+        window = nullptr;
+        return 0;
+    }
+
+    window->setResizable(true);
+    window->setWindowIcon( aaaa );
+    window->setWindowTitle( "Die Siedler von Satan 3D | <benjaminhampe@gmx.de>" );
+    //window->run();
+    window->bringToFront();
+    //window->run();
 
     // MainLoop:
     double m_timeStart = dbTimeInSeconds();

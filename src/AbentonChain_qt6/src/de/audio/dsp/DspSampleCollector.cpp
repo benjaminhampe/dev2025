@@ -61,6 +61,7 @@ void shiftRight(TAlignedVector<float> & ori,
 // ===================================================================
 DspSampleCollector::DspSampleCollector()
     : m_inputSignal{ nullptr }
+    , m_sampleRate{ 48000 }
     , m_blockSize{ 0 }
     , m_blockCount{ 16 } // fftSize / blockSize = 2048 / 128 = 16
     , m_blockIndex{ 0 }
@@ -141,6 +142,7 @@ DspSampleCollector::dsp_init( u64 frames, u32 channels, u32 sampleRate )
 
     DE_OK("frames(",frames,"), channels(",channels,"), sampleRate(",sampleRate,")")
 
+    m_sampleRate = sampleRate;
     m_blockSize = frames;
     m_L.resize(frames);
     m_R.resize(frames);

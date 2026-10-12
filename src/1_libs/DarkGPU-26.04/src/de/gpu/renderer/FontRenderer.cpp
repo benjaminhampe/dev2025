@@ -218,11 +218,15 @@ FontRenderer::draw2DText(int x, int y, std::wstring const & msg,
         //}
     }
 
-    quads.upload();
+    if (quads.getVertexCount() < 1)
+    {
+        return; // Nothing todo
+    }
 
-    quads.setDepth( Depth::alwaysPass() );
-    quads.setBlend( Blend::alphaBlend() );
+    quads.upload();
     quads.setCulling( Culling::disabled() );
+    quads.setDepth( Depth::disabled() );
+    quads.setBlend( Blend::alphaBlend() );
     quads.setTexture( 0, tex );
     quads.getMaterial().CloudTransparent = true;
 

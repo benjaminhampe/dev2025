@@ -20,6 +20,11 @@ IntField::IntField( const std::string& label, Env* env, Widget* parent, u32 id, 
     m_lblValue = new Label("", env, this, 0, Recti(0,0, r.w - 2*w1, w1));
     m_btnPlus = new Button("+", env, this, 0, Recti(r.w - 1 - 2*w1,0,w1,w1));
 
+    // addChild(m_lblName);
+    // addChild(m_btnMinus);
+    // addChild(m_lblValue);
+    // addChild(m_btnPlus);
+
     m_btnMinus->setOnClicked( [&](){ setValue(m_value - m_step); } );
     m_btnPlus->setOnClicked( [&](){ setValue(m_value + m_step); } );
 }
@@ -39,37 +44,24 @@ void IntField::setFont( const Font& font )
     m_btnPlus->setFont(font2);
 }
 
-void IntField::setSize( const Sizei& dim )
+void IntField::resize(int x, int y, int w, int h)
 {
-    m_size = dim;
-    int w = dim.w;
-    int h = dim.h;
-    int x = 0;
-    int y = 0;
+    m_rect = de::Recti(x,y,w,h);
     int c = 3*w/5;
     int d = w - c - 2*h;
-    m_lblName->setRect(x,y,c,h);    x += c;
-    m_btnMinus->setRect(x,y,h,h);   x += h;
-    m_lblValue->setRect(x,y,d,h);   x += d;
-    m_btnPlus->setRect(x,y,h,h);
+
+    int X = 0;
+    int Y = 0;
+    m_lblName->resize(X,Y,c,h);    X += c;
+    m_btnMinus->resize(X,Y,h,h);   X += h;
+    m_lblValue->resize(X,Y,d,h);   X += d;
+    m_btnPlus->resize(X,Y,h,h);
     // DE_OK("(",dim.str(),")")
     // DE_BENNI("m_lblName = ",m_lblName->getRect().str())
     // DE_BENNI("m_btnMinus = ",m_btnMinus->getRect().str())
     // DE_BENNI("m_lblValue = ",m_lblValue->getRect().str())
     // DE_BENNI("m_btnPlus = ",m_btnPlus->getRect().str())
 }
-
-/*
-void IntField::draw()
-{
-    Widget::draw();
-}
-
-void IntField::onEvent( const Event& event)
-{
-    Widget::onEvent(event);
-}
-*/
 
 } // end namespace gui.
 } // end namespace de.

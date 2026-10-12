@@ -66,13 +66,6 @@ struct H3_Tex
 // =======================================================================
 // Textures
 // =======================================================================
-/*
-de::gpu::TexRef
-H3_getTex(const H3_Game& game, const std::string & caller, const H3_Tex::eID id );
-
-de::gpu::TexRef
-H3_getTex(const H3_Game& game, const H3_Tex::eID id );
-*/
 de::gpu::TexRef
 H3_getDiceTex(const H3_Game& game, const int diceValue );
 

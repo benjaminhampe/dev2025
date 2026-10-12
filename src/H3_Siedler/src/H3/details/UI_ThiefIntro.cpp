@@ -6,7 +6,7 @@
 // =====================================================================
 UI_ThiefIntro::UI_ThiefIntro( H3_Game* game, de::gui::Env* env, de::gui::Widget* parent, u32 id, const de::Recti& pos )
 // =====================================================================
-    : de::gui::Widget(env, parent, id, pos)
+    : de::gui::Panel(env, parent, id, pos)
     , m_game(game)
     //, m_panel(nullptr)
     , m_btnA1(nullptr)
@@ -166,7 +166,7 @@ UI_ThiefIntro::UI_ThiefIntro( H3_Game* game, de::gui::Env* env, de::gui::Widget*
 
 UI_ThiefIntro::~UI_ThiefIntro()
 {
-    DE_WARN("")
+
 }
 
 void UI_ThiefIntro::updateTexts()
@@ -198,7 +198,7 @@ void UI_ThiefIntro::resizeLayout()
     int h = scr_h - 300;
     int x = (scr_w - w) / 2;
     int y = (scr_h - h) / 2;
-    setRect( x,y,w,h );
+    m_rect = de::Recti( x,y,w,h );
 
     // ::::: Panel body ::::
     w = getRect().w - 200;
@@ -209,13 +209,13 @@ void UI_ThiefIntro::resizeLayout()
     int p = fScale * 5;
     int h1 = h / 6 - p;
     int h2 = h / 3 - p;
-    m_lblTitle->setRect(x,y,w+20,h1);
+    m_lblTitle->resize(x,y,w+20,h1);
     y += h1 + p;
     resizeLayoutThief(de::Recti(x+50,y,w-100,h2));
     y += h2 + p;
     resizeLayoutPlayer(de::Recti(x+50,y,w-100,h2));
     y += h2 + p;
-    m_btnAccept->setRect(x+50,y,w-150,h1);
+    m_btnAccept->resize(x+50,y,w-150,h1);
 }
 
 void UI_ThiefIntro::resizeLayoutThief( de::Recti pos )
@@ -228,8 +228,8 @@ void UI_ThiefIntro::resizeLayoutThief( de::Recti pos )
     int hName = font.getTextSize("Thief").height + 4;
     int hIcon = pos.h - hName; // Line-height of Icon
 
-    m_lblThiefName->setRect(de::Recti(pos.x,pos.y,wName,hName));
-    m_lblThiefIcon->setRect(de::Recti(pos.x,pos.y+hName,hIcon,hIcon));
+    m_lblThiefName->resize(pos.x,pos.y,wName,hName);
+    m_lblThiefIcon->resize(pos.x,pos.y+hName,hIcon,hIcon);
 
     int wLeft = std::max(wName,hIcon);
 
@@ -241,11 +241,11 @@ void UI_ThiefIntro::resizeLayoutThief( de::Recti pos )
     int y = pos.y;
     int w = (wRight)/5 - p;
     int h = pos.h;
-    if (m_btnA1) m_btnA1->setRect( de::Recti(x,y,w,h) ); x += w + p;
-    if (m_btnB1) m_btnB1->setRect( de::Recti(x,y,w,h) ); x += w + p;
-    if (m_btnC1) m_btnC1->setRect( de::Recti(x,y,w,h) ); x += w + p;
-    if (m_btnD1) m_btnD1->setRect( de::Recti(x,y,w,h) ); x += w + p;
-    if (m_btnE1) m_btnE1->setRect( de::Recti(x,y,w,h) );
+    if (m_btnA1) m_btnA1->resize(x,y,w,h); x += w + p;
+    if (m_btnB1) m_btnB1->resize(x,y,w,h); x += w + p;
+    if (m_btnC1) m_btnC1->resize(x,y,w,h); x += w + p;
+    if (m_btnD1) m_btnD1->resize(x,y,w,h); x += w + p;
+    if (m_btnE1) m_btnE1->resize(x,y,w,h);
 }
 
 void UI_ThiefIntro::resizeLayoutPlayer( de::Recti pos )
@@ -258,8 +258,8 @@ void UI_ThiefIntro::resizeLayoutPlayer( de::Recti pos )
     int hName = font.getTextSize("Player").height + 4;
     int hIcon = pos.h - hName; // Line-height of Icon
 
-    m_lblPlayerName->setRect(de::Recti(pos.x,pos.y,wName,hName));
-    m_lblPlayerIcon->setRect(de::Recti(pos.x,pos.y+hName,hIcon,hIcon));
+    m_lblPlayerName->resize(pos.x,pos.y,wName,hName);
+    m_lblPlayerIcon->resize(pos.x,pos.y+hName,hIcon,hIcon);
 
     int wLeft = std::max(wName,hIcon);
 
@@ -271,11 +271,11 @@ void UI_ThiefIntro::resizeLayoutPlayer( de::Recti pos )
     int y = pos.y;
     int w = (wRight)/5 - p;
     int h = pos.h;
-    if (m_btnA2) m_btnA2->setRect( de::Recti(x,y,w,h) ); x += w + p;
-    if (m_btnB2) m_btnB2->setRect( de::Recti(x,y,w,h) ); x += w + p;
-    if (m_btnC2) m_btnC2->setRect( de::Recti(x,y,w,h) ); x += w + p;
-    if (m_btnD2) m_btnD2->setRect( de::Recti(x,y,w,h) ); x += w + p;
-    if (m_btnE2) m_btnE2->setRect( de::Recti(x,y,w,h) );
+    if (m_btnA2) m_btnA2->resize(x,y,w,h); x += w + p;
+    if (m_btnB2) m_btnB2->resize(x,y,w,h); x += w + p;
+    if (m_btnC2) m_btnC2->resize(x,y,w,h); x += w + p;
+    if (m_btnD2) m_btnD2->resize(x,y,w,h); x += w + p;
+    if (m_btnE2) m_btnE2->resize(x,y,w,h);
 }
 
 void UI_ThiefIntro::setPlayer( uint32_t playerId )

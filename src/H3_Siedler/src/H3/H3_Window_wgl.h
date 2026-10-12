@@ -10,6 +10,8 @@ struct H3_Window : public de::Window_WGL
     H3_Window( H3_Game& game );
     ~H3_Window();
 
+    void createEvent(const de::Recti& r_client) override;
+
     void timerEvent( const de::TimerEvent& event ) override;
     void resizeEvent( const de::ResizeEvent& event ) override;
     void moveEvent( const de::MoveEvent& event ) override;

@@ -8,6 +8,10 @@
 //#include <de/IrrlichtDevice.h>
 #include <de/gpu/VideoDriver.h>
 #include <de/gui/Env.h>
+#include <de/gui/Panel.h>
+#include <de/gui/Label.h>
+#include <de/gui/Button.h>
+#include <de/gui/IntField.h>
 
 typedef uint32_t u32;
 typedef int32_t s32;
@@ -36,13 +40,14 @@ struct H3_Action;
 struct H3_ActionLog;
 struct H3_Game;
 
-namespace de::gui
-{
-    class Widget;
-    class Button;
-    class Label;
-    class IntField;
-}
+// namespace de::gui
+// {
+//     class Widget;
+//     class Panel;
+//     class Button;
+//     class Label;
+//     class IntField;
+// }
 
 // =====================================================================
 struct LineBoxAnim

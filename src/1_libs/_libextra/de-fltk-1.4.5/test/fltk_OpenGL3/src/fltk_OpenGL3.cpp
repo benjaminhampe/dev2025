@@ -204,16 +204,6 @@ void toggle_double(Fl_Widget *wid, void *data) {
 
 Fl_Text_Display *output; // shared between output_win() and add_output()
 
-void output_win(SimpleGL3Window *gl)
-{
-  output = new Fl_Text_Display(300,0,500, 280);
-  Fl_Light_Button *lb = new Fl_Light_Button(300, 280, 500, 20, "Double-Buffered");
-  lb->callback(toggle_double);
-  lb->user_data(gl);
-  lb->value(1);
-  output->buffer(new Fl_Text_Buffer());
-}
-
 
 void add_output(const char *format, ...)
 {
@@ -247,6 +237,16 @@ void add_widgets(Fl_Gl_Window *g) {
   g->end();
 }
 
+
+void output_win(SimpleGL3Window *gl)
+{
+  output = new Fl_Text_Display(300,0,500, 280);
+  Fl_Light_Button *lb = new Fl_Light_Button(300, 280, 500, 20, "Double-Buffered");
+  lb->callback(toggle_double);
+  lb->user_data(gl);
+  lb->value(1);
+  output->buffer(new Fl_Text_Buffer());
+}
 
 int main(int argc, char **argv)
 {

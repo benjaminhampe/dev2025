@@ -1,12 +1,10 @@
 #include "UI_WinnerScreen.h"
 #include <H3/H3_Game.h>
-#include <de/gui/Label.h>
-#include <de/gui/Button.h>
 
 // =====================================================================
 UI_WinnerScreen::UI_WinnerScreen( H3_Game* game, de::gui::Env* env, de::gui::Widget* parent, u32 id, const de::Recti& pos )
     // =====================================================================
-    : de::gui::Widget(env, parent, id, pos)
+    : de::gui::Panel(env, parent, id, pos)
     , m_game(game)
     , m_btnClose(nullptr)
 {
@@ -31,7 +29,7 @@ UI_WinnerScreen::UI_WinnerScreen( H3_Game* game, de::gui::Env* env, de::gui::Wid
 
 UI_WinnerScreen::~UI_WinnerScreen()
 {
-    DE_WARN("")
+
 }
 
 void UI_WinnerScreen::updateData()
@@ -49,16 +47,11 @@ void UI_WinnerScreen::resizeLayout()
     int h = scr_h - 200;
     int x = 100;
     int y = 100;
-    setRect( de::Recti(x,y,w,h) );
-
-
-    m_lblWinner->setRect(de::Recti(100,100,w - 200, 100));
-    m_lblWinnerIcon->setRect(de::Recti(100,200,100,100));
-    m_lblWinnerName->setRect(de::Recti(200,200,w-200,100));
-
-    // ::::: CloseButton ::::
-    auto r_close = de::Recti(100,getRect().h - 100,getRect().w - 200,64);
-    m_btnClose->setRect( r_close );
+    m_rect = de::Recti(x,y,w,h);
+    m_lblWinner->resize(100,100,w - 200,100);
+    m_lblWinnerIcon->resize(100,200,100,100);
+    m_lblWinnerName->resize(200,200,w-200,100);
+    m_btnClose->resize(100,m_rect.h - 100,m_rect.w - 200,64);
 }
 
 // static

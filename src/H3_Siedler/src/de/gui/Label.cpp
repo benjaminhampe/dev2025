@@ -11,20 +11,22 @@ Label::Label( std::string text, Env* env, Widget* parent, u32 id, const Recti& r
     : Widget(env, parent, id, r)
     , m_text(text)
 {
-    setFillColor(0xFFFFFFFF, eWS_Idle);
-    setFillColor(0xFFFFFFFF, eWS_Hovered);
-    setFillColor(0xFFFFFFFF, eWS_Pressed);
-    setFillColor(0xFFFFFFFF, eWS_Released);
+    setFillColor(dbRGB(255,255,255), eWS_Idle);
+    setFillColor(dbRGB(255,255,255), eWS_Hovered);
+    setFillColor(dbRGB(255,255,255), eWS_Pressed);
+    setFillColor(dbRGB(255,255,255), eWS_Released);
 
-    setBorderColor(0x00000000, eWS_Idle);
-    setBorderColor(0x00000000, eWS_Hovered);
-    setBorderColor(0x00000000, eWS_Pressed);
-    setBorderColor(0x00000000, eWS_Released);
+    setBorderColor(dbRGB(0,0,0), eWS_Idle);
+    setBorderColor(dbRGB(0,0,0), eWS_Hovered);
+    setBorderColor(dbRGB(0,0,0), eWS_Pressed);
+    setBorderColor(dbRGB(0,0,0), eWS_Released);
 
     setTextColor(dbRGB(0,0,0), eWS_Idle);
     setTextColor(dbRGB(0,0,0), eWS_Hovered);
     setTextColor(dbRGB(0,0,0), eWS_Pressed);
     setTextColor(dbRGB(0,0,0), eWS_Released);
+
+    setPickable(false);
 }
 
 Label::~Label()
@@ -91,13 +93,6 @@ void Label::draw()
             const auto r = glm::ivec2(m_radius,m_radius);
             r_screen->draw2DRoundRect( pos, r, fillColor, m_tex, 24 );
         }
-    }
-
-
-    // --- [Draw] Children ---
-    for (auto & child : m_children)
-    {
-        child->draw();
     }
 
     // --- [Draw] Text ---

@@ -1463,7 +1463,7 @@ std::string
 SamplerOptions::str() const
 {
     std::ostringstream o;
-    o << "SamplerOptions[" << sizeof(SamplerOptions)<<"](";
+    //o << "SamplerOptions[" << sizeof(SamplerOptions)<<"](";
     if ( af > 0 ) { o << "AF:" << af; }
     o << "|Min:";
     if ( min == Minify::Linear )               o << "L";

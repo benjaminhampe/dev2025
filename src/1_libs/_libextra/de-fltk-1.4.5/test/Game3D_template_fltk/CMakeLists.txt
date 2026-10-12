@@ -1,0 +1,75 @@
+set(APP_NAME Game3D_template_fltk)
+project(${APP_NAME})
+
+if (TARGET ${APP_NAME})
+    message("${BoldRed}[benni] HEADER_GUARD: ${APP_NAME}${ColourReset}")
+else()
+    # add_subdirectory(lib)
+
+    set(APP_SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/src)
+    file(GLOB_RECURSE APP_HEADERS ${APP_SOURCE_DIR}/*.h)
+    file(GLOB_RECURSE APP_SOURCES ${APP_SOURCE_DIR}/*.cpp)
+
+    if (WIN32)
+        enable_language(RC)
+        list(APPEND APP_SOURCES ${CMAKE_CURRENT_LIST_DIR}/res/resource.h)
+        list(APPEND APP_SOURCES ${CMAKE_CURRENT_LIST_DIR}/res/resource.rc)
+      # list(APPEND APP_SOURCES "${APP_RC_DIR}/resource.qrc")
+    endif()
+
+    message("${BoldGreen}[benni] APP: ${APP_NAME}${ColourReset}")
+    add_executable(${APP_NAME} "")
+
+    target_sources(${APP_NAME} PRIVATE ${APP_HEADERS} ${APP_SOURCES})
+
+    target_include_directories(${APP_NAME} PRIVATE ${APP_SOURCE_DIR})
+
+    # target_compile_definitions(${APP_NAME} PRIVATE )
+
+    if (MSVC)
+    else()
+        # target_link_options(${APP_NAME} PRIVATE -mwindows)
+
+        if (WIN32)
+            # target_link_libraries(${APP_NAME} PRIVATE shcore) # for DPI‑Awareness
+            # target_link_libraries(${APP_NAME} PRIVATE shlwapi) # for PathRemoveFileSpecW
+            # target_link_libraries(${APP_NAME} PRIVATE dbghelp) # for SymInitialize, SymFromAddr
+        else()
+            target_link_libraries(${APP_NAME} PRIVATE fltk)
+            target_link_libraries(${APP_NAME} PRIVATE Xext)
+            target_link_libraries(${APP_NAME} PRIVATE Xinerama)
+            target_link_libraries(${APP_NAME} PRIVATE Xft)
+            target_link_libraries(${APP_NAME} PRIVATE X11)
+            target_link_libraries(${APP_NAME} PRIVATE m)
+        endif()
+    endif()
+
+    target_link_libraries(${APP_NAME} PRIVATE de_fltk_145)
+    target_link_libraries(${APP_NAME} PRIVATE de_glew)
+    # target_link_libraries(${APP_NAME} PRIVATE libFileInfo)
+
+    # target_link_libraries(${APP_NAME} PRIVATE DarkImage_2604)
+    # target_link_libraries(${APP_NAME} PRIVATE de_bzip3)
+    # target_link_libraries(${APP_NAME} PRIVATE de_lyra_180)
+    # target_link_libraries(${APP_NAME} PRIVATE de_moodycamel_concurrentqueue_105)
+    # target_link_libraries(${APP_NAME} PRIVATE de_win32_RegUtil)
+
+    include(${CMAKE_SOURCE_DIR}/src/embed_static_runtime.cmake)
+
+    # set_target_properties(${APP_NAME} PROPERTIES
+        # PREFIX ""
+        # SUFFIX ".exe"
+        # OUTPUT_NAME "8z"
+        # # ARCHIVE_OUTPUT_NAME "8z_exe"
+    # )
+
+    if (CMAKE_BUILD_TYPE STREQUAL "Release")
+        message(STATUS "Building in Release mode, strip symbols")
+        add_custom_command(TARGET ${APP_NAME} POST_BUILD
+            COMMAND ${CMAKE_OBJCOPY} --strip-unneeded $<TARGET_FILE:${APP_NAME}>
+            COMMENT "Stripping unneeded symbols"
+        )
+    endif()
+
+    # file(COPY media/earcut_viz DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/media)
+endif()

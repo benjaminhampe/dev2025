@@ -13,18 +13,20 @@ struct VideoDriver;
 class ScreenQuadRenderer
 // ------------------------------------------------------------
 {
-	VideoDriver* m_driver;
-	Shader* m_shader;
-	uint32_t m_vao;
-    int32_t m_u_tex;
-    int32_t m_u_posTransform;
+    VideoDriver* m_driver;
+    Shader* m_shader;
+    uint32_t m_vao;
     int32_t m_u_screenSize;
+    int32_t m_u_posTransform;
+    int32_t m_u_tex;
+    int32_t m_u_texTransform;
+
 public:
-	ScreenQuadRenderer();
-	~ScreenQuadRenderer();
-	
-	void init(VideoDriver* driver);
-    void draw2D( const de::Rectf& pos, Texture* tex, bool blend);
+    ScreenQuadRenderer();
+    ~ScreenQuadRenderer();
+
+    void init(VideoDriver* driver);
+    void draw2D( const de::Recti& pos, const TexRef& ref, bool blend);
 };
 
 } // end namespace gpu.

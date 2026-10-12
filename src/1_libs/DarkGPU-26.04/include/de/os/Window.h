@@ -31,7 +31,7 @@ public:
     // Its not clear if glFlush() should be used at all.
     // Seems to reduce vsync to 30 fps, because we swapped one time too often.
     // I recommend disabling vsync, enabling double buffering and have fun.
-    virtual void makeCurrent() = 0;
+    virtual void makeCurrent( bool bRelease = false ) = 0;
     virtual void swapBuffers() = 0;
     // Most important thing to reduce power consumption.
     // But interferes with sync timings, vsync, fps wait duration computation, etc...

@@ -813,19 +813,37 @@ std::string VideoDriver::getShaderVersionHeader() const
 
 bool VideoDriver::useTexture( Texture* tex, int stage )
 {
-    if (tex && tex->id())
+    if (stage < 0)
     {
-        glActiveTexture(GL_TEXTURE0 + stage); GL_VALIDATE
-        glBindTexture(tex->target(), tex->id()); GL_VALIDATE
+        DE_ERROR("Invalid stage ", stage)
+    }
+
+    if (tex)
+    {
+        if (!tex->id())
+        {
+            DE_ERROR("Tex exists, but no GPU handle ", tex->str())
+        }
+
+        glBindTextureUnit(stage,tex->id());
+
+        // glActiveTexture(GL_TEXTURE0 + stage);
+        // GL_VALIDATE
+        // glBindTexture(tex->target(), tex->id());
+        // GL_VALIDATE
         m_texMgr.applySamplerOptions(tex->so());
-        return true;
     }
     else
     {
-        glActiveTexture(GL_TEXTURE0 + stage); GL_VALIDATE
-        glBindTexture(GL_TEXTURE_2D, 0); GL_VALIDATE
-        return false;
+        DE_WARN("Unbind texture ", tex->str())
+        glBindTextureUnit(stage,0);
+
+        // glActiveTexture(GL_TEXTURE0 + stage); GL_VALIDATE
+        // glBindTexture(GL_TEXTURE_2D, 0); GL_VALIDATE
+//        return false;
     }
+
+    return true;
 }
 
 bool VideoDriver::useShader( Shader* shader )

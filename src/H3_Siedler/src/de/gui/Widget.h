@@ -16,6 +16,7 @@ public:
     enum eWidgetType
     {
         eWT_Widget = 0,
+        eWT_Panel,
         eWT_Label,
         eWT_Button,
         eWT_IntField,
@@ -47,45 +48,78 @@ public:
     Widget( Env* env, Widget* parent, u32 id, const Recti& r );
     virtual ~Widget();
     virtual u32 getType() const { return eWT_Widget; }
-
+    virtual void resize(int x, int y, int w, int h);
     virtual void draw();
+
+/*
+    void resizeEvent( const ResizeEvent& event ) override;
+    void paintEvent( const PaintEvent& event ) override;
+    void enterEvent( const EnterEvent& event ) override;
+    void leaveEvent( const LeaveEvent& event ) override;
+    //void mouseButtonEvent( const MouseButtonEvent& event ) override;
+    void mousePressEvent( const MousePressEvent& event ) override;
+    void mouseReleaseEvent( const MouseReleaseEvent& event ) override;
+    //void showEvent( ShowEvent const & event ) override;
+    //void hideEvent( HideEvent const & event ) override;
+    //void focusEvent( FocusEvent const & event ) override;
+    //void keyEvent( KeyEvent const & event ) override;
+    //void mouseMoveEvent( MouseMoveEvent const & event ) override;
+    //void mouseWheelEvent( MouseWheelEvent const & event ) override;
+*/
     virtual void onEvent( const Event& event );
-    virtual Posi getAbsolutePos() const;
-
     virtual Widget* pick( int mx, int my );
-    virtual void clearChildren();
-    virtual void addChild( Widget* child );
 
-    // Inline impl.
+    Recti getAbsoluteRect() const;
+    const Recti& getRect() const { return m_rect; }
+    void clearChildren();
+    void addChild( Widget* child );
 
-    virtual u32 getId() const { return m_id; }
-    virtual void setId( u32 id ) { m_id = id; }
+    Widget* getParent() { return m_parent; }
+    void setParent( Widget* parent ) { m_parent = parent; }
 
-    virtual u32 getFlags() const { return m_flags; }
-    virtual void setFlags( u32 flags ) { m_flags = flags; }
-    virtual bool hasFlags( u32 flags ) const { return (m_flags & flags) == flags; }
-    virtual void enableFlags( u32 flags ) { m_flags |= flags; }
-    virtual void disableFlags( u32 flags ) { m_flags &= ~flags; }
-    virtual void setFlags( u32 flags, bool enable )
+    u32 getId() const { return m_id; }
+    void setId( u32 id ) { m_id = id; }
+
+    const std::string& getName() const { return m_name; }
+    void setName( const std::string & name ) { m_name = name; }
+
+    bool isEnabled() const { return hasFlags( eWF_Enabled ); }
+    void setEnabled( bool enabled ) { setFlags( eWF_Enabled, enabled ); }
+
+    bool isVisible() const { return hasFlags( eWF_Visible ); }
+    void setVisible( bool visible ) { setFlags( eWF_Visible, visible ); }
+
+    void setPickable( bool pickable ) { setFlags( eWF_Pickable, pickable ); }
+    bool isPickable() const { return hasFlags( eWF_Pickable ); }
+
+    u32 getFlags() const { return m_flags; }
+    void setFlags( u32 flags ) { m_flags = flags; }
+    bool hasFlags( u32 flags ) const { return (m_flags & flags) == flags; }
+    void enableFlags( u32 flags ) { m_flags |= flags; }
+    void disableFlags( u32 flags ) { m_flags &= ~flags; }
+    void setFlags( u32 flags, bool enable )
     {
         if (enable) { enableFlags(flags); }
         else        { disableFlags(flags); }
     }
 
-    virtual const std::string & getName() const { return m_name; }
-    virtual void setName( const std::string & name ) { m_name = name; }
+    const Font& getFont() const { return m_font; }
 
-    virtual bool isVisible() const { return hasFlags( eWF_Visible ); }
-    virtual void setVisible( bool visible ) { setFlags( eWF_Visible, visible ); }
+    virtual void setFont( const Font& font )
+    {
+        m_font = font;
+        for ( auto & child : m_children)
+        {
+            child->setFont( font );
+        }
+    }
 
-    virtual bool isEnabled() const { return hasFlags( eWF_Enabled ); }
-    virtual void setEnabled( bool enabled ) { setFlags( eWF_Enabled, enabled ); }
+/*
+    virtual Recti getRect() const { return Recti( getPos(), getSize() ); }
+    virtual void setRect( const Recti& r ) { setPos(r.pos()); setSize(r.size()); }
+    virtual void setRect( int x, int y, int w, int h ) { setRect( {x,y,w,h} ); }
 
-    virtual void setPickable( bool pickable ) { setFlags( eWF_Pickable, pickable ); }
-    virtual bool isPickable() const { return hasFlags( eWF_Pickable ); }
-
-    virtual Widget* getParent() { return m_parent; }
-    virtual void setParent( Widget* parent ) { m_parent = parent; }
+    virtual Posi getAbsolutePos() const;
 
     virtual const Posi& getPos() const { return m_pos; }
     virtual void setPos( const Posi& pos ) { m_pos = pos; }
@@ -99,26 +133,10 @@ public:
     virtual void setMinimumSize( const Sizei& size ) { m_minimumSize = size; }
     virtual void setMinimumSize( int w, int h ) { setMinimumSize( Sizei(w,h) ); }
 
-    virtual Recti getRect() const { return Recti( getPos(), getSize() ); }
-    virtual void setRect( const Recti& r ) { setPos(r.pos()); setSize(r.size()); }
-    virtual void setRect( int x, int y, int w, int h ) { setRect( {x,y,w,h} ); }
+*/
 
-    virtual Recti getAbsoluteRect() const
-    {
-        const auto& p = getAbsolutePos();
-        const auto& s = getSize();
-        return Recti( p.x, p.y, s.w, s.h );
-    }
 
-    virtual const Font& getFont() const { return m_font; }
-    virtual void setFont( const Font& font )
-    {
-        m_font = font;
-        for ( auto & child : m_children)
-        {
-            child->setFont( font );
-        }
-    }
+/*
 
     virtual void setFillColor( u32 color )
     {
@@ -148,18 +166,25 @@ public:
 
     virtual const gpu::TexRef& getTexture() const { return m_tex; }
     virtual void setTexture( gpu::TexRef tex ) { m_tex = tex; }
+*/
 
 protected:
     u32 m_flags;
     u32 m_id;
-    Posi m_pos;
-    Sizei m_size;
-    Sizei m_minimumSize;
+    Recti m_rect;
+    //Posi m_pos;
+    //Sizei m_size;
+    //Sizei m_minimumSize;
 
     Env* m_env;
     Widget* m_parent;
     std::string m_name;
 
+    std::vector< Widget* > m_children;
+
+    Font m_font;
+
+/*
     // --- Fill ---
     int m_radius;
     gpu::TexRef m_tex;
@@ -170,8 +195,9 @@ protected:
     std::array<u32,4> m_borderColors; // Idle,Hovered,Pressed,Released
 
     // --- Text ---
-    Font m_font;
-    std::vector< Widget* > m_children;
+
+
+*/
 };
 
 } // end namespace gui.

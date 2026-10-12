@@ -129,7 +129,7 @@ struct MandelbrotWindow : public de::Window_WGL
     }
     void destroyEvent() override
     {
-        DE_DEBUG()
+        // DE_DEBUG()
         m_driver->close();
     }
 
@@ -205,7 +205,7 @@ struct MandelbrotWindow : public de::Window_WGL
         m_driver->beginRender( glm::vec4(0.1f,0.1f,0.1f,1.0f) );
 
         m_driver->getScreenQuadRenderer()->draw2D(
-                    de::Rectf(0,0,w,h),
+                    de::Recti(0,0,w,h),
                     m_mandelbrotTex,
                     false);
 

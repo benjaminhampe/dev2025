@@ -130,7 +130,8 @@ struct H3_Game
     int getScalePc() const { return m_guienv.getScalePc(); }
     void setScalePc( int iScalePc ) { m_guienv.setScalePc( iScalePc ); }
 
-    bool init();
+    bool init( de::Window* window );
+    void resize( int w, int h );
     void destroy();
     void requestClose();
     bool run();

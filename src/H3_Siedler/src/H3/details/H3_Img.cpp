@@ -105,56 +105,7 @@ H3_Img::init()
 
     de::ImageLoadOptions optRGB = opt;
     optRGB.outputFormat = de::PixelFormat::R8G8B8;
-/*
-    // gfx/wallpaper
-    {
-        std::string baseDir = mediaDir + "gfx/wallpaper/";
-        add(Satan, baseDir + "satan.webp", opt);
-    }
 
-    // gfx/skybox/Powerlines
-    {
-        std::string baseDir = mediaDir + "gfx/skybox/Powerlines/";
-        add(Sky1NegX, baseDir + "nx.jpg", optRGB);
-        add(Sky1PosX, baseDir + "px.jpg", optRGB);
-        add(Sky1NegY, baseDir + "ny.jpg", optRGB);
-        add(Sky1PosY, baseDir + "py.jpg", optRGB);
-        add(Sky1NegZ, baseDir + "nz.jpg", optRGB);
-        add(Sky1PosZ, baseDir + "pz.jpg", optRGB);
-    }
-    // gfx/skybox/H3
-    {
-        std::string baseDir = mediaDir + "gfx/skybox/H3/";
-        add(Sky1NegX, baseDir + "nx.png", optRGB);
-        add(Sky1PosX, baseDir + "px.png", optRGB);
-        add(Sky1NegY, baseDir + "ny.png", optRGB);
-        add(Sky1PosY, baseDir + "py.png", optRGB);
-        add(Sky1NegZ, baseDir + "nz.png", optRGB);
-        add(Sky1PosZ, baseDir + "pz.png", optRGB);
-    }
-    // gfx/skybox/ClubTropicana
-    {
-        std::string baseDir = mediaDir + "gfx/skybox/ClubTropicana/";
-        add(Sky1NegX, baseDir + "nx.png", optRGB);
-        add(Sky1PosX, baseDir + "px.png", optRGB);
-        add(Sky1NegY, baseDir + "ny.png", optRGB);
-        add(Sky1PosY, baseDir + "py.png", optRGB);
-        add(Sky1NegZ, baseDir + "nz.png", optRGB);
-        add(Sky1PosZ, baseDir + "pz.png", optRGB);
-    }
-
-    // gfx/skybox/forest
-    {
-        std::string baseDir = mediaDir + "gfx/skybox/forest/";
-        add(Sky1NegX, baseDir + "nx.jpg", optRGB);
-        add(Sky1PosX, baseDir + "px.jpg", optRGB);
-        add(Sky1NegY, baseDir + "ny.jpg", optRGB);
-        add(Sky1PosY, baseDir + "py.jpg", optRGB);
-        add(Sky1NegZ, baseDir + "nz.jpg", optRGB);
-        add(Sky1PosZ, baseDir + "pz.jpg", optRGB);
-    }
-
-*/
     // gfx/skybox/Default (ClubTropicana)
     {
         std::string baseDir = mediaDir + "gfx/skybox/Default/";

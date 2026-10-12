@@ -12,30 +12,28 @@ Button::Button( std::string text, Env* env, Widget* parent, u32 id, const Recti&
     , m_text(text)
     , m_fnOnClicked( [] () {} )
 {
-    DE_DEBUG("Rect(",r.str(),")")
-    setPickable(true);
+    setFillColor(dbRGB(255,255,255), eWS_Idle);
+    setFillColor(dbRGB(255,255,255), eWS_Hovered);
+    setFillColor(dbRGB(255,255,255), eWS_Pressed);
+    setFillColor(dbRGB(255,255,255), eWS_Released);
 
-    setFillColor(0xFFFFFFFF, eWS_Idle);
-    setFillColor(0xFFFFFFFF, eWS_Hovered);
-    setFillColor(0xFFFFFFFF, eWS_Pressed);
-    setFillColor(0xFFFFFFFF, eWS_Released);
-
-    setBorderColor(0x00000000, eWS_Idle);
-    setBorderColor(0x00000000, eWS_Hovered);
-    setBorderColor(0x00000000, eWS_Pressed);
-    setBorderColor(0x00000000, eWS_Released);
+    setBorderColor(dbRGB(0,0,0), eWS_Idle);
+    setBorderColor(dbRGB(0,0,0), eWS_Hovered);
+    setBorderColor(dbRGB(0,0,0), eWS_Pressed);
+    setBorderColor(dbRGB(0,0,0), eWS_Released);
 
     setTextColor(dbRGB(0,0,0), eWS_Idle);
     setTextColor(dbRGB(0,0,0), eWS_Hovered);
     setTextColor(dbRGB(0,0,0), eWS_Pressed);
     setTextColor(dbRGB(0,0,0), eWS_Released);
+
+    setPickable(true);
 }
 
 Button::~Button()
 {
 
 }
-
 
 void
 Button::draw()
@@ -68,12 +66,16 @@ Button::draw()
         textColor = m_textColors[eWS_Hovered];
     }
 
-    const auto pos = getAbsoluteRect();
+    const Recti pos = getAbsoluteRect();
     // DE_DEBUG("AbsolutePos(",pos.str(),")")
 
     // --- [Draw] Fill ---
     if (dbRGB_A(fillColor) > 0)
     {
+#if 1
+        auto r_screen = driver->getScreenQuadRenderer();
+        r_screen->draw2D( pos, m_tex, true );
+#else
         auto r_screen = driver->getScreenRenderer();
         if ( m_radius < 1 )
         {
@@ -84,13 +86,7 @@ Button::draw()
             const auto r = glm::ivec2(m_radius,m_radius);
             r_screen->draw2DRoundRect( pos, r, fillColor, m_tex, 24 );
         }
-    }
-
-
-    // --- [Draw] Children ---
-    for (auto & child : m_children)
-    {
-        child->draw();
+#endif
     }
 
     // --- [Draw] Text ---

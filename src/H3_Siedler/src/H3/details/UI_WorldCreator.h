@@ -2,7 +2,7 @@
 #include <H3/H3_Board.h>
 
 // ===========================================================================
-class UI_World : public de::gui::Widget
+class UI_World : public de::gui::Panel
 // ===========================================================================
 {
 public:
@@ -29,15 +29,14 @@ private:
 
 
 // ===========================================================================
-class UI_WorldCreator : public de::gui::Widget
+class UI_WorldCreator : public de::gui::Panel
 // ===========================================================================
 {
 public:
     UI_WorldCreator( H3_Game* game, de::gui::Env* env, de::gui::Widget* parent, u32 id, const de::Recti& r );
     ~UI_WorldCreator() override;
-    void draw() override;
-    //void onEvent(const de::Event& event) override;
     void resizeLayout();
+
     void setPreset( const H3_Cfg& cfg );
     H3_Cfg& getPreset();
     H3_Cfg& getPreset( const std::string& presetName );

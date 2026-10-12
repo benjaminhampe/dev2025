@@ -136,38 +136,38 @@ void UI_Actions::resizeLayout()
     const auto fScale = 0.01f * m_env->getScalePc();
     const auto scr_w = m_env->getScreenWidth();
     const auto scr_h = m_env->getScreenHeight();
-    setRect(0,0,scr_w,scr_h);
+    m_rect = de::Recti(0,0,scr_w,scr_h);
 
     const int p = fScale * 5;
-    const int w1 = fScale * m_btnDice->getMinimumSize().w;
-    const int h1 = fScale * m_btnDice->getMinimumSize().h;
-    const int w2 = fScale * m_btnBank->getMinimumSize().w;
-    const int h2 = fScale * m_btnBank->getMinimumSize().h;
+    const int w1 = fScale * m_btnDice->getRect().w;
+    const int h1 = fScale * m_btnDice->getRect().h;
+    const int w2 = fScale * m_btnBank->getRect().w;
+    const int h2 = fScale * m_btnBank->getRect().h;
 
-    const int w3 = fScale * m_btnCancel->getMinimumSize().w;
-    const int h3 = fScale * m_btnCancel->getMinimumSize().h;
+    const int w3 = fScale * m_btnCancel->getRect().w;
+    const int h3 = fScale * m_btnCancel->getRect().h;
 
-    const int w4 = fScale * m_btnBuyCard->getMinimumSize().w;
-    const int h4 = fScale * m_btnBuyCard->getMinimumSize().h;
+    const int w4 = fScale * m_btnBuyCard->getRect().w;
+    const int h4 = fScale * m_btnBuyCard->getRect().h;
 
 
     int x = scr_w/2; //  - p - w1 - p - w2
     int y = scr_h - 1 - p - std::max(h1,h2);
 
-    m_btnDice->setRect(x,y,w1,h1); x += w1 + p;
-    m_btnBank->setRect(x,y,w2,h2); x += w2 + p;
-    m_btnTrade->setRect(x,y,w2,h2); x += w2 + p;
-    m_btnEndTurn->setRect(x,y,w2,h2); x += w2 + p;
+    m_btnDice->resize(x,y,w1,h1); x += w1 + p;
+    m_btnBank->resize(x,y,w2,h2); x += w2 + p;
+    m_btnTrade->resize(x,y,w2,h2); x += w2 + p;
+    m_btnEndTurn->resize(x,y,w2,h2); x += w2 + p;
 
     x = scr_w/2; //  - p - w3 - p - w3
     y = scr_h - 1 - p - std::max(h1,h2) - p - h3;
-    m_btnCancel->setRect(x,y,w3,h3); x += w3 + p;
-    m_btnBuyRoad->setRect(x,y,w3,h3); x += w3 + p;
-    m_btnBuyFarm->setRect(x,y,w3,h3); x += w3 + p;
-    m_btnBuyCity->setRect(x,y,w3,h3); x += w3 + p;
+    m_btnCancel->resize(x,y,w3,h3); x += w3 + p;
+    m_btnBuyRoad->resize(x,y,w3,h3); x += w3 + p;
+    m_btnBuyFarm->resize(x,y,w3,h3); x += w3 + p;
+    m_btnBuyCity->resize(x,y,w3,h3); x += w3 + p;
 
     y = scr_h - 1 - p - h4;
-    m_btnBuyCard->setRect(x,y,w4,h4);
+    m_btnBuyCard->resize(x,y,w4,h4);
 
     //DE_DEBUG("this = ", this->getRect().str())
     //DE_DEBUG("m_btnDice = ", m_btnDice->getRect().str(), ", visible = ", m_btnDice->isVisible())

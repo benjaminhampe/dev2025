@@ -1747,6 +1747,9 @@ struct Posi
     bool operator==( const Posi & o ) const { return x == o.x && y == o.y; }
     bool operator!=( const Posi & other ) const { return !( other == *this ); }
 
+    Posi& operator+=( const Posi & o ) { x += o.x; y += o.y; return *this; }
+    Posi& operator-=( const Posi & o ) { x -= o.x; y -= o.y; return *this; }
+
     void test()
     {
         // DE_DEBUG("typename(int32_t) = ", typename(int32_t) )

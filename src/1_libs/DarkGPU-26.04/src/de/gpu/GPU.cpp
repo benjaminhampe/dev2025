@@ -646,15 +646,13 @@ void Texture::set( uint32_t preset, uint32_t format, uint32_t dataType)
 std::string Texture::str() const
 {
     std::ostringstream o; o <<
-    "id(" << m_id << "), "
-    "target(" << m_target << "), "
-    "w(" << m_w << "), "
-    "h(" << m_h << "), "
-    "layer(" << m_layer << "), "
-    "fmt(" << pixelFormatStr() << "), "
-    "unit(" << m_unit << "), "
-    "name(" << m_name << "), "
-    "so(" << m_so.str() << ")";
+    "name:" << m_name << "|"
+    "id:" << m_id << "|"
+    "d:" << m_w << "," << m_h << "," << m_layer << "|"
+    "u:" << m_unit << "|"
+    "" << pixelFormatStr() << "|"
+    "" << m_target << "|"
+    "so:" << m_so.str();
     return o.str();
 }
 
@@ -842,6 +840,7 @@ void TexManager::deinit()
 void TexManager::dumpTextures() const
 {
     DE_DEBUG( "TexUnit.Count = ", m_numTexUnits )
+
 /*
     DE_DEBUG( "TexUnit.Count = ", m_texUnits.size() )
     for ( size_t i = 0; i < m_texUnits.size(); ++i )
@@ -849,11 +848,12 @@ void TexManager::dumpTextures() const
         DE_DEBUG( "TexUnit[",i,"] = ", m_texUnits[ i ].toString() )
     }
 */
+
     DE_DEBUG( "TexCache.Count = ", m_texCache.size() )
     for ( size_t i = 0; i < m_texCache.size(); ++i )
     {
         Texture* tex = m_texCache[ i ];
-        DE_DEBUG( "TexCache[",i,"] = ", tex->str() )
+        DE_DEBUG( "[",i,"] ", tex->str() )
     }
 }
 
@@ -1057,6 +1057,12 @@ Texture* TexManager::createTexture2D( const std::string& name, const Image& img,
 
 Texture* TexManager::createTexture2D( const std::string& name, int w, int h, void const* const pixels, PixelFormat fmt, const SamplerOptions& so )
 {
+    if (name.empty())
+    {
+        DE_ERROR("Empty name")
+        return nullptr;
+    }
+
     auto cached = getTexture( name );
     if (cached)
     {
@@ -1086,6 +1092,7 @@ bool TexManager::uploadTexture2D( Texture* &tex, int w, int h, void const* const
         DE_ERROR("Got nullptr texture")
         return false;
     }
+
     if (!tex->m_id)
     {
         uint32_t texId = 0;

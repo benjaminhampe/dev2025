@@ -62,8 +62,8 @@ int main( int argc, char* argv[] )
     //m_window->setResizable( true );
 
     // 2. Rufe hier dein Custom-Init auf
-    m_window->createEvent(m_window->getClientRect());
-    m_window->setPaintEnabled(true);
+    // m_window->createEvent(m_window->getClientRect());
+    // m_window->setPaintEnabled(true);
 
     // de::CreateParams params;
     // params.receiver = &eventReceiver;

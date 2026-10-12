@@ -2,7 +2,7 @@
 #include <H3/H3_Board.h>
 
 // =====================================================================
-struct UI_WinnerScreen : public de::gui::Widget
+struct UI_WinnerScreen : public de::gui::Panel
 // =====================================================================
 {
     UI_WinnerScreen( H3_Game* game, de::gui::Env* env, de::gui::Widget* parent, u32 id, const de::Recti& r );

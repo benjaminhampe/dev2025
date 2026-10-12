@@ -273,6 +273,11 @@ ScreenRenderer::setMaterial( smesh::SMaterial const & mtl, const Recti& pos )
         return false;
     }
 
+    State state = mtl.state;
+    state.depth = Depth::disabled();
+    state.culling = Culling::disabled();
+    m_driver->setState( state );
+
     const int w = m_driver->getScreenWidth();
     const int h = m_driver->getScreenHeight();
     shader->setVec2f( "u_screenSize", glm::vec2( w, h ) );
@@ -285,10 +290,7 @@ ScreenRenderer::setMaterial( smesh::SMaterial const & mtl, const Recti& pos )
         shader->setVec4f( "u_texTransform", diffuseMap.coords );
     }
 
-    State state = mtl.state;
-    state.depth = Depth::disabled();
-    state.culling = Culling::disabled();
-    m_driver->setState( state );
+
 
     return true;
 }
@@ -296,11 +298,7 @@ ScreenRenderer::setMaterial( smesh::SMaterial const & mtl, const Recti& pos )
 void
 ScreenRenderer::unsetMaterial( smesh::SMaterial const & mtl )
 {
-    const TexRef& diffuseMap = mtl.getDiffuseMap();
-    if (diffuseMap.tex)
-    {
-        m_driver->useTexture(0,0);
-    }
+
 }
 
 std::string
@@ -318,7 +316,6 @@ ScreenRenderer::createVS( smesh::SMaterial const & material )
     std::stringstream vs; vs <<
     R"(
         precision highp float;
-      //precision mediump float;
 
         layout(location = 0) in vec3 a_pos;
         layout(location = 1) in vec3 a_normal;
@@ -327,25 +324,16 @@ ScreenRenderer::createVS( smesh::SMaterial const & material )
 
         uniform vec2 u_screenSize;
 
-      //uniform vec2 u_pixelOffset;
-      //uniform vec2 u_pixelScale;
-
-      //out vec3 v_pos;
-      //out vec3 v_normal;
         out vec4 v_color;
         out vec2 v_tex;
 
         void main()
         {
-          //vec2 dim = u_pixelScale * a_pos.xy;
-          //vec2 pos = u_pixelOffset + dim;
-            vec2 ndc = (2.0 * vec2( a_pos.x, u_screenSize.y - 1.0 - a_pos.y ) / u_screenSize ) - 1.0;
-          //v_pos = pos;
-          //v_normal = a_normal;
+            vec2 pos = vec2( a_pos.x, u_screenSize.y - 1.0 - a_pos.y );
+            vec2 ndc = (2.0 * pos / u_screenSize ) - 1.0;
+            gl_Position = vec4( ndc, 0.0, 1.0 );
             v_color = clamp( vec4( a_color ) * (1.0 / 255.0), vec4( 0,0,0,0 ), vec4( 1,1,1,1 ) );
             v_tex = a_tex;
-          //vec2 ndc = (2.0 * vec2( pos.x, u_screenSize.y - 1.0 - pos.y ) / u_screenSize ) - 1.0;
-            gl_Position = vec4( ndc, 0.0, 1.0 );
         }
     )";
     return vs.str();
@@ -357,7 +345,6 @@ ScreenRenderer::createFS( smesh::SMaterial const & material )
     std::stringstream fs;
     fs << R"(
         precision highp float;
-      //precision mediump float;
 
         layout(location = 0) out vec4 fragColor;
     )";
@@ -371,8 +358,6 @@ ScreenRenderer::createFS( smesh::SMaterial const & material )
     }
 
     fs << R"(
-      //in vec3 v_pos;
-      //in vec3 v_normal;
         in vec4 v_color;
         in vec2 v_tex;
 
@@ -385,7 +370,7 @@ ScreenRenderer::createFS( smesh::SMaterial const & material )
         fs << R"(
             vec2 atlasPos = u_texTransform.xy;
             vec2 atlasDim = u_texTransform.zw;
-            vec2 atlasUV = atlasDim * fract( v_tex ) + atlasPos;
+            vec2 atlasUV = (atlasDim * v_tex) + atlasPos;
             vec4 Td = texture( u_tex, atlasUV );
         )";
 

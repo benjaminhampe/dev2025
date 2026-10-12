@@ -23,23 +23,34 @@ Env::~Env()
 
 void Env::init( gpu::VideoDriver* driver )
 {
+    if (!driver)
+    {
+        DE_ERROR("No driver")
+    }
     m_driver = driver;
 }
 
 void Env::draw()
 {
-    for (auto & topLevelWidget : m_topLevelWidgets)
+    for (auto & child : m_topLevelWidgets)
     {
-        topLevelWidget->draw();
+        if (!child) continue;
+
+        child->draw();
     }
 }
 
 void Env::clear()
 {
-    for (auto & elem : m_topLevelWidgets)
+    for (auto & child : m_topLevelWidgets)
     {
-        delete elem;
+        if (!child) continue;
+
+        child->clearChildren();
+
+        delete child;
     }
+
     m_topLevelWidgets.clear();
 }
 
@@ -109,7 +120,7 @@ void Env::onEvent( const Event & event )
     // {
     //     for (auto & child : m_topLevelWidgets)
     //     {
-    //         child->onEvent(event);
+    //         child->resize(event.resizeEvent.w,event.resizeEvent.h);
     //     }
     // }
     // else

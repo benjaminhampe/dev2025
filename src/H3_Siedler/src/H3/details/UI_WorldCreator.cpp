@@ -10,7 +10,7 @@
 // =====================================================================
 UI_World::UI_World( H3_Game* game, de::gui::Env* env, de::gui::Widget* parent, u32 id, const de::Recti& pos )
 // =====================================================================
-    : de::gui::Widget(env, parent, id, pos)
+    : de::gui::Panel(env, parent, id, pos)
     , m_game(game)
 {
 
@@ -36,9 +36,8 @@ void UI_World::resizeLayout()
     const int scr_w = m_env->getScreenWidth();
     const int scr_h = m_env->getScreenHeight();
     const float f = 0.01f * m_env->getScalePc();
-
-
 }
+
 void UI_World::onEvent( const de::Event& event )
 {
 
@@ -46,14 +45,13 @@ void UI_World::onEvent( const de::Event& event )
 
 void UI_World::draw()
 {
-    Widget::draw();
+    Panel::draw();
 
     if (!isVisible()) return;
 
-    auto siz = getSize();
-    auto pos = getAbsolutePos();
-    float originX = pos.x + siz.w/2;
-    float originY = pos.y + siz.h/2;
+    auto r = getAbsoluteRect();
+    float originX = r.centerX();
+    float originY = r.centerY();
 
     auto texA = m_game->getTex(H3_Tex::TileA, "UI_World.draw()");
     auto texB = m_game->getTex(H3_Tex::TileB, "UI_World.draw()");
@@ -99,7 +97,7 @@ void UI_World::draw()
 // =====================================================================
 UI_WorldCreator::UI_WorldCreator( H3_Game* game, de::gui::Env* env, de::gui::Widget* parent, u32 id, const de::Recti& pos )
 // =====================================================================
-    : de::gui::Widget(env, parent, id, pos)
+    : de::gui::Panel(env, parent, id, pos)
     , m_game(game)
     , m_btnClose(nullptr)
 {
@@ -147,7 +145,6 @@ UI_WorldCreator::~UI_WorldCreator()
     DE_WARN("")
 }
 
-
 void UI_WorldCreator::resizeLayout()
 {
     const int scr_w = m_env->getScreenWidth();
@@ -160,31 +157,31 @@ void UI_WorldCreator::resizeLayout()
     int h = scr_h;
     int x = 0;
     int y = 0;
-    setRect( x,y,w,h );
+    m_rect = de::Recti( x,y,w,h );
     setFont( de::Font("Postamt", f * 16) );
 
     // ::::: Row[0] Title ::::
     w = scr_w/2;
     h = 100;
-    m_title->setRect(x + w/2,y,w,h); y += h;
+    m_title->resize(x + w/2,y,w,h); y += h;
 
     // ::::: Row[1] PresetBar ::::
     x = 20;
     h = 100;
     w = 150;
-    m_presetPrev->setRect(x,y,w,h); x += w + p;
-    m_presetNext->setRect(x,y,w,h); x += w + p;
+    m_presetPrev->resize(x,y,w,h); x += w + p;
+    m_presetNext->resize(x,y,w,h); x += w + p;
     w = 350;
-    m_presetName->setRect(x,y,w,h); x += w + p;
+    m_presetName->resize(x,y,w,h); x += w + p;
     w = 100;
-    m_presetNew->setRect(x,y,w,h); x += w + p;
+    m_presetNew->resize(x,y,w,h); x += w + p;
     w = 200;
-    m_presetClone->setRect(x,y,w,h); x += w + p;
+    m_presetClone->resize(x,y,w,h); x += w + p;
     w = 100;
-    m_presetDelete->setRect(x,y,w,h); x += w + p;
+    m_presetDelete->resize(x,y,w,h); x += w + p;
     w = 200;
-    m_presetExport->setRect(x,y,w,h); x += w + p;
-    m_presetImport->setRect(x,y,w,h); x += w + p;
+    m_presetExport->resize(x,y,w,h); x += w + p;
+    m_presetImport->resize(x,y,w,h); x += w + p;
     // w = 100;
     // m_presetEdit->setRect(x,y,w,h);
     y += h + 2*p;
@@ -197,33 +194,35 @@ void UI_WorldCreator::resizeLayout()
     x = 20;
     //m_edtTilesX->setRect(x,y,w,h);      y += h + q;
     //m_edtTilesY->setRect(x,y,w,h);      y += h + q;
-    m_edtVictory->setRect(x,y,w,h);     y += h + q;
-    m_edtCardLimit->setRect(x,y,w,h);   y += h + q;
-    m_edtSpacing->setRect(x,y,w,h);     y += h + q;
-    m_edtPlayer->setRect(x,y,w,h);
+    m_edtVictory->resize(x,y,w,h);     y += h + q;
+    m_edtCardLimit->resize(x,y,w,h);   y += h + q;
+    m_edtSpacing->resize(x,y,w,h);     y += h + q;
+    m_edtPlayer->resize(x,y,w,h);
 
     // ::::: Row[2] Body ::::
     y = y2;
     x += w + p;
     w = scr_w - p - x;
     h = scr_h - 2*p - y - 200;
-    m_body->setRect(x,y,w,h);
+    m_body->resize(x,y,w,h);
 
     // ::::: Row[N] Main-Buttons ::::
     w = 400;
     h = 100;
     x = 200;
     y = scr_h - 100 - h;
-    m_btnClose->setRect(x,y,w,h); x += w + 100;
-    m_btnStart->setRect(x,y,w,h);
+    m_btnClose->resize(x,y,w,h); x += w + 100;
+    m_btnStart->resize(x,y,w,h);
 }
 
-const std::string& UI_WorldCreator::getPresetName() const
+const std::string&
+UI_WorldCreator::getPresetName() const
 {
     return m_presetName->getText();
 }
 
-H3_Cfg& UI_WorldCreator::getPreset( const std::string& presetName )
+H3_Cfg&
+UI_WorldCreator::getPreset( const std::string& presetName )
 {
     auto it = m_presets.find( presetName );
     if (it == m_presets.end())
@@ -234,7 +233,8 @@ H3_Cfg& UI_WorldCreator::getPreset( const std::string& presetName )
     return it->second;
 }
 
-H3_Cfg& UI_WorldCreator::getPreset()
+H3_Cfg&
+UI_WorldCreator::getPreset()
 {
     const std::string& presetName = getPresetName();
     if (presetName.empty())
@@ -268,10 +268,6 @@ void UI_WorldCreator::setPreset( const H3_Cfg& cfg )
     m_edtCardLimit->setValue( m_cfg.cardLimitNoSteal );
     m_edtSpacing->setValue( m_cfg.buildingSpacing );
     m_edtPlayer->setValue( m_cfg.playerList.size() );
-
-    //calcTileBounds();
-    //m_edtTilesX->setValue( m_tileBounds.w );
-    //m_edtTilesY->setValue( m_tileBounds.h );
 }
 
 void UI_WorldCreator::calcTileBounds()
@@ -294,7 +290,6 @@ void UI_WorldCreator::calcTileBounds()
     m_tileBounds = de::Recti(x1, y1, x2-x1, y2-y1);
 }
 
-// static
 de::gui::Button*
 UI_WorldCreator::createButton(std::string txt, de::gpu::TexRef ref, de::Recti pos)
 {
@@ -306,7 +301,6 @@ UI_WorldCreator::createButton(std::string txt, de::gpu::TexRef ref, de::Recti po
     return btn;
 }
 
-// static
 de::gui::IntField*
 UI_WorldCreator::createIntField(std::string txt, int val, int min, int max)
 {
@@ -315,15 +309,8 @@ UI_WorldCreator::createIntField(std::string txt, int val, int min, int max)
     edt->setMaximum(max);
     edt->setValue(val);
     auto tex = m_game->getTex( H3_Tex::Scroll1, "UI_WorldCreator.createIntField()" );
-    //edt->setFillColor( 0xffffffff );
-    //edt->setTexture( tex );
     edt->getMinusButton()->setTexture( tex );
     edt->getPlusButton()->setTexture( tex );
     return edt;
 }
 
-
-void UI_WorldCreator::draw()
-{
-    Widget::draw();
-}

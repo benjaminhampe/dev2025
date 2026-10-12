@@ -4,11 +4,32 @@
 #include "H3_Game.h"
 
 H3_Window::H3_Window(H3_Game& game)
-    : m_game(game)
+    : de::Window_WGL()
+    , m_game(game)
 {
 }
 H3_Window::~H3_Window()
 {
+}
+
+void H3_Window::createEvent(const de::Recti& r_client)
+{
+    m_game.init(this);
+}
+
+void H3_Window::moveEvent( const de::MoveEvent& event )
+{
+    // Window move event
+}
+
+void H3_Window::resizeEvent( const de::ResizeEvent& event )
+{
+    m_game.resize(event.w,event.h);
+}
+
+void H3_Window::paintEvent( const de::PaintEvent& event )
+{
+    m_game.draw();
 }
 
 void H3_Window::timerEvent( const de::TimerEvent& event )
@@ -22,30 +43,6 @@ void H3_Window::timerEvent( const de::TimerEvent& event )
         m_game.updateWindowTitle();
     }
 }
-void H3_Window::resizeEvent( const de::ResizeEvent& event )
-{
-    auto driver = m_game.getDriver();
-    if (driver)
-    {
-        driver->resize(event.w,event.h);
-    }
-    else
-    {
-        DE_ERROR("No driver")
-    }
-    m_game.UI_resizeLayouts();
-}
-
-void H3_Window::moveEvent( const de::MoveEvent& event )
-{
-
-}
-
-void H3_Window::paintEvent( const de::PaintEvent& event )
-{
-    m_game.draw();
-}
-
 
 void H3_Window::keyPressEvent( const de::KeyPressEvent& event )
 {

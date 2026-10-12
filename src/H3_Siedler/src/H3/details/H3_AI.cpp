@@ -286,7 +286,6 @@ void CPU_doRound2( H3_Game & game )
                 }
             }
         }
-
     }
 
     std::vector< RoadMatch > roadMatches = CPU_findBestRoad( game );
@@ -308,7 +307,6 @@ void CPU_doRound2( H3_Game & game )
                 }
             }
         }
-
     }
 
     game.doEndTurn();
@@ -368,7 +366,6 @@ void CPU_doRoundN( H3_Game & game )
                 }
             }
         }
-
     }
 
     if ( player.state.bank.canBuyCard())

@@ -3,7 +3,7 @@
 
 namespace de {
 namespace gui {
-    
+
 // =====================================================================
 class Button : public Widget
 // =====================================================================
@@ -16,51 +16,49 @@ public:
     void onEvent( const Event& event ) override;
     void draw() override;
 
-    virtual void setText( const std::string& text )
-    {
-        m_text = text;
-    }
+    const std::string& getText() const { return m_text; }
+    void setText( const std::string& text ) { m_text = text; }
 
-    virtual void setTextColor( u32 color )
-    {
-        for (u32 & c : m_textColors) { c = color; }
-    }
+    void setTextColor( u32 color ) { for (u32 & c : m_textColors) { c = color; } }
+    void setTextColor( u32 color, int state ) { m_textColors[state] = color; }
 
-    virtual void setTextColor( u32 color, int state ) // = eWS_Idle
-    {
-        m_textColors[state] = color;
-    }
+    void setFillColor( u32 color ) { for (u32 & c : m_fillColors) { c = color; } }
+    void setFillColor( u32 color, int state ) { m_fillColors[ state ] = color; }
 
-    virtual void setOnClicked(const std::function<void(void)> & fnOnClicked )
+    int getRadius() const { return m_radius; }
+    void setRadius( int radius ) { m_radius = radius; }
+
+    void setBorderColor( u32 color ) { for (u32 & c : m_borderColors) { c = color; } }
+    void setBorderColor( u32 color, int state ) { m_borderColors[ state ] = color; }
+
+    int getBorderWidth() const { return m_borderWidth; }
+    void setBorderWidth( int width ) { m_borderWidth = width; }
+
+    const gpu::TexRef& getTexture() const { return m_tex; }
+    void setTexture( gpu::TexRef tex ) { m_tex = tex; }
+
+
+    void setOnClicked(const std::function<void(void)> & fnOnClicked )
     {
         m_fnOnClicked = fnOnClicked;
     }
 
-/*
-    void resizeEvent( const ResizeEvent& event ) override;
-    void paintEvent( const PaintEvent& event ) override;
-    void enterEvent( const EnterEvent& event ) override;
-    void leaveEvent( const LeaveEvent& event ) override;
-    //void mouseButtonEvent( const MouseButtonEvent& event ) override;
-    void mousePressEvent( const MousePressEvent& event ) override;
-    void mouseReleaseEvent( const MouseReleaseEvent& event ) override;
-    //void showEvent( ShowEvent const & event ) override;
-    //void hideEvent( HideEvent const & event ) override;
-    //void focusEvent( FocusEvent const & event ) override;
-    //void keyEvent( KeyEvent const & event ) override;
-    //void mouseMoveEvent( MouseMoveEvent const & event ) override;
-    //void mouseWheelEvent( MouseWheelEvent const & event ) override;
-*/
 protected:
+    // --- Fill ---
+    int m_radius;
+    gpu::TexRef m_tex;
+    std::array<u32,4> m_fillColors; // Idle,Hovered,Pressed,Released
+
+    // --- Border ---
+    int m_borderWidth;
+    std::array<u32,4> m_borderColors; // Idle,Hovered,Pressed,Released
+
     // --- Text ---
     std::string m_text;
     std::array<u32,4> m_textColors;
 
     // --- Callbacks ---
     std::function<void(void)> m_fnOnClicked;
-
-
-
 
 };
 

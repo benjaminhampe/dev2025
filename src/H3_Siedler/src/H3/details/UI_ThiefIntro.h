@@ -1,9 +1,10 @@
 #pragma once
 #include <H3/H3_Board.h>
+#include <de/gui/Panel.h>
 
 // Dialog to donate cards to the robber when (dice == 7).
 // =====================================================================
-class UI_ThiefIntro : public de::gui::Widget
+class UI_ThiefIntro : public de::gui::Panel
 // =====================================================================
 {
 public:

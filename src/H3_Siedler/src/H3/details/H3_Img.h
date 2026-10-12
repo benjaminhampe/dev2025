@@ -53,7 +53,6 @@ struct H3_Img
     };
 
     H3_Img();
-
     ~H3_Img();
 
     void init();

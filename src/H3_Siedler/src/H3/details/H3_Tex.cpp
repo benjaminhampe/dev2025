@@ -16,9 +16,14 @@ H3_Tex::add( H3_Game & game, eID texId, H3_Img::eID imgId,
     }
 
     auto img = H3_getImg( game, imgId );
-    auto texName = std::to_string(u32(texId));
+    auto texName = dbStr("h3t_",u32(texId));
     auto tex = m_driver->createTexture2D( texName, *img, so );
     m_textures.push_back(tex);
+
+    if (m_refs.find(texId) != m_refs.end())
+    {
+        DE_ERROR("Texture ",texId, " already exists")
+    }
     m_refs[ texId ] = de::gpu::TexRef(tex);
 }
 
@@ -45,14 +50,14 @@ H3_Tex::initLoadScreen( H3_Game & game )
         add( game, Satan, H3_Img::Satan, so);
     }
 
-    DE_OK("")
+    // DE_OK("")
 
-    DE_OK("m_refs.size() = ",m_refs.size())
-    DE_OK("m_textures.size() = ",m_textures.size())
-    for (size_t i = 0; i < m_textures.size(); ++i)
-    {
-        DE_OK("m_textures[",i,"] = ",m_textures[i]->str())
-    }
+    // DE_OK("m_refs.size() = ",m_refs.size())
+    // DE_OK("m_textures.size() = ",m_textures.size())
+    // for (size_t i = 0; i < m_textures.size(); ++i)
+    // {
+    //     DE_OK("m_textures[",i,"] = ",m_textures[i]->str())
+    // }
 }
 
 void
@@ -325,7 +330,6 @@ H3_Tex::init( H3_Game & game )
         m_textures.push_back(texDo2);
     }
 
-
     // gfx/ui/player
     {
         constexpr int N = 16;
@@ -395,367 +399,6 @@ H3_Tex::init( H3_Game & game )
     }
 }
 
-/*
-void
-H3_Tex::add( eID id,
-         const std::string& texName,
-         const std::string& uri,
-         const de::ImageLoadOptions& options,
-         const de::SamplerOptions& so )
-{
-    de::Image img;
-    dbLoadImage(img, uri, options );
-    //dbSaveImage(img, texName + ".png");
-    //dbSaveImage(img, texName + ".webp");
-    auto tex = m_driver->createTexture2D( texName, img, so );
-    m_textures.push_back(tex);
-    m_refs[ id ] = de::TexRef(tex);
-}
-
-void
-H3_Tex::init( H3_Game & game, de::VideoDriver* driver )
-{
-    m_driver = driver;
-
-    auto fromRecti = [](int img_w, int img_h, int x, int y, int w, int h )
-    {
-        return glm::vec4( float(x) / float(img_w),
-                          float(y) / float(img_h),
-                          float(w) / float(img_w),
-                          float(h) / float(img_h) );
-    };
-
-    std::string mediaDir = "media/H3/gfx/";
-
-    de::ImageLoadOptions options;
-    options.m_ThrowOnFail = true;
-
-    de::ImageLoadOptions optRGB = options;
-    optRGB.m_pixelFormat = de::PixelFormat::R8G8B8;
-
-    de::ImageLoadOptions optWood = options;
-    //optWood.m_Rotate90 = true;
-
-    de::SamplerOptions so;
-    so.setAF( 1.0f );
-    so.setMin( de::SamplerOptions::Minify::Linear );
-    so.setMag( de::SamplerOptions::Magnify::Linear );
-    so.setWrapR( de::SamplerOptions::Wrap::ClampToEdge );
-    so.setWrapS( de::SamplerOptions::Wrap::ClampToEdge );
-    so.setWrapT( de::SamplerOptions::Wrap::ClampToEdge );
-
-    add(Unknown,"h3_unknown", mediaDir + "unknown.jpg", options, so);
-    add(Benni,"h3_benni", mediaDir + "benni.png", options, so);
-
-    de::SamplerOptions soWood;
-    soWood.setAF( 1.0f );
-    soWood.setMin( de::SamplerOptions::Minify::LinearMipmapLinear );
-    soWood.setMag( de::SamplerOptions::Magnify::Linear );
-    soWood.setWrapR( de::SamplerOptions::Wrap::Repeat );
-    soWood.setWrapS( de::SamplerOptions::Wrap::Repeat );
-    soWood.setWrapT( de::SamplerOptions::Wrap::Repeat );
-    add(Wood,"h3_wood", mediaDir + "wood.webp", optWood, soWood);
-
-    // gfx/neu
-    {
-        std::string baseDir = mediaDir + "neu/";
-        add(Rolle,"h3_rolle", baseDir + "mainpanel.webp", options, so);
-        add(Rolle1,"h3_rolle1", baseDir + "rolle1.webp", options, so);
-        add(Rolle2,"h3_rolle2", baseDir + "rolle2.webp", options, so);
-    }
-
-    // gfx/tiles
-    {
-        std::string baseDir = mediaDir + "tiles/";
-        add(TileWater,"h3_tile_water", baseDir + "water.png", optRGB, so);
-        add(TileDesert,"h3_tile_desert", baseDir + "desert.png", optRGB, so);
-        add(TileA,"h3_tile_a", baseDir + "tile_a.jpg", optRGB, so);
-        add(TileB,"h3_tile_b", baseDir + "tile_b.jpg", optRGB, so);
-        add(TileC,"h3_tile_c", baseDir + "tile_c.jpg", optRGB, so);
-        add(TileD,"h3_tile_d", baseDir + "tile_d.jpg", optRGB, so);
-        add(TileE,"h3_tile_e", baseDir + "tile_e.png", optRGB, so);
-    }
-
-    // gfx/chips
-    {
-        std::string baseDir = mediaDir + "chip/";
-        add(Chip2,"chip2", baseDir + "chip_2.png", options, so );   // 0
-        add(Chip3,"chip3", baseDir + "chip_3.png", options, so );   // 1
-        add(Chip4,"chip4", baseDir + "chip_4.png", options, so );   // 2
-        add(Chip5,"chip5", baseDir + "chip_5.png", options, so );   // 3
-        add(Chip6,"chip6", baseDir + "chip_6.png", options, so );   // 4
-        add(Chip8,"chip8", baseDir + "chip_8.png", options, so );   // 5
-        add(Chip9,"chip9", baseDir + "chip_9.png", options, so );   // 6
-        add(Chip10,"chip10",baseDir + "chip_10.png", options, so);  // 7
-        add(Chip11,"chip11",baseDir + "chip_11.png", options, so);  // 8
-        add(Chip12,"chip12",baseDir + "chip_12.png", options, so);  // 9
-        add(ChipS,"chipS", baseDir + "chip_s.png", options, so );   // 10
-        add(ChipW,"chipW", baseDir + "chip_w.png", options, so );   // 11
-        add(Chip3v1,"chip3v1",baseDir+"chip_3v1.png",options, so ); // 12
-        add(ChipA,"chipA", baseDir + "chip_a.jpg", options, so );   // 13
-        add(ChipB,"chipB", baseDir + "chip_b.png", options, so );   // 14
-        add(ChipC,"chipC", baseDir + "chip_c.jpg", options, so );   // 15
-        add(ChipD,"chipD", baseDir + "chip_d.jpg", options, so );   // 16
-        add(ChipE,"chipE", baseDir + "chip_e.jpg", options, so );   // 17
-    }
-
-    // gfx/dice
-    {
-        constexpr int N = 6;
-        std::array<de::Image,N> images;
-        int i = 0;
-        for (auto & dice_img : images)
-        {
-            dbLoadImage(dice_img, dbStrJoin(mediaDir,"dice/dice_",i+1,".png" ), options );
-            i++;
-        }
-        const int w = images[0].w();
-        const int h = images[0].h();
-        de::Image img( w, h * N, de::PixelFormat::R8G8B8 );
-        int y = 0;
-        for (const auto & dice_img : images)
-        {
-            de::ImagePainter::drawImage(img, dice_img, 0, y, false);
-            y += h;
-        }
-        //dbSaveImage(img,"H3_dice.png");
-        //dbSaveImage(img,"H3_dice.webp");
-        auto texDice = m_driver->createTexture2D( "dice", img, so );
-        m_refs[ Dice1 ] = de::TexRef(texDice, de::Recti(1,1,    w-2,h-2));
-        m_refs[ Dice2 ] = de::TexRef(texDice, de::Recti(1,1+h,  w-2,h-2));
-        m_refs[ Dice3 ] = de::TexRef(texDice, de::Recti(1,1+2*h,w-2,h-2));
-        m_refs[ Dice4 ] = de::TexRef(texDice, de::Recti(1,1+3*h,w-2,h-2));
-        m_refs[ Dice5 ] = de::TexRef(texDice, de::Recti(1,1+4*h,w-2,h-2));
-        m_refs[ Dice6 ] = de::TexRef(texDice, de::Recti(1,1+5*h,w-2,h-2));
-        m_textures.push_back(texDice);
-    }
-
-    // Bonus
-    {
-        std::string baseDir = mediaDir + "ui/bonus/";
-        std::array<de::Image,2> imgs;
-        dbLoadImage(imgs[0], baseDir + "bonus_army.png", options );
-        dbLoadImage(imgs[1], baseDir + "bonus_road.png", options );
-        const int w = imgs[0].w();
-        const int h = imgs[0].h();
-        int x = 0;
-        int y = 0;
-        de::Image img( w, h * 2, de::PixelFormat::R8G8B8A8 );
-        de::ImagePainter::drawImage(img, imgs[0], x, y); y += h;
-        de::ImagePainter::drawImage(img, imgs[1], x, y); //y += h;
-        //dbSaveImage(img,"H3_bonus.png");
-        //dbSaveImage(img,"H3_bonus.webp");
-        auto texBonus = m_driver->createTexture2D( "h3_bonus", img, so );
-        m_refs[ BonusArmy ] = de::TexRef(texBonus, de::Recti(1,1,    w-2,h-2));
-        m_refs[ BonusRoad ] = de::TexRef(texBonus, de::Recti(1,1+2*h,w-2,h-2));
-        m_textures.push_back(texBonus);
-    }
-
-    // gfx/ui/card1
-    {
-        std::string baseDir = mediaDir + "ui/card1/";
-        std::array<de::Image,5> imgs;
-        dbLoadImage(imgs[0], baseDir + "card_a.jpg", options );
-        dbLoadImage(imgs[1], baseDir + "card_b.jpg", options );
-        dbLoadImage(imgs[2], baseDir + "card_c.jpg", options );
-        dbLoadImage(imgs[3], baseDir + "card_d.jpg", options );
-        dbLoadImage(imgs[4], baseDir + "card_e.jpg", options );
-        const int w = imgs[0].w();
-        const int h = imgs[0].h();
-        int x = 0;
-        int y = 0;
-        de::Image img( w, h * 5, de::PixelFormat::R8G8B8 );
-        de::ImagePainter::drawImage(img, imgs[0], x, y); y += h;
-        de::ImagePainter::drawImage(img, imgs[1], x, y); y += h;
-        de::ImagePainter::drawImage(img, imgs[2], x, y); y += h;
-        de::ImagePainter::drawImage(img, imgs[3], x, y); y += h;
-        de::ImagePainter::drawImage(img, imgs[4], x, y); //y += h;
-        //dbSaveImage(img,"H3_card1.png");
-        //dbSaveImage(img,"H3_card1.webp");
-        auto texCard1 = m_driver->createTexture2D( "h3_card1", img, so );
-        m_refs[ CardA ] = de::TexRef(texCard1, de::Recti(1,1,    w-2,h-2));
-        m_refs[ CardB ] = de::TexRef(texCard1, de::Recti(1,1+h,  w-2,h-2));
-        m_refs[ CardC ] = de::TexRef(texCard1, de::Recti(1,1+2*h,w-2,h-2));
-        m_refs[ CardD ] = de::TexRef(texCard1, de::Recti(1,1+3*h,w-2,h-2));
-        m_refs[ CardE ] = de::TexRef(texCard1, de::Recti(1,1+4*h,w-2,h-2));
-        m_textures.push_back(texCard1);
-    }
-
-    // gfx/ui/card2
-    {
-        std::string baseDir = mediaDir + "ui/card2/";
-        std::array<de::Image,3> imgs;
-        dbLoadImage(imgs[0], baseDir + "do_buyeventcard.png", options );
-        dbLoadImage(imgs[1], baseDir + "eventcard_knight.png", options );
-        dbLoadImage(imgs[2], baseDir + "eventcard_point.png", options );
-        const int w = imgs[0].w();
-        const int h = imgs[0].h();
-        int x = 0;
-        int y = 0;
-        de::Image img( w, h * 3, de::PixelFormat::R8G8B8A8 );
-        de::ImagePainter::drawImage(img, imgs[0], x, y); y += h;
-        de::ImagePainter::drawImage(img, imgs[1], x, y); y += h;
-        de::ImagePainter::drawImage(img, imgs[2], x, y); //y += h;
-        //dbSaveImage(img,"H3_card2.png");
-        //dbSaveImage(img,"H3_card2.webp");
-        auto texCard2 = m_driver->createTexture2D( "h3_card2", img, so );
-        m_refs[ DoBuyEventCard ] = de::TexRef(texCard2, de::Recti(1,1,    w-2,h-2));
-        m_refs[ EventCardKnight ]= de::TexRef(texCard2, de::Recti(1,1+h,  w-2,h-2));
-        m_refs[ EventCardPoint ] = de::TexRef(texCard2, de::Recti(1,1+2*h,w-2,h-2));
-        m_textures.push_back(texCard2);
-    }
-
-    // gfx/ui/do1
-    {
-        std::string baseDir = mediaDir + "ui/do1/";
-        std::array<de::Image,7> imgs;
-        dbLoadImage(imgs[0], baseDir + "do_bank.png", options );
-        dbLoadImage(imgs[1], baseDir + "do_dice.png", options );
-        dbLoadImage(imgs[2], baseDir + "do_endturn.png", options );
-        dbLoadImage(imgs[3], baseDir + "do_playcard.png", options );
-        dbLoadImage(imgs[4], baseDir + "do_trade.png", options );
-        dbLoadImage(imgs[5], baseDir + "do_redo.png", options );
-        dbLoadImage(imgs[6], baseDir + "do_undo.png", options );
-        const int w = imgs[0].w();
-        const int h = imgs[0].h();
-        int x = 0;
-        int y = 0;
-        de::Image img( w, h * 6, de::PixelFormat::R8G8B8A8 );
-        de::ImagePainter::drawImage(img, imgs[0], x, y); y += h;
-        de::ImagePainter::drawImage(img, imgs[1], x, y); y += h;
-        de::ImagePainter::drawImage(img, imgs[2], x, y); y += h;
-        de::ImagePainter::drawImage(img, imgs[3], x, y); y += h;
-        de::ImagePainter::drawImage(img, imgs[4], x, y); y += h;
-        de::ImagePainter::drawImage(img, imgs[5], x, y); x += w/2;
-        de::ImagePainter::drawImage(img, imgs[6], x, y);
-        //dbSaveImage(img,"H3_do1.png");
-        //dbSaveImage(img,"H3_do1.webp");
-        auto texDo1 = m_driver->createTexture2D( "h3_do1", img, so );
-        m_refs[ DoBank ]    = de::TexRef(texDo1, de::Recti(1,1,    w-2,h-2));
-        m_refs[ DoDice ]    = de::TexRef(texDo1, de::Recti(1,1+h,  w-2,h-2));
-        m_refs[ DoEndTurn ] = de::TexRef(texDo1, de::Recti(1,1+2*h,w-2,h-2));
-        m_refs[ DoPlayCard ]= de::TexRef(texDo1, de::Recti(1,1+3*h,w-2,h-2));
-        m_refs[ DoTrade ]   = de::TexRef(texDo1, de::Recti(1,1+4*h,w-2,h-2));
-        m_refs[ DoRedo ]    = de::TexRef(texDo1, de::Recti(1,1+5*h,w/2-2,h-2));
-        m_refs[ DoUndo ]    = de::TexRef(texDo1, de::Recti(1 + w/2,1+5*h,w/2-2,h-2));
-        m_textures.push_back(texDo1);
-    }
-
-    // Do2
-    {
-        std::string baseDir = mediaDir + "ui/do2/";
-        std::array<de::Image,6> imgs;
-        dbLoadImage(imgs[0], baseDir + "do_buycity.png", options );
-        dbLoadImage(imgs[1], baseDir + "do_buyfarm.png", options );
-        dbLoadImage(imgs[2], baseDir + "do_buyroad.png", options );
-        dbLoadImage(imgs[3], baseDir + "do_cancel.png", options );
-        dbLoadImage(imgs[4], baseDir + "do_rob.png", options );
-        dbLoadImage(imgs[5], baseDir + "template.png", options );
-        const int w = imgs[0].w();
-        const int h = imgs[0].h();
-        int x = 0;
-        int y = 0;
-        de::Image img( w, h * 6, de::PixelFormat::R8G8B8A8 );
-        de::ImagePainter::drawImage(img, imgs[0], x, y); y += h;
-        de::ImagePainter::drawImage(img, imgs[1], x, y); y += h;
-        de::ImagePainter::drawImage(img, imgs[2], x, y); y += h;
-        de::ImagePainter::drawImage(img, imgs[3], x, y); y += h;
-        de::ImagePainter::drawImage(img, imgs[4], x, y); y += h;
-        de::ImagePainter::drawImage(img, imgs[5], x, y); //y += h;
-        //dbSaveImage(img,"H3_do2.png");
-        //dbSaveImage(img,"H3_do2.webp");
-        auto texDo2 = m_driver->createTexture2D( "h3_do2", img, so );
-        m_refs[ DoBuyCity ] = de::TexRef(texDo2, de::Recti(1,1,    w-2,h-2));
-        m_refs[ DoBuyFarm ] = de::TexRef(texDo2, de::Recti(1,1+h,  w-2,h-2));
-        m_refs[ DoBuyRoad ] = de::TexRef(texDo2, de::Recti(1,1+2*h,w-2,h-2));
-        m_refs[ DoCancel ]  = de::TexRef(texDo2, de::Recti(1,1+3*h,w-2,h-2));
-        m_refs[ DoRob ]     = de::TexRef(texDo2, de::Recti(1,1+4*h,w-2,h-2));
-        m_refs[ DoTemplate ]= de::TexRef(texDo2, de::Recti(1,1+5*h,w-2,h-2));
-        m_textures.push_back(texDo2);
-    }
-
-    // gfx/ui/stat
-    {
-        std::string baseDir = mediaDir + "ui/stat/";
-        std::array<de::Image,5> imgs;
-        dbLoadImage(imgs[0], baseDir + "stat_card.png", options );
-        dbLoadImage(imgs[1], baseDir + "stat_city.png", options );
-        dbLoadImage(imgs[2], baseDir + "stat_farm.png", options );
-        dbLoadImage(imgs[3], baseDir + "stat_point.png", options );
-        dbLoadImage(imgs[4], baseDir + "stat_road.png", options );
-        const int w = imgs[0].w();
-        const int h = imgs[0].h();
-        int x = 0;
-        int y = 0;
-        de::Image img( w, h * 5, de::PixelFormat::R8G8B8A8 );
-        de::ImagePainter::drawImage(img, imgs[0], x, y); y += h;
-        de::ImagePainter::drawImage(img, imgs[1], x, y); y += h;
-        de::ImagePainter::drawImage(img, imgs[2], x, y); y += h;
-        de::ImagePainter::drawImage(img, imgs[3], x, y); y += h;
-        de::ImagePainter::drawImage(img, imgs[4], x, y); // y += h;
-        //dbSaveImage(img,"H3_stat.png");
-        //dbSaveImage(img,"H3_stat.webp");
-        auto texStat = m_driver->createTexture2D( "h3_stat", img, so );
-        m_refs[ StatCard ] = de::TexRef(texStat, de::Recti(1,1,    w-2,h-2));
-        m_refs[ StatCity ] = de::TexRef(texStat, de::Recti(1,1+2*h,w-2,h-2));
-        m_refs[ StatFarm ] = de::TexRef(texStat, de::Recti(1,1+2*h,w-2,h-2));
-        m_refs[ StatVic ]  = de::TexRef(texStat, de::Recti(1,1+3*h,w-2,h-2));
-        m_refs[ StatRoad ] = de::TexRef(texStat, de::Recti(1,1+4*h,w-2,h-2));
-        m_textures.push_back(texStat);
-    }
-
-
-}
-*/
-/*
-// =======================================================================
-// Textures
-// =======================================================================
-de::gpu::TexRef
-H3_getTex(const H3_Game& game, const std::string & caller, const H3_Tex::eID id )
-{
-    const auto it = game.m_tex.m_refs.find(id);
-    if (it == game.m_tex.m_refs.end())
-    {
-        std::ostringstream o;
-        o << "No texRef with id " << static_cast<uint32_t>(id) << ", caller("<<caller<<")";
-        throw std::runtime_error(o.str());
-    }
-
-    if (it->second.empty())
-    {
-        std::ostringstream o;
-        o << "Got empty texRef with id " << static_cast<uint32_t>(id);
-        throw std::runtime_error(o.str());
-    }
-
-    return it->second;
-}
-
-// =======================================================================
-// Textures
-// =======================================================================
-de::gpu::TexRef
-H3_getTex(const H3_Game& game, const H3_Tex::eID id )
-{
-    const auto it = game.m_tex.m_refs.find(id);
-    if (it == game.m_tex.m_refs.end())
-    {
-        std::ostringstream o;
-        o << "No texRef with id " << static_cast<uint32_t>(id);
-        throw std::runtime_error(o.str());
-    }
-
-    if (it->second.empty())
-    {
-        std::ostringstream o;
-        o << "Got empty texRef with id " << static_cast<uint32_t>(id);
-        throw std::runtime_error(o.str());
-    }
-
-    return it->second;
-}
-*/
 de::gpu::TexRef
 H3_getDiceTex(const H3_Game& game, const int diceValue )
 {

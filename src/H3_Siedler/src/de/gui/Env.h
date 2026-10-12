@@ -15,15 +15,18 @@ public:
     ~Env();
     void init( gpu::VideoDriver* driver);
     void draw();
+
     int getScalePc() const { return m_iScalePc; }
     void setScalePc( int scalePercent ) { m_iScalePc = scalePercent; }
 
     int getMouseX() const;
     int getMouseY() const;
     int getScreenWidth() const;
-    int getScreenHeight() const;   
+    int getScreenHeight() const;
     gpu::VideoDriver* getVideoDriver();
+
     void addTopLevelWidget( Widget* widget );
+
     void clear();
     void onEvent( const Event & event );
     Widget* pick( int mx, int my );

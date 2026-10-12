@@ -8,13 +8,7 @@ namespace gui {
 // =====================================================================
 Panel::Panel( Env* env, Widget* parent, u32 id, const Recti& r )
     // =====================================================================
-    : m_flags(eWF_Visible | eWF_Enabled)
-    , m_id(id)
-    , m_pos(r.x,r.y)
-    , m_size(r.w,r.h)
-    , m_minimumSize(r.w,r.h)
-    , m_env(env)
-    , m_parent(parent)
+    : Widget(env,parent,id,r)
     // --- Fill ---
     , m_radius(0)
     , m_tex()
@@ -22,29 +16,28 @@ Panel::Panel( Env* env, Widget* parent, u32 id, const Recti& r )
     // --- Border ---
     , m_borderWidth(1)
     , m_borderColors{ 0,0,0,0 }
-    // --- Text ---
-    , m_font("Postamt",16)
 {
-    if (!m_env)
-    {
-        std::ostringstream o;
-        o << "No Env given to Panel id " << id;
-        throw std::runtime_error(o.str());
-    }
+    setFillColor(dbRGB(255,255,255), eWS_Idle);
+    setFillColor(dbRGB(255,255,255), eWS_Hovered);
+    setFillColor(dbRGB(255,255,255), eWS_Pressed);
+    setFillColor(dbRGB(255,255,255), eWS_Released);
 
-    if (m_parent)
-    {
-        m_parent->addChild( this );
-    }
-    else
-    {
-        m_env->addTopLevelWidget( this );
-    }
+    setBorderColor(dbRGB(0,0,0), eWS_Idle);
+    setBorderColor(dbRGB(0,0,0), eWS_Hovered);
+    setBorderColor(dbRGB(0,0,0), eWS_Pressed);
+    setBorderColor(dbRGB(0,0,0), eWS_Released);
+
+    // setTextColor(dbRGB(0,0,0), eWS_Idle);
+    // setTextColor(dbRGB(0,0,0), eWS_Hovered);
+    // setTextColor(dbRGB(0,0,0), eWS_Pressed);
+    // setTextColor(dbRGB(0,0,0), eWS_Released);
+
+    setPickable(false);
 }
 
 Panel::~Panel()
 {
-    clearChildren();
+
 }
 
 void Panel::draw()
@@ -134,7 +127,7 @@ void Panel::onEvent( const Event& event )
     }
 }
 
-Panel* Panel::pick( int mx, int my )
+Widget* Panel::pick( int mx, int my )
 {
     // Pick nothing if container is invisible, including all children.
     if (!isVisible()) return nullptr;
@@ -158,8 +151,6 @@ Panel* Panel::pick( int mx, int my )
         }
     }
 
-
-
     // No child was picked, but we are still inside this widget
     // So return this pointer when we are pickable, else nullptr.
     if (isPickable())
@@ -171,77 +162,6 @@ Panel* Panel::pick( int mx, int my )
         return nullptr; // A panel
     }
 }
-
-Posi Panel::getAbsolutePos() const
-{
-    if (m_parent)
-    {
-        return m_pos + m_parent->getAbsolutePos();
-    }
-    else
-    {
-        return m_pos;
-    }
-}
-
-void Panel::clearChildren()
-{
-    for (auto & child : m_children)
-    {
-        delete child;
-    }
-    m_children.clear();
-}
-
-void Panel::addChild( Panel* child )
-{
-    if (!child) return; // Nothing todo;
-
-    auto it = std::find_if( m_children.begin(), m_children.end(),
-        [=](const auto cached) { return cached == child; });
-    if (it != m_children.end())
-    {
-        DE_WARN("Child already added ", child->getName())
-        return;
-    }
-
-    m_children.push_back(child);
-}
-
-/*
-Recti Panel::getAbsolutePos() const
-{
-    if (m_parent)
-    {
-        const Recti r_parent = m_parent->getAbsolutePos();
-
-        auto pos = Recti( m_pos.x + r_parent.x,
-                         m_pos.y + r_parent.y,
-                         m_pos.w,
-                         m_pos.h);
-
-// Clipping
-#ifdef USE_BENNI_CLIPPING
-        if (pos.x2() > pp.x2() )
-        {
-            pos.w = pos.x - pp.x2() + 1;
-            if (pos.w < 0) pos.w = 0;
-        }
-
-        if (pos.y2() > pp.y2() )
-        {
-            pos.h = pos.y - pp.y2() + 1;
-            if (pos.h < 0) pos.h = 0;
-        }
-#endif
-        return pos;
-    }
-    else
-    {
-        return m_pos;
-    }
-}*/
-
 
 } // end namespace gui.
 } // end namespace de.

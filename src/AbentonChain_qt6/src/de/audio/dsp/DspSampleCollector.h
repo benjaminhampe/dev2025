@@ -12,6 +12,7 @@ class DspSampleCollector : public IDspChainElement
 // ===================================================================
 {
     IDspChainElement* m_inputSignal;
+    u32 m_sampleRate;
     u32 m_blockSize;
     u32 m_blockCount; // Blocks we collect before a new fft calc. 1 = fft every block
     u32 m_blockIndex;
@@ -72,6 +73,7 @@ public:
     DspSampleCollector();
     ~DspSampleCollector();
 
+    uint32_t sampleRate() const { return m_sampleRate; }
     uint32_t blockSize() const { return m_blockSize; }
     uint32_t fftSize() const { return m_fftSize; }
     uint32_t cols() const { return m_cols; }

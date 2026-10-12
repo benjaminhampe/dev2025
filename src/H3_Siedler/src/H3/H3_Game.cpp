@@ -10,11 +10,8 @@
 #include <H3/details/UI_WinnerScreen.h>
 #include <de_opengl.h>
 #include <de/gpu/GL_debug_layer.h>
-#include "../res/resource.h" // setWindowIcon(aaaa)
 
 #include "H3_Window_wgl.h"
-
-
 
 void createSMeshTile( de::smesh::SMeshBuffer & o, de::gpu::VideoDriver* driver,
     glm::vec3 tileSize, de::Image bumpMap, const de::gpu::TexRef& diffuseMap )
@@ -137,33 +134,24 @@ bool H3_Game::run()
     return m_bShouldRun && m_window && m_window->run();
 }
 
-bool H3_Game::init()
+void H3_Game::resize(int w, int h)
 {
-    DE_OK("")
-    dbRandomize();
-
-    m_window = new H3_Window(*this);
-
-    de::WindowOptions wo;
-    wo.width = 1024;
-    wo.height = 768;
-    if ( !m_window->create( wo ) )
+    if (m_driver)
     {
-        DE_ERROR("Cant create window, abort main().")
-        delete m_window;
-        m_window = nullptr;
-        return false;
+        m_driver->resize(w,h);
+        UI_resizeLayouts();
     }
+    else
+    {
+        DE_ERROR("No driver")
+    }
+}
 
-    m_window->setResizable(true);
-    m_window->setWindowIcon( aaaa );
-    m_window->setWindowTitle( "Die Siedler von Satan 3D | <benjaminhampe@gmx.de>" );
-    m_window->run();
-    m_window->bringToFront();
-    m_window->run();
+bool H3_Game::init( de::Window* window )
+{
+    DE_INFO("")
 
-    DE_INFO("Create opengl video driver.")
-
+    m_window = window;
     m_driver = new de::gpu::VideoDriver();
 
     int w = m_window->getClientRect().w;
@@ -180,22 +168,22 @@ bool H3_Game::init()
         return false;
     }
 
-    m_window->setPaintEnabled(true);
-
     // =======================
     // === Draw LoadScreen ===
     // =======================
     //m_img.initLoadScreen();
     m_img.loadLoadScreen();
     m_tex.initLoadScreen( *this );
-    run();
-    m_driver->beginRender();
-    w = m_driver->getScreenWidth();
-    h = m_driver->getScreenHeight();
-    m_driver->getScreenRenderer()->draw2DRect( de::Recti(0,0,w,h), 0xFFFFFFFF, getTex( H3_Tex::Satan, "LoadScreen" ) );
-    m_driver->endRender();
-    m_window->swapBuffers();
-    run();
+
+    // m_window->update();
+    // //run();
+    // m_driver->beginRender();
+    // w = m_driver->getScreenWidth();
+    // h = m_driver->getScreenHeight();
+    // m_driver->getScreenRenderer()->draw2DRect( de::Recti(0,0,w,h), 0xFFFFFFFF, getTex( H3_Tex::Satan, "LoadScreen" ) );
+    // m_driver->endRender();
+    // m_window->swapBuffers();
+    //run();
 
     // ======================
     // === Load images ===
@@ -385,19 +373,20 @@ bool H3_Game::init()
     auto e = &m_guienv;
     auto n = nullptr;
     auto r = de::Recti(100,100,800,600 );
-    m_uiMainmenu = new UI_MainMenu( g, e, n, 0, r );
+    auto k = 1;
+    m_uiMainmenu = new UI_MainMenu( g, e, n, k++, r );
     m_uiMainmenu->setVisible( false );
 
-    m_uiWorldCreator = new UI_WorldCreator( g, e, n, 0, r );
+    m_uiWorldCreator = new UI_WorldCreator( g, e, n, k++, r );
     m_uiWorldCreator->setVisible( false );
 
-    m_uiActions = new UI_Actions( g, e, n, 0, r );
+    m_uiActions = new UI_Actions( g, e, n, k++, r );
     m_uiActions->setVisible( false );
 
-    m_uiThiefIntroPanel = new UI_ThiefIntro( g, e, n, 0, r );
+    m_uiThiefIntroPanel = new UI_ThiefIntro( g, e, n, k++, r );
     m_uiThiefIntroPanel->setVisible( false );
 
-    m_uiWinnerScreen = new UI_WinnerScreen( g, e, n, 0, r );
+    m_uiWinnerScreen = new UI_WinnerScreen( g, e, n, k++, r );
     m_uiWinnerScreen->setVisible(false);
 
     m_uiWorldCreator->setPreset( H3_Cfg::createStandard() );
@@ -405,6 +394,8 @@ bool H3_Game::init()
     // m_fpsTimerId = m_device->startTimer(33);
     m_capTimerId = m_window->startTimer(200);
     m_bPaintEvents = true;
+
+    m_driver->dumpTextures();
 
     enterStartMenu();
     return true;
@@ -451,6 +442,9 @@ void H3_Game::draw()
     if ( isRunning() )
     {
         drawSkybox();
+
+        // driver->useTexture(nullptr,0); // Skybox does not use driver for texture handling, so driver is out of sync.
+
         drawSun();
         drawTiles();
         drawPortBridges();
@@ -2131,8 +2125,20 @@ void H3_Game::toggleHelpWindow()
 
 void H3_Game::UI_resizeLayouts()
 {
+    if (!m_driver)
+    {
+        DE_ERROR("No driver")
+        return;
+    }
+
+    auto scr_w = m_driver->getScreenWidth();
+    auto scr_h = m_driver->getScreenHeight();
+
+    int pw = scr_w / 6;
+    int ph = scr_h / 2;
+
     if (m_uiMainmenu)
-        m_uiMainmenu->resizeLayout();
+        m_uiMainmenu->resize(0,0,pw,ph);
 
     if (m_uiActions)
         m_uiActions->resizeLayout();
@@ -2235,7 +2241,6 @@ void H3_Game::drawTiles()
     auto driver = getDriver();
     driver->beginPerf("Tiles");
 
-    // m_bUpdateDrawCall_Tiles = true;
     if (m_bUpdateDrawCall_Tiles)
     {
         // ========================
@@ -2252,7 +2257,7 @@ void H3_Game::drawTiles()
         auto mkHMeshDrawCall = [&]( de::gpu::HMesh & hmesh, H3_TileType tt )
         {
             hmesh.m_instanceMat.clear();
-            //hmesh.m_instanceAngle60.clear();
+
             for (const auto& t : m_tiles)
             {
                 if (t.tileType.value != tt) { continue; }
@@ -2267,7 +2272,6 @@ void H3_Game::drawTiles()
                 trs.update();
 
                 hmesh.m_instanceMat.push_back( trs.modelMat );
-                //m_instanceAngle60.emplace_back( tile.angle60 );
             }
 
             //DE_OK(tt.toString()," : instance = ", hmesh.m_instanceMat.size())

@@ -21,7 +21,8 @@
 
 namespace de {
 
-static bool g_isTimerValid = true;
+LRESULT CALLBACK
+WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 namespace {
 
@@ -32,7 +33,7 @@ void de_killTimer( uint32_t timerId )
         return;
     }
 
-    DE_DEBUG( "de_killTimer(",timerId,")" )
+    // DE_DEBUG("timerId(",timerId,")")
 
     timeKillEvent( timerId );
 
@@ -85,7 +86,38 @@ uint32_t de_startTimer( uint32_t ms = 10, LPTIMECALLBACK timeCallback = nullptr,
 
         return 0;
     }
+
+    // DE_DEBUG("timerId(",timerId,")")
     return timerId;
+}
+
+
+std::wstring makeUniqueWindowTitle() {
+    // 64‑bit RNG
+    static thread_local std::mt19937_64 rng{ std::random_device{}() };
+    uint64_t r = rng();
+
+    // Combine timestamp + random
+    uint64_t t = static_cast<uint64_t>(GetTickCount64());
+
+    wchar_t buf[64];
+    swprintf(buf, 64, L"win_%016llX_%016llX", r, t);
+
+    return std::wstring(buf);
+}
+
+std::wstring makeUniqueWindowClass() {
+    // 64‑bit RNG
+    static thread_local std::mt19937_64 rng{ std::random_device{}() };
+    uint64_t r = rng();
+
+    // Combine timestamp + random
+    uint64_t t = static_cast<uint64_t>(GetTickCount64());
+
+    wchar_t buf[64];
+    swprintf(buf, 64, L"WGL_class_%016llX_%016llX", r, t);
+
+    return std::wstring(buf);
 }
 
 } // end namespace.
@@ -193,22 +225,26 @@ struct Window_WGL_Internals
 
     void killTimers()
     {
-        g_isTimerValid = false;
-        for (uint32_t id : m_timerIds) { de_killTimer( id ); }
+        // DE_DEBUG("")
+
+        for (uint32_t id : m_timerIds)
+        {
+            de_killTimer( id );
+        }
         m_timerIds.clear();
-        Sleep(100);
-        DE_DEBUG("")
+
+        // Sleep(100);
     }
 
     void destroy()
     {
-        DE_DEBUG("")
+        // DE_DEBUG("")
 
         killTimers();
 
         m_bPaintEventEnabled = false;
 
-        Sleep(100);
+        Sleep(10);
 
         if (m_hBackgroundBitmap)
         {
@@ -223,18 +259,28 @@ struct Window_WGL_Internals
         //     m_vg = nullptr;
         // }
 
-        HGLRC current = wglGetCurrentContext();
-        if (current == hGL)
-            wglMakeCurrent(nullptr, nullptr); // nur deinen Kontext entbinden
+        if (hGL)
+        {
+            HGLRC current = wglGetCurrentContext();
+            if (current == hGL)
+                wglMakeCurrent(nullptr, nullptr); // nur deinen Kontext entbinden
 
-        wglDeleteContext(hGL);
-        hGL = nullptr;
+            wglDeleteContext(hGL);
+            hGL = nullptr;
+        }
 
-        ReleaseDC(hWnd, hDC);
-        hDC = nullptr;
+        if (hDC)
+        {
+            ReleaseDC(hWnd, hDC);
+            hDC = nullptr;
+        }
 
-        DestroyWindow(hWnd);
-        hWnd = nullptr;
+        if (hWnd)
+        {
+            HWND h2 = hWnd;
+            hWnd = nullptr; // Must set this to nullptr before call to DestroyWindow
+            DestroyWindow(h2); // -> or infinite WM_CLOSE loop.
+        }
     }
 };
 
@@ -252,6 +298,12 @@ Window_WGL::~Window_WGL()
     delete _d;
 }
 
+
+void Window_WGL::destroy()
+{
+    _d->destroy();
+}
+
 void Window_WGL::killTimer( uint32_t id )
 {
     de_killTimer( id );
@@ -263,7 +315,7 @@ Window_WGL::startTimer( uint32_t ms, bool singleShot )
     return de_startTimer( ms,
         [] ( UINT timerId, UINT uMsg, DWORD_PTR dwUser, DWORD_PTR dw1, DWORD_PTR dw2 )
         {
-            if ( !g_isTimerValid ) return;
+            // if ( !g_isTimerValid ) return;
             if ( !dwUser ) return;
             auto baseClass = reinterpret_cast<Window_WGL*>(dwUser);
             if (baseClass)
@@ -276,17 +328,6 @@ Window_WGL::startTimer( uint32_t ms, bool singleShot )
         DWORD_PTR( this ), singleShot );
 }
 
-/*
-IEventReceiver* Window_WGL::getEventReceiver()
-{
-    return _d->m_receiver;
-}
-
-void Window_WGL::setEventReceiver( IEventReceiver* receiver )
-{
-    _d->m_receiver = receiver;
-}
-*/
 void Window_WGL::setPaintEnabled(bool enabled)
 {
     _d->m_bPaintEventEnabled = enabled;
@@ -300,79 +341,11 @@ bool Window_WGL::isPaintEnabled() const
 bool Window_WGL::getKeyState( const EKEY ekey ) const
 {
     return _d->m_keyStates[ekey];
-    //int winKey = convert_EKEY_to_WinVK( ekey );
-    //return 0 != GetKeyState( winKey );
 }
 
 void Window_WGL::setKeyState( const EKEY ekey, const bool bPressed )
 {
     _d->m_keyStates[ekey] = bPressed;
-    //int winKey = convert_EKEY_to_WinVK( ekey );
-    //return 0 != GetKeyState( winKey );
-}
-
-/*
-void Window_WGL::onEvent( const Event& event )
-{
-    if (event.type == EventType::KEY_PRESS)
-    {
-        auto evt = event.keyPressEvent;
-        setKeyState( (EKEY)evt.key, true);
-    }
-    else if (event.type == EventType::KEY_RELEASE)
-    {
-        auto evt = event.keyReleaseEvent;
-        setKeyState( (EKEY)evt.key, false);
-    }
-
-    if (_d->m_receiver)
-    {
-        _d->m_receiver->onEvent(event);
-    }
-    else
-    {
-        DE_WARN("No _d->m_receiver")
-    }
-}
-*/
-
-void Window_WGL::destroy()
-{
-/*
-    DE_DEBUG("")
-
-    killTimers();
-
-    _d->m_bPaintEventEnabled = false;
-
-    Sleep(100);
-
-    if (_d->m_hBackgroundBitmap)
-    {
-        DeleteObject(_d->m_hBackgroundBitmap);
-        _d->m_hBackgroundBitmap = nullptr; // Optional but good practice
-    }
-
-    // if (m_vg)
-    // {
-    //     wglMakeCurrent(_d->hDC, _d->hGL);
-    //     nvgDeleteGL3(m_vg);
-    //     m_vg = nullptr;
-    // }
-
-    HGLRC current = wglGetCurrentContext();
-    if (current == _d->m_hRC)
-        wglMakeCurrent(nullptr, nullptr); // nur deinen Kontext entbinden
-
-    wglDeleteContext(_d->m_hRC);
-    _d->m_hRC = nullptr;
-
-    ReleaseDC(_d->m_hWnd, _d->m_hDC);
-    _d->m_hDC = nullptr;
-
-    DestroyWindow(_d->m_hWnd);
-    _d->m_hWnd = nullptr;
-*/
 }
 
 void Window_WGL::yield( int ms )
@@ -390,26 +363,24 @@ void Window_WGL::requestClose()
     }
 }
 
-void Window_WGL::makeCurrent()
+void Window_WGL::makeCurrent( bool bRelease )
 {
-    // Done in WndProc
 /*
-    // wglMakeCurrent(ps.hdc, self->_d->glrc);
-    if (!_d->m_hDC)
+    if (bRelease)
     {
-        DE_ERROR("No _d->m_hDC")
-        return;
+        wglMakeCurrent(nullptr,nullptr);
     }
-    if (!_d->m_hRC)
+    else
     {
-        DE_ERROR("No _d->m_hRC")
-        return;
+        if (!_d->hDC) { DE_ERROR("No hDC") return; }
+        if (!_d->hGL) { DE_ERROR("No hGL") return; }
+        wglMakeCurrent(_d->hDC, _d->hGL);
     }
-    wglMakeCurrent(_d->m_hDC, _d->m_hRC);
 */
 }
 void Window_WGL::swapBuffers()
 {
+    if (!_d->hDC) { DE_ERROR("No hDC") return; }
     // glFlush();
 #if 0
     // TODO: rework this. Seems like enabled vsync = 1 leads to 30 fps, not 60
@@ -441,7 +412,7 @@ void Window_WGL::swapBuffers()
     }
     //}
 #endif
-    // bool ok = (SwapBuffers( _d->m_hDC ) == TRUE);
+    // bool ok = (SwapBuffers( _d->hDC ) == TRUE);
 }
 
 void Window_WGL::update()
@@ -449,88 +420,470 @@ void Window_WGL::update()
     InvalidateRect(_d->hWnd, nullptr, FALSE);
 }
 
-/*
-static HGLRC InitGL (HWND Wnd)
+bool Window_WGL::create( WindowOptions params )
 {
-    //  We need to make sure the window create in a suitable DC format
-    PIXELFORMATDESCRIPTOR pfd =
-        {
-            sizeof(PIXELFORMATDESCRIPTOR),
-            1,
-            PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL | PFD_DOUBLEBUFFER, //Flags
-            PFD_TYPE_RGBA, // The kind of framebuffer. RGBA or palette.
-            32, // Colordepth of the framebuffer.
-            0, 0, 0, 0, 0, 0,
-            0,
-            0,
-            0,
-            0, 0, 0, 0,
-            24, // Number of bits for the depthbuffer
-            8, // Number of bits for the stencilbuffer
-            0, // Number of Aux buffers in the framebuffer.
-            PFD_MAIN_PLANE,
-            0,
-            0, 0, 0
-        };
+    int desktopW = GetSystemMetrics( SM_CXSCREEN );
+    int desktopH = GetSystemMetrics( SM_CYSCREEN );
 
-    HDC ourWindowHandleToDeviceContext = GetDC(Wnd); // Get a DC for our window
-    int letWindowsChooseThisPixelFormat = ChoosePixelFormat(ourWindowHandleToDeviceContext, &pfd); // Let windows select an appropriate pixel format
-    HGLRC ourOpenGLRC = 0;
-    if (SetPixelFormat(ourWindowHandleToDeviceContext, letWindowsChooseThisPixelFormat, &pfd))
+    int windowW = desktopW / 2 - 100;
+    int windowH = desktopH - 300;
+
+    const HMODULE hInstance = GetModuleHandleW(nullptr);
+    const HWND parentHwnd = (HWND)params.parent; //(HWND)parent;
+    DE_DEBUG("Created parentHwnd ",(void*)parentHwnd)
+
+    static const std::wstring className = makeUniqueWindowClass();
+    static bool reg = false;
+    if (!reg)
     {
-        ourOpenGLRC = wglCreateContext(ourWindowHandleToDeviceContext);
-        if (ourOpenGLRC != 0)
+        WNDCLASSEXW wc = {0};
+        wc.cbSize = sizeof(WNDCLASSEXW);
+        wc.style = CS_HREDRAW | CS_VREDRAW | CS_DBLCLKS | CS_OWNDC; //  | CS_OWNDC
+        wc.cbClsExtra = 0;
+        wc.cbWndExtra = 0;
+        wc.hInstance = hInstance;
+        wc.lpszClassName = className.c_str(); // lpszClassName;
+        wc.lpfnWndProc = WndProc; // WndProcTest; // WndProc; DefWindowProc;
+
+        ATOM a = RegisterClassExW(&wc);
+
+        if (a == 0)
         {
-            wglMakeCurrent(ourWindowHandleToDeviceContext, ourOpenGLRC); // Make our render context current
-            // glEnable(GL_TEXTURE_2D); // Enable Texture Mapping
-            // glShadeModel(GL_SMOOTH); // Enable Smooth Shading
-            glClearColor(0.0f, 0.0f, 0.0f, 0.0f); // Black Background
-            glClearDepth(1.0f); // Depth Buffer Setup
-            glEnable(GL_DEPTH_TEST); // Enables Depth Testing
-            glDepthFunc(GL_LEQUAL); // The Type Of Depth Testing To Do
-            // glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST); // Really Nice Perspective Calculations
+            DWORD err = GetLastError();
+            if (err != ERROR_CLASS_ALREADY_EXISTS)
+            {
+                DE_ERROR("Cannot register class, err = ",err)
+                return false;
+            }
         }
+
+        DE_DEBUG("Registered window class ",de_mbstr(className))
+        reg = true;
     }
-    ReleaseDC(Wnd, ourWindowHandleToDeviceContext); // Release the window device context we are done
-    return ourOpenGLRC; // Return the render context
-}
-*/
 
-LRESULT CALLBACK
-WndProcTest(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
-{
-    Window_WGL* self = nullptr;
+    // DWORD dwStyle = WS_VISIBLE | WS_TABSTOP;//  | WS_CLIPCHILDREN
+    // if (parentHwnd) dwStyle |= WS_CHILD;
+    // DWORD dwExStyle = (parentHwnd)
+    //                 ? WS_EX_CONTROLPARENT
+    //                 : WS_EX_OVERLAPPEDWINDOW;
 
-    if (uMsg == WM_NCCREATE)
+    // 1. Definiere die normalen Window Styles (dwStyle)
+    DWORD dwStyle = WS_VISIBLE | WS_TABSTOP;
+
+    if (parentHwnd)
     {
-        LPCREATESTRUCTW cs = reinterpret_cast<LPCREATESTRUCTW>(lParam);
-        self = reinterpret_cast<Window_WGL*>(cs->lpCreateParams);
-        SetWindowLongPtrW(hwnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(self));
-        DE_DEBUG("WM_NCCREATE")
-
-         // WICHTIG: Erst Windows die Standardarbeit machen lassen!
-        if (!DefWindowProcW(hwnd, uMsg, wParam, lParam))
-        {
-            DE_ERROR("DefWindowProc error")
-            return FALSE; // Windows sagt Nein -> Erstellung abbrechen
-        }
-
-        return TRUE; // Explizit TRUE zurückgeben, damit CreateWindow weiterläuft!
+        dwStyle |= WS_CHILD;
     }
     else
     {
-        DE_DEBUG("Other WM_Message ",uMsg)
-        self = reinterpret_cast<Window_WGL*>(GetWindowLongPtrW(hwnd, GWLP_USERDATA));
+        // WICHTIG: Das Hauptfenster benötigt Rahmen, Titelleiste, etc.
+        // WS_CLIPCHILDREN und WS_CLIPSIBSIGNALS sind für OpenGL zwingend erforderlich!
+        dwStyle |= WS_OVERLAPPEDWINDOW | WS_CLIPCHILDREN | WS_CLIPSIBLINGS;
     }
 
-    // ACHTUNG: Bei den allerersten Nachrichten ist self noch NULL!
-    if (self)
+    // 2. Definiere die erweiterten Window Styles (dwExStyle)
+    DWORD dwExStyle = 0;
+    if (parentHwnd)
     {
-        DE_DEBUG("self ",(void*)self)
-        // Hier sind Instanz-Zugriffe sicher
+        dwExStyle |= WS_EX_CONTROLPARENT;
+    }
+    else
+    {
+        dwExStyle |= WS_EX_APPWINDOW; // Zeigt das Fenster korrekt in der Taskleiste an
     }
 
-    return DefWindowProc(hwnd, uMsg, wParam, lParam);
+    std::wstring winTitle = makeUniqueWindowTitle();
+        //  : params.title;
+
+    _d->hWnd = CreateWindowExW(
+        dwExStyle,
+        className.c_str(), // lpszClassName,
+        winTitle.c_str(),
+        dwStyle,
+        0, 0, windowW, windowH,
+        parentHwnd,
+        nullptr,
+        hInstance,
+        this);
+
+    if (!_d->hWnd)
+    {
+        DE_ERROR("No window created")
+        return false;
+    }
+
+    DE_DEBUG("Created window.")
+    SetFocus(_d->hWnd);
+
+    _d->m_hInstance = hInstance;
+    _d->hDC = GetDC(_d->hWnd);
+    if (!_d->hDC)
+    {
+        DE_ERROR("No hDC")
+        return false;
+    }
+
+    DE_DEBUG("Created hDC.")
+    PIXELFORMATDESCRIPTOR pfd = {
+        sizeof(PIXELFORMATDESCRIPTOR),
+        1,
+        PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL | PFD_DOUBLEBUFFER,
+        PFD_TYPE_RGBA,
+        32 };
+
+    int pf = ChoosePixelFormat(_d->hDC, &pfd);
+    if (pf < 0)
+    {
+        DE_ERROR("pf = ",pf)
+        return false;
+    }
+
+    DE_DEBUG("pf = ",pf)
+    SetPixelFormat(_d->hDC, pf, &pfd);
+
+    _d->hGL = wglCreateContext(_d->hDC);
+    if (!_d->hGL)
+    {
+        DE_ERROR("No hRC")
+        return false;
+    }
+
+    DE_DEBUG("Created hGL")
+    wglMakeCurrent(_d->hDC, _d->hGL);
+
+    ensureDesktopOpenGL();
+
+    // Fenster für Multi-Touch-Nachrichten registrieren
+    if (!RegisterTouchWindow(_d->hWnd, 0))
+    {
+        DE_ERROR("Failed RegisterTouchWindow().");
+    }
+    else
+    {
+        DE_OK("Multi-Touch gestures activated.");
+    }
+
+    DE_DEBUG("Desktop(",desktopW,",",desktopH,"), Window(",windowW,",",windowH,")")
+
+    // customInit():
+
+    RECT r;
+    GetClientRect(_d->hWnd, &r);
+    int w = r.right - r.left;
+    int h = r.bottom - r.top;
+    de::Recti r_client(r.left,r.top,w,h);
+    createEvent(r_client);
+
+    _d->m_bPaintEventEnabled = true;
+
+    return true;
+}
+
+Recti Window_WGL::getWindowRect() const
+{
+    RECT r;
+    GetWindowRect( _d->hWnd, &r );
+    // DE_DEBUG("hWnd(",_d->hWnd,"), "
+    //          "r.left(",r.left,"), "
+    //          "r.top(",r.top,"), "
+    //          "r.right(",r.right,"), "
+    //          "r.bottom(",r.bottom,")")
+    return Recti(r.left, r.top, r.right - r.left, r.bottom - r.top );
+}
+
+Recti Window_WGL::getClientRect() const
+{
+    RECT r;
+    GetClientRect( _d->hWnd, &r );
+    // DE_DEBUG("hWnd(",_d->hWnd,"), "
+    //          "r.left(",r.left,"), "
+    //          "r.top(",r.top,"), "
+    //          "r.right(",r.right,"), "
+    //          "r.bottom(",r.bottom,")")
+    return Recti(r.left, r.top, r.right - r.left, r.bottom - r.top );
+}
+
+void Window_WGL::bringToFront()
+{
+    ShowWindow(_d->hWnd, SW_SHOWNORMAL);  // Or SW_RESTORE if minimized
+    SetWindowPos(_d->hWnd, HWND_TOP, 0, 0, 0, 0,
+                 SWP_NOMOVE | SWP_NOSIZE);
+
+    AllowSetForegroundWindow(ASFW_ANY);
+
+    SetForegroundWindow(_d->hWnd);
+}
+
+bool Window_WGL::isHideOnClose() const
+{
+    return _d->m_hideOnClose;
+}
+
+void Window_WGL::setHideOnClose( bool bEnableHideOnClose )
+{
+    _d->m_hideOnClose = bEnableHideOnClose;
+}
+
+bool Window_WGL::isPostQuitMessage() const
+{
+    return _d->m_postQuitMessage;
+}
+
+void Window_WGL::setPostQuitMessage( bool bPostQuitMessage )
+{
+    _d->m_postQuitMessage = bPostQuitMessage;
+}
+
+bool Window_WGL::isVisible() const
+{
+    return IsWindowVisible(_d->hWnd);
+}
+
+void Window_WGL::setVisible( bool bVisible )
+{
+    if (bVisible)
+    {
+        ShowWindow(_d->hWnd, SW_SHOW);
+        DE_DEBUG("Show Window ", (void*)_d->hWnd)
+    }
+    else
+    {
+        ShowWindow(_d->hWnd, SW_HIDE);
+        DE_DEBUG("Hide Window ", (void*)_d->hWnd)
+    }
+}
+
+void Window_WGL::setWindowTitle( char const* title )
+{
+    // SendMessage instead of SetText for cases where HWND was created in a different thread
+    DWORD_PTR dwResult;
+    SendMessageTimeoutA(
+        _d->hWnd,
+        WM_SETTEXT,
+        0,
+        reinterpret_cast< LPARAM >( title ),
+        SMTO_ABORTIFHUNG,
+        2000,
+        &dwResult
+    );
+}
+
+void
+Window_WGL::setWindowIcon( int iRessourceID )
+{
+    if ( !_d->hWnd ) { return; }
+
+    if ( !_d->m_hInstance ) { _d->m_hInstance = GetModuleHandle( nullptr ); }
+
+    HICON hIcon = (HICON)LoadImage( _d->m_hInstance,
+    MAKEINTRESOURCE(iRessourceID),
+    IMAGE_ICON, 0, 0, LR_DEFAULTSIZE | LR_SHARED );
+
+    if ( hIcon )
+    {
+        LONG_PTR ptr = reinterpret_cast<LONG_PTR>( hIcon );
+        SetClassLongPtr( _d->hWnd, GCLP_HICON, ptr );
+        SetClassLongPtr( _d->hWnd, GCLP_HICONSM, ptr );
+
+        SendMessage(_d->hWnd, WM_SETICON, ICON_BIG, (LPARAM)hIcon);
+        SendMessage(_d->hWnd, WM_SETICON, ICON_SMALL, (LPARAM)hIcon);
+    }
+}
+
+void
+Window_WGL::setWindowBackgroundImage( int iRessourceID )
+{
+    if ( !_d->hWnd ) { return; }
+
+    if ( !_d->m_hInstance ) { _d->m_hInstance = GetModuleHandle( nullptr ); }
+
+    if (_d->m_hBackgroundBitmap)
+    {
+        DeleteObject(_d->m_hBackgroundBitmap);
+        _d->m_hBackgroundBitmap = nullptr; // Optional but good practice
+    }
+
+    _d->m_hBackgroundBitmap = (HBITMAP)LoadImageW(
+        _d->m_hInstance,
+        MAKEINTRESOURCEW(iRessourceID),
+        IMAGE_BITMAP, 0, 0, LR_CREATEDIBSECTION );
+
+    update();
+}
+
+
+bool Window_WGL::isResizable() const
+{
+    return _d->m_params.isResizable;
+}
+
+void Window_WGL::setResizable( bool resizable )
+{
+    if ( !_d->hWnd ) { return; }
+
+    // 1. Hole den AKTUELLEN Stil direkt vom Windows-Fenster,
+    // damit Stile wie WS_CLIPCHILDREN / WS_CLIPSIBLINGS NICHT verloren gehen!
+    DWORD style = GetWindowLong( _d->hWnd, GWL_STYLE );
+
+    if (resizable)
+    {
+        style |= (WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_THICKFRAME);
+    }
+    else
+    {
+        style &= ~(WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_THICKFRAME);
+    }
+
+    _d->m_windowedStyle = style;
+    _d->m_params.isResizable = resizable;
+
+    if ( _d->m_params.isFullscreen ) { return; }
+
+    // 2. Stil sicher anwenden
+    if ( !SetWindowLongPtr( _d->hWnd, GWL_STYLE, LONG_PTR(style) ) )
+    {
+        DE_ERROR("Cant change window style.")
+        return;
+    }
+
+    _d->m_windowStyle = style;
+
+    // 3. Richtige Fenstergröße inklusive Titelleiste berechnen
+    RECT r_window;
+    GetClientRect(_d->hWnd, &r_window); // Holt die echten, aktuellen Client-Maße (0, 0, W, H)
+
+    // Berechnet die benötigte Gesamtfenstergröße basierend auf dem NEUEN Stil
+    AdjustWindowRect( &r_window, style, FALSE );
+
+    int winW = r_window.right - r_window.left;
+    int winH = r_window.bottom - r_window.top;
+
+    // Zentrieren auf dem Bildschirm
+    int winX = (GetSystemMetrics(SM_CXSCREEN) - winW) / 2;
+    int winY = (GetSystemMetrics(SM_CYSCREEN) - winH) / 2;
+
+    winX = std::max( winX, 0 );
+    winY = std::max( winY, 0 );
+
+    // 4. WICHTIG: SWP_FRAMECHANGED zwingt Windows, den Rahmen und die Titelleiste
+    // basierend auf dem neuen Stil komplett neu und sauber zu zeichnen!
+    SetWindowPos( _d->hWnd, HWND_TOP, winX, winY, winW, winH,
+              SWP_FRAMECHANGED | SWP_SHOWWINDOW | SWP_NOACTIVATE);
+}
+
+bool Window_WGL::isFullScreen() const
+{
+    return _d->m_params.isFullscreen;
+}
+
+void Window_WGL::setFullScreen( bool fullscreen )
+{
+   DWORD style;
+
+   if ( fullscreen )
+   {
+      style = _d->m_fullscreenStyle;
+   }
+   else
+   {
+      style = _d->m_windowedStyle;
+   }
+
+   // TODO: Separate this code into a reusable function setWindowStyle().
+   if ( !SetWindowLongPtr( _d->hWnd, GWL_STYLE, LONG_PTR(style) ) )
+   {
+      printf("Cant change window style.\n");
+      //std::cout << "Could not change window style." << std::endl;
+   }
+
+   _d->m_params.isFullscreen = fullscreen;
+   _d->m_windowStyle = style; // Update 'current style' only on Success
+
+   int const desktopWidth = GetSystemMetrics(SM_CXSCREEN);
+   int const desktopHeight = GetSystemMetrics(SM_CYSCREEN);
+
+   // This part is needed, or Window will freeze in the background.
+   RECT r_window;
+
+   if (_d->m_params.isFullscreen)
+   {
+      r_window.top = 0;
+      r_window.left = 0;
+      r_window.right = desktopWidth;
+      r_window.bottom = desktopHeight;
+   }
+   else
+   {
+      r_window.top = 0;
+      r_window.left = 0;
+      r_window.right = _d->m_params.width;
+      r_window.bottom = _d->m_params.height;
+   }
+
+   AdjustWindowRect( &r_window, _d->m_windowStyle, FALSE );
+
+   int winW = r_window.right - r_window.left;
+   int winH = r_window.bottom - r_window.top;
+   int winX = (desktopWidth - winW) / 2;
+   int winY = (desktopHeight - winH) / 2;
+
+   if ( _d->m_params.isFullscreen )
+   {
+      winX = 0;
+      winY = 0;
+   }
+   else
+   {
+      winX = std::max( winX, 0 ); // Thick Border
+      winY = std::max( winY, 0 );
+   }
+   SetWindowPos( _d->hWnd, HWND_TOP, winX, winY, winW, winH,
+                  SWP_FRAMECHANGED | SWP_SHOWWINDOW); //  | SWP_NOMOVE
+}
+
+
+// Runs the device. Returns false if device wants to be deleted
+bool Window_WGL::run()
+{
+    yield();
+
+/*
+   MSG msg;
+   while (GetMessage (&msg, nullptr, 0, 0))
+   {
+      TranslateMessage (&msg);
+      DispatchMessage (&msg);
+      // self.beginScene();
+      // self.endScene();
+   }
+*/
+
+    MSG msg;
+
+    while (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE))
+    {
+        // No message translation because we don't use WM_CHAR and it would conflict with our
+        // deadkey handling.
+
+        //if (ExternalWindow && msg.hwnd == m_hWnd)
+        //   WndProc(HWnd, msg.message, msg.wParam, msg.lParam);
+        //else
+        DispatchMessage(&msg);
+
+        if (msg.message == WM_QUIT)
+        {
+            _d->m_shouldRun = false;
+        }
+    }
+
+    //if (!Close)
+    //   resizeIfNecessary();
+
+    //if(!Close && JoyControl)
+    //   JoyControl->pollJoysticks();
+
+    //_IRR_IMPLEMENT_MANAGED_MARSHALLING_BUGFIX;
+    return _d->m_shouldRun;
 }
 
 LRESULT CALLBACK
@@ -819,25 +1172,13 @@ WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
             if (self)
             {
                 // 2. Sicherstellen, dass der OpenGL-Kontext für diesen Thread AKTIV ist
-                wglMakeCurrent(self->_d->hDC, self->_d->hGL);
+                // wglMakeCurrent(self->_d->hDC, self->_d->hGL);
 
                 // 3. GL cleanup user callback
                 self->destroyEvent();
 
-                // 4. WGL cleanup
-                self->_d->m_bPaintEventEnabled = false;
-
-                wglMakeCurrent(nullptr, nullptr);
-                if (self->_d->hGL)
-                {
-                    wglDeleteContext(self->_d->hGL);
-                    self->_d->hGL = nullptr;
-                }
-                if (self->_d->hDC)
-                {
-                    ReleaseDC(hwnd, self->_d->hDC);
-                    self->_d->hDC = nullptr;
-                }
+                // 4. Clean timers, WGL, DC, window.
+                self->_d->destroy();
             }
 
             // 5. WM_QUIT in die Nachrichtenschleife posten
@@ -860,7 +1201,7 @@ WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
         }
         case WM_QUIT:
         {
-            DE_OK("WM_QUIT ", hwnd)
+            // DE_OK("WM_QUIT ", hwnd)
             return DefWindowProc(hwnd, msg, wParam, lParam);
         }
         case WM_TIMER:
@@ -890,7 +1231,7 @@ WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
             if ( self && self->_d->m_bPaintEventEnabled )
             {
                 // wglMakeCurrent(ps.hdc, self->_d->hGL);
-                wglMakeCurrent(self->_d->hDC, self->_d->hGL);
+                // wglMakeCurrent(self->_d->hDC, self->_d->hGL);
 
                 RECT r;
                 GetClientRect(hwnd, &r);
@@ -902,6 +1243,8 @@ WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 
                 // SwapBuffers( ps.hdc );
                 SwapBuffers( self->_d->hDC );
+
+                // wglMakeCurrent(nullptr, nullptr);
             }
 
             EndPaint(hwnd, &ps);
@@ -926,11 +1269,24 @@ WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
                 int w = r.right - x;
                 int h = r.bottom - y;
 
-                // DE_OK("WM_SIZE(",sw,",",sh,"), ClientRect(",x,",",y,",",w,",",h,")")
-                de::ResizeEvent event;
-                event.w = w;
-                event.h = h;
-                self->resizeEvent(event);
+                // DE_OK("WM_SIZE(",sw,",",sh,"), "
+                //       "ClientRect(",x,",",y,",",w,",",h,")")
+
+                if (self->_d->hDC && self->_d->hGL)
+                {
+                    // wglMakeCurrent(self->_d->hDC, self->_d->hGL);
+
+                    de::ResizeEvent event;
+                    event.w = w;
+                    event.h = h;
+                    self->resizeEvent(event);
+
+                    // wglMakeCurrent(nullptr, nullptr);
+                }
+                else
+                {
+                    DE_ERROR("No HDC and or hGL")
+                }
             }
             return 0;
         }
@@ -1302,1995 +1658,5 @@ WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
     }
     return DefWindowProc(hwnd, msg, wParam, lParam);
 }
-/*
-bool ensureClassRegistered(HINSTANCE hInst, const wchar_t* className) {
-    WNDCLASSEXW wc = { sizeof(wc) };
-    wc.style         = CS_HREDRAW | CS_VREDRAW;
-    wc.lpfnWndProc   = DefWindowProcW;
-    wc.hInstance     = hInst;
-    wc.lpszClassName = className;
-
-    ATOM a = RegisterClassExW(&wc);
-    if (a != 0)
-        return true; // erfolgreich registriert
-
-    DWORD err = GetLastError();
-    if (err == ERROR_CLASS_ALREADY_EXISTS)
-        return true; // Klasse existiert bereits → OK
-
-    return false; // anderer Fehler
-}
-*/
-
-
-std::wstring makeUniqueWindowTitle() {
-    // 64‑bit RNG
-    static thread_local std::mt19937_64 rng{ std::random_device{}() };
-    uint64_t r = rng();
-
-    // Combine timestamp + random
-    uint64_t t = static_cast<uint64_t>(GetTickCount64());
-
-    wchar_t buf[64];
-    swprintf(buf, 64, L"win_%016llX_%016llX", r, t);
-
-    return std::wstring(buf);
-}
-
-std::wstring makeUniqueWindowClass() {
-    // 64‑bit RNG
-    static thread_local std::mt19937_64 rng{ std::random_device{}() };
-    uint64_t r = rng();
-
-    // Combine timestamp + random
-    uint64_t t = static_cast<uint64_t>(GetTickCount64());
-
-    wchar_t buf[64];
-    swprintf(buf, 64, L"WGL_class_%016llX_%016llX", r, t);
-
-    return std::wstring(buf);
-}
-
-
-bool Window_WGL::create( WindowOptions params )
-{
-    int desktopW = GetSystemMetrics( SM_CXSCREEN );
-    int desktopH = GetSystemMetrics( SM_CYSCREEN );
-
-    int windowW = desktopW / 2 - 100;
-    int windowH = desktopH - 300;
-
-    const HMODULE hInstance = GetModuleHandleW(nullptr);
-    const HWND parentHwnd = (HWND)params.parent; //(HWND)parent;
-    DE_DEBUG("Created parentHwnd ",(void*)parentHwnd)
-
-    static const std::wstring className = makeUniqueWindowClass();
-    //static const auto lpszClassName = L"DarkGPU_WGL_Class";
-    static bool reg = false;
-    if (!reg)
-    {
-        WNDCLASSEXW wc = {0};
-        wc.cbSize = sizeof(WNDCLASSEXW);
-        wc.style = CS_HREDRAW | CS_VREDRAW | CS_DBLCLKS | CS_OWNDC; //  | CS_OWNDC
-        wc.cbClsExtra = 0;
-        wc.cbWndExtra = 0;
-        wc.hInstance = hInstance;
-        wc.lpszClassName = className.c_str(); // lpszClassName;
-        wc.lpfnWndProc = WndProc; // WndProcTest; // WndProc; DefWindowProc;
-
-        ATOM a = RegisterClassExW(&wc);
-
-        if (a == 0)
-        {
-            DWORD err = GetLastError();
-            if (err != ERROR_CLASS_ALREADY_EXISTS)
-            {
-                DE_ERROR("Cannot register class, err = ",err)
-                return false;
-            }
-        }
-
-        DE_DEBUG("Registered window class ",de_mbstr(className))
-        reg = true;
-    }
-
-    // DWORD dwStyle = WS_VISIBLE | WS_TABSTOP;//  | WS_CLIPCHILDREN
-    // if (parentHwnd) dwStyle |= WS_CHILD;
-    // DWORD dwExStyle = (parentHwnd)
-    //                 ? WS_EX_CONTROLPARENT
-    //                 : WS_EX_OVERLAPPEDWINDOW;
-
-    // 1. Definiere die normalen Window Styles (dwStyle)
-    DWORD dwStyle = WS_VISIBLE | WS_TABSTOP;
-
-    if (parentHwnd)
-    {
-        dwStyle |= WS_CHILD;
-    }
-    else
-    {
-        // WICHTIG: Das Hauptfenster benötigt Rahmen, Titelleiste, etc.
-        // WS_CLIPCHILDREN und WS_CLIPSIBSIGNALS sind für OpenGL zwingend erforderlich!
-        dwStyle |= WS_OVERLAPPEDWINDOW | WS_CLIPCHILDREN | WS_CLIPSIBLINGS;
-    }
-
-    // 2. Definiere die erweiterten Window Styles (dwExStyle)
-    DWORD dwExStyle = 0;
-    if (parentHwnd)
-    {
-        dwExStyle |= WS_EX_CONTROLPARENT;
-    }
-    else
-    {
-        dwExStyle |= WS_EX_APPWINDOW; // Zeigt das Fenster korrekt in der Taskleiste an
-    }
-
-    std::wstring winTitle = makeUniqueWindowTitle();
-        //  : params.title;
-
-    _d->hWnd = CreateWindowExW(
-        dwExStyle,
-        className.c_str(), // lpszClassName,
-        winTitle.c_str(),
-        dwStyle,
-        0, 0, windowW, windowH,
-        parentHwnd,
-        nullptr,
-        hInstance,
-        this);
-
-    if (!_d->hWnd)
-    {
-        DE_ERROR("No window created")
-        return false;
-    }
-
-    DE_DEBUG("Created window.")
-    SetFocus(_d->hWnd);
-
-    _d->m_hInstance = hInstance;
-    _d->hDC = GetDC(_d->hWnd);
-    if (!_d->hDC)
-    {
-        DE_ERROR("No hDC")
-        return false;
-    }
-
-    DE_DEBUG("Created hDC.")
-    PIXELFORMATDESCRIPTOR pfd = {
-        sizeof(PIXELFORMATDESCRIPTOR),
-        1,
-        PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL | PFD_DOUBLEBUFFER,
-        PFD_TYPE_RGBA,
-        32 };
-
-    int pf = ChoosePixelFormat(_d->hDC, &pfd);
-    if (pf < 0)
-    {
-        DE_ERROR("pf = ",pf)
-        return false;
-    }
-
-    DE_DEBUG("pf = ",pf)
-    SetPixelFormat(_d->hDC, pf, &pfd);
-
-    _d->hGL = wglCreateContext(_d->hDC);
-    if (!_d->hGL)
-    {
-        DE_ERROR("No hRC")
-        return false;
-    }
-
-    DE_DEBUG("Created hGL")
-    wglMakeCurrent(_d->hDC, _d->hGL);
-
-    ensureDesktopOpenGL();
-
-    // glewExperimental = GL_TRUE;
-    // glewInit();
-
-    // glViewport(0, 0, w, h);
-    // glClearColor(0.11f, 0.03f, 0.12f, 1.0f);
-
-
-    // Fenster für Multi-Touch-Nachrichten registrieren
-    if (!RegisterTouchWindow(_d->hWnd, 0))
-    {
-        DE_ERROR("Failed RegisterTouchWindow().");
-    }
-    else
-    {
-        DE_OK("Multi-Touch gestures activated.");
-    }
-
-    DE_DEBUG("Desktop(",desktopW,",",desktopH,"), Window(",windowW,",",windowH,")")
-
-    // customInit():
-    /*
-    RECT r;
-    GetClientRect(_d->hWnd, &r);
-    int w = r.right - r.left;
-    int h = r.bottom - r.top;
-    de::Recti r_client(r.left,r.top,w,h);
-    createEvent(r_client);
-
-    _d->m_bPaintEventEnabled = true;
-*/
-
-#if 0
-    // =============================================================
-    // DEVMODE
-    // =============================================================
-    memset(&_d->m_desktopMode, 0, sizeof(DEVMODE));
-    _d->m_desktopMode.dmSize = sizeof(DEVMODE);
-    EnumDisplaySettings(nullptr, ENUM_CURRENT_SETTINGS, &_d->m_desktopMode);
-
-    _d->m_params = params;
-    _d->m_hInstance = GetModuleHandle( nullptr );
-
-    const TCHAR* className = _T("de_Window_WGL");
-    //std::string dummyName = "de_Window_WGL_dummy2";
-
-    WNDCLASSEX wcex;
-    wcex.cbSize       = sizeof(WNDCLASSEX);
-    wcex.style        = CS_HREDRAW | CS_VREDRAW | CS_DBLCLKS; // CS_OWNDC; // CS_HREDRAW | CS_VREDRAW | CS_DBLCLKS
-    wcex.cbClsExtra   = 0;
-    wcex.cbWndExtra   = 0;
-    wcex.hInstance    = _d->m_hInstance;
-    wcex.hIcon        = LoadIcon( nullptr, IDI_WINLOGO );
-    wcex.hIconSm	  = LoadIcon( nullptr, IDI_WINLOGO );
-    wcex.hCursor      = LoadCursor( nullptr, IDC_ARROW );   // IDC_ARROW,_UPARROW,_WAIT,_APPSTARTING,_CROSS,_HAND,_HELP,_IBEAM,_NO,_SIZEALL,_SIZENESW,_SIZENS,_SIZENWSE,_SIZEWE
-    wcex.hbrBackground= reinterpret_cast<HBRUSH>(COLOR_WINDOW+1); //CreateSolidBrush( RGB( 0, 150, 255 ) );
-    wcex.lpszMenuName = nullptr;
-    wcex.lpszClassName= className;
-    wcex.lpfnWndProc  = Window_WGL_Proc;
-
-    if ( !RegisterClassEx( &wcex ) )
-    {
-        DE_ERROR("RegisterClass(",className,") failed")
-        return false;
-    }
-
-    // Figure out the WindowStyle flags:
-    int w = params.width;
-    int h = params.height;
-    int x = 0;
-    int y = 0;
-    const TCHAR* titleNoParent = _T("Window_WGL");
-    const TCHAR* titleParent = nullptr;
-    const TCHAR* title = nullptr;
-    const HWND parent = static_cast<HWND>(params.parent);
-
-    if (parent)
-    {
-        DE_DEBUG("Create ChildWindow with parent ", parent)
-        title = titleParent;
-        DWORD style = WS_CHILD | WS_CLIPSIBLINGS | WS_CLIPCHILDREN | WS_VISIBLE;
-        _d->m_windowedStyle = style;
-        _d->m_fullscreenStyle = style;
-    }
-    else
-    {
-        DE_DEBUG("Create TopLevelWindow")
-        title = titleNoParent;
-        //DWORD dwWndStyle = WS_OVERLAPPEDWINDOW;
-        //DWORD dwExtStyle = WS_EX_APPWINDOW | WS_EX_WINDOWEDGE;
-
-        _d->m_windowedStyle = WS_POPUP | WS_OVERLAPPEDWINDOW;
-        // WS_SYSMENU | WS_CAPTION | WS_CLIPCHILDREN | WS_CLIPSIBLINGS; // | WS_THICKFRAME;
-        _d->m_fullscreenStyle = WS_POPUP;
-
-        if ( _d->m_params.isResizable )
-        {
-            _d->m_windowedStyle |= DWORD(WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_THICKFRAME);
-        }
-
-        if ( _d->m_params.isFullscreen )
-        {
-            _d->m_windowStyle = _d->m_fullscreenStyle;
-        }
-        else
-        {
-            _d->m_windowStyle = _d->m_windowedStyle;
-        }
-
-        // Use WindowStyle and desired FrameBuffer size to figure out the WindowSize:
-        RECT r;
-        r.left = 0;
-        r.top = 0;
-        r.right = params.width; // Desired framebuffer width
-        r.bottom = params.height; // Desired framebuffer height
-        AdjustWindowRect( &r, _d->m_windowStyle, FALSE );
-        x = r.left;
-        y = r.right;
-        w = r.right - r.left;
-        h = r.bottom - r.top;
-
-        DE_DEBUG("AdjustWindowRect(",x,",",y,",",w,",",h,")")
-
-
-        if (_d->m_params.isFullscreen)
-        {
-            x = 0;
-            y = 0;
-        }
-        else
-        {
-            if ( x < 0 ) x = 0;
-            if ( y < 0 ) y = 0;	// make sure window menus are in screen on creation
-        }
-    }
-
-    _d->m_hWnd = CreateWindow( className,
-                    title,
-                    _d->m_windowStyle,
-                    x, y, w, h,
-                    parent,
-                    nullptr,
-                    _d->m_hInstance,
-                    this );
-
-    if (!parent)
-    {
-        //RECT r_window;
-        //GetClientRect( _d->m_hWnd, &r_window );
-    }
-
-    // ShowWindow( _d->m_hWnd, SW_SHOW );
-    ShowWindow( _d->m_hWnd, SW_SHOWNORMAL );
-    UpdateWindow( _d->m_hWnd );
-    ShowCursor( TRUE );
-
-    // fix ugly ATI driver bugs. Thanks to ariaci
-    MoveWindow( _d->m_hWnd, x, y, w, h, TRUE );
-
-    _d->m_hRC = InitGL( _d->m_hWnd );
-#endif
-
-#ifdef BENNI_USE_BLOAT
-   #ifdef BENNI_USE_COUT
-   DE_DEBUG("FinalWindowRect(",r_window,")")
-   #endif
-
-   // =============================================================
-   // Create dummy Window
-   // =============================================================
-
-   WNDCLASSEXA dummy_wcex;
-   dummy_wcex.cbSize        = sizeof(WNDCLASSEXA);
-   dummy_wcex.style        = CS_HREDRAW | CS_VREDRAW | CS_DBLCLKS; //  | CS_OWNDC
-   dummy_wcex.cbClsExtra   = 0;
-   dummy_wcex.cbWndExtra   = 0;
-   dummy_wcex.hInstance    = _d->m_hInstance;
-   dummy_wcex.hIcon        = nullptr; // LoadIcon( nullptr, IDI_WINLOGO );
-   dummy_wcex.hIconSm		= nullptr; // LoadIcon( nullptr, IDI_WINLOGO );
-   dummy_wcex.hCursor      = nullptr; // LoadCursor( nullptr, IDC_ARROW );   // IDC_ARROW,_UPARROW,_WAIT,_APPSTARTING,_CROSS,_HAND,_HELP,_IBEAM,_NO,_SIZEALL,_SIZENESW,_SIZENS,_SIZENWSE,_SIZEWE
-   dummy_wcex.hbrBackground= nullptr; //reinterpret_cast<HBRUSH>(COLOR_WINDOW+1); //CreateSolidBrush( RGB( 0, 150, 255 ) );
-   dummy_wcex.lpszMenuName = nullptr;
-   dummy_wcex.lpszClassName= dummyName.c_str();
-   dummy_wcex.lpfnWndProc  = DefWindowProc;
-
-   if ( !RegisterClassExA( &dummy_wcex ) )
-   {
-      #ifdef BENNI_USE_COUT
-      DE_DEBUG("RegisterClass(",dummyName,") failed")
-      #endif
-      return false;
-   }
-
-   _d->m_dummyWnd = CreateWindowA(
-        dummyName.c_str(),
-        "GLTestAAsupportWindow2",
-        _d->m_windowStyle,
-        winX, winY, winW, winH,
-        static_cast<HWND>(params.parent),
-        nullptr,
-        _d->m_hInstance,
-        nullptr );
-
-   if (!_d->m_dummyWnd)
-   {
-      #ifdef BENNI_USE_COUT
-      DE_DEBUG("Cannot create a temporary window.")
-      #endif
-      UnregisterClassA(dummyName.c_str(), _d->m_hInstance);
-      return false;
-   }
-
-   #ifdef BENNI_USE_COUT
-   DE_DEBUG("Created dummy window(",m_dummyWnd,")")
-   #endif
-
-   _d->m_dummyDC = GetDC( _d->m_dummyWnd );
-
-   ZeroMemory(&_d->m_pfd, sizeof(PIXELFORMATDESCRIPTOR));
-   // Set up pixel format descriptor with desired parameters
-   _d->m_pfd.nSize = sizeof(PIXELFORMATDESCRIPTOR); // Size Of This Pixel Format Descriptor
-   _d->m_pfd.nVersion = 1;
-   _d->m_pfd.dwFlags = PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL; //  | PFD_DOUBLEBUFFER
-   _d->m_pfd.iPixelType = PFD_TYPE_RGBA;        // Request An RGBA Format
-   _d->m_pfd.cColorBits = 32;                   // Select Our Color Depth
-   _d->m_pfd.cDepthBits = 24;                   // Z-Buffer (Depth Buffer)
-   _d->m_pfd.cStencilBits = 8;                  // Stencil Buffer Depth
-   _d->m_pfd.iLayerType = PFD_MAIN_PLANE;       // Main Drawing Layer
-
-   int pixelFormat = ChoosePixelFormat(_d->m_dummyDC, &_d->m_pfd);
-   if (!pixelFormat)
-   {
-      #ifdef BENNI_USE_COUT
-      DE_ERROR("No such pixelFormat available")
-      #endif
-      ReleaseDC( _d->m_dummyWnd, _d->m_dummyDC );
-      DestroyWindow( _d->m_dummyWnd );
-      UnregisterClassA( dummyName.c_str(), _d->m_hInstance );
-      return false;
-   }
-
-   if (!SetPixelFormat(_d->m_dummyDC, pixelFormat, &_d->m_pfd))
-   {
-      #ifdef BENNI_USE_COUT
-      DE_ERROR("Cant set pixelFormat for dummy context")
-      #endif
-      ReleaseDC( _d->m_dummyWnd, _d->m_dummyDC );
-      DestroyWindow( _d->m_dummyWnd );
-      UnregisterClassA( dummyName.c_str(), _d->m_hInstance );
-      return false;
-   }
-
-   // Create WGL context
-   _d->m_dummyRC = wglCreateContext( _d->m_dummyDC );
-   if (!_d->m_dummyRC)
-   {
-      #ifdef BENNI_USE_COUT
-      DE_ERROR("[Error] No WGL context created")
-      #endif
-      ReleaseDC( _d->m_dummyWnd, _d->m_dummyDC );
-      DestroyWindow( _d->m_dummyWnd );
-      UnregisterClassA( dummyName.c_str(), _d->m_hInstance );
-      return false;
-   }
-
-   HDC old_dc = wglGetCurrentDC();
-   HGLRC old_rc = wglGetCurrentContext();
-
-   if (!wglMakeCurrent( _d->m_dummyDC, _d->m_dummyRC ))
-   {
-      #ifdef BENNI_USE_COUT
-      DE_ERROR("WGL: Failed to make dummy context current")
-      #endif
-      wglMakeCurrent( old_dc, old_rc );
-      wglDeleteContext( _d->m_dummyRC );
-      ReleaseDC( _d->m_dummyWnd, _d->m_dummyDC );
-      DestroyWindow( _d->m_dummyWnd );
-      UnregisterClassA( dummyName.c_str(), _d->m_hInstance );
-      _d->m_dummyRC = nullptr;
-      return false;
-   }
-
-   std::string m_wglExtensionString;
-
-#ifdef WGL_ARB_extensions_string
-   PFNWGLGETEXTENSIONSSTRINGARBPROC my_wglGetExtensionsStringARB =
-      reinterpret_cast<PFNWGLGETEXTENSIONSSTRINGARBPROC>(
-         wglGetProcAddress("wglGetExtensionsStringARB"));
-
-   if (my_wglGetExtensionsStringARB)
-   {
-      auto t = my_wglGetExtensionsStringARB( _d->m_dummyDC );
-      if (t)
-      {
-         m_wglExtensionString = t;
-      }
-      else
-      {
-         #ifdef BENNI_USE_COUT
-         DE_ERROR("wglGetExtensionsStringARB returned nullptr")
-         #endif
-      }
-   }
-   else
-   {
-      #ifdef BENNI_USE_COUT
-      DE_ERROR("No wglGetExtensionsStringARB")
-      #endif
-   }
-#elif defined(WGL_EXT_extensions_string)
-   PFNWGLGETEXTENSIONSSTRINGEXTPROC my_wglGetExtensionsStringEXT =
-   reinterpret_cast<PFNWGLGETEXTENSIONSSTRINGEXTPROC>(wglGetProcAddress("wglGetExtensionsStringEXT"));
-   if (my_wglGetExtensionsStringEXT)
-   {
-      auto t = my_wglGetExtensionsStringEXT();
-      if (t)
-      {
-         m_wglExtensionString = t;
-      }
-      else
-      {
-         m_wglExtensionString = "";
-         DE_ERROR("wglGetExtensionsStringEXT returned nullptr")
-      }
-   }
-   else
-   {
-      DE_ERROR("No wglGetExtensionsStringEXT")
-   }
-#endif
-
-    auto extensions = StringUtil::split(m_wglExtensionString,' ');
-    DE_INFO("WGL_EXTENSIONS = ", extensions.size())
-    // for (size_t i = 0; i < extensions.size(); ++i)
-    // {
-    //    DE_INFO("WGL_EXTENSION[",i,"] ", extensions[i])
-    // }
-
-   bool const hasWGL_ARB_pixel_format = m_wglExtensionString.find("WGL_ARB_pixel_format") != std::string::npos;
-
-
-   #ifdef BENNI_USE_COUT
-   bool const hasWGL_ARB_multisample = m_wglExtensionString.find("WGL_ARB_multisample") != std::string::npos;
-   bool const hasWGL_EXT_multisample = m_wglExtensionString.find("WGL_EXT_multisample") != std::string::npos;
-   bool const hasWGL_3DFX_multisample = m_wglExtensionString.find("WGL_3DFX_multisample") != std::string::npos;
-
-   bool const hasWGL_multisample = hasWGL_ARB_multisample
-                                || hasWGL_EXT_multisample
-                                || hasWGL_3DFX_multisample;
-
-   bool const hasWGL_ARB_framebuffer_sRGB = m_wglExtensionString.find("WGL_ARB_framebuffer_sRGB") != std::string::npos;
-   bool const hasWGL_EXT_framebuffer_sRGB = m_wglExtensionString.find("WGL_EXT_framebuffer_sRGB") != std::string::npos;
-   bool const hasWGL_framebuffer_sRGB = hasWGL_ARB_framebuffer_sRGB
-                                     || hasWGL_EXT_framebuffer_sRGB;
-
-   DE_INFO("WGL extensions: ", m_wglExtensionString)
-
-//   std::vector<std::string> wglExtensions = splitText(m_wglExtensionString, ' ');
-
-//   std::cout << "WGL extensions count = "<< wglExtensions.size() << std::endl;
-//   for ( size_t i = 0; i < wglExtensions.size(); ++i )
-//   {
-//      std::cout << "WGL extension[" << i <<"] "<< wglExtensions[i] << std::endl;
-//   }
-
-   DE_INFO("hasWGL_ARB_pixel_format = ",hasWGL_ARB_pixel_format)
-   DE_INFO("hasWGL_ARB_multisample = ",hasWGL_ARB_multisample)
-   DE_INFO("hasWGL_EXT_multisample = ",hasWGL_EXT_multisample)
-   DE_INFO("hasWGL_3DFX_multisample = ",hasWGL_3DFX_multisample)
-   DE_INFO("hasWGL_multisample = ",hasWGL_multisample)
-   DE_INFO("hasWGL_ARB_framebuffer_sRGB = ",hasWGL_ARB_framebuffer_sRGB)
-   DE_INFO("hasWGL_EXT_framebuffer_sRGB = ",hasWGL_EXT_framebuffer_sRGB)
-   DE_INFO("hasWGL_framebuffer_sRGB = ",hasWGL_framebuffer_sRGB)
-   #endif
-
-// #ifdef WGL_ARB_pixel_format
-   PFNWGLCHOOSEPIXELFORMATARBPROC my_wglChoosePixelFormatARB =
-    reinterpret_cast<PFNWGLCHOOSEPIXELFORMATARBPROC>(wglGetProcAddress("wglChoosePixelFormatARB"));
-
-   int pixelFormatWGL = 0;
-
-   if (hasWGL_ARB_pixel_format && my_wglChoosePixelFormatARB)
-   {
-      // This value determines the number of samples used for antialiasing
-      // My experience is that 8 does not show a big
-      // improvement over 4, but 4 shows a big improvement
-      // over 2.
-
-      if(_d->m_params.aa > 32)
-         _d->m_params.aa = 32;
-
-      std::vector< int32_t > iAttributes
-      {
-         WGL_DRAW_TO_WINDOW_ARB, 1,
-         WGL_SUPPORT_OPENGL_ARB, 1,
-         WGL_ACCELERATION_ARB, WGL_FULL_ACCELERATION_ARB,
-         WGL_PIXEL_TYPE_ARB, WGL_TYPE_RGBA_ARB,
-         WGL_RED_BITS_ARB, _d->m_params.r,
-         WGL_GREEN_BITS_ARB, _d->m_params.g,
-         WGL_BLUE_BITS_ARB, _d->m_params.b,
-         WGL_ALPHA_BITS_ARB, _d->m_params.a,
-         WGL_DEPTH_BITS_ARB, _d->m_params.d,
-         WGL_STENCIL_BITS_ARB, _d->m_params.s,
-         WGL_DOUBLE_BUFFER_ARB, _d->m_params.isDoubleBuffered ? 1 : 0,
-         WGL_STEREO_ARB, 0,
-         //WGL_SWAP_EXCHANGE_ARB, 1
-      };
-
-#if 0 // !!! Multisampling not working on my PC
-      if ( hasWGL_multisample )
-      {
-         DE_INFO("Use WGL_multisample")
-      #ifdef WGL_ARB_multisample
-         iAttributes.emplace_back( WGL_SAMPLES_ARB );
-         iAttributes.emplace_back( m_params.aa );
-         iAttributes.emplace_back( WGL_SAMPLE_BUFFERS_ARB );
-         iAttributes.emplace_back( 1 );
-      #elif defined(WGL_EXT_multisample)
-         iAttributes.emplace_back( WGL_SAMPLES_EXT );
-         iAttributes.emplace_back( m_params.aa );
-         iAttributes.emplace_back( WGL_SAMPLE_BUFFERS_EXT );
-         iAttributes.emplace_back( 1 );
-         #elif defined(WGL_3DFX_multisample)
-         iAttributes.emplace_back( WGL_SAMPLES_3DFX );
-         iAttributes.emplace_back( m_params.aa );
-         iAttributes.emplace_back( WGL_SAMPLE_BUFFERS_3DFX );
-         iAttributes.emplace_back( 1 );
-      #endif
-         }
-
-      if (hasWGL_framebuffer_sRGB)
-      {
-         DE_INFO("Use WGL_framebuffer_sRGB")
-      #ifdef WGL_ARB_framebuffer_sRGB
-         iAttributes.emplace_back( WGL_FRAMEBUFFER_SRGB_CAPABLE_ARB );
-         iAttributes.emplace_back( m_params.handleSRGB ? 1 : 0 );
-      #elif defined(WGL_EXT_framebuffer_sRGB)
-         iAttributes.emplace_back( WGL_FRAMEBUFFER_SRGB_CAPABLE_EXT );
-         iAttributes.emplace_back( m_params.handleSRGB ? 1 : 0 );
-      #endif
-      }
-      //iAttributes.emplace_back( WGL_DEPTH_FLOAT_EXT );
-      //iAttributes.emplace_back( 1 );
-#endif
-
-      iAttributes.emplace_back( 0 );
-      iAttributes.emplace_back( 0 );
-
-      f32 fAttributes[] = {0.0f, 0.0f};
-
-      UINT numFormats = 0;
-      #ifdef BENNI_USE_COUT
-      BOOL const valid =
-      #endif
-      my_wglChoosePixelFormatARB( _d->m_dummyDC, iAttributes.data(),
-            fAttributes, 1, &pixelFormatWGL, &numFormats);
-
-      #ifdef BENNI_USE_COUT
-      DE_INFO("Got num formats = ", numFormats)
-      DE_INFO("Got valid = ", valid)
-      #endif
-   }
-   else
-   {
-      _d->m_params.aa = 0;
-      _d->m_params.handleSRGB = false;
-   }
-
-   wglMakeCurrent( _d->m_dummyDC, nullptr );
-   wglDeleteContext( _d->m_dummyRC );
-   ReleaseDC( _d->m_dummyWnd, _d->m_dummyDC );
-   DestroyWindow( _d->m_dummyWnd );
-   UnregisterClassA( dummyName.c_str(), _d->m_hInstance );
-
-   if ( !pixelFormatWGL )
-   {
-      #ifdef BENNI_USE_COUT
-      DE_ERROR("pixelFormatWGL == 0.")
-      #endif
-   }
-   else
-   {
-      #ifdef BENNI_USE_COUT
-      DE_INFO("pixelFormat = ", pixelFormat)
-      DE_INFO("pixelFormatWGL = ", pixelFormatWGL)
-      #endif
-   }
-
-   _d->m_hDC = GetDC( _d->m_hWnd );
-   if (!_d->m_hDC)
-   {
-      #ifdef BENNI_USE_COUT
-      DE_ERROR("Cannot create a GL DC device context.")
-      #endif
-      return false;
-   }
-
-   if ( !SetPixelFormat( _d->m_hDC, pixelFormatWGL, &_d->m_pfd ) )
-   {
-      #ifdef BENNI_USE_COUT
-      DE_ERROR("Cannot set the GL pixel format.")
-      #endif
-      return false;
-   }
-
-#if 0 // !!! wglCreateContextAttribsARB not working on my PC !!!
-   bool const hasWGL_ARB_create_context =
-    m_wglExtensionString.find("WGL_ARB_create_context") != std::string::npos;
-   bool const hasWGL_ARB_create_context_profile =
-    m_wglExtensionString.find("hasWGL_ARB_create_context_profile") != std::string::npos;
-   DE_INFO("hasWGL_ARB_create_context = ", hasWGL_ARB_create_context)
-   DE_INFO("hasWGL_ARB_create_context_profile = ", hasWGL_ARB_create_context_profile)
-
-   // create rendering context
-   //HGLRC WINAPI
-   //wglCreateContextAttribsARB (HDC hDC, HGLRC hShareContext, const int *attribList);
-
-   //#ifdef WGL_ARB_create_context
-   //#endif
-
-   PFNWGLCREATECONTEXTATTRIBSARBPROC my_wglCreateContextAttribsARB =
-      reinterpret_cast<PFNWGLCREATECONTEXTATTRIBSARBPROC>(wglGetProcAddress("wglCreateContextAttribsARB"));
-
-   if ( my_wglCreateContextAttribsARB )
-   {
-      DE_INFO("Got wglCreateContextAttribsARB()")
-   }
-   else
-   {
-      DE_ERROR("No wglCreateContextAttribsARB()")
-   }
-
-   if ( my_wglCreateContextAttribsARB )
-   {
-      int iContextAttribs[] =
-      {
-         WGL_CONTEXT_MAJOR_VERSION_ARB, 3,
-         WGL_CONTEXT_MINOR_VERSION_ARB, 3,
-         0
-      };
-
-      m_hRC = my_wglCreateContextAttribsARB( m_hDC, nullptr, iContextAttribs );
-
-      if ( m_hRC )
-      {
-         DE_INFO("wglCreateContextAttribsARB(3,3)")
-      }
-      else
-      {
-         DE_ERROR("wglCreateContextAttribsARB(3,3)")
-      }
-   }
-   else
-#endif
-   {
-      _d->m_hRC = wglCreateContext( _d->m_hDC );
-      if ( _d->m_hRC )
-      {
-         #ifdef BENNI_USE_COUT
-         DE_INFO("Only wglCreateContext()")
-         #endif
-      }
-      else
-      {
-         #ifdef BENNI_USE_COUT
-         DE_ERROR("Failed wglCreateContext()")
-         #endif
-         return false;
-      }
-   }
-
-   wglMakeCurrent( _d->m_hDC, _d->m_hRC );
-
-   // !!! wglSwapIntervalEXT not working on my PC, maybe i need to use all EXT, not ARB? !!!
-#ifdef WGL_EXT_swap_control
-   PFNWGLSWAPINTERVALEXTPROC my_wglSwapIntervalEXT =
-      reinterpret_cast<PFNWGLSWAPINTERVALEXTPROC>( wglGetProcAddress("wglSwapIntervalEXT") );
-
-   if (my_wglSwapIntervalEXT)
-   {
-      #ifdef BENNI_USE_COUT
-      DE_INFO("wglSwapIntervalEXT.")
-      #endif
-   }
-   else
-   {
-      #ifdef BENNI_USE_COUT
-      DE_ERROR("wglSwapIntervalEXT.")
-      #endif
-   }
-
-   if (my_wglSwapIntervalEXT)
-   {
-      my_wglSwapIntervalEXT( _d->m_params.vsync );
-
-      #ifdef BENNI_USE_COUT
-      DE_INFO("my_wglSwapIntervalEXT.")
-      #endif
-   }
-
-   //wglSwapIntervalEXT( m_params.vsync );
-#endif
-
-   // OpenGLDriver.init():
-
-   glewInit(); // VIP call
-
-   //beginScene();
-   //endScene();
-   //swapBuffers();
-   /// !!! Using GLAD not working on my PC !!!
-#ifdef BENNI_USE_COUT
-   // PointSize
-   f32 pointSize[2] { 0,0 };
-   f32 pointSizeRange[4] { 0,0,0,0 };
-   glGetFloatv( GL_POINT_SIZE, pointSize );
-   glGetFloatv( GL_POINT_SIZE_RANGE, pointSizeRange );
-
-   f32 lineWidth[4] { 0,0,0,0 };
-   f32 lineWidthRange[4] { 0,0,0,0 };
-   f32 lineWidthGranularity[4] { 0,0,0,0 };
-   glGetFloatv( GL_LINE_WIDTH, lineWidth );
-   glGetFloatv( GL_LINE_WIDTH_RANGE, lineWidthRange );
-   glGetFloatv( GL_LINE_WIDTH_GRANULARITY, lineWidthGranularity );
-
-
-   // DEBUG BEGIN:
-#if 1
-   std::cout << "GL extensions: "<< glExtensions << std::endl;
-#else
-   std::vector< std::string > glExtensionsVec = splitText( glExtensions, ' ' );
-
-   std::cout << "GL extensions count = "<< glExtensionsVec.size() << std::endl;
-   for ( size_t i = 0; i < glExtensionsVec.size(); ++i )
-   {
-      std::cout << "GL extension[" << i <<"] "<< glExtensionsVec[i] << std::endl;
-   }
-#endif
-
-   std::cout << "[GL] GL_POINT_SIZE = " << pointSize[0] << std::endl;
-   std::cout << "[GL] GL_POINT_SIZE_RANGE = " << pointSizeRange[0] << "," << pointSizeRange[1] << std::endl;
-
-   std::cout << "[GL] GL_LINE_WIDTH = " << lineWidth[0] << std::endl;
-   std::cout << "[GL] GL_LINE_WIDTH_RANGE = " << lineWidthRange[0] << "," << lineWidthRange[1] << std::endl;
-   std::cout << "[GL] GL_LINE_WIDTH_GRANULARITY = " << lineWidthGranularity[0] << std::endl;
-
-   /*
-   if ( params.m_msaa > 0 )
-   {
-      glEnable( GL_MULTISAMPLE );
-      s32 samples[4] { 0,0,0,0 };
-      glGetIntegerv( GL_MULTISAMPLE, samples );
-      f32 mlwRange[4] { 0,0,0,0 };
-      glGetFloatv( GL_MULTISAMPLE_LINE_WIDTH_RANGE, mlwRange );
-      f32 mlwGranularity[4] { 0,0,0,0 };
-      glGetFloatv( GL_MULTISAMPLE_LINE_WIDTH_GRANULARITY, mlwGranularity );
-      DE_DEBUG("GL_MULTISAMPLE")
-      DE_DEBUG("GL_MULTISAMPLE = ", samples[0])
-      DE_DEBUG("GL_MULTISAMPLE_LINE_WIDTH_RANGE = ",mlwRange[0],",",mlwRange[1])
-      DE_DEBUG("GL_MULTISAMPLE_LINE_WIDTH_GRANULARITY = ",mlwGranularity[0])
-   }
-
-   DE_DEBUG("GL_gpu_shader4 = ",glHasExtension( "GL_gpu_shader4" ))
-   DE_DEBUG("GL_gpu_shader5 = ",glHasExtension( "GL_gpu_shader5" ))
-   DE_DEBUG("GL_EXT_gpu_shader4 = ",glHasExtension( "GL_EXT_gpu_shader4" ))
-   DE_DEBUG("GL_EXT_gpu_shader5 = ",glHasExtension( "GL_EXT_gpu_shader5" ))
-   */
-#endif
-#endif
-   return true;
-}
-
-Recti Window_WGL::getWindowRect() const
-{
-    RECT r;
-    GetWindowRect( _d->hWnd, &r );
-    // DE_DEBUG("hWnd(",_d->hWnd,"), "
-    //          "r.left(",r.left,"), "
-    //          "r.top(",r.top,"), "
-    //          "r.right(",r.right,"), "
-    //          "r.bottom(",r.bottom,")")
-    return Recti(r.left, r.top, r.right - r.left, r.bottom - r.top );
-}
-
-Recti Window_WGL::getClientRect() const
-{
-    RECT r;
-    GetClientRect( _d->hWnd, &r );
-    // DE_DEBUG("hWnd(",_d->hWnd,"), "
-    //          "r.left(",r.left,"), "
-    //          "r.top(",r.top,"), "
-    //          "r.right(",r.right,"), "
-    //          "r.bottom(",r.bottom,")")
-    return Recti(r.left, r.top, r.right - r.left, r.bottom - r.top );
-}
-
-void Window_WGL::bringToFront()
-{
-    ShowWindow(_d->hWnd, SW_SHOWNORMAL);  // Or SW_RESTORE if minimized
-    SetWindowPos(_d->hWnd, HWND_TOP, 0, 0, 0, 0,
-                 SWP_NOMOVE | SWP_NOSIZE);
-
-    AllowSetForegroundWindow(ASFW_ANY);
-
-    SetForegroundWindow(_d->hWnd);
-}
-
-bool Window_WGL::isHideOnClose() const
-{
-    return _d->m_hideOnClose;
-}
-
-void Window_WGL::setHideOnClose( bool bEnableHideOnClose )
-{
-    _d->m_hideOnClose = bEnableHideOnClose;
-}
-
-bool Window_WGL::isPostQuitMessage() const
-{
-    return _d->m_postQuitMessage;
-}
-
-void Window_WGL::setPostQuitMessage( bool bPostQuitMessage )
-{
-    _d->m_postQuitMessage = bPostQuitMessage;
-}
-
-bool Window_WGL::isVisible() const
-{
-    return IsWindowVisible(_d->hWnd);
-}
-
-void Window_WGL::setVisible( bool bVisible )
-{
-    if (bVisible)
-    {
-        ShowWindow(_d->hWnd, SW_SHOW);
-        DE_DEBUG("Show Window ", (void*)_d->hWnd)
-    }
-    else
-    {
-        ShowWindow(_d->hWnd, SW_HIDE);
-        DE_DEBUG("Hide Window ", (void*)_d->hWnd)
-    }
-}
-
-void Window_WGL::setWindowTitle( char const* title )
-{
-    // SendMessage instead of SetText for cases where HWND was created in a different thread
-    DWORD_PTR dwResult;
-    SendMessageTimeoutA(
-        _d->hWnd,
-        WM_SETTEXT,
-        0,
-        reinterpret_cast< LPARAM >( title ),
-        SMTO_ABORTIFHUNG,
-        2000,
-        &dwResult
-    );
-}
-
-void
-Window_WGL::setWindowIcon( int iRessourceID )
-{
-    if ( !_d->hWnd ) { return; }
-
-    if ( !_d->m_hInstance ) { _d->m_hInstance = GetModuleHandle( nullptr ); }
-
-    HICON hIcon = (HICON)LoadImage( _d->m_hInstance,
-    MAKEINTRESOURCE(iRessourceID),
-    IMAGE_ICON, 0, 0, LR_DEFAULTSIZE | LR_SHARED );
-
-    if ( hIcon )
-    {
-        LONG_PTR ptr = reinterpret_cast<LONG_PTR>( hIcon );
-        SetClassLongPtr( _d->hWnd, GCLP_HICON, ptr );
-        SetClassLongPtr( _d->hWnd, GCLP_HICONSM, ptr );
-
-        SendMessage(_d->hWnd, WM_SETICON, ICON_BIG, (LPARAM)hIcon);
-        SendMessage(_d->hWnd, WM_SETICON, ICON_SMALL, (LPARAM)hIcon);
-    }
-}
-
-/*
-// Function to load a bitmap from a resource
-HBITMAP LoadBitmapFromResource(HINSTANCE hInstance, LPCWSTR lpBitmapName)
-{
-    return (HBITMAP)LoadImageW(hInstance, lpBitmapName, IMAGE_BITMAP, 0, 0, LR_CREATEDIBSECTION);
-}
-*/
-
-void
-Window_WGL::setWindowBackgroundImage( int iRessourceID )
-{
-    if ( !_d->hWnd ) { return; }
-
-    if ( !_d->m_hInstance ) { _d->m_hInstance = GetModuleHandle( nullptr ); }
-
-    if (_d->m_hBackgroundBitmap)
-    {
-        DeleteObject(_d->m_hBackgroundBitmap);
-        _d->m_hBackgroundBitmap = nullptr; // Optional but good practice
-    }
-
-    _d->m_hBackgroundBitmap = (HBITMAP)LoadImageW(
-        _d->m_hInstance,
-        MAKEINTRESOURCEW(iRessourceID),
-        IMAGE_BITMAP, 0, 0, LR_CREATEDIBSECTION );
-
-    update();
-}
-
-
-bool Window_WGL::isResizable() const
-{
-    return _d->m_params.isResizable;
-}
-
-/*
-void Window_WGL::setResizable( bool resizable )
-{
-   if ( !_d->hWnd ) { return; }
-
-   int screenWidth = getClientRect().w; // TODO: Change GetClientRect() to m_screenWidth;
-   int screenHeight = getClientRect().h;// TODO: Change GetClientRect() to m_screenHeight;
-
-   DWORD style = _d->m_windowedStyle;
-
-   if (resizable)
-   {
-      style |= DWORD(WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_THICKFRAME);
-   }
-   else
-   {
-      style &= ~DWORD(WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_THICKFRAME);
-   }
-
-   // Should be ok to set it here
-   _d->m_windowedStyle = style;
-   _d->m_params.isResizable = resizable;
-
-   // If we are in fullscreen mode, abort now...
-   // We changed the window mode style and wait now for the user to call setFullscreen(false).
-   if ( _d->m_params.isFullscreen ) { return; }
-
-   // TODO: Separate this code into a reusable function setWindowStyle().
-   if ( !SetWindowLongPtr( _d->hWnd, GWL_STYLE, LONG_PTR(style) ) )
-   {
-      DE_ERROR("Cant change window style.")
-      return;
-   }
-
-   _d->m_windowStyle = style; // Update 'current style' only on Success
-
-   // This part is needed, or Window will freeze in the background.
-   RECT r_window;
-   r_window.top = 0;
-   r_window.left = 0;
-   r_window.right = screenWidth;
-   r_window.bottom = screenHeight;
-
-   AdjustWindowRect( &r_window, _d->m_windowStyle, FALSE );
-
-   int winW = r_window.right - r_window.left;
-   int winH = r_window.bottom - r_window.top;
-
-   int winX = (GetSystemMetrics(SM_CXSCREEN) - winW) / 2;
-   int winY = (GetSystemMetrics(SM_CYSCREEN) - winH) / 2;
-
-   winX = std::max( winX, 0 );
-   winY = std::max( winY, 0 );
-
-   SetWindowPos( _d->hWnd, HWND_TOP, winX, winY, winW, winH,
-                  SWP_FRAMECHANGED | SWP_SHOWWINDOW); //  | SWP_NOMOVE
-}
-*/
-
-void Window_WGL::setResizable( bool resizable )
-{
-    if ( !_d->hWnd ) { return; }
-
-    // 1. Hole den AKTUELLEN Stil direkt vom Windows-Fenster,
-    // damit Stile wie WS_CLIPCHILDREN / WS_CLIPSIBLINGS NICHT verloren gehen!
-    DWORD style = GetWindowLong( _d->hWnd, GWL_STYLE );
-
-    if (resizable)
-    {
-        style |= (WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_THICKFRAME);
-    }
-    else
-    {
-        style &= ~(WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_THICKFRAME);
-    }
-
-    _d->m_windowedStyle = style;
-    _d->m_params.isResizable = resizable;
-
-    if ( _d->m_params.isFullscreen ) { return; }
-
-    // 2. Stil sicher anwenden
-    if ( !SetWindowLongPtr( _d->hWnd, GWL_STYLE, LONG_PTR(style) ) )
-    {
-        DE_ERROR("Cant change window style.")
-        return;
-    }
-
-    _d->m_windowStyle = style;
-
-    // 3. Richtige Fenstergröße inklusive Titelleiste berechnen
-    RECT r_window;
-    GetClientRect(_d->hWnd, &r_window); // Holt die echten, aktuellen Client-Maße (0, 0, W, H)
-
-    // Berechnet die benötigte Gesamtfenstergröße basierend auf dem NEUEN Stil
-    AdjustWindowRect( &r_window, style, FALSE );
-
-    int winW = r_window.right - r_window.left;
-    int winH = r_window.bottom - r_window.top;
-
-    // Zentrieren auf dem Bildschirm
-    int winX = (GetSystemMetrics(SM_CXSCREEN) - winW) / 2;
-    int winY = (GetSystemMetrics(SM_CYSCREEN) - winH) / 2;
-
-    winX = std::max( winX, 0 );
-    winY = std::max( winY, 0 );
-
-    // 4. WICHTIG: SWP_FRAMECHANGED zwingt Windows, den Rahmen und die Titelleiste
-    // basierend auf dem neuen Stil komplett neu und sauber zu zeichnen!
-    SetWindowPos( _d->hWnd, HWND_TOP, winX, winY, winW, winH,
-              SWP_FRAMECHANGED | SWP_SHOWWINDOW | SWP_NOACTIVATE);
-}
-
-bool Window_WGL::isFullScreen() const
-{
-    return _d->m_params.isFullscreen;
-}
-
-void Window_WGL::setFullScreen( bool fullscreen )
-{
-   DWORD style;
-
-   if ( fullscreen )
-   {
-      style = _d->m_fullscreenStyle;
-   }
-   else
-   {
-      style = _d->m_windowedStyle;
-   }
-
-   // TODO: Separate this code into a reusable function setWindowStyle().
-   if ( !SetWindowLongPtr( _d->hWnd, GWL_STYLE, LONG_PTR(style) ) )
-   {
-      printf("Cant change window style.\n");
-      //std::cout << "Could not change window style." << std::endl;
-   }
-
-   _d->m_params.isFullscreen = fullscreen;
-   _d->m_windowStyle = style; // Update 'current style' only on Success
-
-   int const desktopWidth = GetSystemMetrics(SM_CXSCREEN);
-   int const desktopHeight = GetSystemMetrics(SM_CYSCREEN);
-
-   // This part is needed, or Window will freeze in the background.
-   RECT r_window;
-
-   if (_d->m_params.isFullscreen)
-   {
-      r_window.top = 0;
-      r_window.left = 0;
-      r_window.right = desktopWidth;
-      r_window.bottom = desktopHeight;
-   }
-   else
-   {
-      r_window.top = 0;
-      r_window.left = 0;
-      r_window.right = _d->m_params.width;
-      r_window.bottom = _d->m_params.height;
-   }
-
-   AdjustWindowRect( &r_window, _d->m_windowStyle, FALSE );
-
-   int winW = r_window.right - r_window.left;
-   int winH = r_window.bottom - r_window.top;
-   int winX = (desktopWidth - winW) / 2;
-   int winY = (desktopHeight - winH) / 2;
-
-   if ( _d->m_params.isFullscreen )
-   {
-      winX = 0;
-      winY = 0;
-   }
-   else
-   {
-      winX = std::max( winX, 0 ); // Thick Border
-      winY = std::max( winY, 0 );
-   }
-   SetWindowPos( _d->hWnd, HWND_TOP, winX, winY, winW, winH,
-                  SWP_FRAMECHANGED | SWP_SHOWWINDOW); //  | SWP_NOMOVE
-}
-
-
-// Runs the device. Returns false if device wants to be deleted
-bool Window_WGL::run()
-{
-    yield();
-   //os::Timer::tick();
-
-   //static_cast<CCursorControl*>(CursorControl)->update();
-
-   //handleSystemMessages();
-
-/*
-   MSG msg;
-   while (GetMessage (&msg, nullptr, 0, 0))
-   {
-      TranslateMessage (&msg);
-      DispatchMessage (&msg);
-      // self.beginScene();
-      // self.endScene();
-   }
-*/
-
-   MSG msg;
-
-   while (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE))
-   {
-      // No message translation because we don't use WM_CHAR and it would conflict with our
-      // deadkey handling.
-
-      //if (ExternalWindow && msg.hwnd == m_hWnd)
-      //   WndProc(HWnd, msg.message, msg.wParam, msg.lParam);
-      //else
-         DispatchMessage(&msg);
-
-      if (msg.message == WM_QUIT)
-      {
-         _d->m_shouldRun = false;
-      }
-   }
-
-   //if (!Close)
-   //   resizeIfNecessary();
-
-   //if(!Close && JoyControl)
-   //   JoyControl->pollJoysticks();
-
-   //_IRR_IMPLEMENT_MANAGED_MARSHALLING_BUGFIX;
-   return _d->m_shouldRun;
-}
-
-
-/*
-
-//! runs the device. Returns false if device wants to be deleted
-bool CIrrDeviceWin32::run()
-{
-   os::Timer::tick();
-
-   static_cast<CCursorControl*>(CursorControl)->update();
-
-   handleSystemMessages();
-
-   if (!Close)
-      resizeIfNecessary();
-
-   if(!Close && JoyControl)
-      JoyControl->pollJoysticks();
-
-   _IRR_IMPLEMENT_MANAGED_MARSHALLING_BUGFIX;
-   return !Close;
-}
-
-//! Process system events
-void CIrrDeviceWin32::handleSystemMessages()
-{
-   MSG msg;
-
-   while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
-   {
-      // No message translation because we don't use WM_CHAR and it would conflict with our
-      // deadkey handling.
-
-      if (ExternalWindow && msg.hwnd == HWnd)
-         WndProc(HWnd, msg.message, msg.wParam, msg.lParam);
-      else
-         DispatchMessage(&msg);
-
-      if (msg.message == WM_QUIT)
-         Close = true;
-   }
-}
-
-//! Remove all messages pending in the system message loop
-void CIrrDeviceWin32::clearSystemMessages()
-{
-   MSG msg;
-   while (PeekMessage(&msg, NULL, WM_KEYFIRST, WM_KEYLAST, PM_REMOVE))
-   {}
-   while (PeekMessage(&msg, NULL, WM_MOUSEFIRST, WM_MOUSELAST, PM_REMOVE))
-   {}
-}
-
-//! Minimizes the window.
-void CIrrDeviceWin32::minimizeWindow()
-{
-   WINDOWPLACEMENT wndpl;
-   wndpl.length = sizeof(WINDOWPLACEMENT);
-   GetWindowPlacement(HWnd, &wndpl);
-   wndpl.showCmd = SW_SHOWMINNOACTIVE;
-   SetWindowPlacement(HWnd, &wndpl);
-}
-
-
-//! Maximizes the window.
-void CIrrDeviceWin32::maximizeWindow()
-{
-   WINDOWPLACEMENT wndpl;
-   wndpl.length = sizeof(WINDOWPLACEMENT);
-   GetWindowPlacement(HWnd, &wndpl);
-   wndpl.showCmd = SW_SHOWMAXIMIZED;
-   SetWindowPlacement(HWnd, &wndpl);
-}
-
-//! Restores the window to its original size.
-void CIrrDeviceWin32::restoreWindow()
-{
-   WINDOWPLACEMENT wndpl;
-   wndpl.length = sizeof(WINDOWPLACEMENT);
-   GetWindowPlacement(HWnd, &wndpl);
-   wndpl.showCmd = SW_SHOWNORMAL;
-   SetWindowPlacement(HWnd, &wndpl);
-}
-
-#include <windows.h>
-#include <gl/gl.h>
-#include <gl/glu.h>
-#include <gl/glcorearb.h>
-
-// Function prototypes
-LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
-void InitializeOpenGL(HWND hwnd);
-void RenderScene();
-void UpdateFrameRate(HWND hwnd);
-
-// Global variables
-HDC hDC;
-HGLRC hGLRC;
-bool running = true;
-
-int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd) {
-    // Window class setup
-    const char* className = "OpenGLWindowClass";
-    WNDCLASS wc = {};
-    wc.lpfnWndProc = WindowProc;
-    wc.hInstance = hInstance;
-    wc.lpszClassName = className;
-    wc.hCursor = LoadCursor(nullptr, IDC_ARROW);
-
-    RegisterClass(&wc);
-
-    // Create the window
-    HWND hwnd = CreateWindowEx(
-        0,
-        className,
-        "OpenGL Window",
-        WS_OVERLAPPEDWINDOW,
-        CW_USEDEFAULT, CW_USEDEFAULT, 800, 600,
-        nullptr, nullptr, hInstance, nullptr
-        );
-
-    ShowWindow(hwnd, nShowCmd);
-
-    // Initialize OpenGL
-    InitializeOpenGL(hwnd);
-
-    // Main message loop
-    MSG msg = {};
-    while (running) {
-        while (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE)) {
-            TranslateMessage(&msg);
-            DispatchMessage(&msg);
-        }
-
-        RenderScene();
-        SwapBuffers(hDC);
-        UpdateFrameRate(hwnd);
-    }
-
-    // Cleanup
-    wglMakeCurrent(nullptr, nullptr);
-    wglDeleteContext(hGLRC);
-    ReleaseDC(hwnd, hDC);
-    DestroyWindow(hwnd);
-
-    return 0;
-}
-
-LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
-    switch (uMsg) {
-    case WM_CREATE: {
-        SetTimer(hwnd, 1, 1000 / 30, nullptr); // 30 FPS
-    } break;
-    case WM_PAINT: {
-        PAINTSTRUCT ps;
-        BeginPaint(hwnd, &ps);
-        RenderScene();
-        EndPaint(hwnd, &ps);
-    } break;
-    case WM_TIMER: {
-        InvalidateRect(hwnd, nullptr, FALSE);
-    } break;
-    case WM_CLOSE: {
-        running = false;
-        PostQuitMessage(0);
-    } break;
-    case WM_DESTROY: {
-        KillTimer(hwnd, 1);
-    } break;
-    default: {
-        return DefWindowProc(hwnd, uMsg, wParam, lParam);
-    }
-    }
-    return 0;
-}
-
-void InitializeOpenGL(HWND hwnd) {
-    // Set up pixel format descriptor
-    PIXELFORMATDESCRIPTOR pfd = {};
-    pfd.nSize = sizeof(PIXELFORMATDESCRIPTOR);
-    pfd.nVersion = 1;
-    pfd.dwFlags = PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL | PFD_DOUBLEBUFFER;
-    pfd.iPixelType = PFD_TYPE_RGBA;
-    pfd.cColorBits = 32;
-    pfd.cDepthBits = 24;
-    pfd.cStencilBits = 8;
-    pfd.iLayerType = PFD_MAIN_PLANE;
-
-    hDC = GetDC(hwnd);
-    int pixelFormat = ChoosePixelFormat(hDC, &pfd);
-    SetPixelFormat(hDC, pixelFormat, &pfd);
-
-    // Create OpenGL context
-    hGLRC = wglCreateContext(hDC);
-    wglMakeCurrent(hDC, hGLRC);
-}
-
-void RenderScene() {
-    // Clear color, depth and stencil buffers
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-
-    // TODO: Add your rendering code here
-}
-
-void UpdateFrameRate(HWND hwnd) {
-    // Update the screen at 30 FPS
-    static DWORD lastTime = 0;
-    DWORD currentTime = GetTickCount();
-    if (currentTime - lastTime >= 1000 / 30) {
-        InvalidateRect(hwnd, nullptr, FALSE);
-        lastTime = currentTime;
-    }
-}
-*/
-
 
 } // end namespace de.
-
-#if 0
-
-LRESULT CALLBACK
-Window_WGL_Proc( HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam )
-{
-    Window_WGL* self = reinterpret_cast<Window_WGL*>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
-    if (msg == WM_CREATE)
-    {
-        CREATESTRUCT* cs = (CREATESTRUCT*)lParam;
-        SetWindowLongPtr(hwnd, GWLP_USERDATA, (LONG_PTR)cs->lpCreateParams);
-
-        DE_OK("WM_CREATE")
-        SetTimer(hwnd, 123, 1000 / 60, NULL);
-        return 0;
-    }
-
-    if (!self) return DefWindowProc(hwnd, msg, wParam, lParam);
-
-#if 0
-    Window_WGL* glwin = nullptr;
-    if ( message == WM_NCCREATE )
-    {
-        glwin = static_cast< Window_WGL* >(
-            reinterpret_cast< CREATESTRUCT* >( lParam )->lpCreateParams ); // MinGW wraps nicely
-
-        SetLastError( 0 );
-        if ( !SetWindowLongPtr( hwnd, GWL_USERDATA, reinterpret_cast< LONG_PTR >( glwin ) ) )
-        {
-            DWORD const e = ::GetLastError();
-            if ( e != 0 )
-            {
-                DE_ERROR("Async SetUserData failed. ") //, getErrorString( e ))
-                //return FALSE;
-            }
-        }
-    }
-    else
-    {
-        glwin = reinterpret_cast< Window_WGL* >( GetWindowLongPtr( hwnd, GWL_USERDATA ) );
-    }
-#endif
-
-    auto createMouseDblClickEvent = [](UINT msg, WPARAM wParam, LPARAM lParam)
-    {
-        const int mx = GET_X_LPARAM(lParam);
-        const int my = GET_Y_LPARAM(lParam);
-        const bool bCtrl = (wParam & MK_CONTROL) != 0;
-        const bool bShift = (wParam & MK_SHIFT) != 0;
-        const bool bAlt = (wParam & MK_ALT) != 0;
-
-        MouseDblClickEvent e;
-        e.x = mx;
-        e.y = my;
-
-        e.flags = MouseFlag::DoubleClick;
-        if (bCtrl) { e.flags |= MouseFlag::WithCtrl; }
-        if (bShift) { e.flags |= MouseFlag::WithShift; }
-        if (bAlt) { e.flags |= MouseFlag::WithAlt; }
-
-        switch (msg)
-        {
-            case WM_LBUTTONDBLCLK: e.buttons = MouseButton::Left; break;
-            case WM_RBUTTONDBLCLK: e.buttons = MouseButton::Right; break;
-            case WM_MBUTTONDBLCLK: e.buttons = MouseButton::Middle; break;
-            default: DE_ERROR("Unsupported mouse button double click.") break;
-        }
-
-        return e;
-    };
-
-    auto createMousePressEvent = [](UINT msg, WPARAM wParam, LPARAM lParam)
-    {
-        MousePressEvent e;
-        e.x = LOWORD(lParam);
-        e.y = HIWORD(lParam);
-        e.flags = MouseFlag::Pressed;
-        //e.flags.Shift = ((LOWORD(wParam) & MK_SHIFT) != 0);
-        //e.flags.Control = ((LOWORD(wParam) & MK_CONTROL) != 0);
-
-        switch (msg)
-        {
-            case WM_LBUTTONDOWN: e.buttons = MouseButton::Left; break;
-            case WM_RBUTTONDOWN: e.buttons = MouseButton::Right; break;
-            case WM_MBUTTONDOWN: e.buttons = MouseButton::Middle; break;
-            default: DE_ERROR("Unsupported mouse press event.") break;
-        }
-        return e;
-    };
-
-    auto createMouseReleaseEvent = [](UINT msg, WPARAM wParam, LPARAM lParam)
-    {
-        MouseReleaseEvent e;
-        e.x = LOWORD(lParam);
-        e.y = HIWORD(lParam);
-        e.flags = MouseFlag::Released;
-        //e.flags.Shift = ((LOWORD(wParam) & MK_SHIFT) != 0);
-        //e.flags.Control = ((LOWORD(wParam) & MK_CONTROL) != 0);
-
-        switch (msg)
-        {
-            case WM_LBUTTONUP: e.buttons = MouseButton::Left; break;
-            case WM_RBUTTONUP: e.buttons = MouseButton::Right; break;
-            case WM_MBUTTONUP: e.buttons = MouseButton::Middle; break;
-            default: DE_ERROR("Unsupported mouse release event.") break;
-        }
-        return e;
-    };
-
-    auto createKeyPressEvent = [](Window_WGL* self, UINT msg, WPARAM wParam, LPARAM lParam)
-    {
-        BYTE allKeys[ 256 ];
-        GetKeyboardState( allKeys );
-        bool const isShift = ( ( allKeys[ VK_SHIFT ] & 0x80 ) != 0 );
-        bool const isCtrl = ( ( allKeys[ VK_CONTROL ] & 0x80 ) != 0 );
-
-        // Handle unicode and deadkeys in a way that works since Windows 95 and nt4.0
-        // Using ToUnicode instead would be shorter, but would to my knowledge not run on 95 and 98.
-        UINT32 unicode = 0;
-        wchar_t singleChar = 0;
-        WORD keyChars[ 2 ];
-        UINT scanCode = HIWORD( lParam );
-        int conversionResult = ::ToAsciiEx( UINT(wParam),
-                                           scanCode,
-                                           allKeys,
-                                           keyChars,
-                                           0,
-                                           self->_d->m_KEYBOARD_INPUT_HKL );
-        if (conversionResult == 1)
-        {
-            WORD unicodeChar;
-            ::MultiByteToWideChar( self->_d->m_KEYBOARD_INPUT_CODEPAGE,
-                                  MB_PRECOMPOSED, // default
-                                  reinterpret_cast<LPCSTR>(keyChars),
-                                  sizeof( keyChars ),
-                                  reinterpret_cast<WCHAR*>(&unicodeChar),
-                                  1 );
-            singleChar = unicodeChar;
-            unicode = unicodeChar;
-        }
-        else
-        {
-            DE_ERROR("Conversion Error in keyPressEvent")
-        }
-
-        KeyPressEvent e;
-        e.key = translateWinKey( UINT(wParam) );
-        e.unicode = unicode;
-        e.scancode = UINT(wParam);
-        e.modifiers = 0;
-        if ( isShift ) e.modifiers |= KeyModifier::Shift;
-        if ( isCtrl ) e.modifiers |= KeyModifier::Ctrl;
-        return e;
-    };
-
-    auto createKeyReleaseEvent = [](Window_WGL* self, UINT msg, WPARAM wParam, LPARAM lParam)
-    {
-        BYTE allKeys[ 256 ];
-        GetKeyboardState( allKeys );
-        bool const isShift = ( ( allKeys[ VK_SHIFT ] & 0x80 ) != 0 );
-        bool const isCtrl = ( ( allKeys[ VK_CONTROL ] & 0x80 ) != 0 );
-
-        // Handle unicode and deadkeys in a way that works since Windows 95 and nt4.0
-        // Using ToUnicode instead would be shorter, but would to my knowledge not run on 95 and 98.
-        UINT32 unicode = 0;
-        wchar_t singleChar = 0;
-        WORD keyChars[ 2 ];
-        UINT scanCode = HIWORD( lParam );
-        int conversionResult = ::ToAsciiEx( UINT(wParam),
-                                           scanCode,
-                                           allKeys,
-                                           keyChars,
-                                           0,
-                                           self->_d->m_KEYBOARD_INPUT_HKL );
-        if (conversionResult == 1)
-        {
-            WORD unicodeChar;
-            ::MultiByteToWideChar( self->_d->m_KEYBOARD_INPUT_CODEPAGE,
-                                  MB_PRECOMPOSED, // default
-                                  reinterpret_cast<LPCSTR>(keyChars),
-                                  sizeof( keyChars ),
-                                  reinterpret_cast<WCHAR*>(&unicodeChar),
-                                  1 );
-            singleChar = unicodeChar;
-            unicode = unicodeChar;
-        }
-        else
-        {
-            DE_ERROR("Conversion Error in keyReleaseEvent")
-        }
-
-        KeyReleaseEvent e;
-        e.key = translateWinKey( UINT(wParam) );
-        e.unicode = unicode;
-        e.scancode = UINT(wParam);
-        e.modifiers = 0;
-        if ( isShift ) e.modifiers |= KeyModifier::Shift;
-        if ( isCtrl ) e.modifiers |= KeyModifier::Ctrl;
-        return e;
-    };
-
-    switch (msg)
-    {
-        case WM_NCCREATE:
-        {
-            DE_TRACE("WM_NCCREATE ", hwnd)
-            break;
-        }
-        case WM_CREATE:
-        {
-            DE_TRACE("WM_CREATE ", hwnd)
-            //setWindowIcon( u64(hwnd), aaaa );
-            //setResizable( hwnd, true, 800, 600 );
-            //createMenu( hwnd );
-            break;
-        }
-        case WM_SETFOCUS:
-        {
-            DE_OK("WM_SETFOCUS")
-            self->_d->focused = true;
-            break;
-        }
-        case WM_KILLFOCUS:
-        {
-            DE_OK("WM_KILLFOCUS")
-            self->_d->focused = false;
-            break;
-        }
-        case WM_DESTROY:
-        {
-            DE_OK("WM_DESTROY ", hwnd)
-            KillTimer(hwnd, 123);
-            //PostQuitMessage(0);
-            return 0;
-
-            self->_d->m_receiver = nullptr;
-
-
-            if (self->_d->m_postQuitMessage)
-            {
-                PostQuitMessage(0);
-                return 0;
-            }
-            else
-            {
-                return DefWindowProc(hwnd, msg, wParam, lParam);
-            }
-        }
-        case WM_CLOSE:
-        {
-            DE_TRACE("WM_CLOSE ", hwnd)
-            /*
-            if (self->_d->m_hideOnClose)
-            {
-                // Instead of destroying, just hide the window
-                ShowWindow(hwnd, SW_HIDE);
-                return 0;
-            }
-            else
-            {
-                return DefWindowProc(hwnd, msg, wParam, lParam);
-            }
-            */
-            break;
-        }
-        case WM_TIMER:
-        {
-            if (wParam == 123)
-            {
-                InvalidateRect(hwnd, NULL, TRUE); // force redraw
-            }
-            return 0;
-        }
-        case WM_ERASEBKGND:
-        {
-           return 0;
-        }
-        case WM_PAINT:
-        {
-            PAINTSTRUCT ps;
-            BeginPaint(hwnd, &ps);
-
-            if ( self && self->_d->m_bPaintEventEnabled)
-            {
-                wglMakeCurrent(ps.hdc, self->_d->m_hRC);
-
-                RECT r;
-                GetClientRect(hwnd, &r);
-
-                de::PaintEvent event;
-                event.w = r.right - r.left;
-                event.h = r.bottom - r.top;
-                self->paintEvent(event);
-
-                // PaintEvent event;
-                // Recti r = self->getClientRect();
-                // event.w = r.w;
-                // event.h = r.h;
-                //std::lock_guard< std::mutex > guard( os::win32::s_Mutex );
-                self->onEvent( event );
-                //self->swapBuffers();
-
-                //SwapBuffers( self->_d->m_hDC );
-
-                SwapBuffers( ps.hdc );
-
-                //ValidateRect( hwnd, nullptr );
-            }
-
-            EndPaint(hwnd, &ps);
-
-        /*
-            int dstW = self->_d->m_screenWidth;
-            int dstH = self->_d->m_screenHeight;
-
-            HBITMAP hBmp = self->_d->m_hBackgroundBitmap;
-            if (hBmp)
-            {
-               HDC hMemDC = CreateCompatibleDC(hDC);
-               HBITMAP hOld = (HBITMAP)SelectObject(hMemDC, hBmp);
-
-               BITMAP bm;
-               GetObject(hBmp, sizeof(bm), &bm);
-
-               SetStretchBltMode(hDC, HALFTONE); // Or other stretch mode
-               StretchBlt(hDC, 0, 0, dstW, dstH, hMemDC, 0, 0, bm.bmWidth, bm.bmHeight, SRCCOPY);
-
-               SelectObject(hMemDC, hOld);
-               DeleteDC(hMemDC);
-            }
-            else
-            {
-                HBRUSH solidBrush = CreateSolidBrush(RGB(0x3C, 0x43, 0x54));
-                SelectObject(hDC, solidBrush);
-                Rectangle(hDC, -1, -1, dstW+1, dstH+1);
-                DeleteObject(solidBrush);
-            }
-        */
-            return 0;
-        }
-        case WM_MOVE:
-        {
-            if ( self )
-            {
-                MoveEvent moveEvent;
-                moveEvent.x = GET_X_LPARAM( lParam );
-                moveEvent.y = GET_Y_LPARAM( lParam );
-                //DE_WARN("MoveEvent = ", moveEvent.str())
-                self->onEvent( moveEvent );
-            }
-            return 0;
-        }
-        case WM_SIZE:
-        {
-            if ( self )
-            {
-                ResizeEvent resizeEvent;
-                resizeEvent.w = GET_X_LPARAM( lParam );
-                resizeEvent.h = GET_Y_LPARAM( lParam );
-                //DE_WARN("ResizeEvent = ", resizeEvent.str())
-                self->onEvent( resizeEvent );
-            }
-            return 0;
-        }
-        case WM_LBUTTONDBLCLK:
-        {
-            if ( self )
-            {
-                self->onEvent( createMouseDblClickEvent(msg, wParam, lParam) );
-            }
-            return 0;
-        }
-        case WM_RBUTTONDBLCLK:
-        {
-            if ( self )
-            {
-                self->onEvent( createMouseDblClickEvent(msg, wParam, lParam) );
-            }
-            return 0;
-        }
-        case WM_MBUTTONDBLCLK:
-        {
-            if ( self )
-            {
-                self->onEvent( createMouseDblClickEvent(msg, wParam, lParam) );
-            }
-            return 0;
-        }
-        case WM_MOUSEMOVE:
-        {
-            if ( self )
-            {
-               MouseMoveEvent mouseMoveEvent;
-               mouseMoveEvent.x = int( LOWORD( lParam ) );
-               mouseMoveEvent.y = int( HIWORD( lParam ) );
-               //DE_OK("MouseMoveEvent = ", mouseMoveEvent.str())
-               //std::lock_guard< std::mutex > guard( os::win32::s_Mutex );
-               self->onEvent( mouseMoveEvent );
-            }
-            return 0;
-        }
-        case WM_MOUSEWHEEL:
-        {
-            if ( self )
-            {
-                MouseWheelEvent mouseWheelEvent;
-                mouseWheelEvent.x = 0.0f;
-                mouseWheelEvent.y = float( int16_t( HIWORD( wParam ) ) ) / float( WHEEL_DELTA );
-                self->onEvent( mouseWheelEvent );
-            }
-            return 0;
-        }
-        case WM_LBUTTONDOWN:
-        {
-            if ( self ) { self->onEvent( createMousePressEvent(msg, wParam, lParam) ); }
-            return 0;
-        }
-        case WM_RBUTTONDOWN:
-        {
-            if ( self ) { self->onEvent( createMousePressEvent(msg, wParam, lParam) ); }
-            return 0;
-        }
-        case WM_MBUTTONDOWN:
-        {
-            if ( self ) { self->onEvent( createMousePressEvent(msg, wParam, lParam) ); }
-            return 0;
-        }
-        case WM_LBUTTONUP:
-        {
-            if ( self ) { self->onEvent( createMouseReleaseEvent(msg, wParam, lParam) ); }
-            return 0;
-        }
-        case WM_RBUTTONUP:
-        {
-            if ( self ) { self->onEvent( createMouseReleaseEvent(msg, wParam, lParam) ); }
-            return 0;
-        }
-        case WM_MBUTTONUP:
-        {
-            if ( self ) { self->onEvent( createMouseReleaseEvent(msg, wParam, lParam) ); }
-            return 0;
-        }
-
-        //case WM_XBUTTONDOWN:
-        //case WM_XBUTTONUP:
-
-        // === KeyboardEvents: ===
-
-        case WM_INPUTLANGCHANGE:
-        {
-            if ( self )
-            {
-                auto hkl = GetKeyboardLayout( 0 ); // get the new codepage used for keyboard input
-                self->_d->m_KEYBOARD_INPUT_HKL = hkl; // get the new codepage used for keyboard input
-                self->_d->m_KEYBOARD_INPUT_CODEPAGE = convertLocaleIdToCodepage( LOWORD( hkl ) );
-            }
-            return 0;
-        }
-        case WM_SYSKEYDOWN:
-        {
-            if ( self ) { self->onEvent( createKeyPressEvent(self, msg, wParam, lParam) ); }
-            return 0;
-        }
-        case WM_KEYDOWN:
-        {
-            if ( self ) { self->onEvent( createKeyPressEvent(self, msg, wParam, lParam) ); }
-            return 0;
-        }
-        case WM_SYSKEYUP:
-        {
-            if ( self ) { self->onEvent( createKeyReleaseEvent(self, msg, wParam, lParam) ); }
-            return 0;
-        }
-        case WM_KEYUP:
-        {
-            if ( self ) { self->onEvent( createKeyReleaseEvent(self, msg, wParam, lParam) ); }
-            return 0;
-        }
-
-        case WM_SYSCOMMAND:
-        {
-            // if ( ( wParam & 0xFFF0 ) == SC_SCREENSAVE ||
-            //      ( wParam & 0xFFF0 ) == SC_MONITORPOWER ||
-            //      ( wParam & 0xFFF0 ) == SC_KEYMENU )
-            // {
-            //    return 0; // prevent screensaver or monitor powersave mode from starting
-            // }
-            break;
-        }
-
-        case WM_USER:
-            //event.UserEvent.UserData1 = (irr::s32)wParam;
-            //event.UserEvent.UserData2 = (irr::s32)lParam;
-            return 0;
-        case WM_SETCURSOR:
-#if 0
-   dev = getDeviceFromHWnd(hWnd); // because Windows forgot about that in the meantime
-      if (dev)
-      {
-         dev->getCursorControl()->setActiveIcon( dev->getCursorControl()->getActiveIcon() );
-         dev->getCursorControl()->setVisible( dev->getCursorControl()->isVisible() );
-      }
-#endif
-            break;
-        case WM_COMMAND:
-        {
-            /*
-            switch( wParam )
-            {
-                case ID_FILE_EXIT:
-                {
-                    DestroyWindow( hwnd );
-                    break;
-                }
-                case ID_FILE_LOAD:
-                {
-                    std::string uri = dbOpenFileA();
-                    break;
-                }
-                case ID_FILE_SAVE:
-                {
-                    break;
-                }
-                case ID_HELP_ABOUT:
-                {
-                    // doModalAboutDialog(m_hWindow);
-                    break;
-                }
-                default:
-                    break;
-            }
-            */
-            break;
-        }
-
-        default:
-            break;
-    }
-    return DefWindowProc(hwnd, msg, wParam, lParam);
-}
-
-#endif

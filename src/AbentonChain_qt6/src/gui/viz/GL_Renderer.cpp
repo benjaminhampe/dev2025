@@ -5,7 +5,7 @@
 #include "rainbow_1k_webp.h"
 #include <vector>
 #include <utility>
-
+#include <de/audio/dsp/DspSampleCollector.h>
 #include <de/video/skybox/Miramar.h>
 
 // ===========================================================================
@@ -259,10 +259,10 @@ void GL_Renderer::draw3DAccumFftMatrix()
         return;
     }
 
-    auto s = App::instance()->getSampleCollector();
-    const auto& d = s->getAccumMat();
+    const de::audio::DspSampleCollector* s = App::instance()->getSampleCollector();
+    const de::AlignedFloatShiftMatrix& d = s->getAccumMat();
 
-    auto & m = m_matrix_fft;
+    GL_Mesh16& m = m_matrix_fft;
 
     auto siz3d = glm::vec3(3500,500,2000);
     auto pos3d = glm::vec3{-0.5f * siz3d.x,0,0 };
@@ -273,8 +273,8 @@ void GL_Renderer::draw3DAccumFftMatrix()
         pos3d.x -= 0.06f * siz3d.x;
     }
 
-    auto cols = d.columnCount();
-    auto rows = d.rowCount();
+    uint32_t cols = d.columnCount();
+    uint32_t rows = d.rowCount();
     if ( rows < 2 ) { DE_ERROR("No rows") return; }
     if ( cols < 2 ) { DE_ERROR("No cols") return; }
 
@@ -315,8 +315,8 @@ void GL_Renderer::draw3DAccumFftMatrix()
         if (m_matrix_fft_xmap.size() != cols)
         {
             m_matrix_fft_xmap.resize(cols);
-            const float sampleRate = 48000.0f;
-            const float fftSize = 2048;
+            const float sampleRate = s->sampleRate();
+            const float fftSize = s->fftSize();
             const float factor = fftSize / cols;
             const float fNyquist = sampleRate * 0.5f;
             const float fMin = 100.0f;
@@ -397,9 +397,8 @@ void GL_Renderer::draw3DAccumFftMatrix()
     for ( size_t col = 0; col < cols; ++col )
     {
         auto a = vertices[col];
-        auto b = a;
-        b.set_y(0.0f); //
-        //b.set_y(-b.y()); // 0.0f
+        auto b = vertices[col];
+        a.set_y(0.0f); // a.set_y(-b.y());
         m_matrix_fft_front.Vertices.emplace_back( std::move(a) );
         m_matrix_fft_front.Vertices.emplace_back( std::move(b) );
     }

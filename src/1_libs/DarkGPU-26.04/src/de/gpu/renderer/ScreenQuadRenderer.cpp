@@ -11,9 +11,10 @@ ScreenQuadRenderer::ScreenQuadRenderer()
     : m_driver(nullptr)
     , m_shader(nullptr)
     , m_vao(0)
-    , m_u_tex(-1)
-    , m_u_posTransform(-1)
     , m_u_screenSize(-1)
+    , m_u_posTransform(-1)
+    , m_u_tex(-1)
+    , m_u_texTransform(-1)
 {
 }
 
@@ -26,84 +27,109 @@ ScreenQuadRenderer::init(VideoDriver* driver)
 {
     m_driver = driver;
 
-    const char* vs = R"(
+    if (!m_shader)
+    {
+        const char* vs = R"(
 
-        uniform vec2 u_screenSize;
-        uniform vec4 u_posTransform;
+            uniform vec2 u_screenSize;
+            uniform vec4 u_posTransform;
 
-        out vec2 v_tex;
+            out vec2 v_tex;
 
-        void main()
+            void main()
+            {
+                const vec2 c_vertices[6] = vec2[6](
+                    vec2(0.0, 1.0),
+                    vec2(1.0, 1.0),
+                    vec2(1.0, 0.0),
+                    vec2(0.0, 1.0),
+                    vec2(1.0, 0.0),
+                    vec2(0.0, 0.0)
+                );
+
+                vec2 a_pos = c_vertices[gl_VertexID];
+
+                vec2 vertPos = u_posTransform.xy;
+                vec2 vertDim = u_posTransform.zw;
+                vec2 pos = vertPos + (vertDim * a_pos);
+                vec2 ndc = (pos / u_screenSize) * 2.0 - 1.0;
+                ndc.y = -ndc.y;
+
+                gl_Position = vec4(ndc, 0.0, 1.0);
+
+                v_tex = a_pos;
+            }
+        )";
+
+        const char* fs = R"(
+
+            out vec4 fragColor;
+
+            uniform sampler2D u_tex;
+            uniform vec4 u_texTransform;
+
+            in vec2 v_tex;
+
+            void main()
+            {
+                vec2 texPos = u_texTransform.xy;
+                vec2 texDim = u_texTransform.zw;
+                vec2 texCoords = texPos + (texDim * v_tex);
+                fragColor = texture(u_tex, texCoords);
+            }
+        )";
+
+        m_shader = m_driver->createShader("sq2d", vs, fs );
+        if (!m_shader)
         {
-            const vec2 c_vertices[6] = vec2[6](
-                vec2(0.0, 1.0),
-                vec2(1.0, 1.0),
-                vec2(1.0, 0.0),
-                vec2(0.0, 1.0),
-                vec2(1.0, 0.0),
-                vec2(0.0, 0.0)
-            );
-
-            v_tex = c_vertices[gl_VertexID];
-
-            vec2 pos = u_posTransform.xy + v_tex * u_posTransform.zw;
-            vec2 ndc = (pos / u_screenSize) * 2.0 - 1.0;
-            ndc.y = -ndc.y;
-
-            gl_Position = vec4(ndc, 0.0, 1.0);
+            DE_ERROR("No shader")
         }
-    )";
-
-    const char* fs = R"(
-
-        out vec4 fragColor;
-
-        uniform sampler2D u_tex;
-
-        in vec2 v_tex;
-
-        void main()
+        else
         {
-            fragColor = texture(u_tex, v_tex);
+            m_u_screenSize = glGetUniformLocation(m_shader->id, "u_screenSize");
+            m_u_posTransform = glGetUniformLocation(m_shader->id, "u_posTransform");
+            m_u_tex = glGetUniformLocation(m_shader->id, "u_tex");
+            m_u_texTransform = glGetUniformLocation(m_shader->id, "u_texTransform");
         }
-    )";
+    }
 
-    m_shader = m_driver->createShader("sq2d", vs, fs );
-
-    m_u_tex = glGetUniformLocation(m_shader->id, "u_tex");
-    m_u_posTransform = glGetUniformLocation(m_shader->id, "u_posTransform");
-    m_u_screenSize = glGetUniformLocation(m_shader->id, "u_screenSize");
-
-    // Dummy VAO (required in core profile)
-    glGenVertexArrays(1, &m_vao);
-    //glBindVertexArray(m_vao);
+    if (!m_vao)
+    {
+        // Dummy VAO (required in core profile)
+        glGenVertexArrays(1, &m_vao);
+    }
 }
 
 void
-ScreenQuadRenderer::draw2D(const de::Rectf& pos, Texture* tex, bool blend)
+ScreenQuadRenderer::draw2D(const de::Recti& pos, const TexRef& ref, bool blend)
 {
-    if (!tex) { DE_ERROR("No tex") return; }
+    if (!ref.tex) { DE_ERROR("No tex") return; }
     if (!m_driver) { DE_ERROR("No driver") return; }
     if (!m_shader) { DE_ERROR("No shader") return; }
+    if (!m_vao) { DE_ERROR("No vao") return; }
 
-    m_driver->useShader(m_shader);
-    glBindVertexArray(m_vao);
-
-    glBindTextureUnit(0, tex->id());
-    glUniform1i(m_u_tex, 0);
-
-    int w = m_driver->getRenderWidth();
-    int h = m_driver->getRenderHeight();
-    glUniform2f(m_u_screenSize, (float)w, (float)h);
-
-    glUniform4f(m_u_posTransform, pos.x(), pos.y(), pos.w(), pos.h());
-
-    State state = m_driver->getState();
-    state.blend = Blend::alphaBlend();
+    State state;
+    state.culling = Culling::disabled();
     state.depth = Depth::disabled();
+    state.blend = Blend::alphaBlend();
     m_driver->setState(state);
 
+    m_driver->useShader(m_shader);
+
+    // int w = m_driver->getRenderWidth();
+    // int h = m_driver->getRenderHeight();
+    const int w = m_driver->getScreenWidth();
+    const int h = m_driver->getScreenHeight();
+    glUniform2f(m_u_screenSize, (float)w, (float)h);
+    glUniform4f(m_u_posTransform, pos.x, pos.y, pos.w, pos.h);
+
+    glBindTextureUnit(0, ref.tex->id());
+    glUniform1i(m_u_tex, 0);
+    glUniform4fv(m_u_texTransform, 1, glm::value_ptr(ref.coords));
+
+    glBindVertexArray(m_vao);
     glDrawArrays(GL_TRIANGLES, 0, 6);
+    glBindVertexArray(0);
 }
 
 } // end namespace gpu.

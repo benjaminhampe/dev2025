@@ -3,8 +3,7 @@
 #include <H3/details/H3_UI.h>
 #include <H3/H3_Game.h>
 
-void
-UIBanking_create( H3_Game & game )
+void UIBanking_create( H3_Game & game )
 {
 /*
     de::Font5x8 menuFont;
@@ -72,8 +71,7 @@ UIBanking_create( H3_Game & game )
 */
 }
 
-void
-UIBanking_update( H3_Game & game )
+void UIBanking_update( H3_Game & game )
 {
 /*
     UIBanking_hide( game );

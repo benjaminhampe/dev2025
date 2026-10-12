@@ -675,7 +675,7 @@ void H3_ObjShader::setMaterial()
 
 void H3_ObjShader::unsetMaterial()
 {
-    m_driver->useTexture(m_texWood, 0);
+
 }
 
 // ===========================================================================
