@@ -586,6 +586,9 @@ void VideoDriver::resize( int w, int h )
 
 bool VideoDriver::beginRender(const glm::vec4& clearColor)
 {
+    m_timeNow = dbTimeInSeconds() - m_timeEpoch;
+    // DE_BENNI("m_time = ",m_timeNow)
+
     const int w = getScreenWidth();
     const int h = getScreenHeight();
     // DE_DEBUG("Screen(",w,",",h,")")
@@ -601,10 +604,6 @@ bool VideoDriver::beginRender(const glm::vec4& clearColor)
     // DE_BENNI("beginRender()")
     // wglMakeCurrent(ps.hdc, self->_d->glrc);
 GL_VALIDATE
-
-    m_timeNow = dbTimeInSeconds() - m_timeEpoch;
-
-    // DE_BENNI("m_time = ",m_timeNow)
 
     if (m_rt)
     {

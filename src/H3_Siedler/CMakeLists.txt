@@ -42,7 +42,7 @@ else()
 
     if (MSVC)
     else()
-        target_link_options(${APP_NAME} PRIVATE -mwindows)
+        # target_link_options(${APP_NAME} PRIVATE -mwindows)
     endif()
 
     include(${CMAKE_SOURCE_DIR}/src/embed_static_runtime.cmake)
@@ -75,5 +75,5 @@ else()
 
     endif()
 
-    # file(COPY media/H3 DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/media)
+    file(COPY media/H3 DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/media)
 endif()

@@ -16,9 +16,10 @@ public:
     u32 getType() const override { return eWT_IntField; }
 
     void setFont( const Font& font ) override;
+
+    void draw() override;
     void resize(int x, int y, int w, int h) override;
 
-    //void draw() override;
     //void onEvent( const Event& event ) override;
 
     Label* getNameLabel() const { return m_lblName; }

@@ -3,17 +3,16 @@
 #include <H3/details/H3_Font.h>
 #include <H3/details/H3_Img.h>
 #include <H3/details/H3_Tex.h>
+#include <H3/details/H3_Camera.h>
 #include <H3/details/UI_ActionLogger.h>
 #include <H3/details/UI_Banking.h>
 #include <H3/renderers/H3_ChipRenderer.h>
 #include <H3/renderers/H3_ObjRenderer.h>
 #include <H3/renderers/H3_DiceRenderer.h>
+#include <H3/renderers/H3_TileRenderer.h>
 #include <H3/renderers/H3_WaterTileRenderer.h>
-
-#include <de/terrain/Hillplane.h>
-#include <de/terrain/HTerrain.h>
-
 #include <de/os/Window_WGL.h>
+#include <de/gpu/AnimatedTexRenderer.h>
 
 #ifdef HAVE_DE_AUDIO
     #include <de/audio/AudioEngine.h>
@@ -124,11 +123,11 @@ struct H3_Game
 {
     H3_Game();
     ~H3_Game();
-    const de::Image& getImg( H3_Img::eID id ) const { return *H3_getImg(*this,id); }
+    const de::Image& getImg( H3_Img::eID id ) const;
     de::gpu::TexRef getTex( H3_Tex::eID id, const std::string & caller ) const;
 
-    int getScalePc() const { return m_guienv.getScalePc(); }
-    void setScalePc( int iScalePc ) { m_guienv.setScalePc( iScalePc ); }
+    float getZoom() const;
+    void setZoom( float zoom );
 
     bool init( de::Window* window );
     void resize( int w, int h );
@@ -182,11 +181,11 @@ struct H3_Game
 
     bool isRunning() const { return m_round > 0; }
 
-    de::Window* getWindow() { return m_window; }
+    de::Window* getWindow() const { return m_window; }
 
-    de::gpu::VideoDriver* getDriver() { return m_driver; }
+    de::gpu::VideoDriver* getDriver() const { return m_driver; }
 
-    de::gpu::Camera* getCamera() { return m_driver->getCamera(); }
+    de::gpu::Camera* getCamera() const { return m_driver->getCamera(); }
 
     void draw();
     void drawSkybox();
@@ -282,14 +281,6 @@ struct H3_Game
     H3_ChipMeshBuffer m_dcCorners;
     H3_ChipMeshBuffer m_dcEdges;
 
-    de::gpu::HMeshRenderer m_hmeshRenderer;
-    de::gpu::HMesh m_hmeshTileDesert; // Nevada
-    de::gpu::HMesh m_hmeshTileA; // Mt Wilder
-    de::gpu::HMesh m_hmeshTileB; // ?
-    de::gpu::HMesh m_hmeshTileC; // Thuringen
-    de::gpu::HMesh m_hmeshTileD; // Italia
-    de::gpu::HMesh m_hmeshTileE; // Alpen
-
     H3_Font m_font;
     H3_Img m_img;
     H3_Tex m_tex;
@@ -301,7 +292,7 @@ struct H3_Game
     UI_Banking m_uiBanking;
     UI_ActionLogger m_uiActionLogger;
     UI_Marquee m_uiMarquee;
-    UI_ThiefIntro* m_uiThiefIntroPanel;
+    UI_ThiefIntro* m_uiDonateCards;
     UI_WinnerScreen* m_uiWinnerScreen;
 
     // Topology
@@ -335,6 +326,7 @@ struct H3_Game
     // struct H3_Pick m_pick;
     // =======================================================================
     bool m_isCameraMouseInputEnabled = false;
+    bool m_isCameraFreeMoveEnabled = false;
     bool m_firstMouse = (true);
     bool m_isMouseLeftPressed = false;
     bool m_isMouseRightPressed = false;
@@ -345,15 +337,15 @@ struct H3_Game
     int m_lastMouseY = 0;
     int m_mouseMoveX = 0;
     int m_mouseMoveY = 0;
-    int m_leftDragStartX = 0;
-    int m_leftDragStartY = 0;
-    int m_leftDragLastX = 0;
-    int m_leftDragLastY = 0;
-    int m_leftDragPosX = 0;
-    int m_leftDragPosY = 0;
-    double cylinderCamRadius = 500;
-    double cylinderCamHeight = 300;
-    double cylinderCamAngleY = 0;
+    // int m_leftDragStartX = 0;
+    // int m_leftDragStartY = 0;
+    // int m_leftDragLastX = 0;
+    // int m_leftDragLastY = 0;
+    // int m_leftDragPosX = 0;
+    // int m_leftDragPosY = 0;
+    // double cylinderCamRadius = 500;
+    // double cylinderCamHeight = 300;
+    // double cylinderCamAngleY = 0;
 
     std::array<bool, 1024> m_keyStates;
 
@@ -386,8 +378,9 @@ struct H3_Game
     H3_ChipRenderer m_chipRenderer;
     H3_ObjRenderer m_objRenderer;
     H3_DiceRenderer m_diceRenderer;
-    //H3_UI_Renderer m_uiRenderer;
+    H3_TileRenderer m_tileRenderer;
     H3_WaterTileRenderer m_waterTileRenderer;
+    de::gpu::AnimatedTexRenderer m_animatedTexRenderer;
     //};
 
     bool m_bUpdateDrawCall_Tiles = true;

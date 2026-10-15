@@ -13,63 +13,6 @@
 
 #include "H3_Window_wgl.h"
 
-void createSMeshTile( de::smesh::SMeshBuffer & o, de::gpu::VideoDriver* driver,
-    glm::vec3 tileSize, de::Image bumpMap, const de::gpu::TexRef& diffuseMap )
-{
-    DE_BENNI("Loaded bumpMap = ", dbStrBytes(bumpMap.computeMemoryConsumption()) )
-
-    de::gpu::BumpMapUtil::saturateHeightmap( bumpMap );
-    DE_BENNI("Saturated bumpMap = ", bumpMap.str() )
-
-    bumpMap = de::ImageScaler::resizeBilinear( bumpMap, 118,118 );
-    DE_BENNI("Resized bumpMap = ", bumpMap.str() )
-
-    //Image filterMap = createHexagonFilter( bumpMap.w() );
-    //filterGrey( bumpMap, filterMap );
-
-    //std::string uriSave1 = FileSystem::fileBase( uriBumpMap ) + ".png";
-    //dbSaveImage(bumpMap, uriSave1 );
-
-    // =============== Mesh Creation & Clipping: =============================
-
-    de::gpu::BumpMapUtil::Triangles in_triangles;
-    de::gpu::BumpMapUtil::createTriangles( in_triangles, bumpMap, tileSize );
-    de::gpu::BumpMapUtil::centerTrianglesXZ( in_triangles );
-
-    de::gpu::BumpMapUtil::BBox bbox = de::gpu::BumpMapUtil::computeBBox( in_triangles );
-    DE_BENNI("BBox Min(",bbox.minEdge,"), Max(",bbox.maxEdge,")")
-
-    de::gpu::BumpMapUtil::Triangles out_triangles;
-    de::gpu::BumpMapUtil::clipTrianglesHexagon( in_triangles, out_triangles, tileSize );
-
-    de::gpu::BumpMapUtil::repairWinding( out_triangles );
-    DE_OK("Before SMeshBuffer has ", out_triangles.size() * 3, " vertices")
-    DE_OK("Before SMeshBuffer has ", out_triangles.size() * 3, " indices")
-
-    o.setTexture( 0, diffuseMap );
-
-    //auto tex = driver->createTexture2D("img4x4", imgDiffuseMap);
-    //o.setTexture( 0, tex );
-    o.name = de::FileSystem::fileBase(bumpMap.uri());
-    o.material.Lighting = 0;
-    o.material.FogEnable = false;
-    o.material.state = de::gpu::State();
-    o.material.state.blend = de::gpu::Blend::alphaBlend();
-    // o.material.state.culling = de::gpu::Culling::disabled();
-    de::gpu::BumpMapUtil::addTriangles( o, out_triangles );
-
-    DE_OK("After SMeshBuffer has ", o.vertices.size(), " vertices")
-    DE_OK("After SMeshBuffer has ", o.indices.size(), " indices")
-
-    de::gpu::BumpMapUtil::windowVertices( o );
-
-    //de::smesh::SMeshBufferTool::computeNormals( o );
-
-    //o.upload();
-
-    DE_OK( o.str() )
-}
-
 
 // ===========================================================================
 H3_Game::H3_Game()
@@ -79,7 +22,7 @@ H3_Game::H3_Game()
     , m_uiHelpWindow(nullptr)
     , m_uiMainmenu(nullptr)
     , m_uiActions(nullptr)
-    , m_uiThiefIntroPanel(nullptr)
+    , m_uiDonateCards(nullptr)
     , m_uiWinnerScreen(nullptr)
     , m_uiWorldCreator(nullptr)
 // , m_fpsTimerId(0)
@@ -93,6 +36,44 @@ H3_Game::~H3_Game()
 {
     //m_audioEngine.stop();
     DE_OK()
+}
+
+const de::Image&
+H3_Game::getImg( H3_Img::eID id ) const
+{
+    return *H3_getImg(*this,id);
+}
+
+de::gpu::TexRef
+H3_Game::getTex( H3_Tex::eID id, const std::string & caller ) const
+{
+    const auto it = m_tex.m_refs.find(id);
+    if (it == m_tex.m_refs.end())
+    {
+        std::ostringstream o;
+        o << "No texRef with id " << static_cast<uint32_t>(id) << ", caller("<<caller<<")";
+        throw std::runtime_error(o.str());
+    }
+
+    if (it->second.empty())
+    {
+        std::ostringstream o;
+        o << "Got empty texRef with id " << static_cast<uint32_t>(id);
+        throw std::runtime_error(o.str());
+    }
+
+    return it->second;
+}
+
+float H3_Game::getZoom() const
+{
+    return m_guienv.getZoom();
+}
+
+void H3_Game::setZoom( float zoom )
+{
+    DE_DEBUG("SetZoom(",zoom,")")
+    m_guienv.setZoom( zoom );
 }
 
 void H3_Game::requestClose()
@@ -150,7 +131,7 @@ void H3_Game::resize(int w, int h)
 bool H3_Game::init( de::Window* window )
 {
     DE_INFO("")
-
+    m_isCameraMouseInputEnabled = true;
     m_window = window;
     m_driver = new de::gpu::VideoDriver();
 
@@ -210,7 +191,7 @@ bool H3_Game::init( de::Window* window )
     camera->setMoveSpeed(1.0);
     camera->setStrafeSpeed(1.0);
     camera->setUpSpeed(1.0);
-    m_isCameraMouseInputEnabled = false;
+
 
     // ===================
     // === init skybox ===
@@ -332,42 +313,15 @@ bool H3_Game::init( de::Window* window )
     m_smeshThief.recalculateBoundingBox();
     m_smeshThief.upload();
 
-    // === Create hexagon tiles geometry ===
-    de::smesh::SMeshBuffer m_meshTileDesert; // Nevada
-    de::smesh::SMeshBuffer m_meshTileA; // Mt Wilder
-    de::smesh::SMeshBuffer m_meshTileB; // ?
-    de::smesh::SMeshBuffer m_meshTileC; // Thuringen
-    de::smesh::SMeshBuffer m_meshTileD; // Italia
-    de::smesh::SMeshBuffer m_meshTileE; // Alpen
+    m_tileRenderer.init(*this);
 
-    createSMeshTile( m_meshTileDesert, m_driver, m_tileSize, getImg(H3_Img::TileDesert_H), getTex(H3_Tex::TileDesert_D, "m_meshTileDesert"));
-    createSMeshTile( m_meshTileA, m_driver, m_tileSize, getImg(H3_Img::TileA_H), getTex(H3_Tex::TileA_D, "m_meshTileA"));
-    createSMeshTile( m_meshTileB, m_driver, m_tileSize, getImg(H3_Img::TileB_H), getTex(H3_Tex::TileB_D, "m_meshTileB"));
-    createSMeshTile( m_meshTileC, m_driver, m_tileSize, getImg(H3_Img::TileC_H), getTex(H3_Tex::TileC_D, "m_meshTileC"));
-    createSMeshTile( m_meshTileD, m_driver, m_tileSize, getImg(H3_Img::TileD_H), getTex(H3_Tex::TileD_D, "m_meshTileD"));
-    createSMeshTile( m_meshTileE, m_driver, m_tileSize, getImg(H3_Img::TileE_H), getTex(H3_Tex::TileE_D, "m_meshTileE"));
-
-    // de::gpu::BumpMapUtil::testNevada( m_meshTileDesert, m_driver );
-    // de::gpu::BumpMapUtil::testMountWilder( m_meshTileA, m_driver );
-    // de::gpu::BumpMapUtil::testLehm( m_meshTileB, m_driver );
-    // de::gpu::BumpMapUtil::testThuringen( m_meshTileC, m_driver );
-    // de::gpu::BumpMapUtil::testWeizen( m_meshTileD, m_driver );
-    // de::gpu::BumpMapUtil::testAlpen( m_meshTileE, m_driver );
-
-    m_hmeshTileDesert = de::gpu::HMesh::fromSMesh( m_meshTileDesert );
-    m_hmeshTileA = de::gpu::HMesh::fromSMesh( m_meshTileA );
-    m_hmeshTileB = de::gpu::HMesh::fromSMesh( m_meshTileB );
-    m_hmeshTileC = de::gpu::HMesh::fromSMesh( m_meshTileC );
-    m_hmeshTileD = de::gpu::HMesh::fromSMesh( m_meshTileD );
-    m_hmeshTileE = de::gpu::HMesh::fromSMesh( m_meshTileE );
-
-    m_hmeshRenderer.init( m_driver );
     m_waterTileRenderer.init( *this );
     //m_tileRenderer.init( *this );
     m_chipRenderer.init( *this );
     m_objRenderer.init( *this );
     m_diceRenderer.init( *this );
     //m_uiRenderer.init( *this );
+    m_animatedTexRenderer.init(m_driver);
 
     auto g = this;
     auto e = &m_guienv;
@@ -383,8 +337,8 @@ bool H3_Game::init( de::Window* window )
     m_uiActions = new UI_Actions( g, e, n, k++, r );
     m_uiActions->setVisible( false );
 
-    m_uiThiefIntroPanel = new UI_ThiefIntro( g, e, n, k++, r );
-    m_uiThiefIntroPanel->setVisible( false );
+    m_uiDonateCards = new UI_ThiefIntro( g, e, n, k++, r );
+    m_uiDonateCards->setVisible( false );
 
     m_uiWinnerScreen = new UI_WinnerScreen( g, e, n, k++, r );
     m_uiWinnerScreen->setVisible(false);
@@ -399,26 +353,6 @@ bool H3_Game::init( de::Window* window )
 
     enterStartMenu();
     return true;
-}
-
-de::gpu::TexRef H3_Game::getTex( H3_Tex::eID id, const std::string & caller ) const
-{
-    const auto it = m_tex.m_refs.find(id);
-    if (it == m_tex.m_refs.end())
-    {
-        std::ostringstream o;
-        o << "No texRef with id " << static_cast<uint32_t>(id) << ", caller("<<caller<<")";
-        throw std::runtime_error(o.str());
-    }
-
-    if (it->second.empty())
-    {
-        std::ostringstream o;
-        o << "Got empty texRef with id " << static_cast<uint32_t>(id);
-        throw std::runtime_error(o.str());
-    }
-
-    return it->second;
 }
 
 
@@ -475,8 +409,8 @@ void H3_Game::draw()
         UI_drawRoundStats( *this );
         driver->endPerf();
 
-        auto fScale = 0.01f * getScalePc();
-        auto p = de::Recti( 20, h/2-100, fScale * 200, fScale * 300 );
+        float zoom = getZoom();
+        auto p = de::Recti( 20, h/2-100, zoom * 200, zoom * 300 );
 
         driver->beginPerf("UI_Info");
         UI_drawInfoPanelTile( *this, p, m_hoverTileId );
@@ -667,8 +601,8 @@ void H3_Game::enterStartMenu()
         m_uiWorldCreator->setVisible( false );
     if (m_uiActions)
         m_uiActions->setVisible( false );
-    if (m_uiThiefIntroPanel)
-        m_uiThiefIntroPanel->setVisible( false );
+    if (m_uiDonateCards)
+        m_uiDonateCards->setVisible( false );
     if (m_uiWinnerScreen)
         m_uiWinnerScreen->setVisible( false );
 }
@@ -711,15 +645,16 @@ void H3_Game::newGame()
         }
     }
 
-    if (m_uiWorldCreator) {
+    if (m_uiWorldCreator)
+    {
         m_uiWorldCreator->setVisible(true);
-        m_uiWorldCreator->resizeLayout();
+        UI_resizeLayouts();
     }
     if (m_uiMainmenu) {
         m_uiMainmenu->setVisible(false);
     }
-    if (m_uiThiefIntroPanel) {
-        m_uiThiefIntroPanel->setVisible(false);
+    if (m_uiDonateCards) {
+        m_uiDonateCards->setVisible(false);
     }
 }
 
@@ -734,7 +669,9 @@ void H3_Game::enterWinnerScreen()
 
     if (m_uiWinnerScreen) {
         m_uiWinnerScreen->setVisible( true );
-        m_uiWinnerScreen->resizeLayout();
+        int w = m_driver->getScreenWidth();
+        int h = m_driver->getScreenHeight();
+        m_uiWinnerScreen->resize(0,0,w,h);
     }
 }
 
@@ -756,8 +693,8 @@ void H3_Game::enterRound1()
     if (m_uiActions) {
         m_uiActions->setVisible(true);
     }
-    if (m_uiThiefIntroPanel) {
-        m_uiThiefIntroPanel->setVisible(false);
+    if (m_uiDonateCards) {
+        m_uiDonateCards->setVisible(false);
     }
     if (m_uiWinnerScreen) {
         m_uiWinnerScreen->setVisible(false);
@@ -1122,9 +1059,9 @@ void H3_Game::enterThiefIntro()
 
     m_state = H3_State::DonateCards;
     UI_updateActions();
-    if (m_uiThiefIntroPanel) {
-        m_uiThiefIntroPanel->setPlayer( m_player );
-        m_uiThiefIntroPanel->setVisible(true);
+    if (m_uiDonateCards) {
+        m_uiDonateCards->setPlayer( m_player );
+        m_uiDonateCards->setVisible(true);
     }
 }
 void H3_Game::enterThiefPlacement()
@@ -1140,8 +1077,8 @@ void H3_Game::enterThiefPlacement()
     DE_OK("")
     m_state = H3_State::PlaceThief;
 
-    if (m_uiThiefIntroPanel) {
-        m_uiThiefIntroPanel->setVisible(false);
+    if (m_uiDonateCards) {
+        m_uiDonateCards->setVisible(false);
     }
 
     marqueeH1(L"Move Robber to new Tile", 1500, 0xFFC0C0C0);
@@ -2134,23 +2071,28 @@ void H3_Game::UI_resizeLayouts()
     auto scr_w = m_driver->getScreenWidth();
     auto scr_h = m_driver->getScreenHeight();
 
-    int pw = scr_w / 6;
-    int ph = scr_h / 2;
-
     if (m_uiMainmenu)
-        m_uiMainmenu->resize(0,0,pw,ph);
+        m_uiMainmenu->resize(0,0,scr_w / 6, scr_h / 2);
 
     if (m_uiActions)
-        m_uiActions->resizeLayout();
+    {
+        m_uiActions->resize(0,0,scr_w,scr_h);
+    }
 
-    if (m_uiThiefIntroPanel)
-        m_uiThiefIntroPanel->resizeLayout();
+    if (m_uiDonateCards)
+    {
+        int w = scr_w - 400;
+        int h = scr_h - 300;
+        int x = (scr_w - w) / 2;
+        int y = (scr_h - h) / 2;
+        m_uiDonateCards->resize(x,y,w,h);
+    }
 
     if (m_uiWorldCreator)
-        m_uiWorldCreator->resizeLayout();
+        m_uiWorldCreator->resize(0,0,scr_w,scr_h);
 
     if (m_uiWinnerScreen)
-        m_uiWinnerScreen->resizeLayout();
+        m_uiWinnerScreen->resize(0,0,scr_w,scr_h);
 }
 
 void H3_Game::UI_updateActions()
@@ -2169,14 +2111,12 @@ void H3_Game::updateWindowTitle()
     const de::Recti r1 = m_window->getWindowRect();
     const de::Recti r2 = m_window->getClientRect();
 
-    int zoom = m_guienv.getScalePc();
-
     int fps = (m_driver) ? m_driver->getFPS() : 0;
 
     std::ostringstream o; o <<
         "Siedler 3D (c) 2025 by BenjaminHampe@gmx.de | "
         "FPS(" << fps << "), "
-        "Zoom(" << zoom << "%), "
+        "Zoom(" << getZoom() << "%), "
         "Desktop("<<desktopW<<","<<desktopH<<"), "
         "Window("<<r1.str()<<"), "
         "Client("<<r2.str()<<")";
@@ -2238,134 +2178,22 @@ void H3_Game::drawSun()
 
 void H3_Game::drawTiles()
 {
-    auto driver = getDriver();
-    driver->beginPerf("Tiles");
-
     if (m_bUpdateDrawCall_Tiles)
     {
-        // ========================
-        // === Create DrawCalls ===
-        // ========================
-        // HMesh uses f16 half floats, aka 16-bit floats
-        // to render terrain (from heightmap) like hexagonal tiles.
-        // The heightmap is converted to vector of 3D Triangles,
-        // clipped to hexagon using math, then as cleanup vector is
-        // rebuild to use only unique vertices (reduce vertices)
-        // and then finally converted to HMesh for fast rendering.
-        // Uses f16 vertices to increase render speed. (reduce GPU memory)
-        // Indices are still uint32_t.
-        auto mkHMeshDrawCall = [&]( de::gpu::HMesh & hmesh, H3_TileType tt )
-        {
-            hmesh.m_instanceMat.clear();
-
-            for (const auto& t : m_tiles)
-            {
-                if (t.tileType.value != tt) { continue; }
-
-                de::TRSf trs;
-                trs.pos = t.pos;
-                trs.rotate = glm::vec3(0,0,0);
-                float sx = m_tileSize.x * 0.5f;
-                float sy = m_tileSize.y;
-                float sz = m_tileSize.z * 0.5f;
-                trs.scale = glm::vec3(sx,sy,sz);
-                trs.update();
-
-                hmesh.m_instanceMat.push_back( trs.modelMat );
-            }
-
-            //DE_OK(tt.toString()," : instance = ", hmesh.m_instanceMat.size())
-            hmesh.upload( true );
-        };
-
-        mkHMeshDrawCall( m_hmeshTileA, H3_TileType::TileA );
-        mkHMeshDrawCall( m_hmeshTileB, H3_TileType::TileB );
-        mkHMeshDrawCall( m_hmeshTileC, H3_TileType::TileC );
-        mkHMeshDrawCall( m_hmeshTileD, H3_TileType::TileD );
-        mkHMeshDrawCall( m_hmeshTileE, H3_TileType::TileE );
-        mkHMeshDrawCall( m_hmeshTileDesert, H3_TileType::Desert );
-
+        m_tileRenderer.collectAndUploadInstances(*this);
         m_waterTileRenderer.collectAndUploadInstances( *this );
 
         m_bUpdateDrawCall_Tiles = false;
         m_bUpdateDrawCall_Chips = true;
     }
 
-    //m_driver->beginPerf("TileDesert");
-    m_hmeshRenderer.draw( m_hmeshTileDesert );
-    //m_driver->endPerf();
+    m_driver->beginPerf("Land-Tiles");
+    m_tileRenderer.render();
+    m_driver->endPerf();
 
-    //m_driver->beginPerf("TileA");
-    m_hmeshRenderer.draw( m_hmeshTileA );
-    //m_driver->endPerf();
-
-    //m_driver->beginPerf("TileB");
-    m_hmeshRenderer.draw( m_hmeshTileB );
-    //m_driver->endPerf();
-
-    //m_driver->beginPerf("TileC");
-    m_hmeshRenderer.draw( m_hmeshTileC );
-    //m_driver->endPerf();
-
-    //m_driver->beginPerf("TileD");
-    m_hmeshRenderer.draw( m_hmeshTileD );
-    //m_driver->endPerf();
-
-    //m_driver->beginPerf("TileE");
-    m_hmeshRenderer.draw( m_hmeshTileE );
-    //m_driver->endPerf();
-
-    //m_driver->beginPerf("TileWater");
+    m_driver->beginPerf("Water-Tiles");
     m_waterTileRenderer.render();
-    //m_driver->endPerf();
-
-    /*
-    // <Desert>
-    {
-        glm::mat4 m = glm::translate(glm::mat4(1.0f), glm::vec3(-150,0,0));
-        m_driver->setModelMatrix( m );
-        m_driver->getSMaterialRenderer()->draw3D( m_meshTileDesert );
-        m_driver->getLine3DRenderer()->draw3DLineBox( m_meshTileDesert.boundingBox );
-    }
-    // <A>
-    {
-        glm::mat4 m = glm::translate(glm::mat4(1.0f), glm::vec3(0,0,0));
-        m_driver->setModelMatrix( m );
-        m_driver->getSMaterialRenderer()->draw3D( m_meshTileA );
-        m_driver->getLine3DRenderer()->draw3DLineBox( m_meshTileA.boundingBox );
-    }
-    // <B>
-    {
-        glm::mat4 m = glm::translate(glm::mat4(1.0f), glm::vec3(150,0,0));
-        m_driver->setModelMatrix( m );
-        m_driver->getSMaterialRenderer()->draw3D( m_meshTileB );
-        m_driver->getLine3DRenderer()->draw3DLineBox( m_meshTileB.boundingBox );
-    }
-
-    // <C>
-    {
-        glm::mat4 m = glm::translate(glm::mat4(1.0f), glm::vec3(-150,0,150));
-        m_driver->setModelMatrix( m );
-        m_driver->getSMaterialRenderer()->draw3D( m_meshTileC );
-        m_driver->getLine3DRenderer()->draw3DLineBox( m_meshTileC.boundingBox );
-    }
-    // <D>
-    {
-        glm::mat4 m = glm::translate(glm::mat4(1.0f), glm::vec3(0,0,150));
-        m_driver->setModelMatrix( m );
-        m_driver->getSMaterialRenderer()->draw3D( m_meshTileD );
-        m_driver->getLine3DRenderer()->draw3DLineBox( m_meshTileD.boundingBox );
-    }
-    // <E>
-    {
-        glm::mat4 m = glm::translate(glm::mat4(1.0f), glm::vec3(150,0,150));
-        m_driver->setModelMatrix( m );
-        m_driver->getSMaterialRenderer()->draw3D( m_meshTileE );
-        m_driver->getLine3DRenderer()->draw3DLineBox( m_meshTileE.boundingBox );
-    }
-    */
-
-    driver->endPerf();
+    m_driver->endPerf();
 }
 
 void H3_Game::drawPortBridges()
@@ -2382,8 +2210,6 @@ void H3_Game::drawPortBridges()
     bridge.material.setTexture( 0, getTex(H3_Tex::Wood2, "H3_Game::drawPortBridges()") );
     bridge.upload();
 
-
-
     for (H3_Tile & tile : m_tiles)
     {
         if (!tile.tileType.isPort()) continue;
@@ -2394,7 +2220,7 @@ void H3_Game::drawPortBridges()
         auto cornerA_pos2 = de::smesh::SMeshHexagon::getCorner(ang60, m_tileSize.x, m_tileSize.z);
         auto cornerA_pos3 = glm::vec3(cornerA_pos2.x, 0, cornerA_pos2.y);
         auto cornerA_ang = atan2( cornerA_pos2.y, cornerA_pos2.x ) * de::Math::RAD2DEG;
-        cornerA_ang = de::Math::wrapAngle(180.0f - cornerA_ang);
+        cornerA_ang = de::Math::wrapAngle0_360(180.0f - cornerA_ang);
         de::TRSf trs;
         trs.pos = tile.pos + cornerA_pos3 * 0.5f;
         trs.rotate = glm::vec3(0,cornerA_ang,0);
@@ -2406,7 +2232,7 @@ void H3_Game::drawPortBridges()
         auto cornerB_pos2 = de::smesh::SMeshHexagon::getCorner((ang60 + 1) % 6, m_tileSize.x, m_tileSize.z);
         auto cornerB_pos3 = glm::vec3(cornerB_pos2.x, 0, cornerB_pos2.y);
         auto cornerB_ang = atan2( cornerB_pos2.y, cornerB_pos2.x ) * de::Math::RAD2DEG;
-        cornerB_ang = de::Math::wrapAngle(180.0f - cornerB_ang);
+        cornerB_ang = de::Math::wrapAngle0_360(180.0f - cornerB_ang);
         trs.reset();
         trs.pos = tile.pos + cornerB_pos3 * 0.5f;
         trs.rotate = glm::vec3(0,cornerB_ang,0);
@@ -2425,9 +2251,11 @@ void H3_Game::drawChips()
     auto driver = getDriver();
     driver->beginPerf("Chips");
 
+    m_bUpdateDrawCall_Chips = true;
     if (m_bUpdateDrawCall_Chips)
     {
-        m_dcChips.collectTiles( *this );
+        float phi = computeCameraAngleXZ(driver->getCamera());
+        m_dcChips.collectTiles( *this, phi );
         m_dcChips.uploadInstances();
         m_bUpdateDrawCall_Chips = false;
     }
@@ -2441,9 +2269,11 @@ void H3_Game::drawCorners()
     auto driver = getDriver();
     driver->beginPerf("Corners");
 
+    m_bUpdateDrawCall_Corners = true;
     if (m_bUpdateDrawCall_Corners)
     {
-        m_dcCorners.collectCorners( *this );
+        float phi = computeCameraAngleXZ(driver->getCamera());
+        m_dcCorners.collectCorners( *this, phi );
         m_dcCorners.uploadInstances();
         m_bUpdateDrawCall_Corners = false;
     }
@@ -2457,9 +2287,12 @@ void H3_Game::drawEdges()
     auto driver = getDriver();
     driver->beginPerf("Edges");
 
+    m_bUpdateDrawCall_Edges = true;
     if (m_bUpdateDrawCall_Edges)
     {
-        m_dcEdges.collectEdges( *this );
+        float phi = computeCameraAngleXZ(driver->getCamera());
+        //DE_DEBUG("phi = ",phi * de::Math::RAD2DEG);
+        m_dcEdges.collectEdges( *this, phi );
         m_dcEdges.uploadInstances();
         m_bUpdateDrawCall_Edges = false;
     }
@@ -2671,6 +2504,7 @@ void H3_Game::drawHoveredTile()
     H3_Tile & tile = H3_getTile( *this, __func__, m_hoverTileId );
 
     auto driver = getDriver();
+    /*
     auto rend = driver->getLine3DRenderer();
 
     de::Box3f bbox;
@@ -2682,9 +2516,87 @@ void H3_Game::drawHoveredTile()
 
     driver->resetModelMatrix();
     rend->draw3DLineBox( bbox, 0xFFC0C0C0 );
+    */
+
+    de::TRSf trsHull;
+    trsHull.pos = tile.pos;
+    trsHull.update();
+
+    // Hull-Points:
+    auto A = de::smesh::SMeshHexagon::cornerA3(m_tileSize.x,m_tileSize.z);
+    auto B = de::smesh::SMeshHexagon::cornerB3(m_tileSize.x,m_tileSize.z);
+    auto C = de::smesh::SMeshHexagon::cornerC3(m_tileSize.x,m_tileSize.z);
+    auto D = de::smesh::SMeshHexagon::cornerD3(m_tileSize.x,m_tileSize.z);
+    auto E = de::smesh::SMeshHexagon::cornerE3(m_tileSize.x,m_tileSize.z);
+    auto F = de::smesh::SMeshHexagon::cornerF3(m_tileSize.x,m_tileSize.z);
+    // std::vector<glm::vec3> corners{ A,B,C,D,E,F };
+
+    float h = 32.0;
+
+    // Hull-Wall:
+    de::smesh::SMeshBuffer hull;
+    hull.primitiveType = de::gpu::PrimitiveType::Triangles;
+    de::smesh::SMeshPolyHull::addLeftStripXZ(   hull,
+                                                { A,B,C,D,E,F },
+                                                h,
+                                                0xFFFFFFFF,
+                                                glm::vec3(0,h * 0.5f,0)   );
+    hull.upload();
+    driver->setModelMatrix(trsHull.modelMat);
+    m_animatedTexRenderer.draw3D(hull);
+    driver->resetModelMatrix();
+    hull.destroy();
+
+    // Hexagon-Line-Box:
+    de::smesh::SMeshBuffer lines;
+    lines.primitiveType = de::gpu::PrimitiveType::Lines;
+    lines.material.state.culling = de::gpu::Culling::disabled();
+    lines.vertices.reserve(36);
+    lines.vertices.emplace_back(A.x,0,A.z,0,0,0,0xFFFFFFFF,0,0);
+    lines.vertices.emplace_back(B.x,0,B.z,0,0,0,0xFFFFFFFF,0,0);
+    lines.vertices.emplace_back(B.x,0,B.z,0,0,0,0xFFFFFFFF,0,0);
+    lines.vertices.emplace_back(C.x,0,C.z,0,0,0,0xFFFFFFFF,0,0);
+    lines.vertices.emplace_back(C.x,0,C.z,0,0,0,0xFFFFFFFF,0,0);
+    lines.vertices.emplace_back(D.x,0,D.z,0,0,0,0xFFFFFFFF,0,0);
+    lines.vertices.emplace_back(D.x,0,D.z,0,0,0,0xFFFFFFFF,0,0);
+    lines.vertices.emplace_back(E.x,0,E.z,0,0,0,0xFFFFFFFF,0,0);
+    lines.vertices.emplace_back(E.x,0,E.z,0,0,0,0xFFFFFFFF,0,0);
+    lines.vertices.emplace_back(F.x,0,F.z,0,0,0,0xFFFFFFFF,0,0);
+    lines.vertices.emplace_back(F.x,0,F.z,0,0,0,0xFFFFFFFF,0,0);
+    lines.vertices.emplace_back(A.x,0,A.z,0,0,0,0xFFFFFFFF,0,0);
+
+    lines.vertices.emplace_back(A.x,h,A.z,0,0,0,0xFFFFFFFF,0,0);
+    lines.vertices.emplace_back(B.x,h,B.z,0,0,0,0xFFFFFFFF,0,0);
+    lines.vertices.emplace_back(B.x,h,B.z,0,0,0,0xFFFFFFFF,0,0);
+    lines.vertices.emplace_back(C.x,h,C.z,0,0,0,0xFFFFFFFF,0,0);
+    lines.vertices.emplace_back(C.x,h,C.z,0,0,0,0xFFFFFFFF,0,0);
+    lines.vertices.emplace_back(D.x,h,D.z,0,0,0,0xFFFFFFFF,0,0);
+    lines.vertices.emplace_back(D.x,h,D.z,0,0,0,0xFFFFFFFF,0,0);
+    lines.vertices.emplace_back(E.x,h,E.z,0,0,0,0xFFFFFFFF,0,0);
+    lines.vertices.emplace_back(E.x,h,E.z,0,0,0,0xFFFFFFFF,0,0);
+    lines.vertices.emplace_back(F.x,h,F.z,0,0,0,0xFFFFFFFF,0,0);
+    lines.vertices.emplace_back(F.x,h,F.z,0,0,0,0xFFFFFFFF,0,0);
+    lines.vertices.emplace_back(A.x,h,A.z,0,0,0,0xFFFFFFFF,0,0);
+
+    lines.vertices.emplace_back(A.x,0,A.z,0,0,0,0xFFFFFFFF,0,0);
+    lines.vertices.emplace_back(A.x,h,A.z,0,0,0,0xFFFFFFFF,0,0);
+    lines.vertices.emplace_back(B.x,0,B.z,0,0,0,0xFFFFFFFF,0,0);
+    lines.vertices.emplace_back(B.x,h,B.z,0,0,0,0xFFFFFFFF,0,0);
+    lines.vertices.emplace_back(C.x,0,C.z,0,0,0,0xFFFFFFFF,0,0);
+    lines.vertices.emplace_back(C.x,h,C.z,0,0,0,0xFFFFFFFF,0,0);
+    lines.vertices.emplace_back(D.x,0,D.z,0,0,0,0xFFFFFFFF,0,0);
+    lines.vertices.emplace_back(D.x,h,D.z,0,0,0,0xFFFFFFFF,0,0);
+    lines.vertices.emplace_back(E.x,0,E.z,0,0,0,0xFFFFFFFF,0,0);
+    lines.vertices.emplace_back(E.x,h,E.z,0,0,0,0xFFFFFFFF,0,0);
+    lines.vertices.emplace_back(F.x,0,F.z,0,0,0,0xFFFFFFFF,0,0);
+    lines.vertices.emplace_back(F.x,h,F.z,0,0,0,0xFFFFFFFF,0,0);
+
+    lines.upload();
+    driver->setModelMatrix(trsHull.modelMat);
+    driver->getSMaterialRenderer()->draw3D(lines);
+    driver->resetModelMatrix();
+    lines.destroy();
 }
-
-
 
 void H3_Game::clearMarquee()
 {
@@ -2726,9 +2638,8 @@ void H3_Game::drawMarquee()
     const int h = driver->getScreenHeight();
     const double t = dbTimeInSeconds();
 
-    const auto fScale = 0.01f * getScalePc();
-    const auto fontSizeH1 = fScale * m_uiMarquee.fontH1.pixelSize;
-    const auto fontSizeH3 = fScale * m_uiMarquee.fontH3.pixelSize;
+    const auto fontSizeH1 = getZoom() * m_uiMarquee.fontH1.pixelSize;
+    const auto fontSizeH3 = getZoom() * m_uiMarquee.fontH3.pixelSize;
 
     const auto align = de::Align::TopCenter;
 

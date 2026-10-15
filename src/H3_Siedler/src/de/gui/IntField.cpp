@@ -44,6 +44,15 @@ void IntField::setFont( const Font& font )
     m_btnPlus->setFont(font2);
 }
 
+void IntField::draw()
+{
+    m_lblName->draw();
+    m_btnMinus->draw();
+    m_lblValue->draw();
+    m_btnPlus->draw();
+}
+
+
 void IntField::resize(int x, int y, int w, int h)
 {
     m_rect = de::Recti(x,y,w,h);

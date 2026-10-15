@@ -21,6 +21,8 @@
 
 namespace de {
 
+static bool g_isTimerValid = true;
+
 LRESULT CALLBACK
 WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
@@ -90,7 +92,6 @@ uint32_t de_startTimer( uint32_t ms = 10, LPTIMECALLBACK timeCallback = nullptr,
     // DE_DEBUG("timerId(",timerId,")")
     return timerId;
 }
-
 
 std::wstring makeUniqueWindowTitle() {
     // 64‑bit RNG
@@ -227,6 +228,8 @@ struct Window_WGL_Internals
     {
         // DE_DEBUG("")
 
+        g_isTimerValid = false; // Prevents call of baseClass->onEvent( e );
+
         for (uint32_t id : m_timerIds)
         {
             de_killTimer( id );
@@ -315,7 +318,7 @@ Window_WGL::startTimer( uint32_t ms, bool singleShot )
     return de_startTimer( ms,
         [] ( UINT timerId, UINT uMsg, DWORD_PTR dwUser, DWORD_PTR dw1, DWORD_PTR dw2 )
         {
-            // if ( !g_isTimerValid ) return;
+            if ( !g_isTimerValid ) return;
             if ( !dwUser ) return;
             auto baseClass = reinterpret_cast<Window_WGL*>(dwUser);
             if (baseClass)
@@ -443,6 +446,7 @@ bool Window_WGL::create( WindowOptions params )
         wc.cbWndExtra = 0;
         wc.hInstance = hInstance;
         wc.lpszClassName = className.c_str(); // lpszClassName;
+        wc.hCursor = LoadCursor(NULL, IDC_ARROW); //
         wc.lpfnWndProc = WndProc; // WndProcTest; // WndProc; DefWindowProc;
 
         ATOM a = RegisterClassExW(&wc);
@@ -778,67 +782,71 @@ bool Window_WGL::isFullScreen() const
 
 void Window_WGL::setFullScreen( bool fullscreen )
 {
-   DWORD style;
+    DWORD style;
 
-   if ( fullscreen )
-   {
-      style = _d->m_fullscreenStyle;
-   }
-   else
-   {
-      style = _d->m_windowedStyle;
-   }
+    if ( fullscreen )
+    {
+        style = _d->m_fullscreenStyle;
+    }
+    else
+    {
+        style = _d->m_windowedStyle;
+    }
 
-   // TODO: Separate this code into a reusable function setWindowStyle().
-   if ( !SetWindowLongPtr( _d->hWnd, GWL_STYLE, LONG_PTR(style) ) )
-   {
-      printf("Cant change window style.\n");
-      //std::cout << "Could not change window style." << std::endl;
-   }
+    // TODO: Separate this code into a reusable function setWindowStyle().
+    if ( !SetWindowLongPtr( _d->hWnd, GWL_STYLE, LONG_PTR(style) ) )
+    {
+        printf("Cant change window style.\n");
+        //std::cout << "Could not change window style." << std::endl;
+    }
 
-   _d->m_params.isFullscreen = fullscreen;
-   _d->m_windowStyle = style; // Update 'current style' only on Success
+    _d->m_params.isFullscreen = fullscreen;
+    _d->m_windowStyle = style; // Update 'current style' only on Success
 
-   int const desktopWidth = GetSystemMetrics(SM_CXSCREEN);
-   int const desktopHeight = GetSystemMetrics(SM_CYSCREEN);
+    int const desktopWidth = GetSystemMetrics(SM_CXSCREEN);
+    int const desktopHeight = GetSystemMetrics(SM_CYSCREEN);
 
-   // This part is needed, or Window will freeze in the background.
-   RECT r_window;
+    // This part is needed, or Window will freeze in the background.
+    RECT r_window;
 
-   if (_d->m_params.isFullscreen)
-   {
-      r_window.top = 0;
-      r_window.left = 0;
-      r_window.right = desktopWidth;
-      r_window.bottom = desktopHeight;
-   }
-   else
-   {
-      r_window.top = 0;
-      r_window.left = 0;
-      r_window.right = _d->m_params.width;
-      r_window.bottom = _d->m_params.height;
-   }
+    if (_d->m_params.isFullscreen)
+    {
+        r_window.top = 0;
+        r_window.left = 0;
+        r_window.right = desktopWidth;
+        r_window.bottom = desktopHeight;
+    }
+    else
+    {
+        r_window.top = 0;
+        r_window.left = 0;
+        r_window.right = _d->m_params.width;
+        r_window.bottom = _d->m_params.height;
+    }
 
-   AdjustWindowRect( &r_window, _d->m_windowStyle, FALSE );
+    AdjustWindowRect( &r_window, _d->m_windowStyle, FALSE );
 
-   int winW = r_window.right - r_window.left;
-   int winH = r_window.bottom - r_window.top;
-   int winX = (desktopWidth - winW) / 2;
-   int winY = (desktopHeight - winH) / 2;
+    int winW = r_window.right - r_window.left;
+    int winH = r_window.bottom - r_window.top;
+    int winX = (desktopWidth - winW) / 2;
+    int winY = (desktopHeight - winH) / 2;
 
-   if ( _d->m_params.isFullscreen )
-   {
-      winX = 0;
-      winY = 0;
-   }
-   else
-   {
-      winX = std::max( winX, 0 ); // Thick Border
-      winY = std::max( winY, 0 );
-   }
-   SetWindowPos( _d->hWnd, HWND_TOP, winX, winY, winW, winH,
-                  SWP_FRAMECHANGED | SWP_SHOWWINDOW); //  | SWP_NOMOVE
+    if ( _d->m_params.isFullscreen )
+    {
+        winX = 0;
+        winY = 0;
+    }
+    else
+    {
+        winX = std::max( winX, 0 ); // Thick Border
+        winY = std::max( winY, 0 );
+    }
+
+    SetWindowPos(
+        _d->hWnd,
+        HWND_TOP,
+        winX, winY, winW, winH,
+        SWP_FRAMECHANGED | SWP_SHOWWINDOW); //  | SWP_NOMOVE
 }
 
 

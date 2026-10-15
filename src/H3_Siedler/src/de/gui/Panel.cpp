@@ -46,7 +46,6 @@ void Panel::draw()
     if (!m_env) { DE_ERROR("No env") return; }
     auto driver = m_env->getVideoDriver();
     if (!driver) { DE_ERROR("No driver") return; }
-    auto r_screen = driver->getScreenRenderer();
 
     u32 fillColor = m_fillColors[eWS_Idle];
     u32 borderColor = m_borderColors[eWS_Idle];
@@ -72,6 +71,7 @@ void Panel::draw()
     // --- [Draw] Fill ---
     if (dbRGB_A(fillColor) > 0)
     {
+        auto r_screen = driver->getScreenRenderer();
         if ( m_radius < 1 )
         {
             r_screen->draw2DRect( pos, fillColor, m_tex );
@@ -86,6 +86,7 @@ void Panel::draw()
     // --- [Draw] Border ---
     if (dbRGB_A(borderColor) > 0 && m_borderWidth > 0)
     {
+        auto r_screen = driver->getScreenRenderer();
         if ( m_radius < 1 )
         {
             r_screen->draw2DRectLine( pos, borderColor );
@@ -97,11 +98,11 @@ void Panel::draw()
         }
     }
 
-    // --- [Draw] Child widgets ---
-    for (auto & child : m_children)
-    {
-        child->draw();
-    }
+    // // --- [Draw] Child widgets ---
+    // for (auto & child : m_children)
+    // {
+    //     child->draw();
+    // }
 }
 
 void Panel::onEvent( const Event& event )

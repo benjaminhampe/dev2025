@@ -1024,10 +1024,14 @@ Image::clear( bool forceShrink )
 }
 
 void
-Image::setPixelFormat( PixelFormat colorFormat )
+Image::setPixelFormat( PixelFormat pixelFormat )
 {
-   m_pixelFormat = colorFormat;
-   m_bytesPerPixel = PixelFormat::getBytesPerPixel( m_pixelFormat );
+    m_pixelFormat = pixelFormat;
+    m_bytesPerPixel = PixelFormat::getBytesPerPixel( m_pixelFormat );
+    if (m_bytesPerPixel < 1)
+    {
+        DE_WARN("Got invalid bpp for format ", pixelFormat.str())
+    }
 }
 
 void

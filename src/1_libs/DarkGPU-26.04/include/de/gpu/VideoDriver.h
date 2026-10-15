@@ -500,7 +500,7 @@ struct VideoDriver
     void                setModelMatrix( const glm::dmat4& modelMatrix ) { m_modelMatrix = modelMatrix; }
     void                resetModelMatrix() { m_modelMatrix = glm::dmat4( 1.0 ); }
 
-    Camera*             getCamera() { return m_camera; }
+    Camera*             getCamera() const { return m_camera; }
     void                setCamera( Camera* camera ) { m_camera = camera; }
     void                resetCamera() { m_camera = &m_camera0; }
 

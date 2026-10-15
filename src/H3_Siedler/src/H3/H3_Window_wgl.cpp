@@ -1,6 +1,8 @@
 #include "H3_Window_wgl.h"
 #include "H3/details/H3_Topology.h"
 #include "H3/details/UI_MainMenu.h"
+#include "H3/details/UI_Actions.h"
+#include "H3/details/UI_ThiefIntro.h"
 #include "H3_Game.h"
 
 H3_Window::H3_Window(H3_Game& game)
@@ -58,9 +60,24 @@ void H3_Window::keyPressEvent( const de::KeyPressEvent& event )
         }
     }
 
+    if (key == de::KEY_1)
+    {
+        static bool bDebugActions = false;
+        bDebugActions = !bDebugActions;
+        m_game.m_uiActions->setDebugVisible(bDebugActions);
+    }
+
+    if (key == de::KEY_2)
+    {
+        static bool bDebugDonate = false;
+        bDebugDonate = !bDebugDonate;
+        m_game.m_uiDonateCards->setVisible(bDebugDonate);
+    }
+
     // F11 - Toggle window resizable
     if (key == de::KEY_F11)
     {
+        DE_DEBUG("de::KEY_F11")
         auto window = m_game.getWindow();
         if (window)
         {
@@ -70,6 +87,7 @@ void H3_Window::keyPressEvent( const de::KeyPressEvent& event )
     // F12|F - Toggle window fullscreen
     if (key == de::KEY_F12 || key == de::KEY_F )
     {
+        DE_DEBUG("de::KEY_F12 || de::KEY_F")
         auto window = m_game.getWindow();
         if (window)
         {
@@ -80,8 +98,8 @@ void H3_Window::keyPressEvent( const de::KeyPressEvent& event )
     // SPACE - Toggle help overlay
     if (key == de::KEY_SPACE) // SPACE - Toggle overlay
     {
-        m_game.m_isCameraMouseInputEnabled = !m_game.m_isCameraMouseInputEnabled;
-        if (m_game.m_isCameraMouseInputEnabled)
+        m_game.m_isCameraFreeMoveEnabled = !m_game.m_isCameraFreeMoveEnabled;
+        if (m_game.m_isCameraFreeMoveEnabled)
         {
             m_game.m_firstMouse = true;
         }
@@ -91,13 +109,15 @@ void H3_Window::keyPressEvent( const de::KeyPressEvent& event )
     // PAGE_UP - Increase font size
     if (key == de::KEY_PAGE_UP)
     {
-        m_game.setScalePc( std::min( 400, m_game.getScalePc() + 10 ) );
+        DE_DEBUG("de::KEY_PAGE_UP")
+        m_game.setZoom( std::min<float>( 4.f, m_game.getZoom() + 0.1f ) );
         m_game.UI_resizeLayouts();
     }
     // PAGE_DOWN - decrease font size
     if (key == de::KEY_PAGE_DOWN)
     {
-        m_game.setScalePc( std::max( 50, m_game.getScalePc() - 10 ) );
+        DE_DEBUG("de::KEY_PAGE_DOWN")
+        m_game.setZoom( std::max<float>( 0.5f, m_game.getZoom() - 0.1f ) );
         m_game.UI_resizeLayouts();
     }
     // ARROW_UP - Increase frame wait time in ms - lower FPS
@@ -142,10 +162,10 @@ void H3_Window::mousePressEvent( const de::MousePressEvent& event )
     if (event.isLeft())
     {
         m_game.m_isMouseLeftPressed = true;
-        m_game.m_leftDragStartX = event.x;
-        m_game.m_leftDragStartY = event.y;
-        m_game.m_leftDragLastX = event.x;
-        m_game.m_leftDragLastY = event.y;
+        // m_game.m_leftDragStartX = event.x;
+        // m_game.m_leftDragStartY = event.y;
+        // m_game.m_leftDragLastX = event.x;
+        // m_game.m_leftDragLastY = event.y;
     }
     else if (event.isRight())
     {
@@ -245,6 +265,93 @@ void H3_Window::mouseReleaseEvent( const de::MouseReleaseEvent& event )
     m_game.m_guienv.onEvent(event);
 }
 
+void H3_Window::mouseMoveEvent( const de::MouseMoveEvent& event )
+{
+    const int mx = event.x;
+    const int my = event.y;
+
+    if (m_game.m_firstMouse)
+    {
+        m_game.m_firstMouse = false;
+    }
+    else
+    {
+        m_game.m_mouseMoveX = mx - m_game.m_mouseX;
+        m_game.m_mouseMoveY = my - m_game.m_mouseY;
+
+        if (m_game.m_isCameraMouseInputEnabled && m_game.m_isMouseRightPressed)
+        {
+            auto camera = m_game.getCamera();
+            if (camera)
+            {
+                if ( m_game.m_isCameraFreeMoveEnabled )
+                {
+                    camera->yaw( 0.003f * m_game.m_mouseMoveX );
+                    camera->pitch( 0.003f * m_game.m_mouseMoveY );
+                }
+                else
+                {
+                    // int mouseDragDeltaX = mx - m_game.m_leftDragLastX;
+                    // int mouseDragDeltaY = my - m_game.m_leftDragLastY;
+                    // m_game.m_leftDragLastX = mx;
+                    // m_game.m_leftDragLastY = my;
+                    auto camPos = camera->getPos();
+                    auto camTar = camera->getTarget();
+                    auto camDir = camTar - camPos;
+
+                    std::optional<glm::dvec3> S = intersectWithYZeroPlane(
+                                                        camPos, camDir);
+                    if (S)
+                    {
+                        camTar = *S; // Ground is intersection point
+                    }
+                    else
+                    {
+                        camTar.y = 0.0; // Make it ground instead.
+                    }
+
+                    camDir = camTar - camPos; // Update
+
+                    double cylinderCamRadius = glm::length( glm::dvec2(camDir.x, camDir.z) );
+                    double cylinderCamAngleY = atan2(camDir.z, camDir.x); // - de::Math::PI64;
+
+                    // DE_DEBUG("Cam: "
+                    //         "MM(",m_game.m_mouseMoveX,",",m_game.m_mouseMoveY,"), "
+                    //         "Pos(",glm::ivec3(camPos),"), "
+                    //         "Tar(",glm::ivec3(camTar),"), "
+                    //         "Dir(",glm::ivec3(camDir),"), "
+                    //         "Radius(",cylinderCamRadius,"), "
+                    //         "Phi(",cylinderCamAngleY,")" )
+
+                    cylinderCamAngleY -= 0.003 * m_game.m_mouseMoveX;
+                    cylinderCamAngleY = de::Math::wrapAngleToRange0_2pi(cylinderCamAngleY);
+
+                    float h = camPos.y;
+                    h += 0.3 * m_game.m_mouseMoveY;
+                    h = de::clampd(h, 0.0, 1500.0);
+
+                    camPos = camTar - glm::dvec3( cylinderCamRadius * cos(cylinderCamAngleY),
+                                                  0,
+                                                  cylinderCamRadius * sin(cylinderCamAngleY));
+                    camPos.y = h;
+
+                    camera->lookAt( camPos, camTar );
+                }
+            }
+        }
+    }
+
+    m_game.m_mouseMoveX = 0; // Reset
+    m_game.m_mouseMoveY = 0; // Reset
+    m_game.m_mouseX = mx;
+    m_game.m_mouseY = my;
+
+    m_game.m_guienv.onEvent(event);
+
+    m_game.pick();
+}
+
+
 void H3_Window::mouseDblClickEvent( const de::MouseDblClickEvent& event )
 {
     // if (event.mouseDblClickEvent.isLeft())
@@ -256,90 +363,12 @@ void H3_Window::mouseDblClickEvent( const de::MouseDblClickEvent& event )
 }
 
 
-void H3_Window::mouseMoveEvent( const de::MouseMoveEvent& event )
-{
-    const int mx = event.x;
-    const int my = event.y;
-
-    if ( m_game.m_isCameraMouseInputEnabled )
-    {
-        if (m_game.m_firstMouse)
-        {
-            m_game.m_firstMouse = false;
-        }
-        else
-        {
-            m_game.m_mouseMoveX = mx - m_game.m_mouseX;
-            m_game.m_mouseMoveY = my - m_game.m_mouseY;
-
-            auto camera = m_game.getCamera();
-            if (camera)
-            {
-                camera->yaw( 0.003f * m_game.m_mouseMoveX );
-                camera->pitch( 0.003f * m_game.m_mouseMoveY );
-            }
-        }
-    }
-    else
-    {
-        if (m_game.m_isMouseLeftPressed)
-        {
-            int mouseDragDeltaX = mx - m_game.m_leftDragLastX;
-            int mouseDragDeltaY = my - m_game.m_leftDragLastY;
-            m_game.m_leftDragLastX = mx;
-            m_game.m_leftDragLastY = my;
-            auto camera = m_game.getCamera();
-            if (camera)
-            {
-                auto camPos = camera->getPos();
-                auto camTar = glm::dvec3(0,0,0);
-
-                // auto camDir = camTar - camPos;
-                //cylinderCamRadius = glm::length( glm::dvec2(camDir.x, camDir.z) );
-                //cylinderCamHeight = camDir.y;
-                //cylinderCamAngleY = atan2(camDir.z, camDir.x) * de::Math::RAD2DEG;
-                // DE_DEBUG("CylinderCam: "
-                //         "phi(",m_game.cylinderCamAngleY,"), "
-                //         "radius(",m_game.cylinderCamRadius,"), "
-                //         "height(",m_game.cylinderCamHeight,")")
-
-                m_game.cylinderCamAngleY += 0.01f * mouseDragDeltaX;
-
-                float a = m_game.cylinderCamAngleY;
-
-                float h = m_game.cylinderCamHeight;
-
-                h += mouseDragDeltaY;
-
-                h = de::clampf(h, 0.0f, 1000.0f);
-
-                float r = m_game.cylinderCamRadius;
-
-                camPos = glm::dvec3( r * sin(a), h, r * cos(a));
-
-                camera->lookAt( camPos, camTar );
-
-                m_game.cylinderCamHeight = h;
-            }
-
-        }
-    }
-    m_game.m_mouseMoveX = 0; // Reset
-    m_game.m_mouseMoveY = 0; // Reset
-    m_game.m_mouseX = mx;
-    m_game.m_mouseY = my;
-
-    m_game.m_guienv.onEvent(event);
-
-    m_game.pick();
-}
-
 void H3_Window::mouseWheelEvent( const de::MouseWheelEvent& event )
 {
-    auto camera = m_game.getCamera();
-    if (camera)
+    if ( m_game.m_isCameraMouseInputEnabled )
     {
-        if ( m_game.m_isCameraMouseInputEnabled )
+        auto camera = m_game.getCamera();
+        if (camera)
         {
             if ( event.y < 0.0f )
             {
@@ -350,6 +379,7 @@ void H3_Window::mouseWheelEvent( const de::MouseWheelEvent& event )
                 camera->move( 2.5f );
             }
         }
+        /*
         else
         {
             float r = m_game.cylinderCamRadius;
@@ -369,6 +399,7 @@ void H3_Window::mouseWheelEvent( const de::MouseWheelEvent& event )
 
             m_game.cylinderCamRadius = r;
         }
+        */
     }
 
     m_game.m_guienv.onEvent(event);

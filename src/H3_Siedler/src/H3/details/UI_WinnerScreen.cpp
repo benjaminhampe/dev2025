@@ -32,22 +32,32 @@ UI_WinnerScreen::~UI_WinnerScreen()
 
 }
 
-void UI_WinnerScreen::updateData()
-{
 
+void UI_WinnerScreen::draw()
+{
+    Panel::draw();
+
+    if (!isVisible()) return;
+
+    for (auto & child : m_children)
+    {
+        child->draw();
+    }
 }
 
-void UI_WinnerScreen::resizeLayout()
+void UI_WinnerScreen::resize(int X, int Y, int W, int H)
 {
-    int scr_w = m_env->getScreenWidth();
-    int scr_h = m_env->getScreenHeight();
+    m_rect = de::Recti(X,Y,W,H);
+
+    const float zoom = m_env->getZoom();
+    setFont( de::Font("Postamt", zoom * 16) );
 
     // ::::: Panel ::::
-    int w = scr_w - 200;
-    int h = scr_h - 200;
+    int w = W - 200;
+    int h = H - 200;
     int x = 100;
     int y = 100;
-    m_rect = de::Recti(x,y,w,h);
+
     m_lblWinner->resize(100,100,w - 200,100);
     m_lblWinnerIcon->resize(100,200,100,100);
     m_lblWinnerName->resize(200,200,w-200,100);

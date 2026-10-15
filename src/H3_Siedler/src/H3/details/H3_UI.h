@@ -23,7 +23,7 @@ void UI_Stats_render( H3_Game & game );
 // void UI_Stats_hide( H3_Game & game );
 // void UI_Stats_show( H3_Game & game );
 
-void UI_drawDlgLooseCards( H3_Game & game );
+// void UI_drawDlgLooseCards( H3_Game & game );
 void UI_drawRoundStats( H3_Game & game);
 void UI_drawStatNum( H3_Game & game, int img, de::Recti pos, int value, int icon_width = 0 );
 void UI_drawPlayerStats( H3_Game & game, int px, int py, int playerId );

@@ -65,9 +65,6 @@ struct SMeshHexagon
     static glm::vec2
     getNeighborTilePos( int corner, float w, float h, int i, int j );
 
-    static int32_t
-    safeMod( int32_t a, int32_t b );
-
     static float
     computeBoardPosX( float w, float h, int i, int j );
 
@@ -76,6 +73,14 @@ struct SMeshHexagon
 
     static glm::ivec2
     computeTileIndex( float x, float y, float w, float h );
+
+
+    static glm::vec3 cornerA3( float w, float h );
+    static glm::vec3 cornerB3( float w, float h );
+    static glm::vec3 cornerC3( float w, float h );
+    static glm::vec3 cornerD3( float w, float h );
+    static glm::vec3 cornerE3( float w, float h );
+    static glm::vec3 cornerF3( float w, float h );
 
     static glm::vec2 lineCenter( glm::vec2 const & a, glm::vec2 const & b );
 

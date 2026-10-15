@@ -32,13 +32,13 @@ struct H3_ChipMeshBuffer
     void render() const;
 
     // Collect visible chips for placing roads
-    void collectEdges(const H3_Game& game);
+    void collectEdges(const H3_Game& game, float phi);
 
     // Collect visible chips for placing farms/cities
-    void collectCorners(const H3_Game& game);
+    void collectCorners(const H3_Game& game, float phi);
 
     // Collect visible chips for tiles ( all tiles except water-tiles )
-    void collectTiles(const H3_Game& game);
+    void collectTiles(const H3_Game& game, float phi);
 };
 
 // ===========================================================================

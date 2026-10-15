@@ -31,23 +31,16 @@ H3_Cfg& UI_World::getPreset()
     return m_cfg;
 }
 
-void UI_World::resizeLayout()
-{
-    const int scr_w = m_env->getScreenWidth();
-    const int scr_h = m_env->getScreenHeight();
-    const float f = 0.01f * m_env->getScalePc();
-}
-
-void UI_World::onEvent( const de::Event& event )
-{
-
-}
-
 void UI_World::draw()
 {
     Panel::draw();
 
     if (!isVisible()) return;
+
+    // for (auto & child : m_children)
+    // {
+    //     child->draw();
+    // }
 
     auto r = getAbsoluteRect();
     float originX = r.centerX();
@@ -142,77 +135,102 @@ UI_WorldCreator::UI_WorldCreator( H3_Game* game, de::gui::Env* env, de::gui::Wid
 
 UI_WorldCreator::~UI_WorldCreator()
 {
-    DE_WARN("")
+
 }
 
-void UI_WorldCreator::resizeLayout()
+void UI_WorldCreator::draw()
 {
-    const int scr_w = m_env->getScreenWidth();
-    const int scr_h = m_env->getScreenHeight();
-    const float f = 0.01f * m_env->getScalePc();
+    Panel::draw();
+
+    if (!isVisible()) return;
+
+    for (auto & child : m_children)
+    {
+        child->draw();
+    }
+
+    // m_presetPrev->draw();
+    // m_presetNext->draw();
+    // m_presetName->draw();
+    // m_presetNew->draw();
+    // m_presetClone->draw();
+    // m_presetDelete->draw();
+    // m_presetExport->draw();
+    // m_presetImport->draw();
+    // m_edtVictory->draw();
+    // m_edtCardLimit->draw();
+    // m_edtSpacing->draw();
+    // m_edtPlayer->draw();
+    // m_body->draw();
+    // m_btnClose->draw();
+    // m_btnStart->draw();
+}
+
+void UI_WorldCreator::resize(int x, int y, int w, int h)
+{
+    m_rect = de::Recti(x,y,w,h);
+
+    const float zoom = m_env->getZoom();
+    setFont( de::Font("Postamt", zoom * 16) );
 
     // ::::: Fullscreen Panel ::::
-    int p = 10;
-    int w = scr_w;
-    int h = scr_h;
-    int x = 0;
-    int y = 0;
-    m_rect = de::Recti( x,y,w,h );
-    setFont( de::Font("Postamt", f * 16) );
+    int p = zoom * 10;
+    int q = p;
+    int ln = zoom * 100;
 
+    int bx = x;
+    int by = y;
     // ::::: Row[0] Title ::::
-    w = scr_w/2;
-    h = 100;
-    m_title->resize(x + w/2,y,w,h); y += h;
+    m_title->resize(bx + w/2,by,w,ln); y += ln;
 
     // ::::: Row[1] PresetBar ::::
-    x = 20;
-    h = 100;
-    w = 150;
-    m_presetPrev->resize(x,y,w,h); x += w + p;
-    m_presetNext->resize(x,y,w,h); x += w + p;
-    w = 350;
-    m_presetName->resize(x,y,w,h); x += w + p;
-    w = 100;
-    m_presetNew->resize(x,y,w,h); x += w + p;
-    w = 200;
-    m_presetClone->resize(x,y,w,h); x += w + p;
-    w = 100;
-    m_presetDelete->resize(x,y,w,h); x += w + p;
-    w = 200;
-    m_presetExport->resize(x,y,w,h); x += w + p;
-    m_presetImport->resize(x,y,w,h); x += w + p;
+    bx = 20;
+    int bh = 100;
+    int bw = 150;
+    m_presetPrev->resize(bx,by,bw,bh); bx += bw + p;
+    m_presetNext->resize(bx,by,bw,bh); bx += bw + p;
+    bw = 350;
+    m_presetName->resize(bx,by,bw,bh); bx += bw + p;
+    bw = 100;
+    m_presetNew->resize(bx,by,bw,bh); bx += bw + p;
+    bw = 200;
+    m_presetClone->resize(bx,by,bw,bh); bx += bw + p;
+    bw = 100;
+    m_presetDelete->resize(bx,by,bw,bh); bx += bw + p;
+    bw = 200;
+    m_presetExport->resize(bx,by,bw,bh); bx += bw + p;
+    m_presetImport->resize(bx,by,bw,bh); bx += bw + p;
     // w = 100;
     // m_presetEdit->setRect(x,y,w,h);
-    y += h + 2*p;
-    const int y2 = y;
+    by += bh + 2*p;
+    const int y2 = by;
 
     // ::::: Row[2] IntFields + HexWorldView ::::
-    const int q = 10;
-    w = f*300;
-    h = f*32;
-    x = 20;
-    //m_edtTilesX->setRect(x,y,w,h);      y += h + q;
-    //m_edtTilesY->setRect(x,y,w,h);      y += h + q;
-    m_edtVictory->resize(x,y,w,h);     y += h + q;
-    m_edtCardLimit->resize(x,y,w,h);   y += h + q;
-    m_edtSpacing->resize(x,y,w,h);     y += h + q;
-    m_edtPlayer->resize(x,y,w,h);
+
+    bw = zoom*300;
+    bh = zoom*32;
+    bx = 20;
+    //m_edtTilesX->setRect(bx,by,bw,bh);   by += ln + q;
+    //m_edtTilesY->setRect(bx,by,bw,bh);   by += ln + q;
+    m_edtVictory->resize(bx,by,bw,bh);     by += ln + q;
+    m_edtCardLimit->resize(bx,by,bw,bh);   by += ln + q;
+    m_edtSpacing->resize(bx,by,bw,bh);     by += ln + q;
+    m_edtPlayer->resize(bx,by,bw,bh);
 
     // ::::: Row[2] Body ::::
-    y = y2;
-    x += w + p;
-    w = scr_w - p - x;
-    h = scr_h - 2*p - y - 200;
-    m_body->resize(x,y,w,h);
+    by = y2;
+    bx += bw + p;
+    bw = bw - p - bx;
+    bh = h - 2*p - y - 200;
+    m_body->resize(bx,by,bw,bh);
 
     // ::::: Row[N] Main-Buttons ::::
-    w = 400;
-    h = 100;
-    x = 200;
-    y = scr_h - 100 - h;
-    m_btnClose->resize(x,y,w,h); x += w + 100;
-    m_btnStart->resize(x,y,w,h);
+    bw = 400;
+    bh = 100;
+    bx = 200;
+    by = h - 100 - bh;
+    m_btnClose->resize(bx,by,bw,bh); bx += bw + 100;
+    m_btnStart->resize(bx,by,bw,bh);
 }
 
 const std::string&

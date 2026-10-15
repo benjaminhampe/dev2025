@@ -648,8 +648,6 @@ GL_VALIDATE
 GL_VALIDATE
 }
 
-
-
 // [MemorySizeInBytes]
 size_t
 SMeshBuffer::computeByteConsumption() const

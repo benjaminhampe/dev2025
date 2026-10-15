@@ -7,8 +7,10 @@ struct UI_WinnerScreen : public de::gui::Panel
 {
     UI_WinnerScreen( H3_Game* game, de::gui::Env* env, de::gui::Widget* parent, u32 id, const de::Recti& r );
     ~UI_WinnerScreen() override;
-    //void draw() override;
-    void resizeLayout();
+
+    void draw() override;
+    void resize(int x, int y, int w, int h) override;
+
     void updateData();
 protected:
     de::gui::Button* createButton(std::string txt, de::gpu::TexRef ref, de::Recti pos);

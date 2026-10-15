@@ -11,10 +11,14 @@ public:
     UI_ThiefIntro( H3_Game* game, de::gui::Env* env, de::gui::Widget* parent, u32 id, const de::Recti& r );
     ~UI_ThiefIntro() override;
     void setPlayer( uint32_t playerId );
-    //void draw() override;
+
+    void draw() override;
+    void resize(int x, int y, int w, int h) override;
+
     //void onEvent( const de::Event& event ) override;
+
     void updateTexts();
-    void resizeLayout();
+
     void resizeLayoutThief( de::Recti pos );
     void resizeLayoutPlayer( de::Recti pos );
 protected:

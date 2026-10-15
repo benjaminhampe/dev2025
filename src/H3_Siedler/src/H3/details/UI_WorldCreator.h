@@ -9,8 +9,6 @@ public:
     UI_World( H3_Game* game, de::gui::Env* env, de::gui::Widget* parent, u32 id, const de::Recti& r );
     ~UI_World() override;
     void draw() override;
-    void onEvent(const de::Event& event) override;
-    void resizeLayout();
     void setPreset( const H3_Cfg& cfg );
     H3_Cfg& getPreset();
     // H3_Cfg& getPreset( const std::string& presetName );
@@ -35,7 +33,11 @@ class UI_WorldCreator : public de::gui::Panel
 public:
     UI_WorldCreator( H3_Game* game, de::gui::Env* env, de::gui::Widget* parent, u32 id, const de::Recti& r );
     ~UI_WorldCreator() override;
-    void resizeLayout();
+
+    void draw() override;
+    void resize(int x, int y, int w, int h) override;
+
+    //    void resizeLayout();
 
     void setPreset( const H3_Cfg& cfg );
     H3_Cfg& getPreset();

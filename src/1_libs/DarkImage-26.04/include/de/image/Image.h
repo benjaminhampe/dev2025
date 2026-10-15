@@ -26,7 +26,7 @@ public:
         R8G8B8A8,   // RGBA_32  :: 32-bit color (default) for all decent painting operations, for format, png, webp, tga.
         B8G8R8A8,   // BGRA_32  :: for format, png, webp,
         A8B8G8R8,   // ABGR_32  :: for format, png, webp,
-        A8GR88B8,   // ARGB_32  :: for format, png, webp,
+        A8R8G8B8,   // ARGB_32  :: for format, png, webp,
         // 24-Bit (default)
         R8G8B8,     // RGB_24   :: 24-bit 888 opaque color, for jpeg and bmp
         B8G8R8,     // BGR_24   :: 24-bit 888 opaque color, for jpeg and bmp
@@ -75,11 +75,11 @@ public:
         RGBA_32 = R8G8B8A8,
         BGRA_32 = B8G8R8A8,
         ABGR_32 = A8B8G8R8,
-        ARGB_32 = A8GR88B8,
+        ARGB_32 = A8R8G8B8,
         RGBA_8888 = R8G8B8A8,
         BGRA_8888 = B8G8R8A8,
         ABGR_8888 = A8B8G8R8,
-        ARGB_8888 = A8GR88B8,
+        ARGB_8888 = A8R8G8B8,
         // ==================
         // Alias: 24-Bit
         RGB_24 = R8G8B8,

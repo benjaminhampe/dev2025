@@ -50,18 +50,7 @@ void Widget::resize(int x, int y, int w, int h)
 
 void Widget::draw()
 {
-    if (!isVisible()) return;
 
-    for (auto & child : m_children)
-    {
-        if (!child)
-        {
-            DE_ERROR("Nullptr child ", m_id)
-            continue;
-        }
-
-        child->draw();
-    }
 }
 
 void Widget::onEvent( const Event& event )

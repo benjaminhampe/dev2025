@@ -9,6 +9,8 @@ class UI_MainMenu : public de::gui::Panel
 public:
     UI_MainMenu( H3_Game* game, de::gui::Env* env, de::gui::Widget* parent, u32 id, const de::Recti& r );
     ~UI_MainMenu() override;
+
+    void draw() override;
     void resize(int x, int y, int w, int h) override;
 
 protected:

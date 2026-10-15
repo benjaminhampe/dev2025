@@ -1717,36 +1717,36 @@ void applySamplerOptions(const SamplerOptions &so)
     GLint magMode = GL_NEAREST; // Low quality is default.
     switch ( so.mag )
     {
-    case SamplerOptions::Magnify::Linear: magMode = GL_LINEAR; break;// High quality on demand.
-    default: break;
+        case SamplerOptions::Magnify::Linear: magMode = GL_LINEAR; break;// High quality on demand.
+        default: break;
     }
 
     GLint minMode = GL_NEAREST;   // Low quality is default.
     switch ( so.min )
     {
-    case SamplerOptions::Minify::Linear: minMode = GL_LINEAR; break;
-    case SamplerOptions::Minify::NearestMipmapNearest: minMode = GL_NEAREST_MIPMAP_NEAREST; break;
-    case SamplerOptions::Minify::NearestMipmapLinear: minMode = GL_NEAREST_MIPMAP_LINEAR; break;
-    case SamplerOptions::Minify::LinearMipmapNearest: minMode = GL_LINEAR_MIPMAP_NEAREST; break;
-    case SamplerOptions::Minify::LinearMipmapLinear: minMode = GL_LINEAR_MIPMAP_LINEAR; break;
-    default: break;
+        case SamplerOptions::Minify::Linear: minMode = GL_LINEAR; break;
+        case SamplerOptions::Minify::NearestMipmapNearest: minMode = GL_NEAREST_MIPMAP_NEAREST; break;
+        case SamplerOptions::Minify::NearestMipmapLinear: minMode = GL_NEAREST_MIPMAP_LINEAR; break;
+        case SamplerOptions::Minify::LinearMipmapNearest: minMode = GL_LINEAR_MIPMAP_NEAREST; break;
+        case SamplerOptions::Minify::LinearMipmapLinear: minMode = GL_LINEAR_MIPMAP_LINEAR; break;
+        default: break;
     }
 
     GLint wrapS = GL_REPEAT;
     switch ( so.wrapS )
     {
-    case SamplerOptions::Wrap::RepeatMirrored: wrapS = GL_MIRRORED_REPEAT; break;
-    case SamplerOptions::Wrap::ClampToEdge: wrapS = GL_CLAMP_TO_EDGE; break;
-    case SamplerOptions::Wrap::ClampToBorder: wrapS = GL_CLAMP_TO_BORDER; break;
-    default: break;
+        case SamplerOptions::Wrap::RepeatMirrored: wrapS = GL_MIRRORED_REPEAT; break;
+        case SamplerOptions::Wrap::ClampToEdge: wrapS = GL_CLAMP_TO_EDGE; break;
+        case SamplerOptions::Wrap::ClampToBorder: wrapS = GL_CLAMP_TO_BORDER; break;
+        default: break;
     }
     GLint wrapT = GL_REPEAT;
     switch ( so.wrapT )
     {
-    case SamplerOptions::Wrap::RepeatMirrored: wrapT = GL_MIRRORED_REPEAT; break;
-    case SamplerOptions::Wrap::ClampToEdge: wrapT = GL_CLAMP_TO_EDGE; break;
-    case SamplerOptions::Wrap::ClampToBorder: wrapT = GL_CLAMP_TO_BORDER; break;
-    default: break;
+        case SamplerOptions::Wrap::RepeatMirrored: wrapT = GL_MIRRORED_REPEAT; break;
+        case SamplerOptions::Wrap::ClampToEdge: wrapT = GL_CLAMP_TO_EDGE; break;
+        case SamplerOptions::Wrap::ClampToBorder: wrapT = GL_CLAMP_TO_BORDER; break;
+        default: break;
     }
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, minMode);

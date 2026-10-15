@@ -9,18 +9,9 @@ UI_Actions::UI_Actions( H3_Game* game, de::gui::Env* env, de::gui::Widget* paren
     : de::gui::Widget(env, parent, id, pos)
     , m_game(game)
 {
-    auto scr_w = m_env->getScreenWidth();
-    auto scr_h = m_env->getScreenHeight();
-
-    float fY = 0.9f * scr_w;
-    float fX = 0.5f * scr_h;
-    float fW = 0.06f * scr_w;
-    float fH = 0.06f * scr_h;
-
     // (1.) DoDice
     {
-        fX = 0.3f * scr_w;
-        auto btn = new de::gui::Button("", env, this, 0, de::Recti(fX,fY,68,28));
+        auto btn = new de::gui::Button("", env, this, 0, de::Recti(0,0,0,0));
         btn->setTexture(m_game->getTex(H3_Tex::DoDice, "UI_Actions().DoDice"));
         btn->setBorderColor(dbRGB(255,255,0),1);
         m_btnDice = btn;
@@ -29,8 +20,7 @@ UI_Actions::UI_Actions( H3_Game* game, de::gui::Env* env, de::gui::Widget* paren
 
     // (2.) DoBank
     {
-        fX = 0.4f * scr_w;
-        auto btn = new de::gui::Button("", env, this, 0, de::Recti(fX,fY,68,28));
+        auto btn = new de::gui::Button("", env, this, 0, de::Recti(0,0,0,0));
         btn->setTexture(m_game->getTex(H3_Tex::DoBank, "UI_Actions().DoDice"));
         btn->setBorderColor(dbRGB(255,255,0),1);
         m_btnBank = btn;
@@ -39,8 +29,7 @@ UI_Actions::UI_Actions( H3_Game* game, de::gui::Env* env, de::gui::Widget* paren
 
     // (3.) DoTrade
     {
-        fX = 0.5f * scr_w;
-        auto btn = new de::gui::Button("", env, this, 0, de::Recti(fX,fY,68,28));
+        auto btn = new de::gui::Button("", env, this, 0, de::Recti(0,0,0,0));
         btn->setTexture(m_game->getTex(H3_Tex::DoTrade, "UI_Actions().DoTrade"));
         btn->setBorderColor(dbRGB(255,255,0),1);
         m_btnTrade = btn;
@@ -49,8 +38,7 @@ UI_Actions::UI_Actions( H3_Game* game, de::gui::Env* env, de::gui::Widget* paren
 
     // (4.) DoEndTurn
     {
-        fX = 0.6f * scr_w;
-        auto btn = new de::gui::Button("", env, this, 0, de::Recti(fX,fY,68,28));
+        auto btn = new de::gui::Button("", env, this, 0, de::Recti(0,0,0,0));
         btn->setTexture(m_game->getTex(H3_Tex::DoEndTurn, "UI_Actions().DoEndTurn"));
         btn->setBorderColor(dbRGB(255,255,0),1);
         m_btnEndTurn = btn;
@@ -60,23 +48,17 @@ UI_Actions::UI_Actions( H3_Game* game, de::gui::Env* env, de::gui::Widget* paren
     // (5.) DoBuyEventCard
     {
         auto tex = m_game->getTex(H3_Tex::DoBuyEventCard, "UI_Actions().DoBuyEventCard");
-        fX = 0.7f * scr_w;
-        fY = 0.86f * scr_h;
-        fH = 0.1f * scr_h;
-        auto btn = new de::gui::Button("", env, this, 0, de::Recti(fX,fY,64,64));
+        auto btn = new de::gui::Button("", env, this, 0, de::Recti(0,0,0,0));
         btn->setTexture(tex);
         btn->setBorderColor(dbRGB(255,255,0),1);
         m_btnBuyCard = btn;
         m_btnBuyCard->setOnClicked([&](){ m_game->doBuyCard(); });
     }
 
-    fY = 0.78f * scr_h;
-
     // (6.) DoCancel
     {
         auto tex = m_game->getTex(H3_Tex::DoCancel, "UI_Actions().DoCancel");
-        fX = 0.3f * scr_w;
-        auto btn = new de::gui::Button("", env, this, 0, de::Recti(fX,fY,64,64));
+        auto btn = new de::gui::Button("", env, this, 0, de::Recti(0,0,0,0));
         btn->setTexture(tex);
         btn->setBorderColor(dbRGB(255,255,0),1);
         m_btnCancel = btn;
@@ -86,8 +68,7 @@ UI_Actions::UI_Actions( H3_Game* game, de::gui::Env* env, de::gui::Widget* paren
     // (7.) DoBuyRoad
     {
         auto tex = m_game->getTex(H3_Tex::DoBuyRoad, "UI_Actions().DoBuyRoad");
-        fX = 0.4f * scr_w;
-        auto btn = new de::gui::Button("", env, this, 0, de::Recti(fX,fY,64,64));
+        auto btn = new de::gui::Button("", env, this, 0, de::Recti(0,0,0,0));
         btn->setTexture(tex);
         btn->setBorderColor(dbRGB(255,255,0),1);
         m_btnBuyRoad = btn;
@@ -97,8 +78,7 @@ UI_Actions::UI_Actions( H3_Game* game, de::gui::Env* env, de::gui::Widget* paren
     // (8.) DoBuyFarm
     {
         auto tex = m_game->getTex(H3_Tex::DoBuyFarm, "UI_Actions().DoBuyFarm");
-        fX = 0.5f * scr_w;
-        auto btn = new de::gui::Button("", env, this, 0, de::Recti(fX,fY,64,64));
+        auto btn = new de::gui::Button("", env, this, 0, de::Recti(0,0,0,0));
         btn->setTexture(tex);
         btn->setBorderColor(dbRGB(255,255,0),1);
         m_btnBuyFarm = btn;
@@ -108,8 +88,7 @@ UI_Actions::UI_Actions( H3_Game* game, de::gui::Env* env, de::gui::Widget* paren
     // (9.) DoBuyRoad
     {
         auto tex = m_game->getTex(H3_Tex::DoBuyCity, "UI_Actions().DoBuyCity");
-        fX = 0.6f * scr_w;
-        auto btn = new de::gui::Button("", env, this, 0, de::Recti(fX,fY,64,64));
+        auto btn = new de::gui::Button("", env, this, 0, de::Recti(0,0,0,0));
         btn->setTexture(tex);
         btn->setBorderColor(dbRGB(255,255,0),1);
         m_btnBuyCity = btn;
@@ -129,45 +108,62 @@ UI_Actions::~UI_Actions()
     // DE_WARN("")
 }
 
-void UI_Actions::resizeLayout()
+void UI_Actions::setDebugVisible(bool visible)
 {
+    setVisible( visible );
+    for (auto & child : m_children)
+    {
+        child->setVisible(visible);
+    }
+}
+
+void UI_Actions::draw()
+{
+    de::gui::Widget::draw();
+
+    if (!isVisible()) return;
+
+    for (auto & child : m_children)
+    {
+        child->draw();
+    }
+}
+
+void UI_Actions::resize(int X, int Y, int W, int H)
+{
+    m_rect = de::Recti(X,Y,W,H);
+
     // DE_WARN("")
 
-    const auto fScale = 0.01f * m_env->getScalePc();
-    const auto scr_w = m_env->getScreenWidth();
-    const auto scr_h = m_env->getScreenHeight();
-    m_rect = de::Recti(0,0,scr_w,scr_h);
+    const float zoom = m_env->getZoom();
 
-    const int p = fScale * 5;
-    const int w1 = fScale * m_btnDice->getRect().w;
-    const int h1 = fScale * m_btnDice->getRect().h;
-    const int w2 = fScale * m_btnBank->getRect().w;
-    const int h2 = fScale * m_btnBank->getRect().h;
+    const int p = zoom * 5;
+    const int s = zoom * 2; // = zoom * (68-64)/2
+    const int w1 = zoom * 68;
+    const int h1 = zoom * 28;
+    const int w2 = zoom * 64;
+    const int h2 = zoom * 64;
 
-    const int w3 = fScale * m_btnCancel->getRect().w;
-    const int h3 = fScale * m_btnCancel->getRect().h;
+    const int w3 = w2;
+    const int h3 = zoom * 96;
 
-    const int w4 = fScale * m_btnBuyCard->getRect().w;
-    const int h4 = fScale * m_btnBuyCard->getRect().h;
-
-
-    int x = scr_w/2; //  - p - w1 - p - w2
-    int y = scr_h - 1 - p - std::max(h1,h2);
-
+    int x0 = W/2 - 2*w1;
+    int x = x0;
+    int y = H - 1 - p - h1;
     m_btnDice->resize(x,y,w1,h1); x += w1 + p;
-    m_btnBank->resize(x,y,w2,h2); x += w2 + p;
-    m_btnTrade->resize(x,y,w2,h2); x += w2 + p;
-    m_btnEndTurn->resize(x,y,w2,h2); x += w2 + p;
+    m_btnBank->resize(x,y,w1,h1); x += w1 + p;
+    m_btnTrade->resize(x,y,w1,h1); x += w1 + p;
+    m_btnEndTurn->resize(x,y,w1,h1); // x += w2 + p;
 
-    x = scr_w/2; //  - p - w3 - p - w3
-    y = scr_h - 1 - p - std::max(h1,h2) - p - h3;
-    m_btnCancel->resize(x,y,w3,h3); x += w3 + p;
-    m_btnBuyRoad->resize(x,y,w3,h3); x += w3 + p;
-    m_btnBuyFarm->resize(x,y,w3,h3); x += w3 + p;
-    m_btnBuyCity->resize(x,y,w3,h3); x += w3 + p;
+    x = x0;
+    y = H - 1 - p - h1 - h2;
+    m_btnCancel->resize(x+s,y,w2,h2); x += w1 + p;
+    m_btnBuyRoad->resize(x+s,y,w2,h2); x += w1 + p;
+    m_btnBuyFarm->resize(x+s,y,w2,h2); x += w1 + p;
+    m_btnBuyCity->resize(x+s,y,w2,h2); x += w1 + p;
 
-    y = scr_h - 1 - p - h4;
-    m_btnBuyCard->resize(x,y,w4,h4);
+    y = H - 1 - p - h1 - h3;
+    m_btnBuyCard->resize(x,y,w3,h3);
 
     //DE_DEBUG("this = ", this->getRect().str())
     //DE_DEBUG("m_btnDice = ", m_btnDice->getRect().str(), ", visible = ", m_btnDice->isVisible())

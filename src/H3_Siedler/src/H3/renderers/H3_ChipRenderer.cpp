@@ -185,7 +185,7 @@ void H3_ChipMeshBuffer::uploadInstances()
 }
 
 
-void H3_ChipMeshBuffer::collectEdges(const H3_Game& game)
+void H3_ChipMeshBuffer::collectEdges(const H3_Game& game, float phi)
 {
     // Reset
     m_instanceMat.clear();
@@ -205,6 +205,7 @@ void H3_ChipMeshBuffer::collectEdges(const H3_Game& game)
 
         de::TRSf trs;
         trs.pos = edge.trs.pos;
+        trs.rotate.y = phi;
         trs.update();
 
         m_instanceMat.push_back( trs.modelMat );
@@ -213,7 +214,7 @@ void H3_ChipMeshBuffer::collectEdges(const H3_Game& game)
     }
 }
 
-void H3_ChipMeshBuffer::collectCorners(const H3_Game& game)
+void H3_ChipMeshBuffer::collectCorners(const H3_Game& game, float phi)
 {
     // Reset
     m_instanceMat.clear();
@@ -233,6 +234,7 @@ void H3_ChipMeshBuffer::collectCorners(const H3_Game& game)
 
         de::TRSf trs;
         trs.pos = corner.trs.pos;
+        trs.rotate.y = phi;
         trs.update();
 
         m_instanceMat.push_back( trs.modelMat );
@@ -241,7 +243,7 @@ void H3_ChipMeshBuffer::collectCorners(const H3_Game& game)
     }
 }
 
-void H3_ChipMeshBuffer::collectTiles(const H3_Game& game)
+void H3_ChipMeshBuffer::collectTiles(const H3_Game& game, float phi)
 {
     // Reset
     m_instanceMat.clear();
@@ -294,6 +296,7 @@ void H3_ChipMeshBuffer::collectTiles(const H3_Game& game)
 
         de::TRSf trs;
         trs.pos = tile.trsChip.pos;
+        trs.rotate.y = phi;
         trs.update();
 
         m_instanceMat.push_back( trs.modelMat );

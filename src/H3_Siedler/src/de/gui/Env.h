@@ -16,8 +16,8 @@ public:
     void init( gpu::VideoDriver* driver);
     void draw();
 
-    int getScalePc() const { return m_iScalePc; }
-    void setScalePc( int scalePercent ) { m_iScalePc = scalePercent; }
+    float getZoom() const { return m_zoom; }
+    void setZoom( float zoom ) { m_zoom = zoom; }
 
     int getMouseX() const;
     int getMouseY() const;
@@ -34,7 +34,7 @@ protected:
     gpu::VideoDriver* m_driver = nullptr;
     Widget* m_hoveredElement = nullptr; // Needed for events like Enter/Leave/etc...
     Widget* m_lastHoveredElement = nullptr; // Needed for events like Enter/Leave/etc...
-    int m_iScalePc;
+    float m_zoom;
     int m_mouseX;
     int m_mouseY;
     bool m_mouseMoved;

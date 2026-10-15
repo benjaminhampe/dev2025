@@ -50,8 +50,8 @@ void H3_drawCircle( H3_Game & game, const de::Recti& pos,
 
     if ( num > -1 )
     {
-        const auto fScale = 0.01f * game.getScalePc();
-        auto font = de::Font5x8(fScale,fScale);
+        const float zoom = game.getZoom();
+        auto font = de::Font5x8(zoom,zoom);
         H3_drawText( game, pos.centerX(), pos.centerY(), std::to_string(num), 0xFFFFFFFF, de::Align::Centered, font );
     }
 }
@@ -64,8 +64,8 @@ void H3_drawHexagon( H3_Game & game, const de::Recti& pos,
 
     if ( num > -1 )
     {
-        const auto fScale = 0.01f * game.getScalePc();
-        auto font = de::Font5x8(fScale,fScale);
+        const float zoom = game.getZoom();
+        auto font = de::Font5x8(zoom,zoom);
         H3_drawText( game, pos.centerX(), pos.centerY(), std::to_string(num), 0xFFFFFFFF, de::Align::Centered, font );
     }
 }
@@ -323,11 +323,11 @@ void UI_Stats_drawItem( H3_Game & game, int x, int y, int w, int h,
     auto r = glm::ivec2(8,8);
     H3_draw2DRoundRect( game, de::Recti(x,y,w,h), r, tex );
 
-    const auto fScale = 0.01f * game.getScalePc();
+    const float zoom = game.getZoom();
 
     auto ts = font.getTextSize( str );
 
-    int s = fScale;
+    int s = zoom;
     int tw = ts.width;
     int th = (ts.height / 8) * 7;
 
@@ -343,19 +343,19 @@ void UI_Stats_drawItem( H3_Game & game, int x, int y, int w, int h,
 
 void UI_Stats_render( H3_Game & game )
 {
-    const auto fScale = 0.01f * game.getScalePc();
+    const float zoom = game.getZoom();
 
     H3_Player & player = game.getCurrentPlayer();
 
     auto driver = game.getDriver();
-    auto screenRenderer = driver->getScreenRenderer();
-    auto font58Renderer = driver->getFontRenderer5x8();
+    //auto screenRenderer = driver->getScreenRenderer();
+    //auto font58Renderer = driver->getFontRenderer5x8();
     const auto scr_w = driver->getScreenWidth();
     const auto scr_h = driver->getScreenHeight();
 
     de::Font5x8 font;
-    font.quadWidth = 2 * fScale;
-    font.quadHeight = 2 * fScale;
+    font.quadWidth = zoom*2;
+    font.quadHeight = zoom*2;
     font.quadSpacingX = 0;
     font.quadSpacingY = 0;
     font.glyphSpacingX = 1;
@@ -366,12 +366,12 @@ void UI_Stats_render( H3_Game & game )
     const auto playerColor = player.color;
 
     int s = 1; // spacing
-    int p = fScale * 5; // padding
-    int w = fScale * 39;
+    int p = zoom * 5; // padding
+    int w = zoom * 39;
 
-    int h0 = fScale * 64;
-    int h1 = fScale * 64;
-    int h2 = fScale * 39;
+    int h0 = zoom * 64;
+    int h1 = zoom * 64;
+    int h2 = zoom * 39;
 
     int wT = 5 * w + 2*p;
     int hT = h0 + h1 + h2 + 2*p;
@@ -393,7 +393,7 @@ void UI_Stats_render( H3_Game & game )
     UI_Stats_drawItem( game, x,y,w,h1, H3_Tex::CardB, player.state.bank.B, font); x += w + s;
     UI_Stats_drawItem( game, x,y,w,h1, H3_Tex::CardC, player.state.bank.C, font); x += w + s;
     UI_Stats_drawItem( game, x,y,w,h1, H3_Tex::CardD, player.state.bank.D, font); x += w + s;
-    UI_Stats_drawItem( game, x,y,w,h1, H3_Tex::CardE, player.state.bank.E, font); x += w + s;
+    UI_Stats_drawItem( game, x,y,w,h1, H3_Tex::CardE, player.state.bank.E, font); // x += w + s;
 
     x = p;
     y = scr_h - 1 - p - h2;
@@ -405,30 +405,30 @@ void UI_Stats_render( H3_Game & game )
                        player.state.oldKnightCards.size(), font); x += w + s;
 
     // Cards
-    int wC = fScale * 39;
-    int hC = fScale * 64;
+    int wC = zoom * 39;
+    int hC = zoom * 64;
     x += p;
     y = scr_h - 1 - p - hC;
     UI_Stats_drawItem( game, x,y,wC,hC, H3_Tex::EventCardKnight, player.state.oldKnightCards.size(), font); x += wC + s;
-    UI_Stats_drawItem( game, x,y,wC,hC, H3_Tex::EventCardPoint, player.state.oldPointCards.size(), font); x += wC + s;
+    UI_Stats_drawItem( game, x,y,wC,hC, H3_Tex::EventCardPoint, player.state.oldPointCards.size(), font); // x += wC + s;
 
     // Bonus
-    int wB = fScale * 64;
-    int hB = fScale * 64;
+    int wB = zoom * 64;
+    int hB = zoom * 64;
     x = scr_w - 1 - p - wB - p - wB;
     y = scr_h - 1 - p - hB;
     UI_Stats_drawItem( game, x,y,wB,hB, H3_Tex::BonusArmy, player.hasBonusArmy(), font); x += wB + p;
-    UI_Stats_drawItem( game, x,y,wB,hB, H3_Tex::BonusRoad, player.hasBonusRoad(), font); x += wB + p;
+    UI_Stats_drawItem( game, x,y,wB,hB, H3_Tex::BonusRoad, player.hasBonusRoad(), font); // x += wB + p;
 }
 
-
+/*
 void UI_drawDlgLooseCards( H3_Game & game )
 {
     auto driver = game.getDriver();
     if ( !driver ) { DE_ERROR("No driver") return; }
 }
 
-/*
+
 int UI_computeBankRatio( H3_Game & game, int bankingMode )
 {
     H3_Player & player = H3_getCurrentPlayer( game );
@@ -677,10 +677,10 @@ UI_drawPlayerStats( H3_Game & game, int px, int py, int playerId )
     H3_Player & current = game.getCurrentPlayer();
     H3_Player & player = game.getPlayer( playerId );
 
-    const auto fScale = 0.01f * game.getScalePc();
+    const float zoom = game.getZoom();
     //int p = 20;
     //de::Font nameFont( "garton", 26, false, false, true, true, false );
-    de::Font5x8 nameFont(fScale * 2, fScale * 2,0,0,1,1);
+    de::Font5x8 nameFont(zoom * 2, zoom * 2,0,0,1,1);
 
     // Draw current Player highlight
     de::Recti r_panel(px,py,280,96);
@@ -791,14 +791,14 @@ UI_drawInfoPanelTile( H3_Game & game, de::Recti pos, const u32 tileId )
 
     H3_draw2DRoundRect( game, pos, glm::ivec2(12, 12), 0xA0000000, 13 );
 
-    const auto fScale = 0.01f * game.getScalePc();
+    const float zoom = game.getZoom();
 
     int w = pos.w;
     int x = pos.x + 20;
     int y = pos.y + 20;
-    int ln = fScale * 10;
+    int ln = zoom * 10;
     de::Align align = de::Align::Default;
-    de::Font5x8 font(fScale, fScale, 0,0,0,0);
+    de::Font5x8 font(zoom, zoom, 0,0,0,0);
 
     auto s1 = dbStr(H3_TileType::getString( tile.tileType )," (",tile.i, ",", tile.j,")");
     auto s3 = dbStr(tile.pos);
@@ -877,12 +877,12 @@ UI_drawInfoPanelCorner( H3_Game & game, de::Recti pos, const u32 cornerId )
     uint32_t white = 0xFFFFFFFF;
     H3_draw2DRoundRect( game, pos, glm::ivec2(12, 12), 0xA0000000, 13 );
 
-    const auto fScale = 0.01f * game.getScalePc();
-    auto font = de::Font5x8(fScale, fScale);
+    const float zoom = game.getZoom();
+    auto font = de::Font5x8(zoom, zoom);
     int w = pos.w;
     int x = pos.x + 20;
     int y = pos.y + 20;
-    int ln = fScale * 10;
+    int ln = zoom * 10;
 
 
     auto driver = game.getDriver();
@@ -953,16 +953,16 @@ UI_drawInfoPanelEdge( H3_Game & game, de::Recti pos, const u32 edgeId )
 
     H3_draw2DRoundRect( game, pos, glm::ivec2(12, 12), 0xA0000000, 13 );
 
-    const auto fScale = 0.01f * game.getScalePc();
-    auto font = de::Font5x8(fScale, fScale);
+    const float zoom = game.getZoom();
+    auto font = de::Font5x8(zoom, zoom);
     int w = pos.w;
     int x = pos.x + 20;
     int y = pos.y + 20;
-    int ln = fScale * 10;
+    int ln = zoom * 10;
 
     auto driver = game.getDriver();
-    auto screenRenderer = driver->getScreenRenderer();
-    auto font58Renderer = driver->getFontRenderer5x8();
+    //auto screenRenderer = driver->getScreenRenderer();
+    //auto font58Renderer = driver->getFontRenderer5x8();
 
     auto s1 = dbStr("edgeId = ",edge.id);
     H3_drawText( game, x,y,s1, white, de::Align(), font );
@@ -990,26 +990,26 @@ UI_drawInfoPanelEdge( H3_Game & game, de::Recti pos, const u32 edgeId )
     for ( size_t i = 0; i < edge.tiles.size(); ++i )
     {
         H3_Tile & n = H3_getTile( game, __func__, edge.tiles[ i ] );
-        int d = fScale*32;
+        int d = zoom*32;
         int k = x + (d + 8)*(i+1);
         H3_drawHexagon( game, de::Recti(k,y,d,d), 0xFFFFFFFF, H3_getTileTex( game, n.tileType ), n.id );
     }
-    y += (fScale * 32) + 4;
+    y += (zoom * 32) + 4;
 
     auto s5 = dbStr("CornerCount = ",edge.corners.size());
     H3_drawText( game, x,y, s5, white, de::Align(), font );
     y += ln;
-    H3_drawCircle( game, de::Recti(x,y,fScale*32,fScale*32), 0xFFFFFFFF, game.getTex(H3_Tex::ChipS, __func__) );
+    H3_drawCircle( game, de::Recti(x,y,zoom*32,zoom*32), 0xFFFFFFFF, game.getTex(H3_Tex::ChipS, __func__) );
     for ( size_t i = 0; i < edge.corners.size(); ++i )
     {
         H3_Corner & n = H3_getCorner( game, __func__, edge.corners[ i ] );
         auto s6 = dbStr("Corner[",i,"] = ",n.id);
-        H3_drawText( game, x+(fScale*32)+8,y, s6, white, de::Align(), font );
+        H3_drawText( game, x+(zoom*32)+8,y, s6, white, de::Align(), font );
         y += ln;
     }
 
-    if ( edge.corners.size() < 3 )
-    {
-        y += ln * (3 - edge.corners.size());
-    }
+    // if ( edge.corners.size() < 3 )
+    // {
+    //     y += ln * (3 - edge.corners.size());
+    // }
 }

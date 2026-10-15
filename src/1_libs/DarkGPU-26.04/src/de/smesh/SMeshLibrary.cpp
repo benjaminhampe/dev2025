@@ -157,7 +157,7 @@ SMeshHexagon::add( SMeshBuffer & mb, float w, float h, uint32_t color,
 glm::ivec2
 SMeshHexagon::getNeighborTileIndex( int corner, int i, int j )
 {
-    if ( safeMod(j,2) == 1 )
+    if ( Math::safeMod(j,2) == 1 )
     {
         switch ( corner )
         {
@@ -195,21 +195,13 @@ SMeshHexagon::getNeighborTilePos( int corner, float w, float h, int i, int j )
 }
 
 // static
-int32_t
-SMeshHexagon::safeMod( int32_t a, int32_t b )
-{
-    if ( a == 0 || b == 0 ) { return 0; }
-    return std::abs( a ) % std::abs( b );
-}
-
-// static
 float
 SMeshHexagon::computeBoardPosX( float w, float h, int i, int j )
 {
-    //float x = 0.5f * float( safeMod( j, 2 ) == 1 ) + float( i );
+    //float x = 0.5f * float( Math::safeMod( j, 2 ) == 1 ) + float( i );
     //return x * w;
     //return (0.5f * j + float( i )) * w;
-    float x = 0.5f * float( safeMod( j, 2 ) == 1 ) + float( i );
+    float x = 0.5f * float( Math::safeMod( j, 2 ) == 1 ) + float( i );
     return x * w;
 }
 
@@ -230,6 +222,19 @@ SMeshHexagon::computeTileIndex( float x, float y, float w, float h )
     int i = int( x/w - (0.5f * j) );
     return glm::ivec2(i,j);
 }
+
+// static
+glm::vec3 SMeshHexagon::cornerA3( float w, float h ) { return glm::vec3( 0.0f,   0.0f,  -.5f*h ); }
+// static
+glm::vec3 SMeshHexagon::cornerB3( float w, float h ) { return glm::vec3( -.5f*w, 0.0f, -.25f*h ); }
+// static
+glm::vec3 SMeshHexagon::cornerC3( float w, float h ) { return glm::vec3( -.5f*w, 0.0f,  .25f*h ); }
+// static
+glm::vec3 SMeshHexagon::cornerD3( float w, float h ) { return glm::vec3( 0.0f,   0.0f,   .5f*h ); }
+// static
+glm::vec3 SMeshHexagon::cornerE3( float w, float h ) { return glm::vec3( 0.5f*w, 0.0f,  .25f*h ); }
+// static
+glm::vec3 SMeshHexagon::cornerF3( float w, float h ) { return glm::vec3( 0.5f*w, 0.0f, -.25f*h ); }
 
 // static
 glm::vec2

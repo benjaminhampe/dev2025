@@ -8,6 +8,7 @@ UI_ThiefIntro::UI_ThiefIntro( H3_Game* game, de::gui::Env* env, de::gui::Widget*
 // =====================================================================
     : de::gui::Panel(env, parent, id, pos)
     , m_game(game)
+    , m_playerId(-1)
     //, m_panel(nullptr)
     , m_btnA1(nullptr)
     , m_btnB1(nullptr)
@@ -49,7 +50,7 @@ UI_ThiefIntro::UI_ThiefIntro( H3_Game* game, de::gui::Env* env, de::gui::Widget*
     auto r3 = de::Recti(x,y,w-2*p,bh);
     auto r4 = de::Recti(x,y,w-2*p,bh);
     auto r5 = de::Recti(x,y,w-2*p,bh);
-    m_lblTitle = new de::gui::Label("Title", env, this, 0, r1);
+    m_lblTitle = new de::gui::Label("Donate cards to Robber.", env, this, 0, r1);
     m_lblThiefName = new de::gui::Label("Thief", env, this, 0, r3);
     m_lblThiefIcon = new de::gui::Label("", env, this, 0, r2);
     m_lblPlayerName = new de::gui::Label("Player", env, this, 0, r5);
@@ -88,77 +89,52 @@ UI_ThiefIntro::UI_ThiefIntro( H3_Game* game, de::gui::Env* env, de::gui::Widget*
     y += p + bh;
     m_btnAccept = createButton("Accept", texN, de::Recti(x,y,5*bw + 4*p,bh));
 
-    m_btnA1->setOnClicked(
-        [&] ()
-        {
+    m_btnA1->setOnClicked( [&] () {
             if (m_bankThief.A > 0) { m_bankThief.A--; m_bankPlayer.A++; }
             updateTexts();
         });
-    m_btnB1->setOnClicked(
-        [&] ()
-        {
+    m_btnB1->setOnClicked( [&] () {
             if (m_bankThief.B > 0) { m_bankThief.B--; m_bankPlayer.B++; }
             updateTexts();
         });
-    m_btnC1->setOnClicked(
-        [&] ()
-        {
+    m_btnC1->setOnClicked( [&] () {
             if (m_bankThief.C > 0) { m_bankThief.C--; m_bankPlayer.C++; }
             updateTexts();
         });
-    m_btnD1->setOnClicked(
-        [&] ()
-        {
+    m_btnD1->setOnClicked( [&] () {
             if (m_bankThief.D > 0) { m_bankThief.D--; m_bankPlayer.D++; }
             updateTexts();
         });
-    m_btnE1->setOnClicked(
-        [&] ()
-        {
+    m_btnE1->setOnClicked( [&] () {
             if (m_bankThief.E > 0) { m_bankThief.E--; m_bankPlayer.E++; }
             updateTexts();
         });
-
-    m_btnA2->setOnClicked(
-        [&] ()
-        {
+    m_btnA2->setOnClicked( [&] () {
             if (m_bankPlayer.A > 0) { m_bankThief.A++; m_bankPlayer.A--; }
             updateTexts();
         });
-    m_btnB2->setOnClicked(
-        [&] ()
-        {
+    m_btnB2->setOnClicked( [&] () {
             if (m_bankPlayer.B > 0) { m_bankThief.B++; m_bankPlayer.B--; }
             updateTexts();
         });
-    m_btnC2->setOnClicked(
-        [&] ()
-        {
+    m_btnC2->setOnClicked( [&] () {
             if (m_bankPlayer.C > 0) { m_bankThief.C++; m_bankPlayer.C--; }
             updateTexts();
         });
-    m_btnD2->setOnClicked(
-        [&] ()
-        {
+    m_btnD2->setOnClicked( [&] () {
             if (m_bankPlayer.D > 0) { m_bankThief.D++; m_bankPlayer.D--; }
             updateTexts();
         });
-    m_btnE2->setOnClicked(
-        [&] ()
-        {
+    m_btnE2->setOnClicked( [&] () {
             if (m_bankPlayer.E > 0) { m_bankThief.E++; m_bankPlayer.E--; }
             updateTexts();
         });
-
-    m_btnAccept->setOnClicked(
-        [&] () {
+    m_btnAccept->setOnClicked( [&] () {
             if (m_cardsToRemove < 1)
             {
                 setVisible(false);
-
                 H3_Player & player = m_game->getPlayer( m_playerId );
                 player.state.bank = m_bankPlayer;
-
                 m_game->enterThiefPlacement();
             }
         });
@@ -185,28 +161,47 @@ void UI_ThiefIntro::updateTexts()
 
     m_cardsToRemove = m_bankPlayer.sum() - m_game->m_cfg.cardLimitNoSteal;
 
-    m_lblTitle->setText( dbStr("Donate ", m_cardsToRemove, " more cards.") );
+    m_lblTitle->setText( dbStr("Donate ", m_cardsToRemove, " more cards to Thief.") );
 }
 
-void UI_ThiefIntro::resizeLayout()
+void UI_ThiefIntro::draw()
 {
-    const int scr_w = m_env->getScreenWidth();
-    const int scr_h = m_env->getScreenHeight();
+    Panel::draw();
 
-    // ::::: Panel ::::
-    int w = scr_w - 400;
-    int h = scr_h - 300;
-    int x = (scr_w - w) / 2;
-    int y = (scr_h - h) / 2;
-    m_rect = de::Recti( x,y,w,h );
+    if (!isVisible()) return;
+
+    for (auto & child : m_children)
+    {
+        child->draw();
+    }
+}
+
+void UI_ThiefIntro::resize(int X, int Y, int W, int H)
+{
+    m_rect = de::Recti(X,Y,W,H);
+
+    // int w = scr_w - 400;
+    // int h = scr_h - 300;
+    // int x = (scr_w - w) / 2;
+    // int y = (scr_h - h) / 2;
 
     // ::::: Panel body ::::
-    w = getRect().w - 200;
-    h = getRect().h - 150;
-    x = 100;
-    y = 50;
-    auto fScale = 0.01f * m_game->getScalePc();
-    int p = fScale * 5;
+    int w = W - 200;
+    int h = H - 150;
+    int x = 100;
+    int y = 50;
+
+    const float zoom = m_env->getZoom();
+
+    const int pxSize = zoom * 24;
+    for (auto & child : m_children)
+    {
+        auto font = child->getFont();
+        font.pixelSize = pxSize;
+        child->setFont(font);
+    }
+
+    int p = zoom * 5;
     int h1 = h / 6 - p;
     int h2 = h / 3 - p;
     m_lblTitle->resize(x,y,w+20,h1);
@@ -220,10 +215,10 @@ void UI_ThiefIntro::resizeLayout()
 
 void UI_ThiefIntro::resizeLayoutThief( de::Recti pos )
 {
-    auto fScale = 0.01f * m_game->getScalePc();
+    const float zoom = m_env->getZoom();
     //H3_drawDebugRect(*m_game, pos, 0xFF0000FF, de::Font5x8(fScale,fScale));
 
-    de::Font5x8 font(fScale,fScale);
+    de::Font5x8 font(zoom,zoom);
     int wName = font.getTextSize("Thief").width + 4;
     int hName = font.getTextSize("Thief").height + 4;
     int hIcon = pos.h - hName; // Line-height of Icon
@@ -250,10 +245,11 @@ void UI_ThiefIntro::resizeLayoutThief( de::Recti pos )
 
 void UI_ThiefIntro::resizeLayoutPlayer( de::Recti pos )
 {
-    auto fScale = 0.01f * m_game->getScalePc();
+    const float zoom = m_env->getZoom();
+
     //H3_drawDebugRect(*m_game, pos, 0xFF0000FF, de::Font5x8(fScale,fScale));
 
-    de::Font5x8 font(fScale,fScale);
+    de::Font5x8 font(zoom,zoom);
     int wName = font.getTextSize("Player").width + 4;
     int hName = font.getTextSize("Player").height + 4;
     int hIcon = pos.h - hName; // Line-height of Icon

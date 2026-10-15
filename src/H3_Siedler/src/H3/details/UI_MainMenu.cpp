@@ -50,6 +50,18 @@ UI_MainMenu::~UI_MainMenu()
 
 }
 
+void UI_MainMenu::draw()
+{
+    Panel::draw();
+
+    if (!isVisible()) return;
+    m_btnNewGame->draw();
+    m_btnRestart->draw();
+    m_btnOptions->draw();
+    m_btnHelp->draw();
+    m_btnExit->draw();
+}
+
 void UI_MainMenu::resize(int x, int y, int w, int h)
 {
     DE_DEBUG("Resize(",x,",",y,",",w,",",h,")")
