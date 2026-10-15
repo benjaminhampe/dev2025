@@ -43,6 +43,8 @@ UI_MainMenu::UI_MainMenu( H3_Game* game, de::gui::Env* env, de::gui::Widget* par
     });
     m_btnHelp->setOnClicked([&](){ m_game->toggleHelpWindow(); });
     m_btnExit->setOnClicked([&](){ m_game->exitProgram(); });
+
+    setDrawChildren(true);
 }
 
 UI_MainMenu::~UI_MainMenu()
@@ -50,6 +52,7 @@ UI_MainMenu::~UI_MainMenu()
 
 }
 
+/*
 void UI_MainMenu::draw()
 {
     Panel::draw();
@@ -61,6 +64,7 @@ void UI_MainMenu::draw()
     m_btnHelp->draw();
     m_btnExit->draw();
 }
+*/
 
 void UI_MainMenu::resize(int x, int y, int w, int h)
 {
@@ -98,22 +102,22 @@ UI_MainMenu::createButton(std::string txt, int x, int y, int w, int h )
     }
 
     btn->setTexture(h3tex);
-    btn->setFillColor(dbRGB(255,255,255,200),0);
-    btn->setFillColor(dbRGB(255,255,255,255),1);
-    btn->setTextColor(dbRGB(0,0,0,150),0);
-    btn->setTextColor(dbRGB(0,0,0,255),1);
+    btn->setFillColor(dbRGB(255,255,255,200),eWS_Idle);
+    btn->setFillColor(dbRGB(255,255,255,255),eWS_Hovered);
+    btn->setFillColor(dbRGB(255,255,255,255), eWS_Pressed);
+    btn->setFillColor(dbRGB(255,255,255,255), eWS_Released);
 
-    // de::Font5x8 menuFont;
-    // menuFont.quadWidth = 3;
-    // menuFont.quadHeight = 4;
-    // menuFont.quadSpacingX = 0;
-    // menuFont.quadSpacingY = 0;
-    // menuFont.glyphSpacingX = 2;
-    // menuFont.glyphSpacingY = 2;
-    // btn->setTextFont(menuFont);
+    btn->setTextColor(dbRGB(0,0,0,150), dbRGB(255,255,255,100), eWS_Idle);
+    btn->setTextColor(dbRGB(0,0,0,255), dbRGB(255,255,255,150), eWS_Hovered);
+    btn->setTextColor(dbRGB(0,0,0,255), dbRGB(255,255,255,200), eWS_Pressed);
+    btn->setTextColor(dbRGB(0,0,0,255), dbRGB(255,255,255,200), eWS_Released);
+
+    btn->setBorderColor(dbRGB(0,0,0,255), eWS_Idle);
+    btn->setBorderColor(dbRGB(0,0,0,255), eWS_Hovered);
+    btn->setBorderColor(dbRGB(0,0,0,255), eWS_Pressed);
+    btn->setBorderColor(dbRGB(0,0,0,255), eWS_Released);
 
     de::Font menuFont("Postamt", 32);
     btn->setFont(menuFont);
-
     return btn;
 }

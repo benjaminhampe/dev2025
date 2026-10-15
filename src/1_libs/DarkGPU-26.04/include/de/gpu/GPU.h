@@ -227,10 +227,10 @@ struct TexManager
     Texture*        createTexture2D( const std::string& name, const Image& img, const SamplerOptions& so = SamplerOptions() );
 
     void            applySamplerOptions(SamplerOptions &so);
-    bool            uploadTexture2D( Texture* &tex, int w, int h, void const* const pixels, PixelFormat fmt, const SamplerOptions& so );
-    bool            uploadTexture2D( Texture* &tex, const Image& img, const SamplerOptions& so = SamplerOptions() )
+    bool            uploadTexture2D( Texture* &tex, int w, int h, void const* const pixels, PixelFormat fmt);
+    bool            uploadTexture2D( Texture* &tex, const Image& img)
     {
-        return uploadTexture2D(tex,img.w(),img.h(),img.data(),img.pixelFormat(), so);
+        return uploadTexture2D(tex,img.w(),img.h(),img.data(),img.pixelFormat());
     }
 };
 

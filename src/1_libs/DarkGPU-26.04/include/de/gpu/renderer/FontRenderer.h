@@ -44,6 +44,18 @@ struct FontRenderer
     {
         draw2DText( text.x, text.y, text.msg, text.brush.color, text.align, text.font );
     }
+
+
+    bool buildDrawCall(
+            smesh::SMeshBuffer & outQuadMeshBuffer,
+            Recti & outTextBounds,
+            int x, int y,
+            std::wstring const & msg,
+            uint32_t color = 0xFF000000,
+            Align align = Align::Default,
+            Font const & font = Font()
+        );
+
 };
 
 #pragma pack( push )

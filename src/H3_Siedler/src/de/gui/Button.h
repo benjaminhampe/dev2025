@@ -16,19 +16,35 @@ public:
     void onEvent( const Event& event ) override;
     void draw() override;
 
-    const std::string& getText() const { return m_text; }
-    void setText( const std::string& text ) { m_text = text; }
+    const std::string& getText() const
+    {
+        return m_text;
+    }
 
-    void setTextColor( u32 color ) { for (u32 & c : m_textColors) { c = color; } }
-    void setTextColor( u32 color, int state ) { m_textColors[state] = color; }
+    void setText( const std::string& text )
+    {
+        m_text = text;
+    }
 
-    void setFillColor( u32 color ) { for (u32 & c : m_fillColors) { c = color; } }
+    void setTextColors( u32 fg, u32 bg )
+    {
+        for (u32 & c : m_textFgColors) { c = fg; }
+        for (u32 & c : m_textBgColors) { c = bg; }
+    }
+
+    void setTextColor( u32 fg, u32 bg, int state )
+    {
+        m_textFgColors[state] = fg;
+        m_textBgColors[state] = bg;
+    }
+
+    void setFillColors( u32 color ) { for (u32 & c : m_fillColors) { c = color; } }
     void setFillColor( u32 color, int state ) { m_fillColors[ state ] = color; }
 
     int getRadius() const { return m_radius; }
     void setRadius( int radius ) { m_radius = radius; }
 
-    void setBorderColor( u32 color ) { for (u32 & c : m_borderColors) { c = color; } }
+    void setBorderColors( u32 color ) { for (u32 & c : m_borderColors) { c = color; } }
     void setBorderColor( u32 color, int state ) { m_borderColors[ state ] = color; }
 
     int getBorderWidth() const { return m_borderWidth; }
@@ -55,7 +71,8 @@ protected:
 
     // --- Text ---
     std::string m_text;
-    std::array<u32,4> m_textColors;
+    std::array<u32,4> m_textFgColors;
+    std::array<u32,4> m_textBgColors;
 
     // --- Callbacks ---
     std::function<void(void)> m_fnOnClicked;

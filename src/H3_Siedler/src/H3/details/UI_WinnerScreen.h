@@ -20,9 +20,9 @@ private:
 
     de::gui::Button* m_btnClose;
 
-    de::gui::Label* m_lblWinner;
-    de::gui::Label* m_lblWinnerIcon;
-    de::gui::Label* m_lblWinnerName;
+    // de::gui::Label* m_lblWinner;
+    // de::gui::Label* m_lblWinnerIcon;
+    // de::gui::Label* m_lblWinnerName;
 
 };
 

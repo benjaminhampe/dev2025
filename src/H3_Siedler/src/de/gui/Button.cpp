@@ -12,22 +12,23 @@ Button::Button( std::string text, Env* env, Widget* parent, u32 id, const Recti&
     , m_text(text)
     , m_fnOnClicked( [] () {} )
 {
-    setFillColor(dbRGB(255,255,255), eWS_Idle);
-    setFillColor(dbRGB(255,255,255), eWS_Hovered);
-    setFillColor(dbRGB(255,255,255), eWS_Pressed);
-    setFillColor(dbRGB(255,255,255), eWS_Released);
+    setFillColor(dbRGB( 50, 50, 50), eWS_Idle);
+    setFillColor(dbRGB(155,155,155), eWS_Hovered);
+    setFillColor(dbRGB(100,100,100), eWS_Pressed);
+    setFillColor(dbRGB(105,105,105), eWS_Released);
 
     setBorderColor(dbRGB(0,0,0), eWS_Idle);
     setBorderColor(dbRGB(0,0,0), eWS_Hovered);
     setBorderColor(dbRGB(0,0,0), eWS_Pressed);
     setBorderColor(dbRGB(0,0,0), eWS_Released);
 
-    setTextColor(dbRGB(0,0,0), eWS_Idle);
-    setTextColor(dbRGB(0,0,0), eWS_Hovered);
-    setTextColor(dbRGB(0,0,0), eWS_Pressed);
-    setTextColor(dbRGB(0,0,0), eWS_Released);
+    setTextColor(dbRGB(220,220,220), dbRGB(20,20,20), eWS_Idle);
+    setTextColor(dbRGB(255,255,255), dbRGB(20,20,20), eWS_Hovered);
+    setTextColor(dbRGB(100,100,100), dbRGB(20,20,20), eWS_Pressed);
+    setTextColor(dbRGB(105,105,105), dbRGB(20,20,20), eWS_Released);
 
     setPickable(true);
+    setDrawChildren(false);
 }
 
 Button::~Button()
@@ -45,25 +46,29 @@ Button::draw()
 
     u32 fillColor = m_fillColors[eWS_Idle];
     u32 borderColor = m_borderColors[eWS_Idle];
-    u32 textColor = m_textColors[eWS_Idle];
+    u32 textFgColor = m_textFgColors[eWS_Idle];
+    u32 textBgColor = m_textBgColors[eWS_Idle];
 
-    if (hasFlags(eWF_Pressed))
+    if (hasFlags(eWF_Hovered))
+    {
+        fillColor = m_fillColors[eWS_Hovered];
+        borderColor = m_fillColors[eWS_Hovered];
+        textFgColor = m_textFgColors[eWS_Hovered];
+        textBgColor = m_textBgColors[eWS_Hovered];
+    }
+    else if (hasFlags(eWF_Pressed))
     {
         fillColor = m_fillColors[eWS_Pressed];
         borderColor = m_fillColors[eWS_Pressed];
-        textColor = m_textColors[eWS_Pressed];
+        textFgColor = m_textFgColors[eWS_Pressed];
+        textBgColor = m_textBgColors[eWS_Pressed];
     }
     else if (hasFlags(eWF_Released))
     {
         fillColor = m_fillColors[eWS_Released];
         borderColor = m_fillColors[eWS_Released];
-        textColor = m_textColors[eWS_Released];
-    }
-    else if (hasFlags(eWF_Hovered))
-    {
-        fillColor = m_fillColors[eWS_Hovered];
-        borderColor = m_fillColors[eWS_Hovered];
-        textColor = m_textColors[eWS_Hovered];
+        textFgColor = m_textFgColors[eWS_Released];
+        textBgColor = m_textBgColors[eWS_Released];
     }
 
     const Recti pos = getAbsoluteRect();
@@ -90,17 +95,16 @@ Button::draw()
     }
 
     // --- [Draw] Text ---
-    if (m_text.size() && dbRGB_A(textColor))
+    if (m_text.size())
     {
         const int cx = pos.centerX();
         const int cy = pos.centerY();
         auto r_font = driver->getFontRenderer();
-        r_font->draw2DText( cx,cy, m_text, textColor,
+        r_font->draw2DText( cx,cy, m_text, textFgColor,
                             Align::Centered, m_font,
-                            0x00000000, 10 );
+                            textBgColor, 5 );
     }
 
-/*
     // --- [Draw] Border ---
     if (dbRGB_A(borderColor) > 0 && m_borderWidth > 0)
     {
@@ -115,7 +119,6 @@ Button::draw()
             r_screen->draw2DRoundRectLine( pos, r, borderColor, m_tex, 24 );
         }
     }
-*/
 }
 
 void Button::onEvent( const Event& event )

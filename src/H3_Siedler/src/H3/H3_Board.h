@@ -40,14 +40,17 @@ struct H3_Action;
 struct H3_ActionLog;
 struct H3_Game;
 
-// namespace de::gui
-// {
-//     class Widget;
-//     class Panel;
-//     class Button;
-//     class Label;
-//     class IntField;
-// }
+// =====================================================================
+struct H3_GuiState
+// =====================================================================
+{
+    bool bMainMenu = false;
+    bool bHelpWindow = false;
+    bool bWorldCreator = false;
+    bool bActions = false;
+    bool bDonateCards = false;
+    bool bWinnerScreen = false;
+};
 
 // =====================================================================
 struct LineBoxAnim

@@ -14,17 +14,10 @@ UI_WinnerScreen::UI_WinnerScreen( H3_Game* game, de::gui::Env* env, de::gui::Wid
     setTexture( texPanel );
     setFillColor( 0xffffffff );
 
-    auto r_close = de::Recti(100,
-                             getRect().h - 100,
-                             getRect().w - 200,
-                             64);
-
-    m_lblWinner = new de::gui::Label("Winner", env, this, 0, de::Recti());
-    m_lblWinnerIcon = new de::gui::Label("Icon", env, this, 0, de::Recti());
-    m_lblWinnerName = new de::gui::Label("Name", env, this, 0, de::Recti());
-
-    m_btnClose = createButton("Close", texClose, r_close );
+    m_btnClose = createButton("Return to Menu", texClose, de::Recti(0,0,0,0) );
     m_btnClose->setOnClicked( [&](){ m_game->enterStartMenu(); } );
+
+    setDrawChildren(false);
 }
 
 UI_WinnerScreen::~UI_WinnerScreen()
@@ -32,6 +25,10 @@ UI_WinnerScreen::~UI_WinnerScreen()
 
 }
 
+void UI_WinnerScreen::updateData()
+{
+
+}
 
 void UI_WinnerScreen::draw()
 {
@@ -39,10 +36,79 @@ void UI_WinnerScreen::draw()
 
     if (!isVisible()) return;
 
-    for (auto & child : m_children)
+    const float zoom = m_env->getZoom();
+    auto driver = m_env->getVideoDriver();
+    const int x = m_rect.x;
+    const int y = m_rect.y;
+    const int w = m_rect.w;
+    const int h = m_rect.h;
+
+    // --- Determine Winner ---
+    auto & players = m_game->m_players;
+
+    uint32_t winnerId = 0;
+
+    int maxPoints = 0;
+    for (int i = 0; i < players.size(); ++i)
     {
-        child->draw();
+        const H3_Player & player = players[i];
+        if (maxPoints < player.state.victoryPoints)
+        {
+            maxPoints = player.state.victoryPoints;
+            winnerId = player.id;
+        }
     }
+
+    const H3_Player & winner = m_game->getPlayer(winnerId);
+
+    // --- Draw Winner Title ---
+
+    int tx = x + w/2;
+    int ty = zoom * 50;
+    de::Font titleFont("Postamt", zoom * 32);
+
+    auto s = dbStr("Winner is ",winner.name," with ",maxPoints," points.");
+    driver->draw2DText(
+        tx,ty,
+        s,
+        winner.color,
+        de::Align::Centered,
+        titleFont);
+
+    // --- Draw Winner Icon ---
+    int py = y + ty + 20;
+
+    auto ico = m_game->getTex((H3_Tex::eID)winner.avatar, "WinnerScreen");
+    int ico_w = zoom * ico.w();
+    int ico_h = zoom * ico.h();
+    driver->getScreenRenderer()->draw2DRect(
+        de::Recti(x+(w-ico_w)/2, py, ico_w, ico_h),
+        0xFFFFFFFF,
+        ico);
+
+    py += ico_h + zoom * 10;
+
+    int cw = zoom * 32;
+    int ch = cw;
+    int cx = x+(w-cw)/2;
+    int cy = py;
+
+    driver->getScreenRenderer()->draw2DCircle(
+        de::Recti(cx, cy, cw, ch),
+        winner.color
+    );
+
+    de::Font pointsFont("Postamt", zoom * 20);
+    driver->getFontRenderer()->draw2DText(
+        cx + cw/2, cy + ch/2,
+        dbStr(maxPoints),
+        0xFF000000,
+        de::Align::Centered,
+        pointsFont,
+        winner.color
+    );
+
+    m_btnClose->draw();
 }
 
 void UI_WinnerScreen::resize(int X, int Y, int W, int H)
@@ -58,10 +124,10 @@ void UI_WinnerScreen::resize(int X, int Y, int W, int H)
     int x = 100;
     int y = 100;
 
-    m_lblWinner->resize(100,100,w - 200,100);
-    m_lblWinnerIcon->resize(100,200,100,100);
-    m_lblWinnerName->resize(200,200,w-200,100);
-    m_btnClose->resize(100,m_rect.h - 100,m_rect.w - 200,64);
+    // m_lblWinner->resize(100,100,w - 200,100);
+    // m_lblWinnerIcon->resize(100,200,100,100);
+    // m_lblWinnerName->resize(200,200,w-200,100);
+    m_btnClose->resize(100, y+m_rect.h-100, m_rect.w-200, 64);
 }
 
 // static
@@ -70,8 +136,8 @@ UI_WinnerScreen::createButton(std::string txt, de::gpu::TexRef ref, de::Recti po
 {
     auto btn = new de::gui::Button(txt, m_env, this, 0, pos);
     btn->setRadius( 8 );
-    btn->setFillColor(dbRGB(255,255,255,200),0);
-    btn->setTextColor(dbRGB(255,255,255),1);
+    // btn->setFillColor(dbRGB(255,255,255,200),0);
+    // btn->setTextColor(dbRGB(255,255,255),1);
     btn->setTexture( ref );
     return btn;
 }

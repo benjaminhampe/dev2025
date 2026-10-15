@@ -21,16 +21,11 @@
 class UI_MainMenu;
 class UI_WorldCreator;
 class UI_Actions;
-class UI_ThiefIntro;
+class UI_DonateCards;
 class UI_WinnerScreen;
 //class H3_UI_Banking m_uiBanking;
 //class H3_UI_Logger m_uiActionLogger;
 //class H3_Marquee m_uiMarquee;
-
-//#include <de/gui/IntField.h>
-//#include <de/os/CommonDialogs.h>
-//#include <H3/ImageSkyboxRepair.h>
-//#include <de/gpu/mtl/MTL.h>
 
 // ===========================================================================
 struct H3_State
@@ -142,11 +137,18 @@ struct H3_Game
     void restartGame();
 
     void enterStartMenu();
-    void enterRound1();
-    void enterRound2();
-    void enterRound3();
-    void enterRoundN();
-    void enterThiefIntro();     // Donate cards to robber
+
+    void enterStartGame(); // Actually starts a new Game
+    void enterIdle();
+    void doEndTurn();
+
+    // void enterRound1();
+    // void enterRound2();
+    // void enterRound3();
+    // void enterRoundN();
+
+
+    void enterDonateCards();     // Donate cards to robber
     void enterThiefPlacement();     // Place robber on new tile
     void leaveThiefPlacement( H3_Tile& tile ); // Place robber on new tile
     void leaveThiefOutro( H3_Corner& corner ); // Select player to steal card from
@@ -157,7 +159,7 @@ struct H3_Game
     // After 1st round we sort players
     // ordered by highest to lowest dice value
     void computeRanking(); // Used in: enterRound2()
-    void doEndTurn();
+
     void doDice();
     void doPlaceCancel();
     void doBuyRoad();
@@ -179,7 +181,7 @@ struct H3_Game
     H3_Player& getPlayer( const u32 playerId );
     H3_Player& getCurrentPlayer();
 
-    bool isRunning() const { return m_round > 0; }
+    bool isGameRunning() const { return m_round > 0; }
 
     de::Window* getWindow() const { return m_window; }
 
@@ -215,6 +217,8 @@ struct H3_Game
 
     void toggleHelpWindow();
 
+    H3_GuiState UI_getState() const;
+    void UI_setState(const H3_GuiState& params);
     void UI_resizeLayouts();
     void UI_updateActions();
 
@@ -251,6 +255,7 @@ struct H3_Game
 
     //de::audio::AudioEngine m_audioEngine;
     H3_Cfg m_cfg;
+    H3_GuiState m_guiState;
 
     // de::IrrlichtDevice* m_device;
     de::Window* m_window;
@@ -285,15 +290,16 @@ struct H3_Game
     H3_Img m_img;
     H3_Tex m_tex;
 
-    de::gui::Widget* m_uiHelpWindow;
     UI_MainMenu* m_uiMainmenu;
+    de::gui::Widget* m_uiHelpWindow;
     UI_WorldCreator* m_uiWorldCreator;
+    UI_WinnerScreen* m_uiWinnerScreen;
     UI_Actions* m_uiActions;
+    UI_DonateCards* m_uiDonateCards;
+
     UI_Banking m_uiBanking;
     UI_ActionLogger m_uiActionLogger;
     UI_Marquee m_uiMarquee;
-    UI_ThiefIntro* m_uiDonateCards;
-    UI_WinnerScreen* m_uiWinnerScreen;
 
     // Topology
     std::vector<H3_Tile>    m_tiles;

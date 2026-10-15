@@ -627,10 +627,10 @@ struct VideoDriver
                 { return m_texMgr.createTexture2D(name,w,h,pixels,fmt,so); }
     Texture*    createTexture2D( const std::string& name, const Image& img, const SamplerOptions& so = SamplerOptions() )
                 { return m_texMgr.createTexture2D(name,img,so); }
-    bool        uploadTexture2D( Texture* &tex, int w, int h, void const* const pixels, PixelFormat fmt, const SamplerOptions& so = SamplerOptions() )
-                { return m_texMgr.uploadTexture2D(tex,w,h,pixels,fmt,so); }
-    bool        uploadTexture2D( Texture* &tex, const Image& img, const SamplerOptions& so = SamplerOptions() )
-                { return m_texMgr.uploadTexture2D(tex,img,so); }
+    bool        uploadTexture2D( Texture* &tex, int w, int h, void const* const pixels, PixelFormat fmt )
+                { return m_texMgr.uploadTexture2D(tex,w,h,pixels,fmt); }
+    bool        uploadTexture2D( Texture* &tex, const Image& img )
+                { return m_texMgr.uploadTexture2D(tex,img); }
 
     // ============================================================
     // FontRenderer (ttf) and Font5x8Renderer in action:

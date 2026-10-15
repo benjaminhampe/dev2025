@@ -19,12 +19,12 @@ H3_Game::H3_Game()
 // ===========================================================================
     : m_window(nullptr)
     , m_driver(nullptr)
-    , m_uiHelpWindow(nullptr)
     , m_uiMainmenu(nullptr)
+    , m_uiHelpWindow(nullptr)
+    , m_uiWorldCreator(nullptr)
+    , m_uiWinnerScreen(nullptr)
     , m_uiActions(nullptr)
     , m_uiDonateCards(nullptr)
-    , m_uiWinnerScreen(nullptr)
-    , m_uiWorldCreator(nullptr)
 // , m_fpsTimerId(0)
 // , m_capTimerId(0)
 {
@@ -337,7 +337,7 @@ bool H3_Game::init( de::Window* window )
     m_uiActions = new UI_Actions( g, e, n, k++, r );
     m_uiActions->setVisible( false );
 
-    m_uiDonateCards = new UI_ThiefIntro( g, e, n, k++, r );
+    m_uiDonateCards = new UI_DonateCards( g, e, n, k++, r );
     m_uiDonateCards->setVisible( false );
 
     m_uiWinnerScreen = new UI_WinnerScreen( g, e, n, k++, r );
@@ -373,7 +373,7 @@ void H3_Game::draw()
     const int w = driver->getScreenWidth();
     const int h = driver->getScreenHeight();
 
-    if ( isRunning() )
+    if ( isGameRunning() )
     {
         drawSkybox();
 
@@ -459,7 +459,7 @@ void H3_Game::draw()
 
 void H3_Game::exitProgram()
 {
-    if (isRunning())
+    if (isGameRunning())
     {
         bool wannaExit = H3_MessageBox("Exit Game",
                                        "Do you want to exit the running Game?");
@@ -587,24 +587,124 @@ void H3_Game::setPreset(const H3_Cfg& preset)
     GL_VALIDATE;
 }
 
+H3_GuiState H3_Game::UI_getState() const
+{
+    return m_guiState;
+}
+
+void H3_Game::UI_setState(const H3_GuiState& guiState)
+{
+    if (m_uiMainmenu)
+    {
+        m_uiMainmenu->setVisible(guiState.bMainMenu);
+    }
+    if (m_uiHelpWindow)
+    {
+        m_uiHelpWindow->setVisible(guiState.bHelpWindow);
+    }
+    if (m_uiWorldCreator)
+    {
+        m_uiWorldCreator->setVisible(guiState.bWorldCreator);
+    }
+    if (m_uiActions)
+    {
+        m_uiActions->setVisible(guiState.bActions);
+    }
+    if (m_uiDonateCards)
+    {
+        m_uiDonateCards->setVisible(guiState.bDonateCards);
+    }
+    if (m_uiWinnerScreen)
+    {
+        m_uiWinnerScreen->setVisible(guiState.bWinnerScreen);
+    }
+
+    m_guiState = guiState;
+    UI_resizeLayouts();
+}
+
+void H3_Game::UI_resizeLayouts()
+{
+    if (!m_driver)
+    {
+        DE_ERROR("No driver")
+        return;
+    }
+
+    auto scr_w = m_driver->getScreenWidth();
+    auto scr_h = m_driver->getScreenHeight();
+
+    if (m_uiMainmenu && m_uiMainmenu->isVisible())
+    {
+        m_uiMainmenu->resize(0,0,scr_w / 6, scr_h / 2);
+    }
+
+    if (m_uiHelpWindow && m_uiHelpWindow->isVisible())
+    {
+        m_uiHelpWindow->resize(scr_w / 6, 50, 4*scr_w / 6, scr_h - 100);
+    }
+
+    if (m_uiWorldCreator && m_uiWorldCreator->isVisible())
+    {
+        m_uiWorldCreator->resize(0,0,scr_w,scr_h);
+    }
+
+    if (m_uiWinnerScreen && m_uiWinnerScreen->isVisible())
+    {
+        m_uiWinnerScreen->resize(0,0,scr_w,scr_h);
+    }
+
+    if (m_uiActions && m_uiActions->isVisible())
+    {
+        m_uiActions->resize(0,0,scr_w,scr_h);
+    }
+
+    if (m_uiDonateCards && m_uiDonateCards->isVisible())
+    {
+        int w = scr_w - 400;
+        int h = scr_h - 300;
+        int x = (scr_w - w) / 2;
+        int y = (scr_h - h) / 2;
+        m_uiDonateCards->resize(x,y,w,h);
+    }
+}
+
+
 void H3_Game::enterStartMenu()
 {
     DE_WARN("")
     m_state = H3_State::StartMenu;
+
+    H3_GuiState guiState = UI_getState();
+    guiState.bMainMenu = true;
+    UI_setState( guiState );
+}
+
+
+void H3_Game::enterWinnerScreen()
+{
+    if ( m_state != H3_State::Idle )
+    {
+        DE_ERROR("Incorrect state ", m_state.str())
+    }
+
+    m_state = H3_State::Winner;
     m_round = 0;
 
-    if (m_uiMainmenu)
-        m_uiMainmenu->setVisible( true );
-    if (m_uiHelpWindow)
-        m_uiHelpWindow->setVisible( false );
-    if (m_uiWorldCreator)
-        m_uiWorldCreator->setVisible( false );
-    if (m_uiActions)
-        m_uiActions->setVisible( false );
-    if (m_uiDonateCards)
-        m_uiDonateCards->setVisible( false );
+    //H3_GuiState guiState = UI_getState();
+    H3_GuiState guiState;
+    guiState.bWinnerScreen = true;
+    UI_setState( guiState );
+
+/*
     if (m_uiWinnerScreen)
-        m_uiWinnerScreen->setVisible( false );
+    {
+        m_uiWinnerScreen->setVisible( true );
+        int w = m_driver->getScreenWidth();
+        int h = m_driver->getScreenHeight();
+        m_uiWinnerScreen->resize(0,0,w,h);
+    }
+*/
 }
 
 void H3_Game::restartGame()
@@ -623,10 +723,7 @@ void H3_Game::restartGame()
         }
     }
 
-    if (m_uiMainmenu)
-        m_uiMainmenu->setVisible( false );
-
-    m_round = 1;
+    enterStartGame();
 }
 
 void H3_Game::newGame()
@@ -645,6 +742,12 @@ void H3_Game::newGame()
         }
     }
 
+    //H3_GuiState guiState = UI_getState();
+    H3_GuiState guiState;
+    guiState.bWorldCreator = true;
+    UI_setState( guiState );
+
+/*
     if (m_uiWorldCreator)
     {
         m_uiWorldCreator->setVisible(true);
@@ -656,61 +759,28 @@ void H3_Game::newGame()
     if (m_uiDonateCards) {
         m_uiDonateCards->setVisible(false);
     }
+*/
 }
 
-void H3_Game::enterWinnerScreen()
+void H3_Game::enterStartGame()
 {
-    if ( m_state != H3_State::Idle )
+    if (m_uiWorldCreator)
     {
-        DE_ERROR("Incorrect state ", m_state.str())
-    }
-
-    m_state = H3_State::Winner;
-
-    if (m_uiWinnerScreen) {
-        m_uiWinnerScreen->setVisible( true );
-        int w = m_driver->getScreenWidth();
-        int h = m_driver->getScreenHeight();
-        m_uiWinnerScreen->resize(0,0,w,h);
-    }
-}
-
-void H3_Game::enterRound1()
-{
-    DE_DEBUG("")
-
-    if (m_uiMainmenu) {
-        m_uiMainmenu->setVisible(false);
-    }
-    if (m_uiWorldCreator) {
-        m_uiWorldCreator->setVisible(false);
         setPreset( m_uiWorldCreator->getPreset() );
     }
     else
     {
         setPreset( H3_Cfg::createStandard() );
     }
-    if (m_uiActions) {
-        m_uiActions->setVisible(true);
-    }
-    if (m_uiDonateCards) {
-        m_uiDonateCards->setVisible(false);
-    }
-    if (m_uiWinnerScreen) {
-        m_uiWinnerScreen->setVisible(false);
-    }
 
-    // if (m_round != 0)
-    // {
-    //     DE_ERROR("Invalid round ", m_round)
-    //     return;
-    // }
+    H3_GuiState guiState;
+    guiState.bActions = true;
+    UI_setState( guiState );
 
     m_state = H3_State::Idle;
     m_round = 1;
     m_turn = 1;
 
-    //startRanking();
     m_ranking.clear();
     m_ranking.reserve( m_players.size() );
 
@@ -721,10 +791,6 @@ void H3_Game::enterRound1()
         item.diceSum = 0;
         m_ranking.push_back( item );
     }
-
-    // m_player = m_players.back().id;
-    // m_uiThiefIntroPanel->setPlayer( m_player );
-
     m_player = m_ranking.front().playerId;
 
     computeVisibleCorners( 0 );
@@ -751,79 +817,66 @@ void H3_Game::enterRound1()
     UI_updateActions();
 }
 
-void H3_Game::enterRound2()
+void H3_Game::enterIdle()
 {
     DE_DEBUG("")
 
-    if (m_round != 1)
+    m_state = H3_State::Idle;
+
+    H3_GuiState guiState;
+    guiState.bActions = true;
+    UI_setState( guiState );
+
+    if (m_round == 2)
     {
-        DE_ERROR("Invalid round ", m_round)
-        return;
+        if (m_turn == 1)
+        {
+            m_player = m_ranking.front().playerId;
+
+            marqueeH1( L"Round 2", 2000, 0xFF00CC10 );
+            marqueeH1( L"Placing first Road and Farm", 3000, 0xFF00CC10 );
+
+            marqueeH3( L"Each player has to place one farm\n"
+                      L"and one road next to the farm.", 6000, dbRGB(255,128,0) );
+        }
+    }
+    else if (m_round == 3)
+    {
+        if (m_turn == 1)
+        {
+            m_player = m_ranking.back().playerId;
+
+            marqueeH1( L"Round 3", 2000, 0xFF00CC10 );
+            marqueeH1( L"Placing second Road and Farm", 3000, 0xFF00CC10 );
+
+            marqueeH3( L"Each player has to place one farm\n"
+                      L"and one road next to the farm.", 6000, dbRGB(255,128,0) );
+        }
+    }
+    else
+    {
+        if (m_turn == 1)
+        {
+            m_player = m_ranking.front().playerId;
+
+            marqueeH1( dbStrW(L"Round ",m_round), 3000, 0xFF00CC10 );
+            marqueeH1( L"Normal round and Farm", 2000, 0xFF00CC10 );
+
+            marqueeH3( L"Each player has to place one farm\n"
+                      L"and one road next to the farm.", 6000, dbRGB(255,128,0) );
+
+        }
     }
 
-    m_state = H3_State::Idle;
-    m_round = 2;
-    m_turn = 1;
-    m_player = m_ranking.front().playerId;
-
-    marqueeH1( L"Round 2", 2000, 0xFF00CC10 );
-    marqueeH1( L"Placing first Road and Farm", 3000, 0xFF00CC10 );
-
-    marqueeH3( L"Each player has to place one farm\n"
-              L"and one road next to the farm.", 6000, dbRGB(255,128,0) );
-
     UI_updateActions();
 }
-
-void H3_Game::enterRound3()
-{
-    DE_DEBUG("")
-
-    if (m_round != 2)
-    {
-        DE_ERROR("Invalid round ", m_round)
-        return;
-    }
-
-    m_state = H3_State::Idle;
-    m_round = 3;
-    m_turn = 1;
-    m_player = m_ranking.back().playerId;
-
-    marqueeH1( L"Round 3", 2000, 0xFF00CC10 );
-    marqueeH1( L"Placing second Road and Farm", 3000, 0xFF00CC10 );
-
-    marqueeH3( L"Each player has to place one farm\n"
-              L"and one road next to the farm.", 6000, dbRGB(255,128,0) );
-
-    UI_updateActions();
-}
-
-void H3_Game::enterRoundN()
-{
-    DE_DEBUG("")
-
-    m_state = H3_State::Idle;
-    m_round++;
-    m_turn = 1;
-    m_player = m_ranking.front().playerId;
-
-    marqueeH1( dbStrW(L"Round ",m_round), 3000, 0xFF00CC10 );
-    marqueeH1( L"Normal round and Farm", 2000, 0xFF00CC10 );
-
-    marqueeH3( L"Each player has to place one farm\n"
-              L"and one road next to the farm.", 6000, dbRGB(255,128,0) );
-
-    UI_updateActions();
-}
-
 
 void H3_Game::doEndTurn()
 {
     if ( m_state != H3_State::Idle )
     {
         DE_ERROR("Incorrect state ", m_state.str())
-        return;
+        //return;
     }
 
     DE_DEBUG("")
@@ -867,21 +920,9 @@ void H3_Game::doEndTurn()
         //     m_player = m_ranking.front().playerId; // Next player normal
         // }
 
-        //m_turn = 1;   // Next turn
-        //m_round++;    // Next round
-
-        if (m_round == 1)
-        {
-            enterRound2();
-        }
-        else if (m_round == 2)
-        {
-            enterRound3();
-        }
-        else
-        {
-            enterRoundN();
-        }
+        m_turn = 1;   // Next turn
+        m_round++;    // Next round
+        enterIdle();
     }
 
     // End of Turn:
@@ -996,8 +1037,6 @@ void H3_Game::doDice()
         return;
     }
 
-
-
     // Normal Round:
 
     const int sum = m_dice.sum();
@@ -1009,12 +1048,15 @@ void H3_Game::doDice()
     {
         for (auto & cpu_player : m_players)
         {
-            if (cpu_player.typ == H3_PlayerType::CPU)
+            if (cpu_player.typ == H3_PlayerType::HUMAN)
+            {
+                enterDonateCards();
+            }
+            else // if (cpu_player.typ == H3_PlayerType::CPU)
             {
                 AI_donateCardsToRobber(*this, cpu_player.id);
             }
         }
-        enterThiefIntro();
         return;
     }
 
@@ -1048,21 +1090,42 @@ void H3_Game::doDice()
     UI_updateActions();
 }
 
-void H3_Game::enterThiefIntro()
+void H3_Game::enterDonateCards()
 {
-    if (m_state != H3_State::Dice)
+    // if (m_state != H3_State::Dice)
+    // {
+    //     DE_ERROR("Invalid state ", m_state.str())
+    //     m_state = H3_State::Idle;
+    //     return;
+    // }
+
+    H3_Player & player = getPlayer(m_player);
+    if (player.typ != H3_PlayerType::HUMAN)
     {
-        DE_ERROR("Invalid state ", m_state.str())
-        m_state = H3_State::Idle;
+        DE_ERROR("Player[",player.id,"] ",player.name," is not a Human.")
+    }
+
+    uint32_t cards = player.state.bank.sum();
+    if (cards <= m_cfg.cardLimitNoSteal)
+    {
+        DE_DEBUG("Player[",player.id,"] ",player.name," has only ",cards," cards. No donation.")
         return;
     }
 
+    DE_DEBUG("Player[",player.id,"] ",player.name," has ",cards," cards. "
+             "Must donate ", cards/2, ". Threshold(",m_cfg.cardLimitNoSteal,")")
     m_state = H3_State::DonateCards;
-    UI_updateActions();
-    if (m_uiDonateCards) {
-        m_uiDonateCards->setPlayer( m_player );
-        m_uiDonateCards->setVisible(true);
+    // UI_updateActions();
+
+    if (m_uiDonateCards)
+    {
+        m_uiDonateCards->startDonation( m_player, UI_getState() );
+
+        H3_GuiState guiState;
+        guiState.bDonateCards = true;
+        UI_setState( guiState );
     }
+
 }
 void H3_Game::enterThiefPlacement()
 {
@@ -1070,19 +1133,24 @@ void H3_Game::enterThiefPlacement()
         m_state != H3_State::UseKnightCard )
     {
         DE_ERROR("Invalid state ", m_state.str())
-        m_state = H3_State::Idle;
-        return;
+        // m_state = H3_State::Idle;
+        // return;
     }
 
-    DE_OK("")
     m_state = H3_State::PlaceThief;
 
-    if (m_uiDonateCards) {
+    if (m_uiDonateCards)
+    {
         m_uiDonateCards->setVisible(false);
     }
 
-    marqueeH1(L"Move Robber to new Tile", 1500, 0xFFC0C0C0);
-    // enterThiefOutro();
+    auto & player = getCurrentPlayer();
+    marqueeH1(L"Placement of Thief to another Tile", 2000, player.color);
+
+    if (player.typ == H3_PlayerType::CPU)
+    {
+        DE_WARN("AI should do something here...")
+    }
 }
 
 void H3_Game::leaveThiefPlacement( H3_Tile& tile )
@@ -1132,27 +1200,32 @@ void H3_Game::leaveThiefPlacement( H3_Tile& tile )
     if (owners.empty())
     {
         DE_DEBUG("Nothing to steal")
-        m_state = H3_State::Idle;
-        UI_updateActions();
+        enterIdle();
         return;
     }
     else if (owners.size() == 1)
     {
         DE_DEBUG("Auto steal from player ", getPlayer(owners[0]).name);
         stealRandomCard( owners[0], m_player );
-        m_state = H3_State::Idle;
-        UI_updateActions();
+        enterIdle();
         return;
     }
 
     // We have atleast 2 players on the Robber tile
     // Ergo the current player needs to select one of them using the mouse and 3d collision detection
     m_state = H3_State::StealRandomCard;
+    H3_GuiState guiState;
+    UI_setState( guiState );
     marqueeH1(L"Select Player to steal a card...", 1500, 0xFFC0C0C0);
 }
 
 void H3_Game::leaveThiefOutro( H3_Corner& corner )
 {
+    if (m_state != H3_State::StealRandomCard)
+    {
+        DE_ERROR("Invalid state ",m_state.str())
+    }
+
     // [1.] Corner must be on Robber's tile...
     H3_Tile & tileOfRobber = H3_getTile(*this, __func__, m_thief.owner);
 
@@ -1180,13 +1253,16 @@ void H3_Game::leaveThiefOutro( H3_Corner& corner )
     }
 
     // [3.] Reset state and update
-    m_state = H3_State::Idle;
-    UI_updateActions();
-
+    enterIdle();
 }
 
 void H3_Game::leaveThiefOutro( H3_Edge& edge )
 {
+    if (m_state != H3_State::StealRandomCard)
+    {
+        DE_ERROR("Invalid state ",m_state.str())
+    }
+
     // [1.] Corner must be on Robber's tile...
     H3_Tile & tileOfRobber = H3_getTile(*this, __func__, m_thief.owner);
 
@@ -1214,10 +1290,8 @@ void H3_Game::leaveThiefOutro( H3_Edge& edge )
     }
 
     // [3.] Reset state and update
-    m_state = H3_State::Idle;
-    UI_updateActions();
+    enterIdle();
 }
-
 
 void H3_Game::stealRandomCard( int playerFromId, int playerToId )
 {
@@ -1245,7 +1319,6 @@ void H3_Game::stealRandomCard( int playerFromId, int playerToId )
     playerFrom.state.bank.subAmount( tt, 1 );
 }
 
-
 void H3_Game::enterUseKnightCard()
 {
     if (m_state != H3_State::Idle )
@@ -1271,11 +1344,11 @@ void H3_Game::doPlaceCancel()
     UI_logCancel( *this );
 
     m_state = H3_State::Idle;
-    UI_updateActions();
     computeVisibleCorners( m_player );
     computeVisibleEdges( m_player );
     m_bUpdateDrawCall_Corners = true;
     m_bUpdateDrawCall_Edges = true;
+    enterIdle();
 }
 
 void H3_Game::doBuyRoad()
@@ -1355,10 +1428,10 @@ void H3_Game::finalizeBuyRoad( H3_Edge & edge )
     UI_logBuyRoad( *this, edge.id );
 
     m_state = H3_State::Idle;
-    UI_updateActions();
     computeVisibleEdges( m_player );
     m_bUpdateDrawCall_Edges = true;
     m_bUpdateDrawCall_Roads = true;
+    enterIdle();
 }
 
 void H3_Game::doBuyFarm()
@@ -1475,6 +1548,7 @@ void H3_Game::finalizeBuyFarm( H3_Corner & corner )
     computeVisibleCorners( m_player );
     m_bUpdateDrawCall_Corners = true;
     m_bUpdateDrawCall_Farms = true;
+    enterIdle();
 }
 
 void H3_Game::doBuyCity()
@@ -1606,9 +1680,9 @@ void H3_Game::finalizeBuyCity( H3_Farm & farm )
     //DE_DEBUG("EndCity()")
     UI_logBuyCity( *this, corner.id );
     m_state = H3_State::Idle;
-    UI_updateActions();
     m_bUpdateDrawCall_Farms = true;
     m_bUpdateDrawCall_Citys = true;
+    enterIdle();
 }
 
 void H3_Game::doBuyCard()
@@ -2060,41 +2134,6 @@ void H3_Game::toggleHelpWindow()
     }
 }
 
-void H3_Game::UI_resizeLayouts()
-{
-    if (!m_driver)
-    {
-        DE_ERROR("No driver")
-        return;
-    }
-
-    auto scr_w = m_driver->getScreenWidth();
-    auto scr_h = m_driver->getScreenHeight();
-
-    if (m_uiMainmenu)
-        m_uiMainmenu->resize(0,0,scr_w / 6, scr_h / 2);
-
-    if (m_uiActions)
-    {
-        m_uiActions->resize(0,0,scr_w,scr_h);
-    }
-
-    if (m_uiDonateCards)
-    {
-        int w = scr_w - 400;
-        int h = scr_h - 300;
-        int x = (scr_w - w) / 2;
-        int y = (scr_h - h) / 2;
-        m_uiDonateCards->resize(x,y,w,h);
-    }
-
-    if (m_uiWorldCreator)
-        m_uiWorldCreator->resize(0,0,scr_w,scr_h);
-
-    if (m_uiWinnerScreen)
-        m_uiWinnerScreen->resize(0,0,scr_w,scr_h);
-}
-
 void H3_Game::UI_updateActions()
 {
     if (m_uiActions) m_uiActions->updateVisibility();
@@ -2398,10 +2437,26 @@ void H3_Game::drawThief()
 
 void H3_Game::drawDice()
 {
-    auto driver = getDriver();
-    driver->beginPerf("Dice");
+    float zoom = m_guienv.getZoom();
+
+    m_driver->beginPerf("Dice");
+
+    de::gpu::TexRef d1 = H3_getDiceTex(*this,m_dice.a);
+    de::gpu::TexRef d2 = H3_getDiceTex(*this,m_dice.b);
+
+    int w = zoom * 48;
+    int r = zoom * 6;
+    auto r2 = glm::ivec2(r,r);
+
+    m_driver->getScreenRenderer()->
+        draw2DRoundRect(de::Recti(32,256,w,w),r2,0xFFFFFFFF,d1);
+
+    m_driver->getScreenRenderer()->
+        draw2DRoundRect(de::Recti(32 + w + 10,256,w,w),r2,0xFFFFFFFF,d1);
+
     m_diceRenderer.render();
-    driver->endPerf();
+
+    m_driver->endPerf();
 }
 
 void H3_Game::drawHoveredEdge()

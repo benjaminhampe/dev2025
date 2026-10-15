@@ -8,10 +8,9 @@ class UI_Actions : public de::gui::Widget
 public:
     UI_Actions( H3_Game* game, de::gui::Env* env, de::gui::Widget* parent, u32 id, const de::Recti& r );
     ~UI_Actions() override;
-
-    void draw() override;
     void resize(int x, int y, int w, int h) override;
-    //void resizeLayout();
+    // void draw() override;
+    // void resizeLayout();
 
     void setDebugVisible(bool visible);
 

@@ -8,7 +8,7 @@ namespace gui {
 // =====================================================================
 Widget::Widget( Env* env, Widget* parent, u32 id, const Recti& r )
     // =====================================================================
-    : m_flags(eWF_Visible | eWF_Enabled)
+    : m_flags(eWF_Visible | eWF_Enabled | eWF_DrawChildren)
     , m_id(id)
     , m_rect(r)
     , m_env(env)
@@ -50,7 +50,18 @@ void Widget::resize(int x, int y, int w, int h)
 
 void Widget::draw()
 {
+    if (!isVisible())
+    {
+        return;
+    }
 
+    if (isDrawChildren())
+    {
+        for (auto child : m_children)
+        {
+            child->draw();
+        }
+    }
 }
 
 void Widget::onEvent( const Event& event )
@@ -161,41 +172,6 @@ void Widget::addChild( Widget* child )
 
     m_children.push_back(child);
 }
-
-/*
-Recti Widget::getAbsolutePos() const
-{
-    if (m_parent)
-    {
-        const Recti r_parent = m_parent->getAbsolutePos();
-
-        auto pos = Recti( m_pos.x + r_parent.x,
-                         m_pos.y + r_parent.y,
-                         m_pos.w,
-                         m_pos.h);
-
-// Clipping
-#ifdef USE_BENNI_CLIPPING
-        if (pos.x2() > pp.x2() )
-        {
-            pos.w = pos.x - pp.x2() + 1;
-            if (pos.w < 0) pos.w = 0;
-        }
-
-        if (pos.y2() > pp.y2() )
-        {
-            pos.h = pos.y - pp.y2() + 1;
-            if (pos.h < 0) pos.h = 0;
-        }
-#endif
-        return pos;
-    }
-    else
-    {
-        return m_pos;
-    }
-}*/
-
 
 } // end namespace gui.
 } // end namespace de.

@@ -4,29 +4,30 @@
 
 // Dialog to donate cards to the robber when (dice == 7).
 // =====================================================================
-class UI_ThiefIntro : public de::gui::Panel
+class UI_DonateCards : public de::gui::Panel
 // =====================================================================
 {
 public:
-    UI_ThiefIntro( H3_Game* game, de::gui::Env* env, de::gui::Widget* parent, u32 id, const de::Recti& r );
-    ~UI_ThiefIntro() override;
-    void setPlayer( uint32_t playerId );
-
-    void draw() override;
+    UI_DonateCards( H3_Game* game, de::gui::Env* env, de::gui::Widget* parent, u32 id, const de::Recti& r );
+    ~UI_DonateCards() override;
     void resize(int x, int y, int w, int h) override;
-
+    //void draw() override;
     //void onEvent( const de::Event& event ) override;
-
     void updateTexts();
 
     void resizeLayoutThief( de::Recti pos );
     void resizeLayoutPlayer( de::Recti pos );
+
+    void startDonation( uint32_t playerId, H3_GuiState oldState );
+
 protected:
     de::gui::Button* createButton(std::string txt, de::gpu::TexRef ref, de::Recti pos);
 private:
     // [Necessary Game Logic]
     H3_Game* m_game;
     uint32_t m_playerId;
+    H3_GuiState m_oldState;
+
     int m_cardsToRemove;
     H3_Bank m_bankThief;
     H3_Bank m_bankPlayer;

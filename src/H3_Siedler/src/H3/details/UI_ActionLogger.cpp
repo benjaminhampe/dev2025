@@ -124,6 +124,11 @@ UI_logBuyCard( H3_Game & game, int cardType )
 void
 UI_drawLogEndTurn( H3_Game & game, const UI_Action& act, int x, int y )
 {
+    if (!game.isGameRunning())
+    {
+        return;
+    }
+
     H3_Player & player = game.getPlayer( act.playerId );
 
     H3_draw2DRect( game, de::Recti( x,y, 10,10), player.color );
@@ -291,6 +296,11 @@ UI_drawLogBuyCity( H3_Game & game, const UI_Action& act, int x, int y )
 void
 UI_drawLog( H3_Game & game )
 {
+    if (!game.isGameRunning())
+    {
+        return;
+    }
+
     auto driver = game.getDriver();
     int w = driver->getScreenWidth();
     int h = driver->getScreenHeight();

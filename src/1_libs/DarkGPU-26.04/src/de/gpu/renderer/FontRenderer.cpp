@@ -41,22 +41,25 @@ FontRenderer::draw2DText(int x, int y, std::string const & msg,
     draw2DText(x,y,StringUtil::to_wstr(msg),color, align, font, bgColor, padding);
 }
 
-void
-FontRenderer::draw2DText(int x, int y, std::wstring const & msg,
-                        uint32_t color, Align align, Font const & font,
-                        uint32_t bgColor, int padding )
+bool FontRenderer::buildDrawCall(
+        smesh::SMeshBuffer & quads,
+        Recti & textBounds,
+        int x, int y,
+        std::wstring const & msg,
+        uint32_t color,
+        Align align,
+        Font const & font
+    )
 {
-    if (!m_driver) { DE_WARN("No driver") return; }
-    const int w = m_driver->getScreenWidth();
-    const int h = m_driver->getScreenHeight();
-    if ( w < 2 || h < 2 ) { return; }
-    if (msg.empty()) { return; }
+    if (!m_driver) { DE_WARN("No driver") return false; }
+
+    if (msg.empty()) { return false; }
 
     const auto face = getFontFace( font );
     if (!face)
     {
         DE_ERROR("No face for font ", font.toString())
-        return;
+        return false;
     }
 
     face->cacheString( msg );
@@ -65,7 +68,7 @@ FontRenderer::draw2DText(int x, int y, std::wstring const & msg,
     //DE_WARN("TextSize(",ts.toString(),"), ",StringUtil::to_str(msg))
 
     const Image* atlasImage = face->getAtlasImage();
-    if (!atlasImage) { DE_ERROR("No atlas image") return; }
+    if (!atlasImage) { DE_ERROR("No atlas image") return false; }
 
     const std::string uri = atlasImage->uri();
 
@@ -75,21 +78,22 @@ FontRenderer::draw2DText(int x, int y, std::wstring const & msg,
     //     dbSaveImage(*atlasImage, uri);
     // }
 
-    SamplerOptions const so( 1.0f,
-        SamplerOptions::Minify::Linear,
-        SamplerOptions::Magnify::Linear,
-        SamplerOptions::Wrap::ClampToEdge,
-        SamplerOptions::Wrap::ClampToEdge );
-
     auto tex = m_driver->getTexture( uri );
     if (!tex)
     {
         //dbSaveImage(*atlasImage,uri + ".png");
+
+        SamplerOptions const so( 1.0f,
+            SamplerOptions::Minify::Linear,
+            SamplerOptions::Magnify::Linear,
+            SamplerOptions::Wrap::ClampToEdge,
+            SamplerOptions::Wrap::ClampToEdge );
+
         tex = m_driver->createTexture2D( uri, *atlasImage, so );
         if (!tex)
         {
             DE_ERROR("No atlas tex(", uri, ") created")
-            return;
+            return false;
         }
         face->setDirty( false );
         //DE_DEBUG("Created font texture ", uri)
@@ -98,7 +102,7 @@ FontRenderer::draw2DText(int x, int y, std::wstring const & msg,
     {
         if ( face->isDirty() )
         {
-            m_driver->uploadTexture2D( tex, *atlasImage, so );
+            m_driver->uploadTexture2D( tex, *atlasImage );
             face->setDirty( false );
             //DE_DEBUG("Uploaded font texture ", uri)
         }
@@ -120,17 +124,15 @@ FontRenderer::draw2DText(int x, int y, std::wstring const & msg,
          if ( align & Align::Left )  { aligned_pos.x = x;       }
     else if ( align & Align::Center ){ aligned_pos.x = x - tw/2; }
     else if ( align & Align::Right ) { aligned_pos.x = x - tw;   }
-    else { DE_ERROR("Invalid horizontal text align") return; }
+    else { DE_ERROR("Invalid horizontal text align") return false; }
     // vertical align to entire screen
          if ( align & Align::Top )   { aligned_pos.y = y;       }
     else if ( align & Align::Middle ){ aligned_pos.y = y - th/2; }
     else if ( align & Align::Bottom ){ aligned_pos.y = y - th;   }
-    else { DE_ERROR("Invalid vertical text align") return; }
+    else { DE_ERROR("Invalid vertical text align") return false; }
 
     int px = aligned_pos.x;
     int py = aligned_pos.y;
-
-    smesh::SMeshBuffer quads( PrimitiveType::Triangles );
 
     // Loop over glyphs we got from cacheString() and
     // render them now...
@@ -220,9 +222,10 @@ FontRenderer::draw2DText(int x, int y, std::wstring const & msg,
 
     if (quads.getVertexCount() < 1)
     {
-        return; // Nothing todo
+        return false; // Nothing todo
     }
 
+    quads.primitiveType = PrimitiveType::Triangles;
     quads.upload();
     quads.setCulling( Culling::disabled() );
     quads.setDepth( Depth::disabled() );
@@ -230,6 +233,10 @@ FontRenderer::draw2DText(int x, int y, std::wstring const & msg,
     quads.setTexture( 0, tex );
     quads.getMaterial().CloudTransparent = true;
 
+    textBounds = Recti( bbox_x1,
+                        bbox_y1,
+                        bbox_x2 - bbox_x1,
+                        bbox_y2 - bbox_y1);
     // Draw background rect
 /*
     if (dbRGBA_A(bgColor) > 0)
@@ -242,16 +249,42 @@ FontRenderer::draw2DText(int x, int y, std::wstring const & msg,
         m_screenRenderer->draw2DRect( bbox_r, bgColor );
     }
 */
+    return true;
+}
 
+
+void
+FontRenderer::draw2DText(int x, int y, std::wstring const & msg,
+                        uint32_t color, Align align, Font const & font,
+                        uint32_t bgColor, int padding )
+{
+    if (msg.empty()) { return; }
+
+    if (!m_driver) { DE_WARN("No driver") return; }
+    const int w = m_driver->getScreenWidth();
+    const int h = m_driver->getScreenHeight();
+    if ( w < 2 || h < 2 ) { return; }
+
+    smesh::SMeshBuffer quads;
+    Recti textBounds;
+    buildDrawCall(quads,textBounds,x,y,msg,color,align,font);
+
+    // Draw background rect
+
+    if (dbRGB_A(bgColor) > 0)
+    {
+        int x1 = textBounds.x1() - padding;
+        int y1 = textBounds.y1() - padding;
+        int x2 = textBounds.x2() + padding;
+        int y2 = textBounds.y2() + padding;
+        auto bbox_r = Recti(x1, y1, x2 - x1, y2 - y1);
+        m_screenRenderer->draw2DRect( bbox_r, bgColor );
+    }
+
+    // Draw aligned text
     m_screenRenderer->draw2D( quads );
-/*
-    m_screenRenderer->setMaterial( quads.material );
-    quads.draw();
-
-*/
     quads.destroy();
 
-    //m_Driver->draw2D( quads );
     //draw2DTextDebug( x,y,msg,color,align,font);
 }
 
@@ -484,6 +517,221 @@ FontRenderer::test()
    text2.pen = Pen( RGBA( 255,0,0,255 ), 2.5f );
    text2.msg = L"Hello TopCenter World";
    addText( text2 );
+}
+
+
+void
+FontRenderer::draw2DText(int x, int y, std::wstring const & msg,
+                        uint32_t color, Align align, Font const & font,
+                        uint32_t bgColor, int padding )
+{
+    if (!m_driver) { DE_WARN("No driver") return; }
+    const int w = m_driver->getScreenWidth();
+    const int h = m_driver->getScreenHeight();
+    if ( w < 2 || h < 2 ) { return; }
+    if (msg.empty()) { return; }
+
+    const auto face = getFontFace( font );
+    if (!face)
+    {
+        DE_ERROR("No face for font ", font.toString())
+        return;
+    }
+
+    face->cacheString( msg );
+
+    const TextSize ts = face->getTextSize( msg );
+    //DE_WARN("TextSize(",ts.toString(),"), ",StringUtil::to_str(msg))
+
+    const Image* atlasImage = face->getAtlasImage();
+    if (!atlasImage) { DE_ERROR("No atlas image") return; }
+
+    const std::string uri = atlasImage->uri();
+
+    //DE_DEBUG("Font: ", font.toString(), " has atlasURI(", uri, "), msg(",dbStr(msg),")")
+    // if ( face->isDirty() )
+    // {
+    //     dbSaveImage(*atlasImage, uri);
+    // }
+
+    SamplerOptions const so( 1.0f,
+        SamplerOptions::Minify::Linear,
+        SamplerOptions::Magnify::Linear,
+        SamplerOptions::Wrap::ClampToEdge,
+        SamplerOptions::Wrap::ClampToEdge );
+
+    auto tex = m_driver->getTexture( uri );
+    if (!tex)
+    {
+        //dbSaveImage(*atlasImage,uri + ".png");
+        tex = m_driver->createTexture2D( uri, *atlasImage, so );
+        if (!tex)
+        {
+            DE_ERROR("No atlas tex(", uri, ") created")
+            return;
+        }
+        face->setDirty( false );
+        //DE_DEBUG("Created font texture ", uri)
+    }
+    else
+    {
+        if ( face->isDirty() )
+        {
+            m_driver->uploadTexture2D( tex, *atlasImage, so );
+            face->setDirty( false );
+            //DE_DEBUG("Uploaded font texture ", uri)
+        }
+    }
+
+    const int tex_w = tex->w();
+    const int tex_h = tex->h();
+
+    // Align the text_size(w,h) to the text_pos(x,y) only.
+    const int32_t tw = ts.m_width;
+    const int32_t th = ts.m_height;
+    //   if ( font.lcdFit )
+    //   {
+    //      tw /= 3;
+    //   }
+
+    // horizontal align to entire screen
+    glm::ivec2 aligned_pos;
+         if ( align & Align::Left )  { aligned_pos.x = x;       }
+    else if ( align & Align::Center ){ aligned_pos.x = x - tw/2; }
+    else if ( align & Align::Right ) { aligned_pos.x = x - tw;   }
+    else { DE_ERROR("Invalid horizontal text align") return; }
+    // vertical align to entire screen
+         if ( align & Align::Top )   { aligned_pos.y = y;       }
+    else if ( align & Align::Middle ){ aligned_pos.y = y - th/2; }
+    else if ( align & Align::Bottom ){ aligned_pos.y = y - th;   }
+    else { DE_ERROR("Invalid vertical text align") return; }
+
+    int px = aligned_pos.x;
+    int py = aligned_pos.y;
+
+    smesh::SMeshBuffer quads( PrimitiveType::Triangles );
+
+    // Loop over glyphs we got from cacheString() and
+    // render them now...
+    uint32_t last_unicode = 0;
+
+    int32_t bbox_x1 = std::numeric_limits<int32_t>::max();
+    int32_t bbox_y1 = std::numeric_limits<int32_t>::max();
+    int32_t bbox_x2 = std::numeric_limits<int32_t>::lowest();
+    int32_t bbox_y2 = std::numeric_limits<int32_t>::lowest();
+
+    for ( size_t i = 0; i < msg.size(); ++i )
+    {
+        uint32_t unicode = msg[ i ];
+        if ( unicode == '\n' || unicode == '\r' )
+        {
+            px = aligned_pos.x;
+            py += ts.m_lineHeight;
+            continue;
+        }
+
+        // Kerning
+        glm::ivec2 kerning(0,0);
+        if ( i > 0 )
+        {
+            kerning = face->getKerning( last_unicode, unicode );
+        }
+
+        last_unicode = unicode;
+
+        // Draw
+        const Glyph & glyph = face->getGlyph( unicode );
+
+        if ( glyph.ref.w() > 0 && glyph.ref.h() > 0 )
+        {
+            int x1 = px + glyph.bmp.x + kerning.x;
+            int y1 = py + ts.m_baseline - glyph.bmp.y; // ts.lineHeight + ts.baseline; // + glyph.ref.getY();
+
+            int gw = glyph.ref.w();
+            int gh = glyph.ref.h();
+            if ( font.lcdFit ) gw /= 2;
+            int x2 = x1 + gw-1;
+            int y2 = y1 + gh-1;
+
+            bbox_x1 = std::min( bbox_x1, x1 );
+            bbox_y1 = std::min( bbox_y1, y1 );
+            bbox_x2 = std::max( bbox_x2, x2 );
+            bbox_y2 = std::max( bbox_y2, y2 );
+
+            auto const & r = glyph.ref.rect();
+            float u1 = float( r.x ) / float( tex_w );
+            float v1 = float( r.y ) / float( tex_h );
+            float u2 = u1 + ( float( r.w ) / float( tex_w ) );
+            float v2 = v1 + ( float( r.h ) / float( tex_h ) );
+
+            smesh::S3DVertex A( x1, y2, 0, 0,0,1, color, u1, v2 ); // color is set as uniform now
+            smesh::S3DVertex B( x1, y1, 0, 0,0,1, color, u1, v1 ); // not as vertex attrib anymore
+            smesh::S3DVertex C( x2, y1, 0, 0,0,1, color, u2, v1 );
+            smesh::S3DVertex D( x2, y2, 0, 0,0,1, color, u2, v2 );
+
+            quads.addVertex( A );
+            quads.addVertex( C );
+            quads.addVertex( B );
+            quads.addVertex( A );
+            quads.addVertex( D );
+            quads.addVertex( C );
+
+            //DE_DEBUG( "Glyph[",i,"] x1(",x1,"), y1(",y1,"), x2(",x2,"), y2(",y2,")")
+            //DE_DEBUG( "Glyph[",i,"] bmp_rect(", glyph.bmp.toString(), ")" )
+            //DE_DEBUG( "Glyph[",i,"] atlas_rect(", glyph.atlas.rect.toString(), ")" )
+            //DE_DEBUG("Draw Glyph[",i,"] u1(",u1,"), v1(",v1,"), u2(",u2,"), v2(",v2,")" )
+        }
+
+        if ( font.lcdFit )
+        {
+            px += glyph.advance / 2;
+        }
+        else
+        {
+            px += glyph.advance;
+        }
+
+        //if ( font.lcdFit )
+        //{
+        //px += glyph.advance / 3;
+        //}
+    }
+
+    if (quads.getVertexCount() < 1)
+    {
+        return; // Nothing todo
+    }
+
+    quads.upload();
+    quads.setCulling( Culling::disabled() );
+    quads.setDepth( Depth::disabled() );
+    quads.setBlend( Blend::alphaBlend() );
+    quads.setTexture( 0, tex );
+    quads.getMaterial().CloudTransparent = true;
+
+    // Draw background rect
+/*
+    if (dbRGBA_A(bgColor) > 0)
+    {
+        bbox_x1 -= padding;
+        bbox_y1 -= padding;
+        bbox_x2 += padding;
+        bbox_y2 += padding;
+        auto bbox_r = Recti(bbox_x1, bbox_y1, bbox_x2 - bbox_x1, bbox_y2 - bbox_y1);
+        m_screenRenderer->draw2DRect( bbox_r, bgColor );
+    }
+*/
+
+    m_screenRenderer->draw2D( quads );
+/*
+    m_screenRenderer->setMaterial( quads.material );
+    quads.draw();
+
+*/
+    quads.destroy();
+
+    //m_Driver->draw2D( quads );
+    //draw2DTextDebug( x,y,msg,color,align,font);
 }
 
 #endif

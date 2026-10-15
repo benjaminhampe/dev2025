@@ -117,6 +117,7 @@ void UI_Actions::setDebugVisible(bool visible)
     }
 }
 
+/*
 void UI_Actions::draw()
 {
     de::gui::Widget::draw();
@@ -128,6 +129,7 @@ void UI_Actions::draw()
         child->draw();
     }
 }
+*/
 
 void UI_Actions::resize(int X, int Y, int W, int H)
 {

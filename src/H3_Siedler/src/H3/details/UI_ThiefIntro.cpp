@@ -4,7 +4,7 @@
 #include <de/gui/Button.h>
 
 // =====================================================================
-UI_ThiefIntro::UI_ThiefIntro( H3_Game* game, de::gui::Env* env, de::gui::Widget* parent, u32 id, const de::Recti& pos )
+UI_DonateCards::UI_DonateCards( H3_Game* game, de::gui::Env* env, de::gui::Widget* parent, u32 id, const de::Recti& pos )
 // =====================================================================
     : de::gui::Panel(env, parent, id, pos)
     , m_game(game)
@@ -136,16 +136,35 @@ UI_ThiefIntro::UI_ThiefIntro( H3_Game* game, de::gui::Env* env, de::gui::Widget*
                 H3_Player & player = m_game->getPlayer( m_playerId );
                 player.state.bank = m_bankPlayer;
                 m_game->enterThiefPlacement();
+
+
             }
         });
 }
 
-UI_ThiefIntro::~UI_ThiefIntro()
+UI_DonateCards::~UI_DonateCards()
 {
 
 }
 
-void UI_ThiefIntro::updateTexts()
+void UI_DonateCards::startDonation( uint32_t playerId, H3_GuiState oldState )
+{
+    m_playerId = playerId;
+    m_oldState = oldState;
+
+    H3_Player & player = m_game->getPlayer( playerId );
+
+    m_bankThief.reset();
+
+    m_bankPlayer = player.state.bank;
+
+    m_lblPlayerName->setText( player.name );
+    m_lblPlayerIcon->setTexture( m_game->getTex(H3_Tex::Play2, __func__) );
+
+    updateTexts();
+}
+
+void UI_DonateCards::updateTexts()
 {
     m_btnA1->setText( std::to_string(m_bankThief.A) );
     m_btnB1->setText( std::to_string(m_bankThief.B) );
@@ -159,24 +178,12 @@ void UI_ThiefIntro::updateTexts()
     m_btnD2->setText( std::to_string(m_bankPlayer.D) );
     m_btnE2->setText( std::to_string(m_bankPlayer.E) );
 
-    m_cardsToRemove = m_bankPlayer.sum() - m_game->m_cfg.cardLimitNoSteal;
+    m_cardsToRemove = m_bankPlayer.sum()/2; // - m_game->m_cfg.cardLimitNoSteal;
 
-    m_lblTitle->setText( dbStr("Donate ", m_cardsToRemove, " more cards to Thief.") );
+    m_lblTitle->setText( dbStr("Donate ", m_cardsToRemove, " more cards.") );
 }
 
-void UI_ThiefIntro::draw()
-{
-    Panel::draw();
-
-    if (!isVisible()) return;
-
-    for (auto & child : m_children)
-    {
-        child->draw();
-    }
-}
-
-void UI_ThiefIntro::resize(int X, int Y, int W, int H)
+void UI_DonateCards::resize(int X, int Y, int W, int H)
 {
     m_rect = de::Recti(X,Y,W,H);
 
@@ -213,7 +220,7 @@ void UI_ThiefIntro::resize(int X, int Y, int W, int H)
     m_btnAccept->resize(x+50,y,w-150,h1);
 }
 
-void UI_ThiefIntro::resizeLayoutThief( de::Recti pos )
+void UI_DonateCards::resizeLayoutThief( de::Recti pos )
 {
     const float zoom = m_env->getZoom();
     //H3_drawDebugRect(*m_game, pos, 0xFF0000FF, de::Font5x8(fScale,fScale));
@@ -243,7 +250,7 @@ void UI_ThiefIntro::resizeLayoutThief( de::Recti pos )
     if (m_btnE1) m_btnE1->resize(x,y,w,h);
 }
 
-void UI_ThiefIntro::resizeLayoutPlayer( de::Recti pos )
+void UI_DonateCards::resizeLayoutPlayer( de::Recti pos )
 {
     const float zoom = m_env->getZoom();
 
@@ -274,29 +281,30 @@ void UI_ThiefIntro::resizeLayoutPlayer( de::Recti pos )
     if (m_btnE2) m_btnE2->resize(x,y,w,h);
 }
 
-void UI_ThiefIntro::setPlayer( uint32_t playerId )
+
+/*
+void UI_DonateCards::draw()
 {
-    m_playerId = playerId;
-    H3_Player & player = m_game->getPlayer( playerId );
+    Panel::draw();
 
-    m_bankThief.reset();
+    if (!isVisible()) return;
 
-    m_bankPlayer = player.state.bank;
-
-    m_lblPlayerName->setText( player.name );
-    m_lblPlayerIcon->setTexture( m_game->getTex(H3_Tex::Play2, __func__) );
-
-    updateTexts();
+    for (auto & child : m_children)
+    {
+        child->draw();
+    }
 }
+*/
+
 
 // static
 de::gui::Button*
-UI_ThiefIntro::createButton(std::string txt, de::gpu::TexRef ref, de::Recti pos)
+UI_DonateCards::createButton(std::string txt, de::gpu::TexRef ref, de::Recti pos)
 {
     auto btn = new de::gui::Button(txt, m_env, this, 0, pos);
     btn->setRadius( 8 );
-    btn->setFillColor(dbRGB(255,255,255,200),0);
-    btn->setTextColor(dbRGB(255,255,255),1);
+    // btn->setFillColor(dbRGB(255,255,255,200),0);
+    // btn->setTextColor(dbRGB(255,255,255),1);
     btn->setTexture( ref );
     return btn;
 }

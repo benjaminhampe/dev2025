@@ -1074,8 +1074,9 @@ Texture* TexManager::createTexture2D( const std::string& name, int w, int h, voi
     tex->m_name = name;
     tex->m_target = GL_TEXTURE_2D;
     tex->m_unit = -1;
+    tex->m_so = so;
 
-    if (!uploadTexture2D( tex, w, h, pixels, fmt, so ))
+    if (!uploadTexture2D( tex, w, h, pixels, fmt ))
     {
         DE_ERROR("Upload failed, tex(",tex->str(), ")")
     }
@@ -1085,7 +1086,7 @@ Texture* TexManager::createTexture2D( const std::string& name, int w, int h, voi
     return tex;
 }
 
-bool TexManager::uploadTexture2D( Texture* &tex, int w, int h, void const* const pixels, PixelFormat fmt, const SamplerOptions& so )
+bool TexManager::uploadTexture2D( Texture* &tex, int w, int h, void const* const pixels, PixelFormat fmt )
 {
     if (!tex)
     {
@@ -1117,7 +1118,6 @@ GL_VALIDATE
     tex->m_w = w;
     tex->m_h = h;
     tex->m_fmt = fmt;
-    tex->m_so = so;
     tex->m_layer = 0;
 
          if (fmt == PixelFormat::R8)        { tex->set( GL_RED, GL_RED, GL_UNSIGNED_BYTE ); }

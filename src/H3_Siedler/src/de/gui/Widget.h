@@ -34,6 +34,7 @@ public:
         eWF_Pickable = 8,   // 0000 0100
         eWF_Pressed = 16,   // 0000 1000
         eWF_Released = 32,  // 0001 0000
+        eWF_DrawChildren = 64, // 0010 0000
         eWF_FlagMask = 0x1F
     };
 
@@ -91,6 +92,9 @@ public:
 
     void setPickable( bool pickable ) { setFlags( eWF_Pickable, pickable ); }
     bool isPickable() const { return hasFlags( eWF_Pickable ); }
+
+    void setDrawChildren( bool enabled ) { setFlags( eWF_DrawChildren, enabled ); }
+    bool isDrawChildren() const { return hasFlags( eWF_DrawChildren ); }
 
     u32 getFlags() const { return m_flags; }
     void setFlags( u32 flags ) { m_flags = flags; }

@@ -126,7 +126,7 @@ UI_WorldCreator::UI_WorldCreator( H3_Game* game, de::gui::Env* env, de::gui::Wid
     m_btnStart = createButton("Start", texB, r);
 
     m_btnClose->setOnClicked([&] () { m_game->enterStartMenu(); });
-    m_btnStart->setOnClicked([&] () { m_game->enterRound1(); });
+    m_btnStart->setOnClicked([&] () { m_game->enterStartGame(); });
 
     m_body = new UI_World( m_game, env, this, 0, r);
     m_body->setTexture( tex1 );
@@ -313,8 +313,8 @@ UI_WorldCreator::createButton(std::string txt, de::gpu::TexRef ref, de::Recti po
 {
     auto btn = new de::gui::Button(txt, m_env, this, 0, pos);
     btn->setRadius( 8 );
-    btn->setFillColor(dbRGB(255,255,255,200),0);
-    btn->setTextColor(dbRGB(255,255,255),1);
+    // btn->setFillColor(dbRGB(255,255,255,200),0);
+    // btn->setTextColor(dbRGB(255,255,255),dbRGB(255,255,255), 1);
     btn->setTexture( ref );
     return btn;
 }
