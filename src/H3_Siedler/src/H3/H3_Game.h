@@ -4,8 +4,10 @@
 #include <H3/details/H3_Img.h>
 #include <H3/details/H3_Tex.h>
 #include <H3/details/H3_Camera.h>
-#include <H3/details/UI_ActionLogger.h>
-#include <H3/details/UI_Banking.h>
+
+#include <H3/details/UI_MainMenu.h>
+#include <H3/details/UI_Game.h>
+
 #include <H3/renderers/H3_ChipRenderer.h>
 #include <H3/renderers/H3_ObjRenderer.h>
 #include <H3/renderers/H3_DiceRenderer.h>
@@ -18,99 +20,14 @@
     #include <de/audio/AudioEngine.h>
 #endif
 
-class UI_MainMenu;
-class UI_WorldCreator;
-class UI_Actions;
-class UI_DonateCards;
-class UI_WinnerScreen;
+// class UI_MainMenu;
+// class UI_WorldCreator;
+// class UI_Actions;
+// class UI_DonateCards;
+// class UI_WinnerScreen;
 //class H3_UI_Banking m_uiBanking;
 //class H3_UI_Logger m_uiActionLogger;
 //class H3_Marquee m_uiMarquee;
-
-// ===========================================================================
-struct H3_State
-// ===========================================================================
-{
-    enum eState
-    {
-        StartMenu = 0,  // Show Wallpaper and MainMenu
-        NewGame,        // Show WorldCreator
-        Idle,           // InGame Idle round1/2/3/4+
-        Dice,
-        DonateCards,
-        PlaceThief,
-        StealRandomCard,
-        UseKnightCard,
-        PlaceRoad,
-        PlaceFarm,
-        PlaceCity,
-        Banking,
-        Winner,
-        EStateCount
-    };
-
-    static std::string
-    getString( eState state )
-    {
-        switch( state )
-        {
-            case StartMenu: return "StartMenu";
-            case NewGame: return "NewGame";
-            case Idle: return "Idle";
-            case Dice: return "Dice";
-            case DonateCards: return "DonateCards";
-            case PlaceThief: return "PlaceThief";
-            case StealRandomCard: return "StealRandomCard";
-            case UseKnightCard: return "UseKnightCard";
-            //case UseMonopolyCard: return "UseMonopolyCard";
-            //case UseInventionCard: return "UseInventionCard";
-            //case UseVictoryCard: return "UseVictoryCard";
-            case PlaceRoad: return "PlaceRoad";
-            case PlaceFarm: return "PlaceFarm";
-            case PlaceCity: return "PlaceCity";
-            case Banking: return "Banking";
-            case Winner: return "Winner";
-            default: return "Unknown";
-        }
-    }
-
-    eState m_state;
-
-    H3_State() : m_state(Idle) {}
-    H3_State(eState state) : m_state(state) {}
-
-    operator eState () const { return m_state; }
-
-    std::string str() const { return getString( m_state ); }
-
-    H3_State& operator= (eState state)
-    {
-        m_state = state;
-        return *this;
-    }
-};
-
-// ===========================================================================
-struct UI_MarqueeItem
-// ===========================================================================
-{
-    std::wstring msg;
-    uint32_t color = 0xFFFFFFFF;
-    int timeDurationInMs = 0; // 0 = display forever until clear()
-    std::optional<double> timeStartInSec = 0;
-    //bool hasStarted = false;
-    de::Font font = de::Font("Garton", 128);
-};
-
-// ===========================================================================
-struct UI_Marquee
-// ===========================================================================
-{
-    de::Font fontH1 = de::Font("Postamt", 48);
-    de::Font fontH3 = de::Font("Postamt", 24);
-    std::deque< UI_MarqueeItem > h1;
-    std::deque< UI_MarqueeItem > h3;
-};
 
 // ===========================================================================
 struct H3_Game
@@ -132,22 +49,15 @@ struct H3_Game
 
     void setPreset(const H3_Cfg& preset);
     void exitProgram();
-    void exitGame();
     void newGame();
     void restartGame();
+    void toggleMainMenu();
 
-    void enterStartMenu();
-
+    void exitGame();
     void enterStartGame(); // Actually starts a new Game
+
     void enterIdle();
     void doEndTurn();
-
-    // void enterRound1();
-    // void enterRound2();
-    // void enterRound3();
-    // void enterRoundN();
-
-
     void enterDonateCards();     // Donate cards to robber
     void enterThiefPlacement();     // Place robber on new tile
     void leaveThiefPlacement( H3_Tile& tile ); // Place robber on new tile
@@ -206,7 +116,6 @@ struct H3_Game
     void drawHoveredCorner();
     void drawHoveredTile();
 
-    void drawMarquee();
     void clearMarquee();
     void marqueeH1( std::wstring msg, int durationMs, uint32_t color = 0xFFFFFFFF );
     void marqueeH3( std::wstring msg, int durationMs, uint32_t color = 0xFFFFFFFF );
@@ -253,15 +162,17 @@ struct H3_Game
     glm::vec3 m_playerSize = glm::vec3( 20, 60, 20 );
     glm::vec3 m_thiefSize = glm::vec3( 20, 60, 20 );
 
-    //de::audio::AudioEngine m_audioEngine;
-    H3_Cfg m_cfg;
-    H3_GuiState m_guiState;
-
     // de::IrrlichtDevice* m_device;
     de::Window* m_window;
     de::gpu::VideoDriver* m_driver;
-    de::gpu::Camera m_camera;
+    //de::audio::AudioEngine m_audioEngine;
     de::gui::Env m_guienv;
+
+    H3_Cfg m_cfg;
+    H3_State m_state;
+    int m_round;    // current round index
+    int m_turn;     // current round index
+    int m_player;   // current Player index
 
     bool m_bPaintEvents = false;
     bool m_bShouldRun = true;
@@ -290,16 +201,8 @@ struct H3_Game
     H3_Img m_img;
     H3_Tex m_tex;
 
-    UI_MainMenu* m_uiMainmenu;
-    de::gui::Widget* m_uiHelpWindow;
-    UI_WorldCreator* m_uiWorldCreator;
-    UI_WinnerScreen* m_uiWinnerScreen;
-    UI_Actions* m_uiActions;
-    UI_DonateCards* m_uiDonateCards;
-
-    UI_Banking m_uiBanking;
-    UI_ActionLogger m_uiActionLogger;
-    UI_Marquee m_uiMarquee;
+    UI_MainMenu* m_uiMenu;
+    UI_Game* m_uiGame;
 
     // Topology
     std::vector<H3_Tile>    m_tiles;
@@ -315,10 +218,6 @@ struct H3_Game
     std::vector< H3_Farm >  m_farms;
     std::vector< H3_City >  m_citys;
 
-    H3_State m_state = H3_State::StartMenu;
-    int m_round = 0;    // current round index
-    int m_turn = 0;     // current round index
-    int m_player = 0;   // current Player index
     H3_Dice m_dice;     // current dice
 
 

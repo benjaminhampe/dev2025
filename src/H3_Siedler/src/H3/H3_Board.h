@@ -34,22 +34,86 @@ struct H3_City;
 struct H3_RankedPlayer;
 struct H3_Player;
 struct LineBoxAnim;
-struct H3_UIElem;
-struct H3_UI;
+// struct H3_UIElem;
+// struct H3_UI;
 struct H3_Action;
 struct H3_ActionLog;
 struct H3_Game;
 
 // =====================================================================
-struct H3_GuiState
+struct H3_GuiState // Actually just H3_UIGameState
 // =====================================================================
 {
-    bool bMainMenu = false;
-    bool bHelpWindow = false;
+    // bool bMainMenu = false;
+    // bool bHelpWindow = false;
     bool bWorldCreator = false;
+    bool bMarquee = false;
     bool bActions = false;
     bool bDonateCards = false;
     bool bWinnerScreen = false;
+};
+
+// ===========================================================================
+struct H3_State
+// ===========================================================================
+{
+    enum eState
+    {
+        // StartMenu = 0,  // Show Wallpaper and MainMenu
+        // NewGame,        // Show WorldCreator
+        Idle = 0,           // InGame Idle round1/2/3/4+
+        Dice,
+        DonateCards,
+        PlaceThief,
+        StealRandomCard,
+        UseKnightCard,
+        PlaceRoad,
+        PlaceFarm,
+        PlaceCity,
+        Banking,
+        Winner,
+        EStateCount
+    };
+
+    static std::string
+    getString( eState state )
+    {
+        switch( state )
+        {
+            // case StartMenu: return "StartMenu";
+            // case NewGame: return "NewGame";
+            case Idle: return "Idle";
+            case Dice: return "Dice";
+            case DonateCards: return "DonateCards";
+            case PlaceThief: return "PlaceThief";
+            case StealRandomCard: return "StealRandomCard";
+            case UseKnightCard: return "UseKnightCard";
+            //case UseMonopolyCard: return "UseMonopolyCard";
+            //case UseInventionCard: return "UseInventionCard";
+            //case UseVictoryCard: return "UseVictoryCard";
+            case PlaceRoad: return "PlaceRoad";
+            case PlaceFarm: return "PlaceFarm";
+            case PlaceCity: return "PlaceCity";
+            case Banking: return "Banking";
+            case Winner: return "Winner";
+            default: return "Unknown";
+        }
+    }
+
+    eState m_state;
+
+    H3_State() : m_state(Idle) {}
+    H3_State(eState state) : m_state(state) {}
+
+    operator eState () const { return m_state; }
+
+    std::string str() const { return getString( m_state ); }
+
+    H3_State& operator= (eState state)
+    {
+        m_state = state;
+        return *this;
+    }
 };
 
 // =====================================================================
@@ -343,7 +407,6 @@ struct H3_Bank
     }
 
     void clear() { A = B = C = D = E = 0; }
-    void reset() { A = B = C = D = E = 0; }
     int sum() const { return A + B + C + D + E; }
 
     static H3_Bank costOfRoad() { H3_Bank b; b.A = 1; b.B = 1; return b; }
@@ -477,8 +540,7 @@ struct H3_Dice
     int b;
 
     H3_Dice() : a(0), b(0) {}
-    void reset() { a = 0; b = 0; }
-    void dice() { a = rand()%6 + 1; b = rand()%6 + 1; }
+    void clear() { a = 0; b = 0; }
     int sum() const { return a + b; }
     int max() const { return std::max( a, b ); }
     int min() const { return std::min( a, b ); }
@@ -830,14 +892,18 @@ struct H3_Player
     int ai_handicap; // Determines AI player stupidity
     int ai_cheating; // Determines AI player advantages
 
-    int didDice = 0; // Reset every round, indicates if player did dice every round, determines if other actions are doable now
-    int didBuyRoad = 0;
-    int didBuyFarm = 0;
-    int didBuyCity = 0;
-    int didBuyCard = 0;
-
     int rank_start; // Round 1
     int rank_dice;  // Round 2,3
+
+    bool hasPort3v1() const { return state.flags & eFlagPort3v1; }
+    bool hasPortA() const { return state.flags & eFlagPortA; }
+    bool hasPortB() const { return state.flags & eFlagPortB; }
+    bool hasPortC() const { return state.flags & eFlagPortC; }
+    bool hasPortD() const { return state.flags & eFlagPortD; }
+    bool hasPortE() const { return state.flags & eFlagPortE; }
+
+    bool hasBonusArmy() const { return state.flags & eFlagBonusArmy; }
+    bool hasBonusRoad() const { return state.flags & eFlagBonusRoad; }
 
     enum eFlags : u32
     {
@@ -852,14 +918,24 @@ struct H3_Player
         eFlagBonusRoad  = 1 << 8,
     };
 
-    // State
     struct State
     {
         u32 flags;
-        H3_Dice dice;
         H3_Bank bank;
         u32 victoryPoints;
         int rank;
+
+        H3_Dice dice;
+        std::vector< u32 > newRoads;
+        std::vector< u32 > newFarms;
+        std::vector< u32 > newCitys;
+        std::vector< u32 > newCards;
+        std::vector< u32 > newPointCards;  // Bought in this round, not revealed = not counted in victoryPoints!
+        std::vector< u32 > newKnightCards; // Bought, not revealed.
+        std::vector< u32 > newInventCards;     // Bought, not revealed.
+        std::vector< u32 > newMonopolCards;    // Bought, not revealed.
+        std::vector< u32 > newBankings;
+        std::vector< u32 > newTrades;
 
         std::vector< u32 > tiles;       // tile-ids
         std::vector< u32 > corners;     // corner-ids
@@ -868,24 +944,48 @@ struct H3_Player
         std::vector< u32 > farms;       // farm-ids
         std::vector< u32 > citys;       // city-ids
         std::vector< u32 > ships;       // ship-ids
+        std::vector< u32 > points;      // Revealed = now counts into victoryPoints!
+        std::vector< u32 > knights;     // Revealed = now counts into bonus!
+        std::vector< u32 > invents;     // Revealed (aka not a card anymore)
+        std::vector< u32 > monopols;    // Revealed (aka not a card anymore)
 
-        std::vector< u32 > newPointCards;  // Bought, not revealed.
-        std::vector< u32 > newKnightCards; // Bought, not revealed.
-        std::vector< u32 > newInventCards; // Bought, not revealed.
-        std::vector< u32 > newMonoplCards; // Bought, not revealed.
+        std::vector< u32 > pointCards;      // Bought in previous rounds, not revealed = not counted in victoryPoints!
+        std::vector< u32 > knightCards;     // Bought, not revealed.
+        std::vector< u32 > inventCards;     // Bought, not revealed.
+        std::vector< u32 > monopolCards;    // Bought, not revealed.
 
-        std::vector< u32 > oldPointCards;  // Used/revealed.
-        std::vector< u32 > oldKnightCards; // Used/revealed.
-        std::vector< u32 > oldInventCards; // Used/revealed.
-        std::vector< u32 > oldMonoplCards; // Used/revealed.
-
-        void reset()
+        void endTurn()
         {
+            dice.clear();       // Needed for every round.
+            newRoads.clear();
+            newFarms.clear();
+            newCitys.clear();
+            newCards.clear();       // New resource cards
+            newBankings.clear();
+            newTrades.clear();
+
+            // Move new event cards to stash of unrevealed event cards.
+            pointCards.insert(pointCards.end(), newPointCards.begin(), newPointCards.end());
+            knightCards.insert(knightCards.end(), newKnightCards.begin(), newKnightCards.end());
+            inventCards.insert(inventCards.end(), newInventCards.begin(), newInventCards.end());
+            monopolCards.insert(monopolCards.end(), newMonopolCards.begin(), newMonopolCards.end());
+
+            // Clear stash of unrevealed event cards.
+            newPointCards.clear();
+            newKnightCards.clear();
+            newInventCards.clear();
+            newMonopolCards.clear();
+        }
+
+        void clear()
+        {
+            endTurn();
+
             flags = 0;
-            rank = 0;
-            victoryPoints = 0;
             bank.clear();
-            dice.reset();
+            rank = 0;
+            victoryPoints = 0; // = 1 per farm + 2 per city + 1 per pointCard
+
             tiles.clear();
             edges.clear();
             corners.clear();
@@ -893,51 +993,53 @@ struct H3_Player
             farms.clear();
             citys.clear();
             ships.clear();
-            newPointCards.clear();
-            newKnightCards.clear();
-            newInventCards.clear();
-            newMonoplCards.clear();
-            oldPointCards.clear();
-            oldKnightCards.clear();
-            oldInventCards.clear();
-            oldMonoplCards.clear();
+            pointCards.clear();
+            knightCards.clear();
+            inventCards.clear();
+            monopolCards.clear();
         }
     };
 
-    // State
+    // Current state
     State state;
+
 
     // Statistics
     std::vector< State > history;
 
     void endTurn()
     {
-        didDice = 0;    // Needed for every round.
-        didBuyRoad = 0; // Needed for AI + round 2+3.
-        didBuyFarm = 0; // Needed for AI + round 2+3.
-        didBuyCity = 0; // Needed for AI
-        didBuyCard = 0; // Needed for AI
+        history.emplace_back(state);
+        state.endTurn();
     }
 
-    void reset()
+    void startGame()
     {
-        endTurn();
+        history.clear();
+        state.clear();
         rank_start = 0;
         rank_dice = 0;
-        state.reset();
-        history.clear();
     }
 
-    bool hasPort3v1() const { return state.flags & eFlagPort3v1; }
-    bool hasPortA() const { return state.flags & eFlagPortA; }
-    bool hasPortB() const { return state.flags & eFlagPortB; }
-    bool hasPortC() const { return state.flags & eFlagPortC; }
-    bool hasPortD() const { return state.flags & eFlagPortD; }
-    bool hasPortE() const { return state.flags & eFlagPortE; }
+    int unrevealedPointCards() const
+    {
+        return state.newPointCards.size() + state.pointCards.size();
+    }
 
-    bool hasBonusArmy() const { return state.flags & eFlagBonusArmy; }
-    bool hasBonusRoad() const { return state.flags & eFlagBonusRoad; }
+    int unrevealedKnightCards() const
+    {
+        return state.newKnightCards.size() + state.knightCards.size();
+    }
 
+    int unrevealedInventCards() const
+    {
+        return state.newInventCards.size() + state.inventCards.size();
+    }
+
+    int unrevealedMonopolCards() const
+    {
+        return state.newMonopolCards.size() + state.monopolCards.size();
+    }
 };
 
 // =====================================================================

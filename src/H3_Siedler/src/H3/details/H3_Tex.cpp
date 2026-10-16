@@ -27,54 +27,10 @@ H3_Tex::add( H3_Game & game, eID texId, H3_Img::eID imgId,
     m_refs[ texId ] = de::gpu::TexRef(tex);
 }
 
-
-void
-H3_Tex::initLoadScreen( H3_Game & game )
-{
-    DE_OK("")
-    m_driver = game.getDriver();
-
-    if (!m_driver)
-    {
-        throw std::runtime_error("No driver in H3_Tex::initLoadScreen()");
-    }
-    // gfx/wallpaper
-    {
-        de::gpu::SamplerOptions so;
-        so.setAF( 1.0f );
-        so.setMin( de::gpu::SamplerOptions::Minify::Linear );
-        so.setMag( de::gpu::SamplerOptions::Magnify::Linear );
-        so.setWrapR( de::gpu::SamplerOptions::Wrap::ClampToEdge );
-        so.setWrapS( de::gpu::SamplerOptions::Wrap::ClampToEdge );
-        so.setWrapT( de::gpu::SamplerOptions::Wrap::ClampToEdge );
-        add( game, Satan, H3_Img::Satan, so);
-    }
-
-    // DE_OK("")
-
-    // DE_OK("m_refs.size() = ",m_refs.size())
-    // DE_OK("m_textures.size() = ",m_textures.size())
-    // for (size_t i = 0; i < m_textures.size(); ++i)
-    // {
-    //     DE_OK("m_textures[",i,"] = ",m_textures[i]->str())
-    // }
-}
-
 void
 H3_Tex::init( H3_Game & game )
 {
     m_driver = game.getDriver();
-
-    //std::string mediaDir = "media/H3/gfx/";
-
-    // de::ImageLoadOptions options;
-    // options.throwOnFail = true;
-
-    // de::ImageLoadOptions optRGB = options;
-    // optRGB.outputFormat = de::PixelFormat::R8G8B8;
-
-    // de::ImageLoadOptions optWood = options;
-    // //optWood.m_Rotate90 = true;
 
     de::gpu::SamplerOptions so;
     so.setAF( 1.0f );
@@ -83,6 +39,11 @@ H3_Tex::init( H3_Game & game )
     so.setWrapR( de::gpu::SamplerOptions::Wrap::ClampToEdge );
     so.setWrapS( de::gpu::SamplerOptions::Wrap::ClampToEdge );
     so.setWrapT( de::gpu::SamplerOptions::Wrap::ClampToEdge );
+
+    // gfx/wallpaper
+    {
+        add( game, Satan, H3_Img::Satan, so);
+    }
 
     // gfx/base
     {

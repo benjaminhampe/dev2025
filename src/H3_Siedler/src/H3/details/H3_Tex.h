@@ -47,12 +47,13 @@ struct H3_Tex
         PlayU, Play1, Play2, Play3, Play4, Play5, Play6, Play7,
         Play8, Play9, PlayA, PlayB, PlayC, PlayD, PlayE, PlayF,
 
+        NicePointCard, NiceKnightCard, NiceInventCard, NiceMonopolCard,
+
         Count
     };
 
     H3_Tex();
     void init( H3_Game & game );
-    void initLoadScreen( H3_Game & game );
 
     void add( H3_Game & game, eID texId, H3_Img::eID imgId, const de::gpu::SamplerOptions& so );
 

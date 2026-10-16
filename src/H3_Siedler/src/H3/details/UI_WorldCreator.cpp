@@ -125,8 +125,14 @@ UI_WorldCreator::UI_WorldCreator( H3_Game* game, de::gui::Env* env, de::gui::Wid
     m_btnClose = createButton("Close", texB, r);
     m_btnStart = createButton("Start", texB, r);
 
-    m_btnClose->setOnClicked([&] () { m_game->enterStartMenu(); });
-    m_btnStart->setOnClicked([&] () { m_game->enterStartGame(); });
+    m_btnClose->setOnClicked([&] ()
+    {
+        m_game->exitGame();
+    });
+    m_btnStart->setOnClicked([&] ()
+    {
+        m_game->enterStartGame();
+    });
 
     m_body = new UI_World( m_game, env, this, 0, r);
     m_body->setTexture( tex1 );

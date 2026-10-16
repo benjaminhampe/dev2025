@@ -2237,9 +2237,15 @@ int32_t file64_open(const std::wstring& uri, eFileMode fileMode, int32_t permiss
 
     // Add LongPath Prefix, verhindert MAX_PATH Fehler in C-Runtime
     std::wstring win32Path = dbMakeNT(uri);
-    if (win32Path.compare(0,4,L"\\\\?\\") != 0)
+
+    // Only add prefix for absolute paths:
+    if (win32Path.size() >= 3)
     {
-        win32Path = L"\\\\?\\" + win32Path;
+        if (win32Path[1] == L':' &&
+            win32Path[2] == L'\\') // Absolute path
+        {
+            win32Path = L"\\\\?\\" + win32Path; // Long NT path prefix to allow > 260 char paths.
+        }
     }
 
     int fd = _wopen(win32Path.c_str(), nativeMode, permission);
@@ -2384,14 +2390,16 @@ File::open(const std::wstring& utf16_uri, eFileMode fileMode, int permission)
         return true;
     }
 
-    m_fd = file64_open( utf16_uri, fileMode, permission );
+    const auto& uri = utf16_uri; // de::FileSystem::makeAbsolute(utf16_uri);
+
+    m_fd = file64_open( uri, fileMode, permission );
     if ( m_fd < 0 )
     {
-        DE_ERROR("Cannot open ", de_mbstr(utf16_uri))
+        DE_ERROR("Cannot open ", de_mbstr(uri))
         return false;
     }
 
-    m_uri = de_mbstr(utf16_uri);
+    m_uri = de_mbstr(uri);
     return true;
 }
 
@@ -2404,14 +2412,16 @@ File::open(const std::string& utf8_uri, eFileMode fileMode, int permission)
         return true;
     }
 
-    m_fd = file64_open( utf8_uri, fileMode, permission );
+    const auto& uri = utf8_uri; // de::FileSystem::makeAbsolute(utf8_uri);
+
+    m_fd = file64_open( uri, fileMode, permission );
     if ( m_fd < 0 )
     {
-        DE_ERROR("Cannot open ", utf8_uri)
+        DE_ERROR("Cannot open ", uri)
         return false;
     }
 
-    m_uri = utf8_uri;
+    m_uri = uri;
     return true;
 }
 
@@ -3171,7 +3181,8 @@ FileSystem::makeAbsolute( const std::string& uri, const std::string& baseDir )
     }
     catch ( std::exception & e )
     {
-        // DE_DEBUG("exception what(",e.what(),"), uri = ",uri )
+        //DE_DEBUG("exception what(",e.what(),"), uri = ",uri )
+        return uri;
     }
 
     return o;
@@ -3188,7 +3199,7 @@ FileSystem::makeAbsolute( const std::wstring& uri, const std::wstring& baseDir )
     }
     catch ( std::exception & e )
     {
-        //DE_DEBUG("exception what(",e.what(),"), uri = ",uri )
+        //DE_DEBUG("exception what(",e.what(),"), uri = ",de_mbstr(uri) )
         return uri;
     }
 }

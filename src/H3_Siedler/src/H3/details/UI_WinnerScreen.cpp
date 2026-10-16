@@ -15,7 +15,10 @@ UI_WinnerScreen::UI_WinnerScreen( H3_Game* game, de::gui::Env* env, de::gui::Wid
     setFillColor( 0xffffffff );
 
     m_btnClose = createButton("Return to Menu", texClose, de::Recti(0,0,0,0) );
-    m_btnClose->setOnClicked( [&](){ m_game->enterStartMenu(); } );
+    m_btnClose->setOnClicked( [&]()
+    {
+        m_game->exitGame();
+    } );
 
     setDrawChildren(false);
 }

@@ -3,6 +3,7 @@
 #include <H3/details/H3_Topology.h>
 #include <H3/details/H3_UI.h>
 
+#if 0
 void
 UI_resetLog( H3_Game & game )
 {
@@ -720,3 +721,4 @@ UI_drawInfoPanelEdge( H3_Game & game, de::Recti pos, const u32 edgeId )
 
 */
 
+#endif

@@ -78,7 +78,7 @@ H3_Img::add( eID id, const std::string& uri, const de::ImageLoadOptions& opt )
 }
 
 void
-H3_Img::initLoadScreen()
+H3_Img::init()
 {
     std::string mediaDir = "media/H3/";
 
@@ -93,18 +93,6 @@ H3_Img::initLoadScreen()
         std::string baseDir = mediaDir + "gfx/wallpaper/";
         add(Satan, baseDir + "satan.webp", opt);
     }
-}
-
-void
-H3_Img::init()
-{
-    std::string mediaDir = "media/H3/";
-
-    de::ImageLoadOptions opt;
-    opt.throwOnFail = true;
-
-    de::ImageLoadOptions optRGB = opt;
-    optRGB.outputFormat = de::PixelFormat::R8G8B8;
 
     // gfx/skybox/Default (ClubTropicana)
     {
@@ -273,6 +261,15 @@ H3_Img::init()
         add(StatVic, baseDir + "stat_point.png", opt);
         add(StatRoad, baseDir + "stat_road.png", opt);
     }
+
+    // gfx/event/
+    {
+        std::string baseDir = mediaDir + "gfx/event/";    // 800+KB
+        add(NicePointCard, baseDir + "Nice_pointCard.webp", opt);
+        add(NiceKnightCard, baseDir + "Nice_knightCard.webp", opt);
+        add(NiceInventCard, baseDir + "Nice_inventCard.webp", opt);
+        add(NiceMonopolCard, baseDir + "Nice_monopolCard.webp", opt);
+    }
 }
 
 void H3_Img::save(const std::string& baseDir)
@@ -340,10 +337,10 @@ void H3_Img::save(const std::string& baseDir)
         auto origName = de::FileSystem::fileName(item.img->uri());
         auto origBase = de::FileSystem::fileBase(item.img->uri());
         auto origExt = de::FileSystem::fileSuffix(item.img->uri());
-        bool bJPG = (origExt == "jpg") || (origExt == "jpeg");
+        bool bHighlyCompressed = (origExt == "jpg") || (origExt == "jpeg") || (origExt == "webp");
 
-        // Store everything but jpg as webp, because jpg is likely much smaller than webp.
-        if (bJPG)
+        // Compress everything as webp, except webp and jpg.
+        if (bHighlyCompressed)
         {
             item.saveName = dbStr("img_",strId(item.id),"_",origBase,".",origExt);
             item.saveUri = dbStr(previewDir,"/",item.saveName);
@@ -351,6 +348,7 @@ void H3_Img::save(const std::string& baseDir)
         }
         else
         {
+
             item.saveName = dbStr("img_",strId(item.id),"_",origBase,".webp");
             item.saveUri = dbStr(previewDir,"/",item.saveName);
             dbSaveImage(*item.img, item.saveUri);
@@ -362,7 +360,7 @@ void H3_Img::save(const std::string& baseDir)
         item.binSize = bv.size();
 
         // Load convert binary to C++ header file string
-        if (bJPG)
+        if (bHighlyCompressed)
         {
             item.binName = dbStr("img_",strId(item.id),"_",origBase,"_",origExt);
         }
@@ -519,16 +517,14 @@ void H3_Img::save(const std::string& baseDir)
 #include "rc_img/img_102_peter_webp.h"	// 4.31055 KB
 #include "rc_img/img_103_roosevelt_webp.h"	// 4.35938 KB
 #include "rc_img/img_104_shihhuangti_webp.h"	// 4.45703 KB
-
-void H3_Img::loadLoadScreen()
-{
-    DE_OK("")
-    addFromMemory((eID)1,img_001_satan_webp,294404);
-    DE_OK("")
-}
+#include "rc_img/img_105_Nice_pointCard_webp.h"	// 344.326 KB
+#include "rc_img/img_106_Nice_knightCard_webp.h"	// 164.613 KB
+#include "rc_img/img_107_Nice_inventCard_webp.h"	// 174.686 KB
+#include "rc_img/img_108_Nice_monopolCard_webp.h"	// 145.17 KB
 
 void H3_Img::load()
 {
+    addFromMemory((eID)1,img_001_satan_webp,294404);
     addFromMemory((eID)2,img_002_nx_webp,88026);
     addFromMemory((eID)3,img_003_px_webp,63344);
     addFromMemory((eID)4,img_004_ny_webp,23136);
@@ -632,4 +628,8 @@ void H3_Img::load()
     addFromMemory((eID)102,img_102_peter_webp,4414);
     addFromMemory((eID)103,img_103_roosevelt_webp,4464);
     addFromMemory((eID)104,img_104_shihhuangti_webp,4564);
+    addFromMemory((eID)105,img_105_Nice_pointCard_webp,352590);
+    addFromMemory((eID)106,img_106_Nice_knightCard_webp,168564);
+    addFromMemory((eID)107,img_107_Nice_inventCard_webp,178878);
+    addFromMemory((eID)108,img_108_Nice_monopolCard_webp,148654);
 }

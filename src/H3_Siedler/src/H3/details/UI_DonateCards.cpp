@@ -1,4 +1,4 @@
-#include "UI_ThiefIntro.h"
+#include "UI_DonateCards.h"
 #include <H3/H3_Game.h>
 #include <de/gui/Label.h>
 #include <de/gui/Button.h>
@@ -135,6 +135,11 @@ UI_DonateCards::UI_DonateCards( H3_Game* game, de::gui::Env* env, de::gui::Widge
                 setVisible(false);
                 H3_Player & player = m_game->getPlayer( m_playerId );
                 player.state.bank = m_bankPlayer;
+
+                // Restore old Game GUI state.
+                m_game->m_uiGame->popState();
+
+                // Enter new state.
                 m_game->enterThiefPlacement();
 
 
@@ -154,7 +159,7 @@ void UI_DonateCards::startDonation( uint32_t playerId, H3_GuiState oldState )
 
     H3_Player & player = m_game->getPlayer( playerId );
 
-    m_bankThief.reset();
+    m_bankThief.clear();
 
     m_bankPlayer = player.state.bank;
 

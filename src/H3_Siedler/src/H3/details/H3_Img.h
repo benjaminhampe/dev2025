@@ -49,6 +49,8 @@ struct H3_Img
         PlayU, Play1, Play2, Play3, Play4, Play5, Play6, Play7,
         Play8, Play9, PlayA, PlayB, PlayC, PlayD, PlayE, PlayF,
 
+        NicePointCard, NiceKnightCard, NiceInventCard, NiceMonopolCard,
+
         Count
     };
 
@@ -56,7 +58,9 @@ struct H3_Img
     ~H3_Img();
 
     void init();
-    void initLoadScreen();
+    void load();
+    void save(const std::string& baseDir);
+    void clear();
 
     void add( eID id, const std::string& uri, const de::ImageLoadOptions& opt );
 
@@ -64,12 +68,9 @@ struct H3_Img
 
     const de::Image* get( const eID id ) const;
 
-    void clear();
 
-    void save(const std::string& baseDir);
 
-    void load();
-    void loadLoadScreen();
+
 
     std::unordered_map<eID, de::Image*> m_cache;
 };

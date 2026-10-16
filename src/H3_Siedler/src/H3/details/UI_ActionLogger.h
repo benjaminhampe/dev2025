@@ -34,6 +34,40 @@ struct UI_ActionLogger
     std::vector< UI_Action > history;
 };
 
+#if 1 // Dummies
+
+inline void UI_resetLog( H3_Game & game ) {}
+inline void UI_logCancel( H3_Game & game ) {}
+inline void UI_logEndTurn( H3_Game & game ) {}
+inline void UI_logDice( H3_Game & game ) {}
+inline void UI_logBank( H3_Game & game, H3_Bank in, H3_Bank out ) {}
+inline void UI_logBuyRoad( H3_Game & game, int edgeId ) {}
+inline void UI_logBuyFarm( H3_Game & game, int cornerId ) {}
+inline void UI_logBuyCity( H3_Game & game, int cornerId ) {}
+inline void UI_logBuyCard( H3_Game & game, int cardType ) {}
+
+inline void UI_drawLogEndTurn( H3_Game & game, const UI_Action& act, int x, int y ) {}
+inline void UI_drawLogCancel( H3_Game & game, const UI_Action& act, int x, int y ) {}
+inline void UI_drawLogDice( H3_Game & game, const UI_Action& act, int x, int y ) {}
+inline void UI_drawLogBank( H3_Game & game, const UI_Action& act, int x, int y ) {}
+inline void UI_drawLogBuyCard( H3_Game & game, const UI_Action& act, int x, int y ) {}
+inline void UI_drawLogBuyRoad( H3_Game & game, const UI_Action& act, int x, int y ) {}
+inline void UI_drawLogBuyFarm( H3_Game & game, const UI_Action& act, int x, int y ) {}
+inline void UI_drawLogBuyCity( H3_Game & game, const UI_Action& act, int x, int y ) {}
+inline void UI_drawLog( H3_Game & game ) {}
+
+
+
+#else
+
+
+
+
+
+
+
+
+
 void UI_resetLog( H3_Game & game );
 void UI_logCancel( H3_Game & game );
 void UI_logEndTurn( H3_Game & game );
@@ -53,3 +87,5 @@ void UI_drawLogBuyRoad( H3_Game & game, const UI_Action& act, int x, int y );
 void UI_drawLogBuyFarm( H3_Game & game, const UI_Action& act, int x, int y );
 void UI_drawLogBuyCity( H3_Game & game, const UI_Action& act, int x, int y );
 void UI_drawLog( H3_Game & game );
+
+#endif

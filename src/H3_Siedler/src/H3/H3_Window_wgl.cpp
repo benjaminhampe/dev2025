@@ -1,9 +1,6 @@
 #include "H3_Window_wgl.h"
-#include "H3/details/H3_Topology.h"
-#include "H3/details/UI_MainMenu.h"
-#include "H3/details/UI_Actions.h"
-#include "H3/details/UI_ThiefIntro.h"
 #include "H3_Game.h"
+#include "H3/details/H3_Topology.h"
 
 H3_Window::H3_Window(H3_Game& game)
     : de::Window_WGL()
@@ -53,25 +50,21 @@ void H3_Window::keyPressEvent( const de::KeyPressEvent& event )
     // Toggle visibility of MainMenu:
     if (key == de::KEY_ESCAPE)
     {
-        if (m_game.m_uiMainmenu)
-        {
-            bool bVisible = m_game.m_uiMainmenu->isVisible();
-            m_game.m_uiMainmenu->setVisible( !bVisible );
-        }
+        m_game.toggleMainMenu();
     }
 
     if (key == de::KEY_1)
     {
         static bool bDebugActions = false;
         bDebugActions = !bDebugActions;
-        m_game.m_uiActions->setDebugVisible(bDebugActions);
+        m_game.m_uiGame->m_actions->setDebugVisible(bDebugActions);
     }
 
     if (key == de::KEY_2)
     {
         static bool bDebugDonate = false;
         bDebugDonate = !bDebugDonate;
-        m_game.m_uiDonateCards->setVisible(bDebugDonate);
+        m_game.m_uiGame->m_donateCards->setVisible(bDebugDonate);
     }
 
     // F11 - Toggle window resizable

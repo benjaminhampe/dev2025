@@ -216,7 +216,7 @@ void UI_Actions::updateVisibility()
     // Round - 1
     else if ( m_game->m_round == 1 )
     {
-        if ( player.didDice )
+        if ( player.state.dice.sum() )
         {
             m_btnEndTurn->setVisible(true);
         }
@@ -228,25 +228,41 @@ void UI_Actions::updateVisibility()
     // Round - 2
     else if ( m_game->m_round == 2 )
     {
-        if ( player.didBuyFarm )
+        if ( player.state.newFarms.empty() )
         {
-            if ( player.didBuyRoad )
-            {
-                m_btnEndTurn->setVisible(true);
-            }
-            else
-            {
-                m_btnBuyRoad->setVisible(true);
-            }
+            m_btnBuyFarm->setVisible(true);
         }
         else
         {
-            m_btnBuyFarm->setVisible(true);
+            if ( player.state.newRoads.empty() )
+            {
+                m_btnBuyRoad->setVisible(true);
+            }
+            else
+            {
+                m_btnEndTurn->setVisible(true);
+            }
         }
     }
     // Round - 3
     else if ( m_game->m_round == 3 )
     {
+        if ( player.state.newFarms.empty() )
+        {
+            m_btnBuyFarm->setVisible(true);
+        }
+        else
+        {
+            if ( player.state.newRoads.empty() )
+            {
+                m_btnBuyRoad->setVisible(true);
+            }
+            else
+            {
+                m_btnEndTurn->setVisible(true);
+            }
+        }
+        /*
         if ( !player.didBuyRoad )
         {
             m_btnBuyRoad->setVisible(true);
@@ -259,11 +275,12 @@ void UI_Actions::updateVisibility()
         {
             m_btnEndTurn->setVisible(true);
         }
+        */
     }
     // Round - N
     else
     {
-        if ( player.didDice )
+        if ( player.state.dice.sum() )
         {
             m_btnEndTurn->setVisible(true);
 
@@ -271,21 +288,23 @@ void UI_Actions::updateVisibility()
             {
                 m_btnBuyRoad->setVisible(true);
             }
-
             if ( player.state.bank.canBuyFarm() )
             {
                 m_btnBuyFarm->setVisible(true);
             }
-
             if ( player.state.bank.canBuyCity() )
             {
                 m_btnBuyCity->setVisible(true);
             }
-
             if ( player.state.bank.canBuyCard() )
             {
                 m_btnBuyCard->setVisible(true);
             }
+            if ( player.unrevealedPointCards() )
+            {
+                m_btnPlayPointCard->setVisible(true);
+            }
+
         }
         else
         {

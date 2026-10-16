@@ -268,7 +268,7 @@ void CPU_doRound2( H3_Game & game )
 
     std::vector< FarmMatch > farmMatches = CPU_findBestFarm( game );
 
-    if ( !player.didBuyFarm )
+    if ( player.state.newFarms.empty() )
     {
         for ( size_t i = 0; i < farmMatches.size(); ++i )
         {
@@ -290,7 +290,7 @@ void CPU_doRound2( H3_Game & game )
 
     std::vector< RoadMatch > roadMatches = CPU_findBestRoad( game );
 
-    if ( !player.didBuyRoad )
+    if ( player.state.newRoads.empty() )
     {
         for ( size_t i = 0; i < roadMatches.size(); ++i )
         {
@@ -370,10 +370,10 @@ void CPU_doRoundN( H3_Game & game )
 
     if ( player.state.bank.canBuyCard())
     {
-        int a = player.state.oldKnightCards.size();
-        int b = player.state.oldPointCards.size();
-        int c = player.state.oldInventCards.size();
-        int d = player.state.oldMonoplCards.size();
+        int a = player.state.knightCards.size();
+        int b = player.state.pointCards.size();
+        int c = player.state.inventCards.size();
+        int d = player.state.monopolCards.size();
         int e = player.state.farms.size();
         int f = player.state.citys.size();
         if (a + b + c + d < e + f)

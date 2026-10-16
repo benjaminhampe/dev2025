@@ -29,4 +29,10 @@ private:
     de::gui::Button* m_btnBuyFarm;
     de::gui::Button* m_btnBuyCity;
     de::gui::Button* m_btnBuyCard;
+
+    de::gui::Button* m_btnPlayPointCard;
+    de::gui::Button* m_btnPlayKnightCard;
+    de::gui::Button* m_btnPlayInventCard;
+    de::gui::Button* m_btnPlayMonopolCard;
+
 };

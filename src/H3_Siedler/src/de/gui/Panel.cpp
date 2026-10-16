@@ -98,11 +98,13 @@ void Panel::draw()
         }
     }
 
-    // // --- [Draw] Child widgets ---
-    // for (auto & child : m_children)
-    // {
-    //     child->draw();
-    // }
+    if (isDrawChildren())
+    {
+        for (auto child : m_children)
+        {
+            child->draw();
+        }
+    }
 }
 
 void Panel::onEvent( const Event& event )

@@ -402,15 +402,15 @@ void UI_Stats_render( H3_Game & game )
     UI_Stats_drawItem( game, x,y,w,h2, H3_Tex::StatFarm, player.state.farms.size(), font); x += w + s;
     UI_Stats_drawItem( game, x,y,w,h2, H3_Tex::StatCity, player.state.citys.size(), font); x += w + s;
     UI_Stats_drawItem( game, x,y,w,h2, H3_Tex::StatCard,
-                       player.state.oldKnightCards.size(), font); x += w + s;
+                       player.state.knightCards.size(), font); x += w + s;
 
     // Cards
     int wC = zoom * 39;
     int hC = zoom * 64;
     x += p;
     y = scr_h - 1 - p - hC;
-    UI_Stats_drawItem( game, x,y,wC,hC, H3_Tex::EventCardKnight, player.state.oldKnightCards.size(), font); x += wC + s;
-    UI_Stats_drawItem( game, x,y,wC,hC, H3_Tex::EventCardPoint, player.state.oldPointCards.size(), font); // x += wC + s;
+    UI_Stats_drawItem( game, x,y,wC,hC, H3_Tex::EventCardKnight, player.state.knightCards.size(), font); x += wC + s;
+    UI_Stats_drawItem( game, x,y,wC,hC, H3_Tex::EventCardPoint, player.state.pointCards.size(), font); // x += wC + s;
 
     // Bonus
     int wB = zoom * 64;
@@ -764,8 +764,8 @@ UI_drawPlayerStats( H3_Game & game, int px, int py, int playerId )
     UI_drawStatNum( game, H3_Tex::StatRoad, de::Recti(x,y,w,h), player.state.roads.size(), 0); x += d;
     UI_drawStatNum( game, H3_Tex::StatFarm, de::Recti(x,y,w,h), player.state.farms.size(), 0); x += d;
     UI_drawStatNum( game, H3_Tex::StatCity, de::Recti(x,y,w,h), player.state.citys.size(), 0); x += d;
-    UI_drawStatNum( game, H3_Tex::StatCard, de::Recti(x,y,w,h), player.state.oldKnightCards.size(), 0); x += d;
-    UI_drawStatNum( game, H3_Tex::EventCardPoint, de::Recti(x,y,w,h), player.state.oldPointCards.size(), 16); // x += d;
+    UI_drawStatNum( game, H3_Tex::StatCard, de::Recti(x,y,w,h), player.state.knightCards.size(), 0); x += d;
+    UI_drawStatNum( game, H3_Tex::EventCardPoint, de::Recti(x,y,w,h), player.state.pointCards.size(), 16); // x += d;
 
     // <--> ROW 2 <-->
     x = r_panel.x+103;
@@ -775,7 +775,7 @@ UI_drawPlayerStats( H3_Game & game, int px, int py, int playerId )
     UI_drawStatNum( game, H3_Tex::CardC, de::Recti(x,y,w,h), player.state.bank.C, 16); x += d;
     UI_drawStatNum( game, H3_Tex::CardD, de::Recti(x,y,w,h), player.state.bank.D, 16); x += d;
     UI_drawStatNum( game, H3_Tex::CardE, de::Recti(x,y,w,h), player.state.bank.E, 16); x += d;
-    UI_drawStatNum( game, H3_Tex::EventCardKnight, de::Recti(x,y,w,h), player.state.oldKnightCards.size(), 16); // x += d;
+    UI_drawStatNum( game, H3_Tex::EventCardKnight, de::Recti(x,y,w,h), player.state.knightCards.size(), 16); // x += d;
 }
 
 void
