@@ -1,7 +1,6 @@
 #include "UI_Game.h"
 #include <H3/H3_Game.h>
-#include <de/gui/Label.h>
-#include <de/gui/Button.h>
+#include <H3/details/UI_CpuPlayer.h>
 
 // =====================================================================
 UI_Game::UI_Game( H3_Game* game, de::gui::Env* env, de::gui::Widget* parent, u32 id, const de::Recti& pos )
@@ -36,19 +35,45 @@ UI_Game::~UI_Game()
 
 }
 
-/*
 void UI_Game::draw()
 {
-    Panel::draw();
+    if (!isVisible())
+    {
+        return;
+    }
 
-    if (!isVisible()) return;
-    m_btnNewGame->draw();
-    m_btnRestart->draw();
-    m_btnOptions->draw();
-    m_btnHelp->draw();
-    m_btnExit->draw();
+    H3_Game & game = *m_game;
+
+    float zoom = game.getZoom();
+    int w = m_rect.w; // game.getDriver()->getScreenWidth();
+    int h = m_rect.h; // game.getDriver()->getScreenHeight();
+
+    // --- Draw Enemy Statistics ---
+
+    int p = zoom * p;
+    int estat_w = (w - 5*p) / 4;
+    int estat_h = zoom * 150;
+    int x = p;
+    int y = zoom * 50;
+    for (int i = 0; i < game.m_players.size(); ++i)
+    {
+        H3_Player & player = game.m_players[i];
+        if (player.typ == H3_PlayerType::HUMAN) continue;
+
+        UI_CpuPlayer_draw( game, player.id, de::Recti(x,y,estat_w,estat_h) );
+
+        x += estat_w + p;
+    }
+
+
+    if (isDrawChildren())
+    {
+        for (auto child : m_children)
+        {
+            child->draw();
+        }
+    }
 }
-*/
 
 void UI_Game::resize(int x, int y, int w, int h)
 {

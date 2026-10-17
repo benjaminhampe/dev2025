@@ -14,8 +14,8 @@ UI_Actions::UI_Actions( H3_Game* game, de::gui::Env* env, de::gui::Widget* paren
         auto btn = new de::gui::Button("", env, this, 0, de::Recti(0,0,0,0));
         btn->setTexture(m_game->getTex(H3_Tex::DoDice, "UI_Actions().DoDice"));
         btn->setBorderColor(dbRGB(255,255,0),1);
+        btn->setOnClicked([&](){ m_game->doDice(); });
         m_btnDice = btn;
-        m_btnDice->setOnClicked([&](){ m_game->doDice(); });
     }
 
     // (2.) DoBank
@@ -23,8 +23,8 @@ UI_Actions::UI_Actions( H3_Game* game, de::gui::Env* env, de::gui::Widget* paren
         auto btn = new de::gui::Button("", env, this, 0, de::Recti(0,0,0,0));
         btn->setTexture(m_game->getTex(H3_Tex::DoBank, "UI_Actions().DoDice"));
         btn->setBorderColor(dbRGB(255,255,0),1);
+        btn->setOnClicked([&](){ H3_MessageBox("Bank", "DoBanking"); });
         m_btnBank = btn;
-        m_btnBank->setOnClicked([&](){ H3_MessageBox("Bank", "DoBanking"); });
     }
 
     // (3.) DoTrade
@@ -32,8 +32,8 @@ UI_Actions::UI_Actions( H3_Game* game, de::gui::Env* env, de::gui::Widget* paren
         auto btn = new de::gui::Button("", env, this, 0, de::Recti(0,0,0,0));
         btn->setTexture(m_game->getTex(H3_Tex::DoTrade, "UI_Actions().DoTrade"));
         btn->setBorderColor(dbRGB(255,255,0),1);
+        btn->setOnClicked([&](){ H3_MessageBox("Trade", "DoTrade"); });
         m_btnTrade = btn;
-        m_btnTrade->setOnClicked([&](){ H3_MessageBox("Trade", "DoTrade"); });
     }
 
     // (4.) DoEndTurn
@@ -41,8 +41,8 @@ UI_Actions::UI_Actions( H3_Game* game, de::gui::Env* env, de::gui::Widget* paren
         auto btn = new de::gui::Button("", env, this, 0, de::Recti(0,0,0,0));
         btn->setTexture(m_game->getTex(H3_Tex::DoEndTurn, "UI_Actions().DoEndTurn"));
         btn->setBorderColor(dbRGB(255,255,0),1);
+        btn->setOnClicked([&](){ m_game->doEndTurn(); });
         m_btnEndTurn = btn;
-        m_btnEndTurn->setOnClicked([&](){ m_game->doEndTurn(); });
     }
 
     // (5.) DoBuyEventCard
@@ -51,8 +51,8 @@ UI_Actions::UI_Actions( H3_Game* game, de::gui::Env* env, de::gui::Widget* paren
         auto btn = new de::gui::Button("", env, this, 0, de::Recti(0,0,0,0));
         btn->setTexture(tex);
         btn->setBorderColor(dbRGB(255,255,0),1);
+        btn->setOnClicked([&](){ m_game->doBuyCard(); });
         m_btnBuyCard = btn;
-        m_btnBuyCard->setOnClicked([&](){ m_game->doBuyCard(); });
     }
 
     // (6.) DoCancel
@@ -61,8 +61,8 @@ UI_Actions::UI_Actions( H3_Game* game, de::gui::Env* env, de::gui::Widget* paren
         auto btn = new de::gui::Button("", env, this, 0, de::Recti(0,0,0,0));
         btn->setTexture(tex);
         btn->setBorderColor(dbRGB(255,255,0),1);
+        btn->setOnClicked([&](){ m_game->doPlaceCancel(); });
         m_btnCancel = btn;
-        m_btnCancel->setOnClicked([&](){ m_game->doPlaceCancel(); });
     }
 
     // (7.) DoBuyRoad
@@ -71,8 +71,8 @@ UI_Actions::UI_Actions( H3_Game* game, de::gui::Env* env, de::gui::Widget* paren
         auto btn = new de::gui::Button("", env, this, 0, de::Recti(0,0,0,0));
         btn->setTexture(tex);
         btn->setBorderColor(dbRGB(255,255,0),1);
+        btn->setOnClicked([&](){ m_game->doBuyRoad(); });
         m_btnBuyRoad = btn;
-        m_btnBuyRoad->setOnClicked([&](){ m_game->doBuyRoad(); });
     }
 
     // (8.) DoBuyFarm
@@ -81,8 +81,8 @@ UI_Actions::UI_Actions( H3_Game* game, de::gui::Env* env, de::gui::Widget* paren
         auto btn = new de::gui::Button("", env, this, 0, de::Recti(0,0,0,0));
         btn->setTexture(tex);
         btn->setBorderColor(dbRGB(255,255,0),1);
+        btn->setOnClicked([&](){ m_game->doBuyFarm(); });
         m_btnBuyFarm = btn;
-        m_btnBuyFarm->setOnClicked([&](){ m_game->doBuyFarm(); });
     }
 
     // (9.) DoBuyRoad
@@ -91,8 +91,8 @@ UI_Actions::UI_Actions( H3_Game* game, de::gui::Env* env, de::gui::Widget* paren
         auto btn = new de::gui::Button("", env, this, 0, de::Recti(0,0,0,0));
         btn->setTexture(tex);
         btn->setBorderColor(dbRGB(255,255,0),1);
+        btn->setOnClicked([&](){ m_game->doBuyCity(); });
         m_btnBuyCity = btn;
-        m_btnBuyCity->setOnClicked([&](){ m_game->doBuyCity(); });
     }
 
     //UI_addElem( game, H3_UI::BtnDoRob, H3_UIElem::ImageButton, de::Recti( 300, 68,0,0),

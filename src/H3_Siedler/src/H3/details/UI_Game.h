@@ -10,6 +10,7 @@
 #include <H3/details/UI_DonateCards.h>
 #include <H3/details/UI_WinnerScreen.h>
 #include <H3/details/UI_Marquee.h>
+#include <H3/details/UI_CpuPlayer.h>
 
 // =====================================================================
 class UI_Game : public de::gui::Widget
@@ -26,7 +27,7 @@ public:
     void popState();
 
     void resize(int x, int y, int w, int h) override;
-    //void draw() override;
+    void draw() override;
 
 protected:
     void updateLayouts();
@@ -44,6 +45,7 @@ public:
     UI_WinnerScreen* m_winnerScreen;
     UI_Actions* m_actions;
     UI_DonateCards* m_donateCards;
+
 
     UI_Banking m_banking;
     UI_ActionLogger m_actionLogger;

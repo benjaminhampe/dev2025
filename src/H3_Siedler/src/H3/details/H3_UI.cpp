@@ -621,10 +621,6 @@ UI_hideBanking( H3_Game & game ) { UI_setBankingVisible( game, false ); }
 void
 UI_showBanking( H3_Game & game ) { UI_setBankingVisible( game, true ); }
 
-*/
-
-
-
 void
 UI_drawStatNum( H3_Game & game, int img, de::Recti pos, int value, int icon_width )
 {
@@ -777,6 +773,7 @@ UI_drawPlayerStats( H3_Game & game, int px, int py, int playerId )
     UI_drawStatNum( game, H3_Tex::CardE, de::Recti(x,y,w,h), player.state.bank.E, 16); x += d;
     UI_drawStatNum( game, H3_Tex::EventCardKnight, de::Recti(x,y,w,h), player.state.knightCards.size(), 16); // x += d;
 }
+*/
 
 void
 UI_drawInfoPanelTile( H3_Game & game, de::Recti pos, const u32 tileId )

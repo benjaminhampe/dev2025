@@ -1838,6 +1838,11 @@ struct Recti
     void addInternalPoint( glm::ivec2 const & p );
     void addInternalPoint( int32_t x_, int32_t y_ );
 
+    Recti inset(int margin_left, int margin_top,
+                int margin_right, int margin_bottom) const;
+
+    Recti inset(int margin) const;
+
     inline bool isPointInside( int mx, int my ) const
     {
         int x1_ = x1();

@@ -364,12 +364,12 @@ void H3_Game::draw()
         UI_Stats_render( *this );
         driver->endPerf();
 
-        driver->beginPerf("UI_PlayerStats");
-        for ( int i = 0; i < m_players.size(); ++i )
-        {
-            UI_drawPlayerStats( *this, 20, 20+100*i, m_players[ i ].id );
-        }
-        driver->endPerf();
+        // driver->beginPerf("UI_PlayerStats");
+        // for ( int i = 0; i < m_players.size(); ++i )
+        // {
+        //     UI_drawPlayerStats( *this, 20, 20+100*i, m_players[ i ].id );
+        // }
+        // driver->endPerf();
 
         driver->beginPerf("UI_RoundStats");
         UI_drawRoundStats( *this );
@@ -438,9 +438,12 @@ void H3_Game::setPreset(const H3_Cfg& preset)
 
     // === Players ===
     m_players.clear();
+    m_humans.clear();
+    m_enemies.clear();
     for (const auto& cfg : m_cfg.playerList)
     {
-        H3_Player player;
+        m_players.emplace_back();
+        H3_Player & player = m_players.back();
         player.startGame();
         player.id = H3_createId();
         player.typ = cfg.typ;
@@ -453,7 +456,15 @@ void H3_Game::setPreset(const H3_Cfg& preset)
         // player.state.bank.C = 2;
         // player.state.bank.D = 1;
         // player.state.bank.E = 0;
-        m_players.emplace_back( std::move( player ) );
+
+        if (player.typ == H3_PlayerType::HUMAN)
+        {
+            m_humans.emplace_back(&player);
+        }
+        else // if (player.typ == H3_PlayerType::CPU)
+        {
+            m_enemies.emplace_back(&player);
+        }
     }
     DE_WARN("Created players = ", m_players.size())
 
@@ -1802,12 +1813,27 @@ void H3_Game::pick()
     }
 }
 
-H3_Player& H3_Game::getPlayer( const u32 playerId )
+int H3_Game::hasPlayer( const u32 playerId ) const
 {
-    auto it = std::find_if( m_players.begin(), m_players.end(),
-                           [=] (const H3_Player& player) { return player.id == playerId; });
+    auto it = std::find_if( m_players.begin(),
+                            m_players.end(),
+                            [=] (const H3_Player& player)
+                            {
+                                return player.id == playerId;
+                            });
 
     if (it == m_players.end())
+    {
+        return -1;
+    }
+
+    return std::distance(m_players.begin(),it);
+}
+
+H3_Player& H3_Game::getPlayer( const u32 playerId )
+{
+    int found = hasPlayer(playerId);
+    if (found < 0)
     {
         std::ostringstream o;
         o << __func__ << "() :: Invalid playerId " << playerId;
@@ -1819,7 +1845,7 @@ H3_Player& H3_Game::getPlayer( const u32 playerId )
         throw std::runtime_error( o.str() );
     }
 
-    return m_players[ std::distance(m_players.begin(),it) ];
+    return m_players[ found ];
 }
 
 H3_Player& H3_Game::getCurrentPlayer()

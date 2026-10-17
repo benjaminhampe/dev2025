@@ -88,6 +88,7 @@ struct H3_Game
     void pick();
     void stealRandomCard( int playerFrom, int playerTo );
 
+    int hasPlayer( const u32 playerId ) const;
     H3_Player& getPlayer( const u32 playerId );
     H3_Player& getCurrentPlayer();
 
@@ -210,6 +211,8 @@ struct H3_Game
     std::vector<H3_Corner>  m_corners;
     std::vector<H3_Edge>    m_edges;
     std::vector<H3_Player>  m_players;
+    std::vector<H3_Player*> m_humans;
+    std::vector<H3_Player*> m_enemies;  // Used for faster drawing UI_CpuPlayer
 
     // Board objects
     H3_Thief                m_thief;

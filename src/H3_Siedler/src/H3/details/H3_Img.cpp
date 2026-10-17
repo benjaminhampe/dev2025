@@ -36,6 +36,8 @@ H3_Img::~H3_Img()
 
 void H3_Img::clear()
 {
+    DE_DEBUG("Destroy image cache")
+
     for (auto p : m_cache)
     {
         delete p.second;
@@ -51,8 +53,16 @@ H3_Img::addFromMemory( eID id, const uint8_t* pData, uint64_t nBytes )
     de::ImageLoadOptions opt;
     opt.throwOnFail = true;
 
-    dbLoadImage(*pImage, pData, nBytes, "", opt );
+    if (!dbLoadImage(*pImage, pData, nBytes, "", opt ))
+    {
+        DE_ERROR("Can't load image id ", (uint32_t)id)
+        delete pImage;
+        return;
+    }
+
     m_cache[ id ] = pImage;
+
+    DE_DEBUG("H3_Img[",(uint32_t)id,"] ",pImage->str())
 
     //dbSaveImage( *pImage, dbStrJoin("img_",id,".webp"));
 }
@@ -73,6 +83,8 @@ H3_Img::add( eID id, const std::string& uri, const de::ImageLoadOptions& opt )
     }
 
     m_cache[ id ] = pImage;
+
+    DE_DEBUG("H3_Img[",id,"] ",pImage->str())
 
     //dbSaveImage( *pImage, dbStrJoin("img_",id,".webp"));
 }

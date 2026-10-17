@@ -24,34 +24,34 @@ public:
 
     // --- Panel specific ---
 
-    virtual void setFillColor( u32 color )
+    void setFillColor( u32 color )
     {
         for (u32 & c : m_fillColors) { c = color; }
     }
 
-    virtual void setFillColor( u32 color, int state ) // = eWS_Idle
+    void setFillColor( u32 color, int state ) // = eWS_Idle
     {
         m_fillColors[ state ] = color;
     }
 
-    virtual int getRadius() const { return m_radius; }
-    virtual void setRadius( int radius ) { m_radius = radius; }
+    int getRadius() const { return m_radius; }
+    void setRadius( int radius ) { m_radius = radius; }
 
-    virtual void setBorderColor( u32 color )
+    void setBorderColor( u32 color )
     {
         for (u32 & c : m_borderColors) { c = color; }
     }
 
-    virtual void setBorderColor( u32 color, int state ) // = eWS_Idle
+    void setBorderColor( u32 color, int state ) // = eWS_Idle
     {
         m_borderColors[ state ] = color;
     }
 
-    virtual int getBorderWidth() const { return m_borderWidth; }
-    virtual void setBorderWidth( int width ) { m_borderWidth = width; }
+    int getBorderWidth() const { return m_borderWidth; }
+    void setBorderWidth( int width ) { m_borderWidth = width; }
 
-    virtual const gpu::TexRef& getTexture() const { return m_tex; }
-    virtual void setTexture( gpu::TexRef tex ) { m_tex = tex; }
+    const gpu::TexRef& getTexture() const { return m_tex; }
+    void setTexture( gpu::TexRef tex ) { m_tex = tex; }
 
 protected:
     // u32 m_flags;

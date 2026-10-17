@@ -27,9 +27,7 @@ int ScreenRenderer::getScreenHeight() const { return m_driver->getScreenHeight()
 void ScreenRenderer::draw2D( const SMeshBuffer& m )
 {
     setMaterial( m.material );
-
     m.draw();
-
     unsetMaterial( m.material );
 }
 
@@ -56,14 +54,8 @@ void ScreenRenderer::draw2DHexagon( const Recti& pos, const uint32_t color, cons
     m.addQuad( B,C,E,F ); // Body
     m.addTriangle( A,B,F ); // Bottom
     m.upload();
-
-    m.setDepth( Depth::alwaysPass() );
-    m.setCulling( Culling::disabled() );
-    m.setBlend( Blend::alphaBlend() );
     m.setTexture( 0, tex );
-
     draw2D( m );
-
     m.destroy();
 }
 
@@ -103,14 +95,8 @@ void ScreenRenderer::draw2DCircle( const Recti& pos, const uint32_t color, const
     }
 
     m.upload();
-
-    m.setDepth( Depth::alwaysPass() );
-    m.setCulling( Culling::disabled() );
-    m.setBlend( Blend::alphaBlend() );
     m.setTexture( 0, tex );
-
     draw2D( m );
-
     m.destroy();
 }
 
@@ -136,11 +122,7 @@ ScreenRenderer::draw2DLine( int x1, int y1, int x2, int y2,
     m.addVertex( S3DVertex(x1,y1,0, 0,0,1, c1, 0,0) );
     m.addVertex( S3DVertex(x2,y2,0, 0,0,1, c2, 1,0) );
     m.upload();
-
-    m.setDepth( Depth::alwaysPass() );
-    m.setCulling( Culling::disabled() );
     draw2D( m );
-
     m.destroy();
 }
 
@@ -165,14 +147,8 @@ ScreenRenderer::draw2DRect( const Recti& pos, const uint32_t color, const TexRef
     m.addVertex( C );
     m.addVertex( D );
     m.upload();
-
-    m.setDepth( Depth::alwaysPass() );
-    m.setCulling( Culling::disabled() );
-    m.setBlend( Blend::alphaBlend() );
     m.setTexture( 0, tex );
-
     draw2D( m );
-
     m.destroy();
 }
 
@@ -195,14 +171,8 @@ ScreenRenderer::draw2DRectLine( const Recti& pos, const uint32_t color, const Te
     m.addVertex( C ); m.addVertex( D ); // Line CD
     m.addVertex( D ); m.addVertex( A ); // Line DA
     m.upload();
-
-    m.setDepth( Depth::alwaysPass() );
-    m.setCulling( Culling::disabled() );
-    m.setBlend( Blend::alphaBlend() );
     m.setTexture( 0, tex );
-
     draw2D( m );
-
     m.destroy();
 }
 
@@ -219,14 +189,8 @@ ScreenRenderer::draw2DRoundRect( const Recti& pos, const glm::ivec2& r, const ui
                            tess,
                            color, color);
     m.upload();
-
-    m.setDepth( Depth::alwaysPass() );
-    m.setCulling( Culling::disabled() );
-    m.setBlend( Blend::alphaBlend() );
     m.setTexture( 0, tex );
-
     draw2D( m );
-
     m.destroy();
 }
 
@@ -237,14 +201,8 @@ ScreenRenderer::draw2DRoundRectLine( const Recti& pos, const glm::ivec2& r, cons
     /*
     SMeshBuffer m( PrimitiveType::Triangles );
     SMeshRoundRect::addXY( m, glm::vec3(pos.x(), pos.y(), 0), pos.w(), pos.h(), r.x, r.y, 23, color, color);
-
-    m.setCulling( Culling::disabled() );
-    m.setBlend( Blend::alphaBlend() );
     m.setTexture( 0, tex );
-
-
     draw2D( m );
-
     m.destroy();
     */
 }
@@ -273,9 +231,10 @@ ScreenRenderer::setMaterial( smesh::SMaterial const & mtl, const Recti& pos )
         return false;
     }
 
-    State state = mtl.state;
+    State state; //  = mtl.state;
     state.depth = Depth::disabled();
     state.culling = Culling::disabled();
+    state.blend = Blend::alphaBlend();
     m_driver->setState( state );
 
     const int w = m_driver->getScreenWidth();
@@ -289,8 +248,6 @@ ScreenRenderer::setMaterial( smesh::SMaterial const & mtl, const Recti& pos )
         shader->setInt( "u_tex", 0 );
         shader->setVec4f( "u_texTransform", diffuseMap.coords );
     }
-
-
 
     return true;
 }

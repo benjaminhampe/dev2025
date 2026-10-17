@@ -36,9 +36,9 @@ H3_Tex::init( H3_Game & game )
     so.setAF( 1.0f );
     so.setMin( de::gpu::SamplerOptions::Minify::Linear );
     so.setMag( de::gpu::SamplerOptions::Magnify::Linear );
-    so.setWrapR( de::gpu::SamplerOptions::Wrap::ClampToEdge );
-    so.setWrapS( de::gpu::SamplerOptions::Wrap::ClampToEdge );
-    so.setWrapT( de::gpu::SamplerOptions::Wrap::ClampToEdge );
+    so.setWrapR( de::gpu::SamplerOptions::Wrap::Repeat );
+    so.setWrapS( de::gpu::SamplerOptions::Wrap::Repeat );
+    so.setWrapT( de::gpu::SamplerOptions::Wrap::Repeat );
 
     // gfx/wallpaper
     {
@@ -52,7 +52,7 @@ H3_Tex::init( H3_Game & game )
 
         de::gpu::SamplerOptions soWood;
         soWood.setAF( 1.0f );
-        soWood.setMin( de::gpu::SamplerOptions::Minify::LinearMipmapLinear );
+        soWood.setMin( de::gpu::SamplerOptions::Minify::Linear ); // MipmapLinear
         soWood.setMag( de::gpu::SamplerOptions::Magnify::Linear );
         soWood.setWrapR( de::gpu::SamplerOptions::Wrap::Repeat );
         soWood.setWrapS( de::gpu::SamplerOptions::Wrap::Repeat );

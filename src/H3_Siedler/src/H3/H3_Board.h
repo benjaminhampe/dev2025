@@ -885,7 +885,7 @@ struct H3_Player
     u32 typ = H3_PlayerType::CPU;
     u32 connect = H3_PlayerConnect::LOCAL;
     u32 color = 0xFFFFFFFF;
-    u32 avatar = 0; // H3_Tex::eID = PlayU....PlayF
+    u32 avatar = 0; // (H3_Tex::eID) = PlayU....PlayF
     std::string name;
 
     int ai_strategy; // Determines AI player behaviour

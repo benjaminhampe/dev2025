@@ -4847,6 +4847,25 @@ Recti::addInternalPoint( int32_t x_, int32_t y_ )
     }
 }
 
+Recti Recti::inset( int margin_left, int margin_top,
+                    int margin_right, int margin_bottom) const
+{
+    int px = x + margin_left;
+    int py = y + margin_top;
+    int pw = std::max<int>(0, w - (margin_right + margin_left));
+    int ph = std::max<int>(0, h - (margin_top + margin_bottom));
+    return Recti(px,py,pw,ph);
+}
+
+Recti Recti::inset(int margin) const
+{
+    int px = x + margin;
+    int py = y + margin;
+    int pw = std::max<int>(0, w - (margin + margin));
+    int ph = std::max<int>(0, h - (margin + margin));
+    return Recti(px,py,pw,ph);
+}
+
 //   Recti operator+ ( int32_t v ) const { return Recti( *this ) += v; }
 //   Recti operator- ( int32_t v ) const { return Recti( *this ) -= v; }
 //   Recti operator* ( int32_t v ) const { return Recti( *this ) *= v; }
