@@ -11,9 +11,6 @@ namespace
    constexpr float const CONST_Z_STEP = -0.00001f; // enough for 200.000 elements, TODO: test more.
 }
 
-using smesh::S3DVertex;
-using smesh::SMeshBuffer;
-
 ScreenRenderer::ScreenRenderer()
    : m_driver( nullptr )
    , m_zIndex( CONST_Z_INIT )
@@ -24,9 +21,13 @@ ScreenRenderer::ScreenRenderer()
 int ScreenRenderer::getScreenWidth() const { return m_driver->getScreenWidth(); }
 int ScreenRenderer::getScreenHeight() const { return m_driver->getScreenHeight(); }
 
-void ScreenRenderer::draw2D( const SMeshBuffer& m )
+void ScreenRenderer::draw2D( const smesh::SMeshBuffer& m )
 {
-    setMaterial( m.material );
+    if (!setMaterial( m.material ))
+    {
+        DE_ERROR("No material, ",m.str(true))
+        return;
+    }
     m.draw();
     unsetMaterial( m.material );
 }
@@ -42,14 +43,14 @@ void ScreenRenderer::draw2DHexagon( const Recti& pos, const uint32_t color, cons
     const float y2 = pos.y + 3*pos.h/4;
     const float y3 = pos.y + pos.h;
 
-    const S3DVertex A( x1,y3,-1, 0,0,-1, color, 0.5f,  1.0f );
-    const S3DVertex B( x0,y2,-1, 0,0,-1, color, 0.0f, 0.75f );
-    const S3DVertex C( x0,y1,-1, 0,0,-1, color, 0.0f, 0.25f );
-    const S3DVertex D( x1,y0,-1, 0,0,-1, color, 0.5f,  0.0f );
-    const S3DVertex E( x2,y1,-1, 0,0,-1, color, 1.0f, 0.25f );
-    const S3DVertex F( x2,y2,-1, 0,0,-1, color, 1.0f, 0.75f );
+    const smesh::S3DVertex A( x1,y3,-1, 0,0,-1, color, 0.5f,  1.0f );
+    const smesh::S3DVertex B( x0,y2,-1, 0,0,-1, color, 0.0f, 0.75f );
+    const smesh::S3DVertex C( x0,y1,-1, 0,0,-1, color, 0.0f, 0.25f );
+    const smesh::S3DVertex D( x1,y0,-1, 0,0,-1, color, 0.5f,  0.0f );
+    const smesh::S3DVertex E( x2,y1,-1, 0,0,-1, color, 1.0f, 0.25f );
+    const smesh::S3DVertex F( x2,y2,-1, 0,0,-1, color, 1.0f, 0.75f );
 
-    SMeshBuffer m( PrimitiveType::Triangles );
+    smesh::SMeshBuffer m( PrimitiveType::Triangles );
     m.addTriangle( C,D,E ); // Top
     m.addQuad( B,C,E,F ); // Body
     m.addTriangle( A,B,F ); // Bottom
@@ -68,7 +69,7 @@ void ScreenRenderer::draw2DCircle( const Recti& pos, const uint32_t color, const
     const float ry = 0.5f * pos.h;
     const float cx = float( pos.x ) + 0.5f*pos.w;
     const float cy = float( pos.y ) + 0.5f*pos.h;
-    const S3DVertex M( cx,cy,0, 0,0,-1, color, .5f, .5f );
+    const smesh::S3DVertex M( cx,cy,0, 0,0,-1, color, .5f, .5f );
     m.addVertex( M );
 
     const float angleStep = float( ( 2.0 * M_PI ) / double( tess ) );
@@ -82,7 +83,7 @@ void ScreenRenderer::draw2DCircle( const Recti& pos, const uint32_t color, const
         const float y = cy + (ry * s);
         const float u = std::clamp( 0.5f + 0.5f * c, 0.0001f, 0.9999f );
         const float v = std::clamp( 0.5f + 0.5f * s, 0.0001f, 0.9999f );
-        const S3DVertex P( x,y,0, 0,0,-1, color, u, v );
+        const smesh::S3DVertex P( x,y,0, 0,0,-1, color, u, v );
         m.addVertex( P );
     }
 
@@ -104,7 +105,7 @@ void
 ScreenRenderer::draw2DLine( int x1, int y1, int x2, int y2,
                             uint32_t c1, uint32_t c2 )
 {
-    SMeshBuffer m( PrimitiveType::Lines );
+    smesh::SMeshBuffer m( PrimitiveType::Lines );
     m.setCulling( Culling::disabled() );
     m.setBlend( Blend::disabled() );
     if (c1 == c2)
@@ -119,8 +120,8 @@ ScreenRenderer::draw2DLine( int x1, int y1, int x2, int y2,
         if (a1 || a2) { m.setBlend( Blend::alphaBlend() ); }
     }
 
-    m.addVertex( S3DVertex(x1,y1,0, 0,0,1, c1, 0,0) );
-    m.addVertex( S3DVertex(x2,y2,0, 0,0,1, c2, 1,0) );
+    m.addVertex( smesh::S3DVertex(x1,y1,0, 0,0,1, c1, 0,0) );
+    m.addVertex( smesh::S3DVertex(x2,y2,0, 0,0,1, c2, 1,0) );
     m.upload();
     draw2D( m );
     m.destroy();
@@ -129,16 +130,16 @@ ScreenRenderer::draw2DLine( int x1, int y1, int x2, int y2,
 void
 ScreenRenderer::draw2DRect( const Recti& pos, const uint32_t color, const TexRef& tex )
 {
-    SMeshBuffer m( PrimitiveType::Triangles );
+    smesh::SMeshBuffer m( PrimitiveType::Triangles );
     const int x1 = pos.x1();
     const int y1 = pos.y1();
     const int x2 = pos.x2();
     const int y2 = pos.y2();
 
-    const S3DVertex A( x1, y1, 0, 0,0,1, color, 0, 0 );
-    const S3DVertex B( x2, y1, 0, 0,0,1, color, 1, 0 );
-    const S3DVertex C( x2, y2, 0, 0,0,1, color, 1, 1 );
-    const S3DVertex D( x1, y2, 0, 0,0,1, color, 0, 1 );
+    const smesh::S3DVertex A( x1, y1, 0, 0,0,1, color, 0, 0 );
+    const smesh::S3DVertex B( x2, y1, 0, 0,0,1, color, 1, 0 );
+    const smesh::S3DVertex C( x2, y2, 0, 0,0,1, color, 1, 1 );
+    const smesh::S3DVertex D( x1, y2, 0, 0,0,1, color, 0, 1 );
 
     m.addVertex( A );
     m.addVertex( B );
@@ -155,16 +156,16 @@ ScreenRenderer::draw2DRect( const Recti& pos, const uint32_t color, const TexRef
 void
 ScreenRenderer::draw2DRectLine( const Recti& pos, const uint32_t color, const TexRef& tex )
 {
-    SMeshBuffer m( PrimitiveType::Lines );
+    smesh::SMeshBuffer m( PrimitiveType::Lines );
     const int x1 = pos.x1();
     const int x2 = pos.x2();
     const int y1 = pos.y1();
     const int y2 = pos.y2();
 
-    const S3DVertex A( x1, y1, 0, 0,0,1, color, 0, 0 );
-    const S3DVertex B( x2, y1, 0, 0,0,1, color, 1, 0 );
-    const S3DVertex C( x2, y2, 0, 0,0,1, color, 1, 1 );
-    const S3DVertex D( x1, y2, 0, 0,0,1, color, 0, 1 );
+    const smesh::S3DVertex A( x1, y1, 0, 0,0,1, color, 0, 0 );
+    const smesh::S3DVertex B( x2, y1, 0, 0,0,1, color, 1, 0 );
+    const smesh::S3DVertex C( x2, y2, 0, 0,0,1, color, 1, 1 );
+    const smesh::S3DVertex D( x1, y2, 0, 0,0,1, color, 0, 1 );
 
     m.addVertex( A ); m.addVertex( B ); // Line AB
     m.addVertex( B ); m.addVertex( C ); // Line BC
@@ -179,7 +180,7 @@ ScreenRenderer::draw2DRectLine( const Recti& pos, const uint32_t color, const Te
 void
 ScreenRenderer::draw2DRoundRect( const Recti& pos, const glm::ivec2& r, const uint32_t color, const TexRef& tex, int tess )
 {
-    SMeshBuffer m( PrimitiveType::Triangles );
+    smesh::SMeshBuffer m( PrimitiveType::Triangles );
     smesh::SMeshRoundRect::addXY( m,
                            glm::vec3(pos.x + 0.5f*pos.w, pos.y + 0.5f*pos.h, 0),
                            pos.w,
@@ -217,7 +218,7 @@ ScreenRenderer::setMaterial( smesh::SMaterial const & mtl, const Recti& pos )
     auto shader = m_driver->getShader( name );
     if (!shader)
     {
-        shader = m_driver->createShader( name, createVS( mtl ), createFS( mtl ) );
+        shader = m_driver->createShader( name, createVS( mtl ), createFS( mtl ), true );
         if (!shader)
         {
             DE_ERROR("No shader created name(", name, ")")
@@ -231,12 +232,6 @@ ScreenRenderer::setMaterial( smesh::SMaterial const & mtl, const Recti& pos )
         return false;
     }
 
-    State state; //  = mtl.state;
-    state.depth = Depth::disabled();
-    state.culling = Culling::disabled();
-    state.blend = Blend::alphaBlend();
-    m_driver->setState( state );
-
     const int w = m_driver->getScreenWidth();
     const int h = m_driver->getScreenHeight();
     shader->setVec2f( "u_screenSize", glm::vec2( w, h ) );
@@ -244,10 +239,20 @@ ScreenRenderer::setMaterial( smesh::SMaterial const & mtl, const Recti& pos )
     const TexRef& diffuseMap = mtl.getDiffuseMap();
     if (diffuseMap.tex)
     {
-        m_driver->useTexture(diffuseMap.tex,0);
+        if (!m_driver->useTexture(diffuseMap.tex,0))
+        {
+            DE_ERROR("Fail diffuseMap ",diffuseMap.str())
+            return false;
+        }
         shader->setInt( "u_tex", 0 );
         shader->setVec4f( "u_texTransform", diffuseMap.coords );
     }
+
+    State state; //  = mtl.state;
+    state.depth = Depth::disabled();
+    state.culling = Culling::disabled();
+    state.blend = Blend::alphaBlend();
+    m_driver->setState( state );
 
     return true;
 }
@@ -255,13 +260,18 @@ ScreenRenderer::setMaterial( smesh::SMaterial const & mtl, const Recti& pos )
 void
 ScreenRenderer::unsetMaterial( smesh::SMaterial const & mtl )
 {
-
+    // const auto& ref = mtl.getDiffuseMap();
+    // if (ref.tex && ref.tex->id())
+    // {
+    //     glBindTexture(GL_TEXTURE_2D,0);
+    //     glBindTextureUnit(0, 0);
+    // }
 }
 
 std::string
 ScreenRenderer::createShaderName( smesh::SMaterial const & material )
 {
-   std::stringstream s; s << "s2d";
+   std::stringstream s; s << "scrb2d";
    if ( material.hasDiffuseMap() ) s << "+Td";
    if ( material.CloudTransparent ) s << "+cloud";
    return s.str();

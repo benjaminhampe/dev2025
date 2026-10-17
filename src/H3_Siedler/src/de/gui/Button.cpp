@@ -9,7 +9,13 @@ namespace gui {
 Button::Button( std::string text, Env* env, Widget* parent, u32 id, const Recti& r)
 // =====================================================================
     : Widget(env, parent, id, r)
+    // --- Fill ---
+    , m_radius(0)
+    // --- Border ---
+    , m_borderWidth(0)
+    // --- Text ---
     , m_text(text)
+    // --- Callbacks ---
     , m_fnOnClicked( [] () {} )
 {
     setFillColor(dbRGB( 50, 50, 50), eWS_Idle);
@@ -77,7 +83,7 @@ Button::draw()
     // --- [Draw] Fill ---
     if (dbRGB_A(fillColor) > 0)
     {
-#if 1
+#if 0
         auto r_screen = driver->getScreenQuadRenderer();
         r_screen->draw2D( pos, m_tex, true );
 #else

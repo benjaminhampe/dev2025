@@ -67,13 +67,15 @@ uint32_t
 GT_compileShader(
     const std::string& shaderName,
     uint32_t shaderType,
-    const std::string& srcText);
+    const std::string& srcText,
+    bool debug );
 
 uint32_t
 GT_createShader(
     const std::string& shaderName,
     const std::string& vsText,
-    const std::string& fsText );
+    const std::string& fsText,
+    bool debug );
 
 
 

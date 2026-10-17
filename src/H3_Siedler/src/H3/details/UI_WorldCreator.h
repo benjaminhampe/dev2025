@@ -2,11 +2,11 @@
 #include <H3/H3_Board.h>
 
 // ===========================================================================
-class UI_World : public de::gui::Panel
+class UI_World : public de::gui::Widget
 // ===========================================================================
 {
 public:
-    UI_World( H3_Game* game, de::gui::Env* env, de::gui::Widget* parent, u32 id, const de::Recti& r );
+    UI_World( H3_Game* game, de::gui::Env* env, de::gui::Widget* parent, u32 id );
     ~UI_World() override;
     void draw() override;
     void setPreset( const H3_Cfg& cfg );
@@ -16,6 +16,9 @@ public:
 protected:
 private:
     H3_Game* m_game;
+
+    de::gpu::TexRef m_backgroundTex;
+
     float m_tileSize = 100.f;
     float m_scale = 1.f;
     float m_off_x = 0.f;
@@ -27,7 +30,7 @@ private:
 
 
 // ===========================================================================
-class UI_WorldCreator : public de::gui::Panel
+class UI_WorldCreator : public de::gui::Widget
 // ===========================================================================
 {
 public:
@@ -44,11 +47,16 @@ public:
     H3_Cfg& getPreset( const std::string& presetName );
     const std::string& getPresetName() const;
 protected:
-    de::gui::Button* createButton(std::string txt, de::gpu::TexRef ref, de::Recti pos);
+    de::gui::Button* createButton(std::string txt);
     de::gui::IntField* createIntField(std::string txt, int val, int min, int max);
     void calcTileBounds();
 private:
     H3_Game* m_game;
+
+    de::gpu::TexRef m_backgroundTex;
+
+    UI_World* m_body;
+
     de::gui::Label* m_title;
     //de::gui::Label* m_presetLabel;
     de::gui::Button* m_presetPrev;
@@ -70,7 +78,6 @@ private:
     de::gui::Button* m_btnClose;
     de::gui::Button* m_btnStart;
 
-    UI_World* m_body;
 
     float m_tileSize = 100.f;
 

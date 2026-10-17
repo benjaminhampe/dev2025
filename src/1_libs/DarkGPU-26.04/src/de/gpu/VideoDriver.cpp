@@ -90,44 +90,114 @@ void Shader::setBool(const std::string& name, bool value) const
 }
 void Shader::setInt(const std::string& name, int value) const
 {
-    glUniform1i(glGetUniformLocation(id, name.c_str()), value); GL_VALIDATE
+    int loc = glGetUniformLocation(id, name.c_str());
+    if (loc < 0)
+    {
+        DE_ERROR("No loc name(",name, "), shaderId(",id,")")
+        return;
+    }
+    glUniform1i(loc, value);
+    GL_VALIDATE
 }
 void Shader::setUInt(const std::string& name, uint32_t value) const
 {
-    glUniform1ui(glGetUniformLocation(id, name.c_str()), value); GL_VALIDATE
+    int loc = glGetUniformLocation(id, name.c_str());
+    if (loc < 0)
+    {
+        DE_ERROR("No loc name(",name, "), shaderId(",id,")")
+        return;
+    }
+    glUniform1ui(loc, value);
+    GL_VALIDATE
 }
 void Shader::setFloat(const std::string& name, float value) const
 {
-    glUniform1f(glGetUniformLocation(id, name.c_str()), value); GL_VALIDATE
+    int loc = glGetUniformLocation(id, name.c_str());
+    if (loc < 0)
+    {
+        DE_ERROR("No loc name(",name, "), shaderId(",id,")")
+        return;
+    }
+    glUniform1f(loc, value);
+    GL_VALIDATE
 }
 void Shader::setVec1f(const std::string& name, float value) const
 {
-    glUniform1f(glGetUniformLocation(id, name.c_str()), value); GL_VALIDATE
+    int loc = glGetUniformLocation(id, name.c_str());
+    if (loc < 0)
+    {
+        DE_ERROR("No loc name(",name, "), shaderId(",id,")")
+        return;
+    }
+    glUniform1f(loc, value);
+    GL_VALIDATE
 }
 void Shader::setVec2f(const std::string& name, glm::vec2 const &value) const
 {
-    glUniform2fv(glGetUniformLocation(id, name.c_str()), 1, glm::value_ptr( value )); GL_VALIDATE
+    int loc = glGetUniformLocation(id, name.c_str());
+    if (loc < 0)
+    {
+        DE_ERROR("No loc name(",name, "), shaderId(",id,")")
+        return;
+    }
+    glUniform2fv(loc, 1, glm::value_ptr( value ));
+    GL_VALIDATE
 }
 void Shader::setVec3f(const std::string& name, glm::vec3 const &value) const
 {
-    glUniform3fv(glGetUniformLocation(id, name.c_str()), 1, glm::value_ptr( value )); GL_VALIDATE
+    int loc = glGetUniformLocation(id, name.c_str());
+    if (loc < 0)
+    {
+        DE_ERROR("No loc name(",name, "), shaderId(",id,")")
+        return;
+    }
+    glUniform3fv(loc, 1, glm::value_ptr( value ));
+    GL_VALIDATE
 }
 void Shader::setVec4f(const std::string& name, glm::vec4 const &value) const
 {
-    glUniform4fv(glGetUniformLocation(id, name.c_str()), 1, glm::value_ptr( value )); GL_VALIDATE
+    int loc = glGetUniformLocation(id, name.c_str());
+    if (loc < 0)
+    {
+        DE_ERROR("No loc name(",name, "), shaderId(",id,")")
+        return;
+    }
+    glUniform4fv(loc, 1, glm::value_ptr( value ));
+    GL_VALIDATE
 }
 // ------------------------------------------------------------------------
 void Shader::setMat2f(const std::string& name, glm::mat2 const &mat) const
 {
-    glUniformMatrix2fv(glGetUniformLocation(id, name.c_str()), 1, GL_FALSE, glm::value_ptr( mat )); GL_VALIDATE
+    int loc = glGetUniformLocation(id, name.c_str());
+    if (loc < 0)
+    {
+        DE_ERROR("No loc name(",name, "), shaderId(",id,")")
+        return;
+    }
+    glUniformMatrix2fv(loc, 1, GL_FALSE, glm::value_ptr( mat ));
+    GL_VALIDATE
 }
 void Shader::setMat3f(const std::string& name, glm::mat3 const &mat) const
 {
-    glUniformMatrix3fv(glGetUniformLocation(id, name.c_str()), 1, GL_FALSE, glm::value_ptr( mat )); GL_VALIDATE
+    int loc = glGetUniformLocation(id, name.c_str());
+    if (loc < 0)
+    {
+        DE_ERROR("No loc name(",name, "), shaderId(",id,")")
+        return;
+    }
+    glUniformMatrix3fv(loc, 1, GL_FALSE, glm::value_ptr( mat ));
+    GL_VALIDATE
 }
 void Shader::setMat4f(const std::string& name, glm::mat4 const &mat) const
 {
-    glUniformMatrix4fv(glGetUniformLocation(id, name.c_str()), 1, GL_FALSE, glm::value_ptr( mat )); GL_VALIDATE
+    int loc = glGetUniformLocation(id, name.c_str());
+    if (loc < 0)
+    {
+        DE_ERROR("No loc name(",name, "), shaderId(",id,")")
+        return;
+    }
+    glUniformMatrix4fv(loc, 1, GL_FALSE, glm::value_ptr( mat ));
+    GL_VALIDATE
 }
 
 
@@ -815,6 +885,7 @@ bool VideoDriver::useTexture( Texture* tex, int stage )
     if (stage < 0)
     {
         DE_ERROR("Invalid stage ", stage)
+        stage = 0;
     }
 
     if (tex)
@@ -822,6 +893,7 @@ bool VideoDriver::useTexture( Texture* tex, int stage )
         if (!tex->id())
         {
             DE_ERROR("Tex exists, but no GPU handle ", tex->str())
+            return false;
         }
 
         glBindTextureUnit(stage,tex->id());
@@ -883,7 +955,7 @@ Shader* VideoDriver::getShader( const std::string& name ) const
 Shader* VideoDriver::createShader(
       const std::string& name,
       const std::string& vsSourceText,
-      const std::string& fsSourceText )
+      const std::string& fsSourceText, bool debug )
 {
     if (getShader( name ))
     {
@@ -902,7 +974,7 @@ Shader* VideoDriver::createShader(
     const char* vsText = vs.c_str();
     const char* fsText = fs.c_str();
 
-    uint32_t shaderId = GT_createShader(name.c_str(), vsText, fsText);
+    uint32_t shaderId = GT_createShader(name.c_str(), vsText, fsText, debug);
     if (!shaderId)
     {
         DE_ERROR("Cannot create shader ", name)
@@ -914,12 +986,12 @@ Shader* VideoDriver::createShader(
     shader->name = name;
     m_shaders[ name ] = shader;
 
-    // if ( debug )
-    // {
-    // DE_DEBUG("Created shader ", name, " with id ", shaderId, ":")
-    // DE_DEBUG("VS[", name, "]:\n", vs )
-    // DE_DEBUG("FS[", name, "]:\n", fs )
-    // }
+    if ( debug )
+    {
+        DE_DEBUG("Created shader ", name, " with id ", shaderId, ":")
+        DE_DEBUG("VS[", name, "]:\n", vs )
+        DE_DEBUG("FS[", name, "]:\n", fs )
+    }
 
     useShader( shader );
     return shader;

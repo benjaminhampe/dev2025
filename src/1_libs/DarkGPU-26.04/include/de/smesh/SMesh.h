@@ -251,30 +251,8 @@ struct SMeshBuffer
     std::string name;   /// @brief Able to find specific MeshBuffer in Mesh by (category/material) name. ( e.g. "Lines", "Triangles" )
 
     /// @brief Constructor
-    explicit SMeshBuffer( gpu::PrimitiveType primType = gpu::PrimitiveType::Triangles )
-        : primitiveType( primType )
-        , bVisible( true )
-        , bShouldUpload( false )
-        //, m_FVF( TVertex::getFVF() )
-        , vao( 0 )
-        , vbo( 0 )
-        , ibo( 0 )
-
-        , boundingBox()
-        //, ModelMat( 1.0 )
-        //, name("")
-    {
-    // DE_DEBUG(getName())
-    }
-
-    ~SMeshBuffer()
-    {
-        if ( vao )
-        {
-            DE_ERROR("Forgot to call SMeshBuffer.destroy()")
-        }
-    }
-
+    explicit SMeshBuffer( gpu::PrimitiveType primType = gpu::PrimitiveType::Triangles );
+    ~SMeshBuffer();
     void destroy();
     void upload( bool bForceUpload = false );
     void draw() const;

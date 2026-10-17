@@ -103,7 +103,8 @@ ScreenQuadRenderer::init(VideoDriver* driver)
 void
 ScreenQuadRenderer::draw2D(const de::Recti& pos, const TexRef& ref, bool blend)
 {
-    if (!ref.tex) { DE_ERROR("No tex") return; }
+    if (ref.empty()) { DE_ERROR("No tex") return; }
+    //if (!ref.tex->id()) { DE_ERROR("No texId ",ref.str()) return; }
     if (!m_driver) { DE_ERROR("No driver") return; }
     if (!m_shader) { DE_ERROR("No shader") return; }
     if (!m_vao) { DE_ERROR("No vao") return; }
@@ -111,7 +112,10 @@ ScreenQuadRenderer::draw2D(const de::Recti& pos, const TexRef& ref, bool blend)
     State state;
     state.culling = Culling::disabled();
     state.depth = Depth::disabled();
-    state.blend = Blend::alphaBlend();
+    if (blend)
+    {
+        state.blend = Blend::alphaBlend();
+    }
     m_driver->setState(state);
 
     m_driver->useShader(m_shader);
@@ -120,12 +124,17 @@ ScreenQuadRenderer::draw2D(const de::Recti& pos, const TexRef& ref, bool blend)
     // int h = m_driver->getRenderHeight();
     const int w = m_driver->getScreenWidth();
     const int h = m_driver->getScreenHeight();
-    glUniform2f(m_u_screenSize, (float)w, (float)h);
-    glUniform4f(m_u_posTransform, pos.x, pos.y, pos.w, pos.h);
+    m_shader->setVec2f("u_screenSize", glm::vec2(w,h));
+    m_shader->setVec4f("u_posTransform", glm::vec4(pos.x, pos.y, pos.w, pos.h));
+    m_driver->useTexture(ref.tex,0);
+    m_shader->setInt("u_tex",0);
+    m_shader->setVec4f("u_texTransform", ref.coords);
 
-    glBindTextureUnit(0, ref.tex->id());
-    glUniform1i(m_u_tex, 0);
-    glUniform4fv(m_u_texTransform, 1, glm::value_ptr(ref.coords));
+    // glUniform2f(m_u_screenSize, (float)w, (float)h);
+    // glUniform4f(m_u_posTransform, pos.x, pos.y, pos.w, pos.h);
+    // glBindTextureUnit(0, ref.tex->id());
+    // glUniform1i(m_u_tex, 0);
+    // glUniform4fv(m_u_texTransform, 1, glm::value_ptr(ref.coords));
 
     glBindVertexArray(m_vao);
     glDrawArrays(GL_TRIANGLES, 0, 6);

@@ -509,6 +509,31 @@ SMaterial::loadXML( std::string uri )
    return true;
 }
 
+/// @brief Constructor
+SMeshBuffer::SMeshBuffer( gpu::PrimitiveType primType )
+    : primitiveType( primType )
+    , bVisible( true )
+    , bShouldUpload( true )
+    //, m_FVF( TVertex::getFVF() )
+    , vao( 0 )
+    , vbo( 0 )
+    , ibo( 0 )
+
+    , boundingBox()
+    //, ModelMat( 1.0 )
+    //, name("")
+{
+// DE_DEBUG(getName())
+}
+
+SMeshBuffer::~SMeshBuffer()
+{
+    if ( vao )
+    {
+        DE_ERROR("Forgot to call SMeshBuffer.destroy()")
+    }
+}
+
 void
 SMeshBuffer::destroy()
 {
@@ -628,24 +653,29 @@ SMeshBuffer::upload( bool bForceUpload )
 void
 SMeshBuffer::draw() const
 {
-   // Draw call
+    if (!vao)
+    {
+        DE_ERROR("No vao")
+        return;
+    }
+    // Draw call
 
-   glBindVertexArray(vao);
-GL_VALIDATE
+    glBindVertexArray(vao);
+    GL_VALIDATE
 
-   GLenum const primType = gpu::PrimitiveType::toOpenGL( primitiveType );
-   if ( ibo )
-   {
-      glDrawElements( primType, GLint(indices.size()), GL_UNSIGNED_INT, nullptr );
-   }
-   else
-   {
-      glDrawArrays( primType, 0, GLint(vertices.size()) );
-   }
-GL_VALIDATE
+    GLenum const primType = gpu::PrimitiveType::toOpenGL( primitiveType );
+    if ( ibo )
+    {
+        glDrawElements( primType, GLint(indices.size()), GL_UNSIGNED_INT, nullptr );
+    }
+    else
+    {
+        glDrawArrays( primType, 0, GLint(vertices.size()) );
+    }
+    GL_VALIDATE
 
-   glBindVertexArray(0);
-GL_VALIDATE
+    glBindVertexArray(0);
+    GL_VALIDATE
 }
 
 // [MemorySizeInBytes]

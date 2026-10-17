@@ -578,7 +578,7 @@ struct VideoDriver
     Shader*     getShader( const std::string& name ) const;
     bool        useShader( Shader* shader );
     //void      addShader( IShader* shader );
-    Shader*     createShader( const std::string& name, const std::string& vsText, const std::string& fsText );
+    Shader*     createShader( const std::string& name, const std::string& vsText, const std::string& fsText, bool debug = false );
     //Shader*   createShader( const std::string& name, const std::string& vs, const std::string& gs, const std::string& fs, bool debug = false );
     //int32_t   findShader( const std::string& name ) const;
 
@@ -787,6 +787,7 @@ protected:
     int32_t m_shaderVersionMinor; // Brings second number, read from glGetInteger(GL_VERSION_MINOR)
     bool m_useCoreProfile;        // Brings <core> word, read from GL_RENDERER ? ( not read yet )
     bool m_useGLES;               // Brings <es> word, read from -DBENNI_USE_ES or GL_RENDERER ?
+    // bool m_bPrintShaderTexts;
     std::unordered_map< std::string, Shader* > m_shaders;
 
     PerfTracer m_perfTracer;

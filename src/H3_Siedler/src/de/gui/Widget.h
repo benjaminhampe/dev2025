@@ -46,7 +46,7 @@ public:
         eWS_Released = 3,
     };
 
-    Widget( Env* env, Widget* parent, u32 id, const Recti& r );
+    Widget( Env* env, Widget* parent = nullptr, u32 id = 0, const Recti& r = de::Recti() );
     virtual ~Widget();
     virtual u32 getType() const { return eWT_Widget; }
     virtual void resize(int x, int y, int w, int h);

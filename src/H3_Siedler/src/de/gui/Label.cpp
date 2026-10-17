@@ -9,6 +9,11 @@ namespace gui {
 Label::Label( std::string text, Env* env, Widget* parent, u32 id, const Recti& r )
 // =====================================================================
     : Widget(env, parent, id, r)
+    // --- Fill ---
+    , m_radius(0)
+    // --- Border ---
+    , m_borderWidth(0)
+    // --- Text ---
     , m_text(text)
 {
     // setFillColor(dbRGB(255,255,255), eWS_Idle);
@@ -103,6 +108,18 @@ void Label::draw()
     // --- [Draw] Fill ---
     if (dbRGB_A(fillColor) > 0)
     {
+#if 0
+        if (m_tex.tex)
+        {
+            auto r_screen = driver->getScreenQuadRenderer();
+            r_screen->draw2D( pos, m_tex, true );
+        }
+        else
+        {
+            driver->getScreenRenderer()->
+                draw2DRect( pos, fillColor, m_tex );
+        }
+#else
         if ( m_radius < 1 )
         {
             driver->getScreenRenderer()->
@@ -114,6 +131,7 @@ void Label::draw()
             driver->getScreenRenderer()->
                 draw2DRoundRect( pos, r, fillColor, m_tex, 24 );
         }
+#endif
     }
 
     // --- [Draw] Text ---
@@ -126,6 +144,7 @@ void Label::draw()
                         m_font, textBgColor, 10 );
     }
 
+/*
     // --- [Draw] Border ---
     if (m_borderWidth > 0)
     {
@@ -141,6 +160,7 @@ void Label::draw()
                 draw2DRoundRectLine( pos, r, borderColor, m_tex, 24 );
         }
     }
+*/
 }
 
 } // end namespace gui.

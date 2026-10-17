@@ -11,11 +11,8 @@ Panel::Panel( Env* env, Widget* parent, u32 id, const Recti& r )
     : Widget(env,parent,id,r)
     // --- Fill ---
     , m_radius(0)
-    , m_tex()
-    , m_fillColors{ 0,0,0,0 }
     // --- Border ---
-    , m_borderWidth(1)
-    , m_borderColors{ 0,0,0,0 }
+    , m_borderWidth(0)
 {
     setFillColor(dbRGB(255,255,255), eWS_Idle);
     setFillColor(dbRGB(255,255,255), eWS_Hovered);

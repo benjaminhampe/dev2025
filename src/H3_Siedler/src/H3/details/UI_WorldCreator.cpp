@@ -8,12 +8,12 @@
 #include <de/gui/IntField.h>
 
 // =====================================================================
-UI_World::UI_World( H3_Game* game, de::gui::Env* env, de::gui::Widget* parent, u32 id, const de::Recti& pos )
+UI_World::UI_World( H3_Game* game, de::gui::Env* env, de::gui::Widget* parent, u32 id )
 // =====================================================================
-    : de::gui::Panel(env, parent, id, pos)
+    : de::gui::Widget(env, parent, id)
     , m_game(game)
 {
-
+    m_backgroundTex = game->getTex( H3_Tex::Grunge, "UI_World()" );
 }
 
 UI_World::~UI_World()
@@ -33,18 +33,25 @@ H3_Cfg& UI_World::getPreset()
 
 void UI_World::draw()
 {
-    Panel::draw();
-
     if (!isVisible()) return;
+
+    if (!m_env) { DE_ERROR("No env") return; }
+    auto driver = m_env->getVideoDriver();
+    if (!driver) { DE_ERROR("No driver") return; }
+
+    const auto pos = getAbsoluteRect();
+    if (pos.w < 1 || pos.h < 1) return;
+
+    driver->getScreenRenderer()->
+        draw2DRect( pos, 0xFFFFFFFF, m_backgroundTex );
 
     // for (auto & child : m_children)
     // {
     //     child->draw();
     // }
 
-    auto r = getAbsoluteRect();
-    float originX = r.centerX();
-    float originY = r.centerY();
+    float originX = pos.centerX();
+    float originY = pos.centerY();
 
     auto texA = m_game->getTex(H3_Tex::TileA, "UI_World.draw()");
     auto texB = m_game->getTex(H3_Tex::TileB, "UI_World.draw()");
@@ -90,30 +97,28 @@ void UI_World::draw()
 // =====================================================================
 UI_WorldCreator::UI_WorldCreator( H3_Game* game, de::gui::Env* env, de::gui::Widget* parent, u32 id, const de::Recti& pos )
 // =====================================================================
-    : de::gui::Panel(env, parent, id, pos)
+    : de::gui::Widget(env, parent, id, pos)
     , m_game(game)
     , m_btnClose(nullptr)
 {
-    auto tex1 = game->getTex( H3_Tex::Grunge, "UI_WorldCreator()" );
-    setTexture( tex1 );
-    setFillColor( 0xffffffff );
+    m_backgroundTex = game->getTex( H3_Tex::Grunge, "UI_WorldCreator()" );
 
-    auto texB = m_game->getTex(H3_Tex::Scroll1, "UI_WorldCreator().Scroll1");
-    auto r = de::Recti();
+    m_body = new UI_World( m_game, env, this, 0);
 
-    m_title = new de::gui::Label("WorldCreator", env, this, 0, r);
-    m_title->setTexture( texB );
+    auto tex = m_game->getTex(H3_Tex::Scroll1, "UI_WorldCreator().Scroll1");
+    m_title = new de::gui::Label("WorldCreator", env, this, 0, de::Recti());
+    m_title->setTexture(tex);
 
     //m_presetLabel = new de::gui::Label("Presets:", env, this, 0, r);
-    m_presetPrev = createButton("Prev", texB, r );
-    m_presetNext = createButton("Next", texB, r);
-    m_presetName = new de::gui::Label("Preset Name", env, this, 0, r);
-    m_presetNew = createButton("New", texB, r);
-    m_presetClone = createButton("Clone", texB, r);
-    m_presetDelete = createButton("Del", texB, r);
-    m_presetExport = createButton("Export", texB, r);
-    m_presetImport = createButton("Import", texB, r);
-    //m_presetEdit = createButton("Edit", texB, r);
+    m_presetPrev = createButton("Prev");
+    m_presetNext = createButton("Next");
+    m_presetName = new de::gui::Label("Preset Name", env, this, 0, de::Recti());
+    m_presetNew = createButton("New");
+    m_presetClone = createButton("Clone");
+    m_presetDelete = createButton("Del");
+    m_presetExport = createButton("Export");
+    m_presetImport = createButton("Import");
+    //m_presetEdit = createButton("Edit");
 
     //m_edtTilesX = createIntField("Tiles X", 10, 3, 200);
     //m_edtTilesY = createIntField("Tiles Y", 10, 3, 200);
@@ -122,8 +127,8 @@ UI_WorldCreator::UI_WorldCreator( H3_Game* game, de::gui::Env* env, de::gui::Wid
     m_edtSpacing = createIntField("Building Spacing", 1, 0, 1);
     m_edtPlayer = createIntField("Num Players", 4, 2, 16);
 
-    m_btnClose = createButton("Close", texB, r);
-    m_btnStart = createButton("Start", texB, r);
+    m_btnClose = createButton("Close");
+    m_btnStart = createButton("Start");
 
     m_btnClose->setOnClicked([&] ()
     {
@@ -133,10 +138,6 @@ UI_WorldCreator::UI_WorldCreator( H3_Game* game, de::gui::Env* env, de::gui::Wid
     {
         m_game->enterStartGame();
     });
-
-    m_body = new UI_World( m_game, env, this, 0, r);
-    m_body->setTexture( tex1 );
-    m_body->setFillColor( 0xffffffff );
 }
 
 UI_WorldCreator::~UI_WorldCreator()
@@ -146,30 +147,41 @@ UI_WorldCreator::~UI_WorldCreator()
 
 void UI_WorldCreator::draw()
 {
-    Panel::draw();
-
     if (!isVisible()) return;
 
+    if (!m_env) { DE_ERROR("No env") return; }
+    auto driver = m_env->getVideoDriver();
+    if (!driver) { DE_ERROR("No driver") return; }
+
+    const auto pos = getAbsoluteRect();
+
+    driver->getScreenQuadRenderer()->
+        draw2D( pos, m_backgroundTex, false );
+
+/*
     for (auto & child : m_children)
     {
         child->draw();
     }
+*/
+    m_presetPrev->draw();
+    m_presetNext->draw();
+    m_presetName->draw();
+    m_presetNew->draw();
+    m_presetClone->draw();
+    m_presetDelete->draw();
+    m_presetExport->draw();
+    m_presetImport->draw();
 
-    // m_presetPrev->draw();
-    // m_presetNext->draw();
-    // m_presetName->draw();
-    // m_presetNew->draw();
-    // m_presetClone->draw();
-    // m_presetDelete->draw();
-    // m_presetExport->draw();
-    // m_presetImport->draw();
-    // m_edtVictory->draw();
-    // m_edtCardLimit->draw();
-    // m_edtSpacing->draw();
-    // m_edtPlayer->draw();
-    // m_body->draw();
-    // m_btnClose->draw();
-    // m_btnStart->draw();
+    m_edtVictory->draw();
+    m_edtCardLimit->draw();
+    m_edtSpacing->draw();
+    m_edtPlayer->draw();
+
+    m_body->draw();
+
+    m_btnClose->draw();
+    m_btnStart->draw();
 }
 
 void UI_WorldCreator::resize(int x, int y, int w, int h)
@@ -205,7 +217,7 @@ void UI_WorldCreator::resize(int x, int y, int w, int h)
     m_presetDelete->resize(bx,by,bw,bh); bx += bw + p;
     bw = 200;
     m_presetExport->resize(bx,by,bw,bh); bx += bw + p;
-    m_presetImport->resize(bx,by,bw,bh); bx += bw + p;
+    m_presetImport->resize(bx,by,bw,bh); // bx += bw + p;
     // w = 100;
     // m_presetEdit->setRect(x,y,w,h);
     by += bh + 2*p;
@@ -315,20 +327,23 @@ void UI_WorldCreator::calcTileBounds()
 }
 
 de::gui::Button*
-UI_WorldCreator::createButton(std::string txt, de::gpu::TexRef ref, de::Recti pos)
+UI_WorldCreator::createButton(std::string txt)
 {
-    auto btn = new de::gui::Button(txt, m_env, this, 0, pos);
+    auto btn = new de::gui::Button(txt, m_env, this, 0, de::Recti());
     btn->setRadius( 8 );
+
+    auto tex = m_game->getTex(H3_Tex::Scroll1, "UI_WorldCreator().Scroll1");
+
     // btn->setFillColor(dbRGB(255,255,255,200),0);
     // btn->setTextColor(dbRGB(255,255,255),dbRGB(255,255,255), 1);
-    btn->setTexture( ref );
+    btn->setTexture( tex );
     return btn;
 }
 
 de::gui::IntField*
 UI_WorldCreator::createIntField(std::string txt, int val, int min, int max)
 {
-    auto edt = new de::gui::IntField(txt, m_env, this, 0, de::Recti(0,0,10,10));
+    auto edt = new de::gui::IntField(txt, m_env, this, 0, de::Recti());
     edt->setMinimum(min);
     edt->setMaximum(max);
     edt->setValue(val);

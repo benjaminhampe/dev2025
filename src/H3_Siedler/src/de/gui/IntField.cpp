@@ -13,6 +13,7 @@ IntField::IntField( const std::string& label, Env* env, Widget* parent, u32 id, 
     , m_maximum(100)
     , m_step(1)
 {
+    setDrawChildren(false);
     int w1 = r.h;
 
     m_lblName = new Label(label, env, this, 0, Recti(w1, 0, r.w - 2*w1, w1));
@@ -46,12 +47,12 @@ void IntField::setFont( const Font& font )
 
 void IntField::draw()
 {
+    if (!isVisible()) return;
     m_lblName->draw();
     m_btnMinus->draw();
     m_lblValue->draw();
     m_btnPlus->draw();
 }
-
 
 void IntField::resize(int x, int y, int w, int h)
 {

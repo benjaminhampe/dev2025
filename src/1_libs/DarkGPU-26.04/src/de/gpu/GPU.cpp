@@ -101,9 +101,11 @@ GT_getShaderTypeStr( uint32_t shaderType )
 }
 
 uint32_t
-GT_compileShader( const std::string& shaderName,
-                  uint32_t shaderType,
-                  const std::string& srcText)
+GT_compileShader(
+    const std::string& shaderName,
+    uint32_t shaderType,
+    const std::string& srcText,
+    bool debug )
 {
     uint32_t shaderId = glCreateShader(shaderType);
 GL_VALIDATE
@@ -123,7 +125,10 @@ GL_VALIDATE
 GL_VALIDATE
         const auto shaderTypeStr = GT_getShaderTypeStr(shaderType);
         DE_ERROR(shaderTypeStr,"-SHADER[",shaderName,"]::COMPILATION_FAILED:\n", infoLog)
+    }
 
+    if (!ok || debug)
+    {
         auto txt = de::StringUtil::prefixLineNumbers(srcText);
         DE_DEBUG("\n", txt)
     }
@@ -132,10 +137,14 @@ GL_VALIDATE
 }
 
 uint32_t
-GT_createShader( const std::string& name, const std::string& vsText, const std::string& fsText )
+GT_createShader(
+    const std::string& name,
+    const std::string& vsText,
+    const std::string& fsText,
+    bool debug )
 {
-    uint32_t vsShaderId = GT_compileShader(name, GL_VERTEX_SHADER, vsText);
-    uint32_t fsShaderId = GT_compileShader(name, GL_FRAGMENT_SHADER, fsText);
+    uint32_t vsShaderId = GT_compileShader(name, GL_VERTEX_SHADER, vsText, debug);
+    uint32_t fsShaderId = GT_compileShader(name, GL_FRAGMENT_SHADER, fsText, debug);
 
     uint32_t programId = glCreateProgram();
 GL_VALIDATE
@@ -153,9 +162,15 @@ GL_VALIDATE
     {
         glGetProgramInfoLog(programId, 512, NULL, infoLog);
 GL_VALIDATE
-        DE_ERROR("SHADER[",name,"]::LINKING_FAILED:\n", infoLog)
+        DE_ERROR("SHADER[",name,"] LINK FAILED:\n", infoLog)
     }
-
+    else
+    {
+        if (debug)
+        {
+            DE_OK("SHADER[",name,"] LINK_OK.")
+        }
+    }
     glDeleteShader(vsShaderId);
 GL_VALIDATE
     glDeleteShader(fsShaderId);
@@ -746,7 +761,7 @@ bool
 TexRef::empty() const
 {
     constexpr float e = std::numeric_limits<float>::epsilon();
-    return !tex || (coords.z <= e) || (coords.w <= e);
+    return !tex || !tex->id() || (coords.z <= e) || (coords.w <= e);
 }
 
 
