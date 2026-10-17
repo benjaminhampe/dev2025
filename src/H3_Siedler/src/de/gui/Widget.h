@@ -31,11 +31,12 @@ public:
         eWF_Visible = 1,    // 0000 0001
         eWF_Enabled = 2,    // 0000 0010
         eWF_Hovered = 4,    // 0000 0100
-        eWF_Pickable = 8,   // 0000 0100
-        eWF_Pressed = 16,   // 0000 1000
-        eWF_Released = 32,  // 0001 0000
-        eWF_DrawChildren = 64, // 0010 0000
-        eWF_FlagMask = 0x1F
+        eWF_Pickable = 8,   // 0000 1000
+        eWF_Pressed = 16,   // 0001 0000
+        eWF_Released = 32,  // 0010 0000
+        eWF_DrawChildren = 64, // 0100 0000
+        eWF_Drawing = 128,  // 1000 0000
+        eWF_FlagMask = 0x7F
     };
 
     enum eWidgetState

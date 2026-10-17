@@ -7,6 +7,8 @@ void UI_CpuPlayer_draw(
         uint32_t playerId,
         const de::Recti& pos)
 {
+    //DE_DEBUG("Draw(",pos.str(),")")
+
     auto zoom = game.getZoom();
     auto driver = game.getDriver();
     int p = zoom * 10;

@@ -218,7 +218,7 @@ ScreenRenderer::setMaterial( smesh::SMaterial const & mtl, const Recti& pos )
     auto shader = m_driver->getShader( name );
     if (!shader)
     {
-        shader = m_driver->createShader( name, createVS( mtl ), createFS( mtl ), true );
+        shader = m_driver->createShader( name, createVS( mtl ), createFS( mtl ), false );
         if (!shader)
         {
             DE_ERROR("No shader created name(", name, ")")
@@ -271,7 +271,7 @@ ScreenRenderer::unsetMaterial( smesh::SMaterial const & mtl )
 std::string
 ScreenRenderer::createShaderName( smesh::SMaterial const & material )
 {
-   std::stringstream s; s << "scrb2d";
+   std::ostringstream s; s << "scrb2d";
    if ( material.hasDiffuseMap() ) s << "+Td";
    if ( material.CloudTransparent ) s << "+cloud";
    return s.str();

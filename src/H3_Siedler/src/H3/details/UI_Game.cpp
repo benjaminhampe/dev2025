@@ -26,8 +26,6 @@ UI_Game::UI_Game( H3_Game* game, de::gui::Env* env, de::gui::Widget* parent, u32
     m_actions->setVisible(false);
     m_donateCards->setVisible(false);
     m_winnerScreen->setVisible(false);
-
-    m_worldCreator->setPreset( H3_Cfg::createStandard() );
 }
 
 UI_Game::~UI_Game()
@@ -42,6 +40,8 @@ void UI_Game::draw()
         return;
     }
 
+    //DE_DEBUG("Draw(",m_rect.str(),")")
+
     H3_Game & game = *m_game;
 
     float zoom = game.getZoom();
@@ -50,7 +50,7 @@ void UI_Game::draw()
 
     // --- Draw Enemy Statistics ---
 
-    int p = zoom * p;
+    int p = zoom * 10;
     int estat_w = (w - 5*p) / 4;
     int estat_h = zoom * 150;
     int x = p;
@@ -77,6 +77,12 @@ void UI_Game::draw()
 
 void UI_Game::resize(int x, int y, int w, int h)
 {
+    auto rect = de::Recti(x, y, w, h);
+    if (rect == m_rect)
+    {
+        return;
+    }
+
     DE_DEBUG("Resize(",x,",",y,",",w,",",h,")")
     m_rect = de::Recti(x, y, w, h);
     updateLayouts();

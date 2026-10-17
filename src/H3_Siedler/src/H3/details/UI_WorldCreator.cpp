@@ -12,6 +12,7 @@ UI_World::UI_World( H3_Game* game, de::gui::Env* env, de::gui::Widget* parent, u
 // =====================================================================
     : de::gui::Widget(env, parent, id)
     , m_game(game)
+    , m_cfg{ nullptr }
 {
     const std::string caller = "UI_World";
     m_backgroundTex = game->getTex( H3_Tex::Grunge, caller );
@@ -29,16 +30,6 @@ UI_World::~UI_World()
     DE_WARN("")
 }
 
-void UI_World::setPreset( const H3_Cfg& cfg )
-{
-    m_cfg = cfg;
-}
-
-H3_Cfg& UI_World::getPreset()
-{
-    return m_cfg;
-}
-
 void UI_World::draw()
 {
     if (!isVisible()) return;
@@ -53,46 +44,51 @@ void UI_World::draw()
     driver->getScreenQuadRenderer()->
         draw2DRect( pos, m_backgroundTex );
 
-    // for (auto & child : m_children)
-    // {
-    //     child->draw();
-    // }
-
-    float originX = pos.centerX();
-    float originY = pos.centerY();
-
-
-    for (size_t i = 0; i < m_cfg.tileList.size(); ++i)
     {
-        const H3_CfgTile & tile = m_cfg.tileList[i];
-        float fX = de::smesh::SMeshHexagon::computeBoardPosX(m_tileSize, m_tileSize, tile.i, tile.j);
-        float fY = de::smesh::SMeshHexagon::computeBoardPosY(m_tileSize, m_tileSize, tile.i, tile.j);
-        float pX = m_scale * fX;
-        float pY = m_scale * fY;
-        float pW = m_scale * m_tileSize;
-        float pH = m_scale * m_tileSize;
+        std::lock_guard<std::mutex> lg(m_drawMutex);
 
-        float oX = originX + pX + m_off_x;
-        float oY = originY - pY + m_off_y - (0.5f * pH);
-
-        de::gpu::TexRef tex;
-        switch (tile.tileType)
+        if ( !m_cfg )
         {
-            case H3_TileType::TileA: tex = m_texA; break;
-            case H3_TileType::TileB: tex = m_texB; break;
-            case H3_TileType::TileC: tex = m_texC; break;
-            case H3_TileType::TileD: tex = m_texD; break;
-            case H3_TileType::TileE: tex = m_texE; break;
-            case H3_TileType::Water: tex = m_texH; break;
-            case H3_TileType::Desert:tex = m_texW; break;
-            case H3_TileType::PortA: tex = m_texH; break;
-            case H3_TileType::PortB: tex = m_texH; break;
-            case H3_TileType::PortC: tex = m_texH; break;
-            case H3_TileType::PortD: tex = m_texH; break;
-            case H3_TileType::PortE: tex = m_texH; break;
-            case H3_TileType::Port3v1: tex = m_texH; break;
+            return;
         }
-        H3_drawHexagon(*m_game, de::Recti(oX,oY,pW,pH), 0xffffffff, tex, i);
+
+        const auto& tiles = m_cfg->tileList;
+
+        float originX = pos.centerX();
+        float originY = pos.centerY();
+
+        for (size_t i = 0; i < tiles.size(); ++i)
+        {
+            const H3_CfgTile & tile = tiles[i];
+            float fX = de::smesh::SMeshHexagon::computeBoardPosX(m_tileSize, m_tileSize, tile.i, tile.j);
+            float fY = de::smesh::SMeshHexagon::computeBoardPosY(m_tileSize, m_tileSize, tile.i, tile.j);
+            float pX = m_scale * fX;
+            float pY = m_scale * fY;
+            float pW = m_scale * m_tileSize;
+            float pH = m_scale * m_tileSize;
+
+            float oX = originX + pX + m_off_x;
+            float oY = originY - pY + m_off_y - (0.5f * pH);
+
+            de::gpu::TexRef tex;
+            switch (tile.tileType)
+            {
+                case H3_TileType::TileA: tex = m_texA; break;
+                case H3_TileType::TileB: tex = m_texB; break;
+                case H3_TileType::TileC: tex = m_texC; break;
+                case H3_TileType::TileD: tex = m_texD; break;
+                case H3_TileType::TileE: tex = m_texE; break;
+                case H3_TileType::Water: tex = m_texH; break;
+                case H3_TileType::Desert:tex = m_texW; break;
+                case H3_TileType::PortA: tex = m_texH; break;
+                case H3_TileType::PortB: tex = m_texH; break;
+                case H3_TileType::PortC: tex = m_texH; break;
+                case H3_TileType::PortD: tex = m_texH; break;
+                case H3_TileType::PortE: tex = m_texH; break;
+                case H3_TileType::Port3v1: tex = m_texH; break;
+            }
+            H3_drawHexagon(*m_game, de::Recti(oX,oY,pW,pH), 0xffffffff, tex, i);
+        }
     }
 }
 
@@ -122,12 +118,12 @@ UI_WorldCreator::UI_WorldCreator( H3_Game* game, de::gui::Env* env, de::gui::Wid
     m_presetImport = createButton("Import");
     //m_presetEdit = createButton("Edit");
 
-    //m_edtTilesX = createIntField("Tiles X", 10, 3, 200);
-    //m_edtTilesY = createIntField("Tiles Y", 10, 3, 200);
-    m_edtVictory = createIntField("Victory Points", 10, 3, 250);
+    m_edtTilesX = createIntField("Tiles X", 6, 3, 50);
+    m_edtTilesY = createIntField("Tiles Y", 6, 3, 30);
+    m_edtVictoryPoints = createIntField("Victory Points", 10, 3, 250);
     m_edtCardLimit = createIntField("Card Steal Limit", 7, 0, 100);
-    m_edtSpacing = createIntField("Building Spacing", 1, 0, 1);
-    m_edtPlayer = createIntField("Num Players", 4, 2, 16);
+    m_edtBuildingSpacing = createIntField("Building Spacing", 1, 0, 1);
+    m_edtPlayer = createIntField("Num Players", 4, 2, 5);
 
     m_btnClose = createButton("Close");
     m_btnStart = createButton("Start");
@@ -138,7 +134,7 @@ UI_WorldCreator::UI_WorldCreator( H3_Game* game, de::gui::Env* env, de::gui::Wid
     });
     m_btnStart->setOnClicked([&] ()
     {
-        m_game->enterStartGame();
+        m_game->startGame();
     });
 }
 
@@ -156,6 +152,8 @@ void UI_WorldCreator::draw()
     if (!driver) { DE_ERROR("No driver") return; }
 
     const auto pos = getAbsoluteRect();
+
+    // DE_DEBUG("Draw(",pos.str(),")")
 
     driver->getScreenQuadRenderer()->
         draw2DRect( pos, m_backgroundTex, false );
@@ -175,9 +173,9 @@ void UI_WorldCreator::draw()
     m_presetExport->draw();
     m_presetImport->draw();
 
-    m_edtVictory->draw();
+    m_edtVictoryPoints->draw();
     m_edtCardLimit->draw();
-    m_edtSpacing->draw();
+    m_edtBuildingSpacing->draw();
     m_edtPlayer->draw();
 
     m_world->draw();
@@ -227,14 +225,15 @@ void UI_WorldCreator::resize(int x, int y, int w, int h)
 
     // ::::: Row[2] IntFields + HexWorldView ::::
 
-    bw = zoom*300;
-    bh = zoom*32;
+    bw = zoom * 300;
+    bh = zoom * 32;
     bx = 20;
-    //m_edtTilesX->setRect(bx,by,bw,bh);   by += ln + q;
-    //m_edtTilesY->setRect(bx,by,bw,bh);   by += ln + q;
-    m_edtVictory->resize(bx,by,bw,bh);     by += ln + q;
-    m_edtCardLimit->resize(bx,by,bw,bh);   by += ln + q;
-    m_edtSpacing->resize(bx,by,bw,bh);     by += ln + q;
+    ln = zoom * 40;
+    m_edtTilesX->resize(bx,by,bw,bh);           by += ln + q;
+    m_edtTilesY->resize(bx,by,bw,bh);           by += ln + q;
+    m_edtVictoryPoints->resize(bx,by,bw,bh);    by += ln + q;
+    m_edtCardLimit->resize(bx,by,bw,bh);        by += ln + q;
+    m_edtBuildingSpacing->resize(bx,by,bw,bh);  by += ln + q;
     m_edtPlayer->resize(bx,by,bw,bh);
 
     // ::::: Row[2] World Body ::::
@@ -254,6 +253,38 @@ void UI_WorldCreator::resize(int x, int y, int w, int h)
     m_btnStart->resize(bx,by,bw,bh);
 }
 
+void UI_WorldCreator::setCfg( const H3_Cfg& cfg )
+{
+    if (cfg.presetName.empty())
+    {
+        auto s = dbStr("setPreset() :: Got empty presetName.");
+        throw std::runtime_error(s);
+    }
+
+    m_world->disableFlags(eWF_Drawing);
+    std::this_thread::sleep_for(std::chrono::seconds(1));
+    m_cfg = cfg;
+    m_world->setPreset(&m_cfg);
+    m_world->enableFlags(eWF_Drawing);
+
+    m_presetName->setText( m_cfg.presetName );
+    m_edtVictoryPoints->setValue( m_cfg.victoryPoints );
+    m_edtCardLimit->setValue( m_cfg.cardLimitNoSteal );
+    m_edtBuildingSpacing->setValue( m_cfg.buildingSpacing );
+    m_edtPlayer->setValue( m_cfg.playerList.size() );
+}
+
+H3_Cfg
+UI_WorldCreator::getCfg()
+{
+    m_cfg.presetName = m_presetName->getText();
+    m_cfg.buildingSpacing = m_edtBuildingSpacing->getValue();
+    m_cfg.cardLimitNoSteal = m_edtCardLimit->getValue();
+    m_cfg.victoryPoints = m_edtVictoryPoints->getValue();
+    return m_cfg;
+}
+
+/*
 const std::string&
 UI_WorldCreator::getPresetName() const
 {
@@ -301,13 +332,14 @@ void UI_WorldCreator::setPreset( const H3_Cfg& cfg )
 
     auto& m_cfg = m_presets[ cfg.presetName ];
 
-    m_world->setPreset( m_cfg );
+    m_world->setPreset( &m_cfg );
     m_presetName->setText( m_cfg.presetName );
-    m_edtVictory->setValue( m_cfg.victoryPoints );
+    m_edtVictoryPoints->setValue( m_cfg.victoryPoints );
     m_edtCardLimit->setValue( m_cfg.cardLimitNoSteal );
-    m_edtSpacing->setValue( m_cfg.buildingSpacing );
+    m_edtBuildingSpacing->setValue( m_cfg.buildingSpacing );
     m_edtPlayer->setValue( m_cfg.playerList.size() );
 }
+*/
 
 void UI_WorldCreator::calcTileBounds()
 {
@@ -316,7 +348,7 @@ void UI_WorldCreator::calcTileBounds()
     int x2 = std::numeric_limits<int>::lowest();
     int y2 = std::numeric_limits<int>::lowest();
 
-    auto& m_cfg = getPreset();
+    // auto& m_cfg = getPreset();
 
     for ( const auto & tile : m_cfg.tileList )
     {

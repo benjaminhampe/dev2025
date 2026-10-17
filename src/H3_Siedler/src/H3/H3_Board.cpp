@@ -1,6 +1,43 @@
 #include "H3_Board.h"
 #include <H3/details/H3_Tex.h>
 
+void H3_Cfg::dump() const
+{
+    DE_DEBUG("cfg.presetName = ",presetName)
+    DE_DEBUG("cfg.victoryPoints = ",victoryPoints)
+    DE_DEBUG("cfg.cardLimitNoSteal = ",cardLimitNoSteal)
+
+    DE_DEBUG("cfg.buildingSpacing = ",buildingSpacing)
+    DE_DEBUG("cfg.useBonusRoad = ",useBonusRoad)
+    DE_DEBUG("cfg.useBonusArmy = ",useBonusArmy)
+
+    DE_DEBUG("cfg.useCardKnight = ",useCardKnight)
+    DE_DEBUG("cfg.useCardVictoryPoint = ",useCardVictoryPoint)
+    DE_DEBUG("cfg.useCardMonopol = ",useCardMonopol)
+    DE_DEBUG("cfg.useCardInvention = ",useCardInvention)
+    DE_DEBUG("cfg.playerList = ",playerList.size())
+
+    for (size_t i= 0; i < playerList.size(); ++i)
+    {
+        DE_DEBUG("cfg.player[",i,"] ",playerList[i].str())
+    }
+
+    DE_DEBUG("cfg.tileList = ",tileList.size())
+
+    for (size_t i= 0; i < tileList.size(); ++i)
+    {
+        DE_DEBUG("cfg.tile[",i,"] ",tileList[i].str())
+    }
+}
+
+std::string
+H3_Cfg::str() const
+{
+    std::ostringstream o;
+    o << "PresetName = " << presetName << "";
+    return o.str();
+}
+
 void
 H3_Cfg::addTile( int i, int j, H3_TileType tileType, int angle60, int diceValue )
 {

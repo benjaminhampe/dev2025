@@ -368,7 +368,6 @@ void Window_WGL::requestClose()
 
 void Window_WGL::makeCurrent( bool bRelease )
 {
-/*
     if (bRelease)
     {
         wglMakeCurrent(nullptr,nullptr);
@@ -379,7 +378,6 @@ void Window_WGL::makeCurrent( bool bRelease )
         if (!_d->hGL) { DE_ERROR("No hGL") return; }
         wglMakeCurrent(_d->hDC, _d->hGL);
     }
-*/
 }
 void Window_WGL::swapBuffers()
 {
@@ -415,7 +413,11 @@ void Window_WGL::swapBuffers()
     }
     //}
 #endif
-    // bool ok = (SwapBuffers( _d->hDC ) == TRUE);
+    bool ok = (SwapBuffers( _d->hDC ) == TRUE);
+    if (!ok)
+    {
+        DE_ERROR("Swap failed.")
+    }
 }
 
 void Window_WGL::update()
@@ -853,6 +855,31 @@ void Window_WGL::setFullScreen( bool fullscreen )
 // Runs the device. Returns false if device wants to be deleted
 bool Window_WGL::run()
 {
+    yield(); // Gibt CPU-Zeit ab, falls nötig
+
+    MSG msg;
+    // Verarbeite ALLE aktuell anstehenden Windows-Nachrichten
+    while (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE))
+    {
+        // Falls WM_QUIT kommt, brechen wir SOFORT ab
+        if (msg.message == WM_QUIT)
+        {
+            _d->m_shouldRun = false;
+            return false; // Sofort signalisieren: App beenden!
+        }
+
+        // Optional: Wieder einkommentieren, falls GUI-Texteingaben nicht gehen:
+        // TranslateMessage(&msg);
+
+        DispatchMessage(&msg);
+    }
+
+    // Hier folgt nach der Event-Verarbeitung deine Logik (z.B. Joystick polling)
+    // if(!Close && JoyControl) JoyControl->pollJoysticks();
+
+    return _d->m_shouldRun;
+
+#if 0
     yield();
 
 /*
@@ -892,6 +919,7 @@ bool Window_WGL::run()
 
     //_IRR_IMPLEMENT_MANAGED_MARSHALLING_BUGFIX;
     return _d->m_shouldRun;
+#endif
 }
 
 LRESULT CALLBACK
@@ -1236,6 +1264,7 @@ WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
             PAINTSTRUCT ps;
             BeginPaint(hwnd, &ps);
 
+#if 0
             if ( self && self->_d->m_bPaintEventEnabled )
             {
                 // wglMakeCurrent(ps.hdc, self->_d->hGL);
@@ -1254,7 +1283,7 @@ WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 
                 // wglMakeCurrent(nullptr, nullptr);
             }
-
+#endif
             EndPaint(hwnd, &ps);
 
             // SIGNAL an Windows: "Alles erledigt, nicht mehr anfassen!"

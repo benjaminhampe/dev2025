@@ -62,7 +62,7 @@ H3_Img::addFromMemory( eID id, const uint8_t* pData, uint64_t nBytes )
 
     m_cache[ id ] = pImage;
 
-    DE_DEBUG("H3_Img[",(uint32_t)id,"] ",pImage->str())
+    //DE_DEBUG("H3_Img[",(uint32_t)id,"] ",pImage->str())
 
     //dbSaveImage( *pImage, dbStrJoin("img_",id,".webp"));
 }
@@ -84,7 +84,7 @@ H3_Img::add( eID id, const std::string& uri, const de::ImageLoadOptions& opt )
 
     m_cache[ id ] = pImage;
 
-    DE_DEBUG("H3_Img[",id,"] ",pImage->str())
+    //DE_DEBUG("H3_Img[",id,"] ",pImage->str())
 
     //dbSaveImage( *pImage, dbStrJoin("img_",id,".webp"));
 }

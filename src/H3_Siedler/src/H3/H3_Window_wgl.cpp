@@ -23,12 +23,14 @@ void H3_Window::moveEvent( const de::MoveEvent& event )
 
 void H3_Window::resizeEvent( const de::ResizeEvent& event )
 {
-    m_game.resize(event.w,event.h);
+    DE_ERROR("We dont want async resizeEvent()")
+    //m_game.resize(event.w,event.h);
 }
 
 void H3_Window::paintEvent( const de::PaintEvent& event )
 {
-    m_game.draw();
+    DE_ERROR("We dont want async paintEvent()")
+    //m_game.draw();
 }
 
 void H3_Window::timerEvent( const de::TimerEvent& event )

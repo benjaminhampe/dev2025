@@ -13,6 +13,8 @@ void AI_donateCardsToRobber( H3_Game & game, int playerId )
         return;
     }
 
+    DE_DEBUG("")
+
     H3_Bank bank = player.state.bank;
 
     bool bWantBuyRoad = true;
@@ -34,26 +36,31 @@ void AI_donateCardsToRobber( H3_Game & game, int playerId )
         {
             bank.E--;
             E++;
+            numLose--;
         }
         if (bank.D > 0 && numLose > 0)
         {
             bank.D--;
             D++;
+            numLose--;
         }
         if (bank.C > 0 && numLose > 0)
         {
             bank.C--;
             C++;
+            numLose--;
         }
         if (bank.B > 0 && numLose > 0)
         {
             bank.B--;
             B++;
+            numLose--;
         }
         if (bank.A > 0 && numLose > 0)
         {
             bank.A--;
             A++;
+            numLose--;
         }
     }
 
@@ -73,6 +80,8 @@ void AI_donateCardsToRobber( H3_Game & game, int playerId )
     }
 
     DE_OK("Robbed Bank = ", player.state.bank.str())
+
+
 }
 
 float H3_getDiceChance( int diceSum )

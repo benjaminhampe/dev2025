@@ -201,6 +201,192 @@ void Shader::setMat4f(const std::string& name, glm::mat4 const &mat) const
 }
 
 
+/*
+#include <glad/glad.h>
+#include <GLFW/glfw3.h>
+#include <iostream>
+
+// Screen quad shader source code
+const char *vertexShaderSource = R"(
+    #version 330 core
+    layout (location = 0) in vec2 aPos;
+    layout (location = 1) in vec2 aTexCoord;
+    out vec2 TexCoord;
+    void main() {
+        TexCoord = aTexCoord;
+        gl_Position = vec4(aPos, 0.0, 1.0);
+    }
+)";
+
+const char *fragmentShaderSource = R"(
+    #version 330 core
+    out vec4 FragColor;
+    in vec2 TexCoord;
+    uniform sampler2D colorTexture;
+    void main() {
+        FragColor = texture(colorTexture, TexCoord);
+    }
+)";
+
+unsigned int createShader(GLenum type, const char* source) {
+    unsigned int shader = glCreateShader(type);
+    glShaderSource(shader, 1, &source, nullptr);
+    glCompileShader(shader);
+    return shader;
+}
+
+// Setup framebuffer with color, depth, and stencil attachments
+unsigned int setupFramebuffer(unsigned int &colorTexture, unsigned int &depthStencilTexture) {
+    unsigned int FBO;
+    glGenFramebuffers(1, &FBO);
+    glBindFramebuffer(GL_FRAMEBUFFER, FBO);
+
+    // Create color attachment
+    glGenTextures(1, &colorTexture);
+    glBindTexture(GL_TEXTURE_2D, colorTexture);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 800, 600, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, colorTexture, 0);
+
+    // Create depth-stencil attachment
+    glGenTextures(1, &depthStencilTexture);
+    glBindTexture(GL_TEXTURE_2D, depthStencilTexture);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH24_STENCIL8, 800, 600, 0, GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8, nullptr);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D, depthStencilTexture, 0);
+
+    // Check completeness
+    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
+        std::cout << "Error: Framebuffer is not complete!" << std::endl;
+    }
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    return FBO;
+}
+
+
+    // Creating HDR Color Attachment (RGBA16F)
+    glGenTextures(1, &hdrColorTexture);
+    glBindTexture(GL_TEXTURE_2D, hdrColorTexture);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, 800, 600, 0, GL_RGBA, GL_FLOAT, nullptr);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, hdrColorTexture, 0);
+
+    // Creating First Depth Texture Attachment
+    glGenTextures(1, &depthTexture1);
+    glBindTexture(GL_TEXTURE_2D, depthTexture1);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32, 800, 600, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthTexture1, 0);
+
+    // Creating Second Depth Texture for Effects
+    glGenTextures(1, &depthTexture2);
+    glBindTexture(GL_TEXTURE_2D, depthTexture2);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32, 800, 600, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthTexture2, 0);
+
+    // Creating Separate Stencil Buffer as Renderbuffer
+    glGenRenderbuffers(1, &stencilRenderbuffer);
+    glBindRenderbuffer(GL_RENDERBUFFER, stencilRenderbuffer);
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_STENCIL_INDEX8, 800, 600);
+    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_RENDERBUFFER, stencilRenderbuffer);
+
+    // Ensuring framebuffer completeness
+    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
+        std::cout << "Framebuffer not complete!" << std::endl;
+    }
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+#version 330 core
+out vec4 FragColor;
+in vec2 TexCoord;
+uniform sampler2D hdrTexture;
+
+void main() {
+    vec3 hdrColor = texture(hdrTexture, TexCoord).rgb;
+    hdrColor = hdrColor / (hdrColor + vec3(1.0)); // Reinhard tone mapping
+    FragColor = vec4(hdrColor, 1.0);
+}
+
+// Quad setup
+unsigned int setupQuad() {
+    float quadVertices[] = {
+        // Positions    // TexCoords
+        -1.0f, -1.0f,  0.0f, 0.0f,
+        1.0f, -1.0f,  1.0f, 0.0f,
+        1.0f,  1.0f,  1.0f, 1.0f,
+        -1.0f,  1.0f,  0.0f, 1.0f
+    };
+
+    unsigned int quadVAO, quadVBO;
+    glGenVertexArrays(1, &quadVAO);
+    glGenBuffers(1, &quadVBO);
+    glBindVertexArray(quadVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, quadVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), quadVertices, GL_STATIC_DRAW);
+
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
+    glEnableVertexAttribArray(1);
+
+    return quadVAO;
+}
+
+int main() {
+    // Initialize GLFW
+    glfwInit();
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+
+    GLFWwindow* window = glfwCreateWindow(800, 600, "Framebuffer Rendering", nullptr, nullptr);
+    glfwMakeContextCurrent(window);
+    gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
+
+    // Create shaders
+    unsigned int vertexShader = createShader(GL_VERTEX_SHADER, vertexShaderSource);
+    unsigned int fragmentShader = createShader(GL_FRAGMENT_SHADER, fragmentShaderSource);
+    unsigned int shaderProgram = glCreateProgram();
+    glAttachShader(shaderProgram, vertexShader);
+    glAttachShader(shaderProgram, fragmentShader);
+    glLinkProgram(shaderProgram);
+
+    // Setup FBO and textures
+    unsigned int colorTexture, depthStencilTexture;
+    unsigned int framebuffer = setupFramebuffer(colorTexture, depthStencilTexture);
+
+    // Setup screen quad
+    unsigned int quadVAO = setupQuad();
+
+    // Render loop
+    while (!glfwWindowShouldClose(window)) {
+        glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+
+        // Here, render the scene (e.g., 3D objects, models) into the framebuffer
+
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        glClear(GL_COLOR_BUFFER_BIT);
+
+        // Render quad with framebuffer texture
+        glUseProgram(shaderProgram);
+        glBindTexture(GL_TEXTURE_2D, colorTexture);
+        glBindVertexArray(quadVAO);
+        glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+
+        glfwSwapBuffers(window);
+        glfwPollEvents();
+    }
+
+    glfwTerminate();
+    return 0;
+}
+*/
+
+
+
 // ===========================================================================
 // ===========================================================================
 // ===========================================================================
@@ -637,12 +823,18 @@ void VideoDriver::close()
 
 void VideoDriver::resize( int w, int h )
 {
+    if (w < 1 || h < 1)
+    {
+        DE_ERROR("")
+        return;
+    }
+
+    if ((w == m_screenWidth) && (h == m_screenHeight))
+    {
+        return; // Nothing todo.
+    }
+
     // DE_DEBUG("Screen(",w,",",h,")")
-    // if (w < 1 || h < 1)
-    // {
-    //     DE_ERROR("")
-    //     return;
-    // }
 
     m_screenWidth = w;
     m_screenHeight = h;

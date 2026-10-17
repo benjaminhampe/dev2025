@@ -55,7 +55,7 @@ void UI_MainMenu::draw()
 
 void UI_MainMenu::resize(int X, int Y, int W, int H)
 {
-    DE_DEBUG("Resize(",X,",",Y,",",W,",",H,")")
+    // DE_DEBUG("Resize(",X,",",Y,",",W,",",H,")")
     // DE_DEBUG("Resize(",x,",",y,",",w,",",h,")")
 
     float zoom = m_env->getZoom();

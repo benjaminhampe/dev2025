@@ -4,6 +4,9 @@
 
 int main(int argc, char** argv)
 {
+    try {
+        // Dein eigentlicher Code hier
+
     //auto name = dbPromtStrA("Schreibe deinen Namen...", "User-input:");
 #ifdef HAVE_DE_AUDIO
     de::audio::AudioEngine m_audioEngine;
@@ -51,6 +54,21 @@ DE_OK("")
         // fpsComputer.tick();
         m_timeNow = dbTimeInSeconds() - m_timeStart;
 
+        // draw
+        // -----
+        double dtRenderUpdate = m_timeNow - m_timeLastRenderUpdate;
+        if ( dtRenderUpdate >= (1.0 / 60.0) )
+        {
+            m_timeLastRenderUpdate = m_timeNow;
+
+            auto window = m_game.getWindow();
+            auto r_draw = window->getClientRect();
+            window->makeCurrent();
+            m_game.resize(r_draw.w, r_draw.h);
+            m_game.draw();
+            window->swapBuffers();
+        }
+
         // camera
         // -----
         double fMoveSpeed = 75.5;
@@ -95,28 +113,30 @@ DE_OK("")
             }
         }
 
+        // window title
+        // -----
+        double dtWindowTitleUpdate = m_timeNow - m_timeLastWindowTitleUpdate;
+        if ( dtWindowTitleUpdate >= 0.25 )
+        {
+            m_timeLastWindowTitleUpdate = m_timeNow;
 
-        // if ( dtWindowTitleUpdate >= 0.25 )
-        // {
-        //     m_timeLastWindowTitleUpdate = m_timeNow;
-
-        //     m_game.updateWindowTitle();
-        // }
-
-        // // update window title 2-3x per second
-        // double dtWindowTitleUpdate = m_timeNow - m_timeLastWindowTitleUpdate;
-        // if ( dtWindowTitleUpdate >= 0.25 )
-        // {
-        //     m_timeLastWindowTitleUpdate = m_timeNow;
-
-        //     m_game.updateWindowTitle();
-        // }
+            m_game.updateWindowTitle();
+        }
     }
 
     m_game.destroy();
     DE_INFO("Destroyed device.")
 
 #endif
+
+    }
+    catch (const std::exception& e) {
+        DE_ERROR("Fatale Exception abgefangen: ",e.what())
+    }
+    catch (...) {
+        DE_ERROR("Unbekannte Exception abgefangen!")
+    }
+
     return 0;
 }
 

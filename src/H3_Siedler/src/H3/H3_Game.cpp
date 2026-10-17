@@ -33,42 +33,179 @@ H3_Game::~H3_Game()
     DE_OK()
 }
 
-const de::Image&
-H3_Game::getImg( H3_Img::eID id ) const
-{
-    return *H3_getImg(*this,id);
-}
 
-de::gpu::TexRef
-H3_Game::getTex( H3_Tex::eID id, const std::string & caller ) const
+void H3_Game::startGame()
 {
-    const auto it = m_tex.m_refs.find(id);
-    if (it == m_tex.m_refs.end())
+    m_cfg = m_uiGame->m_worldCreator->getCfg();
+
+    m_cfg.dump();
+
+    // === Reset keyboard ===
+    for ( bool & bValue : m_keyStates ) { bValue = false; }
+
+    // === Players ===
+    m_players.clear();
+    m_humans.clear();
+    m_enemies.clear();
+
+
+    for (const auto& cfg : m_cfg.playerList)
     {
-        std::ostringstream o;
-        o << "No texRef with id " << static_cast<uint32_t>(id) << ", caller("<<caller<<")";
-        throw std::runtime_error(o.str());
+        m_players.emplace_back();
+        H3_Player & player = m_players.back();
+        player.startGame();
+        player.id = H3_createId();
+        player.typ = cfg.typ;
+        player.connect = cfg.connect;
+        player.color = cfg.color;
+        player.name = cfg.name;
+        player.avatar = H3_Tex::PlayU + m_players.size();
+        // player.state.bank.A = 4;
+        // player.state.bank.B = 3;
+        // player.state.bank.C = 2;
+        // player.state.bank.D = 1;
+        // player.state.bank.E = 0;
+
+        if (player.typ == H3_PlayerType::HUMAN)
+        {
+            m_humans.emplace_back(&player);
+        }
+        else // if (player.typ == H3_PlayerType::CPU)
+        {
+            m_enemies.emplace_back(&player);
+        }
+    }
+    DE_WARN("Created players = ", m_players.size())
+
+    const auto tileTriangles = m_smeshTile.createCollisionTriangles();
+    const auto chipTriangles = m_smeshChip.createCollisionTriangles();
+
+    // === Board (Tiles + Players) ===
+    m_tiles.clear();
+    m_corners.clear();
+    m_edges.clear();
+
+    // === Board (Tiles) ===
+    for (const auto& cfg : m_cfg.tileList)
+    {
+        H3_Tile tile;
+        tile.id = H3_createId();
+        tile.i = cfg.i;
+        tile.j = cfg.j;
+        tile.tileType = cfg.tileType;
+        tile.chipValue = cfg.chipValue;
+        tile.angle60 = cfg.angle60;
+        tile.visible = true;
+        tile.corners.clear();
+        tile.edges.clear();
+        tile.hasRobber = false;
+        tile.next.clear();
+
+        const auto& tx = m_tileSize.x;
+        const auto& tz = m_tileSize.z;
+        const auto x = de::smesh::SMeshHexagon::computeBoardPosX(tx,tz,tile.i,tile.j);
+        const auto z = de::smesh::SMeshHexagon::computeBoardPosY(tx,tz,tile.i,tile.j);
+        tile.pos = glm::vec3(x,0,z);
+
+        // Collision aabbox:
+        tile.collisionBoundingBox = m_smeshTile.boundingBox + tile.pos;
+
+        // Collision triangles:
+        tile.collisionTriangles.clear();
+        tile.collisionTriangles.reserve( tileTriangles.size() );
+        for (const auto& triangle : tileTriangles)
+        {
+            auto A = tile.pos + triangle.A;
+            auto B = tile.pos + triangle.B;
+            auto C = tile.pos + triangle.C;
+            tile.collisionTriangles.emplace_back(A,B,C);
+        }
+
+        if (tile.tileType.hasChip())
+        {
+            tile.trsChip.pos = tile.pos + glm::vec3(0, m_chipSize.y * 0.5f,0);
+            tile.trsChip.rotate = glm::vec3(0,0,0);
+            tile.trsChip.scale = m_chipSize;
+
+            switch (tile.tileType.value)
+            {
+            case H3_TileType::TileA: tile.trsChip.pos += glm::vec3(0,7,0); break;
+            case H3_TileType::TileD: tile.trsChip.pos += glm::vec3(0,5,0); break;
+            case H3_TileType::TileE: tile.trsChip.pos += glm::vec3(0,8,0); break;
+            default: break;
+            }
+
+            tile.trsChip.update();
+        }
+
+        m_tiles.emplace_back( std::move(tile) );
     }
 
-    if (it->second.empty())
+    H3_createTopology( *this );
+
+    // Camera:
+    getCamera()->lookAt( glm::vec3(-1,260,-123), glm::vec3(0,0,-55) );
+
+    // Place thief:
+    H3_Tile& fdt = H3_findFirstDesertTile( *this );
+    m_thief.owner = fdt.id;
+    m_thief.trs.reset();
+    m_thief.trs.pos = fdt.pos + glm::vec3(10,0,-30);
+    m_thief.trs.update();
+
+    GL_VALIDATE;
+
+
+
+
+    // startGame()
+
+
+
+
+
+    H3_GuiState guiState;
+    guiState.bActions = true;
+    UI_setState( guiState );
+
+    m_state = H3_State::Idle;
+    m_round = 1;
+    m_turn = 1;
+
+    m_ranking.clear();
+    m_ranking.reserve( m_players.size() );
+
+    for ( const auto& player : m_players )
     {
-        std::ostringstream o;
-        o << "Got empty texRef with id " << static_cast<uint32_t>(id);
-        throw std::runtime_error(o.str());
+        H3_RankedPlayer item;
+        item.playerId = player.id;
+        item.diceSum = 0;
+        m_ranking.push_back( item );
     }
+    m_player = m_ranking.front().playerId;
 
-    return it->second;
-}
+    computeVisibleCorners( 0 );
+    computeVisibleEdges( 0 );
+    m_bUpdateDrawCall_Tiles = true;
+    m_bUpdateDrawCall_Chips = true;
+    m_bUpdateDrawCall_Corners = true;
+    m_bUpdateDrawCall_Edges = true;
+    m_bUpdateDrawCall_Roads = true;
+    m_bUpdateDrawCall_Farms = true;
+    m_bUpdateDrawCall_Citys = true;
 
-float H3_Game::getZoom() const
-{
-    return m_guienv.getZoom();
-}
+    marqueeH1( L"Round 1 - Ranking by Dice", 2000, 0xFF00CC10 );
+    marqueeH1( L"Runde 1 - Rang über Würfeln", 3000, 0xFF00CC10 );
 
-void H3_Game::setZoom( float zoom )
-{
-    DE_DEBUG("SetZoom(",zoom,")")
-    m_guienv.setZoom( zoom );
+    auto s1 = dbStrW(L"New Game with (", m_players.size(), L") Players" );
+    marqueeH3( s1, 4000, 0xFF00CF00 );
+    auto s2 = dbStrW(L"Neues Spiel mit (", m_players.size(), L") Spielern" );
+    marqueeH3( s2, 4000, 0xFF00CF00 );
+
+    marqueeH3( L"Please dice to determine your start rank.", 4000, 0xFF00DC10 );
+    marqueeH3( L"Bitte würfeln um deinen Rang zu bestimmen.", 4000, 0xFF00DC10 );
+
+    UI_updateActions();
 }
 
 void H3_Game::requestClose()
@@ -318,6 +455,8 @@ bool H3_Game::init( de::Window* window )
 
     m_driver->dumpTextures();
 
+    m_uiGame->m_worldCreator->setCfg( H3_Cfg::createStandard() );
+
     toggleMainMenu();
     return true;
 }
@@ -429,123 +568,6 @@ void H3_Game::exitGame()
     toggleMainMenu();
 }
 
-void H3_Game::setPreset(const H3_Cfg& preset)
-{
-    m_cfg = preset;
-
-    // === Reset keyboard ===
-    for ( bool & bValue : m_keyStates ) { bValue = false; }
-
-    // === Players ===
-    m_players.clear();
-    m_humans.clear();
-    m_enemies.clear();
-    for (const auto& cfg : m_cfg.playerList)
-    {
-        m_players.emplace_back();
-        H3_Player & player = m_players.back();
-        player.startGame();
-        player.id = H3_createId();
-        player.typ = cfg.typ;
-        player.connect = cfg.connect;
-        player.color = cfg.color;
-        player.name = cfg.name;
-        player.avatar = H3_Tex::PlayU + m_players.size();
-        // player.state.bank.A = 4;
-        // player.state.bank.B = 3;
-        // player.state.bank.C = 2;
-        // player.state.bank.D = 1;
-        // player.state.bank.E = 0;
-
-        if (player.typ == H3_PlayerType::HUMAN)
-        {
-            m_humans.emplace_back(&player);
-        }
-        else // if (player.typ == H3_PlayerType::CPU)
-        {
-            m_enemies.emplace_back(&player);
-        }
-    }
-    DE_WARN("Created players = ", m_players.size())
-
-    const auto tileTriangles = m_smeshTile.createCollisionTriangles();
-    const auto chipTriangles = m_smeshChip.createCollisionTriangles();
-
-    // === Board (Tiles + Players) ===
-    m_tiles.clear();
-    m_corners.clear();
-    m_edges.clear();
-
-    // === Board (Tiles) ===
-    for (const auto& cfg : m_cfg.tileList)
-    {
-        H3_Tile tile;
-        tile.id = H3_createId();
-        tile.i = cfg.i;
-        tile.j = cfg.j;
-        tile.tileType = cfg.tileType;
-        tile.chipValue = cfg.chipValue;
-        tile.angle60 = cfg.angle60;
-        tile.visible = true;
-        tile.corners.clear();
-        tile.edges.clear();
-        tile.hasRobber = false;
-        tile.next.clear();
-
-        const auto& tx = m_tileSize.x;
-        const auto& tz = m_tileSize.z;
-        const auto x = de::smesh::SMeshHexagon::computeBoardPosX(tx,tz,tile.i,tile.j);
-        const auto z = de::smesh::SMeshHexagon::computeBoardPosY(tx,tz,tile.i,tile.j);
-        tile.pos = glm::vec3(x,0,z);
-
-        // Collision aabbox:
-        tile.collisionBoundingBox = m_smeshTile.boundingBox + tile.pos;
-
-        // Collision triangles:
-        tile.collisionTriangles.clear();
-        tile.collisionTriangles.reserve( tileTriangles.size() );
-        for (const auto& triangle : tileTriangles)
-        {
-            auto A = tile.pos + triangle.A;
-            auto B = tile.pos + triangle.B;
-            auto C = tile.pos + triangle.C;
-            tile.collisionTriangles.emplace_back(A,B,C);
-        }
-
-        if (tile.tileType.hasChip())
-        {
-            tile.trsChip.pos = tile.pos + glm::vec3(0, m_chipSize.y * 0.5f,0);
-            tile.trsChip.rotate = glm::vec3(0,0,0);
-            tile.trsChip.scale = m_chipSize;
-
-            switch (tile.tileType.value)
-            {
-            case H3_TileType::TileA: tile.trsChip.pos += glm::vec3(0,7,0); break;
-            case H3_TileType::TileD: tile.trsChip.pos += glm::vec3(0,5,0); break;
-            case H3_TileType::TileE: tile.trsChip.pos += glm::vec3(0,8,0); break;
-            default: break;
-            }
-
-            tile.trsChip.update();
-        }
-
-        m_tiles.emplace_back( std::move(tile) );
-    }
-
-    H3_createTopology( *this );
-
-    // Camera:
-    getCamera()->lookAt( glm::vec3(-1,260,-123), glm::vec3(0,0,-55) );
-
-    // Place thief:
-    H3_Tile& fdt = H3_findFirstDesertTile( *this );
-    m_thief.owner = fdt.id;
-    m_thief.trs.reset();
-    m_thief.trs.pos = fdt.pos + glm::vec3(10,0,-30);
-    m_thief.trs.update();
-
-    GL_VALIDATE;
-}
 
 void H3_Game::toggleMainMenu()
 {
@@ -640,7 +662,7 @@ void H3_Game::restartGame()
         }
     }
 
-    enterStartGame();
+    startGame();
 }
 
 void H3_Game::newGame()
@@ -676,61 +698,6 @@ void H3_Game::newGame()
     m_uiGame->setState( guiState );
     m_uiGame->setVisible(true);
     m_uiGame->resize(0,0,w,h);
-}
-
-void H3_Game::enterStartGame()
-{
-    if (m_uiGame && m_uiGame->m_worldCreator)
-    {
-        setPreset( m_uiGame->m_worldCreator->getPreset() );
-    }
-    else
-    {
-        setPreset( H3_Cfg::createStandard() );
-    }
-
-    H3_GuiState guiState;
-    guiState.bActions = true;
-    UI_setState( guiState );
-
-    m_state = H3_State::Idle;
-    m_round = 1;
-    m_turn = 1;
-
-    m_ranking.clear();
-    m_ranking.reserve( m_players.size() );
-
-    for ( const auto& player : m_players )
-    {
-        H3_RankedPlayer item;
-        item.playerId = player.id;
-        item.diceSum = 0;
-        m_ranking.push_back( item );
-    }
-    m_player = m_ranking.front().playerId;
-
-    computeVisibleCorners( 0 );
-    computeVisibleEdges( 0 );
-    m_bUpdateDrawCall_Tiles = true;
-    m_bUpdateDrawCall_Chips = true;
-    m_bUpdateDrawCall_Corners = true;
-    m_bUpdateDrawCall_Edges = true;
-    m_bUpdateDrawCall_Roads = true;
-    m_bUpdateDrawCall_Farms = true;
-    m_bUpdateDrawCall_Citys = true;
-
-    marqueeH1( L"Round 1 - Ranking by Dice", 2000, 0xFF00CC10 );
-    marqueeH1( L"Runde 1 - Rang über Würfeln", 3000, 0xFF00CC10 );
-
-    auto s1 = dbStrW(L"New Game with (", m_players.size(), L") Players" );
-    marqueeH3( s1, 4000, 0xFF00CF00 );
-    auto s2 = dbStrW(L"Neues Spiel mit (", m_players.size(), L") Spielern" );
-    marqueeH3( s2, 4000, 0xFF00CF00 );
-
-    marqueeH3( L"Please dice to determine your start rank.", 4000, 0xFF00DC10 );
-    marqueeH3( L"Bitte würfeln um deinen Rang zu bestimmen.", 4000, 0xFF00DC10 );
-
-    UI_updateActions();
 }
 
 void H3_Game::enterIdle()
@@ -925,8 +892,6 @@ void H3_Game::doDice()
 
     auto& player = getCurrentPlayer();
 
-    int dice1 = player.state.dice.a;
-    int dice2 = player.state.dice.b;
     if (player.state.dice.sum())
     {
         DE_ERROR("player[",player.id,"] ",player.name," already threw "
@@ -939,6 +904,9 @@ void H3_Game::doDice()
     dbRandomize();
     m_dice.a = (rand()%6) + 1;
     m_dice.b = (rand()%6) + 1;
+
+    DE_DEBUG("player[",player.id,"] ",player.name," "
+            "dice(",player.state.dice.a," + ",player.state.dice.b,").")
 
     player.state.dice = m_dice;
 
@@ -1036,17 +1004,15 @@ void H3_Game::enterDonateCards()
 
     DE_DEBUG("Player[",player.id,"] ",player.name," has ",cards," cards. "
              "Must donate ", cards/2, ". Threshold(",m_cfg.cardLimitNoSteal,")")
+
     m_state = H3_State::DonateCards;
     // UI_updateActions();
 
-    if (m_uiGame && m_uiGame->m_donateCards)
-    {
-        m_uiGame->m_donateCards->startDonation( m_player, UI_getState() );
+    H3_GuiState guiState;
+    guiState.bDonateCards = true;
+    m_uiGame->pushState( guiState );
 
-        H3_GuiState guiState;
-        guiState.bDonateCards = true;
-        m_uiGame->pushState( guiState );
-    }
+    m_uiGame->m_donateCards->startDonation( m_player );
 
 }
 
@@ -2631,3 +2597,42 @@ repairSchriftrolle( de::Image & img )
     }
 }
 */
+
+
+const de::Image&
+H3_Game::getImg( H3_Img::eID id ) const
+{
+    return *H3_getImg(*this,id);
+}
+
+de::gpu::TexRef
+H3_Game::getTex( H3_Tex::eID id, const std::string & caller ) const
+{
+    const auto it = m_tex.m_refs.find(id);
+    if (it == m_tex.m_refs.end())
+    {
+        std::ostringstream o;
+        o << "No texRef with id " << static_cast<uint32_t>(id) << ", caller("<<caller<<")";
+        throw std::runtime_error(o.str());
+    }
+
+    if (it->second.empty())
+    {
+        std::ostringstream o;
+        o << "Got empty texRef with id " << static_cast<uint32_t>(id);
+        throw std::runtime_error(o.str());
+    }
+
+    return it->second;
+}
+
+float H3_Game::getZoom() const
+{
+    return m_guienv.getZoom();
+}
+
+void H3_Game::setZoom( float zoom )
+{
+    DE_DEBUG("SetZoom(",zoom,")")
+    m_guienv.setZoom( zoom );
+}

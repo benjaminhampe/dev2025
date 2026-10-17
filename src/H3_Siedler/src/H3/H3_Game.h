@@ -47,14 +47,14 @@ struct H3_Game
     void requestClose();
     bool run();
 
-    void setPreset(const H3_Cfg& preset);
+    // void setPreset(const H3_Cfg& preset);
     void exitProgram();
     void newGame();
     void restartGame();
     void toggleMainMenu();
 
     void exitGame();
-    void enterStartGame(); // Actually starts a new Game
+    void startGame(); // Actually starts a new Game
 
     void enterIdle();
     void doEndTurn();

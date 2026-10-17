@@ -18,7 +18,7 @@ public:
     void resizeLayoutThief( de::Recti pos );
     void resizeLayoutPlayer( de::Recti pos );
 
-    void startDonation( uint32_t playerId, H3_GuiState oldState );
+    void startDonation( uint32_t playerId );
 
 protected:
     de::gui::Button* createButton(std::string txt, de::gpu::TexRef ref, de::Recti pos);
@@ -26,7 +26,6 @@ private:
     // [Necessary Game Logic]
     H3_Game* m_game;
     uint32_t m_playerId;
-    H3_GuiState m_oldState;
 
     int m_cardsToRemove;
     H3_Bank m_bankThief;

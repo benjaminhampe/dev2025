@@ -300,14 +300,14 @@ struct H3_CfgTile
     int angle60 = 0;// angle [0..5] to rotate tile in 60 degrees steps.
     //H3_TRS trs;   // computed 3d transform = func(i,j,angle)
 
-    std::string toString() const
+    std::string str() const
     {
         std::ostringstream o; o <<
-            "tileType(" << tileType.str() << "), "
-            "chipValue(" << chipValue << "), "
-            "i(" << i << "), "
-            "j(" << j << "), "
-            "angle60("<< angle60 << "), ";
+        "tileType(" << tileType.str() << "), "
+        "chipValue(" << chipValue << "), "
+        "i(" << i << "), "
+        "j(" << j << "), "
+        "angle60("<< angle60 << "), ";
         //"pos("<< trs.pos << "), ";
         return o.str();
     }
@@ -336,6 +336,16 @@ struct H3_CfgPlayer
     uint32_t color = 0xFFFF00FF;
     std::string name;
     u32 avatar = 0;
+
+    std::string str() const
+    {
+        std::ostringstream o; o <<
+        "name(" << name << "), "
+        "typ(" << (typ == H3_PlayerType::CPU ? "CPU" : "HUMAN") << "), "
+        "color(" << dbHex(color) << "), "
+        "avatar(" << avatar << ")";
+        return o.str();
+    }
 };
 
 // ===========================================================================
@@ -364,6 +374,11 @@ struct H3_Cfg
 
     static H3_Cfg
     createStandard();
+
+    void dump() const;
+
+    std::string
+    str() const;
 
 protected:
     void

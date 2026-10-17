@@ -129,10 +129,12 @@ UI_DonateCards::UI_DonateCards( H3_Game* game, de::gui::Env* env, de::gui::Widge
             if (m_bankPlayer.E > 0) { m_bankThief.E++; m_bankPlayer.E--; }
             updateTexts();
         });
-    m_btnAccept->setOnClicked( [&] () {
+    m_btnAccept->setOnClicked( [&] ()
+        {
+            DE_DEBUG("Return from donation")
+
             if (m_cardsToRemove < 1)
             {
-                setVisible(false);
                 H3_Player & player = m_game->getPlayer( m_playerId );
                 player.state.bank = m_bankPlayer;
 
@@ -145,6 +147,8 @@ UI_DonateCards::UI_DonateCards( H3_Game* game, de::gui::Env* env, de::gui::Widge
 
             }
         });
+
+    setDrawChildren(true);
 }
 
 UI_DonateCards::~UI_DonateCards()
@@ -152,14 +156,22 @@ UI_DonateCards::~UI_DonateCards()
 
 }
 
-void UI_DonateCards::startDonation( uint32_t playerId, H3_GuiState oldState )
+void UI_DonateCards::startDonation( uint32_t playerId )
 {
-    m_playerId = playerId;
-    m_oldState = oldState;
+    if (!m_game->hasPlayer(playerId))
+    {
+        DE_ERROR("No playerId ",playerId)
+        m_game->enterIdle();
+        return;
+    }
 
     H3_Player & player = m_game->getPlayer( playerId );
 
+    DE_DEBUG("player[",player.id,"] ", player.name)
+
+    m_playerId = playerId;
     m_bankThief.clear();
+
 
     m_bankPlayer = player.state.bank;
 
