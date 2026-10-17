@@ -204,10 +204,8 @@ struct MandelbrotWindow : public de::Window_WGL
         // ======== Now start rendering with GPU ================
         m_driver->beginRender( glm::vec4(0.1f,0.1f,0.1f,1.0f) );
 
-        m_driver->getScreenQuadRenderer()->draw2D(
-                    de::Recti(0,0,w,h),
-                    m_mandelbrotTex,
-                    false);
+        m_driver->getScreenQuadRenderer()->
+                    draw2DRect(de::Recti(0,0,w,h), m_mandelbrotTex, false);
 
         // m_quadRenderer.render( 0 );
 

@@ -31,20 +31,37 @@ Label::Label( std::string text, Env* env, Widget* parent, u32 id, const Recti& r
     // setTextColor(dbRGB(0,0,0), eWS_Pressed);
     // setTextColor(dbRGB(0,0,0), eWS_Released);
 
-    setFillColor(dbRGB( 50, 50, 50), eWS_Idle);
-    setFillColor(dbRGB(155,155,155), eWS_Hovered);
-    setFillColor(dbRGB(100,100,100), eWS_Pressed);
-    setFillColor(dbRGB(105,105,105), eWS_Released);
+    // setFillColor(dbRGB( 50, 50, 50), eWS_Idle);
+    // setFillColor(dbRGB(155,155,155), eWS_Hovered);
+    // setFillColor(dbRGB(100,100,100), eWS_Pressed);
+    // setFillColor(dbRGB(105,105,105), eWS_Released);
 
-    setBorderColor(dbRGB(0,0,0), eWS_Idle);
-    setBorderColor(dbRGB(0,0,0), eWS_Hovered);
-    setBorderColor(dbRGB(0,0,0), eWS_Pressed);
-    setBorderColor(dbRGB(0,0,0), eWS_Released);
+    // setBorderColor(dbRGB(0,0,0), eWS_Idle);
+    // setBorderColor(dbRGB(0,0,0), eWS_Hovered);
+    // setBorderColor(dbRGB(0,0,0), eWS_Pressed);
+    // setBorderColor(dbRGB(0,0,0), eWS_Released);
 
-    setTextColor(dbRGB(220,220,220), dbRGB(20,20,20), eWS_Idle);
-    setTextColor(dbRGB(255,255,255), dbRGB(20,20,20), eWS_Hovered);
-    setTextColor(dbRGB(100,100,100), dbRGB(20,20,20), eWS_Pressed);
-    setTextColor(dbRGB(105,105,105), dbRGB(20,20,20), eWS_Released);
+    // setTextColor(dbRGB(220,220,220), dbRGB(20,20,20), eWS_Idle);
+    // setTextColor(dbRGB(255,255,255), dbRGB(20,20,20), eWS_Hovered);
+    // setTextColor(dbRGB(100,100,100), dbRGB(20,20,20), eWS_Pressed);
+    // setTextColor(dbRGB(105,105,105), dbRGB(20,20,20), eWS_Released);
+
+    auto black = dbRGB(0,0,0);
+    auto white = dbRGB(255,255,255);
+    setFillColor(white, eWS_Idle);
+    setFillColor(white, eWS_Hovered);
+    setFillColor(white, eWS_Pressed);
+    setFillColor(white, eWS_Released);
+
+    setBorderColor(white, eWS_Idle);
+    setBorderColor(white, eWS_Hovered);
+    setBorderColor(white, eWS_Pressed);
+    setBorderColor(white, eWS_Released);
+
+    setTextColor(black, white, eWS_Idle);
+    setTextColor(black, white, eWS_Hovered);
+    setTextColor(black, white, eWS_Pressed);
+    setTextColor(black, white, eWS_Released);
 
     setPickable(false);
     setDrawChildren(false);

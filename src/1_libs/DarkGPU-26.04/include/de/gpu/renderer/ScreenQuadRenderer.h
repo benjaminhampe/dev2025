@@ -26,7 +26,10 @@ public:
     ~ScreenQuadRenderer();
 
     void init(VideoDriver* driver);
-    void draw2D( const de::Recti& pos, const TexRef& ref, bool blend);
+    void draw2DRect( const de::Recti& pos, const TexRef& ref, bool blend = true);
+
+    //void draw2DRect( const de::Recti& pos, const TexRef& ref, uint32_t color);
+    //void draw2DRect( const de::Recti& pos, uint32_t color);
 };
 
 } // end namespace gpu.

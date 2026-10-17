@@ -13,7 +13,15 @@ UI_World::UI_World( H3_Game* game, de::gui::Env* env, de::gui::Widget* parent, u
     : de::gui::Widget(env, parent, id)
     , m_game(game)
 {
-    m_backgroundTex = game->getTex( H3_Tex::Grunge, "UI_World()" );
+    const std::string caller = "UI_World";
+    m_backgroundTex = game->getTex( H3_Tex::Grunge, caller );
+    m_texA = m_game->getTex(H3_Tex::TileA, caller );
+    m_texB = m_game->getTex(H3_Tex::TileB, caller );
+    m_texC = m_game->getTex(H3_Tex::TileC, caller );
+    m_texD = m_game->getTex(H3_Tex::TileD, caller );
+    m_texE = m_game->getTex(H3_Tex::TileE, caller );
+    m_texH = m_game->getTex(H3_Tex::TileWater, caller );
+    m_texW = m_game->getTex(H3_Tex::TileDesert, caller );
 }
 
 UI_World::~UI_World()
@@ -42,8 +50,8 @@ void UI_World::draw()
     const auto pos = getAbsoluteRect();
     if (pos.w < 1 || pos.h < 1) return;
 
-    driver->getScreenRenderer()->
-        draw2DRect( pos, 0xFFFFFFFF, m_backgroundTex );
+    driver->getScreenQuadRenderer()->
+        draw2DRect( pos, m_backgroundTex );
 
     // for (auto & child : m_children)
     // {
@@ -53,16 +61,10 @@ void UI_World::draw()
     float originX = pos.centerX();
     float originY = pos.centerY();
 
-    auto texA = m_game->getTex(H3_Tex::TileA, "UI_World.draw()");
-    auto texB = m_game->getTex(H3_Tex::TileB, "UI_World.draw()");
-    auto texC = m_game->getTex(H3_Tex::TileC, "UI_World.draw()");
-    auto texD = m_game->getTex(H3_Tex::TileD, "UI_World.draw()");
-    auto texE = m_game->getTex(H3_Tex::TileE, "UI_World.draw()");
-    auto texH = m_game->getTex(H3_Tex::TileWater, "UI_World.draw()");
-    auto texW = m_game->getTex(H3_Tex::TileDesert, "UI_World.draw()");
 
-    for (const H3_CfgTile & tile : m_cfg.tileList)
+    for (size_t i = 0; i < m_cfg.tileList.size(); ++i)
     {
+        const H3_CfgTile & tile = m_cfg.tileList[i];
         float fX = de::smesh::SMeshHexagon::computeBoardPosX(m_tileSize, m_tileSize, tile.i, tile.j);
         float fY = de::smesh::SMeshHexagon::computeBoardPosY(m_tileSize, m_tileSize, tile.i, tile.j);
         float pX = m_scale * fX;
@@ -76,21 +78,21 @@ void UI_World::draw()
         de::gpu::TexRef tex;
         switch (tile.tileType)
         {
-            case H3_TileType::TileA: tex = texA; break;
-            case H3_TileType::TileB: tex = texB; break;
-            case H3_TileType::TileC: tex = texC; break;
-            case H3_TileType::TileD: tex = texD; break;
-            case H3_TileType::TileE: tex = texE; break;
-            case H3_TileType::Water: tex = texH; break;
-            case H3_TileType::Desert:tex = texW; break;
-            case H3_TileType::PortA: tex = texH; break;
-            case H3_TileType::PortB: tex = texH; break;
-            case H3_TileType::PortC: tex = texH; break;
-            case H3_TileType::PortD: tex = texH; break;
-            case H3_TileType::PortE: tex = texH; break;
-            case H3_TileType::Port3v1: tex = texH; break;
+            case H3_TileType::TileA: tex = m_texA; break;
+            case H3_TileType::TileB: tex = m_texB; break;
+            case H3_TileType::TileC: tex = m_texC; break;
+            case H3_TileType::TileD: tex = m_texD; break;
+            case H3_TileType::TileE: tex = m_texE; break;
+            case H3_TileType::Water: tex = m_texH; break;
+            case H3_TileType::Desert:tex = m_texW; break;
+            case H3_TileType::PortA: tex = m_texH; break;
+            case H3_TileType::PortB: tex = m_texH; break;
+            case H3_TileType::PortC: tex = m_texH; break;
+            case H3_TileType::PortD: tex = m_texH; break;
+            case H3_TileType::PortE: tex = m_texH; break;
+            case H3_TileType::Port3v1: tex = m_texH; break;
         }
-        H3_drawHexagon(*m_game, de::Recti(oX,oY,pW,pH), 0xffffffff, tex);
+        H3_drawHexagon(*m_game, de::Recti(oX,oY,pW,pH), 0xffffffff, tex, i);
     }
 }
 
@@ -103,7 +105,7 @@ UI_WorldCreator::UI_WorldCreator( H3_Game* game, de::gui::Env* env, de::gui::Wid
 {
     m_backgroundTex = game->getTex( H3_Tex::Grunge, "UI_WorldCreator()" );
 
-    m_body = new UI_World( m_game, env, this, 0);
+    m_world = new UI_World( m_game, env, this, 0);
 
     auto tex = m_game->getTex(H3_Tex::Scroll1, "UI_WorldCreator().Scroll1");
     m_title = new de::gui::Label("WorldCreator", env, this, 0, de::Recti());
@@ -156,7 +158,7 @@ void UI_WorldCreator::draw()
     const auto pos = getAbsoluteRect();
 
     driver->getScreenQuadRenderer()->
-        draw2D( pos, m_backgroundTex, false );
+        draw2DRect( pos, m_backgroundTex, false );
 
 /*
     for (auto & child : m_children)
@@ -178,7 +180,7 @@ void UI_WorldCreator::draw()
     m_edtSpacing->draw();
     m_edtPlayer->draw();
 
-    m_body->draw();
+    m_world->draw();
 
     m_btnClose->draw();
     m_btnStart->draw();
@@ -235,12 +237,13 @@ void UI_WorldCreator::resize(int x, int y, int w, int h)
     m_edtSpacing->resize(bx,by,bw,bh);     by += ln + q;
     m_edtPlayer->resize(bx,by,bw,bh);
 
-    // ::::: Row[2] Body ::::
+    // ::::: Row[2] World Body ::::
     by = y2;
     bx += bw + p;
-    bw = bw - p - bx;
+    bw = w - p - bx;
     bh = h - 2*p - y - 200;
-    m_body->resize(bx,by,bw,bh);
+    m_world->resize(bx,by,bw,bh);
+    DE_DEBUG("world.rect = ",m_world->getAbsoluteRect().str())
 
     // ::::: Row[N] Main-Buttons ::::
     bw = 400;
@@ -298,7 +301,7 @@ void UI_WorldCreator::setPreset( const H3_Cfg& cfg )
 
     auto& m_cfg = m_presets[ cfg.presetName ];
 
-    m_body->setPreset( m_cfg );
+    m_world->setPreset( m_cfg );
     m_presetName->setText( m_cfg.presetName );
     m_edtVictory->setValue( m_cfg.victoryPoints );
     m_edtCardLimit->setValue( m_cfg.cardLimitNoSteal );

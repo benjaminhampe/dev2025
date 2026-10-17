@@ -18,6 +18,13 @@ private:
     H3_Game* m_game;
 
     de::gpu::TexRef m_backgroundTex;
+    de::gpu::TexRef m_texA;
+    de::gpu::TexRef m_texB;
+    de::gpu::TexRef m_texC;
+    de::gpu::TexRef m_texD;
+    de::gpu::TexRef m_texE;
+    de::gpu::TexRef m_texH;
+    de::gpu::TexRef m_texW;
 
     float m_tileSize = 100.f;
     float m_scale = 1.f;
@@ -55,7 +62,7 @@ private:
 
     de::gpu::TexRef m_backgroundTex;
 
-    UI_World* m_body;
+    UI_World* m_world;
 
     de::gui::Label* m_title;
     //de::gui::Label* m_presetLabel;
