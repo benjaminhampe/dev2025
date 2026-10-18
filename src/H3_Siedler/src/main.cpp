@@ -36,7 +36,7 @@ DE_OK("")
 
     window->setResizable(true);
     window->setWindowIcon( aaaa );
-    window->setWindowTitle( "Die Siedler von Satan 3D | <benjaminhampe@gmx.de>" );
+    window->setWindowTitle( L"Die Siedler von Satan 3D | <benjaminhampe@gmx.de>" );
     //window->run();
     window->bringToFront();
     //window->run();

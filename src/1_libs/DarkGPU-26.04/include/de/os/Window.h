@@ -38,7 +38,7 @@ public:
     // Saves 98% power and is therefore a must have.
     virtual void yield( int ms = 1 ) = 0;
 
-    virtual void setWindowTitle( char const* title ) = 0;
+    virtual void setWindowTitle( std::wstring title ) = 0;
     virtual void setWindowIcon( int iRessourceID ) = 0;
     virtual void setWindowBackgroundImage( int iRessourceID ) = 0;
 

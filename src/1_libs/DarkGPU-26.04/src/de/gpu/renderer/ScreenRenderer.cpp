@@ -196,6 +196,12 @@ ScreenRenderer::draw2DRoundRect( const Recti& pos, const glm::ivec2& r, const ui
 }
 
 void
+ScreenRenderer::draw2DRoundRect( const Recti& pos, const glm::ivec2& r, const TexRef& tex, int tess )
+{
+    draw2DRoundRect(pos, r, 0xFFFFFFFF, tex, tess );
+}
+
+void
 ScreenRenderer::draw2DRoundRectLine( const Recti& pos, const glm::ivec2& r, const uint32_t color, const TexRef& tex, int tess )
 {
     draw2DRectLine(pos,color,tex);

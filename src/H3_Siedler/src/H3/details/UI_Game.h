@@ -29,8 +29,12 @@ public:
     void resize(int x, int y, int w, int h) override;
     void draw() override;
 
+    void updateVisibleActions();
+
 protected:
     void updateLayouts();
+
+    void drawDice();
 
 private:
     H3_Game* m_game;

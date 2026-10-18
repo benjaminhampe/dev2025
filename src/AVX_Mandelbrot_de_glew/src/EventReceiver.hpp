@@ -359,7 +359,8 @@ struct MandelbrotWindow : public de::Window_WGL
         "Window("<<winX<<","<<winY<<","<<winW<<","<<winH<<"), "
         "Screen("<<screenW<<","<<screenH<<")";
 
-        setWindowTitle( o.str().c_str() );
+        std::wstring title = de_wstr(o.str());
+        setWindowTitle( title );
     }
     /*
     void applyZoomToCenter(float centerX, float centerY, float zoomFactor)

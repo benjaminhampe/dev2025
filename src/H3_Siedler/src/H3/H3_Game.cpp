@@ -2,7 +2,6 @@
 #include <de/os/CommonDialogs.h>
 #include <H3/details/H3_Topology.h>
 #include <H3/details/H3_AI.h>
-#include <H3/details/H3_UI.h>
 #include <de_opengl.h>
 #include <de/gpu/GL_debug_layer.h>
 
@@ -481,9 +480,6 @@ void H3_Game::draw()
     if ( isGameRunning() )
     {
         drawSkybox();
-
-        // driver->useTexture(nullptr,0); // Skybox does not use driver for texture handling, so driver is out of sync.
-
         drawSun();
         drawTiles();
         drawPortBridges();
@@ -498,34 +494,6 @@ void H3_Game::draw()
         drawHoveredTile();
         drawHoveredEdge();
         drawHoveredCorner();
-
-        driver->beginPerf("UI_Stats");
-        UI_Stats_render( *this );
-        driver->endPerf();
-
-        // driver->beginPerf("UI_PlayerStats");
-        // for ( int i = 0; i < m_players.size(); ++i )
-        // {
-        //     UI_drawPlayerStats( *this, 20, 20+100*i, m_players[ i ].id );
-        // }
-        // driver->endPerf();
-
-        driver->beginPerf("UI_RoundStats");
-        UI_drawRoundStats( *this );
-        driver->endPerf();
-
-        float zoom = getZoom();
-        auto p = de::Recti( 20, h/2-100, zoom * 200, zoom * 300 );
-
-        driver->beginPerf("UI_Info");
-        UI_drawInfoPanelTile( *this, p, m_hoverTileId );
-        UI_drawInfoPanelCorner( *this, p, m_hoverCornerId );
-        UI_drawInfoPanelEdge( *this, p, m_hoverEdgeId );
-        driver->endPerf();
-
-        driver->beginPerf("UI_Log");
-        UI_drawLog( *this );
-        driver->endPerf();
     }
     else
     {
@@ -2034,12 +2002,7 @@ void H3_Game::toggleHelpWindow()
 
 void H3_Game::UI_updateActions()
 {
-    if (m_uiGame && m_uiGame->m_actions)
-    {
-        m_uiGame->m_actions->updateVisibility();
-    }
-    UI_Stats_update( *this );
-    UIBanking_update( *this );
+    m_uiGame->updateVisibleActions();
 }
 
 void H3_Game::updateWindowTitle()
@@ -2056,12 +2019,14 @@ void H3_Game::updateWindowTitle()
     std::ostringstream o; o <<
         "Siedler 3D (c) 2025 by BenjaminHampe@gmx.de | "
         "FPS(" << fps << "), "
-        "Zoom(" << getZoom() << "%), "
+        "Zoom(" << int(getZoom()*100.f) << "%), "
         "Desktop("<<desktopW<<","<<desktopH<<"), "
         "Window("<<r1.str()<<"), "
         "Client("<<r2.str()<<")";
 
-    m_window->setWindowTitle( o.str().c_str() );
+    // DE_DEBUG(o.str())
+
+    m_window->setWindowTitle( de_wstr(o.str()) );
 }
 
 void H3_Game::drawSkybox()
@@ -2338,22 +2303,7 @@ void H3_Game::drawThief()
 
 void H3_Game::drawDice()
 {
-    float zoom = m_guienv.getZoom();
-
     m_driver->beginPerf("Dice");
-
-    de::gpu::TexRef d1 = H3_getDiceTex(*this,m_dice.a);
-    de::gpu::TexRef d2 = H3_getDiceTex(*this,m_dice.b);
-
-    int w = zoom * 48;
-    int r = zoom * 6;
-    auto r2 = glm::ivec2(r,r);
-
-    m_driver->getScreenRenderer()->
-        draw2DRoundRect(de::Recti(32,256,w,w),r2,0xFFFFFFFF,d1);
-
-    m_driver->getScreenRenderer()->
-        draw2DRoundRect(de::Recti(32 + w + 10,256,w,w),r2,0xFFFFFFFF,d1);
 
     m_diceRenderer.render();
 

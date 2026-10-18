@@ -10,8 +10,9 @@ void UI_CpuPlayer_draw(
     //DE_DEBUG("Draw(",pos.str(),")")
 
     auto zoom = game.getZoom();
+    int p = zoom * 8;
+
     auto driver = game.getDriver();
-    int p = zoom * 10;
 
     // Debug Outline
     driver->getScreenRenderer()->
@@ -20,39 +21,51 @@ void UI_CpuPlayer_draw(
     // Background
     auto t_scroll = game.getTex(H3_Tex::Scroll2, __func__);
     driver->getScreenRenderer()->
-        draw2DRect( pos.inset(0,p,0,p), 0xFFFFFFFF, t_scroll );
+        draw2DRect( pos, 0xFFFFFFFF, t_scroll );
 
-    // Player Icon
-
-    if (playerId < 1)
-    {
-        return;
-    }
-
+    // Get Player
+    if (playerId < 1) { return; }
     auto & player = game.getPlayer(playerId);
 
-    // Icon Background
-    // auto t_wood = game.getTex(H3_Tex::Wood, __func__);
-    int icon_h = pos.h / 2;
-    auto r_icon = de::Recti(pos.x,pos.y,icon_h,icon_h);
-    driver->getScreenRenderer()->
-        draw2DRoundRect( r_icon, {p,p}, player.color );
+    // Calc Icon Background
+    int icon_x = pos.x + 2*p;
+    int icon_y = pos.y + 2*p;
+    int icon_w = 2 * pos.h / 3;
+    int icon_h = icon_w;
+    auto r_iconBg = de::Recti(icon_x, icon_y, icon_w, icon_h);
 
-    // Icon Avatar
-    auto avatar = game.getTex((H3_Tex::eID)player.avatar, __func__);
-    driver->getScreenRenderer()->
-        draw2DRoundRect( r_icon.inset(p), {p,p}, 0xFFFFFFFF, avatar );
+    // Calc Name Background
+    int name_x = r_iconBg.x2() - 2*p;
+    int name_y = r_iconBg.y + p;
+    int name_w = pos.w - 3*p - icon_w;
+    int name_h = pos.h / 3;
+    auto r_nameBg = de::Recti( name_x, name_y, name_w, name_h );
 
-    // Name Text
-    driver->draw2DText( r_icon.x2() + 2*p,
-                        r_icon.y + 2*p,
+    // Draw Icon Background
+    driver->getScreenRenderer()->
+        draw2DRoundRect( r_iconBg, {p,p}, player.color );
+
+    // Draw Name Background
+    driver->getScreenRenderer()->
+        draw2DRoundRect( r_nameBg, {p,p}, player.color );
+
+    // Draw Icon
+    auto icon = game.getTex((H3_Tex::eID)player.avatar, __func__);
+    driver->getScreenRenderer()->
+        draw2DRoundRect( r_iconBg.inset(p,p+2,p,p), {p,p}, icon );
+
+    // Draw Name
+    auto r_name = r_nameBg.inset(p);
+    driver->draw2DText( r_name.centerX(),
+                        r_name.centerY(),
                         player.name,
-                        0xFFFFFFFF,
-                        de::Align::TopLeft,
-                        de::Font("Postamt",zoom * 32),
-                        player.color,
+                        dbRGB(0,0,0),
+                        de::Align::Centered,
+                        de::Font("Postamt",zoom * 28),
+                        dbRGB(255,255,255,225),
                         p );
 
+/*
     // VictoryPoints - Circle
     {
         // Background Circle with Player color
@@ -96,7 +109,8 @@ void UI_CpuPlayer_draw(
             dbStr(player.state.victoryPoints),
             dbRGB(0,0,0), de::Align::Centered, vicFont );
     }
-    //
+*/
+
 }
 
 #if 0

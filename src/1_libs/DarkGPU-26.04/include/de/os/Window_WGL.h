@@ -59,7 +59,7 @@ public:
     bool isPostQuitMessage() const override;
     void setPostQuitMessage( bool bPostQuitMessage ) override;
 
-    void setWindowTitle( char const* title ) override;
+    void setWindowTitle( std::wstring title ) override;
 
     void setWindowIcon( int iRessourceID ) override;
 

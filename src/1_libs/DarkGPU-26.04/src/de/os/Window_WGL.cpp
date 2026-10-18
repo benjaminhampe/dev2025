@@ -187,7 +187,7 @@ struct Window_WGL_Internals
     bool m_bFocused = false;
     bool m_bPaintEventEnabled = false;
 
-
+    std::wstring m_title;
     // // In deiner Klasse (z.B. im privaten Bereich von Window_WGL oder _d):
     // std::map<DWORD, TouchPoint> m_activeTouches;
     // float m_lastTouchDistance = -1.0f; // -1 bedeutet: Keine Geste aktiv
@@ -449,7 +449,7 @@ bool Window_WGL::create( WindowOptions params )
         wc.hInstance = hInstance;
         wc.lpszClassName = className.c_str(); // lpszClassName;
         wc.hCursor = LoadCursor(NULL, IDC_ARROW); //
-        wc.lpfnWndProc = WndProc; // WndProcTest; // WndProc; DefWindowProc;
+        wc.lpfnWndProc = WndProc; // WndProcTest; // WndProc; DefWindowProcW;
 
         ATOM a = RegisterClassExW(&wc);
 
@@ -518,8 +518,16 @@ bool Window_WGL::create( WindowOptions params )
         return false;
     }
 
-    DE_DEBUG("Created window.")
     SetFocus(_d->hWnd);
+
+    if (IsWindowUnicode(_d->hWnd))
+    {
+        DE_DEBUG("Created Unicode window.")
+    }
+    else
+    {
+        DE_DEBUG("Created Ansi window.")
+    }
 
     _d->m_hInstance = hInstance;
     _d->hDC = GetDC(_d->hWnd);
@@ -659,19 +667,55 @@ void Window_WGL::setVisible( bool bVisible )
     }
 }
 
-void Window_WGL::setWindowTitle( char const* title )
+void Window_WGL::setWindowTitle(std::wstring title)
 {
+    _d->m_title = title;
     // SendMessage instead of SetText for cases where HWND was created in a different thread
     DWORD_PTR dwResult;
-    SendMessageTimeoutA(
+    SendMessageTimeoutW(
         _d->hWnd,
         WM_SETTEXT,
         0,
-        reinterpret_cast< LPARAM >( title ),
+        reinterpret_cast< LPARAM >( _d->m_title.c_str() ),
         SMTO_ABORTIFHUNG,
         2000,
         &dwResult
     );
+
+#if 0
+    _d->m_title = title;
+    DWORD_PTR dwResult;
+
+    if (IsWindowUnicode(_d->hWnd))
+    {
+        // Target window is Unicode, send wide-string
+        SendMessageTimeoutW(
+            _d->hWnd,
+            WM_SETTEXT,
+            0,
+            reinterpret_cast< LPARAM >( _d->m_title.c_str() ),
+            SMTO_ABORTIFHUNG,
+            2000,
+            &dwResult
+        );
+    }
+    else
+    {
+        // Target window is ANSI, convert std::wstring to std::string first
+        // Using a quick conversion helper (or your framework's utility)
+        std::string ansiTitle(title.begin(), title.end()); // Simple conversion for ASCII text
+
+        SendMessageTimeoutA(
+            _d->hWnd,
+            WM_SETTEXT,
+            0,
+            reinterpret_cast< LPARAM >( ansiTitle.c_str() ),
+            SMTO_ABORTIFHUNG,
+            2000,
+            &dwResult
+        );
+    }
+#endif
 }
 
 void
@@ -940,11 +984,11 @@ WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
     }
 
     // 4. Wichtig: Falls vor/während WM_NCCREATE andere Systemnachrichten kommen,
-    // leiten wir sie sicher an DefWindowProc weiter.
+    // leiten wir sie sicher an DefWindowProcW weiter.
     if (!self)
     {
         DE_ERROR("No self")
-        //return DefWindowProc(hwnd, msg, wParam, lParam);
+        //return DefWindowProcW(hwnd, msg, wParam, lParam);
     }
 
     // Ab hier kannst du sicher sein, dass "self" existiert und du mit "switch(msg)"
@@ -1196,13 +1240,13 @@ WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
                 return 0;
 
                 // Calls DestroyWindow(hwnd)
-                // return DefWindowProc(hwnd, msg, wParam, lParam);
+                // return DefWindowProcW(hwnd, msg, wParam, lParam);
             }
 
         }
         case WM_DESTROY:
         {
-            DE_OK("WM_DESTROY ", hwnd)
+            DE_OK("WM_DESTROY ",hwnd)
 
             // 1. Eigene Ressourcen freigeben (z. B. OpenGL)
             if (self)
@@ -1220,25 +1264,11 @@ WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
             // 5. WM_QUIT in die Nachrichtenschleife posten
             PostQuitMessage(0);
             return 0;
-
-            //KillTimer(hwnd, 123);
-            //PostQuitMessage(0);
-
-            // if (self->_d->m_postQuitMessage)
-            // {
-            //     PostQuitMessage(0);
-            //     return 0;
-            // }
-            // else
-            // {
-            //     return DefWindowProc(hwnd, msg, wParam, lParam);
-            // }
-            // return DefWindowProc(hwnd, msg, wParam, lParam);
         }
         case WM_QUIT:
         {
-            // DE_OK("WM_QUIT ", hwnd)
-            return DefWindowProc(hwnd, msg, wParam, lParam);
+            DE_OK("WM_QUIT ",hwnd)
+            break;
         }
         case WM_TIMER:
         {
@@ -1615,7 +1645,7 @@ WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
             }
 
             delete[] pInputs;
-            break; // Falls GetTouchInputInfo fehlschlägt, an DefWindowProc weiterleiten
+            break; // Falls GetTouchInputInfo fehlschlägt, an DefWindowProcW weiterleiten
         }
 #endif
 
@@ -1693,7 +1723,7 @@ WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
             break;
         }
     }
-    return DefWindowProc(hwnd, msg, wParam, lParam);
+    return DefWindowProcW(hwnd, msg, wParam, lParam);
 }
 
 } // end namespace de.

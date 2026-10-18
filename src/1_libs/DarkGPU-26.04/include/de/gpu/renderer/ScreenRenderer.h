@@ -36,6 +36,7 @@ struct ScreenRenderer
     void draw2DRect( const Recti& pos, const uint32_t color = 0xFFFFFFFF, const TexRef& tex = TexRef() );
     void draw2DRectLine( const Recti& pos, const uint32_t color = 0xFFFFFFFF, const TexRef& tex = TexRef() );
     void draw2DRoundRect( const Recti& pos, const glm::ivec2& r, const uint32_t color = 0xFFFFFFFF, const TexRef& tex = TexRef(), int tess = 23 );
+    void draw2DRoundRect( const Recti& pos, const glm::ivec2& r, const TexRef& tex, int tess = 23 );
     void draw2DRoundRectLine( const Recti& pos, const glm::ivec2& r, const uint32_t color = 0xFFFFFFFF, const TexRef& tex = TexRef(), int tess = 23 );
 
 protected:
