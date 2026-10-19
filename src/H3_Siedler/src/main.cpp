@@ -4,8 +4,7 @@
 
 int main(int argc, char** argv)
 {
-    try {
-        // Dein eigentlicher Code hier
+    // try {
 
     //auto name = dbPromtStrA("Schreibe deinen Namen...", "User-input:");
 #ifdef HAVE_DE_AUDIO
@@ -129,13 +128,13 @@ DE_OK("")
 
 #endif
 
-    }
-    catch (const std::exception& e) {
-        DE_ERROR("Fatale Exception abgefangen: ",e.what())
-    }
-    catch (...) {
-        DE_ERROR("Unbekannte Exception abgefangen!")
-    }
+    // }
+    // catch (const std::exception& e) {
+    //     DE_ERROR("Fatale Exception abgefangen: ",e.what())
+    // }
+    // catch (...) {
+    //     DE_ERROR("Unbekannte Exception abgefangen!")
+    // }
 
     return 0;
 }

@@ -825,7 +825,7 @@ void VideoDriver::resize( int w, int h )
 {
     if (w < 1 || h < 1)
     {
-        DE_ERROR("")
+        // DE_ERROR("")
         return;
     }
 

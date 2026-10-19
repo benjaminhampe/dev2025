@@ -358,6 +358,26 @@ H3_Tex::init( H3_Game & game )
         m_refs[ StatRoad ] = de::gpu::TexRef(texStat, de::Recti(1,1+4*h,w-2,h-2));
         m_textures.push_back(texStat);
     }
+
+    // gfx/event
+    {
+        auto imgNice1 = H3_getImg( game, H3_Img::NicePointCard);
+        auto imgNice2 = H3_getImg( game, H3_Img::NiceKnightCard);
+        auto imgNice3 = H3_getImg( game, H3_Img::NiceInventCard);
+        auto imgNice4 = H3_getImg( game, H3_Img::NiceMonopolCard);
+        auto texNice1 = m_driver->createTexture2D( "h3_nice_pointCard", *imgNice1, so );
+        auto texNice2 = m_driver->createTexture2D( "h3_nice_knightCard", *imgNice2, so );
+        auto texNice3 = m_driver->createTexture2D( "h3_nice_inventCard", *imgNice3, so );
+        auto texNice4 = m_driver->createTexture2D( "h3_nice_monopolCard", *imgNice4, so );
+        m_refs[ NicePointCard ] = de::gpu::TexRef(texNice1);
+        m_refs[ NiceKnightCard ] = de::gpu::TexRef(texNice2);
+        m_refs[ NiceInventCard ] = de::gpu::TexRef(texNice3);
+        m_refs[ NiceMonopolCard ] = de::gpu::TexRef(texNice4);
+        m_textures.push_back(texNice1);
+        m_textures.push_back(texNice2);
+        m_textures.push_back(texNice3);
+        m_textures.push_back(texNice4);
+    }
 }
 
 de::gpu::TexRef

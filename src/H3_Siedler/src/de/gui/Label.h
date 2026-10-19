@@ -9,7 +9,7 @@ class Label : public Widget
 // =====================================================================
 {
 public:
-    Label( std::string text, Env* env, Widget* parent, u32 id, const Recti& r );
+    Label( std::string text, Env* env, Widget* parent, u32 id = 0, const Recti& pos = Recti() );
     ~Label() override;
     u32 getType() const override { return eWT_Label; }
 

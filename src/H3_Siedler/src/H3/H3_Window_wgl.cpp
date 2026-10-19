@@ -23,13 +23,13 @@ void H3_Window::moveEvent( const de::MoveEvent& event )
 
 void H3_Window::resizeEvent( const de::ResizeEvent& event )
 {
-    DE_ERROR("We dont want async resizeEvent()")
+    //DE_ERROR("We dont want async resizeEvent()")
     //m_game.resize(event.w,event.h);
 }
 
 void H3_Window::paintEvent( const de::PaintEvent& event )
 {
-    DE_ERROR("We dont want async paintEvent()")
+    //DE_ERROR("We dont want async paintEvent()")
     //m_game.draw();
 }
 
@@ -66,7 +66,15 @@ void H3_Window::keyPressEvent( const de::KeyPressEvent& event )
     {
         static bool bDebugDonate = false;
         bDebugDonate = !bDebugDonate;
+        m_game.m_uiGame->m_donateCards->startDonation(m_game.m_players.front().id);
         m_game.m_uiGame->m_donateCards->setVisible(bDebugDonate);
+    }
+
+    if (key == de::KEY_3)
+    {
+        static bool bDebugWinner = false;
+        bDebugWinner = !bDebugWinner;
+        m_game.m_uiGame->m_winnerScreen->setVisible(bDebugWinner);
     }
 
     // F11 - Toggle window resizable

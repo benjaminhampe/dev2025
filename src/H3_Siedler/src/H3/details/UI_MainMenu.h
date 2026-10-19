@@ -12,8 +12,13 @@ public:
     //void draw() override;
     void resize(int x, int y, int w, int h) override;
 
+    void forceResize() { m_forceResize = true; }
+
 private:
     H3_Game* m_game;
+
+    bool m_forceResize;
+
     de::gui::Button* m_btnNewGame;
     de::gui::Button* m_btnRestart;
     de::gui::Button* m_btnOptions;

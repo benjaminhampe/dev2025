@@ -8,6 +8,7 @@ UI_Game::UI_Game( H3_Game* game, de::gui::Env* env, de::gui::Widget* parent, u32
 // =====================================================================
     : de::gui::Widget(env, parent, id, pos)
     , m_game(game)
+    , m_forceResize{ true }
     , m_worldCreator(nullptr)
     , m_winnerScreen(nullptr)
     , m_actions(nullptr)
@@ -131,13 +132,27 @@ void UI_Game::draw()
 
 void UI_Game::resize(int x, int y, int w, int h)
 {
+    // x = 0;
+    // y = 0;
+    // w = m_env->getVideoDriver()->getScreenWidth();
+    // h = m_env->getVideoDriver()->getScreenHeight();
     auto rect = de::Recti(x, y, w, h);
-    if (rect == m_rect)
+
+    if (m_forceResize)
     {
-        return;
+        m_forceResize = false;
+    }
+    else
+    {
+        if (rect == m_rect)
+        {
+            return;
+        }
     }
 
+
     DE_DEBUG("Resize(",x,",",y,",",w,",",h,")")
+
     m_rect = de::Recti(x, y, w, h);
     updateLayouts();
 }
@@ -158,8 +173,7 @@ H3_GuiState UI_Game::getState() const
 {
     H3_GuiState guiState;
     guiState.bWorldCreator = m_worldCreator->isVisible();
-    guiState.bMarquee = m_marquee->isVisible();
-    guiState.bActions = m_actions->isVisible();
+    guiState.bGameOverlay = m_actions->isVisible();
     guiState.bDonateCards = m_donateCards->isVisible();
     guiState.bWinnerScreen = m_winnerScreen->isVisible();
     return guiState;
@@ -170,11 +184,9 @@ void UI_Game::setState(const H3_GuiState& guiState)
     if (m_worldCreator){
         m_worldCreator->setVisible(guiState.bWorldCreator);
     }
-    if (m_marquee){
-        m_marquee->setVisible(guiState.bMarquee);
-    }
     if (m_actions){
-        m_actions->setVisible(guiState.bActions);
+        m_actions->setVisible(guiState.bGameOverlay);
+        m_marquee->setVisible(guiState.bGameOverlay);
     }
     if (m_donateCards){
         m_donateCards->setVisible(guiState.bDonateCards);
@@ -192,33 +204,31 @@ void UI_Game::updateLayouts()
     int y = m_rect.y;
     int w = m_rect.w;
     int h = m_rect.h;
-
-    if (m_worldCreator && m_worldCreator->isVisible())
+    if (m_worldCreator)
     {
-        // m_worldCreator->resize(0,0,scr_w,scr_h);
         m_worldCreator->resize(x,y,w,h);
     }
-
-    if (m_winnerScreen && m_winnerScreen->isVisible())
+    if (m_actions)
     {
-        //m_winnerScreen->resize(0,0,scr_w,scr_h);
-        m_winnerScreen->resize(x,y,w,h);
-    }
-
-    if (m_actions && m_actions->isVisible())
-    {
-        //m_actions->resize(0,0,scr_w,scr_h);
         m_actions->resize(x,y,w,h);
     }
-
-    if (m_donateCards && m_donateCards->isVisible())
+    if (m_donateCards)
     {
-        int dw = w - 400;
-        int dh = h - 300;
-        int dx = (w - dw) / 2;
-        int dy = (h - dh) / 2;
-        m_donateCards->resize(dx,dy,dw,dh);
-        // m_donateCards->resize(0,0,scr_w,scr_h);
+        // ::::: Panel body ::::
+        int dim = 8 * std::min(w,h) / 10;
+        int panel_w = dim;
+        int panel_h = dim;
+        int panel_x = (w - panel_w)/2;
+        int panel_y = (h - panel_h)/2;
+        m_donateCards->resize(panel_x, panel_y, panel_w, panel_h);
+    }
+    if (m_winnerScreen)
+    {
+        int panel_w = w - 200;
+        int panel_h = h - 200;
+        int panel_x = 100;
+        int panel_y = 100;
+        m_winnerScreen->resize(panel_x, panel_y, panel_w, panel_h);
     }
 }
 

@@ -1,7 +1,5 @@
 #include "UI_DonateCards.h"
 #include <H3/H3_Game.h>
-#include <de/gui/Label.h>
-#include <de/gui/Button.h>
 
 // =====================================================================
 UI_DonateCards::UI_DonateCards( H3_Game* game, de::gui::Env* env, de::gui::Widget* parent, u32 id, const de::Recti& pos )
@@ -9,144 +7,82 @@ UI_DonateCards::UI_DonateCards( H3_Game* game, de::gui::Env* env, de::gui::Widge
     : de::gui::Panel(env, parent, id, pos)
     , m_game(game)
     , m_playerId(-1)
-    //, m_panel(nullptr)
-    , m_btnA1(nullptr)
-    , m_btnB1(nullptr)
-    , m_btnC1(nullptr)
-    , m_btnD1(nullptr)
-    , m_btnE1(nullptr)
-    , m_btnA2(nullptr)
-    , m_btnB2(nullptr)
-    , m_btnC2(nullptr)
-    , m_btnD2(nullptr)
-    , m_btnE2(nullptr)
+    , m_btnA(nullptr)
+    , m_btnB(nullptr)
+    , m_btnC(nullptr)
+    , m_btnD(nullptr)
+    , m_btnE(nullptr)
     , m_btnAccept(nullptr)
 {
-    auto texM = game->getTex(H3_Tex::Scroll, __func__);
-    auto texN = game->getTex(H3_Tex::Scroll1, __func__);
-    auto texA = game->getTex(H3_Tex::TileA, __func__);
-    auto texB = game->getTex(H3_Tex::TileB, __func__);
-    auto texC = game->getTex(H3_Tex::TileC, __func__);
-    auto texD = game->getTex(H3_Tex::TileD, __func__);
-    auto texE = game->getTex(H3_Tex::TileE, __func__);
-    auto texT = game->getTex(H3_Tex::Benni, __func__); // Thief icon
-    auto texP = game->getTex(H3_Tex::Play1, __func__); // Player icon
-
-    setTexture( texM );
+    auto tex_scroll = game->getTex(H3_Tex::Scroll, __func__);
+    setTexture( tex_scroll );
     setFillColor( 0xffffffff );
 
-    int w = pos.w;
-    //int h = pos.h;
-    int p = 20;
+    m_btnA = new UI_DonateCard(m_game, m_env, this);
+    m_btnB = new UI_DonateCard(m_game, m_env, this);
+    m_btnC = new UI_DonateCard(m_game, m_env, this);
+    m_btnD = new UI_DonateCard(m_game, m_env, this);
+    m_btnE = new UI_DonateCard(m_game, m_env, this);
 
-    int bw = (w - (6 * p)) / 5;
-    int bh = pos.h / 4;
+    m_btnAccept = new de::gui::Button("Accept", m_env, this);
 
-    int x = p;
-    int y = p;
+    auto tex_scroll2 = game->getTex(H3_Tex::Scroll2, __func__);
+    m_btnAccept->setTexture( tex_scroll2 );
 
-    auto r1 = de::Recti(x,y,w-2*p,bh);
-    auto r2 = de::Recti(x,y,w-2*p,bh);
-    auto r3 = de::Recti(x,y,w-2*p,bh);
-    auto r4 = de::Recti(x,y,w-2*p,bh);
-    auto r5 = de::Recti(x,y,w-2*p,bh);
-    m_lblTitle = new de::gui::Label("Donate cards to Robber.", env, this, 0, r1);
-    m_lblThiefName = new de::gui::Label("Thief", env, this, 0, r3);
-    m_lblThiefIcon = new de::gui::Label("", env, this, 0, r2);
-    m_lblPlayerName = new de::gui::Label("Player", env, this, 0, r5);
-    m_lblPlayerIcon = new de::gui::Label("", env, this, 0, r4);
-
-    m_lblTitle->setRadius(8);
-    m_lblThiefName->setRadius(8);
-    m_lblThiefIcon->setRadius(8);
-    m_lblPlayerName->setRadius(8);
-    m_lblPlayerIcon->setRadius(8);
-
-    m_lblTitle->setTexture( texN );
-    m_lblThiefName->setTexture( texN );
-    m_lblThiefIcon->setTexture( texT );
-    m_lblPlayerName->setTexture( texN );
-    m_lblPlayerIcon->setTexture( texP );
-
-    x += bh;
-    y += bh;
-
-    m_btnA1 = createButton("T_A", texA, de::Recti(x,y,bw,bh)); x += bw + p;
-    m_btnB1 = createButton("T_B", texB, de::Recti(x,y,bw,bh)); x += bw + p;
-    m_btnC1 = createButton("T_C", texC, de::Recti(x,y,bw,bh)); x += bw + p;
-    m_btnD1 = createButton("T_D", texD, de::Recti(x,y,bw,bh)); x += bw + p;
-    m_btnE1 = createButton("T_E", texE, de::Recti(x,y,bw,bh)); //x += bw + p;
-
-    x = p;
-    y += p + bh;
-    m_btnA2 = createButton("P_A", texA, de::Recti(x,y,bw,bh)); x += bw + p;
-    m_btnB2 = createButton("P_B", texB, de::Recti(x,y,bw,bh)); x += bw + p;
-    m_btnC2 = createButton("P_C", texC, de::Recti(x,y,bw,bh)); x += bw + p;
-    m_btnD2 = createButton("P_D", texD, de::Recti(x,y,bw,bh)); x += bw + p;
-    m_btnE2 = createButton("P_E", texE, de::Recti(x,y,bw,bh)); //x += bw + p;
-
-    x = p;
-    y += p + bh;
-    m_btnAccept = createButton("Accept", texN, de::Recti(x,y,5*bw + 4*p,bh));
-
-    m_btnA1->setOnClicked( [&] () {
-            if (m_bankThief.A > 0) { m_bankThief.A--; m_bankPlayer.A++; }
-            updateTexts();
-        });
-    m_btnB1->setOnClicked( [&] () {
-            if (m_bankThief.B > 0) { m_bankThief.B--; m_bankPlayer.B++; }
-            updateTexts();
-        });
-    m_btnC1->setOnClicked( [&] () {
-            if (m_bankThief.C > 0) { m_bankThief.C--; m_bankPlayer.C++; }
-            updateTexts();
-        });
-    m_btnD1->setOnClicked( [&] () {
-            if (m_bankThief.D > 0) { m_bankThief.D--; m_bankPlayer.D++; }
-            updateTexts();
-        });
-    m_btnE1->setOnClicked( [&] () {
-            if (m_bankThief.E > 0) { m_bankThief.E--; m_bankPlayer.E++; }
-            updateTexts();
-        });
-    m_btnA2->setOnClicked( [&] () {
-            if (m_bankPlayer.A > 0) { m_bankThief.A++; m_bankPlayer.A--; }
-            updateTexts();
-        });
-    m_btnB2->setOnClicked( [&] () {
-            if (m_bankPlayer.B > 0) { m_bankThief.B++; m_bankPlayer.B--; }
-            updateTexts();
-        });
-    m_btnC2->setOnClicked( [&] () {
-            if (m_bankPlayer.C > 0) { m_bankThief.C++; m_bankPlayer.C--; }
-            updateTexts();
-        });
-    m_btnD2->setOnClicked( [&] () {
-            if (m_bankPlayer.D > 0) { m_bankThief.D++; m_bankPlayer.D--; }
-            updateTexts();
-        });
-    m_btnE2->setOnClicked( [&] () {
-            if (m_bankPlayer.E > 0) { m_bankThief.E++; m_bankPlayer.E--; }
-            updateTexts();
-        });
-    m_btnAccept->setOnClicked( [&] ()
+    m_btnAccept->onClicked = [&] ()
         {
             DE_DEBUG("Return from donation")
 
-            if (m_cardsToRemove < 1)
+            if (m_cardsToRemove > m_bankThief.sum())
             {
-                H3_Player & player = m_game->getPlayer( m_playerId );
-                player.state.bank = m_bankPlayer;
+                DE_ERROR("Need (",m_cardsToRemove - m_bankThief.sum(),") more cards.")
+                return;
+            }
 
-                // Restore old Game GUI state.
-                m_game->m_uiGame->popState();
+            H3_Player & player = m_game->getPlayer( m_playerId );
 
+            player.state.bank -= m_bankThief;
+
+            // Restore old Game GUI state.
+            m_game->m_uiGame->popState();
+
+            if (player.id == m_game->m_player)
+            {
+                DE_DEBUG("IsCurrentPlayer -> Place thief")
                 // Enter new state.
                 m_game->enterThiefPlacement();
-
-
             }
-        });
+            else
+            {
+                DE_DEBUG("NotCurrentPlayer -> AI Place thief")
+                m_game->enterIdle();
+            }
+        };
+
+    m_btnA->onValueChanged = [&] (int value) {
+        m_bankThief.A = value;
+        // m_btnAccept->setEnabled(m_bankThief.sum() >= m_cardsToRemove);
+    };
+
+    m_btnB->onValueChanged = [&] (int value) {
+        m_bankThief.B = value;
+        // m_btnAccept->setEnabled(m_bankThief.sum() >= m_cardsToRemove);
+    };
+
+    m_btnC->onValueChanged = [&] (int value) {
+        m_bankThief.C = value;
+        // m_btnAccept->setEnabled(m_bankThief.sum() >= m_cardsToRemove);
+    };
+
+    m_btnD->onValueChanged = [&] (int value) {
+        m_bankThief.D = value;
+        // m_btnAccept->setEnabled(m_bankThief.sum() >= m_cardsToRemove);
+    };
+
+    m_btnE->onValueChanged = [&] (int value) {
+        m_bankThief.E = value;
+        // m_btnAccept->setEnabled(m_bankThief.sum() >= m_cardsToRemove);
+    };
 
     setDrawChildren(true);
 }
@@ -156,31 +92,172 @@ UI_DonateCards::~UI_DonateCards()
 
 }
 
+
 void UI_DonateCards::startDonation( uint32_t playerId )
 {
-    if (!m_game->hasPlayer(playerId))
-    {
-        DE_ERROR("No playerId ",playerId)
-        m_game->enterIdle();
-        return;
-    }
-
-    H3_Player & player = m_game->getPlayer( playerId );
+    const H3_Player & player = m_game->getPlayer( playerId );
 
     DE_DEBUG("player[",player.id,"] ", player.name)
 
     m_playerId = playerId;
     m_bankThief.clear();
 
-
     m_bankPlayer = player.state.bank;
+    m_cardsToRemove = player.state.bank.sum()/2;
 
-    m_lblPlayerName->setText( player.name );
-    m_lblPlayerIcon->setTexture( m_game->getTex(H3_Tex::Play2, __func__) );
-
-    updateTexts();
+    m_btnA->setCardData(0, player.state.bank.A);
+    m_btnB->setCardData(1, player.state.bank.B);
+    m_btnC->setCardData(2, player.state.bank.C);
+    m_btnD->setCardData(3, player.state.bank.D);
+    m_btnE->setCardData(4, player.state.bank.E);
 }
 
+
+void UI_DonateCards::resize(int X, int Y, int W, int H)
+{
+    m_rect = de::Recti(X,Y,W,H);
+
+    const float zoom = m_env->getZoom();
+    const int p = zoom * 5;
+    const int fontSize = zoom * 24;
+
+    for (auto & child : m_children)
+    {
+        auto font = child->getFont();
+        font.pixelSize = fontSize;
+        child->setFont(font);
+    }
+
+    {
+        int w = m_rect.w / 8;
+        int h = m_rect.h / 3;
+
+        int x = (W - 5*w)/2;
+        int y = 3*(H - h)/10;
+
+        if (m_btnA) m_btnA->resize(x,y,w,h); x += w + p;
+        if (m_btnB) m_btnB->resize(x,y,w,h); x += w + p;
+        if (m_btnC) m_btnC->resize(x,y,w,h); x += w + p;
+        if (m_btnD) m_btnD->resize(x,y,w,h); x += w + p;
+        if (m_btnE) m_btnE->resize(x,y,w,h);
+    }
+
+    {
+        int w = 6 * m_rect.w / 10;
+        int h = m_rect.h / 7;
+        int x = (W - w)/2;
+        int y = H - h;
+        m_btnAccept->resize(x,y,w,h);
+    }
+}
+
+
+void UI_DonateCards::draw()
+{
+    Panel::draw();
+
+    if (!isVisible()) return;
+
+    auto driver = m_env->getVideoDriver();
+
+    if (m_game->findPlayer(m_playerId) < 0)
+    {
+        DE_ERROR("No playerId = ",m_playerId)
+        return;
+    }
+
+    auto pos = getAbsoluteRect();
+
+    auto & player = m_game->getPlayer(m_playerId);
+
+    auto zoom = m_env->getZoom();
+
+    auto fontBig = de::Font("Postamt", zoom * 28);
+
+    int donated = m_btnA->getCardData()
+                + m_btnB->getCardData()
+                + m_btnC->getCardData()
+                + m_btnD->getCardData()
+                + m_btnE->getCardData();
+
+
+    int w = 7 * m_rect.w / 11;
+    int h = m_rect.h / 8;
+    int x = pos.x + (m_rect.w - w)/2;
+    int y = pos.y + 20;
+    auto r_title = de::Recti(x,y,w,h);
+    auto scroll = m_game->getTex(H3_Tex::Scroll1,__func__);
+
+    driver->getScreenQuadRenderer()->
+        draw2DRect(r_title,scroll,true);
+
+    // Thief icon
+    int icon_s = r_title.w / 10;
+    int icon_h = (r_title.h * 8) / 10;
+    int icon_w = icon_h;
+    int icon_x = r_title.x + icon_s;
+    int icon_y = r_title.y + r_title.h / 10;
+    auto r_icon = de::Recti(icon_x, icon_y, icon_w, icon_h);
+    auto t_icon = m_game->getTex(H3_Tex::Benni,__func__);
+
+    driver->getScreenQuadRenderer()->
+        draw2DRect(r_icon, t_icon, true);
+
+    // Thief text
+    int text_w = r_title.w - icon_w - 10;
+    int text_h = r_title.h - r_title.h / 10;
+    int text_x = r_icon.x2() + 10;
+    int text_y = r_title.y + r_title.h / 10;
+    auto r_text = de::Recti(text_x, text_y, text_w, text_h);
+    auto t_text = dbStr("Donate ", m_cardsToRemove - donated," more cards.");
+    driver->draw2DText(r_text.x, r_text.centerY(), t_text,
+        dbRGB(0,0,0), de::Align::LeftMiddle, fontBig,
+        dbRGB(255,255,255,225), 10);
+
+
+    // Player
+    int y1 = m_btnA->getRect().y2();
+    int y2 = m_btnAccept->getRect().y1();
+
+    int play_w = 7 * m_rect.w / 11;
+    int play_h = std::max(100,(y2-y1)/2);
+    int play_x = pos.x + 4*(m_rect.w - play_w) / 10;
+    int play_y = pos.y + y1 + ((y2-y1) - play_h)/2;
+    auto r_play = de::Recti(play_x, play_y, play_w, play_h);
+
+    driver->getScreenRenderer()->
+        draw2DRoundRect(r_play, {10,10}, player.color);
+
+    int pico_s = r_play.h / 10;
+    int pico_h = 8 * r_play.h / 10;
+    int pico_w = pico_h;
+    int pico_x = r_play.x + pico_s;
+    int pico_y = r_play.y + pico_s;
+
+    auto r_pico = de::Recti(pico_x, pico_y, pico_w, pico_h);
+    auto t_pico = m_game->getTex((H3_Tex::eID)player.avatar,__func__);
+    driver->getScreenRenderer()->
+        draw2DRoundRect(r_pico, {10,10}, t_pico);
+
+    int ptxt_w = r_play.w - r_pico.w;
+    int ptxt_h = r_play.h;
+    int ptxt_x = r_play.x + pico_w + 2*pico_s;
+    int ptxt_y = r_play.y;
+    auto r_ptxt = de::Recti(ptxt_x, ptxt_y, ptxt_w, ptxt_h);
+    auto t_ptxt = dbStr(player.name," lost ",donated," "
+                    "of ", player.state.bank.sum() , " cards.");
+
+    driver->draw2DText(r_ptxt.x, r_ptxt.centerY(), t_ptxt,
+        dbRGB(0,0,0), de::Align::LeftMiddle, fontBig,
+        dbRGB(255,255,255,235), 10);
+
+    for (auto & child : m_children)
+    {
+        child->draw();
+    }
+}
+
+/*
 void UI_DonateCards::updateTexts()
 {
     m_btnA1->setText( std::to_string(m_bankThief.A) );
@@ -195,47 +272,50 @@ void UI_DonateCards::updateTexts()
     m_btnD2->setText( std::to_string(m_bankPlayer.D) );
     m_btnE2->setText( std::to_string(m_bankPlayer.E) );
 
-    m_cardsToRemove = m_bankPlayer.sum()/2; // - m_game->m_cfg.cardLimitNoSteal;
-
     m_lblTitle->setText( dbStr("Donate ", m_cardsToRemove, " more cards.") );
 }
 
+
 void UI_DonateCards::resize(int X, int Y, int W, int H)
 {
-    m_rect = de::Recti(X,Y,W,H);
-
-    // int w = scr_w - 400;
-    // int h = scr_h - 300;
-    // int x = (scr_w - w) / 2;
-    // int y = (scr_h - h) / 2;
-
     // ::::: Panel body ::::
-    int w = W - 200;
-    int h = H - 150;
-    int x = 100;
-    int y = 50;
+    int panel_w = W/2;
+    int panel_h = 2*H/3;
+    int panel_x = (W - panel_w)/2;
+    int panel_y = (H - panel_h)/2;
+    m_rect = de::Recti(panel_x,panel_y,panel_w,panel_h);
 
     const float zoom = m_env->getZoom();
+    const int p = zoom * 5;
+    const int fontSize = zoom * 24;
 
-    const int pxSize = zoom * 24;
     for (auto & child : m_children)
     {
         auto font = child->getFont();
-        font.pixelSize = pxSize;
+        font.pixelSize = fontSize;
         child->setFont(font);
     }
 
-    int p = zoom * 5;
-    int h1 = h / 6 - p;
-    int h2 = h / 3 - p;
-    m_lblTitle->resize(x,y,w+20,h1);
+    int h1 = m_rect.h / 6 - p;
+    int h2 = m_rect.h / 3 - p;
+
+    int w = m_rect.w;
+    int h = m_rect.h;
+    int x = 0;
+    int y = 0;
+
+    m_lblTitle->resize(x+50,y,w-100,h1);
     y += h1 + p;
+
     resizeLayoutThief(de::Recti(x+50,y,w-100,h2));
     y += h2 + p;
+
     resizeLayoutPlayer(de::Recti(x+50,y,w-100,h2));
     y += h2 + p;
-    m_btnAccept->resize(x+50,y,w-150,h1);
+
+    m_btnAccept->resize(x+50,y,w-100,h1);
 }
+
 
 void UI_DonateCards::resizeLayoutThief( de::Recti pos )
 {
@@ -298,30 +378,6 @@ void UI_DonateCards::resizeLayoutPlayer( de::Recti pos )
     if (m_btnE2) m_btnE2->resize(x,y,w,h);
 }
 
-
-/*
-void UI_DonateCards::draw()
-{
-    Panel::draw();
-
-    if (!isVisible()) return;
-
-    for (auto & child : m_children)
-    {
-        child->draw();
-    }
-}
 */
 
 
-// static
-de::gui::Button*
-UI_DonateCards::createButton(std::string txt, de::gpu::TexRef ref, de::Recti pos)
-{
-    auto btn = new de::gui::Button(txt, m_env, this, 0, pos);
-    btn->setRadius( 8 );
-    // btn->setFillColor(dbRGB(255,255,255,200),0);
-    // btn->setTextColor(dbRGB(255,255,255),1);
-    btn->setTexture( ref );
-    return btn;
-}

@@ -47,8 +47,7 @@ struct H3_GuiState // Actually just H3_UIGameState
     // bool bMainMenu = false;
     // bool bHelpWindow = false;
     bool bWorldCreator = false;
-    bool bMarquee = false;
-    bool bActions = false;
+    bool bGameOverlay = false;    // Actions + stats + logger + dice
     bool bDonateCards = false;
     bool bWinnerScreen = false;
 };
@@ -357,12 +356,14 @@ struct H3_Cfg
     u32 victoryPoints;      // Num points to victory
     u32 cardLimitNoSteal;   // Num cards player can hold without robber steal. 0 = disable
     u32 buildingSpacing;    // Num of corners between neighboring buildings, default = 1, can be 0 for more dense use of board.
+    // u32 numPlayers;         // 1+
     u32 useBonusRoad;       // +2 points for 5+ connected roads
     u32 useBonusArmy;       // +2 points for 3+ knights
     u32 useCardKnight;      // +1 Knight with this card
     u32 useCardVictoryPoint;// +1 Victory point with this card
     u32 useCardMonopol;     // Take all cards of one resource of all players
     u32 useCardInvention;   // +2..+4 Arbitrary resource cards from bank
+    u32 skipFirstRound;
 
     std::vector< H3_CfgTile > tileList;
     std::vector< H3_CfgPlayer > playerList;
@@ -509,6 +510,43 @@ struct H3_Bank
         A += o.A; B += o.B; C += o.C; D += o.D; E += o.E; return *this;
     }
 
+    H3_Bank
+    sub( H3_Bank const & o ) const
+    {
+        H3_Bank n = *this;
+        if (n.A - o.A < 0)
+        {
+            DE_ERROR("Negative card amount A")
+            throw std::runtime_error("Negative card amount A");
+        }
+        if (n.B - o.B < 0)
+        {
+            DE_ERROR("Negative card amount B")
+            throw std::runtime_error("Negative card amount B");
+        }
+        if (n.C - o.C < 0)
+        {
+            DE_ERROR("Negative card amount C")
+            throw std::runtime_error("Negative card amount C");
+        }
+        if (n.D - o.D < 0)
+        {
+            DE_ERROR("Negative card amount D")
+            throw std::runtime_error("Negative card amount D");
+        }
+        if (n.E - o.E < 0)
+        {
+            DE_ERROR("Negative card amount E")
+            throw std::runtime_error("Negative card amount E");
+        }
+        n.A -= o.A;
+        n.B -= o.B;
+        n.C -= o.C;
+        n.D -= o.D;
+        n.E -= o.E;
+        return n;
+    }
+
     std::string
     str() const
     {
@@ -521,6 +559,31 @@ struct H3_Bank
 
     H3_Bank& operator-= ( H3_Bank const & o )
     {
+        if (A - o.A < 0)
+        {
+            DE_ERROR("Negative card amount A")
+            throw std::runtime_error("Negative card amount A");
+        }
+        if (B - o.B < 0)
+        {
+            DE_ERROR("Negative card amount B")
+            throw std::runtime_error("Negative card amount B");
+        }
+        if (C - o.C < 0)
+        {
+            DE_ERROR("Negative card amount C")
+            throw std::runtime_error("Negative card amount C");
+        }
+        if (D - o.D < 0)
+        {
+            DE_ERROR("Negative card amount D")
+            throw std::runtime_error("Negative card amount D");
+        }
+        if (E - o.E < 0)
+        {
+            DE_ERROR("Negative card amount E")
+            throw std::runtime_error("Negative card amount E");
+        }
         A -= o.A;
         B -= o.B;
         C -= o.C;
@@ -528,9 +591,10 @@ struct H3_Bank
         E -= o.E;
         return *this;
     }
+
     H3_Bank operator- ( H3_Bank const & o ) const
     {
-        return H3_Bank( *this ) -= o;
+        return sub(o);
     }
     H3_Bank& operator+= ( H3_Bank const & o )
     {
@@ -1013,6 +1077,70 @@ struct H3_Player
             inventCards.clear();
             monopolCards.clear();
         }
+
+
+        bool hasPort3v1() const { return flags & eFlagPort3v1; }
+        bool hasPortA() const { return flags & eFlagPortA; }
+        bool hasPortB() const { return flags & eFlagPortB; }
+        bool hasPortC() const { return flags & eFlagPortC; }
+        bool hasPortD() const { return flags & eFlagPortD; }
+        bool hasPortE() const { return flags & eFlagPortE; }
+
+        bool canBanking() const
+        {
+            if (bank.A >= 4) return true;
+            if (bank.B >= 4) return true;
+            if (bank.C >= 4) return true;
+            if (bank.D >= 4) return true;
+            if (bank.E >= 4) return true;
+
+            if (hasPort3v1())
+            {
+                if (bank.A >= 3) return true;
+                if (bank.B >= 3) return true;
+                if (bank.C >= 3) return true;
+                if (bank.D >= 3) return true;
+                if (bank.E >= 3) return true;
+            }
+
+            if (hasPortA()) { if (bank.A >= 2) return true; }
+            if (hasPortB()) { if (bank.B >= 2) return true; }
+            if (hasPortC()) { if (bank.C >= 2) return true; }
+            if (hasPortD()) { if (bank.D >= 2) return true; }
+            if (hasPortE()) { if (bank.E >= 2) return true; }
+
+            return false;
+        }
+
+        int unrevealedPointCards() const
+        {
+            return newPointCards.size() + pointCards.size();
+        }
+
+        int unrevealedKnightCards() const
+        {
+            return newKnightCards.size() + knightCards.size();
+        }
+
+        int unrevealedInventCards() const
+        {
+            return newInventCards.size() + inventCards.size();
+        }
+
+        int unrevealedMonopolCards() const
+        {
+            return newMonopolCards.size() + monopolCards.size();
+        }
+
+        bool canTrading() const
+        {
+            if (bank.sum() > 0) return true;
+            if (unrevealedPointCards() > 0) return true;
+            if (unrevealedKnightCards() > 0) return true;
+            if (unrevealedInventCards() > 0) return true;
+            if (unrevealedMonopolCards() > 0) return true;
+            return false;
+        }
     };
 
     // Current state
@@ -1034,26 +1162,6 @@ struct H3_Player
         state.clear();
         rank_start = 0;
         rank_dice = 0;
-    }
-
-    int unrevealedPointCards() const
-    {
-        return state.newPointCards.size() + state.pointCards.size();
-    }
-
-    int unrevealedKnightCards() const
-    {
-        return state.newKnightCards.size() + state.knightCards.size();
-    }
-
-    int unrevealedInventCards() const
-    {
-        return state.newInventCards.size() + state.inventCards.size();
-    }
-
-    int unrevealedMonopolCards() const
-    {
-        return state.newMonopolCards.size() + state.monopolCards.size();
     }
 };
 

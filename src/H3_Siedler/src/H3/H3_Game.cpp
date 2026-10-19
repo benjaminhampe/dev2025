@@ -47,34 +47,40 @@ void H3_Game::startGame()
     m_humans.clear();
     m_enemies.clear();
 
-
-    for (const auto& cfg : m_cfg.playerList)
+    for (size_t i = 0; i < m_cfg.playerList.size(); ++i)
     {
+        const auto& cfg = m_cfg.playerList[i];
+
         m_players.emplace_back();
         H3_Player & player = m_players.back();
-        player.startGame();
-        player.id = H3_createId();
+        player.id = i + 1; // H3_createId()
         player.typ = cfg.typ;
         player.connect = cfg.connect;
         player.color = cfg.color;
         player.name = cfg.name;
         player.avatar = H3_Tex::PlayU + m_players.size();
+        player.startGame();
         // player.state.bank.A = 4;
         // player.state.bank.B = 3;
         // player.state.bank.C = 2;
         // player.state.bank.D = 1;
         // player.state.bank.E = 0;
+    }
+    DE_DEBUG("Created players = ", m_players.size())
 
+    for (auto& player : m_players)
+    {
         if (player.typ == H3_PlayerType::HUMAN)
         {
             m_humans.emplace_back(&player);
         }
-        else // if (player.typ == H3_PlayerType::CPU)
+        else if (player.typ == H3_PlayerType::CPU)
         {
             m_enemies.emplace_back(&player);
         }
     }
-    DE_WARN("Created players = ", m_players.size())
+    DE_DEBUG("Stored enemies = ", m_enemies.size())
+    DE_DEBUG("Stored humans = ", m_humans.size())
 
     const auto tileTriangles = m_smeshTile.createCollisionTriangles();
     const auto chipTriangles = m_smeshChip.createCollisionTriangles();
@@ -142,47 +148,6 @@ void H3_Game::startGame()
 
     H3_createTopology( *this );
 
-    // Camera:
-    getCamera()->lookAt( glm::vec3(-1,260,-123), glm::vec3(0,0,-55) );
-
-    // Place thief:
-    H3_Tile& fdt = H3_findFirstDesertTile( *this );
-    m_thief.owner = fdt.id;
-    m_thief.trs.reset();
-    m_thief.trs.pos = fdt.pos + glm::vec3(10,0,-30);
-    m_thief.trs.update();
-
-    GL_VALIDATE;
-
-
-
-
-    // startGame()
-
-
-
-
-
-    H3_GuiState guiState;
-    guiState.bActions = true;
-    UI_setState( guiState );
-
-    m_state = H3_State::Idle;
-    m_round = 1;
-    m_turn = 1;
-
-    m_ranking.clear();
-    m_ranking.reserve( m_players.size() );
-
-    for ( const auto& player : m_players )
-    {
-        H3_RankedPlayer item;
-        item.playerId = player.id;
-        item.diceSum = 0;
-        m_ranking.push_back( item );
-    }
-    m_player = m_ranking.front().playerId;
-
     computeVisibleCorners( 0 );
     computeVisibleEdges( 0 );
     m_bUpdateDrawCall_Tiles = true;
@@ -193,18 +158,57 @@ void H3_Game::startGame()
     m_bUpdateDrawCall_Farms = true;
     m_bUpdateDrawCall_Citys = true;
 
-    marqueeH1( L"Round 1 - Ranking by Dice", 2000, 0xFF00CC10 );
-    marqueeH1( L"Runde 1 - Rang über Würfeln", 3000, 0xFF00CC10 );
+    // Camera:
+    getCamera()->lookAt( glm::vec3(-1,260,-123), glm::vec3(0,0,-55) );
 
-    auto s1 = dbStrW(L"New Game with (", m_players.size(), L") Players" );
-    marqueeH3( s1, 4000, 0xFF00CF00 );
-    auto s2 = dbStrW(L"Neues Spiel mit (", m_players.size(), L") Spielern" );
-    marqueeH3( s2, 4000, 0xFF00CF00 );
+    // Place thief:
+    H3_Tile& fdt = H3_findFirstDesertTile( *this );
+    m_thief.owner = fdt.id;
+    m_thief.trs.reset();
+    m_thief.trs.pos = fdt.pos + glm::vec3(10,0,-30);
+    m_thief.trs.update();
 
-    marqueeH3( L"Please dice to determine your start rank.", 4000, 0xFF00DC10 );
-    marqueeH3( L"Bitte würfeln um deinen Rang zu bestimmen.", 4000, 0xFF00DC10 );
+    // startGame()
 
-    UI_updateActions();
+    H3_GuiState guiState;
+    guiState.bGameOverlay = true;
+    UI_setState( guiState );
+
+    m_state = H3_State::Idle;
+    m_turn = 1;
+    m_ranking.clear();
+    m_ranking.reserve( m_players.size() );
+
+    for ( const auto& player : m_players )
+    {
+        H3_RankedPlayer item;
+        item.playerId = player.id;
+        item.diceSum = 0;
+        m_ranking.push_back( item );
+    }
+
+    if (m_cfg.skipFirstRound)
+    {
+        m_round = 2;
+
+        dbRandomize();
+
+        for ( H3_Player & player : m_players )
+        {
+            m_dice.a = (rand()%6) + 1;
+            m_dice.b = (rand()%6) + 1;
+            player.state.dice = m_dice;
+            player.endTurn();
+        }
+
+        computeRanking();
+    }
+    else
+    {
+        m_round = 1;
+    }
+
+    enterIdle();
 }
 
 void H3_Game::requestClose()
@@ -452,7 +456,7 @@ bool H3_Game::init( de::Window* window )
     m_capTimerId = m_window->startTimer(200);
     m_bPaintEvents = true;
 
-    m_driver->dumpTextures();
+    // m_driver->dumpTextures();
 
     m_uiGame->m_worldCreator->setCfg( H3_Cfg::createStandard() );
 
@@ -675,11 +679,28 @@ void H3_Game::enterIdle()
     m_state = H3_State::Idle;
 
     H3_GuiState guiState;
-    guiState.bActions = true;
-    guiState.bMarquee = true;
+    guiState.bGameOverlay = true;
     UI_setState( guiState );
 
-    if (m_round == 2)
+    if (m_round == 1)
+    {
+        if (m_turn == 1)
+        {
+            m_player = m_ranking.front().playerId;
+
+            marqueeH1( L"Round 1 - Ranking by Dice", 2000, 0xFF00CC10 );
+            marqueeH1( L"Runde 1 - Rang über Würfeln", 3000, 0xFF00CC10 );
+
+            auto s1 = dbStrW(L"New Game with (", m_players.size(), L") Players" );
+            marqueeH3( s1, 4000, 0xFF00CF00 );
+            auto s2 = dbStrW(L"Neues Spiel mit (", m_players.size(), L") Spielern" );
+            marqueeH3( s2, 4000, 0xFF00CF00 );
+
+            marqueeH3( L"Please dice to determine your start rank.", 4000, 0xFF00DC10 );
+            marqueeH3( L"Bitte würfeln um deinen Rang zu bestimmen.", 4000, 0xFF00DC10 );
+        }
+    }
+    else if (m_round == 2)
     {
         if (m_turn == 1)
         {
@@ -904,16 +925,14 @@ void H3_Game::doDice()
     // --> --> --> --> --> --> --> --> --> --> --> --> --> -->
     if (sum == 7)
     {
-        for (auto & cpu_player : m_players)
+        for (H3_Player* cpu_player : m_enemies)
         {
-            if (cpu_player.typ == H3_PlayerType::HUMAN)
-            {
-                enterDonateCards();
-            }
-            else // if (cpu_player.typ == H3_PlayerType::CPU)
-            {
-                AI_donateCardsToRobber(*this, cpu_player.id);
-            }
+            AI_donateCardsToRobber(*this, cpu_player->id);
+        }
+
+        for (H3_Player* human_player : m_humans)
+        {
+            enterDonateCards( human_player->id );
         }
     }
     else
@@ -943,12 +962,12 @@ void H3_Game::doDice()
                 }
             }
         }
-    }
 
-    enterIdle();
+        enterIdle();
+    }
 }
 
-void H3_Game::enterDonateCards()
+void H3_Game::enterDonateCards( uint32_t playerId )
 {
     // if (m_state != H3_State::Dice)
     // {
@@ -957,52 +976,64 @@ void H3_Game::enterDonateCards()
     //     return;
     // }
 
-    H3_Player & player = getPlayer(m_player);
+    H3_Player & player = getPlayer(playerId);
+
     if (player.typ != H3_PlayerType::HUMAN)
     {
         DE_ERROR("Player[",player.id,"] ",player.name," is not a Human.")
-    }
-
-    uint32_t cards = player.state.bank.sum();
-    if (cards <= m_cfg.cardLimitNoSteal)
-    {
-        DE_DEBUG("Player[",player.id,"] ",player.name," has only ",cards," cards. No donation.")
+        enterIdle();
         return;
     }
 
-    DE_DEBUG("Player[",player.id,"] ",player.name," has ",cards," cards. "
-             "Must donate ", cards/2, ". Threshold(",m_cfg.cardLimitNoSteal,")")
+    const uint32_t cards = player.state.bank.sum();
+    if (cards <= m_cfg.cardLimitNoSteal)
+    {
+        DE_DEBUG("Player[",player.id,"] ",player.name," has only ",cards," cards. No donation.")
+        enterThiefPlacement();
+        return;
+    }
 
     m_state = H3_State::DonateCards;
+
+    DE_DEBUG("Player[",player.id,"] ",player.name," has ",cards," cards. "
+            "Must donate ", cards/2, ". "
+            "cardLimitNoSteal(",m_cfg.cardLimitNoSteal,")")
+
     // UI_updateActions();
 
     H3_GuiState guiState;
     guiState.bDonateCards = true;
     m_uiGame->pushState( guiState );
 
-    m_uiGame->m_donateCards->startDonation( m_player );
+    m_uiGame->m_donateCards->startDonation( player.id );
 
 }
 
 void H3_Game::enterThiefPlacement()
 {
-    if (m_state != H3_State::DonateCards &&
+    if (m_state != H3_State::Dice &&
+        m_state != H3_State::DonateCards &&
         m_state != H3_State::UseKnightCard )
     {
         DE_ERROR("Invalid state ", m_state.str())
-        // m_state = H3_State::Idle;
-        // return;
+        enterIdle();
+        return;
     }
 
     m_state = H3_State::PlaceThief;
 
     auto & player = getCurrentPlayer();
-    marqueeH1(L"Placement of Thief to another Tile", 2000, player.color);
+
+    DE_DEBUG(player.name," places thief to tile")
+
+    marqueeH1(L"Place thief to another Tile", 2000, player.color);
 
     if (player.typ == H3_PlayerType::CPU)
     {
         DE_WARN("AI should do something here...")
     }
+
+    UI_updateActions();
 }
 
 void H3_Game::leaveThiefPlacement( H3_Tile& tile )
@@ -1066,8 +1097,6 @@ void H3_Game::leaveThiefPlacement( H3_Tile& tile )
     // We have atleast 2 players on the Robber tile
     // Ergo the current player needs to select one of them using the mouse and 3d collision detection
     m_state = H3_State::StealRandomCard;
-    H3_GuiState guiState;
-    UI_setState( guiState );
     marqueeH1(L"Select Player to steal a card...", 1500, 0xFFC0C0C0);
 }
 
@@ -1604,6 +1633,62 @@ void H3_Game::doTrade()
     UI_updateActions();
 }
 
+void H3_Game::revealPointCard()
+{
+    if ( m_state != H3_State::Idle )
+    {
+        DE_ERROR("Incorrect state ", m_state)
+        return;
+    }
+
+    auto & player = getCurrentPlayer();
+
+    DE_DEBUG("Reveal pointCard of player ",player.name)
+
+    UI_updateActions();
+}
+void H3_Game::revealKnightCard()
+{
+    if ( m_state != H3_State::Idle )
+    {
+        DE_ERROR("Incorrect state ", m_state)
+        return;
+    }
+
+    auto & player = getCurrentPlayer();
+
+    DE_DEBUG("Reveal pointCard of player ",player.name)
+
+    // computeBonusArmy()
+
+    enterThiefPlacement();
+
+    UI_updateActions();
+}
+void H3_Game::revealInventCard()
+{
+    if ( m_state != H3_State::Idle )
+    {
+        DE_ERROR("Incorrect state ", m_state)
+        return;
+    }
+
+    //m_state = H3_State::PlaceCity;
+    //UI_updateActions();
+}
+void H3_Game::revealMonopolCard()
+{
+    if ( m_state != H3_State::Idle )
+    {
+        DE_ERROR("Incorrect state ", m_state)
+        return;
+    }
+
+    //m_state = H3_State::PlaceCity;
+    //UI_updateActions();
+}
+
+
 void H3_Game::pick()
 {
     auto driver = getDriver();
@@ -1747,7 +1832,7 @@ void H3_Game::pick()
     }
 }
 
-int H3_Game::hasPlayer( const u32 playerId ) const
+int H3_Game::findPlayer( const u32 playerId ) const
 {
     auto it = std::find_if( m_players.begin(),
                             m_players.end(),
@@ -1766,7 +1851,7 @@ int H3_Game::hasPlayer( const u32 playerId ) const
 
 H3_Player& H3_Game::getPlayer( const u32 playerId )
 {
-    int found = hasPlayer(playerId);
+    int found = findPlayer(playerId);
     if (found < 0)
     {
         std::ostringstream o;
@@ -2051,26 +2136,20 @@ void H3_Game::drawSun()
     // Move the sun:
     auto & sun = driver->getLights()[0];
 
-    static float sun_angleZ = 0.0f;
+    static float sun_angleY = 0.0f;
     static float sun_sign = 1.0f;
     const float sun_radius = 600.0f;
     const float sun_speed = 1.0f; // 3 sec
 
-    sun_angleZ += sun_sign * sun_speed * dt; // phi = omega * t
-    if (sun_angleZ > 50.0f)
-    {
-        sun_sign = -sun_sign;
-    }
-    if (sun_angleZ < -50.0f)
-    {
-        sun_sign = -sun_sign;
-    }
+    sun_angleY += sun_speed * dt;
+    sun_angleY = de::Math::wrapAngleToRange0_2pi( sun_angleY );
 
-    const float D2R = 3.141f / 180.0f;
+    // if (sun_angleY > 50.0f) { sun_sign = -sun_sign; }
+    // if (sun_angleY <-50.0f) { sun_sign = -sun_sign; }
 
-    glm::vec3 sun_pos( sun_radius * sin( D2R * sun_angleZ ),
-                      sun_radius * cos( D2R * sun_angleZ ),
-                      200.0f - sun_radius * cos( D2R * sun_angleZ ) );
+    glm::vec3 sun_pos(sun_radius * sin( de::Math::DEG2RAD * sun_angleY ),
+                      1200.0f,
+                      sun_radius * cos( de::Math::DEG2RAD * sun_angleY ));
 
     sun.pos = sun_pos;
 
@@ -2079,7 +2158,6 @@ void H3_Game::drawSun()
     driver->getSMaterialRenderer()->draw3D( m_smeshSun );
     driver->endPerf();
 }
-
 
 void H3_Game::drawTiles()
 {
@@ -2585,4 +2663,7 @@ void H3_Game::setZoom( float zoom )
 {
     DE_DEBUG("SetZoom(",zoom,")")
     m_guienv.setZoom( zoom );
+
+    m_uiMenu->forceResize();
+    m_uiGame->forceResize();
 }

@@ -22,17 +22,18 @@ private:
     //de::gui::Widget* m_panel; // Element == Non pickable panel.
     de::gui::Button* m_btnDice;
     de::gui::Button* m_btnEndTurn;
-    de::gui::Button* m_btnBank;
-    de::gui::Button* m_btnTrade;
+    de::gui::Button* m_btnBanking;
+    de::gui::Button* m_btnTrading;
     de::gui::Button* m_btnCancel;
+    de::gui::Button* m_btnPlaceThief;
     de::gui::Button* m_btnBuyRoad;
     de::gui::Button* m_btnBuyFarm;
     de::gui::Button* m_btnBuyCity;
     de::gui::Button* m_btnBuyCard;
 
-    de::gui::Button* m_btnPlayPointCard;
-    de::gui::Button* m_btnPlayKnightCard;
-    de::gui::Button* m_btnPlayInventCard;
-    de::gui::Button* m_btnPlayMonopolCard;
+    de::gui::Button* m_btnPointCard;
+    de::gui::Button* m_btnKnightCard;
+    de::gui::Button* m_btnInventCard;
+    de::gui::Button* m_btnMonopolCard;
 
 };

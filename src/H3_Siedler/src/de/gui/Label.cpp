@@ -89,6 +89,10 @@ void Label::onEvent( const Event& event)
 void Label::draw()
 {
     if (!isVisible()) return;
+
+    if (m_rect.w < 1) return;
+    if (m_rect.h < 1) return;
+
     if (!m_env) { DE_ERROR("No env") return; }
     auto driver = m_env->getVideoDriver();
     if (!driver) { DE_ERROR("No driver") return; }

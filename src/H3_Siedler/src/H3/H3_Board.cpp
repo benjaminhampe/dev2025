@@ -15,6 +15,8 @@ void H3_Cfg::dump() const
     DE_DEBUG("cfg.useCardVictoryPoint = ",useCardVictoryPoint)
     DE_DEBUG("cfg.useCardMonopol = ",useCardMonopol)
     DE_DEBUG("cfg.useCardInvention = ",useCardInvention)
+    DE_DEBUG("cfg.skipFirstRound = ",skipFirstRound)
+
     DE_DEBUG("cfg.playerList = ",playerList.size())
 
     for (size_t i= 0; i < playerList.size(); ++i)
@@ -67,6 +69,7 @@ H3_Cfg::createStandard()
     cfg.useCardVictoryPoint = 1;// +1 Victory point with this card
     cfg.useCardMonopol = 1;     // Take all cards of one resource of all players
     cfg.useCardInvention = 1;   // +2..+4 Arbitrary resource cards from bank
+    cfg.skipFirstRound = 1;     //
 
     cfg.addTile( -2, 3, H3_TileType::PortE, 5 );
     cfg.addTile( -1, 3, H3_TileType::Water );
@@ -114,11 +117,11 @@ H3_Cfg::createStandard()
 
     {
         H3_CfgPlayer player;
-        player.name = "firestarter";
+        player.name = "Benni";
         player.color = dbRGB(255,0,0);
         player.typ = H3_PlayerType::HUMAN;
         player.connect = H3_PlayerConnect::LOCAL;
-        player.avatar = H3_Tex::Play1;
+        player.avatar = H3_Tex::Play3;
         cfg.playerList.push_back( player );
     }
 

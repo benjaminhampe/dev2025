@@ -15,8 +15,6 @@ Button::Button( std::string text, Env* env, Widget* parent, u32 id, const Recti&
     , m_borderWidth(0)
     // --- Text ---
     , m_text(text)
-    // --- Callbacks ---
-    , m_fnOnClicked( [] () {} )
 {
     auto black = dbRGB(0,0,0);
     auto white = dbRGB(255,255,255);
@@ -164,7 +162,24 @@ void Button::onEvent( const Event& event )
     {
         if (hasFlags(eWF_Hovered))
         {
-            m_fnOnClicked();
+            if (onClicked)
+            {
+                onClicked();
+            }
+
+            if (event.mouseReleaseEvent.isLeft())
+            {
+                if (onClickedLeft) { onClickedLeft(); }
+            }
+            else if (event.mouseReleaseEvent.isRight())
+            {
+                if (onClickedRight) { onClickedRight(); }
+            }
+            else if (event.mouseReleaseEvent.isMiddle())
+            {
+                if (onClickedMiddle) { onClickedMiddle(); }
+            }
+
             setFlags( eWF_Pressed, false );
             setFlags( eWF_Released, true );
         }

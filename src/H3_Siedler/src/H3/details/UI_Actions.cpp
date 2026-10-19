@@ -3,6 +3,23 @@
 #include <de/gui/Label.h>
 #include <de/gui/Button.h>
 
+de::gui::Button*
+createActionButton(H3_Game* game, H3_Tex::eID id, de::gui::Env* env, de::gui::Widget* parent)
+{
+    auto btn = new de::gui::Button("", env, parent);
+    btn->setBorderColor(dbRGB(255,255,0),1);
+
+    auto tex = game->getTex(id, dbStr("UI_Actions().texId",int(id)));
+    btn->setTexture(tex);
+
+    float zoom = env->getZoom();
+    int r = zoom * 8;
+    btn->setRadius(r);
+
+    btn->setBorderColor(dbRGB(255,255,255,225), de::gui::Widget::eWS_Hovered);
+    //btn->setFillColor(dbRGB(255,255,255), de::gui::Widget::eWS_Hovered);
+    return btn;
+}
 // =====================================================================
 UI_Actions::UI_Actions( H3_Game* game, de::gui::Env* env, de::gui::Widget* parent, u32 id, const de::Recti& pos )
 // =====================================================================
@@ -10,96 +27,63 @@ UI_Actions::UI_Actions( H3_Game* game, de::gui::Env* env, de::gui::Widget* paren
     , m_game(game)
 {
     // (1.) DoDice
-    {
-        auto btn = new de::gui::Button("", env, this, 0, de::Recti(0,0,0,0));
-        btn->setTexture(m_game->getTex(H3_Tex::DoDice, "UI_Actions().DoDice"));
-        btn->setBorderColor(dbRGB(255,255,0),1);
-        btn->setOnClicked([&](){ m_game->doDice(); });
-        m_btnDice = btn;
-    }
+    m_btnDice = createActionButton(game,H3_Tex::DoDice,env,this);
+    m_btnDice->onClicked = [&](){ m_game->doDice(); };
 
     // (2.) DoBank
-    {
-        auto btn = new de::gui::Button("", env, this, 0, de::Recti(0,0,0,0));
-        btn->setTexture(m_game->getTex(H3_Tex::DoBank, "UI_Actions().DoDice"));
-        btn->setBorderColor(dbRGB(255,255,0),1);
-        btn->setOnClicked([&](){ H3_MessageBox("Bank", "DoBanking"); });
-        m_btnBank = btn;
-    }
+    m_btnBanking = createActionButton(game,H3_Tex::DoBank,env,this);
+    m_btnBanking->onClicked = [&](){ H3_MessageBox("Bank", "DoBanking"); };
 
     // (3.) DoTrade
-    {
-        auto btn = new de::gui::Button("", env, this, 0, de::Recti(0,0,0,0));
-        btn->setTexture(m_game->getTex(H3_Tex::DoTrade, "UI_Actions().DoTrade"));
-        btn->setBorderColor(dbRGB(255,255,0),1);
-        btn->setOnClicked([&](){ H3_MessageBox("Trade", "DoTrade"); });
-        m_btnTrade = btn;
-    }
+    m_btnTrading = createActionButton(game,H3_Tex::DoTrade,env,this);
+    m_btnTrading->onClicked = [&](){ H3_MessageBox("Trade", "DoTrade"); };
 
     // (4.) DoEndTurn
-    {
-        auto btn = new de::gui::Button("", env, this, 0, de::Recti(0,0,0,0));
-        btn->setTexture(m_game->getTex(H3_Tex::DoEndTurn, "UI_Actions().DoEndTurn"));
-        btn->setBorderColor(dbRGB(255,255,0),1);
-        btn->setOnClicked([&](){ m_game->doEndTurn(); });
-        m_btnEndTurn = btn;
-    }
+    m_btnEndTurn = createActionButton(game,H3_Tex::DoEndTurn,env,this);
+    m_btnEndTurn->onClicked = [&](){ m_game->doEndTurn(); };
 
     // (5.) DoBuyEventCard
-    {
-        auto tex = m_game->getTex(H3_Tex::DoBuyEventCard, "UI_Actions().DoBuyEventCard");
-        auto btn = new de::gui::Button("", env, this, 0, de::Recti(0,0,0,0));
-        btn->setTexture(tex);
-        btn->setBorderColor(dbRGB(255,255,0),1);
-        btn->setOnClicked([&](){ m_game->doBuyCard(); });
-        m_btnBuyCard = btn;
-    }
+    m_btnBuyCard = createActionButton(game,H3_Tex::DoBuyEventCard,env,this);
+    m_btnBuyCard->onClicked = [&](){ m_game->doBuyCard(); };
 
     // (6.) DoCancel
-    {
-        auto tex = m_game->getTex(H3_Tex::DoCancel, "UI_Actions().DoCancel");
-        auto btn = new de::gui::Button("", env, this, 0, de::Recti(0,0,0,0));
-        btn->setTexture(tex);
-        btn->setBorderColor(dbRGB(255,255,0),1);
-        btn->setOnClicked([&](){ m_game->doPlaceCancel(); });
-        m_btnCancel = btn;
-    }
+    m_btnCancel = createActionButton(game,H3_Tex::DoCancel,env,this);
+    m_btnCancel->onClicked = [&](){ m_game->doPlaceCancel(); };
+
+    // (New.) DoRob
+    m_btnPlaceThief = createActionButton(game,H3_Tex::DoRob,env,this);
+    //m_btnPlaceThief->onClicked = [&](){ m_game->doPlaceCancel(); };
 
     // (7.) DoBuyRoad
-    {
-        auto tex = m_game->getTex(H3_Tex::DoBuyRoad, "UI_Actions().DoBuyRoad");
-        auto btn = new de::gui::Button("", env, this, 0, de::Recti(0,0,0,0));
-        btn->setTexture(tex);
-        btn->setBorderColor(dbRGB(255,255,0),1);
-        btn->setOnClicked([&](){ m_game->doBuyRoad(); });
-        m_btnBuyRoad = btn;
-    }
+    m_btnBuyRoad = createActionButton(game,H3_Tex::DoBuyRoad,env,this);
+    m_btnBuyRoad->onClicked = [&](){ m_game->doBuyRoad(); };
 
     // (8.) DoBuyFarm
-    {
-        auto tex = m_game->getTex(H3_Tex::DoBuyFarm, "UI_Actions().DoBuyFarm");
-        auto btn = new de::gui::Button("", env, this, 0, de::Recti(0,0,0,0));
-        btn->setTexture(tex);
-        btn->setBorderColor(dbRGB(255,255,0),1);
-        btn->setOnClicked([&](){ m_game->doBuyFarm(); });
-        m_btnBuyFarm = btn;
-    }
+    m_btnBuyFarm = createActionButton(game,H3_Tex::DoBuyFarm,env,this);
+    m_btnBuyFarm->onClicked = [&](){ m_game->doBuyFarm(); };
 
-    // (9.) DoBuyRoad
-    {
-        auto tex = m_game->getTex(H3_Tex::DoBuyCity, "UI_Actions().DoBuyCity");
-        auto btn = new de::gui::Button("", env, this, 0, de::Recti(0,0,0,0));
-        btn->setTexture(tex);
-        btn->setBorderColor(dbRGB(255,255,0),1);
-        btn->setOnClicked([&](){ m_game->doBuyCity(); });
-        m_btnBuyCity = btn;
-    }
-
-    //UI_addElem( game, H3_UI::BtnDoRob, H3_UIElem::ImageButton, de::Recti( 300, 68,0,0),
-    //            12, de::Align::TopCenter, int(H3_Tex::DoRob), "DoRob");
+    // (9.) DoBuyCity
+    m_btnBuyCity = createActionButton(game,H3_Tex::DoBuyCity,env,this);
+    m_btnBuyCity->onClicked = [&](){ m_game->doBuyCity(); };
 
     //   addButton( int(H3_Tex::DoUndo), 0.2, 0.7, 0.3, 0.1, "DoUndo");
     //   addButton( int(H3_Tex::DoRedo), 0.2, 0.7, 0.3, 0.1, "DoRedo");
+
+    // (20.) Reveal PointCard
+    m_btnPointCard = createActionButton(game,H3_Tex::NicePointCard,env,this);
+    m_btnPointCard->onClicked = [&](){ m_game->revealPointCard(); };
+
+    // (20.) Reveal KnightCard
+    m_btnKnightCard = createActionButton(game,H3_Tex::NiceKnightCard,env,this);
+    m_btnKnightCard->onClicked = [&](){ m_game->revealKnightCard(); };
+
+    // (20.) Reveal InventCard
+    m_btnInventCard = createActionButton(game,H3_Tex::NiceInventCard,env,this);
+    m_btnInventCard->onClicked = [&](){ m_game->revealInventCard(); };
+
+    // (20.) Reveal MonopolCard
+    m_btnMonopolCard = createActionButton(game,H3_Tex::NiceMonopolCard,env,this);
+    m_btnMonopolCard->onClicked = [&](){ m_game->revealMonopolCard(); };
 
 }
 
@@ -114,6 +98,11 @@ void UI_Actions::setDebugVisible(bool visible)
     for (auto & child : m_children)
     {
         child->setVisible(visible);
+    }
+
+    if (!visible)
+    {
+        updateVisibility();
     }
 }
 
@@ -153,20 +142,24 @@ void UI_Actions::resize(int X, int Y, int W, int H)
     int x = x0;
     int y = H - 1 - p - h1;
     m_btnDice->resize(x,y,w1,h1); x += w1 + p;
-    m_btnBank->resize(x,y,w1,h1); x += w1 + p;
-    m_btnTrade->resize(x,y,w1,h1); x += w1 + p;
+    m_btnBanking->resize(x,y,w1,h1); x += w1 + p;
+    m_btnTrading->resize(x,y,w1,h1); x += w1 + p;
     m_btnEndTurn->resize(x,y,w1,h1); // x += w2 + p;
 
-    x = x0;
-    y = H - 1 - p - h1 - h2;
+    x = x0 - w1 - p;
+    y = H - 1 - p - h1 - p - h2;
     m_btnCancel->resize(x+s,y,w2,h2); x += w1 + p;
+    m_btnPlaceThief->resize(x+s,y,w2,h2); x += w1 + p;
     m_btnBuyRoad->resize(x+s,y,w2,h2); x += w1 + p;
     m_btnBuyFarm->resize(x+s,y,w2,h2); x += w1 + p;
     m_btnBuyCity->resize(x+s,y,w2,h2); x += w1 + p;
 
-    y = H - 1 - p - h1 - h3;
-    m_btnBuyCard->resize(x,y,w3,h3);
-
+    y = H - 1 - p - h3;
+    m_btnBuyCard->resize(x,y,w3,h3); x += w2 + p;
+    m_btnPointCard->resize(x,y,w3,h3); x += w2 + p;
+    m_btnKnightCard->resize(x,y,w3,h3); x += w2 + p;
+    m_btnInventCard->resize(x,y,w3,h3); x += w2 + p;
+    m_btnMonopolCard->resize(x,y,w3,h3); x += w2 + p;
     //DE_DEBUG("this = ", this->getRect().str())
     //DE_DEBUG("m_btnDice = ", m_btnDice->getRect().str(), ", visible = ", m_btnDice->isVisible())
 }
@@ -175,15 +168,20 @@ void UI_Actions::hideActions()
 {
     m_btnDice->setVisible( false );
     m_btnEndTurn->setVisible( false );
-    m_btnBank->setVisible( false );
-    m_btnTrade->setVisible( false );
+    m_btnBanking->setVisible( false );
+    m_btnTrading->setVisible( false );
 
     m_btnCancel->setVisible( false );
+    m_btnPlaceThief->setVisible( false );
     m_btnBuyRoad->setVisible( false );
     m_btnBuyFarm->setVisible( false );
     m_btnBuyCity->setVisible( false );
 
     m_btnBuyCard->setVisible( false );
+    m_btnPointCard->setVisible( false );
+    m_btnKnightCard->setVisible( false );
+    m_btnInventCard->setVisible( false );
+    m_btnMonopolCard->setVisible( false );
 
     //UI_get( game, H3_UI::BtnDoRob ).visible = false;
 }
@@ -199,6 +197,12 @@ void UI_Actions::updateVisibility()
         m_game->m_state == H3_State::PlaceCity )
     {
         m_btnCancel->setVisible(true);
+        return;
+    }
+
+    if (m_game->m_state == H3_State::PlaceThief )
+    {
+        m_btnPlaceThief->setVisible(true);
         return;
     }
 
@@ -262,20 +266,6 @@ void UI_Actions::updateVisibility()
                 m_btnEndTurn->setVisible(true);
             }
         }
-        /*
-        if ( !player.didBuyRoad )
-        {
-            m_btnBuyRoad->setVisible(true);
-        }
-        if ( !player.didBuyFarm )
-        {
-            m_btnBuyFarm->setVisible(true);
-        }
-        if ( player.didBuyRoad && player.didBuyFarm )
-        {
-            m_btnEndTurn->setVisible(true);
-        }
-        */
     }
     // Round - N
     else
@@ -284,6 +274,14 @@ void UI_Actions::updateVisibility()
         {
             m_btnEndTurn->setVisible(true);
 
+            if ( player.state.canBanking() )
+            {
+                m_btnBanking->setVisible(true);
+            }
+            if ( player.state.canTrading() )
+            {
+                m_btnTrading->setVisible(true);
+            }
             if ( player.state.bank.canBuyRoad() )
             {
                 m_btnBuyRoad->setVisible(true);
@@ -300,11 +298,23 @@ void UI_Actions::updateVisibility()
             {
                 m_btnBuyCard->setVisible(true);
             }
-            if ( player.unrevealedPointCards() )
-            {
-                m_btnPlayPointCard->setVisible(true);
-            }
 
+            if ( player.state.unrevealedPointCards() )
+            {
+                m_btnPointCard->setVisible(true);
+            }
+            if ( player.state.unrevealedKnightCards() )
+            {
+                m_btnKnightCard->setVisible(true);
+            }
+            if ( player.state.unrevealedInventCards() )
+            {
+                m_btnInventCard->setVisible(true);
+            }
+            if ( player.state.unrevealedMonopolCards() )
+            {
+                m_btnMonopolCard->setVisible(true);
+            }
         }
         else
         {

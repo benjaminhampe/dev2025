@@ -11,18 +11,29 @@ class IntField : public Widget
 // =====================================================================
 {
 public:
-    IntField(const std::string& label, Env* env, Widget* parent, u32 id, const Recti& r );
+    IntField(const std::string& label, Env* env, Widget* parent, u32 id, const Recti& pos = Recti() );
     ~IntField() override;
     u32 getType() const override { return eWT_IntField; }
 
     void setFont( const Font& font ) override;
 
+    void setRange( int min_value, int max_value );
+    void setStep( int value );
+    void setValue( int value );
+
     void draw() override;
     void resize(int x, int y, int w, int h) override;
 
+    void resize(const Recti& pos)
+    {
+        resize(pos.x, pos.y, pos.w, pos.h);
+    }
+
     //void onEvent( const Event& event ) override;
 
-    Label* getNameLabel() const { return m_lblName; }
+    const std::string& getLabelText() const { return m_lblName->getText(); }
+
+    Label* getKeyLabel() const { return m_lblName; }
     Label* getValueLabel() const { return m_lblValue; }
     Button* getMinusButton() { return m_btnMinus; }
     Button* getPlusButton() { return m_btnPlus; }
@@ -32,14 +43,10 @@ public:
     int getMaximum() const { return m_maximum; }
     int getStep() const { return m_step; }
 
-    void setValue( int value )
-    {
-        m_value = std::clamp( value, m_minimum, m_maximum );
-        m_lblValue->setText( std::to_string(m_value) );
-    }
-    void setMinimum( int value ) { m_minimum = value; }
-    void setMaximum( int value ) { m_maximum = value; }
-    void setStep( int value ) { m_step = value; }
+
+
+protected:
+    void updateLayout();
 
 protected:
     int m_value;

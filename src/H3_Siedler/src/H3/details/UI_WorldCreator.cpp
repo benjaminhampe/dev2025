@@ -124,18 +124,14 @@ UI_WorldCreator::UI_WorldCreator( H3_Game* game, de::gui::Env* env, de::gui::Wid
     m_edtCardLimit = createIntField("Card Steal Limit", 7, 0, 100);
     m_edtBuildingSpacing = createIntField("Building Spacing", 1, 0, 1);
     m_edtPlayer = createIntField("Num Players", 4, 2, 5);
+    m_edtSkipFirstRound = createIntField("Skip First Round", 1, 0, 1);
+    //m_edtSkipFirstRound = createIntField("Skip First Round", 1, 0, 1);
 
     m_btnClose = createButton("Close");
     m_btnStart = createButton("Start");
 
-    m_btnClose->setOnClicked([&] ()
-    {
-        m_game->exitGame();
-    });
-    m_btnStart->setOnClicked([&] ()
-    {
-        m_game->startGame();
-    });
+    m_btnClose->onClicked = [&] () { m_game->exitGame(); };
+    m_btnStart->onClicked = [&] () { m_game->startGame(); };
 }
 
 UI_WorldCreator::~UI_WorldCreator()
@@ -177,6 +173,7 @@ void UI_WorldCreator::draw()
     m_edtCardLimit->draw();
     m_edtBuildingSpacing->draw();
     m_edtPlayer->draw();
+    m_edtSkipFirstRound->draw();
 
     m_world->draw();
 
@@ -234,7 +231,8 @@ void UI_WorldCreator::resize(int x, int y, int w, int h)
     m_edtVictoryPoints->resize(bx,by,bw,bh);    by += ln + q;
     m_edtCardLimit->resize(bx,by,bw,bh);        by += ln + q;
     m_edtBuildingSpacing->resize(bx,by,bw,bh);  by += ln + q;
-    m_edtPlayer->resize(bx,by,bw,bh);
+    m_edtPlayer->resize(bx,by,bw,bh);           by += ln + q;
+    m_edtSkipFirstRound->resize(bx,by,bw,bh);   //by += ln + q;
 
     // ::::: Row[2] World Body ::::
     by = y2;
@@ -242,7 +240,7 @@ void UI_WorldCreator::resize(int x, int y, int w, int h)
     bw = w - p - bx;
     bh = h - 2*p - y - 200;
     m_world->resize(bx,by,bw,bh);
-    DE_DEBUG("world.rect = ",m_world->getAbsoluteRect().str())
+    // DE_DEBUG("world.rect = ",m_world->getAbsoluteRect().str())
 
     // ::::: Row[N] Main-Buttons ::::
     bw = 400;
@@ -272,16 +270,21 @@ void UI_WorldCreator::setCfg( const H3_Cfg& cfg )
     m_edtCardLimit->setValue( m_cfg.cardLimitNoSteal );
     m_edtBuildingSpacing->setValue( m_cfg.buildingSpacing );
     m_edtPlayer->setValue( m_cfg.playerList.size() );
+    m_edtSkipFirstRound->setValue( m_cfg.skipFirstRound );
 }
 
 H3_Cfg
 UI_WorldCreator::getCfg()
 {
-    m_cfg.presetName = m_presetName->getText();
-    m_cfg.buildingSpacing = m_edtBuildingSpacing->getValue();
-    m_cfg.cardLimitNoSteal = m_edtCardLimit->getValue();
-    m_cfg.victoryPoints = m_edtVictoryPoints->getValue();
-    return m_cfg;
+    H3_Cfg cfg;
+    cfg.presetName = m_presetName->getText();
+    cfg.buildingSpacing = m_edtBuildingSpacing->getValue();
+    cfg.cardLimitNoSteal = m_edtCardLimit->getValue();
+    cfg.victoryPoints = m_edtVictoryPoints->getValue();
+    cfg.skipFirstRound = m_edtSkipFirstRound->getValue();
+    cfg.playerList = m_cfg.playerList;
+    cfg.tileList = m_cfg.tileList;
+    return cfg;
 }
 
 /*
@@ -379,8 +382,7 @@ de::gui::IntField*
 UI_WorldCreator::createIntField(std::string txt, int val, int min, int max)
 {
     auto edt = new de::gui::IntField(txt, m_env, this, 0, de::Recti());
-    edt->setMinimum(min);
-    edt->setMaximum(max);
+    edt->setRange(min,max);
     edt->setValue(val);
     auto tex = m_game->getTex( H3_Tex::Scroll1, "UI_WorldCreator.createIntField()" );
     edt->getMinusButton()->setTexture( tex );

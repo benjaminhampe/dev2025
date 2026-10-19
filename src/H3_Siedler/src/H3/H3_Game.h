@@ -58,7 +58,7 @@ struct H3_Game
 
     void enterIdle();
     void doEndTurn();
-    void enterDonateCards();     // Donate cards to robber
+    void enterDonateCards(uint32_t playerId);  // Donate cards to robber
     void enterThiefPlacement();     // Place robber on new tile
     void leaveThiefPlacement( H3_Tile& tile ); // Place robber on new tile
     void leaveThiefOutro( H3_Corner& corner ); // Select player to steal card from
@@ -81,6 +81,10 @@ struct H3_Game
     void doBuyCard();
     void doBank();
     void doTrade();
+    void revealPointCard();
+    void revealKnightCard();
+    void revealInventCard();
+    void revealMonopolCard();
 
     void computeVisibleCorners( uint32_t playerId );
     void computeVisibleEdges( uint32_t playerId );
@@ -88,7 +92,7 @@ struct H3_Game
     void pick();
     void stealRandomCard( int playerFrom, int playerTo );
 
-    int hasPlayer( const u32 playerId ) const;
+    int findPlayer( const u32 playerId ) const;
     H3_Player& getPlayer( const u32 playerId );
     H3_Player& getCurrentPlayer();
 

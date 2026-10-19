@@ -8,6 +8,7 @@ UI_MainMenu::UI_MainMenu( H3_Game* game, de::gui::Env* env, de::gui::Widget* par
 // =====================================================================
     : de::gui::Panel(env, parent, id, pos)
     , m_game(game)
+    , m_forceResize{ true }
     , m_uiHelpWindow(nullptr)
 {
     setDrawChildren(true);
@@ -24,14 +25,14 @@ UI_MainMenu::UI_MainMenu( H3_Game* game, de::gui::Env* env, de::gui::Widget* par
     m_btnHelp = createButton("Help");
     m_btnExit = createButton("Exit");
 
-    m_btnNewGame->setOnClicked([&](){ m_game->newGame(); });
-    m_btnRestart->setOnClicked([&](){ m_game->restartGame(); });
-    m_btnOptions->setOnClicked([](){
+    m_btnNewGame->onClicked = [&](){ m_game->newGame(); };
+    m_btnRestart->onClicked = [&](){ m_game->restartGame(); };
+    m_btnOptions->onClicked = [](){
         H3_MessageBox("Options", "Options are not implemented so yet.\n"
                                  "Try tinkering with xml config files");
-    });
-    m_btnHelp->setOnClicked([&](){ m_game->toggleHelpWindow(); });
-    m_btnExit->setOnClicked([&](){ m_game->exitProgram(); });
+    };
+    m_btnHelp->onClicked = [&](){ m_game->toggleHelpWindow(); };
+    m_btnExit->onClicked = [&](){ m_game->exitProgram(); };
 }
 
 UI_MainMenu::~UI_MainMenu()

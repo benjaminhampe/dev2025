@@ -31,6 +31,8 @@ public:
 
     void updateVisibleActions();
 
+    void forceResize() { m_forceResize = true; }
+
 protected:
     void updateLayouts();
 
@@ -39,8 +41,12 @@ protected:
 private:
     H3_Game* m_game;
 
+    bool m_forceResize;
+
 public:
+
     std::stack<H3_GuiState> m_stack;
+
 
     UI_WorldCreator* m_worldCreator;
 

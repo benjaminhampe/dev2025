@@ -9,7 +9,7 @@ class Button : public Widget
 // =====================================================================
 {
 public:
-    Button( std::string text, Env* env, Widget* parent, u32 id, const Recti& r );
+    Button( std::string text, Env* env, Widget* parent, u32 id = 0, const Recti& pos = Recti() );
     ~Button() override;
     u32 getType() const override { return eWT_Button; }
 
@@ -53,12 +53,14 @@ public:
     const gpu::TexRef& getTexture() const { return m_tex; }
     void setTexture( gpu::TexRef tex ) { m_tex = tex; }
 
+    // --- Callbacks ---
+    std::function<void(void)> onClicked;
 
-    void setOnClicked(const std::function<void(void)> & fnOnClicked )
-    {
-        m_fnOnClicked = fnOnClicked;
-    }
+    std::function<void(void)> onClickedLeft;
 
+    std::function<void(void)> onClickedRight;
+
+    std::function<void(void)> onClickedMiddle;
 protected:
     // --- Fill ---
     int m_radius;
@@ -74,8 +76,7 @@ protected:
     std::array<u32,4> m_textFgColors;
     std::array<u32,4> m_textBgColors;
 
-    // --- Callbacks ---
-    std::function<void(void)> m_fnOnClicked;
+
 
 };
 
