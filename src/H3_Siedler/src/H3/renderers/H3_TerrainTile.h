@@ -3,7 +3,6 @@
 #include <de/gpu/VideoDriver.h>
 #include <de/image/ImagePainter.h>
 
-
 namespace de {
 namespace gpu {
 

@@ -440,6 +440,7 @@ bool H3_Game::init( de::Window* window )
     m_diceRenderer.init( *this );
     //m_uiRenderer.init( *this );
     m_animatedTexRenderer.init(m_driver);
+    m_animations.init( this );
 
     auto g = this;
     auto e = &m_guienv;
@@ -495,6 +496,7 @@ void H3_Game::draw()
         drawCitys();
         drawThief();
         //drawDice();
+        m_animations.draw();
         drawHoveredTile();
         drawHoveredEdge();
         drawHoveredCorner();
@@ -548,7 +550,7 @@ void H3_Game::toggleMainMenu()
     m_uiGame->setVisible(bVis);
 
     int w = 800;
-    int h = 60;
+    int h = 600;
 
     if (m_driver)
     {
@@ -957,7 +959,52 @@ void H3_Game::doDice()
                         //DE_DEBUG("Player(",player.id,") ",player.name," has before bank = ", player.bank.toString() )
                         //DE_DEBUG("Tile[",i,"] has owner ", corner.owner, " and state = ", corner.state )
                         //DE_DEBUG("Player(",player.id,") ",player.name," has after bank = ", player.bank.toString() )
-                        player.state.bank.addAmount( tile.tileType, corner.building_type );
+                        player.state.bank.addAmount(
+                                tile.tileType,
+                                corner.building_type );
+
+DE_DEBUG("Player(",player.id,") ",player.name," got ",corner.building_type," ",tile.tileType.str() )
+
+                // <Begin> Animations:
+
+                        glm::vec3 worldPos = corner.trs.pos;
+                        glm::vec2 mousePos(0,0);
+
+                        if (player.typ == H3_PlayerType::HUMAN)
+                        {
+                            mousePos.x = m_driver->getScreenWidth()/2;
+                            mousePos.y = m_driver->getScreenHeight()-1;
+                        }
+                        else
+                        {
+                            int e_found = -1;
+                            for (int e_index = 0; e_index < m_enemies.size(); ++e_index)
+                            {
+                                H3_Player* enemy = m_enemies[e_index];
+                                if (enemy->id == player.id)
+                                {
+                                    e_found = e_index;
+                                    break;
+                                }
+                            }
+
+                            if (e_found > -1)
+                            {
+                                int e_width = m_driver->getScreenWidth()/4;
+                                mousePos.x = e_found * e_width + e_width / 2;
+                                mousePos.y = 0;
+                            }
+                        }
+
+                        auto ani = new H3_CardAnimation(this,
+                            worldPos,
+                            mousePos,
+                            tile.tileType,
+                            2.0);
+
+                        m_animations.addAnimation(ani);
+
+                // <End> Animations.
                     }
                 }
             }

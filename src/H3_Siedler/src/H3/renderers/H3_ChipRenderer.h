@@ -21,15 +21,9 @@ struct H3_ChipMeshBuffer
     std::vector<uint8_t> m_instanceAngle60;
 
     H3_ChipMeshBuffer();
-
-    // void init( H3_Game & game );
-    // void initTexture( H3_Game & game );
-    // void initShader();
-    // void initGeometry();
-
     void initVAO();
-    void uploadInstances();
     void render() const;
+    void uploadInstances();
 
     // Collect visible chips for placing roads
     void collectEdges(const H3_Game& game, float phi);
@@ -53,18 +47,6 @@ struct H3_ChipRenderer
     int m_locTex;
 
     uint32_t m_texture2DArray;
-    // uint32_t m_vao;
-    // uint32_t m_vbo_vertices;
-    // uint32_t m_vbo_indices;
-    // uint32_t m_vbo_instanceMat;
-    // uint32_t m_vbo_instanceLayer;
-    // uint32_t m_nVertices;
-    // uint32_t m_nIndices;
-
-    // std::vector<glm::mat4> m_instanceMat;
-    // std::vector<uint8_t> m_instanceLayer;
-    // std::vector<uint8_t> m_instanceAngle60;
-
 
     H3_ChipRenderer();
     ~H3_ChipRenderer();
@@ -72,10 +54,6 @@ struct H3_ChipRenderer
     void init( H3_Game & game );
     void initTexture( H3_Game & game );
     void initShader();
-
-    //void upload(const H3_Game& game);
-    //void collectInstances(const H3_Game& game);
-    //void uploadInstances(const H3_Game& game);
     void render( const H3_ChipMeshBuffer & chips );
 };
 

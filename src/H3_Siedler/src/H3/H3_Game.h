@@ -16,6 +16,8 @@
 #include <de/os/Window_WGL.h>
 #include <de/gpu/AnimatedTexRenderer.h>
 
+#include <H3/animations/H3_Animations.h>
+
 #ifdef HAVE_DE_AUDIO
     #include <de/audio/AudioEngine.h>
 #endif
@@ -293,7 +295,7 @@ struct H3_Game
     H3_TileRenderer m_tileRenderer;
     H3_WaterTileRenderer m_waterTileRenderer;
     de::gpu::AnimatedTexRenderer m_animatedTexRenderer;
-    //};
+    H3_Animations m_animations;
 
     bool m_bUpdateDrawCall_Tiles = true;
     bool m_bUpdateDrawCall_Chips = true;
