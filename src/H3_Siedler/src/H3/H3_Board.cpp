@@ -8,8 +8,8 @@ void H3_Cfg::dump() const
     DE_DEBUG("cfg.cardLimitNoSteal = ",cardLimitNoSteal)
 
     DE_DEBUG("cfg.buildingSpacing = ",buildingSpacing)
-    DE_DEBUG("cfg.useBonusRoad = ",useBonusRoad)
-    DE_DEBUG("cfg.useBonusArmy = ",useBonusArmy)
+    DE_DEBUG("cfg.bonusRoadLimit = ",bonusRoadLimit)
+    DE_DEBUG("cfg.bonusArmyLimit = ",bonusArmyLimit)
 
     DE_DEBUG("cfg.useCardKnight = ",useCardKnight)
     DE_DEBUG("cfg.useCardVictoryPoint = ",useCardVictoryPoint)
@@ -63,13 +63,14 @@ H3_Cfg::createStandard()
     cfg.victoryPoints = 3;      // Num points to victory (Default = 10)
     cfg.cardLimitNoSteal = 7;   // Num cards player can hold without robber steal. 0 = disable
     cfg.buildingSpacing = 1;    // Num of corners between neighboring buildings, default = 1, can be 0 for more dense use of board.
-    cfg.useBonusRoad = 1;       // +2 points for 5+ connected roads
-    cfg.useBonusArmy = 1;       // +2 points for 3+ knights
+    cfg.skipFirstRound = 1;     //
+    cfg.bonusRoadLimit = 5;     // +2 points for 5+ connected roads
+    cfg.bonusArmyLimit = 3;     // +2 points for 3+ knights
+
     cfg.useCardKnight = 1;      // +1 Knight with this card
     cfg.useCardVictoryPoint = 1;// +1 Victory point with this card
     cfg.useCardMonopol = 1;     // Take all cards of one resource of all players
     cfg.useCardInvention = 1;   // +2..+4 Arbitrary resource cards from bank
-    cfg.skipFirstRound = 1;     //
 
     cfg.addTile( -2, 3, H3_TileType::PortE, 5 );
     cfg.addTile( -1, 3, H3_TileType::Water );

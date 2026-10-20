@@ -357,13 +357,13 @@ struct H3_Cfg
     u32 cardLimitNoSteal;   // Num cards player can hold without robber steal. 0 = disable
     u32 buildingSpacing;    // Num of corners between neighboring buildings, default = 1, can be 0 for more dense use of board.
     // u32 numPlayers;         // 1+
-    u32 useBonusRoad;       // +2 points for 5+ connected roads
-    u32 useBonusArmy;       // +2 points for 3+ knights
     u32 useCardKnight;      // +1 Knight with this card
     u32 useCardVictoryPoint;// +1 Victory point with this card
     u32 useCardMonopol;     // Take all cards of one resource of all players
     u32 useCardInvention;   // +2..+4 Arbitrary resource cards from bank
     u32 skipFirstRound;
+    u32 bonusRoadLimit;     // 0 = disabled, +2 points for atleast default:5 connected roads
+    u32 bonusArmyLimit;     // 0 = disabled, +2 points for atleast default:3 knights
 
     std::vector< H3_CfgTile > tileList;
     std::vector< H3_CfgPlayer > playerList;
@@ -652,6 +652,22 @@ struct H3_Util
         ids.emplace_back( id );
         return true;
     }
+};
+
+// =====================================================================
+struct H3_BonusArmy
+// =====================================================================
+{
+    u32 owner = 0;   // player id
+    u32 knights = 0; // number of knights (Default: min. 3)
+};
+
+// =====================================================================
+struct H3_BonusRoad
+// =====================================================================
+{
+    u32 owner = 0; // player id
+    u32 roads = 0; // number of connected roads. (Default: min. 6)
 };
 
 // =====================================================================
@@ -974,16 +990,6 @@ struct H3_Player
     int rank_start; // Round 1
     int rank_dice;  // Round 2,3
 
-    bool hasPort3v1() const { return state.flags & eFlagPort3v1; }
-    bool hasPortA() const { return state.flags & eFlagPortA; }
-    bool hasPortB() const { return state.flags & eFlagPortB; }
-    bool hasPortC() const { return state.flags & eFlagPortC; }
-    bool hasPortD() const { return state.flags & eFlagPortD; }
-    bool hasPortE() const { return state.flags & eFlagPortE; }
-
-    bool hasBonusArmy() const { return state.flags & eFlagBonusArmy; }
-    bool hasBonusRoad() const { return state.flags & eFlagBonusRoad; }
-
     enum eFlags : u32
     {
         eFlagPort3v1    = 1,
@@ -1141,6 +1147,20 @@ struct H3_Player
             if (unrevealedMonopolCards() > 0) return true;
             return false;
         }
+
+        bool hasBonusArmy() const { return flags & eFlagBonusArmy; }
+        bool hasBonusRoad() const { return flags & eFlagBonusRoad; }
+
+        u32 computeVictoryPoints() const
+        {
+            size_t n = 0;
+            n += farms.size();
+            n += citys.size() * 2;
+            n += hasBonusArmy() ? 2 : 0;
+            n += hasBonusRoad() ? 2 : 0;
+            n += points.size();
+            return static_cast<u32>(n);
+        }
     };
 
     // Current state
@@ -1162,6 +1182,35 @@ struct H3_Player
         state.clear();
         rank_start = 0;
         rank_dice = 0;
+    }
+
+    void updateVictoryPoints()
+    {
+        u32 a = state.computeVictoryPoints();
+        u32 b = state.victoryPoints;
+        if (a == b) return;
+        DE_DEBUG("Update player[",id,"] ",name," victoryPoints from ",a, " to ", b)
+        state.victoryPoints = a;
+    }
+
+    void setBonusArmy(bool value)
+    {
+        u32 flags = state.flags;
+        if (value) { flags |= eFlagBonusArmy; }
+        else       { flags &= ~eFlagBonusArmy; }
+        if (flags == state.flags) { return; }
+        state.flags = flags;
+        DE_DEBUG("Update player[",id,"] ",name," BonusArmy = ",value," flags = ",dbHex(state.flags))
+    }
+
+    void setBonusRoad(bool value)
+    {
+        u32 flags = state.flags;
+        if (value) { flags |= eFlagBonusRoad; }
+        else       { flags &= ~eFlagBonusRoad; }
+        if (flags == state.flags) { return; }
+        state.flags = flags;
+        DE_DEBUG("Update player[",id,"] ",name," BonusRoad = ",value," flags = ",dbHex(state.flags))
     }
 };
 

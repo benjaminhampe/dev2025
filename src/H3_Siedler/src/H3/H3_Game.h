@@ -72,6 +72,10 @@ struct H3_Game
     // ordered by highest to lowest dice value
     void computeRanking(); // Used in: enterRound2()
 
+    void computeBonusRoad();
+    void computeBonusArmy();
+    void computeWinner();
+
     void doDice();
     void doPlaceCancel();
     void doBuyRoad();
@@ -177,9 +181,13 @@ struct H3_Game
 
     H3_Cfg m_cfg;
     H3_State m_state;
+    H3_BonusArmy m_bonusArmy; // current state
+    H3_BonusRoad m_bonusRoad; // current state
     int m_round;    // current round index
     int m_turn;     // current round index
     int m_player;   // current Player index
+    uint32_t m_winnerId;
+
 
     bool m_bPaintEvents = false;
     bool m_bShouldRun = true;
@@ -229,7 +237,6 @@ struct H3_Game
 
     H3_Dice m_dice;     // current dice
 
-
     // Round 1. - Decide order by dice ranking
     // Round 2. - Place 1st farm + road
     // Round 3. - Place 2nd farm + road
@@ -261,40 +268,31 @@ struct H3_Game
     // double cylinderCamHeight = 300;
     // double cylinderCamAngleY = 0;
 
-    std::array<bool, 1024> m_keyStates;
-
-    //int placeMode = 0; // 0 = thief, 1 = road, 2 = home, 3 = city, 4 = thief.
     // Scene-Collision: Pick
     // int m_mouseX = 0;
     // int m_mouseY = 0;
-    int m_pickState = 0; // 0 = none, 1 = road, 2 = villa, 3 = city, 4 = thief.
+    int m_pickState = 0; // 0 = none, 1 = road, 2 = farm, 3 = city, 4 = thief.
 
     // Scene-Collision: Hover
     glm::vec3 m_hitPos;
     float m_hitDist;
     // Scene-Collision: Hover
-    int m_hoverState = 0; // 0 = none, 1 = road, 2 = villa, 3 = city, 4 = thief.
+    int m_hoverState = 0; // 0 = none, 1 = road, 2 = farm, 3 = city, 4 = thief.
     int m_hoverTileId = 0;
     int m_hoverCornerId = 0;
     int m_hoverEdgeId = 0;
     int m_hoverRoadId = 0;
     int m_hoverFarmId = 0;
     int m_hoverCityId = 0;
-    //H3_Tile* m_hoverTile = nullptr;
-    //H3_Corner* m_hoverCorner = nullptr;
-    //H3_Edge* m_hoverEdge = nullptr;
-    //};
 
-    //de::BillboardRenderer m_billboardRenderer;
-    //de::RainbowRenderer m_rainbowRenderer;
-
-    //H3_TileRenderer m_tileRenderer;
     H3_ChipRenderer m_chipRenderer;
     H3_ObjRenderer m_objRenderer;
     H3_DiceRenderer m_diceRenderer;
     H3_TileRenderer m_tileRenderer;
     H3_WaterTileRenderer m_waterTileRenderer;
     de::gpu::AnimatedTexRenderer m_animatedTexRenderer;
+    //de::BillboardRenderer m_billboardRenderer;
+    //de::RainbowRenderer m_rainbowRenderer;
     H3_Animations m_animations;
 
     bool m_bUpdateDrawCall_Tiles = true;

@@ -39,8 +39,16 @@ void H3_Game::startGame()
 
     m_cfg.dump();
 
-    // === Reset keyboard ===
-    for ( bool & bValue : m_keyStates ) { bValue = false; }
+    // === Reset Winner ===
+    m_winnerId = 0;
+
+    // === Reset Bonus ===
+    m_bonusArmy.owner = 0;
+    m_bonusArmy.knights = 0;
+
+    // === Reset Bonus ===
+    m_bonusRoad.owner = 0;
+    m_bonusRoad.roads = 0;
 
     // === Players ===
     m_players.clear();
@@ -594,12 +602,152 @@ void H3_Game::UI_resizeLayouts()
     if (m_uiGame) { m_uiGame->resize(0,0,w,h); }
 }
 
+void H3_Game::computeBonusRoad()
+{
+    DE_WARN("Not implemented")
+
+    if (m_cfg.bonusRoadLimit < 1) // Disabled game feature
+    {
+        DE_WARN("BonusRoad:disabled")
+        m_bonusRoad.owner = 0;
+        m_bonusRoad.roads = 0;
+        return; // Reset and abort.
+    }
+
+    // Finally enough connected roads for a new owner, and a new owner ....
+
+    // 1. Finally delete bonus from all players ...
+
+    for ( H3_Player & player : m_players )
+    {
+        player.setBonusRoad(false);
+    }
+
+}
+
+void H3_Game::computeBonusArmy()
+{
+    if (m_cfg.bonusArmyLimit < 1) // Disabled game feature
+    {
+        DE_WARN("BonusArmy:disabled")
+        m_bonusArmy.owner = 0;
+        m_bonusArmy.knights = 0;
+        return; // Reset and abort.
+    }
+
+    // Compute player with biggest army ...
+    uint32_t ownerId = 0;
+    uint32_t knights = 0;
+
+    for ( H3_Player & player : m_players )
+    {
+        // Only count revealed knights...
+        if (knights < player.state.knights.size())
+        {
+            knights = player.state.knights.size();
+            ownerId = player.id;
+        }
+    }
+
+    if (ownerId == 0)
+    {
+        return; // No knights.
+    }
+
+    if (knights < m_cfg.bonusArmyLimit)
+    {
+        return; // Not enough knights for a bonus.
+    }
+
+    if (knights <= m_bonusArmy.knights) // Not enough knights for a new bonus owner.
+    {
+        int found = findPlayer(m_bonusArmy.owner);
+        if (found < 1)
+        {
+            DE_ERROR("Sanity failed")
+        }
+        else
+        {
+            DE_DEBUG("BonusArmy already given to ",m_bonusArmy.owner)
+            return;
+        }
+    }
+
+    // Enough knights for a new owner, but still can be same owner.
+
+    if (ownerId == m_bonusArmy.owner) // Same owner, minor update.
+    {
+        H3_Player & owner = getPlayer(ownerId);
+        owner.setBonusArmy(true); // Just make sure player has bonus.
+        m_bonusArmy.knights = knights; // Update knight count
+        DE_DEBUG("Same player still has BonusArmy")
+        return; // Player already has bonus
+    }
+
+    // Finally enough knights for a new owner, and a new owner ....
+
+    // 1. Finally delete bonus from all players ...
+
+    for ( H3_Player & player : m_players )
+    {
+        player.setBonusArmy(false);
+    }
+
+    // 2. Finally set new owner ...
+
+    H3_Player & owner = getPlayer(ownerId);
+    owner.setBonusArmy(true); // Just make sure player has bonus.
+    m_bonusArmy.owner = ownerId; // Update bonus owner
+    m_bonusArmy.knights = knights; // Update bonus value
+
+    // TODO: trigger some animation or so ...
+
+    DE_DEBUG("[",ownerId,"] ",owner.name," got BonusArmy with ",knights, " knights")
+}
+
+void H3_Game::computeWinner()
+{
+    DE_DEBUG("")
+
+    // TODO: Comment those out and do them only when necessary
+    computeBonusRoad();
+    computeBonusArmy();
+
+    u32 winnerId = 0;
+    u32 maxPoints = 0;
+
+    for ( H3_Player & player : m_players )
+    {
+        player.updateVictoryPoints();
+
+        if (maxPoints < player.state.victoryPoints)
+        {
+            maxPoints = player.state.victoryPoints;
+            winnerId = player.id;
+        }
+    }
+
+    if (maxPoints < m_cfg.victoryPoints)
+    {
+        DE_DEBUG("No winner, maxPoints(",maxPoints,"), playerId(",winnerId,")")
+        return;
+    }
+
+    m_winnerId = winnerId;
+
+    enterWinnerScreen();
+}
+
 void H3_Game::enterWinnerScreen()
 {
     if ( m_state != H3_State::Idle )
     {
         DE_ERROR("Incorrect state ", m_state.str())
     }
+
+    DE_DEBUG("winnerId(",m_winnerId,")")
+
+
 
     m_state = H3_State::Winner;
     m_round = 0;
@@ -757,10 +905,12 @@ void H3_Game::doEndTurn()
     DE_DEBUG("")
 
     // Check for winner
-    if (getCurrentPlayer().state.victoryPoints >= m_cfg.victoryPoints)
-    {
-        enterWinnerScreen();
-    }
+    // if (getCurrentPlayer().state.victoryPoints >= m_cfg.victoryPoints)
+    // {
+    //     enterWinnerScreen();
+    // }
+
+    computeWinner();
 
     // Reset Turn variables of all players:
     for ( H3_Player & player : m_players )
@@ -1479,6 +1629,8 @@ void H3_Game::finalizeBuyFarm( H3_Corner & corner )
     m_bUpdateDrawCall_Corners = true;
     m_bUpdateDrawCall_Farms = true;
     enterIdle();
+
+    // Winner is computed in doEndTurn();
 }
 
 void H3_Game::doBuyCity()
