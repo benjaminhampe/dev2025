@@ -1213,6 +1213,28 @@ struct H3_Player
         state.flags = flags;
         DE_DEBUG("Update player[",id,"] ",name," BonusRoad = ",value," flags = ",dbHex(state.flags))
     }
+
+    int getBankingRatio(int tt) const
+    {
+        if ( tt == 0 && state.hasPortA() ) { return 2; }
+        if ( tt == 1 && state.hasPortB() ) { return 2; }
+        if ( tt == 2 && state.hasPortC() ) { return 2; }
+        if ( tt == 3 && state.hasPortD() ) { return 2; }
+        if ( tt == 4 && state.hasPortE() ) { return 2; }
+        if ( state.hasPort3v1() ) return 3;
+        return 4;
+    }
+
+    H3_Bank getBankingRatios() const
+    {
+        H3_Bank ratios;
+        ratios.A = getBankingRatio(0);
+        ratios.B = getBankingRatio(1);
+        ratios.C = getBankingRatio(2);
+        ratios.D = getBankingRatio(3);
+        ratios.E = getBankingRatio(4);
+        return ratios;
+    }
 };
 
 // =====================================================================

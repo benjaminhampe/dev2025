@@ -51,6 +51,9 @@ Button::draw()
     auto driver = m_env->getVideoDriver();
     if (!driver) { DE_ERROR("No driver") return; }
 
+
+    int tesselation = 24;
+
     u32 fillColor = m_fillColors[eWS_Idle];
     u32 borderColor = m_borderColors[eWS_Idle];
     u32 textFgColor = m_textFgColors[eWS_Idle];
@@ -96,7 +99,7 @@ Button::draw()
         else
         {
             const auto r = glm::ivec2(m_radius,m_radius);
-            r_screen->draw2DRoundRect( pos, r, fillColor, m_tex, 24 );
+            r_screen->draw2DRoundRect( pos, r, fillColor, m_tex, tesselation );
         }
 #endif
     }
@@ -123,7 +126,25 @@ Button::draw()
         else
         {
             const auto r = glm::ivec2(m_radius,m_radius);
-            r_screen->draw2DRoundRectLine( pos, r, borderColor, m_tex, 24 );
+            r_screen->draw2DRoundRectLine( pos, r, borderColor, m_tex, tesselation );
+        }
+    }
+
+
+    // --- [Draw] Disabled Overlay RoundRect/Rect ---
+    if (!isEnabled())
+    {
+        uint32_t disabledColor = dbRGB(130,130,130,180);
+        if ( m_radius < 1 )
+        {
+            driver->getScreenRenderer()->
+                draw2DRect( pos, disabledColor, m_tex );
+        }
+        else
+        {
+            const auto r = glm::ivec2(m_radius,m_radius);
+            driver->getScreenRenderer()->
+                draw2DRoundRect( pos, r, disabledColor, de::gpu::TexRef(), tesselation );
         }
     }
 }
@@ -162,26 +183,30 @@ void Button::onEvent( const Event& event )
     {
         if (hasFlags(eWF_Hovered))
         {
-            if (onClicked)
-            {
-                onClicked();
-            }
-
-            if (event.mouseReleaseEvent.isLeft())
-            {
-                if (onClickedLeft) { onClickedLeft(); }
-            }
-            else if (event.mouseReleaseEvent.isRight())
-            {
-                if (onClickedRight) { onClickedRight(); }
-            }
-            else if (event.mouseReleaseEvent.isMiddle())
-            {
-                if (onClickedMiddle) { onClickedMiddle(); }
-            }
-
             setFlags( eWF_Pressed, false );
             setFlags( eWF_Released, true );
+
+            // We love the clickEvents and decide action in callback
+            // if (isEnabled())
+            // {
+                if (onClicked)
+                {
+                    onClicked();
+                }
+
+                if (event.mouseReleaseEvent.isLeft())
+                {
+                    if (onClickedLeft) { onClickedLeft(); }
+                }
+                else if (event.mouseReleaseEvent.isRight())
+                {
+                    if (onClickedRight) { onClickedRight(); }
+                }
+                else if (event.mouseReleaseEvent.isMiddle())
+                {
+                    if (onClickedMiddle) { onClickedMiddle(); }
+                }
+            // }
         }
         else
         {

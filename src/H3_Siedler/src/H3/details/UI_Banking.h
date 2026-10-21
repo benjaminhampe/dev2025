@@ -35,8 +35,8 @@ private:
     std::vector<Transaction> m_transaction;
     */
 
-    int m_giveCard; // H3_TileType resource Card type the player gives
-    int m_wishCard; // H3_TileType the player wants from bank
+    H3_Bank m_bank;
+    H3_Bank m_user;
 
     de::Recti m_rcHead;
     de::Recti m_rcBank;
@@ -44,61 +44,58 @@ private:
     de::Recti m_rcName;
     de::Recti m_rcBtns;
 
-public:
-    struct LabelButton
+    // de::Font m_fontTitle;
+    // de::Font m_fontCancel;
+    // de::Font m_fontLabel;
+
+    struct TripleWidget
     {
         de::Recti rect;
+        de::gui::Label* lup;
         de::gui::Button* btn;
-        de::gui::Label* lbl;
+        de::gui::Label* ldn;
 
-        void setText( const std::string& text )
+        void resize(int x,int y,int w,int h, int p, int label_h, const de::Font& font)
         {
-            lbl->setText( text );
-            btn->setText( text );
-        }
+            int btn_h = h - 2*(label_h + p);
+            int lup_y = y;
+            int btn_y = y + label_h + p;
+            int ldn_y = y + label_h + p + btn_h + p;
+            lup->resize(x, lup_y, w, label_h);
+            btn->resize(x, btn_y, w, btn_h);
+            ldn->resize(x, ldn_y, w, label_h);
 
-        void resize(int x,int y,int w,int h, int p, int label_h, bool labelOnTop = false)
-        {
-            if (labelOnTop)
-            {
-                int label_y = y;
-                int butto_y = y + label_h + p;
-                int butto_h = h - label_h - p;
-                lbl->resize(x, label_y, w, label_h);
-                btn->resize(x, butto_y, w, butto_h);
-            }
-            else
-            {
-                int butto_y = y;
-                int butto_h = h - label_h - p;
-                int label_y = y + butto_h + p;
-                lbl->resize(x, label_y, w, label_h);
-                btn->resize(x, butto_y, w, butto_h);
-            }
+            lup->setFont(font);
+            btn->setFont(font);
+            ldn->setFont(font);
         }
     };
 
-private:
-    LabelButton m_bankA;
-    LabelButton m_bankB;
-    LabelButton m_bankC;
-    LabelButton m_bankD;
-    LabelButton m_bankE;
+    TripleWidget m_bankA;
+    TripleWidget m_bankB;
+    TripleWidget m_bankC;
+    TripleWidget m_bankD;
+    TripleWidget m_bankE;
 
-    LabelButton m_userA;
-    LabelButton m_userB;
-    LabelButton m_userC;
-    LabelButton m_userD;
-    LabelButton m_userE;
+    TripleWidget m_userA;
+    TripleWidget m_userB;
+    TripleWidget m_userC;
+    TripleWidget m_userD;
+    TripleWidget m_userE;
+
+    // std::array<TripleWidget, 5> m_bankWidgets;
+    // std::array<TripleWidget, 5> m_userWidgets;
 
     de::gui::Button* m_btnCancel; // Cancel dialog.
     de::gui::Button* m_btnAccept; // Accept transaction.
 
-    void createLabelButton(UI_Banking::LabelButton& w, int tileType);
+    void createTripleWidget(TripleWidget& w, int tileType);
 
     void drawTitle();
     void drawBankIconAndName();
     void drawUserIcon();
     void drawUserName();
 
+    void updateUserSide(int lastType);
+    void updateBankSide();
 };

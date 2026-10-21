@@ -1,10 +1,11 @@
 #include "UI_Banking.h"
 #include <H3/H3_Game.h>
 
-void UI_Banking::createLabelButton(UI_Banking::LabelButton& w, int tileType)
+void UI_Banking::createTripleWidget(TripleWidget& w, int tileType)
 {
-    w.lbl = new de::gui::Label("", m_env, this);
+    w.lup = new de::gui::Label("", m_env, this);
     w.btn = new de::gui::Button("", m_env, this);
+    w.ldn = new de::gui::Label("", m_env, this);
 
     de::gpu::TexRef tex;
     switch (tileType)
@@ -21,6 +22,114 @@ void UI_Banking::createLabelButton(UI_Banking::LabelButton& w, int tileType)
     w.btn->setRadius(8);
 }
 
+int countTypes(const H3_Bank& bank)
+{
+    int n = 0;
+    if (bank.A) n++;
+    if (bank.B) n++;
+    if (bank.C) n++;
+    if (bank.D) n++;
+    if (bank.E) n++;
+    return n;
+}
+
+int getRatio(int tt, const H3_Player & player)
+{
+    if ( tt == 0 && player.state.hasPortA() )
+    {
+        return 2;
+    }
+    if ( tt == 1 && player.state.hasPortB() )
+    {
+        return 2;
+    }
+    if ( tt == 2 && player.state.hasPortC() )
+    {
+        return 2;
+    }
+    if ( tt == 3 && player.state.hasPortD() )
+    {
+        return 2;
+    }
+    if ( tt == 4 && player.state.hasPortE() )
+    {
+        return 2;
+    }
+
+    if ( player.state.hasPort3v1() ) return 3;
+
+    return 4;
+}
+
+void UI_Banking::updateUserSide(int lastType)
+{
+    H3_Player & player = m_game->getPlayer( m_playerId );
+
+    // Update user
+
+    // Clear user bank, except last used resource type...
+    // int numTypes = countTypes(m_user);
+    // if (numTypes > 1)
+    // {
+    //     if (lastType != H3_TileType::TileA) m_user.A = 0;
+    //     if (lastType != H3_TileType::TileB) m_user.B = 0;
+    //     if (lastType != H3_TileType::TileC) m_user.C = 0;
+    //     if (lastType != H3_TileType::TileD) m_user.D = 0;
+    //     if (lastType != H3_TileType::TileE) m_user.E = 0;
+    // }
+
+    // Update user
+    m_userA.lup->setText(std::to_string(m_user.A)); // given
+    m_userB.lup->setText(std::to_string(m_user.B)); // given
+    m_userC.lup->setText(std::to_string(m_user.C)); // given
+    m_userD.lup->setText(std::to_string(m_user.D)); // given
+    m_userE.lup->setText(std::to_string(m_user.E)); // given
+
+    const int remainA = player.state.bank.A - m_user.A;
+    const int remainB = player.state.bank.B - m_user.B;
+    const int remainC = player.state.bank.C - m_user.C;
+    const int remainD = player.state.bank.D - m_user.D;
+    const int remainE = player.state.bank.E - m_user.E;
+
+    DE_DEBUG("Ratios "
+             "A(",getRatio(0,player),"), "
+             "B(",getRatio(1,player),"), "
+             "C(",getRatio(2,player),"), "
+             "D(",getRatio(3,player),"), "
+             "E(",getRatio(4,player),")")
+
+    m_userA.btn->setEnabled(remainA >= getRatio(0,player)); // remain
+    m_userB.btn->setEnabled(remainB >= getRatio(1,player)); // remain
+    m_userC.btn->setEnabled(remainC >= getRatio(2,player)); // remain
+    m_userD.btn->setEnabled(remainD >= getRatio(3,player)); // remain
+    m_userE.btn->setEnabled(remainE >= getRatio(4,player)); // remain
+
+    m_userA.ldn->setText(std::to_string(remainA)); // remain
+    m_userB.ldn->setText(std::to_string(remainB)); // remain
+    m_userC.ldn->setText(std::to_string(remainC)); // remain
+    m_userD.ldn->setText(std::to_string(remainD)); // remain
+    m_userE.ldn->setText(std::to_string(remainE)); // remain
+
+    // Update bank
+    const bool bCanBank =
+        (m_user.A >= getRatio(0, player)) ||
+        (m_user.B >= getRatio(1, player)) ||
+        (m_user.C >= getRatio(2, player)) ||
+        (m_user.D >= getRatio(3, player)) ||
+        (m_user.E >= getRatio(4, player));
+
+    m_bankA.btn->setEnabled(bCanBank);
+    m_bankB.btn->setEnabled(bCanBank);
+    m_bankC.btn->setEnabled(bCanBank);
+    m_bankD.btn->setEnabled(bCanBank);
+    m_bankE.btn->setEnabled(bCanBank);
+}
+
+void UI_Banking::updateBankSide()
+{
+
+}
+
 // =====================================================================
 UI_Banking::UI_Banking( H3_Game* game, de::gui::Env* env, de::gui::Widget* parent, u32 id, const de::Recti& pos )
 // =====================================================================
@@ -28,6 +137,8 @@ UI_Banking::UI_Banking( H3_Game* game, de::gui::Env* env, de::gui::Widget* paren
     , m_game(game)
     , m_playerId(0)
 {
+    setDrawChildren(false);
+
     // Compute card aspect ratio
     auto tex_card = game->getTex(H3_Tex::CardA, __func__);
     m_aspect = float(tex_card.w()) / float(tex_card.h());
@@ -38,26 +149,26 @@ UI_Banking::UI_Banking( H3_Game* game, de::gui::Env* env, de::gui::Widget* paren
     setFillColor( 0xffffffff );
 
     // Create widgets
-    createLabelButton(m_bankA, H3_TileType::TileA);
-    createLabelButton(m_bankB, H3_TileType::TileB);
-    createLabelButton(m_bankC, H3_TileType::TileC);
-    createLabelButton(m_bankD, H3_TileType::TileD);
-    createLabelButton(m_bankE, H3_TileType::TileE);
+    createTripleWidget(m_bankA, H3_TileType::TileA);
+    createTripleWidget(m_bankB, H3_TileType::TileB);
+    createTripleWidget(m_bankC, H3_TileType::TileC);
+    createTripleWidget(m_bankD, H3_TileType::TileD);
+    createTripleWidget(m_bankE, H3_TileType::TileE);
 
-    createLabelButton(m_userA, H3_TileType::TileA);
-    createLabelButton(m_userB, H3_TileType::TileB);
-    createLabelButton(m_userC, H3_TileType::TileC);
-    createLabelButton(m_userD, H3_TileType::TileD);
-    createLabelButton(m_userE, H3_TileType::TileE);
+    createTripleWidget(m_userA, H3_TileType::TileA);
+    createTripleWidget(m_userB, H3_TileType::TileB);
+    createTripleWidget(m_userC, H3_TileType::TileC);
+    createTripleWidget(m_userD, H3_TileType::TileD);
+    createTripleWidget(m_userE, H3_TileType::TileE);
 
     m_btnCancel = new de::gui::Button("Cancel", m_env, this);
     m_btnAccept = new de::gui::Button("Accept", m_env, this);
 
     auto tex_scroll2 = game->getTex(H3_Tex::Scroll2, __func__);
+    m_btnCancel->setTexture( tex_scroll2 );
     m_btnAccept->setTexture( tex_scroll2 );
 
-
-    // Set callback logic.
+    // Cancel logic.
 
     m_btnCancel->onClicked = [&] ()
         {
@@ -67,6 +178,9 @@ UI_Banking::UI_Banking( H3_Game* game, de::gui::Env* env, de::gui::Widget* paren
             m_game->m_uiGame->popState();
             m_game->enterIdle();
         };
+
+    // Accept logic.
+
     m_btnAccept->onClicked = [&] ()
         {
              DE_DEBUG("Accept banking.")
@@ -78,45 +192,85 @@ UI_Banking::UI_Banking( H3_Game* game, de::gui::Env* env, de::gui::Widget* paren
             m_game->enterIdle();
         };
 
-/*
-    m_bankA.btn->onClicked = [&] (int value)
-    {
-        if
+    // User '+' (LeftMouseClick)
+
+    m_userA.btn->onClickedLeft = [&] () {
+        if (!isEnabled()) { DE_TRACE("No A") }
         H3_Player & player = m_game->getPlayer( m_playerId );
-
-        if (player.state.hasPort3v1())
-        m_user.A = value;
-        // m_btnAccept->setEnabled(m_bankThief.sum() >= m_cardsToRemove);
+        if (m_user.A < player.state.bank.A) { m_user.A++; }
+        updateUserSide(H3_TileType::TileA);
+        updateBankSide();
     };
 
-    m_btnB->onValueChanged = [&] (int value) {
-        m_bankThief.B = value;
-        // m_btnAccept->setEnabled(m_bankThief.sum() >= m_cardsToRemove);
+    m_userB.btn->onClickedLeft = [&] () {
+        if (!isEnabled()) { DE_TRACE("No B") }
+        H3_Player & player = m_game->getPlayer( m_playerId );
+        if (m_user.B < player.state.bank.B) { m_user.B++; }
+        updateUserSide(H3_TileType::TileB);
+        updateBankSide();
     };
 
-    m_btnC->onValueChanged = [&] (int value) {
-        m_bankThief.C = value;
-        // m_btnAccept->setEnabled(m_bankThief.sum() >= m_cardsToRemove);
+    m_userC.btn->onClickedLeft = [&] () {
+        if (!isEnabled()) { DE_TRACE("No C") }
+        H3_Player & player = m_game->getPlayer( m_playerId );
+        if (m_user.C < player.state.bank.C) { m_user.C++; }
+        updateUserSide(H3_TileType::TileC);
+        updateBankSide();
     };
 
-    m_btnD->onValueChanged = [&] (int value) {
-        m_bankThief.D = value;
-        // m_btnAccept->setEnabled(m_bankThief.sum() >= m_cardsToRemove);
+    m_userD.btn->onClickedLeft = [&] () {
+        if (!isEnabled()) { DE_TRACE("No D") }
+        H3_Player & player = m_game->getPlayer( m_playerId );
+        if (m_user.D < player.state.bank.D) { m_user.D++; }
+        updateUserSide(H3_TileType::TileD);
+        updateBankSide();
     };
 
-    m_btnE->onValueChanged = [&] (int value) {
-        m_bankThief.E = value;
-        // m_btnAccept->setEnabled(m_bankThief.sum() >= m_cardsToRemove);
+    m_userE.btn->onClickedLeft = [&] () {
+        if (!isEnabled()) { DE_TRACE("No E") }
+        H3_Player & player = m_game->getPlayer( m_playerId );
+        if (m_user.E < player.state.bank.E) { m_user.E++; }
+        updateUserSide(H3_TileType::TileE);
+        updateBankSide();
     };
-*/
-    setDrawChildren(false);
+
+    // User '-' (RightMouseClick)
+
+    m_userA.btn->onClickedRight = [&] () {
+        if (m_user.A > 0) { m_user.A--; }
+        updateUserSide(H3_TileType::TileA);
+        updateBankSide();
+    };
+
+    m_userB.btn->onClickedRight = [&] () {
+        if (m_user.B > 0) { m_user.B--; }
+        updateUserSide(H3_TileType::TileB);
+        updateBankSide();
+    };
+
+    m_userC.btn->onClickedRight = [&] () {
+        if (m_user.C > 0) { m_user.C--; }
+        updateUserSide(H3_TileType::TileC);
+        updateBankSide();
+    };
+
+    m_userD.btn->onClickedRight = [&] () {
+        if (m_user.D > 0) { m_user.D--; }
+        updateUserSide(H3_TileType::TileD);
+        updateBankSide();
+    };
+
+    m_userE.btn->onClickedRight = [&] () {
+        if (m_user.E > 0) { m_user.E--; }
+        updateUserSide(H3_TileType::TileE);
+        updateBankSide();
+    };
 }
 
 UI_Banking::~UI_Banking()
 {
 
 }
-
 
 void UI_Banking::startBanking( uint32_t playerId )
 {
@@ -126,17 +280,60 @@ void UI_Banking::startBanking( uint32_t playerId )
 
     DE_DEBUG("player[",player.id,"] ", player.name)
 
-    m_bankA.setText( "0" );
-    m_bankB.setText( "0" );
-    m_bankC.setText( "0" );
-    m_bankD.setText( "0" );
-    m_bankE.setText( "0" );
+    // Bank:
 
-    m_userA.setText( dbStr(player.state.bank.A) );
-    m_userB.setText( dbStr(player.state.bank.B) );
-    m_userC.setText( dbStr(player.state.bank.C) );
-    m_userD.setText( dbStr(player.state.bank.D) );
-    m_userE.setText( dbStr(player.state.bank.E) );
+    m_bankA.lup->setText( "4:1" );
+    m_bankB.lup->setText( "4:1" );
+    m_bankC.lup->setText( "4:1" );
+    m_bankD.lup->setText( "4:1" );
+    m_bankE.lup->setText( "4:1" );
+
+    if (player.state.hasPort3v1())
+    {
+        m_bankA.lup->setText( "3:1" );
+        m_bankB.lup->setText( "3:1" );
+        m_bankC.lup->setText( "3:1" );
+        m_bankD.lup->setText( "3:1" );
+        m_bankE.lup->setText( "3:1" );
+    }
+
+    if (player.state.hasPortA()) { m_bankA.lup->setText( "2:1" ); }
+    if (player.state.hasPortB()) { m_bankB.lup->setText( "2:1" ); }
+    if (player.state.hasPortC()) { m_bankC.lup->setText( "2:1" ); }
+    if (player.state.hasPortD()) { m_bankD.lup->setText( "2:1" ); }
+    if (player.state.hasPortE()) { m_bankE.lup->setText( "2:1" ); }
+
+    m_bankA.btn->setEnabled(false);
+    m_bankB.btn->setEnabled(false);
+    m_bankC.btn->setEnabled(false);
+    m_bankD.btn->setEnabled(false);
+    m_bankE.btn->setEnabled(false);
+
+    m_bankA.ldn->setText( "0" );
+    m_bankB.ldn->setText( "0" );
+    m_bankC.ldn->setText( "0" );
+    m_bankD.ldn->setText( "0" );
+    m_bankE.ldn->setText( "0" );
+
+    // User:
+
+    m_userA.lup->setText( "0" );
+    m_userB.ldn->setText( "0" );
+    m_userC.ldn->setText( "0" );
+    m_userD.ldn->setText( "0" );
+    m_userE.ldn->setText( "0" );
+
+    m_userA.btn->setEnabled(player.state.bank.A >= getRatio(0,player));
+    m_userB.btn->setEnabled(player.state.bank.B >= getRatio(1,player));
+    m_userC.btn->setEnabled(player.state.bank.C >= getRatio(2,player));
+    m_userD.btn->setEnabled(player.state.bank.D >= getRatio(3,player));
+    m_userE.btn->setEnabled(player.state.bank.E >= getRatio(4,player));
+
+    m_userA.ldn->setText( std::to_string(player.state.bank.A) );
+    m_userB.ldn->setText( std::to_string(player.state.bank.B) );
+    m_userC.ldn->setText( std::to_string(player.state.bank.C) );
+    m_userD.ldn->setText( std::to_string(player.state.bank.D) );
+    m_userE.ldn->setText( std::to_string(player.state.bank.E) );
 
     int m_giveCard = -1; // H3_TileType resource Card type the player gives
     int m_wishCard = -1; // H3_TileType the player wants from bank
@@ -150,12 +347,11 @@ void UI_Banking::resize(int X, int Y, int W, int H)
     const int p = zoom * 10;
     const int fontSize = zoom * 24;
 
-    // for (auto & child : m_children)
-    // {
-    //     auto font = child->getFont();
-    //     font.pixelSize = fontSize;
-    //     child->setFont(font);
-    // }
+    auto font = de::Font("Postamt",fontSize);
+    setFont(font);
+
+    // m_btnCancel->setFont(font);
+    // m_btnAccept->setFont(font);
 
     int head_h = H / 10;
     int bank_h = 2*H / 10;
@@ -173,12 +369,12 @@ void UI_Banking::resize(int X, int Y, int W, int H)
     int bank_w = 7 * W /10;
     int bank_x = (W - bank_w)/2;
     int bank_y = p + head_h + s;
-    m_rcBank = de::Recti(bank_x, bank_y, bank_w, bank_h);
+    m_rcBank = de::Recti(bank_x - fontSize, bank_y, bank_w, bank_h);
 
     int user_w = 7 * W /10;
     int user_x = (W - user_w)/2;
     int user_y = p + head_h + s + bank_h + s;
-    m_rcUser = de::Recti(user_x, user_y, user_w, user_h);
+    m_rcUser = de::Recti(user_x - fontSize, user_y, user_w, user_h);
 
     int name_w = 7 * W /10;
     int name_x = (W - name_w)/2;
@@ -196,12 +392,13 @@ void UI_Banking::resize(int X, int Y, int W, int H)
         int h = m_rcBank.h;
         int x = m_rcBank.x + w + p;
         int y = m_rcBank.y;
-        int ln = zoom * 24;
-        m_bankA.resize(x,y,w,h,p,ln,false); x += w + p;
-        m_bankB.resize(x,y,w,h,p,ln,false); x += w + p;
-        m_bankC.resize(x,y,w,h,p,ln,false); x += w + p;
-        m_bankD.resize(x,y,w,h,p,ln,false); x += w + p;
-        m_bankE.resize(x,y,w,h,p,ln,false);
+        int ln = zoom * 28;
+        int p2 = 10;
+        m_bankA.resize(x,y,w,h,p2,ln,font); x += w + p;
+        m_bankB.resize(x,y,w,h,p2,ln,font); x += w + p;
+        m_bankC.resize(x,y,w,h,p2,ln,font); x += w + p;
+        m_bankD.resize(x,y,w,h,p2,ln,font); x += w + p;
+        m_bankE.resize(x,y,w,h,p2,ln,font);
     }
 
     // 1x User Icon + 5x User buttons
@@ -211,22 +408,52 @@ void UI_Banking::resize(int X, int Y, int W, int H)
         int x = m_rcUser.x + w + p;
         int y = m_rcUser.y;
         int ln = zoom * 24;
-        m_userA.resize(x,y,w,h,p,ln,false); x += w + p;
-        m_userB.resize(x,y,w,h,p,ln,false); x += w + p;
-        m_userC.resize(x,y,w,h,p,ln,false); x += w + p;
-        m_userD.resize(x,y,w,h,p,ln,false); x += w + p;
-        m_userE.resize(x,y,w,h,p,ln,false);
+        int p2 = 10;
+        m_userA.resize(x,y,w,h,p2,ln,font); x += w + p;
+        m_userB.resize(x,y,w,h,p2,ln,font); x += w + p;
+        m_userC.resize(x,y,w,h,p2,ln,font); x += w + p;
+        m_userD.resize(x,y,w,h,p2,ln,font); x += w + p;
+        m_userE.resize(x,y,w,h,p2,ln,font);
     }
 
     // Cancel + Accept buttons
     {
-        int w = (m_rcBtns.w - p) / 2;
+        int p3 = zoom * 40;
+        int w = (m_rcBtns.w - p3) / 2;
         int h = m_rcBtns.h;
         int x = m_rcBtns.x;
         int y = m_rcBtns.y;
         int ln = zoom * 24;
-        m_btnCancel->resize(x,y,w,h); x += w + p;
+        m_btnCancel->resize(x,y,w,h); x += w + p3;
         m_btnAccept->resize(x,y,w,h);
+    }
+}
+
+void UI_Banking::draw()
+{
+    Panel::draw();
+    if (!isVisible()) return;
+
+    auto driver = m_env->getVideoDriver();
+
+    // <debug>
+    auto red = dbRGB(255,0,0);
+    auto pos = getAbsoluteRect().pos();
+    driver->getScreenRenderer()->draw2DRectLine(m_rcHead+pos,red);
+    driver->getScreenRenderer()->draw2DRectLine(m_rcBank+pos,red);
+    driver->getScreenRenderer()->draw2DRectLine(m_rcUser+pos,red);
+    driver->getScreenRenderer()->draw2DRectLine(m_rcName+pos,red);
+    driver->getScreenRenderer()->draw2DRectLine(m_rcBtns+pos,red);
+    // </debug>
+
+    drawTitle();
+    drawBankIconAndName();
+    drawUserIcon();
+    drawUserName();
+
+    for (auto & child : m_children)
+    {
+        child->draw();
     }
 }
 
@@ -235,6 +462,7 @@ void UI_Banking::drawTitle()
     auto driver = m_env->getVideoDriver();
     auto pos = getAbsoluteRect();
     auto zoom = m_env->getZoom();
+    int p = zoom * 10;
 
     int x = pos.x + m_rcHead.x;
     int y = pos.y + m_rcHead.y;
@@ -267,7 +495,7 @@ void UI_Banking::drawTitle()
         dbStr("Banking for ",player.name),
         dbRGB(0,0,0),
         de::Align::Centered,
-        de::Font("Postamt", zoom * 28),
+        de::Font("Postamt", zoom * 24),
         dbRGB(255,255,255,225),
         10);
 }
@@ -364,146 +592,4 @@ void UI_Banking::drawUserName()
 {
 
 }
-
-void UI_Banking::draw()
-{
-    Panel::draw();
-    if (!isVisible()) return;
-
-
-
-    drawTitle();
-    drawBankIconAndName();
-    drawUserIcon();
-    drawUserName();
-
-    for (auto & child : m_children)
-    {
-        child->draw();
-    }
-}
-
-/*
-void UI_Banking::updateTexts()
-{
-    m_btnA1->setText( std::to_string(m_bankThief.A) );
-    m_btnB1->setText( std::to_string(m_bankThief.B) );
-    m_btnC1->setText( std::to_string(m_bankThief.C) );
-    m_btnD1->setText( std::to_string(m_bankThief.D) );
-    m_btnE1->setText( std::to_string(m_bankThief.E) );
-
-    m_btnA2->setText( std::to_string(m_bankPlayer.A) );
-    m_btnB2->setText( std::to_string(m_bankPlayer.B) );
-    m_btnC2->setText( std::to_string(m_bankPlayer.C) );
-    m_btnD2->setText( std::to_string(m_bankPlayer.D) );
-    m_btnE2->setText( std::to_string(m_bankPlayer.E) );
-
-    m_lblTitle->setText( dbStr("Donate ", m_cardsToRemove, " more cards.") );
-}
-
-
-void UI_Banking::resize(int X, int Y, int W, int H)
-{
-    // ::::: Panel body ::::
-    int panel_w = W/2;
-    int panel_h = 2*H/3;
-    int panel_x = (W - panel_w)/2;
-    int panel_y = (H - panel_h)/2;
-    m_rect = de::Recti(panel_x,panel_y,panel_w,panel_h);
-
-    const float zoom = m_env->getZoom();
-    const int p = zoom * 5;
-    const int fontSize = zoom * 24;
-
-    for (auto & child : m_children)
-    {
-        auto font = child->getFont();
-        font.pixelSize = fontSize;
-        child->setFont(font);
-    }
-
-    int h1 = m_rect.h / 6 - p;
-    int h2 = m_rect.h / 3 - p;
-
-    int w = m_rect.w;
-    int h = m_rect.h;
-    int x = 0;
-    int y = 0;
-
-    m_lblTitle->resize(x+50,y,w-100,h1);
-    y += h1 + p;
-
-    resizeLayoutThief(de::Recti(x+50,y,w-100,h2));
-    y += h2 + p;
-
-    resizeLayoutPlayer(de::Recti(x+50,y,w-100,h2));
-    y += h2 + p;
-
-    m_btnAccept->resize(x+50,y,w-100,h1);
-}
-
-
-void UI_Banking::resizeLayoutThief( de::Recti pos )
-{
-    const float zoom = m_env->getZoom();
-    //H3_drawDebugRect(*m_game, pos, 0xFF0000FF, de::Font5x8(fScale,fScale));
-
-    de::Font5x8 font(zoom,zoom);
-    int wName = font.getTextSize("Thief").width + 4;
-    int hName = font.getTextSize("Thief").height + 4;
-    int hIcon = pos.h - hName; // Line-height of Icon
-
-    m_lblThiefName->resize(pos.x,pos.y,wName,hName);
-    m_lblThiefIcon->resize(pos.x,pos.y+hName,hIcon,hIcon);
-
-    int wLeft = std::max(wName,hIcon);
-
-    int wRight = pos.w - wLeft;
-
-    int p = 10;
-
-    int x = pos.x + wLeft + p;
-    int y = pos.y;
-    int w = (wRight)/5 - p;
-    int h = pos.h;
-    if (m_btnA1) m_btnA1->resize(x,y,w,h); x += w + p;
-    if (m_btnB1) m_btnB1->resize(x,y,w,h); x += w + p;
-    if (m_btnC1) m_btnC1->resize(x,y,w,h); x += w + p;
-    if (m_btnD1) m_btnD1->resize(x,y,w,h); x += w + p;
-    if (m_btnE1) m_btnE1->resize(x,y,w,h);
-}
-
-void UI_Banking::resizeLayoutPlayer( de::Recti pos )
-{
-    const float zoom = m_env->getZoom();
-
-    //H3_drawDebugRect(*m_game, pos, 0xFF0000FF, de::Font5x8(fScale,fScale));
-
-    de::Font5x8 font(zoom,zoom);
-    int wName = font.getTextSize("Player").width + 4;
-    int hName = font.getTextSize("Player").height + 4;
-    int hIcon = pos.h - hName; // Line-height of Icon
-
-    m_lblPlayerName->resize(pos.x,pos.y,wName,hName);
-    m_lblPlayerIcon->resize(pos.x,pos.y+hName,hIcon,hIcon);
-
-    int wLeft = std::max(wName,hIcon);
-
-    int wRight = pos.w - wLeft;
-
-    int p = 10;
-
-    int x = pos.x + wLeft + p;
-    int y = pos.y;
-    int w = (wRight)/5 - p;
-    int h = pos.h;
-    if (m_btnA2) m_btnA2->resize(x,y,w,h); x += w + p;
-    if (m_btnB2) m_btnB2->resize(x,y,w,h); x += w + p;
-    if (m_btnC2) m_btnC2->resize(x,y,w,h); x += w + p;
-    if (m_btnD2) m_btnD2->resize(x,y,w,h); x += w + p;
-    if (m_btnE2) m_btnE2->resize(x,y,w,h);
-}
-
-*/
-
 

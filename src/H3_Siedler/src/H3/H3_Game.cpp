@@ -68,11 +68,13 @@ void H3_Game::startGame()
         player.name = cfg.name;
         player.avatar = H3_Tex::PlayU + m_players.size();
         player.startGame();
-        // player.state.bank.A = 4;
-        // player.state.bank.B = 3;
-        // player.state.bank.C = 2;
-        // player.state.bank.D = 1;
-        // player.state.bank.E = 0;
+
+        // Debug
+        player.state.bank.A = 3;
+        player.state.bank.B = 4;
+        player.state.bank.C = 5;
+        player.state.bank.D = 6;
+        player.state.bank.E = 7;
     }
     DE_DEBUG("Created players = ", m_players.size())
 
