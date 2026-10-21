@@ -147,7 +147,6 @@ int UIBanking_computeRatio( H3_Game & game, int bankingMode, H3_Player & player 
 
 void UIBanking_start( H3_Game & game, int bankingMode )
 {
-/*
     if ( game.m_state != H3_State::Idle ) { DE_ERROR("No correct idle state") return; }
 
     H3_Player & player = H3_getCurrentPlayer( game );
@@ -211,12 +210,10 @@ void UIBanking_start( H3_Game & game, int bankingMode )
     game.m_state = H3_State::Banking;
     game.m_bankingMode = bankingMode;
     UI_update( game );
-*/
 }
 
 void UI_cancelBanking( H3_Game & game )
 {
-/*
     if ( game.m_state == H3_State::Banking )
     {
         DE_DEBUG(__func__)
@@ -225,12 +222,10 @@ void UI_cancelBanking( H3_Game & game )
         game.m_bankingWish = -1;
         UI_update( game );
     }
-*/
 }
 
 void UI_finishBanking( H3_Game & game )
 {
-    /*
     if ( game.m_state != H3_State::Banking )
     {
         DE_ERROR("No correct banking state") return;
@@ -287,7 +282,6 @@ void UI_finishBanking( H3_Game & game )
     game.m_bankingWish = -1;
 
     UI_update( game );
-*/
 }
 
 

@@ -32,11 +32,11 @@ UI_Actions::UI_Actions( H3_Game* game, de::gui::Env* env, de::gui::Widget* paren
 
     // (2.) DoBank
     m_btnBanking = createActionButton(game,H3_Tex::DoBank,env,this);
-    m_btnBanking->onClicked = [&](){ H3_MessageBox("Bank", "DoBanking"); };
+    m_btnBanking->onClicked = [&](){ m_game->enterBanking(); };
 
     // (3.) DoTrade
     m_btnTrading = createActionButton(game,H3_Tex::DoTrade,env,this);
-    m_btnTrading->onClicked = [&](){ H3_MessageBox("Trade", "DoTrade"); };
+    m_btnTrading->onClicked = [&](){ m_game->enterTrading(); };
 
     // (4.) DoEndTurn
     m_btnEndTurn = createActionButton(game,H3_Tex::DoEndTurn,env,this);
@@ -66,8 +66,6 @@ UI_Actions::UI_Actions( H3_Game* game, de::gui::Env* env, de::gui::Widget* paren
     m_btnBuyCity = createActionButton(game,H3_Tex::DoBuyCity,env,this);
     m_btnBuyCity->onClicked = [&](){ m_game->doBuyCity(); };
 
-    //   addButton( int(H3_Tex::DoUndo), 0.2, 0.7, 0.3, 0.1, "DoUndo");
-    //   addButton( int(H3_Tex::DoRedo), 0.2, 0.7, 0.3, 0.1, "DoRedo");
 
     // (20.) Reveal PointCard
     m_btnPointCard = createActionButton(game,H3_Tex::NicePointCard,env,this);

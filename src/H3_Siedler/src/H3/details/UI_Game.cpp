@@ -13,6 +13,7 @@ UI_Game::UI_Game( H3_Game* game, de::gui::Env* env, de::gui::Widget* parent, u32
     , m_winnerScreen(nullptr)
     , m_actions(nullptr)
     , m_donateCards(nullptr)
+    , m_banking(nullptr)
 {
     setDrawChildren(true);
 
@@ -22,12 +23,14 @@ UI_Game::UI_Game( H3_Game* game, de::gui::Env* env, de::gui::Widget* parent, u32
     m_actions = new UI_Actions( game, env, this, 3, r );
     m_donateCards = new UI_DonateCards( game, env, this, 4, r );
     m_winnerScreen = new UI_WinnerScreen( game, env, this, 5, r );
+    m_banking = new UI_Banking( game, env, this, 6, r );
 
     m_worldCreator->setVisible(false);
     m_marquee->setVisible(false);
     m_actions->setVisible(false);
     m_donateCards->setVisible(false);
     m_winnerScreen->setVisible(false);
+    m_banking->setVisible(false);
 }
 
 UI_Game::~UI_Game()
@@ -44,7 +47,7 @@ void UI_Game::updateVisibleActions()
 
     H3_Game & game = *m_game;
     UI_Stats_update( game );
-    UIBanking_update( game );
+    //UIBanking_update( game );
 }
 
 void UI_Game::draw()
@@ -157,46 +160,6 @@ void UI_Game::resize(int x, int y, int w, int h)
     updateLayouts();
 }
 
-void UI_Game::pushState(const H3_GuiState& guiState)
-{
-    m_stack.push(getState());
-    setState(guiState);
-}
-
-void UI_Game::popState()
-{
-    setState(m_stack.top());
-    m_stack.pop();
-}
-
-H3_GuiState UI_Game::getState() const
-{
-    H3_GuiState guiState;
-    guiState.bWorldCreator = m_worldCreator->isVisible();
-    guiState.bGameOverlay = m_actions->isVisible();
-    guiState.bDonateCards = m_donateCards->isVisible();
-    guiState.bWinnerScreen = m_winnerScreen->isVisible();
-    return guiState;
-}
-
-void UI_Game::setState(const H3_GuiState& guiState)
-{
-    if (m_worldCreator){
-        m_worldCreator->setVisible(guiState.bWorldCreator);
-    }
-    if (m_actions){
-        m_actions->setVisible(guiState.bGameOverlay);
-        m_marquee->setVisible(guiState.bGameOverlay);
-    }
-    if (m_donateCards){
-        m_donateCards->setVisible(guiState.bDonateCards);
-    }
-    if (m_winnerScreen){
-        m_winnerScreen->setVisible(guiState.bWinnerScreen);
-    }
-
-    updateLayouts();
-}
 
 void UI_Game::updateLayouts()
 {
@@ -230,7 +193,63 @@ void UI_Game::updateLayouts()
         int panel_y = 100;
         m_winnerScreen->resize(panel_x, panel_y, panel_w, panel_h);
     }
+    if (m_banking)
+    {
+        // ::::: Panel body ::::
+        int dim = 8 * std::min(w,h) / 10;
+        int panel_w = dim;
+        int panel_h = dim;
+        int panel_x = (w - panel_w)/2;
+        int panel_y = (h - panel_h)/2;
+        m_banking->resize(panel_x, panel_y, panel_w, panel_h);
+    }
 }
+
+void UI_Game::pushState(const H3_GuiState& guiState)
+{
+    m_stack.push(getState());
+    setState(guiState);
+}
+
+void UI_Game::popState()
+{
+    setState(m_stack.top());
+    m_stack.pop();
+}
+
+H3_GuiState UI_Game::getState() const
+{
+    H3_GuiState guiState;
+    guiState.bWorldCreator = m_worldCreator->isVisible();
+    guiState.bGameOverlay = m_actions->isVisible();
+    guiState.bDonateCards = m_donateCards->isVisible();
+    guiState.bBanking = m_banking->isVisible();
+    guiState.bWinnerScreen = m_winnerScreen->isVisible();
+    return guiState;
+}
+
+void UI_Game::setState(const H3_GuiState& guiState)
+{
+    if (m_worldCreator){
+        m_worldCreator->setVisible(guiState.bWorldCreator);
+    }
+    if (m_actions){
+        m_actions->setVisible(guiState.bGameOverlay);
+        m_marquee->setVisible(guiState.bGameOverlay);
+    }
+    if (m_donateCards){
+        m_donateCards->setVisible(guiState.bDonateCards);
+    }
+    if (m_banking){
+        m_banking->setVisible(guiState.bBanking);
+    }
+    if (m_winnerScreen){
+        m_winnerScreen->setVisible(guiState.bWinnerScreen);
+    }
+
+    updateLayouts();
+}
+
 
 void UI_Game::drawDice()
 {
@@ -258,62 +277,3 @@ void UI_Game::drawDice()
     driver->getScreenRenderer()->
         draw2DRoundRect(de::Recti(x+d+s,y,d,d), {r,r}, tex_2);
 }
-
-
-/*
-H3_GuiState H3_Game::UI_getState() const
-{
-    return m_guiState;
-}
-
-void H3_Game::UI_setState(const H3_GuiState& guiState)
-{
-}
-
-void H3_Game::UI_resizeLayouts()
-{
-    if (!m_driver)
-    {
-        DE_ERROR("No driver")
-        return;
-    }
-
-    auto scr_w = m_driver->getScreenWidth();
-    auto scr_h = m_driver->getScreenHeight();
-
-    if (m_uiMainmenu && m_uiMainmenu->isVisible())
-    {
-        m_uiMainmenu->resize(0,0,scr_w / 6, scr_h / 2);
-    }
-
-    if (m_uiHelpWindow && m_uiHelpWindow->isVisible())
-    {
-        m_uiHelpWindow->resize(scr_w / 6, 50, 4*scr_w / 6, scr_h - 100);
-    }
-
-    if (m_uiWorldCreator && m_uiWorldCreator->isVisible())
-    {
-        m_uiWorldCreator->resize(0,0,scr_w,scr_h);
-    }
-
-    if (m_uiWinnerScreen && m_uiWinnerScreen->isVisible())
-    {
-        m_uiWinnerScreen->resize(0,0,scr_w,scr_h);
-    }
-
-    if (m_uiActions && m_uiActions->isVisible())
-    {
-        m_uiActions->resize(0,0,scr_w,scr_h);
-    }
-
-    if (m_uiDonateCards && m_uiDonateCards->isVisible())
-    {
-        int w = scr_w - 400;
-        int h = scr_h - 300;
-        int x = (scr_w - w) / 2;
-        int y = (scr_h - h) / 2;
-        m_uiDonateCards->resize(x,y,w,h);
-    }
-}
-
-*/

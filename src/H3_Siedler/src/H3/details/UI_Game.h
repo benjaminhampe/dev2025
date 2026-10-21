@@ -55,8 +55,8 @@ public:
     UI_WinnerScreen* m_winnerScreen;
     UI_Actions* m_actions;
     UI_DonateCards* m_donateCards;
+    UI_Banking* m_banking;
 
 
-    UI_Banking m_banking;
     UI_ActionLogger m_actionLogger;
 };

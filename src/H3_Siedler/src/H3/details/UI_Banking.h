@@ -1,126 +1,104 @@
 #pragma once
 #include <H3/H3_Board.h>
+#include <de/gui/Panel.h>
+#include <de/gui/Label.h>
+#include <de/gui/Button.h>
 
-struct H3_Game;
-
-/*
-//bool m_isMenuVisible = true;
-//bool m_isCameraInputEnabled = false;
-int m_bankingMode = -1;
-int m_bankingWish = -1;
-H3_Bank m_bankingIn;
-H3_Bank m_bankingOut;
-*/
-
+// Dialog to donate cards to the robber when (dice == 7).
 // =====================================================================
-struct UI_Banking
+class UI_Banking : public de::gui::Panel
 // =====================================================================
 {
-    enum eID
+public:
+    UI_Banking( H3_Game* game, de::gui::Env* env, de::gui::Widget* parent, u32 id, const de::Recti& r );
+    ~UI_Banking() override;
+
+    void draw() override;
+    void resize(int x, int y, int w, int h) override;
+
+    void startBanking( uint32_t playerId );
+
+private:
+
+    // [Necessary Game Logic]
+    H3_Game* m_game;
+    uint32_t m_playerId;
+    float m_aspect = 0.6f; // Card Width / Card Height
+
+    /*
+    struct Transaction
     {
-        Panel = 0,
-        TitleLbl,
-        //      BankBtnUser,
-        //      BankLblUser,
-        BtnBankA,
-        BtnBankB,
-        BtnBankC,
-        BtnBankD,
-        BtnBankE,
-        // LblBankA,
-        // LblBankB,
-        // LblBankC,
-        // LblBankD,
-        // LblBankE,
-
-        BtnUserA,
-        BtnUserB,
-        BtnUserC,
-        BtnUserD,
-        BtnUserE,
-        // LblUserA,
-        // LblUserB,
-        // LblUserC,
-        // LblUserD,
-        // LblUserE,
-        
-        BtnAsk,
-        BtnOK,
-        BtnCancel,
-
-        Unknown
+        int giveCard; // H3_TileType resource Card type the player gives
+        int wishCard; // H3_TileType the player wants from bank
     };
 
-    //static std::string
-    //getString( eID t );
+    std::vector<Transaction> m_transaction;
+    */
 
-    bool m_isVisible = false;
-    u32 m_hoverElement = 0; // eID probably. 
-    std::vector< H3_UIElem > m_elems; // UI elements of this panel
+    int m_giveCard; // H3_TileType resource Card type the player gives
+    int m_wishCard; // H3_TileType the player wants from bank
+
+    de::Recti m_rcHead;
+    de::Recti m_rcBank;
+    de::Recti m_rcUser;
+    de::Recti m_rcName;
+    de::Recti m_rcBtns;
+
+public:
+    struct LabelButton
+    {
+        de::Recti rect;
+        de::gui::Button* btn;
+        de::gui::Label* lbl;
+
+        void setText( const std::string& text )
+        {
+            lbl->setText( text );
+            btn->setText( text );
+        }
+
+        void resize(int x,int y,int w,int h, int p, int label_h, bool labelOnTop = false)
+        {
+            if (labelOnTop)
+            {
+                int label_y = y;
+                int butto_y = y + label_h + p;
+                int butto_h = h - label_h - p;
+                lbl->resize(x, label_y, w, label_h);
+                btn->resize(x, butto_y, w, butto_h);
+            }
+            else
+            {
+                int butto_y = y;
+                int butto_h = h - label_h - p;
+                int label_y = y + butto_h + p;
+                lbl->resize(x, label_y, w, label_h);
+                btn->resize(x, butto_y, w, butto_h);
+            }
+        }
+    };
+
+private:
+    LabelButton m_bankA;
+    LabelButton m_bankB;
+    LabelButton m_bankC;
+    LabelButton m_bankD;
+    LabelButton m_bankE;
+
+    LabelButton m_userA;
+    LabelButton m_userB;
+    LabelButton m_userC;
+    LabelButton m_userD;
+    LabelButton m_userE;
+
+    de::gui::Button* m_btnCancel; // Cancel dialog.
+    de::gui::Button* m_btnAccept; // Accept transaction.
+
+    void createLabelButton(UI_Banking::LabelButton& w, int tileType);
+
+    void drawTitle();
+    void drawBankIconAndName();
+    void drawUserIcon();
+    void drawUserName();
+
 };
-
-// int UI_find( const H3_Game & game, const H3_UI::eID id );
-
-// H3_UIElem& UI_get( H3_Game & game, const H3_UI::eID id );
-
-// void UI_addElem( H3_Game & game, H3_UI::eID id, H3_UIElem::eType typ, de::Recti pos, int radius = 0,
-    // de::Align align = de::Align::TopLeft, int texId = 0, std::string msg = "", de::Font5x8 const & font = de::Font5x8(),
-    // uint32_t textColor = 0xFF000000, uint32_t fillColor = 0xFFFFFFFF, uint32_t borderColor = 0xFFEEEEEE );
-
-void UIBanking_create( H3_Game & game );
-
-void UIBanking_update( H3_Game & game );
-
-void UIBanking_draw( H3_Game & game, bool debug = true );
-
-// void UI_drawElem( H3_Game & game, H3_UIElem & elem );
-
-// void UI_drawElem( H3_Game & game, H3_UI::eID id );
-
-// void UI_drawDlgLooseCards( H3_Game & game );
-
-int UIBanking_computeRatio( H3_Game & game, int bankingMode, H3_Player & player );
-void UIBanking_start( H3_Game & game, int bankingMode );
-void UIBanking_cancel( H3_Game & game );
-void UIBanking_finish( H3_Game & game );
-void UIBanking_setVisible( H3_Game & game, bool bVisible );
-void UIBanking_hide( H3_Game & game );
-void UIBanking_show( H3_Game & game );
-
-// void UI_setActionsVisible( H3_Game & game, bool bVisible );
-// void UI_hideActions( H3_Game & game );
-// void UI_showActions( H3_Game & game );
-
-// void UI_setStatsVisible( H3_Game & game, bool bVisible );
-// void UI_hideStats( H3_Game & game );
-// void UI_showStats( H3_Game & game );
-
-// void UI_drawRoundStats( H3_Game & game);
-// void UI_drawStatNum( H3_Game & game, int img, de::Recti pos, int value, int icon_width = 0 );
-// void UI_drawPlayerStats( H3_Game & game, int px, int py, int playerId );
-
-// void UI_drawInfoPanelTile( H3_Game & game, de::Recti pos, const u32 tileId );
-
-// void UI_drawInfoPanelCorner( H3_Game & game, de::Recti pos, const u32 cornerId );
-
-// void UI_drawInfoPanelEdge( H3_Game & game, de::Recti pos, const u32 edgeId );
-
-// void UI_resetLog( H3_Game & game );
-// void UI_logCancel( H3_Game & game );
-// void UI_logEndTurn( H3_Game & game );
-// void UI_logDice( H3_Game & game );
-// void UI_logBank( H3_Game & game, H3_Bank in, H3_Bank out );
-// void UI_logBuyRoad( H3_Game & game, int edgeId );
-// void UI_logBuyFarm( H3_Game & game, int cornerId );
-// void UI_logBuyCity( H3_Game & game, int cornerId );
-// void UI_logBuyCard( H3_Game & game, int cardType );
-
-// void UI_drawLogEndTurn( H3_Game & game, const H3_Action& act, int x, int y );
-// void UI_drawLogCancel( H3_Game & game, const H3_Action& act, int x, int y );
-// void UI_drawLogDice( H3_Game & game, const H3_Action& act, int x, int y );
-// void UI_drawLogBank( H3_Game & game, const H3_Action& act, int x, int y );
-// void UI_drawLogBuyCard( H3_Game & game, const H3_Action& act, int x, int y );
-// void UI_drawLogBuyRoad( H3_Game & game, const H3_Action& act, int x, int y );
-// void UI_drawLogBuyFarm( H3_Game & game, const H3_Action& act, int x, int y );
-// void UI_drawLogBuyCity( H3_Game & game, const H3_Action& act, int x, int y );
-// void UI_drawLog( H3_Game & game );

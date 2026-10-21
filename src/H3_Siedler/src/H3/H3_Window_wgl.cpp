@@ -59,21 +59,30 @@ void H3_Window::keyPressEvent( const de::KeyPressEvent& event )
     {
         static bool bDebugActions = false;
         bDebugActions = !bDebugActions;
+        DE_DEBUG("bDebugActions = ",bDebugActions)
         m_game.m_uiGame->m_actions->setDebugVisible(bDebugActions);
     }
-
     if (key == de::KEY_2)
     {
         static bool bDebugDonate = false;
         bDebugDonate = !bDebugDonate;
+        DE_DEBUG("bDebugDonate = ",bDebugDonate)
         m_game.m_uiGame->m_donateCards->startDonation(m_game.m_players.front().id);
         m_game.m_uiGame->m_donateCards->setVisible(bDebugDonate);
     }
-
     if (key == de::KEY_3)
+    {
+        static bool bDebugBanking = false;
+        bDebugBanking = !bDebugBanking;
+        DE_DEBUG("bDebugBanking = ",bDebugBanking)
+        m_game.m_uiGame->m_banking->startBanking(m_game.m_players.front().id);
+        m_game.m_uiGame->m_banking->setVisible(bDebugBanking);
+    }
+    if (key == de::KEY_4)
     {
         static bool bDebugWinner = false;
         bDebugWinner = !bDebugWinner;
+        DE_DEBUG("bDebugWinner = ",bDebugWinner)
         m_game.m_uiGame->m_winnerScreen->setVisible(bDebugWinner);
     }
 

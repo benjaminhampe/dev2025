@@ -236,7 +236,7 @@ CPU_findBestRoad( H3_Game & game )
     //   DEM_DEBUG("player.name = ", player.name )
     //   DEM_DEBUG("player.farms.size() = ", player.farms.size() )
 
-    game.computeVisibleEdges( game.m_player );
+    game.computeVisibleEdges( game.m_playerId );
 
     if ( game.m_round < 4 )
     {

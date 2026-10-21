@@ -16,7 +16,7 @@ H3_Game::H3_Game()
     , m_state(H3_State::Idle)
     , m_round(0)
     , m_turn(0)
-    , m_player(0)
+    , m_playerId(0)
     , m_uiMenu(nullptr)
     , m_uiGame(nullptr)
 // , m_fpsTimerId(0)
@@ -602,6 +602,29 @@ void H3_Game::UI_resizeLayouts()
     if (m_uiGame) { m_uiGame->resize(0,0,w,h); }
 }
 
+void H3_Game::enterBanking()
+{
+    DE_WARN("playerId = ",m_playerId)
+
+    m_uiGame->m_banking->startBanking(m_playerId);
+
+    H3_GuiState guiState;
+    guiState.bBanking = true;
+    m_uiGame->pushState( guiState );
+
+}
+
+void H3_Game::enterTrading()
+{
+    DE_WARN("Not implemented")
+
+    H3_MessageBox("Trade", "DoTrade");
+
+    // H3_GuiState guiState;
+    // guiState.bBanking = true;
+    // m_uiGame->pushState( guiState );
+}
+
 void H3_Game::computeBonusRoad()
 {
     DE_WARN("Not implemented")
@@ -747,8 +770,6 @@ void H3_Game::enterWinnerScreen()
 
     DE_DEBUG("winnerId(",m_winnerId,")")
 
-
-
     m_state = H3_State::Winner;
     m_round = 0;
 
@@ -836,7 +857,7 @@ void H3_Game::enterIdle()
     {
         if (m_turn == 1)
         {
-            m_player = m_ranking.front().playerId;
+            m_playerId = m_ranking.front().playerId;
 
             marqueeH1( L"Round 1 - Ranking by Dice", 2000, 0xFF00CC10 );
             marqueeH1( L"Runde 1 - Rang über Würfeln", 3000, 0xFF00CC10 );
@@ -854,7 +875,7 @@ void H3_Game::enterIdle()
     {
         if (m_turn == 1)
         {
-            m_player = m_ranking.front().playerId;
+            m_playerId = m_ranking.front().playerId;
 
             marqueeH1( L"Round 2", 2000, 0xFF00CC10 );
             marqueeH1( L"Placing first Road and Farm", 3000, 0xFF00CC10 );
@@ -867,7 +888,7 @@ void H3_Game::enterIdle()
     {
         if (m_turn == 1)
         {
-            m_player = m_ranking.back().playerId;
+            m_playerId = m_ranking.back().playerId;
 
             marqueeH1( L"Round 3", 2000, 0xFF00CC10 );
             marqueeH1( L"Placing second Road and Farm", 3000, 0xFF00CC10 );
@@ -880,7 +901,7 @@ void H3_Game::enterIdle()
     {
         if (m_turn == 1)
         {
-            m_player = m_ranking.front().playerId;
+            m_playerId = m_ranking.front().playerId;
 
             marqueeH1( dbStrW(L"Round ",m_round), 3000, 0xFF00CC10 );
             marqueeH1( L"Normal round and Farm", 2000, 0xFF00CC10 );
@@ -957,7 +978,7 @@ void H3_Game::doEndTurn()
     // Compute next player by id ( start case )
     if ( m_round == 1 )
     {
-        m_player = m_players[ m_turn - 1 ].id;
+        m_playerId = m_players[ m_turn - 1 ].id;
         //DE_DEBUG( "Next player 1st round is ", m_playerId )
     }
     // Compute next player by ranking ( normal case )
@@ -978,7 +999,7 @@ void H3_Game::doEndTurn()
         }
         else
         {
-            m_player = m_ranking[ index ].playerId;
+            m_playerId = m_ranking[ index ].playerId;
         }
 
         //DE_DEBUG( "Next player Round[", m_round, "].Turn[",m_turn,"] is ", m_playerId )
@@ -1268,7 +1289,7 @@ void H3_Game::leaveThiefPlacement( H3_Tile& tile )
         // Owner must exist
         if (corner.owner < 1) continue;
         // Owner must not be current player
-        if (corner.owner == m_player) continue;
+        if (corner.owner == m_playerId) continue;
         // Owner must not be in list of unique owners already..., could use a set.
         auto it = std::find_if(owners.begin(), owners.end(),
             [&]( uint32_t cached ) { return cached == corner.owner; });
@@ -1286,7 +1307,7 @@ void H3_Game::leaveThiefPlacement( H3_Tile& tile )
     else if (owners.size() == 1)
     {
         DE_DEBUG("Auto steal from player ", getPlayer(owners[0]).name);
-        stealRandomCard( owners[0], m_player );
+        stealRandomCard( owners[0], m_playerId );
         enterIdle();
         return;
     }
@@ -1325,9 +1346,9 @@ void H3_Game::leaveThiefOutro( H3_Corner& corner )
 
     // [2.] Stealing card only possible if corner has owner
     //      different from current player.
-    if (corner.owner > 0 && corner.owner != m_player)
+    if (corner.owner > 0 && corner.owner != m_playerId)
     {
-        stealRandomCard( corner.owner, m_player );
+        stealRandomCard( corner.owner, m_playerId );
     }
 
     // [3.] Reset state and update
@@ -1362,9 +1383,9 @@ void H3_Game::leaveThiefOutro( H3_Edge& edge )
 
     // [2.] Stealing card only possible if corner has owner
     //      different from current player.
-    if (edge.owner > 0 && edge.owner != m_player)
+    if (edge.owner > 0 && edge.owner != m_playerId)
     {
-        stealRandomCard( edge.owner, m_player );
+        stealRandomCard( edge.owner, m_playerId );
     }
 
     // [3.] Reset state and update
@@ -1422,8 +1443,8 @@ void H3_Game::doPlaceCancel()
     UI_logCancel( *this );
 
     m_state = H3_State::Idle;
-    computeVisibleCorners( m_player );
-    computeVisibleEdges( m_player );
+    computeVisibleCorners( m_playerId );
+    computeVisibleEdges( m_playerId );
     m_bUpdateDrawCall_Corners = true;
     m_bUpdateDrawCall_Edges = true;
     enterIdle();
@@ -1441,7 +1462,7 @@ void H3_Game::doBuyRoad()
 
     m_state = H3_State::PlaceRoad;
     UI_updateActions();
-    computeVisibleEdges( m_player );
+    computeVisibleEdges( m_playerId );
     m_bUpdateDrawCall_Edges = true;
 }
 
@@ -1507,7 +1528,7 @@ void H3_Game::finalizeBuyRoad( H3_Edge & edge )
     UI_logBuyRoad( *this, edge.id );
 
     m_state = H3_State::Idle;
-    computeVisibleEdges( m_player );
+    computeVisibleEdges( m_playerId );
     m_bUpdateDrawCall_Edges = true;
     m_bUpdateDrawCall_Roads = true;
     enterIdle();
@@ -1525,7 +1546,7 @@ void H3_Game::doBuyFarm()
 
     m_state = H3_State::PlaceFarm;
     UI_updateActions();
-    computeVisibleCorners( m_player );
+    computeVisibleCorners( m_playerId );
     m_bUpdateDrawCall_Corners = true;
 }
 
@@ -1625,7 +1646,7 @@ void H3_Game::finalizeBuyFarm( H3_Corner & corner )
     UI_logBuyFarm( *this, corner.id );
     m_state = H3_State::Idle;
     UI_updateActions();
-    computeVisibleCorners( m_player );
+    computeVisibleCorners( m_playerId );
     m_bUpdateDrawCall_Corners = true;
     m_bUpdateDrawCall_Farms = true;
     enterIdle();
@@ -1661,9 +1682,9 @@ void H3_Game::finalizeBuyCity( H3_Farm & farm )
         return;
     }
 
-    if ( farm.owner != m_player )
+    if ( farm.owner != m_playerId )
     {
-        DE_ERROR("Farm owner ",farm.owner," is not player ", m_player )
+        DE_ERROR("Farm owner ",farm.owner," is not player ", m_playerId )
         return;
     }
 
@@ -2068,7 +2089,7 @@ H3_Player& H3_Game::getPlayer( const u32 playerId )
 
 H3_Player& H3_Game::getCurrentPlayer()
 {
-    return getPlayer( m_player );
+    return getPlayer( m_playerId );
 }
 
 void H3_Game::computeVisibleCorners( uint32_t playerId )
@@ -2606,9 +2627,9 @@ void H3_Game::drawHoveredEdge()
     driver->resetModelMatrix();
     rend->draw3DLineBox( bbox, 0xFF00FFFF );
 
-    if (m_player)
+    if (m_playerId)
     {
-        H3_Player & player = getPlayer( m_player );
+        H3_Player & player = getPlayer( m_playerId );
 
         if (m_state == H3_State::PlaceRoad)
         {
@@ -2645,9 +2666,9 @@ void H3_Game::drawHoveredCorner()
     driver->resetModelMatrix();
     rend->draw3DLineBox( bbox, 0xFF0000FF );
 
-    if (m_player)
+    if (m_playerId)
     {
-        H3_Player & player = getPlayer( m_player );
+        H3_Player & player = getPlayer( m_playerId );
 
         if (m_state == H3_State::PlaceFarm)
         {

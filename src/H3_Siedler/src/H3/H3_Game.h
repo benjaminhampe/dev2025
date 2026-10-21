@@ -68,6 +68,9 @@ struct H3_Game
     void enterUseKnightCard();
     void enterWinnerScreen();
 
+    void enterBanking();
+    void enterTrading();
+
     // After 1st round we sort players
     // ordered by highest to lowest dice value
     void computeRanking(); // Used in: enterRound2()
@@ -185,7 +188,7 @@ struct H3_Game
     H3_BonusRoad m_bonusRoad; // current state
     int m_round;    // current round index
     int m_turn;     // current round index
-    int m_player;   // current Player index
+    int m_playerId;   // current Player index
     uint32_t m_winnerId;
 
 

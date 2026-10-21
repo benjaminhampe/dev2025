@@ -417,8 +417,8 @@ void UI_Stats_render( H3_Game & game )
     int hB = zoom * 64;
     x = scr_w - 1 - p - wB - p - wB;
     y = scr_h - 1 - p - hB;
-    UI_Stats_drawItem( game, x,y,wB,hB, H3_Tex::BonusArmy, player.hasBonusArmy(), font); x += wB + p;
-    UI_Stats_drawItem( game, x,y,wB,hB, H3_Tex::BonusRoad, player.hasBonusRoad(), font); // x += wB + p;
+    UI_Stats_drawItem( game, x,y,wB,hB, H3_Tex::BonusArmy, player.state.hasBonusArmy(), font); x += wB + p;
+    UI_Stats_drawItem( game, x,y,wB,hB, H3_Tex::BonusRoad, player.state.hasBonusRoad(), font); // x += wB + p;
 }
 
 /*

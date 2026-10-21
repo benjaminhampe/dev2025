@@ -49,6 +49,7 @@ struct H3_GuiState // Actually just H3_UIGameState
     bool bWorldCreator = false;
     bool bGameOverlay = false;    // Actions + stats + logger + dice
     bool bDonateCards = false;
+    bool bBanking = false;
     bool bWinnerScreen = false;
 };
 

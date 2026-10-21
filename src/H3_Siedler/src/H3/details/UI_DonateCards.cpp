@@ -46,7 +46,7 @@ UI_DonateCards::UI_DonateCards( H3_Game* game, de::gui::Env* env, de::gui::Widge
             // Restore old Game GUI state.
             m_game->m_uiGame->popState();
 
-            if (player.id == m_game->m_player)
+            if (player.id == m_game->m_playerId)
             {
                 DE_DEBUG("IsCurrentPlayer -> Place thief")
                 // Enter new state.
