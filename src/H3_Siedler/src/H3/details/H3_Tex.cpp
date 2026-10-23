@@ -6,6 +6,16 @@ H3_Tex::H3_Tex() : m_driver(nullptr)
 
 }
 
+H3_Tex::~H3_Tex()
+{
+    destroy();
+}
+
+void H3_Tex::destroy()
+{
+
+}
+
 void
 H3_Tex::add( H3_Game & game, eID texId, H3_Img::eID imgId,
             const de::gpu::SamplerOptions& so )

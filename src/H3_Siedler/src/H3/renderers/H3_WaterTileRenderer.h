@@ -31,10 +31,10 @@ struct H3_WaterTileRenderer
     std::vector<glm::mat4> m_instanceMat;
     //std::vector<uint8_t> m_instanceLayer;
     std::vector<uint8_t> m_instanceAngle60;
-	
+
     H3_WaterTileRenderer();
     ~H3_WaterTileRenderer();
-    
+    void destroy();
     void init(H3_Game& game);
     void initShader();
     void initTexture(H3_Game& game);

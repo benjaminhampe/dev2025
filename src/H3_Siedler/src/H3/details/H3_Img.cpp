@@ -31,12 +31,17 @@ H3_Img::H3_Img()
 
 H3_Img::~H3_Img()
 {
+    destroy();
+}
+
+void H3_Img::destroy()
+{
     clear();
 }
 
 void H3_Img::clear()
 {
-    DE_DEBUG("Destroy image cache")
+    // DE_DEBUG("Destroy image cache")
 
     for (auto p : m_cache)
     {

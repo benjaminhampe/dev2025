@@ -325,6 +325,11 @@ H3_ChipRenderer::~H3_ChipRenderer()
 
 }
 
+void H3_ChipRenderer::destroy()
+{
+
+}
+
 void H3_ChipRenderer::render( const H3_ChipMeshBuffer & drawcall )
 {
     if (drawcall.m_instanceMat.empty())

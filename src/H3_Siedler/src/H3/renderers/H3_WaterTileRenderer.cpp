@@ -16,6 +16,11 @@ H3_WaterTileRenderer::~H3_WaterTileRenderer()
 
 }
 
+void H3_WaterTileRenderer::destroy()
+{
+
+}
+
 void H3_WaterTileRenderer::init( H3_Game& game )
 {
     m_driver = game.getDriver();

@@ -4,6 +4,8 @@
 
 int main(int argc, char** argv)
 {
+    DE_WARN("Start program")
+
     // try {
 
     //auto name = dbPromtStrA("Schreibe deinen Namen...", "User-input:");
@@ -14,9 +16,7 @@ int main(int argc, char** argv)
     m_audioEngine.stop();
 #endif
 
-#if 1
 
-DE_OK("")
     dbRandomize();
 
     H3_Game m_game;
@@ -123,10 +123,8 @@ DE_OK("")
         }
     }
 
+    DE_WARN("ExitProgram.")
     m_game.destroy();
-    DE_INFO("Destroyed device.")
-
-#endif
 
     // }
     // catch (const std::exception& e) {

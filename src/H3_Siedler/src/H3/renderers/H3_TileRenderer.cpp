@@ -40,6 +40,11 @@ H3_TileRenderer::~H3_TileRenderer()
 
 }
 
+void H3_TileRenderer::destroy()
+{
+
+}
+
 void H3_TileRenderer::init( H3_Game& game )
 {
     m_driver = game.getDriver();

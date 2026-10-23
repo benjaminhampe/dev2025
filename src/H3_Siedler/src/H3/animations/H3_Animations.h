@@ -10,7 +10,7 @@ class H3_Animations
 public:
     H3_Animations();
     ~H3_Animations();
-
+    void destroy();
     void init(H3_Game* game);
     void draw();
 

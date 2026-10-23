@@ -20,9 +20,8 @@ struct H3_DiceRenderer
 
     H3_DiceRenderer();
     ~H3_DiceRenderer();
-
+    void destroy();
     void init(H3_Game & game);
-
     void render();
 };
 

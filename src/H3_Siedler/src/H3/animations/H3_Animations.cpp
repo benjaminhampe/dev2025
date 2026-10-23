@@ -10,7 +10,26 @@ H3_Animations::H3_Animations()
 
 H3_Animations::~H3_Animations()
 {
+    destroy();
+}
+
+void H3_Animations::destroy()
+{
     clearAnimations();
+}
+
+void H3_Animations::clearAnimations()
+{
+    for (H3_Animation* ani : m_queue)
+    {
+        if (ani) delete ani;
+    }
+    m_queue.clear();
+}
+
+void H3_Animations::addAnimation(H3_Animation* ani)
+{
+    m_queue.push_back(ani);
 }
 
 void H3_Animations::init(H3_Game* game)
@@ -53,18 +72,4 @@ void H3_Animations::draw()
     ), m_queue.end());
 
     m_timeLastDraw = m_timeNow;
-}
-
-void H3_Animations::addAnimation(H3_Animation* ani)
-{
-    m_queue.push_back(ani);
-}
-
-void H3_Animations::clearAnimations()
-{
-    for (H3_Animation* ani : m_queue)
-    {
-        if (ani) delete ani;
-    }
-    m_queue.clear();
 }

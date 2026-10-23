@@ -69,11 +69,20 @@ H3_TerrainTileRenderer::H3_TerrainTileRenderer()
 
 H3_TerrainTileRenderer::~H3_TerrainTileRenderer()
 {
-
+    destroy();
 }
 
-void
-H3_TerrainTileRenderer::init( H3_Game & game )
+void H3_TerrainTileRenderer::destroy()
+{
+    m_hmeshTileDesert.destroy();
+    m_hmeshTileA.destroy();
+    m_hmeshTileB.destroy();
+    m_hmeshTileC.destroy();
+    m_hmeshTileD.destroy();
+    m_hmeshTileE.destroy();
+}
+
+void H3_TerrainTileRenderer::init( H3_Game & game )
 {
     m_driver = game.getDriver();
 
@@ -107,8 +116,6 @@ H3_TerrainTileRenderer::init( H3_Game & game )
     m_hmeshTileC = de::gpu::HMesh::fromSMesh( m_meshTileC );
     m_hmeshTileD = de::gpu::HMesh::fromSMesh( m_meshTileD );
     m_hmeshTileE = de::gpu::HMesh::fromSMesh( m_meshTileE );
-
-
 }
 
 void H3_TerrainTileRenderer::render()

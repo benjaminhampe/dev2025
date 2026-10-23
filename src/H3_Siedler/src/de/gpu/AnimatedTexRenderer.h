@@ -28,6 +28,11 @@ struct AnimatedTexRenderer
 
         void startAnimation();
         void tickAnimation();
+
+        void destroy()
+        {
+            tex.destroy();
+        }
     };
 
     de::gpu::VideoDriver* m_driver;

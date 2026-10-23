@@ -32,9 +32,7 @@ H3_Game::H3_Game()
 H3_Game::~H3_Game()
 {
     //m_audioEngine.stop();
-    DE_OK()
 }
-
 
 void H3_Game::startGame()
 {
@@ -227,20 +225,54 @@ void H3_Game::startGame()
 
 void H3_Game::requestClose()
 {
-    DE_OK()
+    // DE_OK()
     m_bShouldRun = false;
 }
 
 void H3_Game::destroy()
 {
-    DE_OK()
+    DE_DEBUG()
 
     requestClose();
 
     // killTimers();
 
+    // === Destroy geometry ===
+    // m_dcChips.destroy();
+    // m_dcCorners.destroy();
+    // m_dcEdges.destroy();
+    m_smeshSun.destroy();
+    m_smeshTile.destroy();
+    m_smeshChip.destroy();
+    m_smeshCorner.destroy();
+    m_smeshEdge.destroy();
+    m_smeshRoad.destroy();
+    m_smeshFarm.destroy();
+    m_smeshCity.destroy();
+    m_smeshThief.destroy();
+
+    m_tmeshRoad.destroy();
+    m_tmeshFarm.destroy();
+    m_tmeshCity.destroy();
+
+    m_tileRenderer.destroy();
+    m_waterTileRenderer.destroy();
+    //m_tileRenderer.destroy();
+    m_chipRenderer.destroy();
+    m_objRenderer.destroy();
+    m_diceRenderer.destroy();
+    //m_uiRenderer.destroy();
+    m_animatedTexRenderer.destroy();
+    m_animations.destroy();
+
+    m_guienv.destroy();
+    m_tex.destroy();
+    m_font.destroy();
+    m_img.destroy();
+
     if (m_driver)
     {
+        m_driver->getSkyboxRenderer()->destroy();
         m_driver->close();
         delete m_driver;
         m_driver = nullptr;

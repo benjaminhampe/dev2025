@@ -21,7 +21,7 @@ struct H3_TerrainTileRenderer
 
     H3_TerrainTileRenderer();
     ~H3_TerrainTileRenderer();
-
+    void destroy();
     void init(H3_Game & game);
 
     void render();

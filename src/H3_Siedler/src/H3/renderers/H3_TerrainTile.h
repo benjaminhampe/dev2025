@@ -325,8 +325,8 @@ struct HMesh
     uint32_t m_vbo_instanceMat;
 
     HMesh();
-    //~HMesh();
-
+    ~HMesh();
+    void destroy();
     void upload( bool bForceUpload = false );
     void draw() const;
     void addVertex( const HVertex& v );

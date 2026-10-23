@@ -15,6 +15,7 @@ H3_CardAnimation::H3_CardAnimation(
     , m_duration(duration)
     , m_timeNow(0.0)
 {
+    m_mesh.name = "H3_CardAnimation";
     de::smesh::SMeshRoundRect::addXZ(m_mesh,{0,0,0},24,40,4,4,23);
     de::smesh::SMeshBufferTool::centerVertices(m_mesh);
 

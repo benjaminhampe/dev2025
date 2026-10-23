@@ -14,7 +14,12 @@ BillboardRenderer::BillboardRenderer()
 
 BillboardRenderer::~BillboardRenderer()
 {
+    destroy();
+}
 
+void BillboardRenderer::destroy()
+{
+    clear();
 }
 
 void BillboardRenderer::init( VideoDriver* driver )

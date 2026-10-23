@@ -64,7 +64,13 @@ H3_DiceRenderer::H3_DiceRenderer()
 
 H3_DiceRenderer::~H3_DiceRenderer()
 {
+    destroy();
+}
 
+void H3_DiceRenderer::destroy()
+{
+    m_cube1.destroy();
+    m_cube2.destroy();
 }
 
 void

@@ -29,11 +29,9 @@ struct H3_TileRenderer
 
     H3_TileRenderer();
     ~H3_TileRenderer();
-
+    void destroy();
     void init(H3_Game& game);
-
     void render();
-
     void collectAndUploadInstances(const H3_Game& game);
 
 private:

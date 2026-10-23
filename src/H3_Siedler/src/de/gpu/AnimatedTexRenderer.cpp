@@ -198,7 +198,7 @@ void AnimatedTexRenderer::init(VideoDriver* driver)
 
 void AnimatedTexRenderer::destroy()
 {
-
+    m_explosion02.destroy();
 }
 
 void AnimatedTexRenderer::draw3D( const smesh::SMeshBuffer& mesh )

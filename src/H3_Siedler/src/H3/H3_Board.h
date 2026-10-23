@@ -557,15 +557,15 @@ struct H3_PlayerState
     std::vector< u32 > citys;       // city-ids
     std::vector< u32 > ships;       // ship-ids
 
-    std::vector< u32 > points;      // Revealed = now counts into victoryPoints!
-    std::vector< u32 > knights;     // Revealed = now counts into bonus!
-    std::vector< u32 > invents;     // Revealed (aka not a card anymore)
-    std::vector< u32 > monopols;    // Revealed (aka not a card anymore)
+    std::vector< u32 > points;      // Revealed = count into victoryPoints!
+    std::vector< u32 > knights;     // Revealed = count into bonusArmy!
+    std::vector< u32 > invents;     // Revealed (used up)
+    std::vector< u32 > monopols;    // Revealed (used up)
 
-    std::vector< u32 > pointCards;      // Bought in previous rounds, not revealed = not counted in victoryPoints!
-    std::vector< u32 > knightCards;     // Bought, not revealed.
-    std::vector< u32 > inventCards;     // Bought, not revealed.
-    std::vector< u32 > monopolCards;    // Bought, not revealed.
+    std::vector< u32 > pointCards;  // Bought in previous rounds, not revealed = not counted in victoryPoints!
+    std::vector< u32 > knightCards; // Bought and unrevealed.
+    std::vector< u32 > inventCards; // Bought and unrevealed.
+    std::vector< u32 > monopolCards;// Bought and unrevealed.
 
     H3_PlayerState();
 

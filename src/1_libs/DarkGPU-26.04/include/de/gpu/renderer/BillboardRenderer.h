@@ -37,13 +37,14 @@ struct BillboardRenderer
 {
     VideoDriver* m_driver;
     Shader* m_shader;
-    smesh::SMeshBuffer meshRect;
-    smesh::SMeshBuffer meshRoundRect;
-    smesh::SMeshBuffer meshCircle;
+    // smesh::SMeshBuffer meshRect;
+    // smesh::SMeshBuffer meshRoundRect;
+    // smesh::SMeshBuffer meshCircle;
     std::vector< Billboard > m_billboards;
 
     BillboardRenderer();
     ~BillboardRenderer();
+    void destroy();
     void init( VideoDriver* driver );
     void clear();
     void render();

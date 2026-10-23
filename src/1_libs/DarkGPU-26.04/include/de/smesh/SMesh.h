@@ -942,6 +942,8 @@ public:
 
     SMesh();
     SMesh( SMeshBuffer const & buf );
+    ~SMesh();
+    void destroy();
     //SMesh( char const* name );
     //SMesh( std::string const & name );
     //glm::dmat4 const& getModelMatrix() const { return ModelMat; }

@@ -27,7 +27,7 @@ UI_World::UI_World( H3_Game* game, de::gui::Env* env, de::gui::Widget* parent, u
 
 UI_World::~UI_World()
 {
-    DE_WARN("")
+
 }
 
 void UI_World::draw()

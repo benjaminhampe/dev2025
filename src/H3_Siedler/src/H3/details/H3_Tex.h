@@ -53,6 +53,8 @@ struct H3_Tex
     };
 
     H3_Tex();
+    ~H3_Tex();
+    void destroy();
     void init( H3_Game & game );
 
     void add( H3_Game & game, eID texId, H3_Img::eID imgId, const de::gpu::SamplerOptions& so );

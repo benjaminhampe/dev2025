@@ -18,7 +18,26 @@ Env::Env()
 
 Env::~Env()
 {
+    destroy();
+}
+
+void Env::destroy()
+{
     clear();
+}
+
+void Env::clear()
+{
+    for (auto & child : m_topLevelWidgets)
+    {
+        if (!child) continue;
+
+        child->clearChildren();
+
+        delete child;
+    }
+
+    m_topLevelWidgets.clear();
 }
 
 void Env::init( gpu::VideoDriver* driver )
@@ -40,19 +59,7 @@ void Env::draw()
     }
 }
 
-void Env::clear()
-{
-    for (auto & child : m_topLevelWidgets)
-    {
-        if (!child) continue;
 
-        child->clearChildren();
-
-        delete child;
-    }
-
-    m_topLevelWidgets.clear();
-}
 
 int Env::getMouseX() const { return m_mouseX; }
 int Env::getMouseY() const { return m_mouseY; }

@@ -56,7 +56,7 @@ struct H3_Img
 
     H3_Img();
     ~H3_Img();
-
+    void destroy();
     void init();
     void load();
     void save(const std::string& baseDir);

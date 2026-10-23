@@ -530,30 +530,30 @@ SMeshBuffer::~SMeshBuffer()
 {
     if ( vao )
     {
-        DE_ERROR("Forgot to call SMeshBuffer.destroy()")
+        DE_ERROR("Forgot to call SMeshBuffer.destroy(), name(",name,")")
     }
 }
 
 void
 SMeshBuffer::destroy()
 {
-   if ( vao )
-   {
-      glDeleteVertexArrays(1, &vao);
-      vao = 0;
-   }
+    if ( vao )
+    {
+        glDeleteVertexArrays(1, &vao);
+        vao = 0;
+    }
 
-   if ( vbo )
-   {
-      glDeleteBuffers(1, &vbo);
-      vbo = 0;
-   }
+    if ( vbo )
+    {
+        glDeleteBuffers(1, &vbo);
+        vbo = 0;
+    }
 
-   if ( ibo )
-   {
-      glDeleteBuffers(1, &ibo);
-      ibo = 0;
-   }
+    if ( ibo )
+    {
+        glDeleteBuffers(1, &ibo);
+        ibo = 0;
+    }
 }
 
 void
@@ -2004,39 +2004,31 @@ SMesh::SMesh()
 {
 }
 
-/*
-SMesh::SMesh( char const * name )
+SMesh::SMesh( const SMeshBuffer& buf )
    : SMesh()
 {
-   // if ( !name )
-   // {
-   //    DE_RUNTIME_ERROR("SMesh(nullptr)", "Prevent crash with std::string(nullptr)")
-   // }
-   // else
-   // {
-   //    Name = name;
-   // }
+    addMeshBuffer( buf );
 }
 
-
-SMesh::SMesh( std::string const & name )
-   : SMesh()
+SMesh::~SMesh()
 {
-   // if ( name.empty() )
-   // {
-   //    DE_RUNTIME_ERROR("SMesh(\"\")", "Prevent creation with empty name")
-   // }
-   // else
-   // {
-   //    Name = name;
-   // }
+    destroy();
 }
-*/
 
-SMesh::SMesh( SMeshBuffer const & buf )
-   : SMesh()
+void SMesh::destroy()
 {
-   addMeshBuffer( buf );
+    clear();
+}
+
+void SMesh::clear()
+{
+    boundingBox.reset();
+
+    for (auto & mb : buffers)
+    {
+        mb.destroy();
+    }
+    buffers.clear();
 }
 
 
@@ -2231,13 +2223,6 @@ SMesh::addMesh( SMesh const & other )
    {
       addMeshBuffer( other.getMeshBuffer( i ) );
    }
-}
-
-void
-SMesh::clear()
-{
-   boundingBox.reset();
-   buffers.clear();
 }
 
 bool

@@ -63,8 +63,8 @@ struct H3_ObjMeshBuffer
     uint32_t m_vbo_instanceColor;
 
     H3_ObjMeshBuffer();
-    //~H3_ObjMeshBuffer();
-
+    ~H3_ObjMeshBuffer();
+    void destroy();
     void upload();
     void uploadInstances();
     void render() const;
@@ -136,7 +136,7 @@ struct H3_ObjRenderer
 
     H3_ObjRenderer();
     //~H3_ObjRenderer();
-
+    void destroy();
     void init( H3_Game & game );
 
     //void upload( const H3_Game & game );

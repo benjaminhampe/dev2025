@@ -51,6 +51,7 @@ struct H3_ChipRenderer
     H3_ChipRenderer();
     ~H3_ChipRenderer();
 
+    void destroy();
     void init( H3_Game & game );
     void initTexture( H3_Game & game );
     void initShader();

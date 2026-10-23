@@ -21,6 +21,11 @@ H3_Font::H3_Font()
 
 H3_Font::~H3_Font()
 {
+    destroy();
+}
+
+void H3_Font::destroy()
+{
     clear();
 }
 

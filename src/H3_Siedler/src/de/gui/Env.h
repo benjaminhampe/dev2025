@@ -14,6 +14,8 @@ public:
     Env();
     ~Env();
     void init( gpu::VideoDriver* driver);
+    void destroy();
+
     void draw();
 
     float getZoom() const { return m_zoom; }

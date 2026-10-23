@@ -1947,8 +1947,29 @@ HMesh::HMesh()
     m_vbo_instanceMat = 0;
 }
 
-void
-HMesh::upload( bool bForceUpload )
+HMesh::~HMesh()
+{
+    if (m_vao)
+    {
+        DE_ERROR("Forgot to call destroy()")
+    }
+
+}
+
+void HMesh::destroy()
+{
+    if ( m_vao )
+    {
+        glDeleteVertexArrays(1, &m_vao);
+        m_vao = 0;
+    }
+
+    if ( m_vbo_vertices ) { glDeleteBuffers(1, &m_vbo_vertices); m_vbo_vertices = 0; }
+    if ( m_vbo_indices ) { glDeleteBuffers(1, &m_vbo_indices); m_vbo_indices = 0; }
+    if ( m_vbo_instanceMat ) { glDeleteBuffers(1, &m_vbo_instanceMat); m_vbo_instanceMat = 0; }
+}
+
+void HMesh::upload( bool bForceUpload )
 {
     bool bNeedUpload = bForceUpload;
 

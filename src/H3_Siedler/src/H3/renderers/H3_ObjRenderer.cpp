@@ -15,6 +15,23 @@ H3_ObjMeshBuffer::H3_ObjMeshBuffer()
     m_vbo_instanceColor = 0;
 }
 
+H3_ObjMeshBuffer::~H3_ObjMeshBuffer()
+{
+    if (m_vao)
+    {
+        DE_ERROR("Forgot to call destroy()")
+    }
+}
+
+void H3_ObjMeshBuffer::destroy()
+{
+    if ( m_vao ) { glDeleteVertexArrays(1, &m_vao); m_vao = 0; }
+    if ( m_vbo_vertices ) { glDeleteBuffers(1, &m_vbo_vertices); m_vbo_vertices = 0; }
+    if ( m_vbo_indices ) { glDeleteBuffers(1, &m_vbo_indices); m_vbo_indices = 0; }
+    if ( m_vbo_instanceMat ) { glDeleteBuffers(1, &m_vbo_instanceMat); m_vbo_instanceMat = 0; }
+    if ( m_vbo_instanceColor ) { glDeleteBuffers(1, &m_vbo_instanceColor); m_vbo_instanceColor = 0; }
+}
+
 // static
 de::smesh::SMeshBuffer
 H3_ObjMeshBuffer::toSMesh( const H3_ObjMeshBuffer& tmesh )
@@ -686,8 +703,12 @@ H3_ObjRenderer::H3_ObjRenderer()
 
 // H3_ObjRenderer::~H3_ObjRenderer() { }
 
-void
-H3_ObjRenderer::init( H3_Game & game )
+void H3_ObjRenderer::destroy()
+{
+
+}
+
+void H3_ObjRenderer::init( H3_Game & game )
 {
     m_driver = game.getDriver();
     m_shader.init( game );
