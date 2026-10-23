@@ -22,61 +22,9 @@ void UI_Banking::createTripleWidget(TripleWidget& w, int tileType)
     w.btn->setRadius(8);
 }
 
-int countTypes(const H3_Bank& bank)
-{
-    int n = 0;
-    if (bank.A) n++;
-    if (bank.B) n++;
-    if (bank.C) n++;
-    if (bank.D) n++;
-    if (bank.E) n++;
-    return n;
-}
-
-int getRatio(int tt, const H3_Player & player)
-{
-    if ( tt == 0 && player.state.hasPortA() )
-    {
-        return 2;
-    }
-    if ( tt == 1 && player.state.hasPortB() )
-    {
-        return 2;
-    }
-    if ( tt == 2 && player.state.hasPortC() )
-    {
-        return 2;
-    }
-    if ( tt == 3 && player.state.hasPortD() )
-    {
-        return 2;
-    }
-    if ( tt == 4 && player.state.hasPortE() )
-    {
-        return 2;
-    }
-
-    if ( player.state.hasPort3v1() ) return 3;
-
-    return 4;
-}
-
-void UI_Banking::updateUserSide(int lastType)
+void UI_Banking::updateWidgetLogic()
 {
     H3_Player & player = m_game->getPlayer( m_playerId );
-
-    // Update user
-
-    // Clear user bank, except last used resource type...
-    // int numTypes = countTypes(m_user);
-    // if (numTypes > 1)
-    // {
-    //     if (lastType != H3_TileType::TileA) m_user.A = 0;
-    //     if (lastType != H3_TileType::TileB) m_user.B = 0;
-    //     if (lastType != H3_TileType::TileC) m_user.C = 0;
-    //     if (lastType != H3_TileType::TileD) m_user.D = 0;
-    //     if (lastType != H3_TileType::TileE) m_user.E = 0;
-    // }
 
     // Update user
     m_userA.lup->setText(std::to_string(m_user.A)); // given
@@ -91,18 +39,11 @@ void UI_Banking::updateUserSide(int lastType)
     const int remainD = player.state.bank.D - m_user.D;
     const int remainE = player.state.bank.E - m_user.E;
 
-    DE_DEBUG("Ratios "
-             "A(",getRatio(0,player),"), "
-             "B(",getRatio(1,player),"), "
-             "C(",getRatio(2,player),"), "
-             "D(",getRatio(3,player),"), "
-             "E(",getRatio(4,player),")")
-
-    m_userA.btn->setEnabled(remainA >= getRatio(0,player)); // remain
-    m_userB.btn->setEnabled(remainB >= getRatio(1,player)); // remain
-    m_userC.btn->setEnabled(remainC >= getRatio(2,player)); // remain
-    m_userD.btn->setEnabled(remainD >= getRatio(3,player)); // remain
-    m_userE.btn->setEnabled(remainE >= getRatio(4,player)); // remain
+    m_userA.btn->setEnabled(remainA >= m_ratio.A); // remain
+    m_userB.btn->setEnabled(remainB >= m_ratio.B); // remain
+    m_userC.btn->setEnabled(remainC >= m_ratio.C); // remain
+    m_userD.btn->setEnabled(remainD >= m_ratio.D); // remain
+    m_userE.btn->setEnabled(remainE >= m_ratio.E); // remain
 
     m_userA.ldn->setText(std::to_string(remainA)); // remain
     m_userB.ldn->setText(std::to_string(remainB)); // remain
@@ -110,24 +51,90 @@ void UI_Banking::updateUserSide(int lastType)
     m_userD.ldn->setText(std::to_string(remainD)); // remain
     m_userE.ldn->setText(std::to_string(remainE)); // remain
 
+    m_bankA.ldn->setText(std::to_string(m_bank.A));
+    m_bankB.ldn->setText(std::to_string(m_bank.B));
+    m_bankC.ldn->setText(std::to_string(m_bank.C));
+    m_bankD.ldn->setText(std::to_string(m_bank.D));
+    m_bankE.ldn->setText(std::to_string(m_bank.E));
+
     // Update bank
+
+    int sumBank = m_bank.sum();
+    int sumUser = (m_user.A / m_ratio.A)
+                + (m_user.B / m_ratio.B)
+                + (m_user.C / m_ratio.C)
+                + (m_user.D / m_ratio.D)
+                + (m_user.E / m_ratio.E);
+
+    // Prevent cheating (yet), clear bank if user removed some cards...
+    if (sumBank > sumUser)
+    {
+        m_bank.clear();
+        m_bankA.ldn->setText("0");
+        m_bankB.ldn->setText("0");
+        m_bankC.ldn->setText("0");
+        m_bankD.ldn->setText("0");
+        m_bankE.ldn->setText("0");
+        sumBank = 0;
+    }
+
+    const bool bCanBank = (sumUser > 0) && (sumUser > sumBank);
+/*
     const bool bCanBank =
-        (m_user.A >= getRatio(0, player)) ||
-        (m_user.B >= getRatio(1, player)) ||
-        (m_user.C >= getRatio(2, player)) ||
-        (m_user.D >= getRatio(3, player)) ||
-        (m_user.E >= getRatio(4, player));
+        (m_user.A >= m_ratio.A) ||
+        (m_user.B >= m_ratio.B) ||
+        (m_user.C >= m_ratio.C) ||
+        (m_user.D >= m_ratio.D) ||
+        (m_user.E >= m_ratio.E);
+*/
 
     m_bankA.btn->setEnabled(bCanBank);
     m_bankB.btn->setEnabled(bCanBank);
     m_bankC.btn->setEnabled(bCanBank);
     m_bankD.btn->setEnabled(bCanBank);
     m_bankE.btn->setEnabled(bCanBank);
+
+    m_btnAccept->setEnabled( m_bank.sum() > 0 );
 }
 
-void UI_Banking::updateBankSide()
+void UI_Banking::onCancel()
 {
+    DE_DEBUG("Cancel banking.")
 
+    // Restore old Game GUI state.
+    m_game->m_uiGame->popState();
+    m_game->enterIdle();
+}
+
+void UI_Banking::onAccept()
+{
+    DE_DEBUG("=================  Finish banking  =================")
+
+    H3_Player & player = m_game->getPlayer( m_playerId );
+
+    DE_DEBUG("player.ratio ", m_ratio.str())
+    DE_DEBUG("player.bank.old = ",player.state.bank.str())
+    DE_DEBUG("banking.user = ",m_user.str())
+    DE_DEBUG("banking.bank = ",m_bank.str())
+
+    // Check
+    const int sumBank = m_bank.sum();
+    const int sumUser = (m_user.A / m_ratio.A)
+                      + (m_user.B / m_ratio.B)
+                      + (m_user.C / m_ratio.C)
+                      + (m_user.D / m_ratio.D)
+                      + (m_user.E / m_ratio.E);
+    const bool bAccept = (sumUser >= sumBank);
+    if (bAccept)
+    {
+        player.state.bank.sub(m_user);
+        player.state.bank.add(m_bank);
+        DE_DEBUG("player.bank.new = ",player.state.bank.str())
+    }
+
+    // Restore old Game GUI state.
+    m_game->m_uiGame->popState();
+    m_game->enterIdle();
 }
 
 // =====================================================================
@@ -169,101 +176,137 @@ UI_Banking::UI_Banking( H3_Game* game, de::gui::Env* env, de::gui::Widget* paren
     m_btnAccept->setTexture( tex_scroll2 );
 
     // Cancel logic.
-
-    m_btnCancel->onClicked = [&] ()
-        {
-            DE_DEBUG("Cancel banking.")
-
-            // Restore old Game GUI state.
-            m_game->m_uiGame->popState();
-            m_game->enterIdle();
-        };
-
-    // Accept logic.
-
-    m_btnAccept->onClicked = [&] ()
-        {
-             DE_DEBUG("Accept banking.")
-
-            H3_Player & player = m_game->getPlayer( m_playerId );
-
-            // Restore old Game GUI state.
-            m_game->m_uiGame->popState();
-            m_game->enterIdle();
-        };
+    m_btnCancel->onClicked = [this] () { this->onCancel(); };
+    m_btnAccept->onClicked = [this] () { this->onAccept(); };
 
     // User '+' (LeftMouseClick)
 
     m_userA.btn->onClickedLeft = [&] () {
-        if (!isEnabled()) { DE_TRACE("No A") }
+        //if (!m_bankA.btn->isEnabled()) { return; }
         H3_Player & player = m_game->getPlayer( m_playerId );
-        if (m_user.A < player.state.bank.A) { m_user.A++; }
-        updateUserSide(H3_TileType::TileA);
-        updateBankSide();
+        if (m_user.A + m_ratio.A <= player.state.bank.A) { m_user.A += m_ratio.A; }
+        updateWidgetLogic();
     };
 
     m_userB.btn->onClickedLeft = [&] () {
-        if (!isEnabled()) { DE_TRACE("No B") }
+        //if (!m_bankB.btn->isEnabled()) { return; }
         H3_Player & player = m_game->getPlayer( m_playerId );
-        if (m_user.B < player.state.bank.B) { m_user.B++; }
-        updateUserSide(H3_TileType::TileB);
-        updateBankSide();
+        if (m_user.B + m_ratio.B <= player.state.bank.B) { m_user.B += m_ratio.B; }
+        updateWidgetLogic();
     };
 
     m_userC.btn->onClickedLeft = [&] () {
-        if (!isEnabled()) { DE_TRACE("No C") }
+        //if (!m_bankC.btn->isEnabled()) { return; }
         H3_Player & player = m_game->getPlayer( m_playerId );
-        if (m_user.C < player.state.bank.C) { m_user.C++; }
-        updateUserSide(H3_TileType::TileC);
-        updateBankSide();
+        if (m_user.C + m_ratio.C <= player.state.bank.C) { m_user.C += m_ratio.C; }
+        updateWidgetLogic();
     };
 
     m_userD.btn->onClickedLeft = [&] () {
-        if (!isEnabled()) { DE_TRACE("No D") }
+        //if (!m_bankD.btn->isEnabled()) { return; }
         H3_Player & player = m_game->getPlayer( m_playerId );
-        if (m_user.D < player.state.bank.D) { m_user.D++; }
-        updateUserSide(H3_TileType::TileD);
-        updateBankSide();
+        if (m_user.D + m_ratio.D <= player.state.bank.D) { m_user.D += m_ratio.D; }
+        updateWidgetLogic();
     };
 
     m_userE.btn->onClickedLeft = [&] () {
-        if (!isEnabled()) { DE_TRACE("No E") }
+        //if (!m_bankE.btn->isEnabled()) { return; }
         H3_Player & player = m_game->getPlayer( m_playerId );
-        if (m_user.E < player.state.bank.E) { m_user.E++; }
-        updateUserSide(H3_TileType::TileE);
-        updateBankSide();
+        if (m_user.E + m_ratio.E <= player.state.bank.E) { m_user.E += m_ratio.E; }
+        updateWidgetLogic();
     };
 
     // User '-' (RightMouseClick)
 
     m_userA.btn->onClickedRight = [&] () {
-        if (m_user.A > 0) { m_user.A--; }
-        updateUserSide(H3_TileType::TileA);
-        updateBankSide();
+        if (m_user.A >= m_ratio.A) { m_user.A -= m_ratio.A; }
+        updateWidgetLogic();
     };
 
     m_userB.btn->onClickedRight = [&] () {
-        if (m_user.B > 0) { m_user.B--; }
-        updateUserSide(H3_TileType::TileB);
-        updateBankSide();
+        if (m_user.B >= m_ratio.B) { m_user.B -= m_ratio.B; }
+        updateWidgetLogic();
     };
 
     m_userC.btn->onClickedRight = [&] () {
-        if (m_user.C > 0) { m_user.C--; }
-        updateUserSide(H3_TileType::TileC);
-        updateBankSide();
+        if (m_user.C >= m_ratio.C) { m_user.C -= m_ratio.C; }
+        updateWidgetLogic();
     };
 
     m_userD.btn->onClickedRight = [&] () {
-        if (m_user.D > 0) { m_user.D--; }
-        updateUserSide(H3_TileType::TileD);
-        updateBankSide();
+        if (m_user.D >= m_ratio.D) { m_user.D -= m_ratio.D; }
+        updateWidgetLogic();
     };
 
     m_userE.btn->onClickedRight = [&] () {
-        if (m_user.E > 0) { m_user.E--; }
-        updateUserSide(H3_TileType::TileE);
-        updateBankSide();
+        if (m_user.E >= m_ratio.E) { m_user.E -= m_ratio.E; }
+        updateWidgetLogic();
+    };
+
+
+   // Bank '+' (LeftMouseClick)
+
+    m_bankA.btn->onClickedLeft = [&] () {
+        if (!m_bankA.btn->isEnabled()) { return; }
+        m_bank.A++;
+        updateWidgetLogic();
+    };
+
+    m_bankB.btn->onClickedLeft = [&] () {
+        if (!m_bankB.btn->isEnabled()) { return; }
+        m_bank.B++;
+        updateWidgetLogic();
+    };
+
+    m_bankC.btn->onClickedLeft = [&] () {
+        if (!m_bankC.btn->isEnabled()) { return; }
+        m_bank.C++;
+        updateWidgetLogic();
+    };
+
+    m_bankD.btn->onClickedLeft = [&] () {
+        if (!m_bankD.btn->isEnabled()) { return; }
+        m_bank.D++;
+        updateWidgetLogic();
+    };
+
+    m_bankE.btn->onClickedLeft = [&] () {
+        if (!m_bankE.btn->isEnabled()) { return; }
+        m_bank.E++;
+        updateWidgetLogic();
+    };
+
+
+   // Bank '-' (RightMouseClick)
+
+    m_bankA.btn->onClickedRight = [&] () {
+        if (m_bank.A <= 0) return;
+        m_bank.A--;
+        updateWidgetLogic();
+    };
+
+    m_bankB.btn->onClickedRight = [&] () {
+        if (m_bank.B <= 0) return;
+        m_bank.B--;
+        updateWidgetLogic();
+    };
+
+    m_bankC.btn->onClickedRight = [&] () {
+        if (m_bank.C <= 0) return;
+        m_bank.C--;
+        updateWidgetLogic();
+    };
+
+    m_bankD.btn->onClickedRight = [&] () {
+        if (m_bank.D <= 0) return;
+        m_bank.D--;
+        updateWidgetLogic();
+    };
+
+    m_bankE.btn->onClickedRight = [&] () {
+        if (m_bank.E <= 0) return;
+        m_bank.E--;
+        updateWidgetLogic();
     };
 }
 
@@ -280,28 +323,17 @@ void UI_Banking::startBanking( uint32_t playerId )
 
     DE_DEBUG("player[",player.id,"] ", player.name)
 
+    m_ratio = player.getBankingRatios();
+    m_bank.clear();
+    m_user.clear();
+
     // Bank:
 
-    m_bankA.lup->setText( "4:1" );
-    m_bankB.lup->setText( "4:1" );
-    m_bankC.lup->setText( "4:1" );
-    m_bankD.lup->setText( "4:1" );
-    m_bankE.lup->setText( "4:1" );
-
-    if (player.state.hasPort3v1())
-    {
-        m_bankA.lup->setText( "3:1" );
-        m_bankB.lup->setText( "3:1" );
-        m_bankC.lup->setText( "3:1" );
-        m_bankD.lup->setText( "3:1" );
-        m_bankE.lup->setText( "3:1" );
-    }
-
-    if (player.state.hasPortA()) { m_bankA.lup->setText( "2:1" ); }
-    if (player.state.hasPortB()) { m_bankB.lup->setText( "2:1" ); }
-    if (player.state.hasPortC()) { m_bankC.lup->setText( "2:1" ); }
-    if (player.state.hasPortD()) { m_bankD.lup->setText( "2:1" ); }
-    if (player.state.hasPortE()) { m_bankE.lup->setText( "2:1" ); }
+    m_bankA.lup->setText( dbStr(m_ratio.A,":1") );
+    m_bankB.lup->setText( dbStr(m_ratio.B,":1") );
+    m_bankC.lup->setText( dbStr(m_ratio.C,":1") );
+    m_bankD.lup->setText( dbStr(m_ratio.D,":1") );
+    m_bankE.lup->setText( dbStr(m_ratio.E,":1") );
 
     m_bankA.btn->setEnabled(false);
     m_bankB.btn->setEnabled(false);
@@ -323,11 +355,11 @@ void UI_Banking::startBanking( uint32_t playerId )
     m_userD.ldn->setText( "0" );
     m_userE.ldn->setText( "0" );
 
-    m_userA.btn->setEnabled(player.state.bank.A >= getRatio(0,player));
-    m_userB.btn->setEnabled(player.state.bank.B >= getRatio(1,player));
-    m_userC.btn->setEnabled(player.state.bank.C >= getRatio(2,player));
-    m_userD.btn->setEnabled(player.state.bank.D >= getRatio(3,player));
-    m_userE.btn->setEnabled(player.state.bank.E >= getRatio(4,player));
+    m_userA.btn->setEnabled(player.state.bank.A >= m_ratio.A);
+    m_userB.btn->setEnabled(player.state.bank.B >= m_ratio.B);
+    m_userC.btn->setEnabled(player.state.bank.C >= m_ratio.C);
+    m_userD.btn->setEnabled(player.state.bank.D >= m_ratio.D);
+    m_userE.btn->setEnabled(player.state.bank.E >= m_ratio.E);
 
     m_userA.ldn->setText( std::to_string(player.state.bank.A) );
     m_userB.ldn->setText( std::to_string(player.state.bank.B) );
@@ -335,8 +367,7 @@ void UI_Banking::startBanking( uint32_t playerId )
     m_userD.ldn->setText( std::to_string(player.state.bank.D) );
     m_userE.ldn->setText( std::to_string(player.state.bank.E) );
 
-    int m_giveCard = -1; // H3_TileType resource Card type the player gives
-    int m_wishCard = -1; // H3_TileType the player wants from bank
+    updateWidgetLogic();
 }
 
 void UI_Banking::resize(int X, int Y, int W, int H)

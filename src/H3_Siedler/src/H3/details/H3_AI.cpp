@@ -277,7 +277,7 @@ void CPU_doRound2( H3_Game & game )
 
     std::vector< FarmMatch > farmMatches = CPU_findBestFarm( game );
 
-    if ( player.state.newFarms.empty() )
+    if ( player.state.farms.empty() )
     {
         for ( size_t i = 0; i < farmMatches.size(); ++i )
         {
@@ -299,7 +299,7 @@ void CPU_doRound2( H3_Game & game )
 
     std::vector< RoadMatch > roadMatches = CPU_findBestRoad( game );
 
-    if ( player.state.newRoads.empty() )
+    if ( player.state.roads.empty() )
     {
         for ( size_t i = 0; i < roadMatches.size(); ++i )
         {

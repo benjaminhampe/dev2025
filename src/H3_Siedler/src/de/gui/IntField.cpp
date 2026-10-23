@@ -26,7 +26,7 @@ IntField::IntField( const std::string& label, Env* env, Widget* parent, u32 id, 
 
 IntField::~IntField()
 {
-    DE_DEBUG("")
+    // DE_DEBUG("")
 }
 
 void IntField::setFont( const Font& font )

@@ -25,20 +25,6 @@ public:
         eWT_Edit,
     };
 
-    enum eWidgetFlag
-    {
-        eWF_None = 0,       // 0000 0000
-        eWF_Visible = 1,    // 0000 0001
-        eWF_Enabled = 2,    // 0000 0010
-        eWF_Hovered = 4,    // 0000 0100
-        eWF_Pickable = 8,   // 0000 1000
-        eWF_Pressed = 16,   // 0001 0000
-        eWF_Released = 32,  // 0010 0000
-        eWF_DrawChildren = 64, // 0100 0000
-        eWF_Drawing = 128,  // 1000 0000
-        eWF_FlagMask = 0x7F
-    };
-
     enum eWidgetState
     {
         eWS_Idle = 0,
@@ -85,28 +71,44 @@ public:
     const std::string& getName() const { return m_name; }
     void setName( const std::string & name ) { m_name = name; }
 
-    bool isEnabled() const { return hasFlags( eWF_Enabled ); }
-    void setEnabled( bool enabled ) { setFlags( eWF_Enabled, enabled ); }
-
-    bool isVisible() const { return hasFlags( eWF_Visible ); }
-    void setVisible( bool visible ) { setFlags( eWF_Visible, visible ); }
-
-    void setPickable( bool pickable ) { setFlags( eWF_Pickable, pickable ); }
-    bool isPickable() const { return hasFlags( eWF_Pickable ); }
-
-    void setDrawChildren( bool enabled ) { setFlags( eWF_DrawChildren, enabled ); }
-    bool isDrawChildren() const { return hasFlags( eWF_DrawChildren ); }
-
-    u32 getFlags() const { return m_flags; }
-    void setFlags( u32 flags ) { m_flags = flags; }
-    bool hasFlags( u32 flags ) const { return (m_flags & flags) == flags; }
-    void enableFlags( u32 flags ) { m_flags |= flags; }
-    void disableFlags( u32 flags ) { m_flags &= ~flags; }
-    void setFlags( u32 flags, bool enable )
+/*
+    enum eWidgetFlag
     {
-        if (enable) { enableFlags(flags); }
-        else        { disableFlags(flags); }
-    }
+        eWF_None = 0,       // 0000 0000
+        eWF_Visible = 1,    // 0000 0001
+        eWF_Enabled = 2,    // 0000 0010
+        eWF_Hovered = 4,    // 0000 0100
+        eWF_Pickable = 8,   // 0000 1000
+        eWF_Pressed = 16,   // 0001 0000
+        eWF_Released = 32,  // 0010 0000
+        eWF_DrawChildren = 64, // 0100 0000
+        eWF_Drawing = 128,  // 1000 0000
+        eWF_FlagMask = 0x7F
+    };
+*/
+    bool isVisible() const { return m_bVisible; }
+    void setVisible( bool visible ) { m_bVisible = visible; }
+
+    bool isEnabled() const { return m_bEnabled; }
+    void setEnabled( bool enabled ) { m_bEnabled = enabled; }
+
+    bool isHovered() const { return m_bHovered; }
+    void setHovered( bool hovered ) { m_bHovered = hovered; }
+
+    bool isPickable() const { return m_bPickable; }
+    void setPickable( bool pickable ) { m_bPickable = pickable; }
+
+    bool isPressed() const { return m_bPressed; }
+    void setPressed( bool pressed ) { m_bPressed = pressed; }
+
+    bool isReleased() const { return m_bReleased; }
+    void setReleased( bool released ) { m_bReleased = released; }
+
+    bool isDrawChildren() const { return m_bDrawChildren; }
+    void setDrawChildren( bool drawing ) { m_bDrawChildren = drawing; }
+
+    bool isDrawing() const { return m_bDrawing; }
+    void setDrawing( bool drawing ) { m_bDrawing = drawing; }
 
     const Font& getFont() const { return m_font; }
 
@@ -174,20 +176,21 @@ public:
 */
 
 protected:
-    u32 m_flags;
-    u32 m_id;
-    Recti m_rect;
-    //Posi m_pos;
-    //Sizei m_size;
-    //Sizei m_minimumSize;
-
     Env* m_env;
     Widget* m_parent;
-    std::string m_name;
-
-    std::vector< Widget* > m_children;
-
+    u32 m_id;
+    bool m_bVisible;
+    bool m_bEnabled;
+    bool m_bHovered;
+    bool m_bPickable;
+    bool m_bPressed;
+    bool m_bReleased;
+    bool m_bDrawChildren;
+    bool m_bDrawing;
+    Recti m_rect;
     Font m_font;
+    std::string m_name;
+    std::vector< Widget* > m_children;
 
 /*
     // --- Fill ---

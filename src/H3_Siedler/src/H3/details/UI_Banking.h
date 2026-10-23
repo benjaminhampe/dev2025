@@ -37,6 +37,7 @@ private:
 
     H3_Bank m_bank;
     H3_Bank m_user;
+    H3_Bank m_ratio;    // Banking Ratios, a 3 means 3:1
 
     de::Recti m_rcHead;
     de::Recti m_rcBank;
@@ -96,6 +97,9 @@ private:
     void drawUserIcon();
     void drawUserName();
 
-    void updateUserSide(int lastType);
-    void updateBankSide();
+    void updateWidgetLogic();
+
+
+    void onCancel();
+    void onAccept();
 };

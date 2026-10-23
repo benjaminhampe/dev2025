@@ -77,12 +77,12 @@ void Label::onEvent( const Event& event)
     if (event.type == EventType::ENTER)
     {
         //DE_DEBUG(event.str())
-        setFlags( eWS_Hovered, true );
+        setHovered( true );
     }
     else if (event.type == EventType::LEAVE)
     {
         //DE_DEBUG(event.str())
-        setFlags( eWS_Hovered, false );
+        setHovered( false );
     }
 }
 
@@ -102,21 +102,21 @@ void Label::draw()
     u32 textFgColor = m_textFgColors[eWS_Idle];
     u32 textBgColor = m_textBgColors[eWS_Idle];
 
-    if (hasFlags(eWF_Hovered))
+    if (isHovered())
     {
         fillColor = m_fillColors[eWS_Hovered];
         borderColor = m_fillColors[eWS_Hovered];
         textFgColor = m_textFgColors[eWS_Hovered];
         textBgColor = m_textBgColors[eWS_Hovered];
     }
-    else if (hasFlags(eWF_Pressed))
+    else if (isPressed())
     {
         fillColor = m_fillColors[eWS_Pressed];
         borderColor = m_fillColors[eWS_Pressed];
         textFgColor = m_textFgColors[eWS_Pressed];
         textBgColor = m_textBgColors[eWS_Pressed];
     }
-    else if (hasFlags(eWF_Released))
+    else if (isReleased())
     {
         fillColor = m_fillColors[eWS_Released];
         borderColor = m_fillColors[eWS_Released];

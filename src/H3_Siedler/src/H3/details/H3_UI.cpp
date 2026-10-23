@@ -417,8 +417,8 @@ void UI_Stats_render( H3_Game & game )
     int hB = zoom * 64;
     x = scr_w - 1 - p - wB - p - wB;
     y = scr_h - 1 - p - hB;
-    UI_Stats_drawItem( game, x,y,wB,hB, H3_Tex::BonusArmy, player.state.hasBonusArmy(), font); x += wB + p;
-    UI_Stats_drawItem( game, x,y,wB,hB, H3_Tex::BonusRoad, player.state.hasBonusRoad(), font); // x += wB + p;
+    UI_Stats_drawItem( game, x,y,wB,hB, H3_Tex::BonusArmy, player.state.hasBonusArmy, font); x += wB + p;
+    UI_Stats_drawItem( game, x,y,wB,hB, H3_Tex::BonusRoad, player.state.hasBonusRoad, font); // x += wB + p;
 }
 
 /*
@@ -800,7 +800,7 @@ UI_drawInfoPanelTile( H3_Game & game, de::Recti pos, const u32 tileId )
     auto s1 = dbStr(H3_TileType::getString( tile.tileType )," (",tile.i, ",", tile.j,")");
     auto s3 = dbStr(tile.pos);
     auto s4 = dbStr("angle60 = ",tile.angle60);
-    auto s5 = dbStr("hasRobber = ",tile.hasRobber);
+    auto s5 = dbStr("hasRobber = ",tile.id == game.m_thief.occupiedTileId);
     auto s6 = dbStr("NextCount = ",tile.next.size());
     auto s7 = dbStr("CornerCount = ",tile.corners.size());
     auto s9 = dbStr("EdgeCount = ",tile.edges.size());

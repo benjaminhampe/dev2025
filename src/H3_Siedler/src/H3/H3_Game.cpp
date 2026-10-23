@@ -7,6 +7,9 @@
 
 #include "H3_Window_wgl.h"
 
+// #ifndef USE_BENNI_DEBUG_RESOURCES
+// #define USE_BENNI_DEBUG_RESOURCES
+// #endif
 
 // ===========================================================================
 H3_Game::H3_Game()
@@ -69,22 +72,23 @@ void H3_Game::startGame()
         player.avatar = H3_Tex::PlayU + m_players.size();
         player.startGame();
 
-        // Debug
+    #ifdef USE_BENNI_DEBUG_RESOURCES
         player.state.bank.A = 3;
         player.state.bank.B = 4;
         player.state.bank.C = 5;
         player.state.bank.D = 6;
         player.state.bank.E = 7;
+    #endif
     }
     DE_DEBUG("Created players = ", m_players.size())
 
     for (auto& player : m_players)
     {
-        if (player.typ == H3_PlayerType::HUMAN)
+        if (player.typ.isHuman())
         {
             m_humans.emplace_back(&player);
         }
-        else if (player.typ == H3_PlayerType::CPU)
+        else if (player.typ.isCPU())
         {
             m_enemies.emplace_back(&player);
         }
@@ -111,9 +115,9 @@ void H3_Game::startGame()
         tile.chipValue = cfg.chipValue;
         tile.angle60 = cfg.angle60;
         tile.visible = true;
+        //tile.hasRobber = false;
         tile.corners.clear();
         tile.edges.clear();
-        tile.hasRobber = false;
         tile.next.clear();
 
         const auto& tx = m_tileSize.x;
@@ -172,10 +176,10 @@ void H3_Game::startGame()
     getCamera()->lookAt( glm::vec3(-1,260,-123), glm::vec3(0,0,-55) );
 
     // Place thief:
-    H3_Tile& fdt = H3_findFirstDesertTile( *this );
-    m_thief.owner = fdt.id;
+    H3_Tile& desertTile = H3_findFirstDesertTile( *this );
+    m_thief.occupiedTileId = desertTile.id;
     m_thief.trs.reset();
-    m_thief.trs.pos = fdt.pos + glm::vec3(10,0,-30);
+    m_thief.trs.pos = desertTile.pos + glm::vec3(10,0,-30);
     m_thief.trs.update();
 
     // startGame()
@@ -548,6 +552,7 @@ void H3_Game::exitProgram()
 
 void H3_Game::exitGame()
 {
+    m_round = 0;
     m_uiMenu->setVisible(false);
     toggleMainMenu();
 }
@@ -743,7 +748,7 @@ void H3_Game::computeWinner()
 
     for ( H3_Player & player : m_players )
     {
-        player.updateVictoryPoints();
+        player.state.updateVictoryPoints();
 
         if (maxPoints < player.state.victoryPoints)
         {
@@ -773,22 +778,11 @@ void H3_Game::enterWinnerScreen()
     DE_DEBUG("winnerId(",m_winnerId,")")
 
     m_state = H3_State::Winner;
-    m_round = 0;
 
     //H3_GuiState guiState = UI_getState();
     H3_GuiState guiState;
     guiState.bWinnerScreen = true;
-    UI_setState( guiState );
-
-/*
-    if (m_uiWinnerScreen)
-    {
-        m_uiWinnerScreen->setVisible( true );
-        int w = m_driver->getScreenWidth();
-        int h = m_driver->getScreenHeight();
-        m_uiWinnerScreen->resize(0,0,w,h);
-    }
-*/
+    m_uiGame->pushState( guiState );
 }
 
 void H3_Game::restartGame()
@@ -1120,6 +1114,13 @@ void H3_Game::doDice()
             auto& tile = m_tiles[ i ];
             if ( sum == tile.chipValue )
             {
+                // Skip tile with thief...
+                if (tile.id == m_thief.occupiedTileId)
+                {
+                    DE_DEBUG("Tile[",tile.str(),"] has Thief")
+                    continue;
+                }
+
                 //DE_DEBUG("Tile[",i,"] produces resource type ", PioTileType::getString( tile.tt ) )
 
                 for ( int cornerId : tile.corners )
@@ -1265,7 +1266,7 @@ void H3_Game::leaveThiefPlacement( H3_Tile& tile )
         return;
     }
 
-    if (m_thief.owner == tile.id)
+    if (m_thief.occupiedTileId == tile.id)
     {
         DE_WARN("Cannot place robber on same tile ", tile.id)
         return;
@@ -1274,10 +1275,7 @@ void H3_Game::leaveThiefPlacement( H3_Tile& tile )
     DE_OK("")
 
     // Place Thief:
-    H3_Tile& old_tile = H3_getTile( *this, __func__, m_thief.owner);
-    old_tile.hasRobber = false;
-    tile.hasRobber = true;
-    m_thief.owner = tile.id;
+    m_thief.occupiedTileId = tile.id;
     m_thief.trs.pos = tile.pos + glm::vec3(20,0,-30);
     m_thief.trs.update();
 
@@ -1328,7 +1326,7 @@ void H3_Game::leaveThiefOutro( H3_Corner& corner )
     }
 
     // [1.] Corner must be on Robber's tile...
-    H3_Tile & tileOfRobber = H3_getTile(*this, __func__, m_thief.owner);
+    H3_Tile & tileOfRobber = H3_getTile(*this, __func__, m_thief.occupiedTileId);
 
     // [1.] Find corner on Robber's tile:
     auto itFound = std::find_if(
@@ -1365,7 +1363,7 @@ void H3_Game::leaveThiefOutro( H3_Edge& edge )
     }
 
     // [1.] Corner must be on Robber's tile...
-    H3_Tile & tileOfRobber = H3_getTile(*this, __func__, m_thief.owner);
+    H3_Tile & tileOfRobber = H3_getTile(*this, __func__, m_thief.occupiedTileId);
 
     // [1.] Find corner on Robber's tile:
     auto itFound = std::find_if(
@@ -1518,7 +1516,6 @@ void H3_Game::finalizeBuyRoad( H3_Edge & edge )
     }
 
     player.state.roads.emplace_back( m_roads.back().id );
-    player.state.newRoads.emplace_back( m_roads.back().id );
     // player.didBuyRoad++;
 
     edge.owner = player.id;
@@ -1600,7 +1597,6 @@ void H3_Game::finalizeBuyFarm( H3_Corner & corner )
     }
 
     player.state.farms.emplace_back( m_farms.back().id );
-    player.state.newFarms.emplace_back( m_farms.back().id );
     player.state.victoryPoints++;
     // player.didBuyFarm++;
 
@@ -1615,24 +1611,12 @@ void H3_Game::finalizeBuyFarm( H3_Corner & corner )
 
         switch (tile.tileType)
         {
-        case H3_TileType::Port3v1:
-            player.state.flags |= H3_Player::eFlagPort3v1;
-            break;
-        case H3_TileType::PortA:
-            player.state.flags |= H3_Player::eFlagPortA;
-            break;
-        case H3_TileType::PortB:
-            player.state.flags |= H3_Player::eFlagPortB;
-            break;
-        case H3_TileType::PortC:
-            player.state.flags |= H3_Player::eFlagPortC;
-            break;
-        case H3_TileType::PortD:
-            player.state.flags |= H3_Player::eFlagPortD;
-            break;
-        case H3_TileType::PortE:
-            player.state.flags |= H3_Player::eFlagPortE;
-            break;
+        case H3_TileType::Port3v1: player.state.hasPort3v1 = true; break;
+        case H3_TileType::PortA: player.state.hasPortA = true; break;
+        case H3_TileType::PortB: player.state.hasPortB = true; break;
+        case H3_TileType::PortC: player.state.hasPortC = true; break;
+        case H3_TileType::PortD: player.state.hasPortD = true; break;
+        case H3_TileType::PortE: player.state.hasPortE = true; break;
         default: break;
         }
     }
@@ -1664,6 +1648,21 @@ void H3_Game::doBuyCity()
         return;
     }
 
+    H3_Player & player = getPlayer(m_playerId);
+    bool bCanBuy = player.state.bank.canBuyCity();
+
+    if (m_bDebugLogic)
+    {
+        DE_DEBUG("Player[",player.id,"] ",player.name, " canBuyCity = ",bCanBuy)
+        DE_ERROR("State ", m_state.str())
+    }
+
+    if (!bCanBuy)
+    {
+        DE_ERROR("Invalid state ", m_state.str())
+        return;
+    }
+
     m_state = H3_State::PlaceCity;
     UI_updateActions();
 }
@@ -1671,6 +1670,8 @@ void H3_Game::doBuyCity()
 void H3_Game::finalizeBuyCity( H3_Farm & farm )
 {
     DE_DEBUG("H3_finalizeBuyCity()")
+
+    H3_Player & player = getCurrentPlayer();
 
     if ( m_state != H3_State::PlaceCity )
     {
@@ -1686,33 +1687,26 @@ void H3_Game::finalizeBuyCity( H3_Farm & farm )
 
     if ( farm.owner != m_playerId )
     {
-        DE_ERROR("Farm owner ",farm.owner," is not player ", m_playerId )
+        DE_ERROR("Player[", player.id,"] ",player.name," is not farm owner. Farm:", farm.id)
         return;
     }
 
-    auto& player = getCurrentPlayer();
     if ( !player.state.bank.canBuyCity() )
     {
-        DE_ERROR("Player ", player.id, " cannot afford a city" )
+        DE_ERROR("Player[", player.id,"] ",player.name," cannot afford a city" )
         return;
     }
 
     H3_Corner & corner = H3_getCorner(*this, __func__, farm.cornerId);
     if ( corner.building_type != 1 )
     {
-        DE_ERROR("Corner not built with farm, corner.id = ", corner.id )
-        return;
-    }
-
-    if ( !player.state.bank.canBuyCity() )
-    {
-        DE_ERROR("Player ", player.id, " cannot afford a city" )
+        DE_ERROR("Player[", player.id,"] ",player.name," corner[",corner.id,"] has no farm.")
         return;
     }
 
     if ( !player.state.bank.buyCity() )
     {
-        DE_ERROR("Player ", player.id, " cannot buy a city" )
+        DE_ERROR("Player[", player.id,"] ",player.name," cannot buy a city ", player.state.bank.str() )
         return;
     }
 
@@ -1820,12 +1814,12 @@ void H3_Game::doBuyCard()
     if (dbTimeInMilliseconds() % 3 == 2)
     {
         card.typ = H3_Tex::EventCardPoint;
-        player.state.newPointCards.push_back( card.id );
+        player.state.pointCards.push_back( card.id );
     }
     else
     {
         card.typ = H3_Tex::EventCardKnight;
-        player.state.newKnightCards.push_back( card.id );
+        player.state.knightCards.push_back( card.id );
     }
 
     UI_logBuyCard( *this, int(card.typ) );

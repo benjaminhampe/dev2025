@@ -191,9 +191,9 @@ struct H3_Game
     int m_playerId;   // current Player index
     uint32_t m_winnerId;
 
-
     bool m_bPaintEvents = false;
     bool m_bShouldRun = true;
+    bool m_bDebugLogic = true;
     uint32_t m_fpsTimerId;  // Screen FPS...
     uint32_t m_capTimerId;  // Window title update...
 

@@ -13,12 +13,13 @@ struct UI_WinnerScreen : public de::gui::Panel
 
     void updateData();
 protected:
-    de::gui::Button* createButton(std::string txt, de::gpu::TexRef ref, de::Recti pos);
+    de::gui::Button* createButton(std::string txt, de::gpu::TexRef ref);
 private:
     // [Necessary Game Logic]
     H3_Game* m_game;
 
-    de::gui::Button* m_btnClose;
+    de::gui::Button* m_btnContinueGame;
+    de::gui::Button* m_btnReturnToMenu;
 
     // de::gui::Label* m_lblWinner;
     // de::gui::Label* m_lblWinnerIcon;

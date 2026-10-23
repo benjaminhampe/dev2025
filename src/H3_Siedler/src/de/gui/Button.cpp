@@ -59,21 +59,21 @@ Button::draw()
     u32 textFgColor = m_textFgColors[eWS_Idle];
     u32 textBgColor = m_textBgColors[eWS_Idle];
 
-    if (hasFlags(eWF_Hovered))
+    if (isHovered())
     {
         fillColor = m_fillColors[eWS_Hovered];
         borderColor = m_fillColors[eWS_Hovered];
         textFgColor = m_textFgColors[eWS_Hovered];
         textBgColor = m_textBgColors[eWS_Hovered];
     }
-    else if (hasFlags(eWF_Pressed))
+    else if (isPressed())
     {
         fillColor = m_fillColors[eWS_Pressed];
         borderColor = m_fillColors[eWS_Pressed];
         textFgColor = m_textFgColors[eWS_Pressed];
         textBgColor = m_textBgColors[eWS_Pressed];
     }
-    else if (hasFlags(eWF_Released))
+    else if (isReleased())
     {
         fillColor = m_fillColors[eWS_Released];
         borderColor = m_fillColors[eWS_Released];
@@ -156,9 +156,9 @@ void Button::onEvent( const Event& event )
         //if (event.enterEvent.m_window == this)
         //{
             //DE_DEBUG(event.str())
-            setFlags( eWF_Hovered, true );
-            setFlags( eWF_Pressed, false );
-            setFlags( eWF_Released, false );
+            setHovered( true );
+            setPressed( false );
+            setReleased( false );
         //}
     }
     else if (event.type == EventType::LEAVE)
@@ -166,25 +166,25 @@ void Button::onEvent( const Event& event )
         //if (event.leaveEvent.m_window == this)
         //{
             //DE_DEBUG(event.str())
-            setFlags( eWF_Hovered, false );
-            setFlags( eWF_Pressed, false );
-            setFlags( eWF_Released, false );
+            setHovered( false );
+            setPressed( false );
+            setReleased( false );
         //}
     }
     else if (event.type == EventType::MOUSE_PRESS)
     {
-        if (hasFlags(eWF_Hovered))
+        if (isHovered())
         {
-            setFlags( eWF_Pressed, true );
-            setFlags( eWF_Released, false );
+            setPressed( true );
+            setReleased( false );
         }
     }
     else if (event.type == EventType::MOUSE_RELEASE)
     {
-        if (hasFlags(eWF_Hovered))
+        if (isHovered())
         {
-            setFlags( eWF_Pressed, false );
-            setFlags( eWF_Released, true );
+            setPressed( false );
+            setReleased( true );
 
             // We love the clickEvents and decide action in callback
             // if (isEnabled())
@@ -210,8 +210,8 @@ void Button::onEvent( const Event& event )
         }
         else
         {
-            setFlags( eWF_Pressed, false );
-            setFlags( eWF_Released, false );
+            setPressed( false );
+            setReleased( false );
         }
     }
 }

@@ -20,6 +20,7 @@ createActionButton(H3_Game* game, H3_Tex::eID id, de::gui::Env* env, de::gui::Wi
     //btn->setFillColor(dbRGB(255,255,255), de::gui::Widget::eWS_Hovered);
     return btn;
 }
+
 // =====================================================================
 UI_Actions::UI_Actions( H3_Game* game, de::gui::Env* env, de::gui::Widget* parent, u32 id, const de::Recti& pos )
 // =====================================================================
@@ -122,24 +123,19 @@ void UI_Actions::resize(int X, int Y, int W, int H)
 {
     m_rect = de::Recti(X,Y,W,H);
 
-    // DE_WARN("")
-
     const float zoom = m_env->getZoom();
-
     const int p = zoom * 5;
-    const int s = zoom * 2; // = zoom * (68-64)/2
+    const int s = zoom * 2;
     const int w1 = zoom * 68;
     const int h1 = zoom * 28;
     const int w2 = zoom * 64;
     const int h2 = zoom * 64;
-
     const int w3 = w2;
     const int h3 = zoom * 96;
-
-    int x0 = W/2 - 2*w1;
+    const int x0 = W/2 - 2*w1;
     int x = x0;
     int y = H - 1 - p - h1;
-    m_btnDice->resize(x,y,w1,h1); x += w1 + p;
+    m_btnDice->resize(x,y,w1,h1);    x += w1 + p;
     m_btnBanking->resize(x,y,w1,h1); x += w1 + p;
     m_btnTrading->resize(x,y,w1,h1); x += w1 + p;
     m_btnEndTurn->resize(x,y,w1,h1); // x += w2 + p;
@@ -157,9 +153,7 @@ void UI_Actions::resize(int X, int Y, int W, int H)
     m_btnPointCard->resize(x,y,w3,h3); x += w2 + p;
     m_btnKnightCard->resize(x,y,w3,h3); x += w2 + p;
     m_btnInventCard->resize(x,y,w3,h3); x += w2 + p;
-    m_btnMonopolCard->resize(x,y,w3,h3); x += w2 + p;
-    //DE_DEBUG("this = ", this->getRect().str())
-    //DE_DEBUG("m_btnDice = ", m_btnDice->getRect().str(), ", visible = ", m_btnDice->isVisible())
+    m_btnMonopolCard->resize(x,y,w3,h3); // x += w2 + p;
 }
 
 void UI_Actions::hideActions()
@@ -230,13 +224,13 @@ void UI_Actions::updateVisibility()
     // Round - 2
     else if ( m_game->m_round == 2 )
     {
-        if ( player.state.newFarms.empty() )
+        if ( player.state.farms.size() < 1 )
         {
             m_btnBuyFarm->setVisible(true);
         }
         else
         {
-            if ( player.state.newRoads.empty() )
+            if ( player.state.roads.size() < 1 )
             {
                 m_btnBuyRoad->setVisible(true);
             }
@@ -249,13 +243,13 @@ void UI_Actions::updateVisibility()
     // Round - 3
     else if ( m_game->m_round == 3 )
     {
-        if ( player.state.newFarms.empty() )
+        if ( player.state.farms.size() < 2 )
         {
             m_btnBuyFarm->setVisible(true);
         }
         else
         {
-            if ( player.state.newRoads.empty() )
+            if ( player.state.roads.size() < 2 )
             {
                 m_btnBuyRoad->setVisible(true);
             }
@@ -272,47 +266,16 @@ void UI_Actions::updateVisibility()
         {
             m_btnEndTurn->setVisible(true);
 
-            if ( player.state.canBanking() )
-            {
-                m_btnBanking->setVisible(true);
-            }
-            if ( player.state.canTrading() )
-            {
-                m_btnTrading->setVisible(true);
-            }
-            if ( player.state.bank.canBuyRoad() )
-            {
-                m_btnBuyRoad->setVisible(true);
-            }
-            if ( player.state.bank.canBuyFarm() )
-            {
-                m_btnBuyFarm->setVisible(true);
-            }
-            if ( player.state.bank.canBuyCity() )
-            {
-                m_btnBuyCity->setVisible(true);
-            }
-            if ( player.state.bank.canBuyCard() )
-            {
-                m_btnBuyCard->setVisible(true);
-            }
-
-            if ( player.state.unrevealedPointCards() )
-            {
-                m_btnPointCard->setVisible(true);
-            }
-            if ( player.state.unrevealedKnightCards() )
-            {
-                m_btnKnightCard->setVisible(true);
-            }
-            if ( player.state.unrevealedInventCards() )
-            {
-                m_btnInventCard->setVisible(true);
-            }
-            if ( player.state.unrevealedMonopolCards() )
-            {
-                m_btnMonopolCard->setVisible(true);
-            }
+            if ( player.state.canBanking() ) { m_btnBanking->setVisible(true); }
+            if ( player.state.canTrading() ) { m_btnTrading->setVisible(true); }
+            if ( player.state.bank.canBuyRoad() ) { m_btnBuyRoad->setVisible(true); }
+            if ( player.state.bank.canBuyFarm() ) { m_btnBuyFarm->setVisible(true); }
+            if ( player.state.bank.canBuyCity() ) { m_btnBuyCity->setVisible(true); }
+            if ( player.state.bank.canBuyCard() ) { m_btnBuyCard->setVisible(true); }
+            if ( player.state.unrevealedPointCards() ) { m_btnPointCard->setVisible(true); }
+            if ( player.state.unrevealedKnightCards() ) { m_btnKnightCard->setVisible(true); }
+            if ( player.state.unrevealedInventCards() ) { m_btnInventCard->setVisible(true); }
+            if ( player.state.unrevealedMonopolCards() ) { m_btnMonopolCard->setVisible(true); }
         }
         else
         {
@@ -320,9 +283,3 @@ void UI_Actions::updateVisibility()
         }
     }
 }
-
-// void UI_Actions::draw()
-// {
-//     Widget::draw();
-// }
-

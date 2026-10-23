@@ -259,11 +259,11 @@ void UI_WorldCreator::setCfg( const H3_Cfg& cfg )
         throw std::runtime_error(s);
     }
 
-    m_world->disableFlags(eWF_Drawing);
+    m_world->setDrawing(false);
     std::this_thread::sleep_for(std::chrono::seconds(1));
     m_cfg = cfg;
     m_world->setPreset(&m_cfg);
-    m_world->enableFlags(eWF_Drawing);
+    m_world->setDrawing(true);
 
     m_presetName->setText( m_cfg.presetName );
     m_edtVictoryPoints->setValue( m_cfg.victoryPoints );

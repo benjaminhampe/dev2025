@@ -47,17 +47,17 @@ void Panel::draw()
     u32 fillColor = m_fillColors[eWS_Idle];
     u32 borderColor = m_borderColors[eWS_Idle];
 
-    if (hasFlags(eWF_Pressed))
+    if (isPressed())
     {
         fillColor = m_fillColors[eWS_Pressed];
         borderColor = m_fillColors[eWS_Pressed];
     }
-    else if (hasFlags(eWS_Released))
+    else if (isReleased())
     {
         fillColor = m_fillColors[eWS_Released];
         borderColor = m_fillColors[eWS_Released];
     }
-    else if (hasFlags(eWS_Hovered))
+    else if (isHovered())
     {
         fillColor = m_fillColors[eWS_Hovered];
         borderColor = m_fillColors[eWS_Hovered];
@@ -111,12 +111,12 @@ void Panel::onEvent( const Event& event )
     if (event.type == EventType::ENTER)
     {
         //DE_DEBUG(event.str())
-        setFlags( eWS_Hovered, true );
+        setHovered( true );
     }
     else if (event.type == EventType::LEAVE)
     {
         //DE_DEBUG(event.str())
-        setFlags( eWS_Hovered, false );
+        setHovered( false );
     }
     else
     {

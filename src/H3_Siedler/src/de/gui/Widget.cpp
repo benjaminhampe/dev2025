@@ -6,15 +6,21 @@ namespace de {
 namespace gui {
 
 // =====================================================================
-Widget::Widget( Env* env, Widget* parent, u32 id, const Recti& r )
+Widget::Widget( Env* env, Widget* parent, u32 id, const Recti& pos )
     // =====================================================================
-    : m_flags(eWF_Visible | eWF_Enabled | eWF_DrawChildren)
-    , m_id(id)
-    , m_rect(r)
-    , m_env(env)
-    , m_parent(parent)
-    // --- Text ---
-    , m_font("Postamt",16)
+    : m_env{ env }
+    , m_parent{ parent }
+    , m_id{ id }
+    , m_bVisible{ true }
+    , m_bEnabled{ true }
+    , m_bHovered{ false }
+    , m_bPickable{ false }
+    , m_bPressed{ false }
+    , m_bReleased{ false }
+    , m_bDrawChildren{ true }
+    , m_bDrawing{ false }
+    , m_rect{ pos }
+    , m_font{ "Postamt",20 }
 {
     if (!m_env)
     {
@@ -71,12 +77,12 @@ void Widget::onEvent( const Event& event )
     if (event.type == EventType::ENTER)
     {
         //DE_DEBUG(event.str())
-        setFlags( eWS_Hovered, true );
+        setHovered( true );
     }
     else if (event.type == EventType::LEAVE)
     {
         //DE_DEBUG(event.str())
-        setFlags( eWS_Hovered, false );
+        setHovered( false );
     }
     else
     {
