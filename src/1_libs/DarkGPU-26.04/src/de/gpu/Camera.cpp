@@ -309,6 +309,107 @@ Ray3f Camera::computeRayf( int mouse_x, int mouse_y ) const
    return r3d.convert< float >();
 }
 
+/*
+// Returns screen space (X, Y) and normalized depth (Z)
+// Returns false if the coordinate is behind the camera clip plane
+bool worldToScreen(const glm::dvec3& worldPos, const glm::dmat4& viewProj, const glm::ivec2& screenSize, glm::dvec3& outScreenSpace)
+{
+    glm::dvec4 clipPos = viewProj * glm::dvec4(worldPos, 1.0);
+
+    if (clipPos.w <= 0.0) return false;
+
+    glm::dvec3 ndcSpace = glm::dvec3(clipPos) / clipPos.w;
+
+    // Check if within bounds of near/far planes (Assuming OpenGL range [-1, 1])
+    if (ndcSpace.z < -1.0 || ndcSpace.z > 1.0) return false;
+
+    outScreenSpace.x = (ndcSpace.x + 1.0) * 0.5 * screenSize.x;
+    outScreenSpace.y = (1.0 - ndcSpace.y) * 0.5 * screenSize.y;
+    outScreenSpace.z = ndcSpace.z; // Keep for depth comparisons / scaling
+
+    return true;
+}
+
+// Berechnet Screen-Space (X, Y) und Tiefeninformation (Z)
+// Gibt 'false' zurück, wenn der Punkt hinter der Kamera oder außerhalb des Frustums liegt.
+bool worldToScreen(const glm::dmat4& modelMat,
+                   const glm::dvec3& localOffset,
+                   const glm::dmat4& viewMat,
+                   const glm::dmat4& projMat,
+                   const glm::ivec2& screenSize,
+                   glm::dvec3& outScreenSpace)
+{
+    // 1. Lokalen Offset in die Weltkoordinaten des Objekts einrechnen
+    glm::dvec4 localPos = glm::dvec4(localOffset, 1.0);
+    glm::dvec4 worldPos = modelMat * localPos;
+
+    // 2. Transformation in den homogenen Clip-Space
+    glm::dvec4 clipPos = (projMat * viewMat) * worldPos;
+
+    // 3. Sicherheitscheck: Liegt der Punkt hinter der Kamera?
+    if (clipPos.w <= 0.0) {
+        return false;
+    }
+
+    // 4. Perspektivische Teilung -> NDC Space [-1.0, 1.0]
+    glm::dvec3 ndcSpace = glm::dvec3(clipPos) / clipPos.w;
+
+    // 5. Frustum-Check (Z-Achse): Liegt der Punkt zwischen Near- und Far-Plane?
+    // Hinweis: Nutzt deine Engine Reversed-Z oder DirectX/Vulkan, lautet der Bereich [0.0, 1.0]
+    if (ndcSpace.z < -1.0 || ndcSpace.z > 1.0) {
+        return false;
+    }
+
+    // 6. Umrechnung von NDC in Pixel-Koordinaten (inkl. Y-Achsen-Flip)
+    outScreenSpace.x = (ndcSpace.x + 1.0) * 0.5 * screenSize.x;
+    outScreenSpace.y = (1.0 - ndcSpace.y) * 0.5 * screenSize.y;
+
+    // 7. Z-Koordinate für spätere Depth-Checks oder Distanz-Skalierung sichern
+    outScreenSpace.z = ndcSpace.z;
+
+    return true;
+}
+*/
+
+bool
+Camera::projectToScreen(
+    glm::dvec3& screenPos,
+    const M4 & modelMat,
+    const V3 & localOffset) const
+{
+    // 1. Lokalen Offset in die Weltkoordinaten des Objekts einrechnen
+    V4 localPos = V4(localOffset, 1.0);
+    V4 worldPos = modelMat * localPos;
+
+    // 2. Transformation in den homogenen Clip-Space
+    V4 clipPos = getViewProjectionMatrix() * worldPos;
+
+    // 3. Sicherheitscheck: Liegt der Punkt hinter der Kamera?
+    if (clipPos.w <= 0.0)
+    {
+        return false;
+    }
+
+    // 4. Perspektivische Teilung -> NDC Space [-1.0, 1.0]
+    V3 ndcSpace = V3(clipPos) / clipPos.w;
+
+    // 5. Frustum-Check (Z-Achse):
+    // Liegt der Punkt zwischen Near- und Far-Plane?
+    // Hinweis: Wenn Reversed-Z oder DirectX/Vulkan, dann Bereich [0.0, 1.0]
+    if (ndcSpace.z < -1.0 || ndcSpace.z > 1.0)
+    {
+        return false;
+    }
+
+    // 6. Umrechnung von NDC in Pixel-Koordinaten (inkl. Y-Achsen-Flip)
+    screenPos.x = (ndcSpace.x + 1.0) * 0.5 * getWidth();
+    screenPos.y = (1.0 - ndcSpace.y) * 0.5 * getHeight();
+
+    // 7. Z-Koordinate für Depth-Checks oder Distanz-Skalierung sichern
+    screenPos.z = ndcSpace.z;
+    return true;
+}
+
 inline void setCol(glm::mat4& M, int col, const glm::vec3& v)
 {
     M[col][0] = v.x;

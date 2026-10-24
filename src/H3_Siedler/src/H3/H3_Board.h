@@ -454,7 +454,7 @@ struct H3_Thief
 {
     u32 id;
     u32 occupiedTileId; // tileId
-    de::TRSf trs;    // Computed 3d model space transform
+    de::TRSd trs;    // Computed 3d model space transform
     std::vector<de::Triangle3f> triangles; // Cylinder
     H3_Thief();
     std::string str() const;

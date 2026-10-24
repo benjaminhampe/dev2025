@@ -1267,6 +1267,8 @@ void H3_Game::enterThiefPlacement()
 
     DE_DEBUG(player.name," places thief to tile")
 
+    m_animations.addAnimation( new H3_ArrowToThiefAnimation(this) );
+
     marqueeH1(L"Place thief to another Tile", 2000, player.color);
 
     if (player.typ == H3_PlayerType::CPU)

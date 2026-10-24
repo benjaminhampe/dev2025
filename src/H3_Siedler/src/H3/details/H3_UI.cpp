@@ -128,15 +128,16 @@ void UI_drawRoundStats( H3_Game & game)
     de::Font5x8 font1(3,3,0,0,1,1);
 
     int ln1 = font1.getTextSize("W").height + p;
-    auto s0 = dbStr("FPS(",fps,")");
-    auto s1 = dbStr("Screen(",w,",",h,")");
-    auto s2 = dbStr("Mouse(",mx,",",my,") L(", game.m_isMouseLeftPressed, "), R(", game.m_isMouseRightPressed,"), M(", game.m_isMouseMiddlePressed,")");
-    H3_drawText( game, x,y, s0, dbRGB(255,225,100), align, font1 );
-    y += ln1;
-    H3_drawText( game, x,y, s1, dbRGB(255,100,100), align, font1 );
-    y += ln1;
-    H3_drawText( game, x,y, s2, dbRGB(255,200,100), align, font1 );
-    y += ln1;
+    const auto s0 = dbStr("FPS(",fps,")");
+    const auto s1 = dbStr("Screen(",w,",",h,")");
+    const auto s2 = dbStr("Mouse(",mx,",",my,") L(", game.m_isMouseLeftPressed, "), R(", game.m_isMouseRightPressed,"), M(", game.m_isMouseMiddlePressed,")");
+    const auto fx = double(mx) / double(w);
+    const auto fy = double(my) / double(h);
+    const auto s3 = dbStr("Relative-Mouse(",fx,",",fy,")");
+    H3_drawText(game,x,y,s0,dbRGB(255,225,100),align,font1); y += ln1;
+    H3_drawText(game,x,y,s1,dbRGB(255,100,100),align,font1); y += ln1;
+    H3_drawText(game,x,y,s2,dbRGB(255,150,100),align,font1); y += ln1;
+    H3_drawText(game,x,y,s3,dbRGB(255,200,100),align,font1); y += ln1;
 
     auto camera = driver->getCamera();
     if ( camera )
@@ -144,12 +145,9 @@ void UI_drawRoundStats( H3_Game & game)
         auto s1 = dbStr("Camera-Pos(",glm::ivec3(camera->getPos()),")");
         auto s2 = dbStr("Camera-Target(",glm::ivec3(camera->getTarget()),")");
         auto s3 = dbStr("Camera-Angle(",camera->getAng(),")");
-        H3_drawText( game, x,y, s1, dbRGB(100,200,100), align, font1 );
-        y += ln1;
-        H3_drawText( game, x,y, s2, dbRGB(125,215,125), align, font1 );
-        y += ln1;
-        H3_drawText( game, x,y, s3, dbRGB(145,225,145), align, font1 );
-        y += ln1;
+        H3_drawText(game,x,y,s1,dbRGB(100,200,100),align,font1); y += ln1;
+        H3_drawText(game,x,y,s2,dbRGB(125,215,125),align,font1); y += ln1;
+        H3_drawText(game,x,y,s3,dbRGB(145,225,145),align,font1); y += ln1;
     }
 
     auto s6 = dbStr("State = ", H3_State::getString( game.m_state ));
@@ -164,21 +162,133 @@ void UI_drawRoundStats( H3_Game & game)
     auto sF = dbStr("HoverFarm = ", game.m_hoverFarmId);
 
     //int ln = font1.getTextSize("W").height + 10;
-    H3_drawText( game, x,y, s6, 0xFFFFFFFF, align, font1 ); y += ln1;
-    H3_drawText( game, x,y, s7, 0xFFFFFFFF, align, font1 ); y += ln1;
-    H3_drawText( game, x,y, s8, 0xFFFFFFFF, align, font1 ); y += ln1;
-    H3_drawText( game, x,y, s9, 0xFFFFFFFF, align, font1 ); y += ln1;
-    H3_drawText( game, x,y, sA, 0xFFFFFFFF, align, font1 ); y += ln1;
-    H3_drawText( game, x,y, sB, 0xFFFFFFFF, align, font1 ); y += ln1;
-    H3_drawText( game, x,y, sC, 0xFFFFFFFF, align, font1 ); y += ln1;
-    H3_drawText( game, x,y, sD, 0xFFFFFFFF, align, font1 ); y += ln1;
-    H3_drawText( game, x,y, sE, 0xFFFFFFFF, align, font1 ); y += ln1;
-    H3_drawText( game, x,y, sF, 0xFFFFFFFF, align, font1 ); y += ln1;
+    H3_drawText(game,x,y,s6,0xFFFFFFFF,align,font1); y += ln1;
+    H3_drawText(game,x,y,s7,0xFFFFFFFF,align,font1); y += ln1;
+    H3_drawText(game,x,y,s8,0xFFFFFFFF,align,font1); y += ln1;
+    H3_drawText(game,x,y,s9,0xFFFFFFFF,align,font1); y += ln1;
+    H3_drawText(game,x,y,sA,0xFFFFFFFF,align,font1); y += ln1;
+    H3_drawText(game,x,y,sB,0xFFFFFFFF,align,font1); y += ln1;
+    H3_drawText(game,x,y,sC,0xFFFFFFFF,align,font1); y += ln1;
+    H3_drawText(game,x,y,sD,0xFFFFFFFF,align,font1); y += ln1;
+    H3_drawText(game,x,y,sE,0xFFFFFFFF,align,font1); y += ln1;
+    H3_drawText(game,x,y,sF,0xFFFFFFFF,align,font1); // y += ln1;
 
-    H3_drawDice( game, de::Recti(x - 128-11, y, 64,64), 12, game.m_dice.a );
-    H3_drawDice( game, de::Recti(x - 64-1, y, 64,64), 12, game.m_dice.b );
+    //H3_drawDice( game, de::Recti(x - 128-11, y, 64,64), 12, game.m_dice.a );
+    //H3_drawDice( game, de::Recti(x - 64-1, y, 64,64), 12, game.m_dice.b );
     //y += 64;
 }
+
+
+void UI_Stats_drawItem( H3_Game & game, int x, int y, int w, int h,
+                       int texId, int value, de::Font5x8 font )
+{
+    auto driver = game.getDriver();
+    if ( !driver ) { DE_ERROR("No driver") return; }
+
+    const auto tex = game.getTex(H3_Tex::eID(texId), __func__);
+    const auto str = std::to_string( value );
+
+    auto r = glm::ivec2(8,8);
+    H3_draw2DRoundRect( game, de::Recti(x,y,w,h), r, tex );
+
+    const float zoom = game.getZoom();
+
+    auto ts = font.getTextSize( str );
+
+    int s = zoom;
+    int tw = ts.width;
+    int th = (ts.height / 8) * 7;
+
+    auto r_num = de::Recti(x + w - 3 - s - tw,
+                           y + h - 3 - s - th,
+                           tw + 2*s,
+                           th + 2*s);
+
+    H3_draw2DRect( game, r_num, dbRGB(0,0,0,128) );
+
+    H3_drawText( game, r_num.x + 1, r_num.y + 1, str, dbRGB(255,255,255), de::Align::Default, font);
+}
+
+void UI_Stats_render( H3_Game & game )
+{
+    const float zoom = game.getZoom();
+
+    H3_Player & player = game.getCurrentPlayer();
+
+    auto driver = game.getDriver();
+    //auto screenRenderer = driver->getScreenRenderer();
+    //auto font58Renderer = driver->getFontRenderer5x8();
+    const auto scr_w = driver->getScreenWidth();
+    const auto scr_h = driver->getScreenHeight();
+
+    de::Font5x8 font;
+    font.quadWidth = zoom*2;
+    font.quadHeight = zoom*2;
+    font.quadSpacingX = 0;
+    font.quadSpacingY = 0;
+    font.glyphSpacingX = 1;
+    font.glyphSpacingY = 1;
+
+    const auto playerTex = game.getTex((H3_Tex::eID)player.avatar, __func__ );
+    const auto playerName = player.name;
+    const auto playerColor = player.color;
+
+    int s = 1; // spacing
+    int p = zoom * 5; // padding
+    int w = zoom * 39;
+
+    int h0 = zoom * 64;
+    int h1 = zoom * 64;
+    int h2 = zoom * 39;
+
+    int wT = 5 * w + 2*p;
+    int hT = h0 + h1 + h2 + 2*p;
+
+    int x = 0;
+    int y = scr_h - 1 - p - h2 - s - h1 - p - h0 - p;
+
+    x = p;
+    y = scr_h - 1 - hT;
+
+    auto r = glm::ivec2(8,8);
+
+    H3_draw2DRoundRect( game, de::Recti(x,y,wT,hT), r, playerColor );
+    H3_draw2DRoundRect( game, de::Recti(x + p, y + p, h0, h0), r, playerTex );
+
+    x = p;
+    y = scr_h - 1 - p - h2 - s - h1;
+    UI_Stats_drawItem( game, x,y,w,h1, H3_Tex::CardA, player.state.bank.A, font); x += w + s;
+    UI_Stats_drawItem( game, x,y,w,h1, H3_Tex::CardB, player.state.bank.B, font); x += w + s;
+    UI_Stats_drawItem( game, x,y,w,h1, H3_Tex::CardC, player.state.bank.C, font); x += w + s;
+    UI_Stats_drawItem( game, x,y,w,h1, H3_Tex::CardD, player.state.bank.D, font); x += w + s;
+    UI_Stats_drawItem( game, x,y,w,h1, H3_Tex::CardE, player.state.bank.E, font); // x += w + s;
+
+    x = p;
+    y = scr_h - 1 - p - h2;
+    UI_Stats_drawItem( game, x,y,w,h2, H3_Tex::StatVic, player.state.victoryPoints, font); x += w + s;
+    UI_Stats_drawItem( game, x,y,w,h2, H3_Tex::StatRoad, player.state.roads.size(), font); x += w + s;
+    UI_Stats_drawItem( game, x,y,w,h2, H3_Tex::StatFarm, player.state.farms.size(), font); x += w + s;
+    UI_Stats_drawItem( game, x,y,w,h2, H3_Tex::StatCity, player.state.citys.size(), font); x += w + s;
+    UI_Stats_drawItem( game, x,y,w,h2, H3_Tex::StatCard,
+                       player.state.knightCards.size(), font); x += w + s;
+
+    // Cards
+    int wC = zoom * 39;
+    int hC = zoom * 64;
+    x += p;
+    y = scr_h - 1 - p - hC;
+    UI_Stats_drawItem( game, x,y,wC,hC, H3_Tex::EventCardKnight, player.state.knightCards.size(), font); x += wC + s;
+    UI_Stats_drawItem( game, x,y,wC,hC, H3_Tex::EventCardPoint, player.state.pointCards.size(), font); // x += wC + s;
+
+    // Bonus
+    int wB = zoom * 64;
+    int hB = zoom * 64;
+    x = scr_w - 1 - p - wB - p - wB;
+    y = scr_h - 1 - p - hB;
+    UI_Stats_drawItem( game, x,y,wB,hB, H3_Tex::BonusArmy, player.state.hasBonusArmy, font); x += wB + p;
+    UI_Stats_drawItem( game, x,y,wB,hB, H3_Tex::BonusRoad, player.state.hasBonusRoad, font); // x += wB + p;
+}
+
 
 void UI_Stats_update( H3_Game & game )
 {
@@ -311,115 +421,6 @@ void UI_Stats_hide( H3_Game & game ) { UI_Stats_setVisible( game, false ); }
 void UI_Stats_show( H3_Game & game ) { UI_Stats_setVisible( game, true ); }
 */
 
-void UI_Stats_drawItem( H3_Game & game, int x, int y, int w, int h,
-                       int texId, int value, de::Font5x8 font )
-{
-    auto driver = game.getDriver();
-    if ( !driver ) { DE_ERROR("No driver") return; }
-
-    const auto tex = game.getTex(H3_Tex::eID(texId), __func__);
-    const auto str = std::to_string( value );
-
-    auto r = glm::ivec2(8,8);
-    H3_draw2DRoundRect( game, de::Recti(x,y,w,h), r, tex );
-
-    const float zoom = game.getZoom();
-
-    auto ts = font.getTextSize( str );
-
-    int s = zoom;
-    int tw = ts.width;
-    int th = (ts.height / 8) * 7;
-
-    auto r_num = de::Recti(x + w - 3 - s - tw,
-                           y + h - 3 - s - th,
-                           tw + 2*s,
-                           th + 2*s);
-
-    H3_draw2DRect( game, r_num, dbRGB(0,0,0,128) );
-
-    H3_drawText( game, r_num.x + 1, r_num.y + 1, str, dbRGB(255,255,255), de::Align::Default, font);
-}
-
-void UI_Stats_render( H3_Game & game )
-{
-    const float zoom = game.getZoom();
-
-    H3_Player & player = game.getCurrentPlayer();
-
-    auto driver = game.getDriver();
-    //auto screenRenderer = driver->getScreenRenderer();
-    //auto font58Renderer = driver->getFontRenderer5x8();
-    const auto scr_w = driver->getScreenWidth();
-    const auto scr_h = driver->getScreenHeight();
-
-    de::Font5x8 font;
-    font.quadWidth = zoom*2;
-    font.quadHeight = zoom*2;
-    font.quadSpacingX = 0;
-    font.quadSpacingY = 0;
-    font.glyphSpacingX = 1;
-    font.glyphSpacingY = 1;
-
-    const auto playerTex = game.getTex((H3_Tex::eID)player.avatar, __func__ );
-    const auto playerName = player.name;
-    const auto playerColor = player.color;
-
-    int s = 1; // spacing
-    int p = zoom * 5; // padding
-    int w = zoom * 39;
-
-    int h0 = zoom * 64;
-    int h1 = zoom * 64;
-    int h2 = zoom * 39;
-
-    int wT = 5 * w + 2*p;
-    int hT = h0 + h1 + h2 + 2*p;
-
-    int x = 0;
-    int y = scr_h - 1 - p - h2 - s - h1 - p - h0 - p;
-
-    x = p;
-    y = scr_h - 1 - hT;
-
-    auto r = glm::ivec2(8,8);
-
-    H3_draw2DRoundRect( game, de::Recti(x,y,wT,hT), r, playerColor );
-    H3_draw2DRoundRect( game, de::Recti(x + p, y + p, h0, h0), r, playerTex );
-
-    x = p;
-    y = scr_h - 1 - p - h2 - s - h1;
-    UI_Stats_drawItem( game, x,y,w,h1, H3_Tex::CardA, player.state.bank.A, font); x += w + s;
-    UI_Stats_drawItem( game, x,y,w,h1, H3_Tex::CardB, player.state.bank.B, font); x += w + s;
-    UI_Stats_drawItem( game, x,y,w,h1, H3_Tex::CardC, player.state.bank.C, font); x += w + s;
-    UI_Stats_drawItem( game, x,y,w,h1, H3_Tex::CardD, player.state.bank.D, font); x += w + s;
-    UI_Stats_drawItem( game, x,y,w,h1, H3_Tex::CardE, player.state.bank.E, font); // x += w + s;
-
-    x = p;
-    y = scr_h - 1 - p - h2;
-    UI_Stats_drawItem( game, x,y,w,h2, H3_Tex::StatVic, player.state.victoryPoints, font); x += w + s;
-    UI_Stats_drawItem( game, x,y,w,h2, H3_Tex::StatRoad, player.state.roads.size(), font); x += w + s;
-    UI_Stats_drawItem( game, x,y,w,h2, H3_Tex::StatFarm, player.state.farms.size(), font); x += w + s;
-    UI_Stats_drawItem( game, x,y,w,h2, H3_Tex::StatCity, player.state.citys.size(), font); x += w + s;
-    UI_Stats_drawItem( game, x,y,w,h2, H3_Tex::StatCard,
-                       player.state.knightCards.size(), font); x += w + s;
-
-    // Cards
-    int wC = zoom * 39;
-    int hC = zoom * 64;
-    x += p;
-    y = scr_h - 1 - p - hC;
-    UI_Stats_drawItem( game, x,y,wC,hC, H3_Tex::EventCardKnight, player.state.knightCards.size(), font); x += wC + s;
-    UI_Stats_drawItem( game, x,y,wC,hC, H3_Tex::EventCardPoint, player.state.pointCards.size(), font); // x += wC + s;
-
-    // Bonus
-    int wB = zoom * 64;
-    int hB = zoom * 64;
-    x = scr_w - 1 - p - wB - p - wB;
-    y = scr_h - 1 - p - hB;
-    UI_Stats_drawItem( game, x,y,wB,hB, H3_Tex::BonusArmy, player.state.hasBonusArmy, font); x += wB + p;
-    UI_Stats_drawItem( game, x,y,wB,hB, H3_Tex::BonusRoad, player.state.hasBonusRoad, font); // x += wB + p;
-}
 
 /*
 void UI_drawDlgLooseCards( H3_Game & game )

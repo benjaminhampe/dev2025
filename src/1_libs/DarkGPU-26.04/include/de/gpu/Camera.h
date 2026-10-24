@@ -114,7 +114,7 @@ struct Camera
     virtual void lookAt( V3 pos, V3 target, V3 up = V3( 0, 1, 0) );
     virtual V3 getPos() const;
     virtual V3 getTarget() const;
-    virtual V3 getUp() const;   
+    virtual V3 getUp() const;
     virtual V3 getDir() const;
     virtual V3 getRight() const;
     virtual V3 getAng() const;
@@ -137,6 +137,12 @@ struct Camera
     // interface [RayCast] convert (2d mouse screen pos) to (3d world ray)
     virtual Ray3d computeRay( int mouse_x, int mouse_y ) const;
     virtual Ray3f computeRayf( int mouse_x, int mouse_y ) const;
+
+    virtual bool
+    projectToScreen(
+        glm::dvec3& screenPos,
+        const M4 & modelMat = M4(1.0),
+        const V3 & offset = V3()) const;
 
     // ==============================================================
     // quick-helper [Viewport]:

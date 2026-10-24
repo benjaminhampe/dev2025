@@ -7,7 +7,7 @@ H3_Dice2DAnimation::H3_Dice2DAnimation(H3_Game* game)
     , m_posBegDice1(0.8,0.8)
     , m_posBegDice2(0.9,0.8)
     , m_posEndDice1(0.45,0.5)
-    , m_posEndDice2(0.55,0.45)
+    , m_posEndDice2(0.50,0.48)
     , m_rotyDice1(715.0f)
     , m_rotyDice2(730.0f)
     , m_sizeAttack(1.0f)
@@ -49,9 +49,8 @@ void H3_Dice2DAnimation::draw(double dt)
     const de::gpu::TexRef tex_1 = H3_getDiceTex(*m_game,dice.a);
     const de::gpu::TexRef tex_2 = H3_getDiceTex(*m_game,dice.b);
 
-    const int tex_w = tex_1.w();
-    DE_DEBUG("tex_w = ",tex_w)
-
+    const int tex_w = tex_1.w(); // 45px
+    //DE_DEBUG("tex_w = ",tex_w)
 
     // int state = 0;
     float t = 0.0f;

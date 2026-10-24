@@ -2,6 +2,7 @@
 #include "H3_Animation.h"
 #include "H3_CardAnimation.h"
 #include "H3_Dice2DAnimation.h"
+#include "H3_ArrowToThiefAnimation.h"
 
 // =====================================================================
 class H3_Animations

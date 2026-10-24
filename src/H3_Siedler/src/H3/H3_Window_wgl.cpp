@@ -85,7 +85,13 @@ void H3_Window::keyPressEvent( const de::KeyPressEvent& event )
         DE_DEBUG("bDebugWinner = ",bDebugWinner)
         m_game.m_uiGame->m_winnerScreen->setVisible(bDebugWinner);
     }
-
+    if (key == de::KEY_5)
+    {
+        // static bool bDebugWinner = false;
+        // bDebugWinner = !bDebugWinner;
+        // DE_DEBUG("bDebugWinner = ",bDebugWinner)
+        m_game.m_animations.addAnimation( new H3_ArrowToThiefAnimation( &m_game ) );
+    }
     // F11 - Toggle window resizable
     if (key == de::KEY_F11)
     {
