@@ -24,6 +24,7 @@ private:
     de::gui::Button* m_btnEndTurn;
     de::gui::Button* m_btnBanking;
     de::gui::Button* m_btnTrading;
+
     de::gui::Button* m_btnCancel;
     de::gui::Button* m_btnPlaceThief;
     de::gui::Button* m_btnBuyRoad;

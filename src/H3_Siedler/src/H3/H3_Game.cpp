@@ -711,60 +711,46 @@ void H3_Game::computeBonusArmy()
         }
     }
 
-    if (ownerId == 0)
-    {
-        return; // No knights.
-    }
-
-    if (knights < m_cfg.bonusArmyLimit)
-    {
-        return; // Not enough knights for a bonus.
-    }
-
-    if (knights <= m_bonusArmy.knights) // Not enough knights for a new bonus owner.
-    {
-        int found = findPlayer(m_bonusArmy.owner);
-        if (found < 1)
-        {
-            DE_ERROR("Sanity failed")
-        }
-        else
-        {
-            DE_DEBUG("BonusArmy already given to ",m_bonusArmy.owner)
-            return;
-        }
-    }
-
-    // Enough knights for a new owner, but still can be same owner.
-
-    if (ownerId == m_bonusArmy.owner) // Same owner, minor update.
-    {
-        H3_Player & owner = getPlayer(ownerId);
-        owner.setBonusArmy(true); // Just make sure player has bonus.
-        m_bonusArmy.knights = knights; // Update knight count
-        DE_DEBUG("Same player still has BonusArmy")
-        return; // Player already has bonus
-    }
-
-    // Finally enough knights for a new owner, and a new owner ....
-
-    // 1. Finally delete bonus from all players ...
+    // Delete bonus from all players ...
 
     for ( H3_Player & player : m_players )
     {
         player.setBonusArmy(false);
     }
 
-    // 2. Finally set new owner ...
+    // Is there a bonus to give?
 
+    if (knights < m_cfg.bonusArmyLimit)
+    {
+        DE_DEBUG("No bonusArmy. ownerId(",ownerId,"), knights(",knights,"), threshold(",m_cfg.bonusArmyLimit,")")
+        return; // No bonus to give.
+    }
+
+    int found = findPlayer(ownerId);
+    if (found < 0)
+    {
+        DE_DEBUG("Invalid ownerId(",ownerId,"), knights(",knights,"), threshold(",m_cfg.bonusArmyLimit,")")
+        return; // No bonus to give.
+    }
+
+    // New owner?
     H3_Player & owner = getPlayer(ownerId);
+
+    // New owner?
+    if (owner.id != m_bonusArmy.owner) // Same owner, minor update.
+    {
+        auto s = dbStr("BonusArmy goes to ",ownerId," with ",knights," knights");
+        marqueeH3(de_wstr(s),2000,owner.color);
+
+        DE_DEBUG("[",ownerId,"] ",owner.name," got BonusArmy with ",knights, " knights")
+
+        // TODO: trigger some animation or so ...
+    }
+
+    // Update state
     owner.setBonusArmy(true); // Just make sure player has bonus.
     m_bonusArmy.owner = ownerId; // Update bonus owner
     m_bonusArmy.knights = knights; // Update bonus value
-
-    // TODO: trigger some animation or so ...
-
-    DE_DEBUG("[",ownerId,"] ",owner.name," got BonusArmy with ",knights, " knights")
 }
 
 void H3_Game::computeWinner()
@@ -1104,6 +1090,8 @@ void H3_Game::doDice()
         "Player[", player.id, "] ", player.name, " has "
         "Dice Values (", int(player.state.dice.a), " + ", int(player.state.dice.b), ")"
         );
+
+    m_animations.addAnimation( new H3_Dice2DAnimation(this) );
 
     marqueeH3( de::StringUtil::to_wstr(s1), 2000, player.color );
 

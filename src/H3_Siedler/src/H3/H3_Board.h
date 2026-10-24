@@ -583,6 +583,24 @@ struct H3_PlayerState
     u32 computeVictoryPoints() const;
     void updateVictoryPoints();
 
+    u32 numEventCards(bool bUnrevealed) const
+    {
+        u32 n = 0;
+        n += points.size();
+        n += knights.size();
+        n += invents.size();
+        n += monopols.size();
+
+        if (bUnrevealed)
+        {
+            n += pointCards.size();
+            n += knightCards.size();
+            n += inventCards.size();
+            n += monopolCards.size();
+        }
+        return n;
+    }
+
     std::string str() const;
 };
 
@@ -674,6 +692,7 @@ struct H3_Player
     }
 };
 
+/*
 // =====================================================================
 struct H3_UIElem
 // =====================================================================
@@ -732,7 +751,6 @@ struct H3_UIElem
     }
 };
 
-/*
 // =====================================================================
 struct H3_Action
 // =====================================================================

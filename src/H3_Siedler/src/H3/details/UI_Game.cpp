@@ -185,14 +185,6 @@ void UI_Game::updateLayouts()
         int panel_y = (h - panel_h)/2;
         m_donateCards->resize(panel_x, panel_y, panel_w, panel_h);
     }
-    if (m_winnerScreen)
-    {
-        int panel_w = w - 200;
-        int panel_h = h - 200;
-        int panel_x = 100;
-        int panel_y = 100;
-        m_winnerScreen->resize(panel_x, panel_y, panel_w, panel_h);
-    }
     if (m_banking)
     {
         // ::::: Panel body ::::
@@ -202,6 +194,14 @@ void UI_Game::updateLayouts()
         int panel_x = (w - panel_w)/2;
         int panel_y = (h - panel_h)/2;
         m_banking->resize(panel_x, panel_y, panel_w, panel_h);
+    }
+    if (m_winnerScreen)
+    {
+        int panel_w = w - 200;
+        int panel_h = h - 200;
+        int panel_x = 100;
+        int panel_y = 100;
+        m_winnerScreen->resize(panel_x, panel_y, panel_w, panel_h);
     }
 }
 
@@ -249,7 +249,6 @@ void UI_Game::setState(const H3_GuiState& guiState)
 
     updateLayouts();
 }
-
 
 void UI_Game::drawDice()
 {
