@@ -225,6 +225,10 @@ struct H3_CfgPlayer
     H3_CfgPlayer();
 
     std::string str() const;
+
+    static std::string getPlayerName(int i); // H3_Img::PlayU, Play0 ... PlayF
+
+    static uint32_t getPlayerColor(int i); // 6 colors 0...5
 };
 
 // ===========================================================================
@@ -236,7 +240,7 @@ struct H3_Cfg
     u32 victoryPoints;      // Num points to victory
     u32 cardLimitNoSteal;   // Num cards player can hold without robber steal. 0 = disable
     u32 buildingSpacing;    // Num of corners between neighboring buildings, default = 1, can be 0 for more dense use of board.
-    // u32 numPlayers;         // 1+
+    u32 numPlayers;         // 1+
     u32 useCardKnight;      // +1 Knight with this card
     u32 useCardVictoryPoint;// +1 Victory point with this card
     u32 useCardMonopol;     // Take all cards of one resource of all players
@@ -246,7 +250,10 @@ struct H3_Cfg
     u32 bonusArmyLimit;     // 0 = disabled, +2 points for atleast default:3 knights
 
     std::vector< H3_CfgTile > tileList;
-    std::vector< H3_CfgPlayer > playerList;
+
+    H3_CfgPlayer player; // human
+
+    // std::vector< H3_CfgPlayer > playerList;
 
     // std::vector< H3_Cost > cost4card;   // Standard
     // std::vector< H3_Cost > cost4road;   // Standard

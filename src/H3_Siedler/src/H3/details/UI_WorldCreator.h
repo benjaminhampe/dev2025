@@ -91,7 +91,7 @@ private:
     de::gui::IntField* m_edtCardLimit;
     de::gui::IntField* m_edtBuildingSpacing;
     de::gui::IntField* m_edtSkipFirstRound;
-    de::gui::IntField* m_edtPlayer;
+    de::gui::IntField* m_edtNumPlayers;
 
     de::gui::Button* m_btnClose;
     de::gui::Button* m_btnStart;

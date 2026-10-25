@@ -110,7 +110,7 @@ void UI_Game::draw()
 
         auto driver = m_env->getVideoDriver();
 
-        driver->beginPerf("UI_Stats");
+        driver->beginPerf("UI_PlayerStats");
         UI_Stats_render( game );
         driver->endPerf();
 

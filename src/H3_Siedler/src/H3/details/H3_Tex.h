@@ -49,7 +49,25 @@ struct H3_Tex
 
         NicePointCard, NiceKnightCard, NiceInventCard, NiceMonopolCard,
 
-        Count
+        Count,
+
+        PlayUnknown = PlayU,
+        PlayAlexander = Play1,
+        PlayAsoka = Play2,
+        PlayBismark = Play3,
+        PlayCatherine = Play4,
+        PlayElizabeth = Play5,
+        PlayFriedrich = Play6,
+        PlayGandhi = Play7,
+        PlayGenghis = Play8,
+        PlayHatshepsut = Play9,
+        PlayIsabella = PlayA,
+        PlayLouisxiv = PlayB,
+        PlayNapoleon = PlayC,
+        PlayPeter = PlayD,
+        PlayRoosevelt = PlayE,
+        PlayShihhuangti = PlayF,
+        PlayBenni = Benni
     };
 
     H3_Tex();

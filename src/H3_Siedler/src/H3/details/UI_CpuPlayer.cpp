@@ -2,6 +2,119 @@
 #include <H3/H3_Game.h>
 #include <H3/details/H3_UI.h>
 
+void UI_drawPlayerStats(
+        H3_Game & game,
+        bool bDebug )
+{
+    H3_Player & player = game.getCurrentPlayer();
+
+    auto driver = game.getDriver();
+    const auto scr_w = driver->getScreenWidth();
+    const auto scr_h = driver->getScreenHeight();
+
+    const auto playerTex = game.getTex((H3_Tex::eID)player.avatar, __func__ );
+    const auto playerName = player.name;
+    const auto playerColor = player.color;
+
+    const float zoom = game.getZoom();
+    de::Font5x8 font(zoom*2,zoom*2,0,0,1,1);
+
+    int s = 1; // spacing
+    int p = zoom * 5; // padding
+    int w = zoom * 39;
+
+    int h0 = zoom * 64;
+    int h1 = zoom * 64;
+    int h2 = zoom * 39;
+
+    int wT = 5 * w + 2*p;
+    int hT = h0 + h1 + h2 + 2*p;
+
+    int x = 0;
+    int y = scr_h - 1 - p - h2 - s - h1 - p - h0 - p;
+
+    x = p;
+    y = scr_h - 1 - hT;
+
+    auto r = glm::ivec2(8,8);
+
+    driver->getScreenRenderer()->draw2DRoundRect(
+        de::Recti(x,y,wT,hT), r, playerColor);
+
+    driver->getScreenRenderer()->draw2DRoundRect(
+        de::Recti(x+p,y+p,h0,h0), r, 0xFFFFFFFF, playerTex, 13);
+
+    auto drawStat = [&](int x, int y, int w, int h,
+                                 int texId, int value, de::Font5x8 font )
+    {
+        const auto tex = game.getTex(H3_Tex::eID(texId), __func__);
+        const auto str = std::to_string( value );
+
+        driver->getScreenRenderer()->draw2DRoundRect(
+            de::Recti(x+p,y+p,h0,h0), r, 0xFFFFFFFF, tex, 13);
+
+        const float zoom = game.getZoom();
+
+        auto ts = font.getTextSize( str );
+
+        int s = zoom;
+        int tw = ts.width;
+        int th = (ts.height / 8) * 7;
+
+        auto r_num = de::Recti(x + w - 3 - s - tw,
+                               y + h - 3 - s - th,
+                               tw + 2*s,
+                               th + 2*s);
+
+        driver->getScreenRenderer()->
+            draw2DRect( r_num, dbRGB(0,0,0,128) );
+
+        driver->
+            draw2DText(
+                r_num.x + 1,
+                r_num.y + 1,
+                str,
+                dbRGB(255,255,255),
+                de::Align::Default,
+                font );
+    };
+
+    x = p;
+    y = scr_h - 1 - p - h2 - s - h1;
+    drawStat(x,y,w,h1, H3_Tex::CardA, player.state.bank.A, font); x += w + s;
+    drawStat(x,y,w,h1, H3_Tex::CardB, player.state.bank.B, font); x += w + s;
+    drawStat(x,y,w,h1, H3_Tex::CardC, player.state.bank.C, font); x += w + s;
+    drawStat(x,y,w,h1, H3_Tex::CardD, player.state.bank.D, font); x += w + s;
+    drawStat(x,y,w,h1, H3_Tex::CardE, player.state.bank.E, font); // x += w + s;
+
+    x = p;
+    y = scr_h - 1 - p - h2;
+    drawStat(x,y,w,h2, H3_Tex::StatVic, player.state.victoryPoints, font); x += w + s;
+    drawStat(x,y,w,h2, H3_Tex::StatRoad, player.state.roads.size(), font); x += w + s;
+    drawStat(x,y,w,h2, H3_Tex::StatFarm, player.state.farms.size(), font); x += w + s;
+    drawStat(x,y,w,h2, H3_Tex::StatCity, player.state.citys.size(), font); x += w + s;
+    drawStat(x,y,w,h2, H3_Tex::StatCard,
+                       player.state.knightCards.size(), font); x += w + s;
+
+    // Cards
+    int wC = zoom * 39;
+    int hC = zoom * 64;
+    x += p;
+    y = scr_h - 1 - p - hC;
+    drawStat(x,y,wC,hC, H3_Tex::EventCardKnight, player.state.knightCards.size(), font); x += wC + s;
+    drawStat(x,y,wC,hC, H3_Tex::EventCardPoint, player.state.pointCards.size(), font); // x += wC + s;
+
+    // Bonus
+    int wB = zoom * 64;
+    int hB = zoom * 64;
+    x = scr_w - 1 - p - wB - p - wB;
+    y = scr_h - 1 - p - hB;
+    drawStat(x,y,wB,hB, H3_Tex::BonusArmy, player.state.hasBonusArmy, font); x += wB + p;
+    drawStat(x,y,wB,hB, H3_Tex::BonusRoad, player.state.hasBonusRoad, font); // x += wB + p;
+}
+
+
+
 void UI_CpuPlayer_draw(
         H3_Game& game,
         uint32_t playerId,
@@ -98,36 +211,13 @@ void UI_CpuPlayer_draw(
         // driver->getFontRenderer()->
         //     draw2DText(cx,cy,s,dbRGB(0,0,0),de::Align::Centered,f);
     }
-/*
-    // Num Resource Cards
-    {
-        // Background Circle with Player color
-        int r = zoom * 8;
-        int d = zoom * 32;
-        auto r0 = de::Recti(pos.x, pos.y, d, 2*d);
-        driver->getScreenRenderer()->
-            draw2DRoundRect( r0, {r,r}, player.color );
-
-        // Foreground Circle in white
-        driver->getScreenRenderer()->
-            draw2DRoundRect( r0.inset(r,r,r,r), {r,r}, 0xFFFFFFFF );
-
-        // Foreground Text in black
-        de::Font vicFont("Postamt", 2 * d / 3);
-        int cx = r0.centerX();
-        int cy = r0.centerY();
-        driver->getFontRenderer()->draw2DText(cx,cy,
-            dbStr(player.state.victoryPoints),
-            dbRGB(0,0,0), de::Align::Centered, vicFont );
-    }
-*/
 
     // Dice 32 x 32
     {
         int dice_w = zoom * 36;
         int dice_h = dice_w;
         int dice_x = icon_x + icon_w / 2 - dice_w - 4;
-        int dice_y = icon_x + icon_h + 8;
+        int dice_y = icon_y + icon_h + 8;
         int d = dice_w + 4;
 
         auto r = glm::ivec2{5,5};

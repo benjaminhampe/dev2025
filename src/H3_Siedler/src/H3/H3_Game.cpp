@@ -52,22 +52,31 @@ void H3_Game::startGame()
     m_bonusRoad.roads = 0;
 
     // === Players ===
-    m_players.clear();
     m_humans.clear();
     m_enemies.clear();
+    m_players.clear();
 
-    for (size_t i = 0; i < m_cfg.playerList.size(); ++i)
+    m_players.reserve(m_cfg.numPlayers);
+
+    for (size_t i = 0; i < m_cfg.numPlayers; ++i)
     {
-        const auto& cfg = m_cfg.playerList[i];
-
         m_players.emplace_back();
         H3_Player & player = m_players.back();
-        player.id = i + 1; // H3_createId()
-        player.typ = cfg.typ;
-        player.connect = cfg.connect;
-        player.color = cfg.color;
-        player.name = cfg.name;
-        player.avatar = H3_Tex::PlayU + m_players.size();
+        player.id = i + 1;
+        player.connect = H3_PlayerConnect::LOCAL;
+        player.color = H3_CfgPlayer::getPlayerColor(i);
+        player.name = H3_CfgPlayer::getPlayerName(H3_Tex::Play1+i);
+        player.avatar = H3_Tex::Play1 + i;
+
+        if (i == 0)
+        {
+            player.name = m_cfg.player.name;
+            player.typ = H3_PlayerType::HUMAN;
+        }
+        else
+        {
+            player.typ = H3_PlayerType::CPU;
+        }
         player.startGame();
 
     #ifdef USE_BENNI_DEBUG_RESOURCES

@@ -407,6 +407,47 @@ H3_PlayerConnect::operator= (eType typ)
 //struct H3_CfgPlayer
 // ==================================================================
 
+// static
+std::string H3_CfgPlayer::getPlayerName(int i)
+{
+    switch (i)
+    {
+    case H3_Tex::PlayUnknown: return "Unknown";
+    case H3_Tex::PlayAlexander: return "Alexander";
+    case H3_Tex::PlayAsoka: return "Asoka";
+    case H3_Tex::PlayBismark: return "Bismark";
+    case H3_Tex::PlayCatherine: return "Catherine";
+    case H3_Tex::PlayElizabeth: return "Elizabeth I.";
+    case H3_Tex::PlayFriedrich: return "Friedrich";
+    case H3_Tex::PlayGandhi: return "Gandhi";
+    case H3_Tex::PlayGenghis: return "Genghis";
+    case H3_Tex::PlayHatshepsut: return "Hatshepsut";
+    case H3_Tex::PlayIsabella: return "Isabella";
+    case H3_Tex::PlayLouisxiv: return "Louisxiv";
+    case H3_Tex::PlayNapoleon: return "Napoleon";
+    case H3_Tex::PlayPeter: return "Peter";
+    case H3_Tex::PlayRoosevelt: return "Roosevelt";
+    case H3_Tex::PlayShihhuangti: return "Shihhuangti";
+    case H3_Tex::PlayBenni: return "Benni";
+    default: return "Unknown";
+    }
+}
+
+// static
+uint32_t H3_CfgPlayer::getPlayerColor(int i)
+{
+    switch (i)
+    {
+    case 0: return dbRGB(0,200,0);
+    case 1: return dbRGB(255,0,0);
+    case 2: return dbRGB(0,0,255);
+    case 3: return dbRGB(255,255,0);
+    case 4: return dbRGB(255,255,255);
+    case 5: return dbRGB(255,150,20);
+    default: return dbRGB(255,0,255);
+    }
+}
+
 H3_CfgPlayer::H3_CfgPlayer()
     : typ{ H3_PlayerType::CPU }
     , connect{ H3_PlayerConnect::LOCAL }
@@ -424,7 +465,45 @@ std::string H3_CfgPlayer::str() const
     "avatar(" << avatar << ")";
     return o.str();
 }
+/*
+// static
+H3_CfgPlayer H3_CfgPlayer::createHuman()
+{
+    H3_CfgPlayer player;
+    player.name = "Benni";
+    player.avatar = H3_Tex::Play3;
+    player.color = dbRGB(255,0,0);
 
+    player.typ = H3_PlayerType::HUMAN;
+    player.connect = H3_PlayerConnect::LOCAL;
+
+    return player;
+}
+
+// static
+H3_CfgPlayer H3_CfgPlayer::createKleopatra()
+{
+    H3_CfgPlayer player;
+    player.name = "Kleopatra";
+    player.color = dbRGB(255,255,0);
+    player.typ = H3_PlayerType::CPU;
+    player.connect = H3_PlayerConnect::LOCAL;
+    player.avatar = H3_Tex::Play2;
+    return player;
+}
+
+// static
+H3_CfgPlayer H3_CfgPlayer::createAlexander()
+{
+    H3_CfgPlayer player;
+    player.name = "Alexander";
+    player.color = dbRGB(255,255,0);
+    player.typ = H3_PlayerType::CPU;
+    player.connect = H3_PlayerConnect::LOCAL;
+    player.avatar = H3_Tex::Play2;
+    return player;
+}
+*/
 // ==================================================================
 
 void
@@ -443,14 +522,16 @@ H3_Cfg::dump() const
     DE_DEBUG("cfg.useCardMonopol = ",useCardMonopol)
     DE_DEBUG("cfg.useCardInvention = ",useCardInvention)
     DE_DEBUG("cfg.skipFirstRound = ",skipFirstRound)
-
+    DE_DEBUG("cfg.numPlayers = ",numPlayers)
+    DE_DEBUG("cfg.player = ",player.str())
+    /*
     DE_DEBUG("cfg.playerList = ",playerList.size())
 
     for (size_t i= 0; i < playerList.size(); ++i)
     {
         DE_DEBUG("cfg.player[",i,"] ",playerList[i].str())
     }
-
+    */
     DE_DEBUG("cfg.tileList = ",tileList.size())
 
     for (size_t i= 0; i < tileList.size(); ++i)
@@ -491,6 +572,7 @@ H3_Cfg::createStandard()
     cfg.cardLimitNoSteal = 7;   // Num cards player can hold without robber steal. 0 = disable
     cfg.buildingSpacing = 1;    // Num of corners between neighboring buildings, default = 1, can be 0 for more dense use of board.
     cfg.skipFirstRound = 1;     //
+    cfg.numPlayers = 4;
     cfg.bonusRoadLimit = 5;     // +2 points for 5+ connected roads
     cfg.bonusArmyLimit = 3;     // +2 points for 3+ knights
 
@@ -543,71 +625,14 @@ H3_Cfg::createStandard()
     cfg.addTile( -0,-3, H3_TileType::Port3v1, 3 );
     cfg.addTile(  1,-3, H3_TileType::Water, 2 );
 
-    {
-        H3_CfgPlayer player;
-        player.name = "Benni";
-        player.color = dbRGB(255,0,0);
-        player.typ = H3_PlayerType::HUMAN;
-        player.connect = H3_PlayerConnect::LOCAL;
-        player.avatar = H3_Tex::Play3;
-        cfg.playerList.push_back( player );
-    }
+    cfg.player.name = "Benni";
+    cfg.player.color = dbRGB(255,0,0);
+    cfg.player.typ = H3_PlayerType::HUMAN;
+    cfg.player.connect = H3_PlayerConnect::LOCAL;
+    cfg.player.avatar = H3_Tex::Play3;
 
-    {
-        H3_CfgPlayer player;
-        player.name = "Kleopatra";
-        player.color = dbRGB(255,255,0);
-        player.typ = H3_PlayerType::CPU;
-        player.connect = H3_PlayerConnect::LOCAL;
-        player.avatar = H3_Tex::Play2;
-        cfg.playerList.push_back( player );
-    }
-
-    // {
-    //     H3_CfgPlayer player;
-    //     player.name = "Alexander";
-    //     player.color = dbRGB(0,255,0);
-    //     player.typ = H3_PlayerType::CPU;
-    //     player.connect = H3_PlayerConnect::LOCAL;
-    //     player.avatar = H3_Tex::Play3;
-    //     cfg.playerList.push_back( player );
-    // }
-
-    // {
-    //     H3_CfgPlayer player;
-    //     player.name = "Napoleon";
-    //     player.color = dbRGB(0,0,255);
-    //     player.typ = H3_PlayerType::CPU;
-    //     player.connect = H3_PlayerConnect::LOCAL;
-    //     player.avatar = H3_Tex::Play4;
-    //     cfg.playerList.push_back( player );
-    // }
-
-    /*
-    cfg.cost4road.push_back({ H3_TileType::TileA, 1});
-    cfg.cost4road.push_back({ H3_TileType::TileB, 1});
-
-    cfg.cost4farm.emplace_back({{ H3_TileType::TileA, 1},
-                                { H3_TileType::TileB, 1},
-                                { H3_TileType::TileC, 1},
-                                { H3_TileType::TileD, 1} });
-
-    cfg.cost4city.emplace_back({{ H3_TileType::TileD, 2},
-                                { H3_TileType::TileE, 3} });
-
-    cfg.cost4card.emplace_back({{ H3_TileType::TileC, 1},
-                                { H3_TileType::TileD, 1},
-                                { H3_TileType::TileE, 1} });
-*/
     return cfg;
 }
-
-
-
-
-
-
-
 
 
 // static

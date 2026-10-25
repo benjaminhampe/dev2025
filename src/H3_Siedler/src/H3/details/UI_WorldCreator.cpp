@@ -123,7 +123,7 @@ UI_WorldCreator::UI_WorldCreator( H3_Game* game, de::gui::Env* env, de::gui::Wid
     m_edtVictoryPoints = createIntField("Victory Points", 10, 3, 250);
     m_edtCardLimit = createIntField("Card Steal Limit", 7, 0, 100);
     m_edtBuildingSpacing = createIntField("Building Spacing", 1, 0, 1);
-    m_edtPlayer = createIntField("Num Players", 4, 2, 5);
+    m_edtNumPlayers = createIntField("Num Players", 4, 2, 5);
     m_edtSkipFirstRound = createIntField("Skip First Round", 1, 0, 1);
     //m_edtSkipFirstRound = createIntField("Skip First Round", 1, 0, 1);
 
@@ -172,7 +172,7 @@ void UI_WorldCreator::draw()
     m_edtVictoryPoints->draw();
     m_edtCardLimit->draw();
     m_edtBuildingSpacing->draw();
-    m_edtPlayer->draw();
+    m_edtNumPlayers->draw();
     m_edtSkipFirstRound->draw();
 
     m_world->draw();
@@ -231,7 +231,7 @@ void UI_WorldCreator::resize(int x, int y, int w, int h)
     m_edtVictoryPoints->resize(bx,by,bw,bh);    by += ln + q;
     m_edtCardLimit->resize(bx,by,bw,bh);        by += ln + q;
     m_edtBuildingSpacing->resize(bx,by,bw,bh);  by += ln + q;
-    m_edtPlayer->resize(bx,by,bw,bh);           by += ln + q;
+    m_edtNumPlayers->resize(bx,by,bw,bh);       by += ln + q;
     m_edtSkipFirstRound->resize(bx,by,bw,bh);   //by += ln + q;
 
     // ::::: Row[2] World Body ::::
@@ -269,7 +269,7 @@ void UI_WorldCreator::setCfg( const H3_Cfg& cfg )
     m_edtVictoryPoints->setValue( m_cfg.victoryPoints );
     m_edtCardLimit->setValue( m_cfg.cardLimitNoSteal );
     m_edtBuildingSpacing->setValue( m_cfg.buildingSpacing );
-    m_edtPlayer->setValue( m_cfg.playerList.size() );
+    m_edtNumPlayers->setValue( m_cfg.numPlayers );
     m_edtSkipFirstRound->setValue( m_cfg.skipFirstRound );
 }
 
@@ -282,8 +282,9 @@ UI_WorldCreator::getCfg()
     cfg.cardLimitNoSteal = m_edtCardLimit->getValue();
     cfg.victoryPoints = m_edtVictoryPoints->getValue();
     cfg.skipFirstRound = m_edtSkipFirstRound->getValue();
-    cfg.playerList = m_cfg.playerList;
+    cfg.numPlayers = m_edtNumPlayers->getValue();
     cfg.tileList = m_cfg.tileList;
+    cfg.player = m_cfg.player;
     return cfg;
 }
 
