@@ -1800,13 +1800,17 @@ inline void repairBadAlpha( Image & img )
     }
 }
 
-inline void applyImageLoadOptions( Image & img, const ImageLoadOptions & options )
+inline void applyImageLoadOptions( Image & img, const ImageLoadOptions & opts )
 {
-    if ( options.outputFormat != PixelFormat::Unknown
-        && options.outputFormat != img.pixelFormat() )
+    if ( opts.outputFormat != PixelFormat::Unknown
+        && opts.outputFormat != img.pixelFormat() )
     {
-        Image tmp = img.convert(options.outputFormat);
-        img = tmp;
+        img = img.convert(opts.outputFormat);
+    }
+
+    if ( opts.searchColor != opts.replaceColor )
+    {
+        ImagePainter::replaceColor( img, opts.searchColor, opts.replaceColor );
     }
 
     /*
@@ -1820,11 +1824,6 @@ inline void applyImageLoadOptions( Image & img, const ImageLoadOptions & options
         img = ImageRotate::rotateRight( img );
     }
 
-    if ( options.m_SearchColor != options.m_ReplaceColor )
-    {
-    // DE_MAIN_DEBUG("ReplaceColor")
-    ImagePainter::replaceColor( img, options.m_SearchColor, options.m_ReplaceColor );
-    }
     if ( options.m_AutoSaturate )
     {
     // DE_MAIN_DEBUG("Saturate")

@@ -92,6 +92,13 @@ void H3_Window::keyPressEvent( const de::KeyPressEvent& event )
         // DE_DEBUG("bDebugWinner = ",bDebugWinner)
         m_game.m_animations.addAnimation( new H3_ArrowToThiefAnimation( &m_game ) );
     }
+    if (key == de::KEY_6)
+    {
+        bool bDebugOverlay = m_game.m_uiGame->isDebug();
+        bDebugOverlay = !bDebugOverlay;
+        DE_DEBUG("bDebugOverlay = ",bDebugOverlay)
+        m_game.m_uiGame->setDebug(bDebugOverlay);
+    }
     // F11 - Toggle window resizable
     if (key == de::KEY_F11)
     {

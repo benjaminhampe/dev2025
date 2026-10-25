@@ -38,6 +38,21 @@ UI_Game::~UI_Game()
 
 }
 
+void UI_Game::forceResize()
+{
+    m_forceResize = true;
+}
+
+void UI_Game::setDebug(bool bDebug)
+{
+    m_bDebug = bDebug;
+}
+
+bool UI_Game::isDebug() const
+{
+    return m_bDebug;
+}
+
 void UI_Game::updateVisibleActions()
 {
     if (m_actions)
@@ -75,17 +90,20 @@ void UI_Game::draw()
 
         // --- Draw Enemy Statistics ---
 
-        int p = zoom * 10;
+        int p = 10;
         int estat_w = (w - 5*p) / 4;
         int estat_h = zoom * 150;
         int x = p;
-        int y = zoom * 10;
-        for (int i = 0; i < game.m_players.size(); ++i)
+        int y = p;
+        for (const H3_Player & player : game.m_players)
         {
-            H3_Player & player = game.m_players[i];
-            if (player.typ == H3_PlayerType::HUMAN) continue;
+            if (player.typ == H3_PlayerType::HUMAN)
+                continue;
 
-            UI_CpuPlayer_draw( game, player.id, de::Recti(x,y,estat_w,estat_h) );
+            UI_CpuPlayer_draw(
+                game,
+                player.id,
+                de::Recti(x,y,estat_w,estat_h), m_bDebug );
 
             x += estat_w + p;
         }
@@ -103,26 +121,26 @@ void UI_Game::draw()
         // }
         // driver->endPerf();
 
-        driver->beginPerf("UI_RoundStats");
-        UI_drawRoundStats( game );
-        driver->endPerf();
-
-        driver->beginPerf("UI_HoverInfo");
-        auto r_panel = de::Recti( 20, 300, zoom * 200, zoom * 300 );
-        UI_drawInfoPanelTile( game, r_panel, game.m_hoverTileId );
-        UI_drawInfoPanelCorner( game, r_panel, game.m_hoverCornerId );
-        UI_drawInfoPanelEdge( game, r_panel, game.m_hoverEdgeId );
-        driver->endPerf();
-
-        driver->beginPerf("UI_Log");
-        UI_drawLog( game );
-        driver->endPerf();
-
-
         drawDice();
+
+        if (m_bDebug)
+        {
+            driver->beginPerf("UI_RoundStats");
+            UI_drawRoundStats( game );
+            driver->endPerf();
+
+            driver->beginPerf("UI_HoverInfo");
+            auto r_panel = de::Recti( 20, 400, zoom * 200, zoom * 250 );
+            UI_drawInfoPanelTile( game, r_panel, game.m_hoverTileId );
+            UI_drawInfoPanelCorner( game, r_panel, game.m_hoverCornerId );
+            UI_drawInfoPanelEdge( game, r_panel, game.m_hoverEdgeId );
+            driver->endPerf();
+
+            driver->beginPerf("UI_Log");
+            UI_drawLog( game );
+            driver->endPerf();
+        }
     }
-
-
 
     if (isDrawChildren())
     {
@@ -131,6 +149,34 @@ void UI_Game::draw()
             child->draw();
         }
     }
+}
+
+
+void UI_Game::drawDice()
+{
+    const float zoom = m_env->getZoom();
+
+    const int r = zoom * 6;
+
+    auto driver = m_env->getVideoDriver();
+    const int w = driver->getScreenWidth();
+    const int h = driver->getScreenHeight();
+
+    const auto & dice = m_game->m_dice;
+    const de::gpu::TexRef tex_1 = H3_getDiceTex(*m_game,dice.a);
+    const de::gpu::TexRef tex_2 = H3_getDiceTex(*m_game,dice.b);
+
+    const int d = zoom * 48;
+    const int s = zoom * 12;
+
+    int x = w - 2*(d+s);
+    int y = h - 300;
+
+    driver->getScreenRenderer()->
+        draw2DRoundRect(de::Recti(x,y,d,d), {r,r}, tex_1);
+
+    driver->getScreenRenderer()->
+        draw2DRoundRect(de::Recti(x+d+s,y,d,d), {r,r}, tex_2);
 }
 
 void UI_Game::resize(int x, int y, int w, int h)
@@ -250,29 +296,3 @@ void UI_Game::setState(const H3_GuiState& guiState)
     updateLayouts();
 }
 
-void UI_Game::drawDice()
-{
-    const float zoom = m_env->getZoom();
-
-    const int r = zoom * 6;
-
-    auto driver = m_env->getVideoDriver();
-    const int w = driver->getScreenWidth();
-    const int h = driver->getScreenHeight();
-
-    const auto & dice = m_game->m_dice;
-    const de::gpu::TexRef tex_1 = H3_getDiceTex(*m_game,dice.a);
-    const de::gpu::TexRef tex_2 = H3_getDiceTex(*m_game,dice.b);
-
-    const int d = zoom * 48;
-    const int s = zoom * 12;
-
-    int x = w - 2*(d+s);
-    int y = h - 300;
-
-    driver->getScreenRenderer()->
-        draw2DRoundRect(de::Recti(x,y,d,d), {r,r}, tex_1);
-
-    driver->getScreenRenderer()->
-        draw2DRoundRect(de::Recti(x+d+s,y,d,d), {r,r}, tex_2);
-}

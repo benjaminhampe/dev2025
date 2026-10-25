@@ -31,7 +31,10 @@ public:
 
     void updateVisibleActions();
 
-    void forceResize() { m_forceResize = true; }
+    void forceResize();
+
+    void setDebug(bool bDebug);
+    bool isDebug() const;
 
 protected:
     void updateLayouts();
@@ -59,4 +62,6 @@ public:
 
 
     UI_ActionLogger m_actionLogger;
+
+    bool m_bDebug;
 };

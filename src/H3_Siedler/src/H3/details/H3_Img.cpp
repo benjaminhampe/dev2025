@@ -7,6 +7,12 @@ H3_getImg( const H3_Game & game, const H3_Img::eID id )
     return game.m_img.get(id);
 }
 
+// de::Image*
+// H3_getImgWrite(H3_Game & game, const H3_Img::eID id )
+// {
+//     return game.m_img.get(id);
+// }
+
 // =======================================================================
 // Images
 // =======================================================================
@@ -23,6 +29,20 @@ H3_Img::get( const eID id ) const
     }
     return it->second;
 }
+/*
+de::Image*
+H3_Img::getWrite( const eID id )
+{
+    const auto it = m_cache.find(id);
+    if (it == m_cache.end())
+    {
+        std::ostringstream o;
+        o << "No H3_Img with id " << static_cast<uint32_t>(id);
+        throw std::runtime_error(o.str());
+    }
+    return it->second;
+}
+*/
 
 H3_Img::H3_Img()
 {
@@ -51,12 +71,9 @@ void H3_Img::clear()
 }
 
 void
-H3_Img::addFromMemory( eID id, const uint8_t* pData, uint64_t nBytes )
+H3_Img::addFromMemory( eID id, const uint8_t* pData, uint64_t nBytes, const de::ImageLoadOptions& opt )
 {
     auto pImage = new de::Image();
-
-    de::ImageLoadOptions opt;
-    opt.throwOnFail = true;
 
     if (!dbLoadImage(*pImage, pData, nBytes, "", opt ))
     {
@@ -82,9 +99,14 @@ H3_Img::add( eID id, const std::string& uri, const de::ImageLoadOptions& opt )
 
     if (!dbLoadImage(*pImage, uri, opt ))
     {
-        DE_ERROR("Can't load image ", uri)
+        DE_ERROR("Image[",int(id),"] loading failed. ", uri)
         delete pImage;
         return;
+    }
+
+    if (opt.outputFormat != pImage->pixelFormat())
+    {
+        DE_ERROR("Image[",int(id),"] conversion failed. ", uri)
     }
 
     m_cache[ id ] = pImage;
@@ -104,6 +126,9 @@ H3_Img::init()
 
     de::ImageLoadOptions optRGB = opt;
     optRGB.outputFormat = de::PixelFormat::R8G8B8;
+
+    de::ImageLoadOptions optRGBA = opt;
+    optRGBA.outputFormat = de::PixelFormat::R8G8B8A8;
 
     // gfx/wallpaper
     {
@@ -240,12 +265,12 @@ H3_Img::init()
     // gfx/ui/do2/
     {
         std::string baseDir = mediaDir + "gfx/ui/do2/";     // 5,3KB
-        add(DoBuyCity, baseDir + "do_buycity.png", opt);
-        add(DoBuyFarm, baseDir + "do_buyfarm.png", opt);
-        add(DoBuyRoad, baseDir + "do_buyroad.png", opt);
-        add(DoCancel, baseDir + "do_cancel.png", opt);
-        add(DoRob, baseDir + "do_rob.png", opt);
-        add(DoTemplate, baseDir + "template.png", opt);
+        add(DoBuyCity, baseDir + "do_buycity.png", optRGBA);
+        add(DoBuyFarm, baseDir + "do_buyfarm.png", optRGBA);
+        add(DoBuyRoad, baseDir + "do_buyroad.png", optRGBA);
+        add(DoCancel, baseDir + "do_cancel.png", optRGBA);
+        add(DoRob, baseDir + "do_rob.png", optRGBA);
+        add(DoTemplate, baseDir + "template.png", optRGBA);
     }
 
     // gfx/ui/player/
@@ -272,11 +297,11 @@ H3_Img::init()
     // gfx/ui/stat/
     {
         std::string baseDir = mediaDir + "gfx/ui/stat/";    // 1,19KB
-        add(StatCard, baseDir + "stat_card.png", opt);
-        add(StatCity, baseDir + "stat_city.png", opt);
-        add(StatFarm, baseDir + "stat_farm.png", opt);
-        add(StatVic, baseDir + "stat_point.png", opt);
-        add(StatRoad, baseDir + "stat_road.png", opt);
+        add(StatCard, baseDir + "stat_card.png", optRGB);
+        add(StatCity, baseDir + "stat_city.png", optRGB);
+        add(StatFarm, baseDir + "stat_farm.png", optRGB);
+        add(StatVic, baseDir + "stat_point.png", optRGB);
+        add(StatRoad, baseDir + "stat_road.png", optRGB);
     }
 
     // gfx/event/
@@ -407,13 +432,21 @@ void H3_Img::save(const std::string& baseDir)
     o << "\n";
     o << "void H3_Img::load()\n";
     o << "{\n";
+    o << "    de::ImageLoadOptions opt;\n";
+    o << "    opt.throwOnFail;\n";
+    o << "\n";
+    o << "    de::ImageLoadOptions optYellowToTransparent = opt;\n";
+    o << "    optYellowToTransparent.outputFormat = de::PixelFormat::RGBA_32; // We stored as 24 bit\n";
+    o << "    optYellowToTransparent.searchColor = dbRGB(255,255,0); // yellow\n";
+    o << "    optYellowToTransparent.replaceColor = 0; // transparent\n";
+    o << "\n";
 
     for (const Item & item : items)
     {
         o << "\t"
         "addFromMemory((eID)" << item.id << ","
                               << item.binName << ","
-                              << item.binSize << ");\n";
+                              << item.binSize << ",opt);\n";
     }
 
     o << "}\n\n";
@@ -541,117 +574,125 @@ void H3_Img::save(const std::string& baseDir)
 
 void H3_Img::load()
 {
-    addFromMemory((eID)1,img_001_satan_webp,294404);
-    addFromMemory((eID)2,img_002_nx_webp,88026);
-    addFromMemory((eID)3,img_003_px_webp,63344);
-    addFromMemory((eID)4,img_004_ny_webp,23136);
-    addFromMemory((eID)5,img_005_py_webp,92476);
-    addFromMemory((eID)6,img_006_nz_webp,94844);
-    addFromMemory((eID)7,img_007_pz_webp,100508);
-    addFromMemory((eID)8,img_008_unknown_jpg,26006);
-    addFromMemory((eID)9,img_009_benni_webp,85150);
-    addFromMemory((eID)10,img_010_wood_webp,230842);
-    addFromMemory((eID)11,img_011_wood2_jpg,469616);
-    addFromMemory((eID)12,img_012_wood3_jpg,203856);
-    addFromMemory((eID)13,img_013_thief_jpg,4801);
-    addFromMemory((eID)14,img_014_grunge_jpg,312652);
-    addFromMemory((eID)15,img_015_scroll_webp,117330);
-    addFromMemory((eID)16,img_016_scroll1_webp,83264);
-    addFromMemory((eID)17,img_017_scroll2_webp,80660);
-    addFromMemory((eID)18,img_018_dice_1_webp,1498);
-    addFromMemory((eID)19,img_019_dice_2_webp,1704);
-    addFromMemory((eID)20,img_020_dice_3_webp,1840);
-    addFromMemory((eID)21,img_021_dice_4_webp,2140);
-    addFromMemory((eID)22,img_022_dice_5_webp,2226);
-    addFromMemory((eID)23,img_023_dice_6_webp,2316);
-    addFromMemory((eID)24,img_024_bonus_army_webp,24576);
-    addFromMemory((eID)25,img_025_bonus_road_webp,22324);
-    addFromMemory((eID)26,img_026_card_a_jpg,169567);
-    addFromMemory((eID)27,img_027_card_b_jpg,100665);
-    addFromMemory((eID)28,img_028_card_c_jpg,118702);
-    addFromMemory((eID)29,img_029_card_d_jpg,116286);
-    addFromMemory((eID)30,img_030_card_e_jpg,83694);
-    addFromMemory((eID)31,img_031_do_buyeventcard_webp,6778);
-    addFromMemory((eID)32,img_032_eventcard_knight_webp,7874);
-    addFromMemory((eID)33,img_033_eventcard_point_webp,5722);
-    addFromMemory((eID)34,img_034_do_bank_webp,952);
-    addFromMemory((eID)35,img_035_do_dice_webp,1614);
-    addFromMemory((eID)36,img_036_do_endturn_webp,996);
-    addFromMemory((eID)37,img_037_do_playcard_webp,1004);
-    addFromMemory((eID)38,img_038_do_trade_webp,950);
-    addFromMemory((eID)39,img_039_do_redo_webp,602);
-    addFromMemory((eID)40,img_040_do_undo_webp,608);
-    addFromMemory((eID)41,img_041_do_buycity_webp,454);
-    addFromMemory((eID)42,img_042_do_buyfarm_webp,284);
-    addFromMemory((eID)43,img_043_do_buyroad_webp,280);
-    addFromMemory((eID)44,img_044_do_cancel_webp,976);
-    addFromMemory((eID)45,img_045_do_rob_webp,454);
-    addFromMemory((eID)46,img_046_template_webp,88);
-    addFromMemory((eID)47,img_047_stat_card_webp,130);
-    addFromMemory((eID)48,img_048_stat_city_webp,90);
-    addFromMemory((eID)49,img_049_stat_farm_webp,120);
-    addFromMemory((eID)50,img_050_stat_road_webp,104);
-    addFromMemory((eID)51,img_051_stat_point_webp,102);
-    addFromMemory((eID)52,img_052_water_webp,270966);
-    addFromMemory((eID)53,img_053_desert_webp,295800);
-    addFromMemory((eID)54,img_054_tile_a_jpg,105678);
-    addFromMemory((eID)55,img_055_tile_b_jpg,83530);
-    addFromMemory((eID)56,img_056_tile_c_jpg,93540);
-    addFromMemory((eID)57,img_057_tile_d_jpg,155915);
-    addFromMemory((eID)58,img_058_tile_e_webp,324674);
-    addFromMemory((eID)59,img_059_Desert_d_jpg,1102030);
-    addFromMemory((eID)60,img_060_Desert_h_webp,13556);
-    addFromMemory((eID)61,img_061_A_d_jpg,2331553);
-    addFromMemory((eID)62,img_062_A_h_webp,10802);
-    addFromMemory((eID)63,img_063_B_d_jpg,1494647);
-    addFromMemory((eID)64,img_064_B_h_webp,35806);
-    addFromMemory((eID)65,img_065_C_d_jpg,923133);
-    addFromMemory((eID)66,img_066_C_h_webp,17944);
-    addFromMemory((eID)67,img_067_D_d_jpg,982275);
-    addFromMemory((eID)68,img_068_D_h_webp,17234);
-    addFromMemory((eID)69,img_069_E_d_jpg,1161965);
-    addFromMemory((eID)70,img_070_E_h_webp,13362);
-    addFromMemory((eID)71,img_071_chip_2_webp,328);
-    addFromMemory((eID)72,img_072_chip_3_webp,330);
-    addFromMemory((eID)73,img_073_chip_4_webp,322);
-    addFromMemory((eID)74,img_074_chip_5_webp,322);
-    addFromMemory((eID)75,img_075_chip_6_webp,430);
-    addFromMemory((eID)76,img_076_chip_8_webp,396);
-    addFromMemory((eID)77,img_077_chip_9_webp,358);
-    addFromMemory((eID)78,img_078_chip_10_webp,302);
-    addFromMemory((eID)79,img_079_chip_11_webp,264);
-    addFromMemory((eID)80,img_080_chip_12_webp,306);
-    addFromMemory((eID)81,img_081_chip_s_webp,286);
-    addFromMemory((eID)82,img_082_chip_w_webp,296);
-    addFromMemory((eID)83,img_083_chip_3v1_webp,234);
-    addFromMemory((eID)84,img_084_chip_a_jpg,289086);
-    addFromMemory((eID)85,img_085_chip_b_webp,48800);
-    addFromMemory((eID)86,img_086_chip_c_jpg,89535);
-    addFromMemory((eID)87,img_087_chip_d_jpg,6582);
-    addFromMemory((eID)88,img_088_chip_e_jpg,73492);
+    de::ImageLoadOptions opt;
+    opt.throwOnFail = true;
 
-    addFromMemory((eID)89,img_089_unknown_webp,3114);
-    addFromMemory((eID)90,img_090_alexander_webp,4706);
-    addFromMemory((eID)91,img_091_asoka_webp,4122);
-    addFromMemory((eID)92,img_092_bismark_webp,4210);
+    de::ImageLoadOptions optYellow = opt;
+    optYellow.outputFormat = de::PixelFormat::RGBA_32; // We stored as 24 bit
+    optYellow.searchColor = dbRGB(255,255,0); // yellow
+    optYellow.replaceColor = 0; // transparent
 
-    addFromMemory((eID)93,img_093_catherine_webp,4190);
-    addFromMemory((eID)94,img_094_elizabethi_webp,4240);
-    addFromMemory((eID)95,img_095_friedrich_webp,4342);
-    addFromMemory((eID)96,img_096_gandhi_webp,4360);
+    addFromMemory((eID)1,img_001_satan_webp,294404,opt);
+    addFromMemory((eID)2,img_002_nx_webp,88026,opt);
+    addFromMemory((eID)3,img_003_px_webp,63344,opt);
+    addFromMemory((eID)4,img_004_ny_webp,23136,opt);
+    addFromMemory((eID)5,img_005_py_webp,92476,opt);
+    addFromMemory((eID)6,img_006_nz_webp,94844,opt);
+    addFromMemory((eID)7,img_007_pz_webp,100508,opt);
+    addFromMemory((eID)8,img_008_unknown_jpg,26006,opt);
+    addFromMemory((eID)9,img_009_benni_webp,85150,opt);
+    addFromMemory((eID)10,img_010_wood_webp,230842,opt);
+    addFromMemory((eID)11,img_011_wood2_jpg,469616,opt);
+    addFromMemory((eID)12,img_012_wood3_jpg,203856,opt);
+    addFromMemory((eID)13,img_013_thief_jpg,4801,opt);
+    addFromMemory((eID)14,img_014_grunge_jpg,312652,opt);
+    addFromMemory((eID)15,img_015_scroll_webp,117330,opt);
+    addFromMemory((eID)16,img_016_scroll1_webp,83264,opt);
+    addFromMemory((eID)17,img_017_scroll2_webp,80660,opt);
+    addFromMemory((eID)18,img_018_dice_1_webp,1498,opt);
+    addFromMemory((eID)19,img_019_dice_2_webp,1704,opt);
+    addFromMemory((eID)20,img_020_dice_3_webp,1840,opt);
+    addFromMemory((eID)21,img_021_dice_4_webp,2140,opt);
+    addFromMemory((eID)22,img_022_dice_5_webp,2226,opt);
+    addFromMemory((eID)23,img_023_dice_6_webp,2316,opt);
+    addFromMemory((eID)24,img_024_bonus_army_webp,24576,opt);
+    addFromMemory((eID)25,img_025_bonus_road_webp,22324,opt);
+    addFromMemory((eID)26,img_026_card_a_jpg,169567,opt);
+    addFromMemory((eID)27,img_027_card_b_jpg,100665,opt);
+    addFromMemory((eID)28,img_028_card_c_jpg,118702,opt);
+    addFromMemory((eID)29,img_029_card_d_jpg,116286,opt);
+    addFromMemory((eID)30,img_030_card_e_jpg,83694,opt);
+    addFromMemory((eID)31,img_031_do_buyeventcard_webp,6778,opt);
+    addFromMemory((eID)32,img_032_eventcard_knight_webp,7874,opt);
+    addFromMemory((eID)33,img_033_eventcard_point_webp,5722,opt);
+    addFromMemory((eID)34,img_034_do_bank_webp,952,opt);
+    addFromMemory((eID)35,img_035_do_dice_webp,1614,opt);
+    addFromMemory((eID)36,img_036_do_endturn_webp,996,opt);
+    addFromMemory((eID)37,img_037_do_playcard_webp,1004,opt);
+    addFromMemory((eID)38,img_038_do_trade_webp,950,opt);
+    addFromMemory((eID)39,img_039_do_redo_webp,602,opt);
+    addFromMemory((eID)40,img_040_do_undo_webp,608,opt);
+    addFromMemory((eID)41,img_041_do_buycity_webp,454,opt);
+    addFromMemory((eID)42,img_042_do_buyfarm_webp,284,opt);
+    addFromMemory((eID)43,img_043_do_buyroad_webp,280,opt);
+    addFromMemory((eID)44,img_044_do_cancel_webp,976,opt);
+    addFromMemory((eID)45,img_045_do_rob_webp,454,opt);
+    addFromMemory((eID)46,img_046_template_webp,88,opt);
+    addFromMemory((eID)47,img_047_stat_card_webp,130,opt);
+    addFromMemory((eID)48,img_048_stat_city_webp,90,optYellow);
+    addFromMemory((eID)49,img_049_stat_farm_webp,120,optYellow);
+    addFromMemory((eID)50,img_050_stat_road_webp,104,optYellow);
+    addFromMemory((eID)51,img_051_stat_point_webp,102,opt);
+    addFromMemory((eID)52,img_052_water_webp,270966,opt);
+    addFromMemory((eID)53,img_053_desert_webp,295800,opt);
+    addFromMemory((eID)54,img_054_tile_a_jpg,105678,opt);
+    addFromMemory((eID)55,img_055_tile_b_jpg,83530,opt);
+    addFromMemory((eID)56,img_056_tile_c_jpg,93540,opt);
+    addFromMemory((eID)57,img_057_tile_d_jpg,155915,opt);
+    addFromMemory((eID)58,img_058_tile_e_webp,324674,opt);
+    addFromMemory((eID)59,img_059_Desert_d_jpg,1102030,opt);
+    addFromMemory((eID)60,img_060_Desert_h_webp,13556,opt);
+    addFromMemory((eID)61,img_061_A_d_jpg,2331553,opt);
+    addFromMemory((eID)62,img_062_A_h_webp,10802,opt);
+    addFromMemory((eID)63,img_063_B_d_jpg,1494647,opt);
+    addFromMemory((eID)64,img_064_B_h_webp,35806,opt);
+    addFromMemory((eID)65,img_065_C_d_jpg,923133,opt);
+    addFromMemory((eID)66,img_066_C_h_webp,17944,opt);
+    addFromMemory((eID)67,img_067_D_d_jpg,982275,opt);
+    addFromMemory((eID)68,img_068_D_h_webp,17234,opt);
+    addFromMemory((eID)69,img_069_E_d_jpg,1161965,opt);
+    addFromMemory((eID)70,img_070_E_h_webp,13362,opt);
+    addFromMemory((eID)71,img_071_chip_2_webp,328,opt);
+    addFromMemory((eID)72,img_072_chip_3_webp,330,opt);
+    addFromMemory((eID)73,img_073_chip_4_webp,322,opt);
+    addFromMemory((eID)74,img_074_chip_5_webp,322,opt);
+    addFromMemory((eID)75,img_075_chip_6_webp,430,opt);
+    addFromMemory((eID)76,img_076_chip_8_webp,396,opt);
+    addFromMemory((eID)77,img_077_chip_9_webp,358,opt);
+    addFromMemory((eID)78,img_078_chip_10_webp,302,opt);
+    addFromMemory((eID)79,img_079_chip_11_webp,264,opt);
+    addFromMemory((eID)80,img_080_chip_12_webp,306,opt);
+    addFromMemory((eID)81,img_081_chip_s_webp,286,opt);
+    addFromMemory((eID)82,img_082_chip_w_webp,296,opt);
+    addFromMemory((eID)83,img_083_chip_3v1_webp,234,opt);
+    addFromMemory((eID)84,img_084_chip_a_jpg,289086,opt);
+    addFromMemory((eID)85,img_085_chip_b_webp,48800,opt);
+    addFromMemory((eID)86,img_086_chip_c_jpg,89535,opt);
+    addFromMemory((eID)87,img_087_chip_d_jpg,6582,opt);
+    addFromMemory((eID)88,img_088_chip_e_jpg,73492,opt);
 
-    addFromMemory((eID)97,img_097_genghis_webp,4208);
-    addFromMemory((eID)98,img_098_hatshepsut_webp,4412);
-    addFromMemory((eID)99,img_099_isabella_webp,4024);
-    addFromMemory((eID)100,img_100_louisxiv_webp,4406);
+    addFromMemory((eID)89,img_089_unknown_webp,3114,opt);
+    addFromMemory((eID)90,img_090_alexander_webp,4706,opt);
+    addFromMemory((eID)91,img_091_asoka_webp,4122,opt);
+    addFromMemory((eID)92,img_092_bismark_webp,4210,opt);
 
-    addFromMemory((eID)101,img_101_napoleon_webp,4160);
-    addFromMemory((eID)102,img_102_peter_webp,4414);
-    addFromMemory((eID)103,img_103_roosevelt_webp,4464);
-    addFromMemory((eID)104,img_104_shihhuangti_webp,4564);
+    addFromMemory((eID)93,img_093_catherine_webp,4190,opt);
+    addFromMemory((eID)94,img_094_elizabethi_webp,4240,opt);
+    addFromMemory((eID)95,img_095_friedrich_webp,4342,opt);
+    addFromMemory((eID)96,img_096_gandhi_webp,4360,opt);
 
-    addFromMemory((eID)105,img_105_Nice_pointCard_webp,352590);
-    addFromMemory((eID)106,img_106_Nice_knightCard_webp,168564);
-    addFromMemory((eID)107,img_107_Nice_inventCard_webp,178878);
-    addFromMemory((eID)108,img_108_Nice_monopolCard_webp,148654);
+    addFromMemory((eID)97,img_097_genghis_webp,4208,opt);
+    addFromMemory((eID)98,img_098_hatshepsut_webp,4412,opt);
+    addFromMemory((eID)99,img_099_isabella_webp,4024,opt);
+    addFromMemory((eID)100,img_100_louisxiv_webp,4406,opt);
+
+    addFromMemory((eID)101,img_101_napoleon_webp,4160,opt);
+    addFromMemory((eID)102,img_102_peter_webp,4414,opt);
+    addFromMemory((eID)103,img_103_roosevelt_webp,4464,opt);
+    addFromMemory((eID)104,img_104_shihhuangti_webp,4564,opt);
+
+    addFromMemory((eID)105,img_105_Nice_pointCard_webp,352590,opt);
+    addFromMemory((eID)106,img_106_Nice_knightCard_webp,168564,opt);
+    addFromMemory((eID)107,img_107_Nice_inventCard_webp,178878,opt);
+    addFromMemory((eID)108,img_108_Nice_monopolCard_webp,148654,opt);
 }

@@ -62,15 +62,22 @@ struct H3_Img
     void save(const std::string& baseDir);
     void clear();
 
-    void add( eID id, const std::string& uri, const de::ImageLoadOptions& opt );
+    void add(
+            eID id,
+            const std::string& uri,
+            const de::ImageLoadOptions& opt );
 
-    void addFromMemory( eID id, const uint8_t* pData, uint64_t nBytes );
+    void addFromMemory(
+            eID id,
+            const uint8_t* pData,
+            uint64_t nBytes,
+            const de::ImageLoadOptions& opt );
 
-    const de::Image* get( const eID id ) const;
+    const de::Image*
+    get( const eID id ) const;
 
-
-
-
+    // de::Image*
+    // get( const eID id );
 
     std::unordered_map<eID, de::Image*> m_cache;
 };
@@ -78,4 +85,8 @@ struct H3_Img
 // =======================================================================
 // Images
 // =======================================================================
-const de::Image* H3_getImg( const H3_Game & game, const H3_Img::eID id );
+const de::Image*
+H3_getImg( const H3_Game & game, const H3_Img::eID id );
+
+// de::Image*
+// H3_getImgWrite(H3_Game & game, const H3_Img::eID id );

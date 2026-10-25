@@ -557,7 +557,10 @@ void H3_Game::draw()
     m_guienv.draw();
     driver->endPerf();
 
-    driver->drawPerf( de::Recti( w - 300, 500, 300, 300));
+    if (m_uiGame->isDebug())
+    {
+        driver->drawPerf( de::Recti( w - 300, 600, 300, 400));
+    }
 
     driver->endRender();
 
@@ -874,7 +877,7 @@ void H3_Game::enterIdle()
             m_playerId = m_ranking.front().playerId;
 
             marqueeH1( L"Round 1 - Ranking by Dice", 2000, 0xFF00CC10 );
-            marqueeH1( L"Runde 1 - Rang über Würfeln", 3000, 0xFF00CC10 );
+            marqueeH1( L"Runde 1 - Würfeln der Rangfolge", 3000, 0xFF00CC10 );
 
             auto s1 = dbStrW(L"New Game with (", m_players.size(), L") Players" );
             marqueeH3( s1, 4000, 0xFF00CF00 );
@@ -891,11 +894,8 @@ void H3_Game::enterIdle()
         {
             m_playerId = m_ranking.front().playerId;
 
-            marqueeH1( L"Round 2", 2000, 0xFF00CC10 );
-            marqueeH1( L"Placing first Road and Farm", 3000, 0xFF00CC10 );
-
-            marqueeH3( L"Each player has to place one farm\n"
-                      L"and one road next to the farm.", 6000, dbRGB(255,128,0) );
+            marqueeH1( L"Round 2 - First farm and road.", 3000, 0xFF00CC10 );
+            marqueeH3( L"Place a farm and a road next to the farm.", 5000, dbRGB(255,128,0) );
         }
     }
     else if (m_round == 3)
@@ -904,11 +904,9 @@ void H3_Game::enterIdle()
         {
             m_playerId = m_ranking.back().playerId;
 
-            marqueeH1( L"Round 3", 2000, 0xFF00CC10 );
-            marqueeH1( L"Placing second Road and Farm", 3000, 0xFF00CC10 );
+            marqueeH1( L"Round 3 - Second farm adn road.", 3000, 0xFF00CC10 );
 
-            marqueeH3( L"Each player has to place one farm\n"
-                      L"and one road next to the farm.", 6000, dbRGB(255,128,0) );
+            marqueeH3( L"Place another farm and road nearby.", 5000, dbRGB(255,128,0) );
         }
     }
     else
@@ -918,12 +916,11 @@ void H3_Game::enterIdle()
             m_playerId = m_ranking.front().playerId;
 
             marqueeH1( dbStrW(L"Round ",m_round), 3000, 0xFF00CC10 );
-            marqueeH1( L"Normal round and Farm", 2000, 0xFF00CC10 );
-
-            marqueeH3( L"Each player has to place one farm\n"
-                      L"and one road next to the farm.", 6000, dbRGB(255,128,0) );
-
         }
+
+        auto & player = getCurrentPlayer();
+        auto s = dbStr("Turn[",m_turn,"] of player ",player.name, " with id ",player.id);
+        marqueeH3( de_wstr(s), 2000, player.color );
     }
 
     UI_updateActions();
@@ -1193,8 +1190,7 @@ DE_DEBUG("Player(",player.id,") ",player.name," got ",corner.building_type," ",t
                         auto ani = new H3_CardAnimation(this,
                             worldPos,
                             mousePos,
-                            tile.tileType,
-                            2.0);
+                            tile.tileType);
 
                         m_animations.addAnimation(ani);
 

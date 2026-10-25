@@ -5,7 +5,8 @@
 void UI_CpuPlayer_draw(
         H3_Game& game,
         uint32_t playerId,
-        const de::Recti& pos)
+        const de::Recti& pos,
+        bool bDebug)
 {
     //DE_DEBUG("Draw(",pos.str(),")")
 
@@ -15,8 +16,8 @@ void UI_CpuPlayer_draw(
     auto driver = game.getDriver();
 
     // Debug Outline
-    driver->getScreenRenderer()->
-        draw2DRectLine( pos, 0xFFFFFFFF );
+    //driver->getScreenRenderer()->
+    //    draw2DRectLine( pos, 0xFFFFFFFF );
 
     // Background
     auto t_scroll = game.getTex(H3_Tex::Scroll2, __func__);
@@ -27,34 +28,34 @@ void UI_CpuPlayer_draw(
     if (playerId < 1) { return; }
     auto & player = game.getPlayer(playerId);
 
-    // Calc Icon Background
+    // Icon Background
     int icon_x = pos.x + 2*p;
     int icon_y = pos.y + 2*p;
     int icon_w = 2 * pos.h / 3;
     int icon_h = icon_w;
     auto r_iconBg = de::Recti(icon_x, icon_y, icon_w, icon_h);
 
-    // Calc Name Background
+    // Icon Background
+    driver->getScreenRenderer()->
+        draw2DRoundRect( r_iconBg, {p,p}, player.color );
+
+    // Name Background
     int name_x = r_iconBg.x2() - 2*p;
-    int name_y = r_iconBg.y + p;
+    int name_y = r_iconBg.y;
     int name_w = pos.w - 3*p - icon_w;
     int name_h = pos.h / 3;
     auto r_nameBg = de::Recti( name_x, name_y, name_w, name_h );
 
-    // Draw Icon Background
-    driver->getScreenRenderer()->
-        draw2DRoundRect( r_iconBg, {p,p}, player.color );
-
-    // Draw Name Background
+    // Name Background
     driver->getScreenRenderer()->
         draw2DRoundRect( r_nameBg, {p,p}, player.color );
 
-    // Draw Icon
+    // Icon
     auto icon = game.getTex((H3_Tex::eID)player.avatar, __func__);
     driver->getScreenRenderer()->
         draw2DRoundRect( r_iconBg.inset(p,p+2,p,p), {p,p}, icon );
 
-    // Draw Name
+    // Name
     auto r_name = r_nameBg.inset(p);
     driver->draw2DText( r_name.centerX(),
                         r_name.centerY(),
@@ -65,30 +66,39 @@ void UI_CpuPlayer_draw(
                         dbRGB(255,255,255,225),
                         p );
 
-
-/*
     // VictoryPoints - Circle
     {
         // Background Circle with Player color
-        int r = zoom * 8;
-        int d = zoom * 32;
-        auto r0 = de::Recti(pos.x,pos.y,d,d);
+        int d = zoom * 40;
+        auto r0 = de::Recti(pos.x-2,pos.y-2,d,d);
         driver->getScreenRenderer()->
             draw2DCircle( r0, player.color );
 
-        // Foreground Circle in white
+        // Foreground Circle in green vic tex
+        int r = zoom * 4;
+        auto texv = game.getTex( H3_Tex::StatVic, __func__ );
         driver->getScreenRenderer()->
-            draw2DCircle( r0.inset(r,r,r,r), 0xFFFFFFFF );
+            draw2DCircle( r0.inset(r,r,r,r), 0xFFFFFFFF, texv );
 
         // Foreground Text in black
-        auto f = de::Font("Postamt", 2 * d / 3);
-        auto s = dbStr(player.state.victoryPoints);
-        int cx = r0.centerX();
-        int cy = r0.centerY();
-        driver->getFontRenderer()->
-            draw2DText(cx,cy,s,dbRGB(0,0,0),de::Align::Centered,f);
-    }
+        driver->draw2DText(
+            r0.centerX(),
+            r0.centerY(),
+            std::to_string( player.state.victoryPoints ),
+            dbRGB(255,255,255),
+            de::Align::Centered,
+            de::Font5x8(zoom*2,zoom*2,0,0,1,1),
+            dbRGB(0,0,0,150),
+            zoom );
 
+        // auto f = de::Font("Postamt", 2 * d / 3);
+        // auto s = dbStr(player.state.victoryPoints);
+        // int cx = r0.centerX();
+        // int cy = r0.centerY();
+        // driver->getFontRenderer()->
+        //     draw2DText(cx,cy,s,dbRGB(0,0,0),de::Align::Centered,f);
+    }
+/*
     // Num Resource Cards
     {
         // Background Circle with Player color
@@ -112,17 +122,19 @@ void UI_CpuPlayer_draw(
     }
 */
 
-    // Dice 16 * 16
+    // Dice 32 x 32
     {
-        int dice_x = pos.x+20;
-        int dice_y = pos.y+20 + icon_h;
-        int dice_w = zoom * 24;
+        int dice_w = zoom * 36;
         int dice_h = dice_w;
+        int dice_x = icon_x + icon_w / 2 - dice_w - 4;
+        int dice_y = icon_x + icon_h + 8;
+        int d = dice_w + 4;
+
         auto r = glm::ivec2{5,5};
         // H3_drawDice( game, de::Recti(x,y, 24,24), 5, dice1, dice2 );
         auto tex1 = H3_getDiceTex( game, player.state.dice.a );
         auto tex2 = H3_getDiceTex( game, player.state.dice.b );
-        de::Recti r_dice1(dice_x, dice_y, dice_w, dice_h ); dice_x += 2 + dice_w;
+        de::Recti r_dice1(dice_x, dice_y, dice_w, dice_h ); dice_x += d;
         de::Recti r_dice2(dice_x, dice_y, dice_w, dice_h );
         driver->getScreenRenderer()->
             draw2DRoundRect( r_dice1, r, 0xFFFFFFFF, tex1, 12 );
@@ -131,12 +143,12 @@ void UI_CpuPlayer_draw(
     }
 
 
-    auto drawStatNum = [&]( int img, de::Recti pos, int value, int icon_width )
+    auto drawStatNum = [&]( int img, de::Recti pos, int value )
     {
         const auto tex = game.getTex(H3_Tex::eID(img), __func__);
 
         driver->getScreenQuadRenderer()->
-            draw2DRect( pos, tex, false );
+            draw2DRect( pos, tex, true );
 
         driver->draw2DText(
             pos.x2() - zoom,
@@ -151,26 +163,45 @@ void UI_CpuPlayer_draw(
 
 
     {
-        int x = icon_x + icon_w + 10;
-        int y = name_y + name_h + 10;
-        int w = zoom * 39;
-        int h = zoom * 39;
-        int s = 1; // spacing
-        drawStatNum( H3_Tex::StatVic, de::Recti(x,y,w,h), player.state.victoryPoints, 16); x += w + s;
-        drawStatNum( H3_Tex::StatRoad, de::Recti(x,y,w,h), player.state.roads.size(), 16); x += w + s;
-        drawStatNum( H3_Tex::StatFarm, de::Recti(x,y,w,h), player.state.farms.size(), 16); x += w + s;
-        drawStatNum( H3_Tex::StatCity, de::Recti(x,y,w,h), player.state.citys.size(), 16); x += w + s;
+        int s = 4; // spacing
+        int x = icon_x + icon_w + s;
+        int y = name_y + name_h + s;
+        int w = zoom * 30;
+        int h = zoom * 50;
 
-        u32 n = player.state.numEventCards(true);
-        drawStatNum( H3_Tex::StatCard, de::Recti(x,y,w,h), n, 16);
+        drawStatNum( H3_Tex::EventCardPoint, de::Recti(x,y,w,h), player.state.points.size()); x += w + s;
+        drawStatNum( H3_Tex::EventCardKnight, de::Recti(x,y,w,h), player.state.knights.size()); x += w + s;
+
+        w = zoom * 36;
+        h = zoom * 36;
+        //drawStatNum( H3_Tex::StatVic, de::Recti(x,y,w,h), player.state.victoryPoints, 16); x += w + s;
+        drawStatNum( H3_Tex::StatRoad, de::Recti(x,y,w,h), player.state.roads.size()); x += w + s;
+        drawStatNum( H3_Tex::StatFarm, de::Recti(x,y,w,h), player.state.farms.size()); x += w + s;
+        drawStatNum( H3_Tex::StatCity, de::Recti(x,y,w,h), player.state.citys.size()); x += w + s;
+
+        // u32 n = player.state.numEventCards(true);
+        // drawStatNum( H3_Tex::StatCard, de::Recti(x,y,w,h), n, 16);
+
+    if (bDebug)
+    {
+        w = zoom * 30;
+        h = zoom * 50;
+        x = icon_x + icon_w + s;
+        y = name_y + name_h + h + 2*s;
+        drawStatNum( H3_Tex::CardA, de::Recti(x,y,w,h), player.state.bank.A); x += w + s;
+        drawStatNum( H3_Tex::CardB, de::Recti(x,y,w,h), player.state.bank.B); x += w + s;
+        drawStatNum( H3_Tex::CardC, de::Recti(x,y,w,h), player.state.bank.C); x += w + s;
+        drawStatNum( H3_Tex::CardD, de::Recti(x,y,w,h), player.state.bank.D); x += w + s;
+        drawStatNum( H3_Tex::CardE, de::Recti(x,y,w,h), player.state.bank.E); x += w + s;
+        drawStatNum( H3_Tex::NicePointCard, de::Recti(x,y,w,h), player.state.pointCards.size()); x += w + s;
+        drawStatNum( H3_Tex::NiceKnightCard, de::Recti(x,y,w,h), player.state.knightCards.size()); x += w + s;
+        drawStatNum( H3_Tex::NiceInventCard, de::Recti(x,y,w,h), player.state.inventCards.size()); x += w + s;
+        drawStatNum( H3_Tex::NiceMonopolCard, de::Recti(x,y,w,h), player.state.monopolCards.size()); x += w + s;
+    }
     }
 
-        //     drawStatNum( H3_Tex::CardA, de::Recti(x,y,w,h), player.state.bank.A, 16); x += w + s;
-        // drawStatNum( H3_Tex::CardB, de::Recti(x,y,w,h), player.state.bank.B, 16); x += w + s;
-        // drawStatNum( H3_Tex::CardC, de::Recti(x,y,w,h), player.state.bank.C, 16); x += w + s;
-        // drawStatNum( H3_Tex::CardD, de::Recti(x,y,w,h), player.state.bank.D, 16); x += w + s;
-        // drawStatNum( H3_Tex::CardE, de::Recti(x,y,w,h), player.state.bank.E, 16); x += w + s;
-        // drawStatNum( H3_Tex::EventCardKnight, de::Recti(x,y,w,h), player.state.knightCards.size(), 16); // x += d;
+
+
 
 
 }

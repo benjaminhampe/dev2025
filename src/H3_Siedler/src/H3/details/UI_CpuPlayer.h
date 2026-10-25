@@ -5,4 +5,5 @@
 void UI_CpuPlayer_draw(
         H3_Game& game,
         uint32_t playerId,
-        const de::Recti& r);
+        const de::Recti& r,
+        bool bDebug = false);

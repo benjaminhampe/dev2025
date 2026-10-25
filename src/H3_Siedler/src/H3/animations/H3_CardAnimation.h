@@ -11,15 +11,15 @@ class H3_CardAnimation : public H3_Animation
     int m_tileType;
     double m_duration;
     double m_timeNow;
-    de::smesh::SMeshBuffer m_mesh;
+    de::gpu::TexRef m_tex;
+    // de::smesh::SMeshBuffer m_mesh;
 
 public:
     H3_CardAnimation(
         H3_Game* game,
-        glm::vec3 worldPos,
-        glm::vec2 mousePos,
-        int tileType,
-        double duration);
+        glm::vec3 worldPos, // -> TileId 3DWorldPos.
+        glm::vec2 mousePos, // -> PlayerScreenPos.
+        int tileType);
 
     ~H3_CardAnimation() override;
 
