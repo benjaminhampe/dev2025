@@ -3,11 +3,21 @@
 
 struct H3_Game;
 
+void CPU_doRound1( H3_Game & game );
+void CPU_doRound2( H3_Game & game );
+void CPU_doRound3( H3_Game & game );
+void CPU_doRoundN( H3_Game & game );
+
 void AI_donateCardsToRobber( H3_Game & game, int playerId );
 
-float H3_getDiceChance( int diceSum );
 
-void CPU_doRound1( H3_Game & game );
+
+
+
+
+
+
+float H3_getDiceChance( int diceSum );
 
 struct FarmMatch
 {
@@ -48,10 +58,4 @@ struct RoadMatch
 std::vector< RoadMatch >
 CPU_findBestRoad( H3_Game & game );
 
-void CPU_doRound2( H3_Game & game );
 
-void CPU_doRound3( H3_Game & game );
-
-void CPU_doRoundN( H3_Game & game );
-
-void CPU_work( H3_Game & game );

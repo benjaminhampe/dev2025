@@ -77,7 +77,7 @@ void UI_Marquee::draw()
             auto font = fontH1;
             font.pixelSize = fontSizeH1;
             const int x = w / 2;
-            const int y = h / 20;
+            const int y = h / 6;
 
             driver->draw2DText( x, y, item.msg,item.color, align,font,0xA0000000,10 );
         }
@@ -103,7 +103,7 @@ void UI_Marquee::draw()
             de::Font font = fontH3;
             font.pixelSize = fontSizeH3;
             const int x = w / 2;
-            const int y = h / 20 + fontSizeH1 + 20;
+            const int y = h / 6 + fontSizeH1 + 20;
             driver->draw2DText( x, y, item.msg, item.color, align, font, 0xA0000000, 10 );
         }
         else

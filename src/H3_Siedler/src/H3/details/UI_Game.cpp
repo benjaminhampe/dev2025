@@ -267,7 +267,8 @@ H3_GuiState UI_Game::getState() const
 {
     H3_GuiState guiState;
     guiState.bWorldCreator = m_worldCreator->isVisible();
-    guiState.bGameOverlay = m_actions->isVisible();
+    guiState.bMarquee = m_marquee->isVisible();
+    guiState.bActions = m_actions->isVisible();
     guiState.bDonateCards = m_donateCards->isVisible();
     guiState.bBanking = m_banking->isVisible();
     guiState.bWinnerScreen = m_winnerScreen->isVisible();
@@ -280,8 +281,10 @@ void UI_Game::setState(const H3_GuiState& guiState)
         m_worldCreator->setVisible(guiState.bWorldCreator);
     }
     if (m_actions){
-        m_actions->setVisible(guiState.bGameOverlay);
-        m_marquee->setVisible(guiState.bGameOverlay);
+        m_actions->setVisible(guiState.bActions);
+    }
+    if (m_marquee){
+        m_marquee->setVisible(guiState.bMarquee);
     }
     if (m_donateCards){
         m_donateCards->setVisible(guiState.bDonateCards);

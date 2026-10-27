@@ -65,7 +65,8 @@ struct H3_GuiState // Actually just H3_UIGameState
 // =====================================================================
 {
     bool bWorldCreator = false;
-    bool bGameOverlay = false;    // Actions + stats + logger + dice
+    bool bMarquee = true;
+    bool bActions = false;
     bool bDonateCards = false;
     bool bBanking = false;
     bool bWinnerScreen = false;
@@ -590,23 +591,7 @@ struct H3_PlayerState
     u32 computeVictoryPoints() const;
     void updateVictoryPoints();
 
-    u32 numEventCards(bool bUnrevealed) const
-    {
-        u32 n = 0;
-        n += points.size();
-        n += knights.size();
-        n += invents.size();
-        n += monopols.size();
-
-        if (bUnrevealed)
-        {
-            n += pointCards.size();
-            n += knightCards.size();
-            n += inventCards.size();
-            n += monopolCards.size();
-        }
-        return n;
-    }
+    u32 numEventCards(bool bUnrevealed) const;
 
     std::string str() const;
 };
@@ -615,11 +600,11 @@ struct H3_PlayerState
 struct H3_Player
 // =====================================================================
 {
-    u32 id = 0;
-    H3_PlayerType typ = H3_PlayerType::CPU;
-    H3_PlayerConnect connect = H3_PlayerConnect::LOCAL;
-    u32 color = 0xFFFFFFFF;
-    u32 avatar = 0; // (H3_Tex::eID) = PlayU....PlayF
+    u32 id;
+    H3_PlayerType typ;
+    H3_PlayerConnect connect;
+    u32 color;
+    u32 avatar; // (H3_Tex::eID) = PlayU....PlayF
     std::string name;
 
     int ai_strategy; // Determines AI player behaviour
@@ -629,74 +614,27 @@ struct H3_Player
     int rank_start; // Round 1
     int rank_dice;  // Round 2,3
 
-    H3_Player() {}
-
-    std::string str() const
-    {
-        std::ostringstream o;
-        o <<
-        "id(" << id << "), "
-        "name(" << name << "), "
-        "typ(" << (H3_PlayerType::HUMAN ? "HUMAN" : "CPU") << "), "
-        "color(" << dbHex(color) << "), "
-        "connect(" << (H3_PlayerConnect::LOCAL ? "LOCAL" : "REMOTE") << "), "
-        "state{" << state.str() << "}";
-        return o.str();
-    }
-
     // Current state
     H3_PlayerState state;
 
     // Statistics
     std::vector< H3_PlayerState > history;
 
-    void endTurn()
-    {
-        history.emplace_back(state);
-        state.endTurn();
-    }
+    H3_Player();
 
-    void startGame()
-    {
-        history.clear();
-        state.clear();
-        rank_start = 0;
-        rank_dice = 0;
-    }
+    std::string str() const;
 
-    void setBonusArmy(bool value)
-    {
-        state.hasBonusArmy = value;
-        DE_DEBUG("Update player[",id,"] ",name," BonusArmy = ",value)
-    }
+    void pushState();
 
-    void setBonusRoad(bool value)
-    {
-        state.hasBonusRoad = value;
-        DE_DEBUG("Update player[",id,"] ",name," BonusRoad = ",value)
-    }
+    void startGame();
 
-    int getBankingRatio(int tt) const
-    {
-        if ( tt == 0 && state.hasPortA ) { return 2; }
-        if ( tt == 1 && state.hasPortB ) { return 2; }
-        if ( tt == 2 && state.hasPortC ) { return 2; }
-        if ( tt == 3 && state.hasPortD ) { return 2; }
-        if ( tt == 4 && state.hasPortE ) { return 2; }
-        if ( state.hasPort3v1 ) return 3;
-        return 4;
-    }
+    void setBonusArmy(bool value);
 
-    H3_Bank getBankingRatios() const
-    {
-        H3_Bank ratios;
-        ratios.A = getBankingRatio(0);
-        ratios.B = getBankingRatio(1);
-        ratios.C = getBankingRatio(2);
-        ratios.D = getBankingRatio(3);
-        ratios.E = getBankingRatio(4);
-        return ratios;
-    }
+    void setBonusRoad(bool value);
+
+    int getBankingRatio(int tt) const;
+
+    H3_Bank getBankingRatios() const;
 };
 
 /*

@@ -51,7 +51,6 @@ Button::draw()
     auto driver = m_env->getVideoDriver();
     if (!driver) { DE_ERROR("No driver") return; }
 
-
     int tesselation = 24;
 
     u32 fillColor = m_fillColors[eWS_Idle];
@@ -216,70 +215,6 @@ void Button::onEvent( const Event& event )
     }
 }
 
-
-/*
-void
-Button::resizeEvent( const ResizeEvent& event )
-{
-}
-
-void
-Button::paintEvent( const PaintEvent& event )
-{
-}
-
-void
-Button::enterEvent( EnterEvent const & event )
-{
-    //DE_DEBUG(event.str())
-    m_hovered = true;
-    m_pressed = false;
-    m_released = false;
-}
-
-void
-Button::leaveEvent( LeaveEvent const & event )
-{
-    //DE_DEBUG(event.str())
-    m_hovered = false;
-    m_pressed = false;
-    m_released = false;
-}
-
-
-void
-Button::mouseButtonEvent( MouseButtonEvent const & event )
-{
-    //DE_DEBUG(event.str())
-    if (event.isPressed())
-    {
-        m_pressed = true;
-        m_released = false;
-    }
-    else if (event.isReleased())
-    {
-        m_fnOnClicked();
-        m_pressed = false;
-        m_released = true;
-    }
-}
-
-
-void
-Button::mousePressEvent( MousePressEvent const & event )
-{
-    m_pressed = true;
-    m_released = false;
-}
-
-void
-Button::mouseReleaseEvent( MouseReleaseEvent const & event )
-{
-    m_fnOnClicked();
-    m_pressed = false;
-    m_released = true;
-}
-*/
 
 } // end namespace gui.
 } // end namespace de.

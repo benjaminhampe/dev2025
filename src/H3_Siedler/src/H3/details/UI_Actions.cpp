@@ -180,6 +180,11 @@ void UI_Actions::hideActions()
 
 void UI_Actions::updateVisibility()
 {
+    if (!isVisible())
+    {
+        return;
+    }
+
     hideActions();
 
     auto& player = m_game->getCurrentPlayer();

@@ -58,8 +58,12 @@ struct H3_Game
     void exitGame();
     void startGame(); // Actually starts a new Game
 
+    void computeNextPlayer();
+    void enterRound();
+    void enterTurn();
     void enterIdle();
     void doEndTurn();
+
     void enterDonateCards(uint32_t playerId);  // Donate cards to robber
     void enterThiefPlacement();     // Place robber on new tile
     void leaveThiefPlacement( H3_Tile& tile ); // Place robber on new tile
@@ -77,7 +81,7 @@ struct H3_Game
 
     void computeBonusRoad();
     void computeBonusArmy();
-    void computeWinner();
+    u32 computeWinnerId();
 
     void doDice();
     void doPlaceCancel();

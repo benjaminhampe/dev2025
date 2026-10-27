@@ -2,6 +2,22 @@
 #include <H3/H3_Game.h>
 #include <H3/details/H3_Topology.h>
 
+void CPU_doRound1( H3_Game & game )
+{
+    const auto & player = game.getCurrentPlayer();
+    if (player.typ != H3_PlayerType::CPU)
+    {
+        DE_ERROR("No cpu player ", player.id)
+    }
+
+    if (game.m_bDebugLogic)
+    {
+        DE_DEBUG("CPU[",player.id,"] ",player.name)
+    }
+    game.doDice();
+    game.doEndTurn();
+}
+
 void AI_donateCardsToRobber( H3_Game & game, int playerId )
 {
     H3_Player & player = game.getPlayer( playerId );
@@ -103,11 +119,7 @@ float H3_getDiceChance( int diceSum )
     }
 }
 
-void CPU_doRound1( H3_Game & game )
-{
-    game.doDice();
-    game.doEndTurn();
-}
+
 
 std::vector< FarmMatch >
 CPU_findBestFarm( H3_Game & game )
@@ -274,6 +286,15 @@ CPU_findBestRoad( H3_Game & game )
 void CPU_doRound2( H3_Game & game )
 {
     auto& player = game.getCurrentPlayer();
+    if (player.typ != H3_PlayerType::CPU)
+    {
+        DE_ERROR("No CPU player ", player.id)
+    }
+
+    if (game.m_bDebugLogic)
+    {
+        DE_DEBUG("CPU[",player.id,"] ",player.name)
+    }
 
     std::vector< FarmMatch > farmMatches = CPU_findBestFarm( game );
 
@@ -328,9 +349,18 @@ void CPU_doRound3( H3_Game & game )
 
 void CPU_doRoundN( H3_Game & game )
 {
-    game.doDice();
-
     auto& player = game.getCurrentPlayer();
+    if (player.typ != H3_PlayerType::CPU)
+    {
+        DE_ERROR("No CPU player ", player.id)
+    }
+
+    if (game.m_bDebugLogic)
+    {
+        DE_DEBUG("CPU[",player.id,"] ",player.name)
+    }
+
+    game.doDice();
 
     if ( player.state.bank.canBuyFarm() )
     {
@@ -394,6 +424,7 @@ void CPU_doRoundN( H3_Game & game )
     game.doEndTurn();
 }
 
+/*
 void CPU_work( H3_Game & game )
 {
     auto& player = game.getCurrentPlayer();
@@ -424,3 +455,4 @@ void CPU_work( H3_Game & game )
         CPU_doRoundN( game );
     }
 }
+*/

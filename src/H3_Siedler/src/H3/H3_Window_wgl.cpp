@@ -180,7 +180,6 @@ void H3_Window::keyRepeatEvent( const de::KeyRepeatEvent& event )
 
 }
 
-
 void H3_Window::mousePressEvent( const de::MousePressEvent& event )
 {
     //DE_BENNI("MousePressEvent = ", event.str())

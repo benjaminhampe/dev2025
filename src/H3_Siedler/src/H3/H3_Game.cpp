@@ -34,202 +34,35 @@ H3_Game::~H3_Game()
     //m_audioEngine.stop();
 }
 
-void H3_Game::startGame()
+u32 H3_Game::computeWinnerId()
 {
-    m_cfg = m_uiGame->m_worldCreator->getCfg();
+    DE_DEBUG("")
 
-    m_cfg.dump();
+    // TODO: Comment those out and do them only when necessary
+    computeBonusRoad();
+    computeBonusArmy();
 
-    // === Reset Winner ===
-    m_winnerId = 0;
+    u32 winnerId = 0;
+    u32 maxPoints = 0;
 
-    // === Reset Bonus ===
-    m_bonusArmy.owner = 0;
-    m_bonusArmy.knights = 0;
-
-    // === Reset Bonus ===
-    m_bonusRoad.owner = 0;
-    m_bonusRoad.roads = 0;
-
-    // === Players ===
-    m_humans.clear();
-    m_enemies.clear();
-    m_players.clear();
-
-    m_players.reserve(m_cfg.numPlayers);
-
-    for (size_t i = 0; i < m_cfg.numPlayers; ++i)
+    for ( H3_Player & player : m_players )
     {
-        m_players.emplace_back();
-        H3_Player & player = m_players.back();
-        player.id = i + 1;
-        player.connect = H3_PlayerConnect::LOCAL;
-        player.color = H3_CfgPlayer::getPlayerColor(i);
-        player.name = H3_CfgPlayer::getPlayerName(H3_Tex::Play1+i);
-        player.avatar = H3_Tex::Play1 + i;
+        player.state.updateVictoryPoints();
 
-        if (i == 0)
+        if (maxPoints < player.state.victoryPoints)
         {
-            player.name = m_cfg.player.name;
-            player.typ = H3_PlayerType::HUMAN;
-        }
-        else
-        {
-            player.typ = H3_PlayerType::CPU;
-        }
-        player.startGame();
-
-    #ifdef USE_BENNI_DEBUG_RESOURCES
-        player.state.bank.A = 3;
-        player.state.bank.B = 4;
-        player.state.bank.C = 5;
-        player.state.bank.D = 6;
-        player.state.bank.E = 7;
-    #endif
-    }
-    DE_DEBUG("Created players = ", m_players.size())
-
-    for (auto& player : m_players)
-    {
-        if (player.typ.isHuman())
-        {
-            m_humans.emplace_back(&player);
-        }
-        else if (player.typ.isCPU())
-        {
-            m_enemies.emplace_back(&player);
+            maxPoints = player.state.victoryPoints;
+            winnerId = player.id;
         }
     }
-    DE_DEBUG("Stored enemies = ", m_enemies.size())
-    DE_DEBUG("Stored humans = ", m_humans.size())
 
-    const auto tileTriangles = m_smeshTile.createCollisionTriangles();
-    const auto chipTriangles = m_smeshChip.createCollisionTriangles();
-
-    // === Board (Tiles + Players) ===
-    m_tiles.clear();
-    m_corners.clear();
-    m_edges.clear();
-
-    // === Board (Tiles) ===
-    for (const auto& cfg : m_cfg.tileList)
+    if (maxPoints < m_cfg.victoryPoints)
     {
-        H3_Tile tile;
-        tile.id = H3_createId();
-        tile.i = cfg.i;
-        tile.j = cfg.j;
-        tile.tileType = cfg.tileType;
-        tile.chipValue = cfg.chipValue;
-        tile.angle60 = cfg.angle60;
-        tile.visible = true;
-        //tile.hasRobber = false;
-        tile.corners.clear();
-        tile.edges.clear();
-        tile.next.clear();
-
-        const auto& tx = m_tileSize.x;
-        const auto& tz = m_tileSize.z;
-        const auto x = de::smesh::SMeshHexagon::computeBoardPosX(tx,tz,tile.i,tile.j);
-        const auto z = de::smesh::SMeshHexagon::computeBoardPosY(tx,tz,tile.i,tile.j);
-        tile.pos = glm::vec3(x,0,z);
-
-        // Collision aabbox:
-        tile.collisionBoundingBox = m_smeshTile.boundingBox + tile.pos;
-
-        // Collision triangles:
-        tile.collisionTriangles.clear();
-        tile.collisionTriangles.reserve( tileTriangles.size() );
-        for (const auto& triangle : tileTriangles)
-        {
-            auto A = tile.pos + triangle.A;
-            auto B = tile.pos + triangle.B;
-            auto C = tile.pos + triangle.C;
-            tile.collisionTriangles.emplace_back(A,B,C);
-        }
-
-        if (tile.tileType.hasChip())
-        {
-            tile.trsChip.pos = tile.pos + glm::vec3(0, m_chipSize.y * 0.5f,0);
-            tile.trsChip.rotate = glm::vec3(0,0,0);
-            tile.trsChip.scale = m_chipSize;
-
-            switch (tile.tileType.value)
-            {
-            case H3_TileType::TileA: tile.trsChip.pos += glm::vec3(0,7,0); break;
-            case H3_TileType::TileD: tile.trsChip.pos += glm::vec3(0,5,0); break;
-            case H3_TileType::TileE: tile.trsChip.pos += glm::vec3(0,8,0); break;
-            default: break;
-            }
-
-            tile.trsChip.update();
-        }
-
-        m_tiles.emplace_back( std::move(tile) );
+        DE_DEBUG("No winner, maxPoints(",maxPoints,"), playerId(",winnerId,")")
+        return 0;
     }
 
-    H3_createTopology( *this );
-
-    computeVisibleCorners( 0 );
-    computeVisibleEdges( 0 );
-    m_bUpdateDrawCall_Tiles = true;
-    m_bUpdateDrawCall_Chips = true;
-    m_bUpdateDrawCall_Corners = true;
-    m_bUpdateDrawCall_Edges = true;
-    m_bUpdateDrawCall_Roads = true;
-    m_bUpdateDrawCall_Farms = true;
-    m_bUpdateDrawCall_Citys = true;
-
-    // Camera:
-    getCamera()->lookAt( glm::vec3(-1,260,-123), glm::vec3(0,0,-55) );
-
-    // Place thief:
-    H3_Tile& desertTile = H3_findFirstDesertTile( *this );
-    m_thief.occupiedTileId = desertTile.id;
-    m_thief.trs.reset();
-    m_thief.trs.pos = desertTile.pos + glm::vec3(10,0,-30);
-    m_thief.trs.update();
-
-    // startGame()
-
-    H3_GuiState guiState;
-    guiState.bGameOverlay = true;
-    UI_setState( guiState );
-
-    m_state = H3_State::Idle;
-    m_turn = 1;
-    m_ranking.clear();
-    m_ranking.reserve( m_players.size() );
-
-    for ( const auto& player : m_players )
-    {
-        H3_RankedPlayer item;
-        item.playerId = player.id;
-        item.diceSum = 0;
-        m_ranking.push_back( item );
-    }
-
-    if (m_cfg.skipFirstRound)
-    {
-        m_round = 2;
-
-        dbRandomize();
-
-        for ( H3_Player & player : m_players )
-        {
-            m_dice.a = (rand()%6) + 1;
-            m_dice.b = (rand()%6) + 1;
-            player.state.dice = m_dice;
-            player.endTurn();
-        }
-
-        computeRanking();
-    }
-    else
-    {
-        m_round = 1;
-    }
-
-    enterIdle();
+    return winnerId;
 }
 
 void H3_Game::requestClose()
@@ -636,7 +469,11 @@ H3_GuiState H3_Game::UI_getState() const
 
 void H3_Game::UI_setState(const H3_GuiState& guiState)
 {
-    if (m_uiGame) { m_uiGame->setState(guiState); }
+    if (m_uiGame)
+    {
+        m_uiGame->setState(guiState);
+    }
+    UI_updateActions();
 }
 
 void H3_Game::UI_resizeLayouts()
@@ -765,39 +602,6 @@ void H3_Game::computeBonusArmy()
     m_bonusArmy.knights = knights; // Update bonus value
 }
 
-void H3_Game::computeWinner()
-{
-    DE_DEBUG("")
-
-    // TODO: Comment those out and do them only when necessary
-    computeBonusRoad();
-    computeBonusArmy();
-
-    u32 winnerId = 0;
-    u32 maxPoints = 0;
-
-    for ( H3_Player & player : m_players )
-    {
-        player.state.updateVictoryPoints();
-
-        if (maxPoints < player.state.victoryPoints)
-        {
-            maxPoints = player.state.victoryPoints;
-            winnerId = player.id;
-        }
-    }
-
-    if (maxPoints < m_cfg.victoryPoints)
-    {
-        DE_DEBUG("No winner, maxPoints(",maxPoints,"), playerId(",winnerId,")")
-        return;
-    }
-
-    m_winnerId = winnerId;
-
-    enterWinnerScreen();
-}
-
 void H3_Game::enterWinnerScreen()
 {
     if ( m_state != H3_State::Idle )
@@ -807,9 +611,13 @@ void H3_Game::enterWinnerScreen()
 
     DE_DEBUG("winnerId(",m_winnerId,")")
 
+    if (m_winnerId == 0)
+    {
+        return;
+    }
+
     m_state = H3_State::Winner;
 
-    //H3_GuiState guiState = UI_getState();
     H3_GuiState guiState;
     guiState.bWinnerScreen = true;
     m_uiGame->pushState( guiState );
@@ -855,7 +663,7 @@ void H3_Game::newGame()
 
     // --- Show Game Menu ---
     int w = 800;
-    int h = 60;
+    int h = 600;
     if (m_driver)
     {
         w = m_driver->getScreenWidth();
@@ -869,143 +677,217 @@ void H3_Game::newGame()
     m_uiGame->resize(0,0,w,h);
 }
 
-void H3_Game::enterIdle()
+
+void H3_Game::startGame()
 {
-    DE_DEBUG("")
+    m_cfg = m_uiGame->m_worldCreator->getCfg();
+
+    m_cfg.dump();
+
+    // === Reset Winner ===
+    m_winnerId = 0;
+
+    // === Reset Bonus ===
+    m_bonusArmy.owner = 0;
+    m_bonusArmy.knights = 0;
+
+    // === Reset Bonus ===
+    m_bonusRoad.owner = 0;
+    m_bonusRoad.roads = 0;
+
+    // === Players ===
+    m_humans.clear();
+    m_enemies.clear();
+    m_players.clear();
+
+    m_players.reserve(m_cfg.numPlayers);
+
+    for (size_t i = 0; i < m_cfg.numPlayers; ++i)
+    {
+        m_players.emplace_back();
+        H3_Player & player = m_players.back();
+        player.id = i + 1;
+        player.connect = H3_PlayerConnect::LOCAL;
+        player.color = H3_CfgPlayer::getPlayerColor(i);
+        player.name = H3_CfgPlayer::getPlayerName(H3_Tex::Play1+i);
+        player.avatar = H3_Tex::Play1 + i;
+
+        if (i == 0)
+        {
+            player.name = m_cfg.player.name;
+            player.typ = H3_PlayerType::HUMAN;
+        }
+        else
+        {
+            player.typ = H3_PlayerType::CPU;
+        }
+        player.startGame();
+
+    #ifdef USE_BENNI_DEBUG_RESOURCES
+        player.state.bank.A = 3;
+        player.state.bank.B = 4;
+        player.state.bank.C = 5;
+        player.state.bank.D = 6;
+        player.state.bank.E = 7;
+    #endif
+    }
+    DE_DEBUG("Created players = ", m_players.size())
+
+    for (auto& player : m_players)
+    {
+        if (player.typ.isHuman())
+        {
+            m_humans.emplace_back(&player);
+        }
+        else if (player.typ.isCPU())
+        {
+            m_enemies.emplace_back(&player);
+        }
+    }
+    DE_DEBUG("Stored enemies = ", m_enemies.size())
+    DE_DEBUG("Stored humans = ", m_humans.size())
+
+    const auto tileTriangles = m_smeshTile.createCollisionTriangles();
+    const auto chipTriangles = m_smeshChip.createCollisionTriangles();
+
+    // === Board (Tiles + Players) ===
+    m_tiles.clear();
+    m_corners.clear();
+    m_edges.clear();
+
+    // === Board (Tiles) ===
+    for (const auto& cfg : m_cfg.tileList)
+    {
+        H3_Tile tile;
+        tile.id = H3_createId();
+        tile.i = cfg.i;
+        tile.j = cfg.j;
+        tile.tileType = cfg.tileType;
+        tile.chipValue = cfg.chipValue;
+        tile.angle60 = cfg.angle60;
+        tile.visible = true;
+        //tile.hasRobber = false;
+        tile.corners.clear();
+        tile.edges.clear();
+        tile.next.clear();
+
+        const auto& tx = m_tileSize.x;
+        const auto& tz = m_tileSize.z;
+        const auto x = de::smesh::SMeshHexagon::computeBoardPosX(tx,tz,tile.i,tile.j);
+        const auto z = de::smesh::SMeshHexagon::computeBoardPosY(tx,tz,tile.i,tile.j);
+        tile.pos = glm::vec3(x,0,z);
+
+        // Collision aabbox:
+        tile.collisionBoundingBox = m_smeshTile.boundingBox + tile.pos;
+
+        // Collision triangles:
+        tile.collisionTriangles.clear();
+        tile.collisionTriangles.reserve( tileTriangles.size() );
+        for (const auto& triangle : tileTriangles)
+        {
+            auto A = tile.pos + triangle.A;
+            auto B = tile.pos + triangle.B;
+            auto C = tile.pos + triangle.C;
+            tile.collisionTriangles.emplace_back(A,B,C);
+        }
+
+        if (tile.tileType.hasChip())
+        {
+            tile.trsChip.pos = tile.pos + glm::vec3(0, m_chipSize.y * 0.5f,0);
+            tile.trsChip.rotate = glm::vec3(0,0,0);
+            tile.trsChip.scale = m_chipSize;
+
+            switch (tile.tileType.value)
+            {
+            case H3_TileType::TileA: tile.trsChip.pos += glm::vec3(0,7,0); break;
+            case H3_TileType::TileD: tile.trsChip.pos += glm::vec3(0,5,0); break;
+            case H3_TileType::TileE: tile.trsChip.pos += glm::vec3(0,8,0); break;
+            default: break;
+            }
+
+            tile.trsChip.update();
+        }
+
+        m_tiles.emplace_back( std::move(tile) );
+    }
+
+    H3_createTopology( *this );
+
+    computeVisibleCorners( 0 );
+    computeVisibleEdges( 0 );
+    m_bUpdateDrawCall_Tiles = true;
+    m_bUpdateDrawCall_Chips = true;
+    m_bUpdateDrawCall_Corners = true;
+    m_bUpdateDrawCall_Edges = true;
+    m_bUpdateDrawCall_Roads = true;
+    m_bUpdateDrawCall_Farms = true;
+    m_bUpdateDrawCall_Citys = true;
+
+    // Camera:
+    getCamera()->lookAt( glm::vec3(-1,260,-123), glm::vec3(0,0,-55) );
+
+    // Place thief:
+    H3_Tile& desertTile = H3_findFirstDesertTile( *this );
+    m_thief.occupiedTileId = desertTile.id;
+    m_thief.trs.reset();
+    m_thief.trs.pos = desertTile.pos + glm::vec3(10,0,-30);
+    m_thief.trs.update();
+
+    // startGame()
 
     m_state = H3_State::Idle;
+    m_turn = 1;
+    m_ranking.clear();
+    m_ranking.reserve( m_players.size() );
+
+    for ( const auto& player : m_players )
+    {
+        H3_RankedPlayer item;
+        item.playerId = player.id;
+        item.diceSum = 0;
+        m_ranking.push_back( item );
+    }
 
     H3_GuiState guiState;
-    guiState.bGameOverlay = true;
     UI_setState( guiState );
 
-    if (m_round == 1)
+    if (m_cfg.skipFirstRound)
     {
-        if (m_turn == 1)
+        m_round = 2;
+
+        dbRandomize();
+
+        for (H3_Player & player : m_players)
         {
-            m_playerId = m_ranking.front().playerId;
-
-            marqueeH1( L"Round 1 - Ranking by Dice", 2000, 0xFF00CC10 );
-            marqueeH1( L"Runde 1 - Würfeln der Rangfolge", 3000, 0xFF00CC10 );
-
-            auto s1 = dbStrW(L"New Game with (", m_players.size(), L") Players" );
-            marqueeH3( s1, 4000, 0xFF00CF00 );
-            auto s2 = dbStrW(L"Neues Spiel mit (", m_players.size(), L") Spielern" );
-            marqueeH3( s2, 4000, 0xFF00CF00 );
-
-            marqueeH3( L"Please dice to determine your start rank.", 4000, 0xFF00DC10 );
-            marqueeH3( L"Bitte würfeln um deinen Rang zu bestimmen.", 4000, 0xFF00DC10 );
-        }
-    }
-    else if (m_round == 2)
-    {
-        if (m_turn == 1)
-        {
-            m_playerId = m_ranking.front().playerId;
-
-            marqueeH1( L"Round 2 - First farm and road.", 3000, 0xFF00CC10 );
-            marqueeH3( L"Place a farm and a road next to the farm.", 5000, dbRGB(255,128,0) );
-        }
-    }
-    else if (m_round == 3)
-    {
-        if (m_turn == 1)
-        {
-            m_playerId = m_ranking.back().playerId;
-
-            marqueeH1( L"Round 3 - Second farm adn road.", 3000, 0xFF00CC10 );
-
-            marqueeH3( L"Place another farm and road nearby.", 5000, dbRGB(255,128,0) );
+            m_dice.a = (rand()%6) + 1;
+            m_dice.b = (rand()%6) + 1;
+            player.state.dice = m_dice;
         }
     }
     else
     {
-        if (m_turn == 1)
-        {
-            m_playerId = m_ranking.front().playerId;
-
-            marqueeH1( dbStrW(L"Round ",m_round), 3000, 0xFF00CC10 );
-        }
-
-        auto & player = getCurrentPlayer();
-        auto s = dbStr("Turn[",m_turn,"] of player ",player.name, " with id ",player.id);
-        marqueeH3( de_wstr(s), 2000, player.color );
+        m_round = 1;
     }
 
-    UI_updateActions();
+    enterRound();
 }
 
-void H3_Game::doEndTurn()
+void H3_Game::computeNextPlayer()
 {
-    if ( m_state != H3_State::Idle )
-    {
-        DE_ERROR("Incorrect state ", m_state.str())
-        //return;
-    }
+    int index = 0;
 
-    DE_DEBUG("")
-
-    // Check for winner
-    // if (getCurrentPlayer().state.victoryPoints >= m_cfg.victoryPoints)
-    // {
-    //     enterWinnerScreen();
-    // }
-
-    computeWinner();
-
-    // Reset Turn variables of all players:
-    for ( H3_Player & player : m_players )
-    {
-        player.endTurn();
-    }
-
-    auto& player = getCurrentPlayer();
-
-    UI_logEndTurn( *this );
-    // DE_DEBUG("EndTurn[",m_turn,"].Round[",m_round,"] playerId = ", player.id )
-
-    m_turn++;
-
-    // End of Round:
-    if ( m_turn > m_players.size() )
-    {
-        DE_DEBUG("[EndRound] playerId(",player.id,"), diceSum(",player.state.dice.sum(),")" )
-
-        //DE_DEBUG("EndRound[",m_round,"], EndTurn[",m_turn,"] playerId = ", m_playerId )
-        if ( m_round == 1 )
-        {
-            computeRanking();
-        }
-
-        // if ( m_round == 3 )
-        // {
-        //     m_player = m_ranking.back().playerId; // Next player reversed
-        // }
-        // else
-        // {
-        //     m_player = m_ranking.front().playerId; // Next player normal
-        // }
-
-        m_turn = 1;   // Next turn
-        m_round++;    // Next round
-        enterIdle();
-    }
-
-    // End of Turn:
-    DE_DEBUG("[EndTurn] playerId(",player.id,"), diceSum(",player.state.dice.sum(),")" )
-    //DE_DEBUG("EndTurn[",m_turn,"].Round[",m_round,"] playerId = ", m_playerId )
-
-    // Compute next player by id ( start case )
+    // ... by start order
     if ( m_round == 1 )
     {
-        m_playerId = m_players[ m_turn - 1 ].id;
-        //DE_DEBUG( "Next player 1st round is ", m_playerId )
+        index = m_turn - 1;
+
+        m_playerId = m_players.at( index ).id;
     }
-    // Compute next player by ranking ( normal case )
+    // ... by ranking ( normal case )
     else
     {
         // index is forward ranking ( normal case )
-        int index = m_turn - 1;
+        index = m_turn - 1;
 
         // index is revered ranking ( special case )
         if ( m_round == 3 )
@@ -1013,20 +895,210 @@ void H3_Game::doEndTurn()
             index = int(m_ranking.size()) - m_turn;
         }
 
-        if ( index < 0 || index >= m_ranking.size() )
+        m_playerId = m_ranking.at( index ).playerId;
+
+        DE_DEBUG("Round[",m_round,"].Turn[",m_turn,"] Computed playerId(",m_playerId,"), index(",index,")")
+        for (size_t i = 0; i < m_ranking.size(); ++i)
         {
-            DE_ERROR("Invalid ranking index ", index, ", ranks = ", m_ranking.size() )
+            const H3_RankedPlayer& r = m_ranking[i];
+            const H3_Player& p = getPlayer(r.playerId);
+
+            DE_DEBUG("Ranking[",i,"] "
+                "rank(",r.rank,"), "
+                "name(",p.name,"), "
+                "id(",p.id,"), "
+                "color(",dbHex(p.color),")")
+        }
+    }
+}
+
+void H3_Game::enterRound()
+{
+    DE_DEBUG("")
+
+    // Prepare new round
+    if ( m_turn != 1 )
+    {
+        DE_ERROR("Invalid turn ",m_turn)
+    }
+
+    // Check win condition
+    m_winnerId = computeWinnerId();
+
+    if (m_winnerId)
+    {
+        enterWinnerScreen();
+        return;
+    }
+
+    // Compute ranking from dice results.
+    // Must be before "player.pushState()" which resets dice values.
+    if ( m_round == 2 )
+    {
+        computeRanking();
+    }
+
+    // Prepare new round
+    for (H3_Player & player : m_players)
+    {
+        player.pushState();
+    }
+
+    // Compute next player ...
+    computeNextPlayer();
+
+    H3_Player& player = getPlayer(m_playerId);
+
+    DE_DEBUG("Round[",m_round,"], "
+         "player[",player.id,"](",player.name,"), "
+         "dice(",player.state.dice.sum(),")" )
+
+    if (m_round == 1)
+    {
+        // m_playerId = m_ranking.front().playerId;
+
+        marqueeH1( L"Round 1 - Ranking by Dice", 2000, 0xFF00CC10 );
+        marqueeH1( L"Runde 1 - Würfeln der Rangfolge", 3000, 0xFF00CC10 );
+
+        auto s1 = dbStrW(L"New Game with (", m_players.size(), L") Players" );
+        marqueeH3( s1, 4000, 0xFF00CF00 );
+        auto s2 = dbStrW(L"Neues Spiel mit (", m_players.size(), L") Spielern" );
+        marqueeH3( s2, 4000, 0xFF00CF00 );
+
+        marqueeH3( L"Please dice to determine your start rank.", 4000, 0xFF00DC10 );
+        marqueeH3( L"Bitte würfeln um deinen Rang zu bestimmen.", 4000, 0xFF00DC10 );
+
+    }
+    else if (m_round == 2)
+    {
+        // m_playerId = m_ranking.front().playerId;
+
+        marqueeH1( L"Round 2 - First farm and road.", 3000, 0xFF00CC10 );
+        marqueeH3( L"Place a farm and a road next to the farm.", 5000, dbRGB(255,128,0) );
+    }
+    else if (m_round == 3)
+    {
+        // m_playerId = m_ranking.back().playerId;
+
+        marqueeH1( L"Round 3 - Second farm adn road.", 3000, 0xFF00CC10 );
+        marqueeH3( L"Place another farm and road nearby.", 5000, dbRGB(255,128,0) );
+    }
+    else
+    {
+        // m_playerId = m_ranking.front().playerId;
+
+        marqueeH1( dbStrW(L"Round ",m_round), 3000, 0xFF00CC10 );
+
+        auto & player = getCurrentPlayer();
+        auto s = dbStr("Turn[",m_turn,"] of player ",player.name, " with id ",player.id);
+        marqueeH3( de_wstr(s), 2000, player.color );
+    }
+
+    enterTurn();
+}
+
+void H3_Game::enterTurn()
+{
+    DE_DEBUG("")
+
+    m_state = H3_State::Idle;
+
+    computeNextPlayer();
+
+    H3_Player& player = getPlayer(m_playerId);
+
+    DE_DEBUG("Round[",m_round,"].Turn[",m_turn,"].Player[",player.id,"]"
+                " ",player.name,", dice(",player.state.dice.sum(),")" )
+
+    if (player.typ == H3_PlayerType::HUMAN)
+    {
+        H3_GuiState guiState;
+        guiState.bActions = true;
+        UI_setState( guiState );
+        enterIdle();
+    }
+    else
+    {
+        if ( m_round == 1 )
+        {
+            CPU_doRound1( *this );
+        }
+        else if ( m_round == 2 )
+        {
+            CPU_doRound2( *this );
+        }
+        else if ( m_round == 3 )
+        {
+            CPU_doRound3( *this );
         }
         else
         {
-            m_playerId = m_ranking[ index ].playerId;
+            CPU_doRoundN( *this );
         }
+    }
+}
 
-        //DE_DEBUG( "Next player Round[", m_round, "].Turn[",m_turn,"] is ", m_playerId )
+
+void H3_Game::doEndTurn()
+{
+    if ( m_state != H3_State::Idle )
+    {
+        DE_ERROR("Incorrect state ", m_state.str())
+        return;
     }
 
-    enterIdle();
+    UI_logEndTurn( *this );
+
+    auto& player = getCurrentPlayer();
+
+    DE_DEBUG("[EndTurn] "
+             "turn(",m_turn,"), "
+             "round(",m_round,"), "
+             "player[",player.id,"](",player.name,"), "
+             "dice(",player.state.dice.sum(),")" )
+
+    m_turn++;
+
+    // End of Round:
+    if ( m_turn > m_players.size() )
+    {
+        {
+            H3_Player& player = getCurrentPlayer();
+            DE_DEBUG("[EndRound] "
+                 "round(",m_round,"), "
+                 "player[",player.id,"](",player.name,"), "
+                 "dice(",player.state.dice.sum(),")" )
+        }
+
+        m_turn = 1;   // Next turn
+        m_round++;    // Next round
+
+        enterRound();
+    }
+    // End of Turn:
+    else
+    {
+        enterTurn();
+    }
 }
+
+void H3_Game::enterIdle()
+{
+    DE_DEBUG("")
+
+    m_state = H3_State::Idle;
+
+    H3_Player & player = getPlayer(m_playerId);
+
+    if (player.typ == H3_PlayerType::HUMAN)
+    {
+        H3_GuiState guiState;
+        guiState.bActions = true;
+        UI_setState( guiState );
+    }
+}
+
+
 
 void H3_Game::computeRanking()
 {
@@ -1038,13 +1110,6 @@ void H3_Game::computeRanking()
     {
         H3_RankedPlayer item;
         item.playerId = player.id;
-
-        // if ( player.diceHistory.empty() )
-        // {
-        //     DE_RUNTIME_ERROR("player.diceHistory.empty()", player.name)
-        // }
-
-        //item.diceSum = player.diceHistory.back().sum();
         item.diceSum = player.state.dice.sum();
         m_ranking.push_back( item );
     }
@@ -1087,19 +1152,21 @@ void H3_Game::doDice()
     m_dice.a = (rand()%6) + 1;
     m_dice.b = (rand()%6) + 1;
 
+    player.state.dice = m_dice;
+
+
     DE_DEBUG("player[",player.id,"] ",player.name," "
             "dice(",player.state.dice.a," + ",player.state.dice.b,").")
-
-    player.state.dice = m_dice;
 
     auto s1 = dbStr(
         "Player[", player.id, "] ", player.name, " has "
         "Dice Values (", int(player.state.dice.a), " + ", int(player.state.dice.b), ")"
         );
 
+
     m_animations.addAnimation( new H3_Dice2DAnimation(this) );
 
-    marqueeH3( de::StringUtil::to_wstr(s1), 2000, player.color );
+    marqueeH3( de_wstr(s1), 2000, player.color );
 
     UI_logDice( *this );
 
@@ -2546,7 +2613,8 @@ void H3_Game::drawRoads()
             trs.update();
             m_tmeshRoad.m_instanceMat.push_back( trs.modelMat );
 
-            m_tmeshRoad.m_instanceColor.push_back( getPlayerColor( road.owner ) );
+            u32 color = getPlayer(road.owner).color;
+            m_tmeshRoad.m_instanceColor.push_back( color );
         }
         m_tmeshRoad.uploadInstances();
         m_bUpdateDrawCall_Roads = false;
@@ -2575,7 +2643,8 @@ void H3_Game::drawFarms()
             trs.update();
             m_tmeshFarm.m_instanceMat.push_back( trs.modelMat );
 
-            m_tmeshFarm.m_instanceColor.push_back( getPlayerColor( farm.owner ) );
+            u32 color = getPlayer(farm.owner).color;
+            m_tmeshFarm.m_instanceColor.push_back( color );
         }
         m_tmeshFarm.uploadInstances();
         m_bUpdateDrawCall_Farms = false;
@@ -2603,7 +2672,9 @@ void H3_Game::drawCitys()
             trs.scale = glm::vec3(1,1,1);
             trs.update();
             m_tmeshCity.m_instanceMat.push_back( trs.modelMat );
-            m_tmeshCity.m_instanceColor.push_back( getPlayerColor( city.owner ) );
+
+            u32 color = getPlayer(city.owner).color;
+            m_tmeshCity.m_instanceColor.push_back( color );
         }
         m_tmeshCity.uploadInstances();
         m_bUpdateDrawCall_Farms = false;
