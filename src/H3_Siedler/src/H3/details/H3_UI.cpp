@@ -793,7 +793,7 @@ UI_drawInfoPanelTile( H3_Game & game, de::Recti pos, const u32 tileId )
     de::Align align = de::Align::Default;
     de::Font5x8 font(zoom, zoom, 0,0,0,0);
 
-    auto s1 = dbStr(H3_TileType::getString( tile.tileType )," (",tile.i, ",", tile.j,")");
+    auto s1 = dbStr(H3_TileType::getString( tile.tt )," (",tile.i, ",", tile.j,")");
     auto s3 = dbStr(tile.pos);
     auto s4 = dbStr("angle60 = ",tile.angle60);
     auto s5 = dbStr("hasRobber = ",tile.id == game.m_thief.occupiedTileId);
@@ -808,7 +808,7 @@ UI_drawInfoPanelTile( H3_Game & game, de::Recti pos, const u32 tileId )
         H3_drawText( game, x+w-40,y, s2, white, de::Align::TopRight, font );
     }
     y += ln;
-    H3_drawHexagon( game, de::Recti(x+50,y,50,50), 0xFFFFFFFF, H3_getTileTex( game, tile.tileType ), tile.id );
+    H3_drawHexagon( game, de::Recti(x+50,y,50,50), 0xFFFFFFFF, H3_getTileTex( game, tile.tt ), tile.id );
     H3_drawText( game, x+w-40,y+25, s3, white, de::Align::RightMiddle, font ); y += 50;
     H3_drawText( game, x,y, s4, white, align, font ); y += ln;
     H3_drawText( game, x,y, s5, white, align, font ); y += ln;
@@ -819,7 +819,7 @@ UI_drawInfoPanelTile( H3_Game & game, de::Recti pos, const u32 tileId )
     for ( size_t i = 0; i < tile.next.size(); ++i )
     {
         H3_Tile & n = H3_getTile( game, __func__, tile.next[ i ] );
-        H3_drawHexagon( game, de::Recti(x+28*i,y,24,24), 0xFFFFFFFF, H3_getTileTex( game, n.tileType ), n.id );
+        H3_drawHexagon( game, de::Recti(x+28*i,y,24,24), 0xFFFFFFFF, H3_getTileTex( game, n.tt ), n.id );
     }
     y += 28;
 
@@ -910,7 +910,7 @@ UI_drawInfoPanelCorner( H3_Game & game, de::Recti pos, const u32 cornerId )
     for ( size_t i = 0; i < corner.tiles.size(); ++i )
     {
         H3_Tile & n = H3_getTile( game, __func__, corner.tiles[ i ] );
-        H3_drawHexagon( game, de::Recti(x+40*(i+1),y,32,32), 0xFFFFFFFF, H3_getTileTex( game, n.tileType ), n.id );
+        H3_drawHexagon( game, de::Recti(x+40*(i+1),y,32,32), 0xFFFFFFFF, H3_getTileTex( game, n.tt ), n.id );
     }
     y += 36;
 
@@ -985,7 +985,7 @@ UI_drawInfoPanelEdge( H3_Game & game, de::Recti pos, const u32 edgeId )
         H3_Tile & n = H3_getTile( game, __func__, edge.tiles[ i ] );
         int d = zoom*32;
         int k = x + (d + 8)*(i+1);
-        H3_drawHexagon( game, de::Recti(k,y,d,d), 0xFFFFFFFF, H3_getTileTex( game, n.tileType ), n.id );
+        H3_drawHexagon( game, de::Recti(k,y,d,d), 0xFFFFFFFF, H3_getTileTex( game, n.tt ), n.id );
     }
     y += (zoom * 32) + 4;
 

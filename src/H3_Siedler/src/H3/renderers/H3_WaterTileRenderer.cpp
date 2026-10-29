@@ -107,7 +107,7 @@ void H3_WaterTileRenderer::collectInstances(const H3_Game& game)
 
     for (const auto& tile : game.m_tiles)
     {
-        if ( !tile.tileType.isWaterOrPort() ) continue;
+        if ( !tile.tt.isWaterOrPort() ) continue;
 
         de::TRSf trs;
         trs.pos = tile.pos;

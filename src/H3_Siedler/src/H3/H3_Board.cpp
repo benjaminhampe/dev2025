@@ -1,5 +1,6 @@
 #include "H3_Board.h"
 #include <H3/details/H3_Tex.h>
+#include <H3/details/H3_AI.h>
 
 // =====================================================================
 void LineBoxAnim::draw( de::gpu::VideoDriver* driver )
@@ -787,8 +788,15 @@ H3_Bank::resetAmount( const H3_TileType tt, const int32_t value )
 void
 H3_Bank::addAmount( const H3_TileType tt, const int value )
 {
-    //DE_DEBUG( "tt(",TileType::getString(tt),"), value(",value,")")
-    resetAmount( tt, getAmount( tt ) + value );
+    switch ( tt.value )
+    {
+        case H3_TileType::TileA: A = std::clamp( A + value, 0, 16000 ); break;
+        case H3_TileType::TileB: B = std::clamp( B + value, 0, 16000 ); break;
+        case H3_TileType::TileC: C = std::clamp( C + value, 0, 16000 ); break;
+        case H3_TileType::TileD: D = std::clamp( D + value, 0, 16000 ); break;
+        case H3_TileType::TileE: E = std::clamp( E + value, 0, 16000 ); break;
+        default: break;
+    }
 }
 
 // [-] Withdraw from current amount...
@@ -881,7 +889,6 @@ H3_Bank& H3_Bank::operator+= ( H3_Bank const & o ) { return add(o); }
 
 H3_Bank& H3_Bank::operator-= ( H3_Bank const & o ) { return sub(o); }
 
-// TODO: Remove if not used anymore. (Was initially used in banking)
 int H3_Bank::countTypes() const
 {
     int n = 0;
@@ -1066,7 +1073,7 @@ H3_Tile::str() const
     "i(" << i << "), "
     "j(" << j << "), "
     "angle60("<< angle60 << "), "
-    "tileType(" << tileType.str() << "), "
+    "tileType(" << tt.str() << "), "
     "visible("<< visible << "), "
     "pos("<< pos << "), "
 
@@ -1081,8 +1088,27 @@ H3_Tile::str() const
 
 H3_Tile::H3_Tile() {}
 
+int H3_Tile::getDiceChance() const
+{
+    switch ( chipValue )
+    {
+        case 2:  return 1; // (1+1)
+        case 3:  return 2; // (1+2), (2+1)
+        case 4:  return 3; // (1+3), (2+2), (3+1)
+        case 5:  return 4; // (1+4), (2+3), (3+2), (4+1)
+        case 6:  return 5; // (1+5), (2+4), (3+3), (4+2), (5+1)
+        case 7:  return 6; // (1+6), (2+5), (3+4), (4+3), (5+2), (6+1)
+        case 8:  return 5; // (2+6), (3+5), (4+4), (5+3), (6+2)
+        case 9:  return 4; // (3+6), (4+5), (5+4), (6+3),
+        case 10: return 3; // (4+6), (5+5), (6+4)
+        case 11: return 2; // (5+6), (6+5)
+        case 12: return 1; // (6+6)
+        default: return 0;
+    }
+}
+
 bool
-H3_Tile::isWaterOrPort() const { return tileType.isWaterOrPort(); }
+H3_Tile::isWaterOrPort() const { return tt.isWaterOrPort(); }
 
 int
 H3_Tile::getCornerIndex( glm::vec3 const & tileSize, H3_Corner & corner ) const
@@ -1466,9 +1492,7 @@ H3_Player::H3_Player()
     , color{ 0xFFFFFFFF }
     , avatar{ 0 }       // (H3_Tex::eID) = PlayU....PlayF
     //, name{};
-    , ai_strategy{ 0 }  // Determines AI player behaviour
-    , ai_handicap{ 0 }  // Determines AI player stupidity
-    , ai_cheating{ 0 }  // Determines AI player advantages
+    , ai_data{ nullptr }
     , rank_start{ 0 }   // Round 1
     , rank_dice{ 0 }    // Round 2,3
     // Current state
@@ -1476,6 +1500,17 @@ H3_Player::H3_Player()
     // Statistics
     , history{}
 {}
+
+H3_Player::~H3_Player()
+{
+    auto p = reinterpret_cast<AI_Data*>(ai_data);
+    if (p)
+    {
+        DE_DEBUG("Delete AI_Data ", id)
+        delete p;
+        ai_data = nullptr;
+    }
+}
 
 std::string
 H3_Player::str() const
@@ -1487,7 +1522,8 @@ H3_Player::str() const
     "typ(" << (H3_PlayerType::HUMAN ? "HUMAN" : "CPU") << "), "
     "color(" << dbHex(color) << "), "
     "connect(" << (H3_PlayerConnect::LOCAL ? "LOCAL" : "REMOTE") << "), "
-    "state{" << state.str() << "}";
+    "state{" << state.str() << "}, "
+    "ai_data{" << ai_data << "}";
     return o.str();
 }
 

@@ -99,9 +99,6 @@ struct H3_Game
     void revealInventCard();
     void revealMonopolCard();
 
-    void computeVisibleCorners( uint32_t playerId );
-    void computeVisibleEdges( uint32_t playerId );
-
     void pick();
     void stealRandomCard( int playerFrom, int playerTo );
 

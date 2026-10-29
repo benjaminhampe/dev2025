@@ -720,7 +720,9 @@ void H3_Game::startGame()
         else
         {
             player.typ = H3_PlayerType::CPU;
+            player.ai_data = new AI_Data();
         }
+
         player.startGame();
 
     #ifdef USE_BENNI_DEBUG_RESOURCES
@@ -762,7 +764,7 @@ void H3_Game::startGame()
         tile.id = H3_createId();
         tile.i = cfg.i;
         tile.j = cfg.j;
-        tile.tileType = cfg.tileType;
+        tile.tt = cfg.tileType;
         tile.chipValue = cfg.chipValue;
         tile.angle60 = cfg.angle60;
         tile.visible = true;
@@ -791,13 +793,13 @@ void H3_Game::startGame()
             tile.collisionTriangles.emplace_back(A,B,C);
         }
 
-        if (tile.tileType.hasChip())
+        if (tile.tt.hasChip())
         {
             tile.trsChip.pos = tile.pos + glm::vec3(0, m_chipSize.y * 0.5f,0);
             tile.trsChip.rotate = glm::vec3(0,0,0);
             tile.trsChip.scale = m_chipSize;
 
-            switch (tile.tileType.value)
+            switch (tile.tt.value)
             {
             case H3_TileType::TileA: tile.trsChip.pos += glm::vec3(0,7,0); break;
             case H3_TileType::TileD: tile.trsChip.pos += glm::vec3(0,5,0); break;
@@ -812,9 +814,9 @@ void H3_Game::startGame()
     }
 
     H3_createTopology( *this );
+    H3_computeCornersForFarm( *this, 0 );
+    H3_computeEdgesForRoad( *this, 0 );
 
-    computeVisibleCorners( 0 );
-    computeVisibleEdges( 0 );
     m_bUpdateDrawCall_Tiles = true;
     m_bUpdateDrawCall_Chips = true;
     m_bUpdateDrawCall_Corners = true;
@@ -1025,11 +1027,11 @@ void H3_Game::enterTurn()
         }
         else if ( m_round == 2 )
         {
-            CPU_doRound2( *this );
+            AI_Round2( *this, m_playerId );
         }
         else if ( m_round == 3 )
         {
-            CPU_doRound3( *this );
+            AI_Round3( *this, m_playerId );
         }
         else
         {
@@ -1088,17 +1090,15 @@ void H3_Game::enterIdle()
 
     m_state = H3_State::Idle;
 
-    H3_Player & player = getPlayer(m_playerId);
+    H3_GuiState guiState;
 
-    if (player.typ == H3_PlayerType::HUMAN)
+    if (getPlayer(m_playerId).typ == H3_PlayerType::HUMAN)
     {
-        H3_GuiState guiState;
         guiState.bActions = true;
-        UI_setState( guiState );
     }
+
+    UI_setState( guiState );
 }
-
-
 
 void H3_Game::computeRanking()
 {
@@ -1227,10 +1227,10 @@ void H3_Game::doDice()
                         //DE_DEBUG("Tile[",i,"] has owner ", corner.owner, " and state = ", corner.state )
                         //DE_DEBUG("Player(",player.id,") ",player.name," has after bank = ", player.bank.toString() )
                         player.state.bank.addAmount(
-                                tile.tileType,
+                                tile.tt,
                                 corner.building_type );
 
-DE_DEBUG("Player(",player.id,") ",player.name," got ",corner.building_type," ",tile.tileType.str() )
+DE_DEBUG("Player(",player.id,") ",player.name," got ",corner.building_type," ",tile.tt.str() )
 
                 // <Begin> Animations:
 
@@ -1266,7 +1266,7 @@ DE_DEBUG("Player(",player.id,") ",player.name," got ",corner.building_type," ",t
                         auto ani = new H3_CardAnimation(this,
                             worldPos,
                             mousePos,
-                            tile.tileType);
+                            tile.tt);
 
                         m_animations.addAnimation(ani);
 
@@ -1537,8 +1537,8 @@ void H3_Game::doPlaceCancel()
     UI_logCancel( *this );
 
     m_state = H3_State::Idle;
-    computeVisibleCorners( m_playerId );
-    computeVisibleEdges( m_playerId );
+    H3_computeCornersForFarm( *this, m_playerId );
+    H3_computeEdgesForRoad( *this, m_playerId );
     m_bUpdateDrawCall_Corners = true;
     m_bUpdateDrawCall_Edges = true;
     enterIdle();
@@ -1556,7 +1556,7 @@ void H3_Game::doBuyRoad()
 
     m_state = H3_State::PlaceRoad;
     UI_updateActions();
-    computeVisibleEdges( m_playerId );
+    H3_computeEdgesForRoad( *this, m_playerId );
     m_bUpdateDrawCall_Edges = true;
 }
 
@@ -1621,7 +1621,7 @@ void H3_Game::finalizeBuyRoad( H3_Edge & edge )
     UI_logBuyRoad( *this, edge.id );
 
     m_state = H3_State::Idle;
-    computeVisibleEdges( m_playerId );
+    H3_computeEdgesForRoad( *this, m_playerId );
     m_bUpdateDrawCall_Edges = true;
     m_bUpdateDrawCall_Roads = true;
     enterIdle();
@@ -1639,7 +1639,7 @@ void H3_Game::doBuyFarm()
 
     m_state = H3_State::PlaceFarm;
     UI_updateActions();
-    computeVisibleCorners( m_playerId );
+    H3_computeCornersForFarm( *this, m_playerId );
     m_bUpdateDrawCall_Corners = true;
 }
 
@@ -1703,7 +1703,7 @@ void H3_Game::finalizeBuyFarm( H3_Corner & corner )
         if ( !tileId ) continue;
         const auto& tile = H3_getTile( *this, __func__, tileId );
 
-        switch (tile.tileType)
+        switch (tile.tt)
         {
         case H3_TileType::Port3v1: player.state.hasPort3v1 = true; break;
         case H3_TileType::PortA: player.state.hasPortA = true; break;
@@ -1724,9 +1724,7 @@ void H3_Game::finalizeBuyFarm( H3_Corner & corner )
     }
 
     UI_logBuyFarm( *this, corner.id );
-    m_state = H3_State::Idle;
-    UI_updateActions();
-    computeVisibleCorners( m_playerId );
+    H3_computeCornersForFarm( *this, 0 );
     m_bUpdateDrawCall_Corners = true;
     m_bUpdateDrawCall_Farms = true;
     enterIdle();
@@ -2182,214 +2180,6 @@ H3_Player& H3_Game::getCurrentPlayer()
     return getPlayer( m_playerId );
 }
 
-void H3_Game::computeVisibleCorners( uint32_t playerId )
-{
-    // Reset all corners to invisible:
-    for (H3_Corner& corner : m_corners)
-    {
-        corner.visible = false;
-    }
-
-    if (playerId < 1)
-    {
-        //DE_DEBUG("Invalid playerId ", playerId)
-        return;
-    }
-
-    if (m_state != H3_State::PlaceFarm)
-    {
-        DE_DEBUG("Invalid state ", m_state.str())
-        return;
-    }
-
-    // Dice ranking Round:
-    if (m_round == 1)
-    {
-        // No corners visible.
-    }
-    // Initial placement rounds:
-    // Only corners that are m_cfg.buildingSpacing away from
-    // already owned corners:
-    else if (m_round == 2 || m_round == 3)
-    {
-        if (m_cfg.buildingSpacing == 0)
-        {
-            for (H3_Corner& corner : m_corners)
-            {
-                // [1.] Corner not already owned.
-                if (corner.owner > 0) continue;
-                corner.visible = true;
-            }
-        }
-        else
-        {
-            // Important is that corners are not already owned by someone
-            // and that those corners have one empty corner in between.
-            for (H3_Corner& corner : m_corners)
-            {
-                // [1.] Corner not already owned.
-                if (corner.owner > 0) continue;
-
-                // [2.] Next corner not already owned.
-                bool bOwnedNextCorner = false;
-                for (const uint32_t nextId : corner.next)
-                {
-                    const H3_Corner& next = H3_getCorner(*this, __func__, nextId);
-                    if (next.owner > 0)
-                    {
-                        bOwnedNextCorner = true;
-                        break;
-                    }
-                }
-
-                if (!bOwnedNextCorner)
-                {
-                    corner.visible = true;
-                }
-            }
-        }
-    }
-    // Normal Round:
-    else
-    {
-        if (m_cfg.buildingSpacing == 0)
-        {
-            for (H3_Corner& corner : m_corners)
-            {
-                // [1.] Corner not already owned.
-                if (corner.owner > 0) continue;
-
-                // [2.] Atleast one egde already owned by playerId.
-                bool bOwnsAnEdge = false;
-                for (const uint32_t edgeId : corner.edges)
-                {
-                    const H3_Edge& edge = H3_getEdge(*this, __func__, edgeId);
-                    if (edge.owner == playerId)
-                    {
-                        bOwnsAnEdge= true;
-                        break;
-                    }
-                }
-
-                if (bOwnsAnEdge)
-                {
-                    corner.visible = true;
-                }
-            }
-        }
-        else
-        {
-            for (H3_Corner& corner : m_corners)
-            {
-                // [1.] Corner not already owned.
-                if (corner.owner > 0) continue;
-
-                // [2.] Next corner not already owned.
-                bool bOwnedNextCorner = false;
-                for (const uint32_t nextId : corner.next)
-                {
-                    const H3_Corner& next = H3_getCorner(*this, __func__, nextId);
-                    if (next.owner > 0)
-                    {
-                        bOwnedNextCorner = true;
-                        break;
-                    }
-                }
-
-                // [3.]
-                if (!bOwnedNextCorner)
-                {
-                    // [3.]
-                    bool bOwnsEdge = false;
-                    for (const uint32_t edgeId : corner.edges)
-                    {
-                        const H3_Edge& edge = H3_getEdge(*this, __func__, edgeId);
-                        if (edge.owner == playerId)
-                        {
-                            bOwnsEdge = true;
-                            break;
-                        }
-
-                    }
-                    // [4.] Finally we set this corner visible
-                    if (bOwnsEdge)
-                    {
-                        corner.visible = true;
-                    }
-                }
-            }
-        }
-    }
-}
-
-void H3_Game::computeVisibleEdges( uint32_t playerId )
-{
-    // Reset all edges to invisible:
-    for (H3_Edge& edge : m_edges)
-    {
-        edge.visible = false;
-    }
-
-    if (playerId < 1)
-    {
-        DE_DEBUG("Invalid playerId ", playerId)
-        return;
-    }
-
-    if (m_state != H3_State::PlaceRoad)
-    {
-        DE_DEBUG("Invalid state ", m_state.str())
-        return;
-    }
-
-    // Dice ranking Round:
-    if (m_round == 1)
-    {
-        // No edges visible.
-    }
-    // Placement + normal Rounds:
-    else
-    {
-        for (H3_Edge& edge : m_edges)
-        {
-            // [1.] Edge not already owned.
-            if (edge.owner > 0) continue;
-
-            // [2.] Next corner already owned.
-            bool bOwnsCorner = false;
-            for (const uint32_t nextId : edge.corners)
-            {
-                if (playerId == H3_getCorner(*this, __func__, nextId).owner)
-                {
-                    bOwnsCorner = true;
-                    break;
-                }
-            }
-
-            if (bOwnsCorner)
-            {
-                edge.visible = true;
-            }
-            else
-            {
-                bool bOwnsEdge = false;
-                for (const uint32_t nextId : edge.next)
-                {
-                    if (playerId == H3_getEdge(*this, __func__, nextId).owner)
-                    {
-                        bOwnsEdge = true;
-                        break;
-                    }
-                }
-                if (bOwnsEdge)
-                {
-                    edge.visible = true;
-                }
-            }
-        }
-    }
-}
-
 void H3_Game::toggleHelpWindow()
 {
     DE_WARN("Not implemented")
@@ -2505,7 +2295,7 @@ void H3_Game::drawPortBridges()
 
     for (H3_Tile & tile : m_tiles)
     {
-        if (!tile.tileType.isPort()) continue;
+        if (!tile.tt.isPort()) continue;
 
         int ang60 = tile.angle60;
 
@@ -2981,3 +2771,5 @@ void H3_Game::setZoom( float zoom )
     m_uiMenu->forceResize();
     m_uiGame->forceResize();
 }
+
+

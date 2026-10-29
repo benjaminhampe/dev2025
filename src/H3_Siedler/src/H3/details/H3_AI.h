@@ -1,5 +1,31 @@
 #pragma once
 #include <H3/H3_Board.h>
+#include <H3/details/H3_AI_StartPlacement.h>
+#include <H3/details/H3_AI_Round2.h>
+
+struct AI_Data
+{
+    u32 playerId;
+    // Determines AI player behaviour
+    // 0 = Looks for 5 resource types and 6 tiles, prios to build farms
+    // 1 = Looks for all resource types - 1, and Port3v1
+    // 2 = Looks for all resource types - 2, and Port2v1 of
+    int strategy;
+
+    int handicap; // Determines AI player stupidity
+    int cheating; // Determines AI player advantages
+
+    std::vector<BestesStartPaar> bestePaare;
+
+    AI_Data()
+        : playerId{ 0 }
+        , strategy{ 0 }  // Determines AI player behaviour
+        , handicap{ 0 }  // Determines AI player stupidity
+        , cheating{ 0 }  // Determines AI player advantages
+    {
+    }
+};
+
 
 struct H3_Game;
 
@@ -36,7 +62,7 @@ struct FarmMatch
 };
 
 std::vector< FarmMatch >
-CPU_findBestFarm( H3_Game & game );
+CPU_findBestFarm( H3_Game & game, uint32_t playerId );
 
 struct RoadMatch
 {
@@ -56,6 +82,6 @@ struct RoadMatch
 //void H3_updatePossibleEdges( H3_Game & game );
 
 std::vector< RoadMatch >
-CPU_findBestRoad( H3_Game & game );
+CPU_findBestRoad( H3_Game & game, uint32_t playerId );
 
 

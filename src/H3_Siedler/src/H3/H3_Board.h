@@ -15,6 +15,9 @@
 
 typedef uint32_t u32;
 typedef int32_t s32;
+typedef float f32;
+typedef double f64;
+typedef long double f80;
 
 struct H3_TileType;
 struct H3_Cost;
@@ -323,7 +326,7 @@ struct H3_Bank
     H3_Bank& operator+= ( H3_Bank const & o );
     H3_Bank& operator-= ( H3_Bank const & o );
 
-    // TODO: Remove if not used anymore. (Was initially used in banking)
+    // Used in AI to compute best places for farms and roads.
     int countTypes() const;
 };
 
@@ -432,7 +435,7 @@ struct H3_Tile
     int i = 0;      // 2d board index x
     int j = 0;      // 2d board index y
     int angle60 = 0;// angle [0..5] to rotate tile in 60 degrees steps.
-    H3_TileType tileType = H3_TileType::Unknown;
+    H3_TileType tt = H3_TileType::Unknown;
     bool visible = true;
     glm::vec3 pos = glm::vec3(0,0,0);
     de::TRSf trsChip;
@@ -452,6 +455,8 @@ struct H3_Tile
     bool addEdgeId( const u32 edgeId );
     // Connect tile with max. 6 unique corners
     bool addCornerId( const u32 cornerId );
+
+    int getDiceChance() const;
 
     std::string str() const;
 };
@@ -607,9 +612,7 @@ struct H3_Player
     u32 avatar; // (H3_Tex::eID) = PlayU....PlayF
     std::string name;
 
-    int ai_strategy; // Determines AI player behaviour
-    int ai_handicap; // Determines AI player stupidity
-    int ai_cheating; // Determines AI player advantages
+    void* ai_data;
 
     int rank_start; // Round 1
     int rank_dice;  // Round 2,3
@@ -621,19 +624,13 @@ struct H3_Player
     std::vector< H3_PlayerState > history;
 
     H3_Player();
-
+    ~H3_Player();
     std::string str() const;
-
     void pushState();
-
     void startGame();
-
     void setBonusArmy(bool value);
-
     void setBonusRoad(bool value);
-
     int getBankingRatio(int tt) const;
-
     H3_Bank getBankingRatios() const;
 };
 

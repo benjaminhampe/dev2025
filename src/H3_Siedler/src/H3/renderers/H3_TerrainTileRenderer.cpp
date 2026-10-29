@@ -226,7 +226,7 @@ void H3_TerrainTileRenderer::collectAndUploadInstances(const H3_Game& game)
 
         for (const auto& t : game.m_tiles)
         {
-            if (t.tileType.value != tt) { continue; }
+            if (t.tt.value != tt) { continue; }
 
             de::TRSf trs;
             trs.pos = t.pos;

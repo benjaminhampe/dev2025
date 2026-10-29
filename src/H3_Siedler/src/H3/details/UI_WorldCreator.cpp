@@ -276,7 +276,7 @@ void UI_WorldCreator::setCfg( const H3_Cfg& cfg )
 H3_Cfg
 UI_WorldCreator::getCfg()
 {
-    H3_Cfg cfg;
+    H3_Cfg cfg = H3_Cfg::createStandard();
     cfg.presetName = m_presetName->getText();
     cfg.buildingSpacing = m_edtBuildingSpacing->getValue();
     cfg.cardLimitNoSteal = m_edtCardLimit->getValue();

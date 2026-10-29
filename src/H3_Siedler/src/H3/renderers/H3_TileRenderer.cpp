@@ -200,7 +200,7 @@ void H3_TileRenderer::collectInstances(int i, const H3_Game& game)
 
     for (const auto& tile : game.m_tiles)
     {
-        if ( tile.tileType != tt ) continue; // Skip all non 'tt' tiles
+        if ( tile.tt != tt ) continue; // Skip all non 'tt' tiles
 
         de::TRSf trs;
         trs.pos = tile.pos;

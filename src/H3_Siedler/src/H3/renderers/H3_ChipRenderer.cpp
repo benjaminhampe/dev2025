@@ -259,7 +259,7 @@ void H3_ChipMeshBuffer::collectTiles(const H3_Game& game, float phi)
     {
         int layer = -1; // Unknown tex (question mark on black background)
 
-        if (tile.tileType.isResource())
+        if (tile.tt.isResource())
         {
             switch( tile.chipValue )
             {
@@ -276,9 +276,9 @@ void H3_ChipMeshBuffer::collectTiles(const H3_Game& game, float phi)
             default: break;
             }
         }
-        else if (tile.tileType.isPort())
+        else if (tile.tt.isPort())
         {
-            switch( tile.tileType.value )
+            switch( tile.tt.value )
             {
             case H3_TileType::Port3v1: layer = Chip3v1; break;
             case H3_TileType::PortA: layer = ChipA; break;
