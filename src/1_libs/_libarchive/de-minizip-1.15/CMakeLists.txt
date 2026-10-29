@@ -6,27 +6,27 @@ if (TARGET ${LIB_NAME})
 else()
     set(LIB_HEADER_DIR ${CMAKE_CURRENT_LIST_DIR}/include/minizip)
     set(LIB_SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/src/minizip)
-    set(LIB_HEADERS 
-		${LIB_HEADER_DIR}/zip.h 
-		${LIB_HEADER_DIR}/miniz.h
-	)
-    set(LIB_SOURCES 
-		${LIB_SOURCE_DIR}/zip.c
-	)
+    set(LIB_HEADERS
+        ${LIB_HEADER_DIR}/zip.h
+        ${LIB_HEADER_DIR}/miniz.h
+    )
+    set(LIB_SOURCES
+        ${LIB_SOURCE_DIR}/zip.c
+    )
 
     if (WIN32)
         enable_language(RC)
         list(APPEND LIB_SOURCES ${CMAKE_CURRENT_LIST_DIR}/res/resource.h)
         list(APPEND LIB_SOURCES ${CMAKE_CURRENT_LIST_DIR}/res/resource.rc)
     endif()
-    
-    if (BUILD_SHARED_LIBS)
-        message("${BoldBlue}[benni] DLL: ${LIB_NAME}${ColourReset}")
-        add_library(${LIB_NAME} SHARED "")
-    else()
+
+    # if (BUILD_SHARED_LIBS)
+    #     message("${BoldBlue}[benni] DLL: ${LIB_NAME}${ColourReset}")
+    #     add_library(${LIB_NAME} SHARED "")
+    # else()
         message("${BoldCyan}[benni] LIB: ${LIB_NAME}${ColourReset}")
         add_library(${LIB_NAME} STATIC "")
-    endif()
+    # endif()
 
     target_sources(${LIB_NAME} PUBLIC ${LIB_HEADERS} PRIVATE ${LIB_SOURCES})
     target_include_directories(${LIB_NAME} PUBLIC ${LIB_HEADER_DIR}/..) # For the SDK

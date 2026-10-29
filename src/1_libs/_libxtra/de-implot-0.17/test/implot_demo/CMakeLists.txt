@@ -31,6 +31,7 @@ else()
         # endif()
     endif()
 
+    # target_link_libraries(${APP_NAME} PUBLIC de_imgui)
     target_link_libraries(${APP_NAME} PUBLIC de_imgui_1_92_8_docking)
     target_link_libraries(${APP_NAME} PRIVATE de_implot_0_17)
     target_link_libraries(${APP_NAME} PRIVATE de_glfw)

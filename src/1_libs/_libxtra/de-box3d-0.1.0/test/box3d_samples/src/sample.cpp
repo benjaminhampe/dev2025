@@ -1770,7 +1770,9 @@ static void DrawMenuBar( SampleContext* context )
                 b3Version version = b3GetVersion();
                 ImGui::Text( "Box3D %d.%d.%d", version.major, version.minor, version.revision );
                 ImGui::Spacing();
+                #ifdef BENNI
                 ImGui::TextLinkOpenURL( "github.com/erincatto/box3d", "https://github.com/erincatto/box3d" );
+                #endif
             }
             ImGui::End();
         }
@@ -1844,7 +1846,10 @@ static void DrawSamplePicker( SampleContext* context )
         }
         bool commit = ImGui::IsKeyPressed( ImGuiKey_Enter, false ) || ImGui::IsKeyPressed( ImGuiKey_KeypadEnter, false );
 
-        ImGui::BeginChild( "##results", { 0.0f, 14.0f * fontSize }, ImGuiChildFlags_Borders );
+        #ifdef BENNI
+        // ImGuiChildFlags_Borders
+        #endif
+        ImGui::BeginChild( "##results", { 0.0f, 14.0f * fontSize }, true );
         for ( int row = 0; row < filteredCount; ++row )
         {
             int i = filtered[row];
@@ -1957,7 +1962,11 @@ static void DrawInfoPanel( SampleContext* context )
         ImGui::Checkbox( "Warm Starting##Solver", &context->enableWarmStarting );
         ImGui::Checkbox( "Continuous##Solver", &context->enableContinuous );
 
-        if ( ImGui::Shortcut( ImGuiKey_R ) || ImGui::Button( "Restart" ) )
+        //IMGUI_API bool
+        //ImGuiKey
+        // Shortcut(ImGuiKeyChord key_chord, ImGuiInputFlags flags = 0);
+        if ( ImGui::Shortcut( ImGuiKey_R,0 )
+            || ImGui::Button( "Restart" ) )
         {
             SelectSample( context, context->sampleIndex, true );
         }

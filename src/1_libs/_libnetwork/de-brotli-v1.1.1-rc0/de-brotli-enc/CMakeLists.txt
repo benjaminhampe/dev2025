@@ -54,9 +54,9 @@ else()
         ${LIB_HEADER_DIR}/brotli/enc/static_dict.h
         ${LIB_HEADER_DIR}/brotli/enc/static_dict_lut.h
         ${LIB_HEADER_DIR}/brotli/enc/utf8_util.h
-        ${LIB_HEADER_DIR}/brotli/enc/write_bits.h		
+        ${LIB_HEADER_DIR}/brotli/enc/write_bits.h
     )
-	
+
     set(LIB_SOURCES
         ${LIB_SOURCE_DIR}/enc/backward_references.c
         ${LIB_SOURCE_DIR}/enc/backward_references_hq.c
@@ -90,7 +90,9 @@ else()
     if (BUILD_SHARED_LIBS)
         message("${BoldBlue}[benni] DLL: ${LIB_NAME}${ColourReset}")
         add_library(${LIB_NAME} SHARED "")
-		target_compile_definitions(${LIB_NAME} PUBLIC JSON_DLL_BUILD=1)
+        target_compile_definitions(${LIB_NAME} PUBLIC JSON_DLL_BUILD=1)
+        target_compile_definitions(${LIB_NAME} PUBLIC BROTLI_SHARED_COMPILATION=1)
+        target_compile_definitions(${LIB_NAME} PRIVATE BROTLIENC_SHARED_COMPILATION=1)
     else()
         message("${BoldCyan}[benni] LIB: ${LIB_NAME}${ColourReset}")
         add_library(${LIB_NAME} STATIC "")
@@ -103,8 +105,8 @@ else()
     target_include_directories(${LIB_NAME} PRIVATE ${LIB_HEADER_DIR}/brotli/enc)
 
     target_compile_definitions(${LIB_NAME} PUBLIC HAVE_BROTLIENC=1)
-	
-	target_link_libraries(${LIB_NAME} PUBLIC de_brotlicommon)
+
+    target_link_libraries(${LIB_NAME} PUBLIC de_brotlicommon)
 
 endif()
 

@@ -91,13 +91,13 @@ else()
         # ${LIB_SOURCE_DIR}/backends/vulkan/glsl_shader.vert
     )
 
-    if (BUILD_SHARED_LIBS)
-        add_library(${LIB_NAME} SHARED "")
-        message("${BoldBlue}[benni] DLL: ${LIB_NAME}${ColourReset}")
-    else()
+    # if (BUILD_SHARED_LIBS)
+    #     add_library(${LIB_NAME} SHARED "")
+    #     message("${BoldBlue}[benni] DLL: ${LIB_NAME}${ColourReset}")
+    # else()
         add_library(${LIB_NAME} STATIC "")
         message("${BoldCyan}[benni] LIB: ${LIB_NAME}${ColourReset}")
-    endif()
+    # endif()
 
     target_include_directories(${LIB_NAME} PUBLIC ${LIB_HEADER_DIR})
     target_include_directories(${LIB_NAME} PRIVATE ${LIB_SOURCE_DIR})
@@ -123,5 +123,10 @@ else()
 
     target_link_libraries(${LIB_NAME} PUBLIC de_glfw)
     target_link_libraries(${LIB_NAME} PUBLIC de_freetype2)
+    # target_link_libraries(${LIB_NAME} PUBLIC de_imgui)
+
+    if (WIN32)
+        target_link_libraries(${LIB_NAME} PUBLIC dwmapi)
+    endif()
 
 endif()

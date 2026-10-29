@@ -7,11 +7,11 @@ else()
 
     set(LIB_HEADER_DIR ${CMAKE_CURRENT_LIST_DIR}/include)
     set(LIB_SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/src)
-        
+
     set(LIB_SOURCES_COMMON
         ${LIB_SOURCE_DIR}/common.h
     )
-    
+
     set(LIB_HEADERS_EVEREST
         ${LIB_HEADER_DIR}/everest/everest.h
         ${LIB_HEADER_DIR}/everest/Hacl_Curve25519.h
@@ -34,7 +34,7 @@ else()
         ${LIB_SOURCE_DIR}/everest/x25519.c
         ${LIB_SOURCE_DIR}/everest/Hacl_Curve25519_joined.c
     )
-    
+
     set(LIB_HEADERS_P256M
         ${LIB_HEADER_DIR}/p256-m/p256-m.h
         ${LIB_HEADER_DIR}/p256-m/p256-m_driver_entrypoints.h
@@ -43,7 +43,7 @@ else()
         ${LIB_SOURCE_DIR}/p256-m/p256-m.c
         ${LIB_SOURCE_DIR}/p256-m/p256-m_driver_entrypoints.c
     )
-    
+
     set(LIB_HEADERS_X509
         ${LIB_HEADER_DIR}/mbedtls/pkcs7.h
         ${LIB_HEADER_DIR}/mbedtls/x509.h
@@ -53,7 +53,7 @@ else()
     )
     set(LIB_SOURCES_X509
         ${LIB_SOURCE_DIR}/x509/pkcs7.c
-        ${LIB_SOURCE_DIR}/x509/x509_internal.h        
+        ${LIB_SOURCE_DIR}/x509/x509_internal.h
         ${LIB_SOURCE_DIR}/x509/x509.c
         ${LIB_SOURCE_DIR}/x509/x509_create.c
         ${LIB_SOURCE_DIR}/x509/x509_crl.c
@@ -63,7 +63,7 @@ else()
         ${LIB_SOURCE_DIR}/x509/x509write_crt.c
         ${LIB_SOURCE_DIR}/x509/x509write_csr.c
     )
-    
+
     set(LIB_HEADERS_TLS
         ${LIB_HEADER_DIR}/mbedtls/debug.h
         ${LIB_HEADER_DIR}/mbedtls/net_sockets.h
@@ -73,7 +73,7 @@ else()
         ${LIB_HEADER_DIR}/mbedtls/ssl_cookie.h
         ${LIB_HEADER_DIR}/mbedtls/ssl_ticket.h
     )
-    
+
     set(LIB_SOURCES_TLS
         ${LIB_SOURCE_DIR}/tls/debug.c
         ${LIB_SOURCE_DIR}/tls/debug_internal.h
@@ -103,9 +103,9 @@ else()
         ${LIB_SOURCE_DIR}/tls/ssl_tls13_invasive.h
         ${LIB_SOURCE_DIR}/tls/ssl_tls13_keys.c
         ${LIB_SOURCE_DIR}/tls/ssl_tls13_keys.h
-        ${LIB_SOURCE_DIR}/tls/ssl_tls13_server.c        
+        ${LIB_SOURCE_DIR}/tls/ssl_tls13_server.c
     )
-    
+
     set(LIB_HEADERS_CRYPTO
         ${LIB_HEADER_DIR}/mbedtls/aes.h
         ${LIB_HEADER_DIR}/mbedtls/aria.h
@@ -192,7 +192,7 @@ else()
         ${LIB_HEADER_DIR}/psa/crypto_sizes.h
         ${LIB_HEADER_DIR}/psa/crypto_struct.h
         ${LIB_HEADER_DIR}/psa/crypto_types.h
-        ${LIB_HEADER_DIR}/psa/crypto_values.h        
+        ${LIB_HEADER_DIR}/psa/crypto_values.h
     )
     set(LIB_SOURCES_CRYPTO
         ${LIB_SOURCE_DIR}/crypto/aes.c
@@ -337,23 +337,23 @@ else()
         # list(APPEND LIB_SOURCES ${CMAKE_CURRENT_LIST_DIR}/res/resource.rc)
     # endif()
 
-    if (BUILD_SHARED_LIBS)
-        message("${BoldBlue}[benni] DLL: ${LIB_NAME}${ColourReset}")
-        add_library(${LIB_NAME} SHARED "")
-        #target_compile_definitions(${LIB_NAME} PUBLIC -DZLIB_DLL=1)
-    else()
+    # if (BUILD_SHARED_LIBS)
+        # message("${BoldBlue}[benni] DLL: ${LIB_NAME}${ColourReset}")
+        # add_library(${LIB_NAME} SHARED "")
+        # #target_compile_definitions(${LIB_NAME} PUBLIC -DZLIB_DLL=1)
+    # else()
         message("${BoldCyan}[benni] LIB: ${LIB_NAME}${ColourReset}")
         add_library(${LIB_NAME} STATIC "")
-    endif()
+    # endif()
 
-    target_sources(${LIB_NAME} 
-        PUBLIC 
+    target_sources(${LIB_NAME}
+        PUBLIC
         ${LIB_HEADERS_EVEREST}
         ${LIB_HEADERS_P256M}
         ${LIB_HEADERS_X509}
         ${LIB_HEADERS_TLS}
         ${LIB_HEADERS_CRYPTO}
-        PRIVATE 
+        PRIVATE
         ${LIB_SOURCES_COMMON}
         ${LIB_SOURCES_EVEREST}
         ${LIB_SOURCES_P256M}
@@ -363,7 +363,7 @@ else()
     )
 
     target_include_directories(${LIB_NAME} PUBLIC ${LIB_HEADER_DIR})
-    
+
     target_include_directories(${LIB_NAME} PRIVATE ${LIB_HEADER_DIR}/everest)
     target_include_directories(${LIB_NAME} PRIVATE ${LIB_HEADER_DIR}/p256-m)
     target_include_directories(${LIB_NAME} PRIVATE ${LIB_HEADER_DIR}/mbedtls)
@@ -374,7 +374,7 @@ else()
     target_include_directories(${LIB_NAME} PRIVATE ${LIB_SOURCE_DIR}/p256-m)
     target_include_directories(${LIB_NAME} PRIVATE ${LIB_SOURCE_DIR}/crypto)
     target_include_directories(${LIB_NAME} PRIVATE ${LIB_SOURCE_DIR}/x509)
-    target_include_directories(${LIB_NAME} PRIVATE ${LIB_SOURCE_DIR}/tls)    
+    target_include_directories(${LIB_NAME} PRIVATE ${LIB_SOURCE_DIR}/tls)
     # target_link_libraries(${LIB_NAME} PUBLIC de_mbedtls_420_everest)
     # target_link_libraries(${LIB_NAME} PUBLIC de_mbedtls_420_p256-m)
 
@@ -402,8 +402,13 @@ else()
         target_link_libraries(${LIB_NAME} PUBLIC ws2_32 bcrypt)
         target_link_libraries(${LIB_NAME} PUBLIC dnsapi)
         # target_link_libraries(${LIB_NAME} PUBLIC msvcrt) # vsnprintf_s
-        # # target_link_libraries(${LIB_NAME} PUBLIC ucrt) # vsnprintf_s        
+        # # target_link_libraries(${LIB_NAME} PUBLIC ucrt) # vsnprintf_s
     endif()
+
+    # Finde die plattformunabhängige Thread-Bibliothek
+    find_package(Threads REQUIRED)
+    # Sauberer Link gegen Threads (funktioniert mit MinGW-LLVM und GCC/Clang auf Linux)
+    target_link_libraries(${LIB_NAME} PUBLIC Threads::Threads)
 
     # install(TARGETS enet
         # RUNTIME DESTINATION bin

@@ -111,6 +111,13 @@ std::string TextureFormat_str(uint32_t internalFormat)
 
 
 Tex2DArray::Tex2DArray()
+    : id{ 0 }
+    , w{ 0 }         // Same width for all images.
+    , h{ 0 }     // Same height for all images.
+    , layers{ 0 }
+    , mipLevels{ 1 }
+    , gpuFormat{ 0 }
+    , so{}
 {
 
 }
@@ -120,11 +127,12 @@ Tex2DArray::~Tex2DArray()
     if (id != 0)
     {
         DE_ERROR("Forgot to call destroy(), ")
-        destroy();
+        //destroy();
     }
 }
 
-// Verschiebe-Semantik (Move)
+/*
+// 1. Der Move-Konstruktor (Kein self-check nötig!)
 Tex2DArray::Tex2DArray(Tex2DArray&& other) noexcept
     : id(other.id)
     , w(other.w)
@@ -132,26 +140,37 @@ Tex2DArray::Tex2DArray(Tex2DArray&& other) noexcept
     , layers(other.layers)
     , mipLevels(other.mipLevels)
     , gpuFormat(other.gpuFormat)
+    , so(other.so)
 {
+    // Ganz wichtig: Dem alten Objekt die ID wegnehmen,
+    // damit dessen Destruktor die Textur nicht auf der GPU löscht!
     other.id = 0;
 }
 
+// 2. Der Move-Zuweisungsoperator (HIER ist der Check Pflicht!)
 Tex2DArray&
 Tex2DArray::operator=(Tex2DArray&& other) noexcept
 {
     if (this != &other)
     {
+        // Clean our house before absorbing new furnitures.
         destroy();
+
+        // New furnitures:
         id = other.id;
         w = other.w;
         h = other.h;
         layers = other.layers;
         mipLevels = other.mipLevels;
         gpuFormat = other.gpuFormat;
+        so = other.so;
+
+        // Leave an eviction notice.
         other.id = 0;
     }
     return *this;
 }
+*/
 
 // Tex2DArray::Tex2DArray(const Tex2DArray&) = delete;
 // Tex2DArray::Tex2DArray& operator=(const Tex2DArray&) = delete;
@@ -180,22 +199,23 @@ std::string Tex2DArray::str() const
 /**
  * Erstellt das Textur-Array. Berechnet automatisch die maximal möglichen Mipmap-Stufen.
  */
-//static
-Tex2DArray
+bool
 Tex2DArray::create(const std::string& name, const std::vector<const Image*>& images, const SamplerOptions& so)
 {
+    destroy();
+
     if (images.empty())
     {
         DE_ERROR("Empty image vector, ",name)
-        return {};
+        return false;
     }
 
-    DE_ERROR("Image vector, ",images.size())
+    DE_DEBUG("Image vector, ",images.size())
 
     // Bilder in Level 0 hochladen
-    int32_t w = images[0]->w();
-    int32_t h = images[0]->h();
-    auto fmt = images[0]->pixelFormat();
+    int32_t img_w = images[0]->w();
+    int32_t img_h = images[0]->h();
+    auto img_fmt = images[0]->pixelFormat();
 
     for (size_t i = 1; i < images.size(); ++i)
     {
@@ -209,27 +229,57 @@ Tex2DArray::create(const std::string& name, const std::vector<const Image*>& ima
         const int32_t h2 = img->h();
         const auto fmt2 = img->pixelFormat();
 
-        if (w2 != w) { DE_ERROR("Img[",i,"] w2(",w2,") != w(",w,")") return {}; }
-        if (h2 != h) { DE_ERROR("Img[",i,"] h2(",h2,") != h(",h,")") return {}; }
-        if (fmt2 != fmt) { DE_ERROR("Img[",i,"] fmt2(",fmt2.str(),") != fmt(",fmt.str(),")") return {}; }
+        if (w2 != img_w)
+        {
+            DE_ERROR("Img[",i,"] w2(",w2,") != w(",img_w,")")
+            return false;
+        }
+        if (h2 != img_h)
+        {
+            DE_ERROR("Img[",i,"] h2(",h2,") != h(",img_h,")")
+            return false;
+        }
+        if (fmt2 != img_fmt)
+        {
+            DE_ERROR("Img[",i,"] fmt2(",fmt2.str(),") != fmt(",img_fmt.str(),")")
+            return false;
+        }
     }
 
-    Tex2DArray tex;
-    tex.w = w;   // Setzt die Ziel-Breite fest
-    tex.h = h;  // Setzt die Ziel-Höhe fest
-    tex.layers = static_cast<GLsizei>(images.size());
-    tex.mipLevels = static_cast<GLsizei>(std::floor(std::log2(std::max(tex.w, tex.h)))) + 1;
-    tex.gpuFormat = (fmt == PixelFormat::R8G8B8) ? GL_RGB8 : GL_RGBA8; // internalFormat.
+    if ((img_fmt != PixelFormat::R8G8B8) &&
+        (img_fmt != PixelFormat::R8G8B8A8))
+    {
+        DE_ERROR("Unsupported pixelFormat ",img_fmt.str())
+        return false;
+    }
 
-    glGenTextures(1, &tex.id);
-    glBindTexture(GL_TEXTURE_2D_ARRAY, tex.id);
-    glTexStorage3D(GL_TEXTURE_2D_ARRAY, tex.mipLevels, tex.gpuFormat, tex.w, tex.h, tex.layers);
+    w = img_w;   // Setzt die Ziel-Breite fest
+    h = img_h;  // Setzt die Ziel-Höhe fest
+    layers = static_cast<GLsizei>(images.size());
+    mipLevels = static_cast<GLsizei>(std::floor(std::log2(std::max(w, h)))) + 1;
+    gpuFormat = (img_fmt == PixelFormat::R8G8B8)
+              ? GL_RGB8 : GL_RGBA8; // internalFormat
 
+    glGenTextures(1, &id);
+    glBindTexture(GL_TEXTURE_2D_ARRAY, id);
+    glTexStorage3D(
+        GL_TEXTURE_2D_ARRAY,
+        mipLevels,
+        gpuFormat,
+        w,
+        h,
+        layers);
+
+    // tex.mipLevels
     // 1. Calculate the CPU-side data format based on your PixelFormat enum
-    GLenum cpuFormat = (fmt == PixelFormat::R8G8B8) ? GL_RGB : GL_RGBA;
+    GLenum cpuFormat = (img_fmt == PixelFormat::R8G8B8)
+                     ? GL_RGB : GL_RGBA;
+
+    // WICHTIG: Erzwinge Byte-Alignment für den CPU-Upload (behebt RGB-Padding Fehler)
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
     // Bilder in Level 0 hochladen
-    for (GLsizei i = 0; i < tex.layers; ++i)
+    for (GLsizei i = 0; i < layers; ++i)
     {
         glTexSubImage3D(
             GL_TEXTURE_2D_ARRAY,//GLenum target
@@ -253,8 +303,8 @@ Tex2DArray::create(const std::string& name, const std::vector<const Image*>& ima
 
     glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
 
-    DE_DEBUG("Created Tex2DArray ",tex.str())
-    return tex;
+    DE_DEBUG("Created Tex2DArray ",str())
+    return true;
 }
 
 #if 0

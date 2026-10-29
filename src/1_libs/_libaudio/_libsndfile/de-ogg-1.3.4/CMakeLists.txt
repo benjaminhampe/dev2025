@@ -21,13 +21,13 @@ else()
         list(APPEND OGG_SOURCES ${CMAKE_CURRENT_LIST_DIR}/res/resource.rc)
     endif()
 
-    if (BUILD_SHARED_LIBS)
-        message("${BoldBlue}[benni] DLL: ${LIB_NAME}${ColourReset}")
-        add_library(${LIB_NAME} SHARED "")
-    else()
+    # if (BUILD_SHARED_LIBS)
+    #     message("${BoldBlue}[benni] DLL: ${LIB_NAME}${ColourReset}")
+    #     add_library(${LIB_NAME} SHARED "")
+    # else()
         message("${BoldCyan}[benni] LIB: ${LIB_NAME}${ColourReset}")
         add_library(${LIB_NAME} STATIC "")
-    endif()
+    # endif()
 
     target_include_directories(${LIB_NAME} PUBLIC ${OGG_HEADER_DIR}/..) # user <ogg/ogg.h>
     target_include_directories(${LIB_NAME} PRIVATE ${OGG_SOURCE_DIR})   # sources

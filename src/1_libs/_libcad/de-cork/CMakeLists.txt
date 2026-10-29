@@ -12,14 +12,14 @@ if (TARGET ${LIB_NAME})
     # file(GLOB_RECURSE CORK_HEADERS "${CORK_HEADER_DIR}/*.[c,h]pp")
     # file(GLOB_RECURSE CORK_SOURCES "${CORK_SOURCE_DIR}/*.[c,h]pp")
 
-    set(CORK_HEADERS 
+    set(CORK_HEADERS
         ${CORK_HEADER_DIR}/cork.h
         ${CORK_HEADER_DIR}/vec.h
         ${CORK_HEADER_DIR}/prelude.h
         ${CORK_HEADER_DIR}/rawMesh.h
         ${CORK_HEADER_DIR}/rawMesh.tpp
         ${CORK_HEADER_DIR}/files.h)
-    set(CORK_SOURCES 
+    set(CORK_SOURCES
         ${CORK_SOURCE_DIR}/aabvh.h
         ${CORK_SOURCE_DIR}/absext4.h
         ${CORK_SOURCE_DIR}/bbox.h
@@ -55,13 +55,13 @@ if (TARGET ${LIB_NAME})
         ${CORK_SOURCE_DIR}/unsafeRayTriIsct.h
     )
 
-    if (BUILD_SHARED_LIBS)
-        add_library(${LIB_NAME} SHARED "")
-        message("${BoldBlue}[benni] DLL: ${LIB_NAME}${ColourReset}")
-    else()
+    # if (BUILD_SHARED_LIBS)
+    #     add_library(${LIB_NAME} SHARED "")
+    #     message("${BoldBlue}[benni] DLL: ${LIB_NAME}${ColourReset}")
+    # else()
         add_library(${LIB_NAME} STATIC "")
         message("${BoldCyan}[benni] LIB: ${LIB_NAME}${ColourReset}")
-    endif()
+    # endif()
 
     target_include_directories(${LIB_NAME} PUBLIC ${CORK_HEADER_DIR}/..)
     target_include_directories(${LIB_NAME} PRIVATE ${CORK_HEADER_DIR})
@@ -69,7 +69,7 @@ if (TARGET ${LIB_NAME})
     target_sources(${LIB_NAME} PUBLIC ${CORK_HEADERS} PRIVATE ${CORK_SOURCES})
 
     target_compile_definitions(${LIB_NAME} PRIVATE TRILIBRARY=1)
-    
+
     if (MSVC)
     else()
         # target_compile_options(${LIB_NAME} PRIVATE -Wno-pointer-to-int-cast)

@@ -13,7 +13,7 @@ else()
         ${LIB_HEADER_DIR}/brotli/dec/prefix.h
         ${LIB_HEADER_DIR}/brotli/dec/state.h
     )
-	
+
     set(LIB_SOURCES
         ${LIB_SOURCE_DIR}/dec/bit_reader.c
         ${LIB_SOURCE_DIR}/dec/decode.c
@@ -30,7 +30,10 @@ else()
     if (BUILD_SHARED_LIBS)
         message("${BoldBlue}[benni] DLL: ${LIB_NAME}${ColourReset}")
         add_library(${LIB_NAME} SHARED "")
-		target_compile_definitions(${LIB_NAME} PUBLIC JSON_DLL_BUILD=1)
+        target_compile_definitions(${LIB_NAME} PUBLIC JSON_DLL_BUILD=1)
+
+        target_compile_definitions(${LIB_NAME} PUBLIC BROTLI_SHARED_COMPILATION=1)
+        target_compile_definitions(${LIB_NAME} PRIVATE BROTLIDEC_SHARED_COMPILATION=1)
     else()
         message("${BoldCyan}[benni] LIB: ${LIB_NAME}${ColourReset}")
         add_library(${LIB_NAME} STATIC "")
@@ -43,8 +46,8 @@ else()
     target_include_directories(${LIB_NAME} PRIVATE ${LIB_HEADER_DIR}/brotli/dec)
 
     target_compile_definitions(${LIB_NAME} PUBLIC HAVE_BROTLIDEC=1)
-	
-	target_link_libraries(${LIB_NAME} PUBLIC de_brotlicommon)
+
+    target_link_libraries(${LIB_NAME} PUBLIC de_brotlicommon)
 
 endif()
 

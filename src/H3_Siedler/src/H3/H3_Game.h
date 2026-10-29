@@ -8,6 +8,7 @@
 #include <H3/details/UI_MainMenu.h>
 #include <H3/details/UI_Game.h>
 
+#include <H3/renderers/H3_Board2DRenderer.h>
 #include <H3/renderers/H3_ChipRenderer.h>
 #include <H3/renderers/H3_ObjRenderer.h>
 #include <H3/renderers/H3_DiceRenderer.h>
@@ -289,6 +290,7 @@ struct H3_Game
     int m_hoverFarmId = 0;
     int m_hoverCityId = 0;
 
+    H3_Board2DRenderer m_board2DRenderer;
     H3_ChipRenderer m_chipRenderer;
     H3_ObjRenderer m_objRenderer;
     H3_DiceRenderer m_diceRenderer;

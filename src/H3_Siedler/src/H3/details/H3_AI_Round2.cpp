@@ -92,7 +92,7 @@ void AI_Round2(H3_Game& game, const uint32_t playerId)
 
     // Buy Road
 
-
+    game.enterIdle();
 
 
     std::vector<u32> roadCandidates = H3_computeVisibleEdges(game, playerId);

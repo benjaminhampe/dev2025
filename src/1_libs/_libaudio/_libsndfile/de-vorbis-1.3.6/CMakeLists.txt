@@ -108,13 +108,13 @@ else()
         # ${VORBIS_SOURCE_DIR}/common/win32thread.h
     endif()
 
-    if (BUILD_SHARED_LIBS)
-        message("${BoldBlue}[benni] DLL: ${LIB_NAME}${ColourReset}")
-        add_library(${LIB_NAME} SHARED "")
-    else()
+    # if (BUILD_SHARED_LIBS)
+        # message("${BoldBlue}[benni] DLL: ${LIB_NAME}${ColourReset}")
+        # add_library(${LIB_NAME} SHARED "")
+    # else()
         message("${BoldCyan}[benni] LIB: ${LIB_NAME}${ColourReset}")
         add_library(${LIB_NAME} STATIC "")
-    endif()
+    # endif()
 
     target_sources(${LIB_NAME} PUBLIC ${VORBIS_HEADERS} PRIVATE ${VORBIS_SOURCES})
 

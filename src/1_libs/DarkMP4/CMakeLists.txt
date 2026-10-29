@@ -25,19 +25,19 @@ else()
         # list(APPEND LIB_SOURCES ${CMAKE_CURRENT_LIST_DIR}/res/resource.rc)
     # endif()
 
-    if (BUILD_SHARED_LIBS)
-        message("${BoldBlue}[benni] DLL: ${LIB_NAME}${ColourReset}")
-        add_library(${LIB_NAME} SHARED "")
-    else()
+    # if (BUILD_SHARED_LIBS)
+    #     message("${BoldBlue}[benni] DLL: ${LIB_NAME}${ColourReset}")
+    #     add_library(${LIB_NAME} SHARED "")
+    # else()
         message("${BoldCyan}[benni] LIB: ${LIB_NAME}${ColourReset}")
         add_library(${LIB_NAME} STATIC "")
-    endif()
+    # endif()
 
     target_sources(${LIB_NAME} PUBLIC ${LIB_HEADERS} PRIVATE ${LIB_SOURCES})
 
     target_include_directories(${LIB_NAME} PUBLIC ${LIB_HEADER_DIR})
     target_include_directories(${LIB_NAME} PRIVATE ${LIB_SOURCE_DIR})
-    
+
     target_link_libraries(${LIB_NAME} PUBLIC DarkImage_2604)
 
 endif()

@@ -253,7 +253,9 @@ struct H3_Cfg
     u32 bonusRoadLimit;     // 0 = disabled, +2 points for atleast default:5 connected roads
     u32 bonusArmyLimit;     // 0 = disabled, +2 points for atleast default:3 knights
 
-    std::vector< H3_CfgTile > tileList;
+    de::Pos2i min;
+    de::Pos2i max;
+    std::vector< H3_CfgTile > tiles;
 
     H3_CfgPlayer player; // human
 
@@ -271,6 +273,8 @@ struct H3_Cfg
 
     std::string
     str() const;
+
+    void computeBounds();
 
 protected:
     void

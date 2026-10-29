@@ -11,4 +11,7 @@ else()
     target_compile_definitions(${LIB_NAME} INTERFACE HAVE_SOKOL=1)
     target_compile_definitions(${LIB_NAME} INTERFACE HAVE_LIBSOKOL=1)
     target_include_directories(${LIB_NAME} INTERFACE ${CMAKE_CURRENT_LIST_DIR}/include)
+
+    # target_link_libraries(${LIB_NAME} INTERFACE de_imgui)
+    target_link_libraries(${LIB_NAME} INTERFACE de_imgui_1_92_8_docking)
 endif()

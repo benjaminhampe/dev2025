@@ -503,6 +503,22 @@ H3_CfgPlayer H3_CfgPlayer::createAlexander()
 */
 // ==================================================================
 
+void H3_Cfg::computeBounds()
+{
+    min.x = std::numeric_limits<int32_t>::max();
+    min.y = std::numeric_limits<int32_t>::max();
+    max.x = std::numeric_limits<int32_t>::lowest();
+    max.y = std::numeric_limits<int32_t>::lowest();
+
+    for (const H3_CfgTile& tile : tiles)
+    {
+        min.x = std::min(min.x, tile.i);
+        min.y = std::min(min.y, tile.j);
+        max.x = std::max(max.x, tile.i);
+        max.y = std::max(max.y, tile.j);
+    }
+}
+
 void
 H3_Cfg::dump() const
 {
@@ -529,11 +545,11 @@ H3_Cfg::dump() const
         DE_DEBUG("cfg.player[",i,"] ",playerList[i].str())
     }
     */
-    DE_DEBUG("cfg.tileList = ",tileList.size())
+    DE_DEBUG("cfg.tiles = ",tiles.size())
 
-    for (size_t i= 0; i < tileList.size(); ++i)
+    for (size_t i= 0; i < tiles.size(); ++i)
     {
-        DE_DEBUG("cfg.tile[",i,"] ",tileList[i].str())
+        DE_DEBUG("cfg.tile[",i,"] ",tiles[i].str())
     }
 }
 
@@ -548,13 +564,13 @@ H3_Cfg::str() const
 void
 H3_Cfg::addTile( int i, int j, H3_TileType tileType, int angle60, int diceValue )
 {
-    H3_CfgTile cfg;
-    cfg.i = i;
-    cfg.j = j;
-    cfg.tileType = tileType;
-    cfg.chipValue = diceValue;
-    cfg.angle60 = angle60;
-    tileList.push_back( std::move( cfg ) );
+    tiles.emplace_back();
+    H3_CfgTile & tile = tiles.back();
+    tile.i = i;
+    tile.j = j;
+    tile.tileType = tileType;
+    tile.chipValue = diceValue;
+    tile.angle60 = angle60;
 }
 
 // static
@@ -628,6 +644,7 @@ H3_Cfg::createStandard()
     cfg.player.connect = H3_PlayerConnect::LOCAL;
     cfg.player.avatar = H3_Tex::Play3;
 
+    cfg.computeBounds();
     return cfg;
 }
 

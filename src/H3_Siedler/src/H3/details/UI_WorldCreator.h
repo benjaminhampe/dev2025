@@ -2,44 +2,6 @@
 #include <H3/H3_Board.h>
 
 // ===========================================================================
-class UI_World : public de::gui::Widget
-// ===========================================================================
-{
-public:
-    UI_World( H3_Game* game, de::gui::Env* env, de::gui::Widget* parent, u32 id );
-    ~UI_World() override;
-    void draw() override;
-
-    void setPreset( H3_Cfg* cfg ) { m_cfg = cfg; }
-    // H3_Cfg& getPreset();
-    // H3_Cfg& getPreset( const std::string& presetName );
-    // const std::string& getPresetName() const;
-
-protected:
-private:
-    H3_Game* m_game;
-
-    de::gpu::TexRef m_backgroundTex;
-    de::gpu::TexRef m_texA;
-    de::gpu::TexRef m_texB;
-    de::gpu::TexRef m_texC;
-    de::gpu::TexRef m_texD;
-    de::gpu::TexRef m_texE;
-    de::gpu::TexRef m_texH;
-    de::gpu::TexRef m_texW;
-
-    float m_tileSize = 100.f;
-    float m_scale = 1.f;
-    float m_off_x = 0.f;
-    float m_off_y = 0.f;
-
-    std::mutex m_drawMutex;
-    H3_Cfg* m_cfg;
-    // de::Recti m_tileBounds;
-};
-
-
-// ===========================================================================
 class UI_WorldCreator : public de::gui::Widget
 // ===========================================================================
 {
@@ -65,19 +27,26 @@ public:
 protected:
     de::gui::Button* createButton(std::string txt);
     de::gui::IntField* createIntField(std::string txt, int val, int min, int max);
-    void calcTileBounds();
+    void drawBoard(const de::Recti & rect);
 private:
     H3_Game* m_game;
+    de::Recti m_rcBoard;
+    //float m_tileSize = 100.f;
+    float m_scale;
+    float m_off_x;
+    float m_off_y;
+    std::vector< H3_CfgTile > m_tiles;
+
+    H3_Cfg m_cfg; // Current preset
+    std::unordered_map<std::string, H3_Cfg> m_presets;
 
     de::gpu::TexRef m_backgroundTex;
-
-    UI_World* m_world;
 
     de::gui::Label* m_title;
     //de::gui::Label* m_presetLabel;
     de::gui::Button* m_presetPrev;
     de::gui::Button* m_presetNext;
-    de::gui::Label* m_presetName;
+    de::gui::Label*  m_presetName;
     de::gui::Button* m_presetNew;
     de::gui::Button* m_presetClone;
     de::gui::Button* m_presetDelete;
@@ -85,8 +54,10 @@ private:
     de::gui::Button* m_presetImport;
     //de::gui::Button* m_presetEdit;
 
-    de::gui::IntField* m_edtTilesX;
-    de::gui::IntField* m_edtTilesY;
+    de::gui::IntField* m_edtMinX;
+    de::gui::IntField* m_edtMaxX;
+    de::gui::IntField* m_edtMinY;
+    de::gui::IntField* m_edtMaxY;
     de::gui::IntField* m_edtVictoryPoints;
     de::gui::IntField* m_edtCardLimit;
     de::gui::IntField* m_edtBuildingSpacing;
@@ -95,14 +66,4 @@ private:
 
     de::gui::Button* m_btnClose;
     de::gui::Button* m_btnStart;
-
-
-    float m_tileSize = 100.f;
-
-    std::unordered_map<std::string, H3_Cfg> m_presets;
-
-    H3_Cfg m_cfg; // Current preset
-
-    de::Recti m_tileBounds;
-
 };

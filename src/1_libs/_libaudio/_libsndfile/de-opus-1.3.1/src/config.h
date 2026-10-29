@@ -125,7 +125,9 @@
 /* #undef OPUS_ARM_PRESUME_NEON_INTR */
 
 /* This is a build of OPUS */
+#ifndef OPUS_BUILD
 #define OPUS_BUILD /**/
+#endif
 
 /* Run bit-exactness checks between optimized and c implementations */
 /* #undef OPUS_CHECK_ASM */

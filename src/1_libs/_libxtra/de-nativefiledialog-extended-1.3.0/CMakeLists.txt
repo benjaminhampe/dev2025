@@ -26,13 +26,13 @@ else()
 		${LIB_SOURCE_DIR}/nfd_win.cpp
     )
 
-    if (BUILD_SHARED_LIBS)
-        add_library(${LIB_NAME} SHARED "")
-        message("${BoldBlue}[benni] DLL: ${LIB_NAME}${ColourReset}")
-    else()
+    # if (BUILD_SHARED_LIBS)
+        # add_library(${LIB_NAME} SHARED "")
+        # message("${BoldBlue}[benni] DLL: ${LIB_NAME}${ColourReset}")
+    # else()
         add_library(${LIB_NAME} STATIC "")
         message("${BoldCyan}[benni] LIB: ${LIB_NAME}${ColourReset}")
-    endif()
+    # endif()
 
     target_include_directories(${LIB_NAME} PUBLIC ${LIB_HEADER_DIR})
     target_include_directories(${LIB_NAME} PRIVATE ${LIB_SOURCE_DIR})

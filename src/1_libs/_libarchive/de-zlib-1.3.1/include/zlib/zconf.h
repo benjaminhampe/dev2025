@@ -365,7 +365,7 @@
 #  endif
 #endif
 
-#if defined (__BEOS__)
+#if defined (__BEOS__) || defined (_WIN32)
 #  ifdef ZLIB_DLL
 #    ifdef ZLIB_INTERNAL
 #      define ZEXPORT   __declspec(dllexport)

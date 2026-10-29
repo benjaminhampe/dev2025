@@ -4746,7 +4746,7 @@ Recti::Recti( int32_t x_, int32_t y_, int32_t w_, int32_t h_ )
     set( x_, y_, w_, h_ );
 }
 
-Recti::Recti( const Posi& pos, const Sizei& size )
+Recti::Recti( const Pos2i& pos, const Sizei& size )
     : x(pos.x), y(pos.y), w(size.w), h(size.h)
 {}
 
@@ -4885,11 +4885,11 @@ int32_t Recti::x1() const { return x; }
 int32_t Recti::y1() const { return y; }
 int32_t Recti::x2() const { return w > 1 ? x + w - 1 : x; }
 int32_t Recti::y2() const { return h > 1 ? y + h - 1 : y; }
-Posi    Recti::pos() const { return { x, y }; }
+Pos2i    Recti::pos() const { return { x, y }; }
 Sizei   Recti::size() const { return { w, h }; }
-Posi    Recti::center() const { return { centerX(), centerY() }; }
-Posi    Recti::topLeft() const { return { x, y }; }
-Posi    Recti::bottomRight() const { return { x2(), y2() }; }
+Pos2i    Recti::center() const { return { centerX(), centerY() }; }
+Pos2i    Recti::topLeft() const { return { x, y }; }
+Pos2i    Recti::bottomRight() const { return { x2(), y2() }; }
 
 // int32_t     Recti::getX() const { return x(); }
 // int32_t     Recti::getY() const { return y(); }

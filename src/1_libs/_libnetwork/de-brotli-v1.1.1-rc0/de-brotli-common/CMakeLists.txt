@@ -19,9 +19,9 @@ else()
         ${LIB_HEADER_DIR}/brotli/common/platform.h
         ${LIB_HEADER_DIR}/brotli/common/shared_dictionary_internal.h
         ${LIB_HEADER_DIR}/brotli/common/transform.h
-        ${LIB_HEADER_DIR}/brotli/common/version.h		
+        ${LIB_HEADER_DIR}/brotli/common/version.h
     )
-	
+
     set(LIB_SOURCES
         ${LIB_SOURCE_DIR}/constants.c
         ${LIB_SOURCE_DIR}/context.c
@@ -40,7 +40,9 @@ else()
     if (BUILD_SHARED_LIBS)
         message("${BoldBlue}[benni] DLL: ${LIB_NAME}${ColourReset}")
         add_library(${LIB_NAME} SHARED "")
-		target_compile_definitions(${LIB_NAME} PUBLIC JSON_DLL_BUILD=1)
+        target_compile_definitions(${LIB_NAME} PUBLIC JSON_DLL_BUILD=1)
+        target_compile_definitions(${LIB_NAME} PUBLIC BROTLI_SHARED_COMPILATION=1)
+        target_compile_definitions(${LIB_NAME} PRIVATE BROTLICOMMON_SHARED_COMPILATION=1)
     else()
         message("${BoldCyan}[benni] LIB: ${LIB_NAME}${ColourReset}")
         add_library(${LIB_NAME} STATIC "")

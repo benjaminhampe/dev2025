@@ -16,13 +16,15 @@ else()
         COMPILE_FLAGS "-fno-fast-math"
     )
 	
-    if (BUILD_SHARED_LIBS)
-        message("${BoldBlue}[benni] DLL: ${LIB_NAME}${ColourReset}")
-        add_library(${LIB_NAME} SHARED "")
-    else()
+    # if (BUILD_SHARED_LIBS)
+        # message("${BoldBlue}[benni] DLL: ${LIB_NAME}${ColourReset}")
+        # add_library(${LIB_NAME} SHARED "")
+        # target_compile_definitions(${LIB_NAME} PUBLIC SQLITE3_DLL=1)
+        # target_compile_definitions(${LIB_NAME} PRIVATE SQLITE3_BUILD=1)
+    # else()
         message("${BoldCyan}[benni] LIB: ${LIB_NAME}${ColourReset}")
         add_library(${LIB_NAME} STATIC "")
-    endif()
+    # endif()
 
     target_sources(${LIB_NAME} PUBLIC ${LIB_HEADERS} PRIVATE ${LIB_SOURCES})
 

@@ -108,9 +108,10 @@ void AnimatedTexRenderer::Material::setImages(const std::vector<const Image*>& i
     so.setWrapS( de::gpu::SO::Wrap::Repeat );
     so.setWrapT( de::gpu::SO::Wrap::Repeat );
 
-    tex.destroy();
-
-    tex = Tex2DArray::create("AniExplosion02",images,so);
+    if (!tex.create("AniExplosion02",images,so))
+    {
+        DE_ERROR("Tex2DArray failed.")
+    }
 
     bGhost = false;
     bAlphaBlend = true;

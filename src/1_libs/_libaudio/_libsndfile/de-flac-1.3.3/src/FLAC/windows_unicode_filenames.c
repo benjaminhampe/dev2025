@@ -34,7 +34,7 @@
 #include "share/windows_unicode_filenames.h"
 
 /* convert WCHAR stored Unicode string to UTF-8. Caller is responsible for freeing memory */
-char *utf8_from_wchar(const wchar_t *wstr)
+FLAC_API char *utf8_from_wchar(const wchar_t *wstr)
 {
     char *utf8str;
     int len;
@@ -54,7 +54,7 @@ char *utf8_from_wchar(const wchar_t *wstr)
 }
 
 /* convert UTF-8 back to WCHAR. Caller is responsible for freeing memory */
-wchar_t *wchar_from_utf8(const char *str)
+FLAC_API wchar_t *wchar_from_utf8(const char *str)
 {
         wchar_t *widestr;
         int len;
@@ -77,19 +77,19 @@ wchar_t *wchar_from_utf8(const char *str)
 static FLAC__bool utf8_filenames = false;
 
 
-void flac_internal_set_utf8_filenames(FLAC__bool flag)
+FLAC_API void flac_internal_set_utf8_filenames(FLAC__bool flag)
 {
         utf8_filenames = flag ? true : false;
 }
 
-FLAC__bool flac_internal_get_utf8_filenames(void)
+FLAC_API FLAC__bool flac_internal_get_utf8_filenames(void)
 {
         return utf8_filenames;
 }
 
 /* file functions */
 
-FILE* flac_internal_fopen_utf8(const char *filename, const char *mode)
+FLAC_API FILE* flac_internal_fopen_utf8(const char *filename, const char *mode)
 {
         if (!utf8_filenames) {
                 return fopen(filename, mode);
@@ -111,7 +111,7 @@ FILE* flac_internal_fopen_utf8(const char *filename, const char *mode)
         }
 }
 
-int flac_internal_stat64_utf8(const char *path, struct __stat64 *buffer)
+FLAC_API int flac_internal_stat64_utf8(const char *path, struct __stat64 *buffer)
 {
         if (!utf8_filenames) {
                 return _stat64(path, buffer);
@@ -127,7 +127,7 @@ int flac_internal_stat64_utf8(const char *path, struct __stat64 *buffer)
         }
 }
 
-int flac_internal_chmod_utf8(const char *filename, int pmode)
+FLAC_API int flac_internal_chmod_utf8(const char *filename, int pmode)
 {
         if (!utf8_filenames) {
                 return _chmod(filename, pmode);
@@ -143,7 +143,7 @@ int flac_internal_chmod_utf8(const char *filename, int pmode)
         }
 }
 
-int flac_internal_utime_utf8(const char *filename, struct utimbuf *times)
+FLAC_API int flac_internal_utime_utf8(const char *filename, struct utimbuf *times)
 {
         if (!utf8_filenames) {
                 return utime(filename, times);
@@ -162,7 +162,7 @@ int flac_internal_utime_utf8(const char *filename, struct utimbuf *times)
         }
 }
 
-int flac_internal_unlink_utf8(const char *filename)
+FLAC_API int flac_internal_unlink_utf8(const char *filename)
 {
         if (!utf8_filenames) {
                 return _unlink(filename);
@@ -178,7 +178,7 @@ int flac_internal_unlink_utf8(const char *filename)
         }
 }
 
-int flac_internal_rename_utf8(const char *oldname, const char *newname)
+FLAC_API int flac_internal_rename_utf8(const char *oldname, const char *newname)
 {
         if (!utf8_filenames) {
                 return rename(oldname, newname);

@@ -194,6 +194,8 @@ else()
 
     target_link_libraries(${APP_NAME} PRIVATE de_box3d)
     target_link_libraries(${APP_NAME} PRIVATE de_sokol)
+    # target_link_libraries(${APP_NAME} PRIVATE de_imgui)
+    target_link_libraries(${APP_NAME} PRIVATE de_imgui_1_92_8_docking)
     target_link_libraries(${APP_NAME} PRIVATE de_implot_0_17)
     target_link_libraries(${APP_NAME} PRIVATE de_glfw)
     target_link_libraries(${APP_NAME} PRIVATE de_glew)

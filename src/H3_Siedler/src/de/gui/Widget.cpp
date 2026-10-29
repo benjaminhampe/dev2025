@@ -131,7 +131,7 @@ Widget* Widget::pick( int mx, int my )
 
 Recti Widget::getAbsoluteRect() const
 {
-    Posi pos = m_rect.pos();
+    Pos2i pos = m_rect.pos();
 
     if (m_parent)
     {

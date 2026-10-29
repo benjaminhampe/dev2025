@@ -320,6 +320,7 @@ bool H3_Game::init( de::Window* window )
     m_smeshThief.recalculateBoundingBox();
     m_smeshThief.upload();
 
+    m_board2DRenderer.init(*this);
     m_tileRenderer.init(*this);
     m_waterTileRenderer.init( *this );
     //m_tileRenderer.init( *this );
@@ -758,7 +759,7 @@ void H3_Game::startGame()
     m_edges.clear();
 
     // === Board (Tiles) ===
-    for (const auto& cfg : m_cfg.tileList)
+    for (const auto& cfg : m_cfg.tiles)
     {
         H3_Tile tile;
         tile.id = H3_createId();

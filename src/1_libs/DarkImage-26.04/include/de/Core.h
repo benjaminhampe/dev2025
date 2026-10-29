@@ -1720,7 +1720,7 @@ struct SM3
 struct Rectf;
 
 // ===========================================================================
-struct Posi
+struct Pos2i
 // ===========================================================================
 {
     typedef int32_t T;
@@ -1730,9 +1730,9 @@ struct Posi
     T x;
     T y;
 
-    Posi() : x(0), y(0) {}
-    Posi( T ox, T oy ) : x(ox), y(oy) {}
-    Posi( const Posi & o ) : x(o.x), y(o.y) {}
+    Pos2i() : x(0), y(0) {}
+    Pos2i( T ox, T oy ) : x(ox), y(oy) {}
+    Pos2i( const Pos2i & o ) : x(o.x), y(o.y) {}
 
     void reset() { x = y = 0; }
     void set( T ox, T oy ) { x = ox; y = oy; }
@@ -1741,14 +1741,14 @@ struct Posi
     //glm::ivec2 v2i() const { return { x, y }; }
     //glm::vec2 v2f() const { return glm::vec2( x, y ); }
     std::string str() const { std::ostringstream o; o << x << "," << y; return o.str(); }
-    Posi operator+( const Posi & o ) const { return Posi(x + o.x, y + o.y); }
-    Posi operator-( const Posi & o ) const { return Posi(x - o.x, y - o.y); }
-    Posi& operator=( const Posi & o ) { x = o.x; y = o.y; return *this; }
-    bool operator==( const Posi & o ) const { return x == o.x && y == o.y; }
-    bool operator!=( const Posi & other ) const { return !( other == *this ); }
+    Pos2i operator+( const Pos2i & o ) const { return Pos2i(x + o.x, y + o.y); }
+    Pos2i operator-( const Pos2i & o ) const { return Pos2i(x - o.x, y - o.y); }
+    Pos2i& operator=( const Pos2i & o ) { x = o.x; y = o.y; return *this; }
+    bool operator==( const Pos2i & o ) const { return x == o.x && y == o.y; }
+    bool operator!=( const Pos2i & other ) const { return !( other == *this ); }
 
-    Posi& operator+=( const Posi & o ) { x += o.x; y += o.y; return *this; }
-    Posi& operator-=( const Posi & o ) { x -= o.x; y -= o.y; return *this; }
+    Pos2i& operator+=( const Pos2i & o ) { x += o.x; y += o.y; return *this; }
+    Pos2i& operator-=( const Pos2i & o ) { x -= o.x; y -= o.y; return *this; }
 
     void test()
     {
@@ -1756,9 +1756,9 @@ struct Posi
         DE_DEBUG("s_Min = ", s_Min )
         DE_DEBUG("s_Max = ", s_Max )
 
-        Posi a(10,10);
-        Posi b(80,50);
-        Posi c(43,33);
+        Pos2i a(10,10);
+        Pos2i b(80,50);
+        Pos2i c(43,33);
         DE_DEBUG("a + b = ", (a+b).str() )
         DE_DEBUG("b + c = ", (b+c).str() )
     }
@@ -1821,14 +1821,14 @@ struct Recti
 
     Recti( int dummy = 0 );
     Recti( int32_t x_, int32_t y_, int32_t w_, int32_t h_ );
-    Recti( const Posi& pos, const Sizei& size );
+    Recti( const Pos2i& pos, const Sizei& size );
     Recti( const Recti& r );
 
     Recti& operator=(const Recti &o );
     bool operator==( const Recti &o ) const;
     bool operator!=( const Recti &o ) const;
-    Recti operator+( const Posi & o ) const { return Recti( x+o.x, y+o.y, w, h ); }
-    Recti operator-( const Posi & o ) const { return Recti( x-o.x, y-o.y, w, h ); }
+    Recti operator+( const Pos2i & o ) const { return Recti( x+o.x, y+o.y, w, h ); }
+    Recti operator-( const Pos2i & o ) const { return Recti( x-o.x, y-o.y, w, h ); }
 
     void reset();
     void setWidth( int32_t w_ );
@@ -1864,11 +1864,11 @@ struct Recti
     int32_t y1() const;
     int32_t x2() const;
     int32_t y2() const;
-    Posi pos() const;
+    Pos2i pos() const;
     Sizei size() const;
-    Posi center() const;
-    Posi topLeft() const;
-    Posi bottomRight() const;
+    Pos2i center() const;
+    Pos2i topLeft() const;
+    Pos2i bottomRight() const;
 
     std::string str() const;
 
