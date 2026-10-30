@@ -17,13 +17,11 @@ Viewport::query()
     GLint vp[ 4 ]; ::glGetIntegerv( GL_VIEWPORT, vp );
 
     Viewport viewport;
-    viewport.x = vp[ 0 ];
-    viewport.y = vp[ 1 ];
-    viewport.w = vp[ 2 ];
-    viewport.h = vp[ 3 ];
-
-    // GL_VALIDATE;
-    return Viewport();
+    viewport.m_rect.x = vp[ 0 ];
+    viewport.m_rect.y = vp[ 1 ];
+    viewport.m_rect.w = vp[ 2 ];
+    viewport.m_rect.h = vp[ 3 ];
+    return viewport;
 }
 
 // static
@@ -32,11 +30,11 @@ Viewport::apply( Viewport const & alt, Viewport const & neu )
 {
     if ( alt != neu )
     {
-        if (neu.w > 0 && neu.h > 0)
+        if (neu.m_rect.w > 0 && neu.m_rect.h > 0)
         {
-            ::glViewport( neu.x, neu.y, neu.w, neu.h );
-            GL_VALIDATE;
         }
+        ::glViewport( neu.m_rect.x, neu.m_rect.y, neu.m_rect.w, neu.m_rect.h );
+        GL_VALIDATE;
     }
     return neu;
 }
@@ -48,23 +46,23 @@ Viewport::apply( Viewport const & alt, Viewport const & neu )
 Scissor
 Scissor::query()
 {
-    Scissor scissorState;
+    Scissor scissor;
     // Is enabled?:
-    scissorState.enabled = ( ::glIsEnabled( GL_SCISSOR_TEST ) != GL_FALSE );
+    scissor.m_enabled = ( ::glIsEnabled( GL_SCISSOR_TEST ) != GL_FALSE );
 
     // ScissorRect:
     GLint box[ 4 ];
     glGetIntegerv( GL_SCISSOR_BOX, box );
 
     // Values stored in scissorBox:
-    scissorState.x = box[ 0 ];// scissorBox[0] = x position
-    scissorState.y = box[ 1 ];// scissorBox[1] = y position
-    scissorState.w = box[ 2 ];    // scissorBox[2] = width
-    scissorState.h = box[ 3 ];    // scissorBox[3] = height
+    scissor.m_rect.x = box[ 0 ];// scissorBox[0] = x position
+    scissor.m_rect.y = box[ 1 ];// scissorBox[1] = y position
+    scissor.m_rect.w = box[ 2 ];    // scissorBox[2] = width
+    scissor.m_rect.h = box[ 3 ];    // scissorBox[3] = height
 
     GL_VALIDATE;
 
-    return scissorState;
+    return scissor;
 }
 
 // static
@@ -73,9 +71,9 @@ Scissor::apply( Scissor const & alt, Scissor const & neu )
 {
     if ( neu == alt ) { return neu; }
 
-    if ( neu.enabled )
+    if ( neu.m_enabled )
     {
-        ::glScissor( neu.x, neu.y, neu.w, neu.h );
+        ::glScissor( neu.m_rect.x, neu.m_rect.y, neu.m_rect.w, neu.m_rect.h );
         ::glEnable( GL_SCISSOR_TEST );
     }
     else

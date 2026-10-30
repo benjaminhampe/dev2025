@@ -2,6 +2,13 @@
 #include <H3/H3_Game.h>
 #include <H3/details/UI_CpuPlayer.h>
 #include <H3/details/H3_UI.h>
+#include <H3/details/UI_WorldCreator.h>
+#include <H3/details/UI_Marquee.h>
+#include <H3/details/UI_Actions.h>
+#include <H3/details/UI_Banking.h>
+#include <H3/details/UI_DonateCards.h>
+#include <H3/details/UI_WinnerScreen.h>
+#include <H3/details/UI_CpuPlayer.h>
 
 // =====================================================================
 UI_Game::UI_Game( H3_Game* game, de::gui::Env* env, de::gui::Widget* parent, u32 id, const de::Recti& pos )

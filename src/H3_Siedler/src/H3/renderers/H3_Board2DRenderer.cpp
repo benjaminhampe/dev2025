@@ -170,7 +170,7 @@ void H3_Board2DRenderer::initShader( H3_Game& game )
 
             // ClipSpace
             vec2 ndc = (pos / u_screenSize) * 2.0 - 1.0;
-            // ndc.y = -ndc.y;
+            //ndc.y = -ndc.y;
             gl_Position = vec4(ndc, 0.0, 1.0);
 
             v_tex = a_texcoord[k];
@@ -262,7 +262,7 @@ void H3_Board2DRenderer::initTex2DArray( H3_Game& game )
     }
 }
 
-void H3_Board2DRenderer::render(const glm::vec4& posTransform)
+void H3_Board2DRenderer::render(const glm::vec4& posTransform, const de::Recti& scissor)
 {
     if (!m_driver) { DE_ERROR("No driver") return; }
     if (m_tex2DArray.empty()) { DE_ERROR("No tex2DArray") return; }
@@ -274,6 +274,7 @@ void H3_Board2DRenderer::render(const glm::vec4& posTransform)
     state.culling = de::gpu::Culling::disabled();
     state.depth = de::gpu::Depth::disabled();
     state.blend = de::gpu::Blend::disabled();
+    state.scissor = de::gpu::Scissor::enabled(scissor);
     m_driver->setState(state);
 
     // [Shader]

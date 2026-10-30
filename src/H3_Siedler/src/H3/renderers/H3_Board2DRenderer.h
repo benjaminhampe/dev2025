@@ -42,7 +42,7 @@ struct H3_Board2DRenderer
     void initVAO(H3_Game& game);
     void initTex2DArray(H3_Game& game);
     void initShader(H3_Game& game);
-    void render(const glm::vec4& posTransform);
+    void render(const glm::vec4& posTransform, const de::Recti& scissor);
 
     void collectAndUploadInstances(
             const H3_Game& game,

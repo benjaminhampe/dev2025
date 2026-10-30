@@ -16,37 +16,32 @@ struct Fog
     float expDensity;
 };
 
-
 // ===========================================================================
 struct Viewport
 // ===========================================================================
 {
-    int32_t x;
-    int32_t y;
-    int32_t w;
-    int32_t h;
-    // sum = 32 Bytes
+    Recti m_rect;
 
-    Viewport() : x(0), y(0), w(0), h(0) {}
+    Viewport() : m_rect(0,0,0,0)
+    {}
 
-    Viewport(int32_t _x,int32_t _y,int32_t _w,int32_t _h) : x(_x), y(_y), w(_w), h(_h) {}
+    Viewport(int32_t x,int32_t y, int32_t w, int32_t h) : m_rect(x,y,w,h)
+    {}
 
-    static Viewport disabled()
+    std::string str() const
     {
-        Viewport v;
-        return v;
-    }
-
-    std::string toString() const
-    {
-        std::stringstream o;
-        o << "Viewport["<< sizeof(Viewport)<< "](" << x << "," << y << "," << w << "," << h << ")";
+        std::ostringstream o;
+        o << "Viewport(" << m_rect.str() << ")";
         return o.str();
     }
 
     bool isEnabled() const { return true; }
-    bool operator==(const Viewport& o) const { return std::tie(x,y,w,h) == std::tie(o.x,o.y,o.w,o.h); }
+    bool operator==(const Viewport& o) const
+    {
+        return m_rect == o.m_rect;
+    }
     bool operator!=( Viewport const & o ) const { return !( o == *this ); }
+
     static Viewport query();
     static Viewport apply( Viewport const & alt, Viewport const & neu );
 };
@@ -55,33 +50,51 @@ struct Viewport
 struct Scissor
 // ===========================================================================
 {
-    int32_t x;
-    int32_t y;
-    int32_t w;
-    int32_t h;
-    bool enabled;
+    Recti m_rect;
+    bool m_enabled;
     // sum = 33 Bytes
 
-    Scissor() : x(0), y(0), w(0), h(0), enabled( false ) {}
+    Scissor() : m_rect(0,0,0,0), m_enabled( false ) {}
 
-    std::string toString() const
+    static Scissor disabled()
     {
-        std::stringstream o;
-        o << "Scissor["<< sizeof(Scissor)<< "](";
-        if (enabled)
+        return Scissor();
+    }
+
+    static Scissor enabled(Recti rect)
+    {
+        Scissor scissor;
+        if (rect.w > 0 && rect.h > 0)
         {
-            o << x << "," << y << "," << w << "," << h << ")";
+            scissor.m_enabled = true;
+            scissor.m_rect = rect;
+        }
+        return scissor;
+    }
+
+    std::string str() const
+    {
+        std::ostringstream o;
+        o << "Scissor(";
+        if (m_enabled)
+        {
+            o << m_rect.str();
         }
         else
         {
-            o << "OFF)";
+            o << "OFF";
         }
+        o << ")";
         return o.str();
     }
-    bool isEnabled() const { return enabled; }
-    bool isValid() const { return w > 0 && h > 0; }
-    bool operator==(const Scissor& o) const { return std::tie(x,y,w,h,enabled) == std::tie(o.x,o.y,o.w,o.h,enabled); }
+    bool isEnabled() const { return m_enabled; }
+    bool isValid() const { return m_rect.w > 0 && m_rect.h > 0; }
+    bool operator==(const Scissor& o) const
+    {
+        return std::tie(m_rect,m_enabled) == std::tie(o.m_rect,o.m_enabled);
+    }
     bool operator!=( const Scissor& o ) const { return !( o == *this ); }
+
     static Scissor query();
     static Scissor apply( Scissor const & alt, Scissor const & neu );
 };

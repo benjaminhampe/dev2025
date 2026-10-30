@@ -10,6 +10,7 @@ public:
     ~UI_WorldCreator() override;
     void draw() override;
     void resize(int x, int y, int w, int h) override;
+    void onEvent(const de::Event& event) override;
 
     // Final config:
 
@@ -31,6 +32,8 @@ protected:
 private:
     H3_Game* m_game;
     de::Recti m_rcBoard;
+    de::Pos2i m_relativePosToBoard;
+    bool m_bHoveredBoard;
     //float m_tileSize = 100.f;
     float m_scale;
     float m_off_x;

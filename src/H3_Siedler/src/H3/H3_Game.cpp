@@ -7,6 +7,14 @@
 
 #include "H3_Window_wgl.h"
 
+#include <H3/details/UI_WorldCreator.h>
+#include <H3/details/UI_Marquee.h>
+#include <H3/details/UI_Actions.h>
+#include <H3/details/UI_Banking.h>
+#include <H3/details/UI_DonateCards.h>
+#include <H3/details/UI_WinnerScreen.h>
+// #include <H3/details/UI_CpuPlayer.h>
+
 // #ifndef USE_BENNI_DEBUG_RESOURCES
 // #define USE_BENNI_DEBUG_RESOURCES
 // #endif

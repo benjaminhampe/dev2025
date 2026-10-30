@@ -2,6 +2,15 @@
 #include "H3_Game.h"
 #include "H3/details/H3_Topology.h"
 
+// #include <H3/details/UI_WorldCreator.h>
+// #include <H3/details/UI_Marquee.h>
+#include <H3/details/UI_Actions.h>
+#include <H3/details/UI_Banking.h>
+#include <H3/details/UI_DonateCards.h>
+#include <H3/details/UI_WinnerScreen.h>
+// #include <H3/details/UI_CpuPlayer.h>
+
+
 H3_Window::H3_Window(H3_Game& game)
     : de::Window_WGL()
     , m_game(game)

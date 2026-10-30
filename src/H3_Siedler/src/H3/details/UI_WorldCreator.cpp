@@ -33,6 +33,7 @@ UI_WorldCreator::UI_WorldCreator( H3_Game* game, de::gui::Env* env, de::gui::Wid
 // =====================================================================
     : de::gui::Widget(env, parent, id, pos)
     , m_game(game)
+    , m_bHoveredBoard{ false }
     , m_scale{ 128.f }
     , m_off_x{ 0.f }
     , m_off_y{ 0.f }
@@ -72,6 +73,8 @@ UI_WorldCreator::UI_WorldCreator( H3_Game* game, de::gui::Env* env, de::gui::Wid
 
     m_btnClose->onClicked = [&] () { m_game->exitGame(); };
     m_btnStart->onClicked = [&] () { m_game->startGame(); };
+
+    setPickable(true);
 }
 
 UI_WorldCreator::~UI_WorldCreator()
@@ -131,17 +134,20 @@ void UI_WorldCreator::drawBoard(const de::Recti & rect)
     driver->getScreenQuadRenderer()->draw2DRect( rect, m_grunge );
 
     // const auto& tiles = m_cfg->tiles;
-
-    auto pos = getAbsoluteRect().pos();
+    auto r_board = rect + getAbsoluteRect().pos();
 
     glm::vec4 posTransform;
-    posTransform.x = pos.x + rect.centerX();
-    posTransform.y = pos.y + rect.centerY();
+    posTransform.x = r_board.centerX();
+    posTransform.y = r_board.centerY();
     posTransform.z = m_scale;
     posTransform.w = m_scale;
 
-    m_game->m_board2DRenderer.render( posTransform );
+    m_game->m_board2DRenderer.render( posTransform, r_board );
 
+    if (m_bHoveredBoard)
+    {
+        driver->getScreenRenderer()->draw2DRectLine( r_board, dbRGB(255,128,20) );
+    }
 /*
 
     float originX = pos.x + rect.centerX();
@@ -289,6 +295,51 @@ UI_WorldCreator::getCfg()
     cfg.player = m_cfg.player;
     return cfg;
 }
+
+void UI_WorldCreator::onEvent(const de::Event& event)
+{
+    de::gui::Widget::onEvent(event);
+
+    auto pos = getAbsoluteRect().pos();
+
+    if (event.type == de::EventType::MOUSE_MOVE)
+    {
+        int mx = event.mouseMoveEvent.x;
+        int my = event.mouseMoveEvent.y;
+        de::Recti r_board = m_rcBoard + pos;
+        //DE_TRACE("MouseMove(",mx,",",my,"), r_board(",r_board.str(),")")
+
+        m_relativePosToBoard.x = mx - r_board.x;
+        m_relativePosToBoard.y = my - r_board.y;
+
+        if (r_board.contains(mx,my))
+        {
+            m_bHoveredBoard = true;
+        }
+        else
+        {
+            m_bHoveredBoard = false;
+        }
+    }
+
+    if (event.type == de::EventType::MOUSE_WHEEL)
+    {
+        float mx = event.mouseWheelEvent.x;
+        float my = event.mouseWheelEvent.y;
+
+        if (my > 0)
+        {
+            m_scale *= 1.025f;
+            DE_TRACE("ZoomOut MouseWheel(",mx,",",my,")")
+        }
+        else if (my < 0)
+        {
+            m_scale /= 1.025f;
+            DE_TRACE("ZoomIn MouseWheel(",mx,",",my,")")
+        }
+    }
+}
+
 
 /*
 const std::string&
