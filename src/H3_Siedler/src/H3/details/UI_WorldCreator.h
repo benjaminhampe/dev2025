@@ -5,6 +5,9 @@
 class UI_WorldCreator : public de::gui::Widget
 // ===========================================================================
 {
+    typedef glm::vec2 V2;
+    typedef glm::vec3 V3;
+
 public:
     UI_WorldCreator( H3_Game* game, de::gui::Env* env, de::gui::Widget* parent, u32 id, const de::Recti& r );
     ~UI_WorldCreator() override;
@@ -32,10 +35,16 @@ protected:
 
     void resizeBoard(int minX, int minY, int maxX, int maxY);
     void resizeBoard();
+
+    void draw2DHexOutline(int i,int j,
+        uint32_t color, int width, const V2& offset, const V2& size);
 private:
     H3_Game* m_game;
     int m_mouseX;
     int m_mouseY;
+    int m_hoveredTileId;
+    int m_selectedTileId;
+
     de::Recti m_rcBoard;
     de::Pos2i m_relativePosToBoard;
     bool m_bHoveredBoard;

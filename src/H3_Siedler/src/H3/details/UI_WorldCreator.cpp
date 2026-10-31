@@ -33,6 +33,10 @@ UI_WorldCreator::UI_WorldCreator( H3_Game* game, de::gui::Env* env, de::gui::Wid
 // =====================================================================
     : de::gui::Widget(env, parent, id, pos)
     , m_game(game)
+    , m_mouseX{ -1 }
+    , m_mouseY{ -1 }
+    , m_hoveredTileId{ -1 }
+    , m_selectedTileId{ -1 }
     , m_bHoveredBoard{ false }
     , m_scale{ 2.f }
     , m_off_x{ 0.f }
@@ -128,6 +132,59 @@ void UI_WorldCreator::draw()
     m_btnStart->draw();
 }
 
+void UI_WorldCreator::draw2DHexOutline( int i, int j, u32 color, int width,
+                                        const V2& offset, const V2& size)
+{
+    float w = 100.0f;
+    float h = 100.0f;
+    const V2 scale(w,h);
+    float x =  de::smesh::SMeshHexagon::computeBoardPosX(w,h,i,j);
+    float y = -de::smesh::SMeshHexagon::computeBoardPosY(w,h,i,j);
+    const V2 pos(x,y);
+
+    // ===============================================
+    /// @brief The Hexagon
+    // ===============================================
+    ///
+    ///               M| x=0 | y=0 | z=0 | u=.5| v=.5|
+    ///       D       -|-----|-----|-----|-----|-----|
+    ///      / \      A|   0 |  0  | -.5 | .5  | 0   |
+    ///   C /   \ E   B| -.5 |  0  |-.25 |  0  | 0.25|
+    ///    |-----|    C| -.5 |  0  | .25 |  0  | 0.75|
+    ///    |  M  |    D| 0.0 |  0  |  .5 |  .5 | 1   |
+    ///    |-----|    E| 0.5 |  0  | .25 |  1  | 0.75|
+    ///   B \   / F   F| 0.5 |  0  |-.25 |  1  | 0.25|
+    ///      \ /
+    ///       A       triangles: BFA, BEF, BCE, CDE
+    ///
+    const V2 pA = (pos + (scale * V2( 0.00, -0.50))) * size + offset;
+    const V2 pB = (pos + (scale * V2(-0.50, -0.25))) * size + offset;
+    const V2 pC = (pos + (scale * V2(-0.50,  0.25))) * size + offset;
+    const V2 pD = (pos + (scale * V2( 0.00,  0.50))) * size + offset;
+    const V2 pE = (pos + (scale * V2( 0.50,  0.25))) * size + offset;
+    const V2 pF = (pos + (scale * V2( 0.50, -0.25))) * size + offset;
+    de::smesh::S3DVertex A( V3(pA,0),{0,0,-1},color,{0,0});
+    de::smesh::S3DVertex B( V3(pB,0),{0,0,-1},color,{0,0});
+    de::smesh::S3DVertex C( V3(pC,0),{0,0,-1},color,{0,0});
+    de::smesh::S3DVertex D( V3(pD,0),{0,0,-1},color,{0,0});
+    de::smesh::S3DVertex E( V3(pE,0),{0,0,-1},color,{0,0});
+    de::smesh::S3DVertex F( V3(pF,0),{0,0,-1},color,{0,0});
+
+    de::smesh::SMeshBuffer m(de::gpu::PrimitiveType::Lines);
+    m.addLine(A,B);
+    m.addLine(B,C);
+    m.addLine(C,D);
+    m.addLine(D,E);
+    m.addLine(E,F);
+    m.addLine(F,A);
+    m.upload();
+
+    auto driver = m_env->getVideoDriver();
+    driver->getScreenRenderer()->draw2D( m );
+
+    m.destroy();
+}
+
 void UI_WorldCreator::drawBoard(const de::Recti & rect)
 {
     auto driver = m_env->getVideoDriver();
@@ -160,6 +217,18 @@ void UI_WorldCreator::drawBoard(const de::Recti & rect)
         driver->getScreenRenderer()->draw2DRectLine( r_board, dbRGB(255,128,20) );
     }
 
+    if (m_selectedTileId > -1)
+    {
+        const H3_CfgTile & tile = m_cfg.tiles[ m_selectedTileId ];
+        draw2DHexOutline(tile.i(), tile.j(), tile.tt().color(), 10, offset, scale);
+    }
+
+    if (m_hoveredTileId > -1)
+    {
+        const H3_CfgTile & tile = m_cfg.tiles[ m_hoveredTileId ];
+        draw2DHexOutline(tile.i(), tile.j(), 0xFFFFFFFF, 20, offset, scale);
+    }
+
     driver->draw2DText(
         r_board.x2() - 4,
         r_board.y1() + 4,
@@ -168,12 +237,15 @@ void UI_WorldCreator::drawBoard(const de::Recti & rect)
         de::Align::RightTop,
         de::Font5x8(3,3,0,0,2,1));
 
+    m_hoveredTileId = -1;
+
     for (size_t i = 0; i < m_cfg.tiles.size(); ++i)
     {
         const H3_CfgTile & tile = m_cfg.tiles[i];
 
         if (tile.isMouseOver(m_mouseX,m_mouseY,scale,offset))
         {
+            m_hoveredTileId = i;
             driver->draw2DText(
                 m_mouseX + 20,
                 m_mouseY + 20,
@@ -314,6 +386,9 @@ void UI_WorldCreator::resizeBoard()
 
 void UI_WorldCreator::resizeBoard(int minX, int minY, int maxX, int maxY)
 {
+    m_hoveredTileId = -1;
+    m_selectedTileId = -1;
+
     // Build new board
     std::vector<H3_CfgTile> tiles;
     int dx = maxX - minX + 1;
@@ -362,6 +437,8 @@ void UI_WorldCreator::setCfg( const H3_Cfg& cfg )
         throw std::runtime_error(s);
     }
 
+    m_hoveredTileId = -1;
+    m_selectedTileId = -1;
     m_cfg = cfg;
     m_cfg.computeBounds();
     resizeBoard(m_cfg.min.x, m_cfg.min.y, m_cfg.max.x, m_cfg.max.y);
@@ -435,6 +512,18 @@ void UI_WorldCreator::onEvent(const de::Event& event)
         {
             m_scale /= 1.025f;
             //DE_TRACE("ZoomIn(",m_scale,") MouseWheel(",mx,",",my,")")
+        }
+    }
+
+    if (event.type == de::EventType::MOUSE_RELEASE)
+    {
+        if (event.mouseReleaseEvent.isLeft())
+        {
+            DE_DEBUG("m_hoveredTileId = ",m_hoveredTileId)
+            if (m_hoveredTileId > -1)
+            {
+                m_selectedTileId = m_hoveredTileId;
+            }
         }
     }
 }

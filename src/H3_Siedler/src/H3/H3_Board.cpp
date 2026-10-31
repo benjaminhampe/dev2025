@@ -192,7 +192,28 @@ H3_TileType::getString( const H3_TileType tt )
     }
 }
 
-// static
+/*
+static uint32_t getColor(H3_TileType tt)
+{
+    switch (tt)
+    {
+    case H3_TileType::TileA: return dbRGB(0,150,0);
+    case H3_TileType::PortA: return dbRGB(0,150,0);
+    case H3_TileType::TileB: return dbRGB(200,0,0);
+    case H3_TileType::PortB: return dbRGB(200,0,0);
+    case H3_TileType::TileC: return dbRGB(255,200,0);
+    case H3_TileType::PortC: return dbRGB(255,200,0);
+    case H3_TileType::TileD: return dbRGB(0,220,0);
+    case H3_TileType::PortD: return dbRGB(0,220,0);
+    case H3_TileType::TileE: return dbRGB(160,160,160);
+    case H3_TileType::PortE: return dbRGB(160,!60,160);
+    case H3_TileType::Water: return dbRGB(0,0,200);
+    case H3_TileType::Desert: return dbRGB(255,255,0);
+    default: return dbRGB(20,20,20);
+    }
+}
+*/
+
 uint32_t
 H3_TileType::getColor( const H3_TileType tt )
 {
