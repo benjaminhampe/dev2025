@@ -119,12 +119,12 @@ void H3_Board2DRenderer::initShader( H3_Game& game )
         layout(location = 2) in uint a_instanceLayer; // index into tex2DArray
 
         const vec2 a_vertices[6] = vec2[](
-            vec2( 0.00, -0.50), // A=0
-            vec2(-0.50, -0.25), // B=1
-            vec2(-0.50,  0.25), // C=2
-            vec2( 0.00,  0.50), // D=3
-            vec2( 0.50,  0.25), // E=4
-            vec2( 0.50, -0.25)  // F=5
+            vec2( 0.00,  0.50), // A=0
+            vec2(-0.50,  0.25), // B=1
+            vec2(-0.50, -0.25), // C=2
+            vec2( 0.00, -0.50), // D=3
+            vec2( 0.50, -0.25), // E=4
+            vec2( 0.50,  0.25)  // F=5
         );
 
         const vec2 a_texcoord[6] = vec2[](
@@ -169,9 +169,13 @@ void H3_Board2DRenderer::initShader( H3_Game& game )
             vec2 pos = offset2 + (scale2 * pos1);
 
             // ClipSpace
-            vec2 ndc = (pos / u_screenSize) * 2.0 - 1.0;
-            //ndc.y = -ndc.y;
-            gl_Position = vec4(ndc, 0.0, 1.0);
+            float ndc_x = (pos.x / u_screenSize.x) * 2.0 - 1.0;
+            float ndc_y = ((u_screenSize.y - pos.y) / u_screenSize.y) * 2.0 - 1.0;
+            gl_Position = vec4(ndc_x, ndc_y, 0.0, 1.0);
+
+            // vec2 ndc = (pos / u_screenSize) * 2.0 - 1.0;
+            // //ndc.y = -ndc.y;
+            // gl_Position = vec4(ndc, 0.0, 1.0);
 
             v_tex = a_texcoord[k];
             v_layer = a_instanceLayer;
@@ -306,10 +310,7 @@ void H3_Board2DRenderer::render(const glm::vec4& posTransform, const de::Recti& 
 }
 
 void
-H3_Board2DRenderer::collectAndUploadInstances(
-    const H3_Game& game,
-    const H3_Cfg& cfg,
-    const glm::vec2& tileSize)
+H3_Board2DRenderer::collectAndUploadInstances(const H3_Game& game, const H3_Cfg& cfg)
 {
     collectInstances( game, cfg );
     uploadInstances();
@@ -317,10 +318,7 @@ H3_Board2DRenderer::collectAndUploadInstances(
 
 // glm::vec2 tileSize(100,100);
 void
-H3_Board2DRenderer::collectInstances(
-    const H3_Game& game,
-    const H3_Cfg& cfg,
-    const glm::vec2& tileSize)
+H3_Board2DRenderer::collectInstances(const H3_Game& game, const H3_Cfg& cfg)
 {
     m_instancePos.clear();
     m_instanceAngle60.clear();
@@ -333,23 +331,20 @@ H3_Board2DRenderer::collectInstances(
 
     for (const H3_CfgTile& tile : cfg.tiles)
     {
-        const float w = tileSize.x;
-        const float h = tileSize.y;
-
         // [Instance] a_instancePos
         m_instancePos.emplace_back();
         glm::vec4 & pos = m_instancePos.back();
-        pos.x = de::smesh::SMeshHexagon::computeBoardPosX(w, h, tile.i, tile.j);
-        pos.y = de::smesh::SMeshHexagon::computeBoardPosY(w, h, tile.i, tile.j);
-        pos.z = w;
-        pos.w = h;
+        pos.x = tile.x();
+        pos.y = tile.y();
+        pos.z = cfg.tileSize.x;
+        pos.w = cfg.tileSize.y;
 
         // [Instance] a_instanceAngle60
-        m_instanceAngle60.emplace_back( tile.angle60 );
+        m_instanceAngle60.emplace_back( tile.angle60() );
 
         // [Instance] a_instanceLayer
         uint8_t layer = Unknown;
-        switch (tile.tileType)
+        switch (tile.tt())
         {
             // case H3_TileType::Unknown: layer = Unknown; break;
             case H3_TileType::Water: layer = Water; break;

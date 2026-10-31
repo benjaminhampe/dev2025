@@ -33,18 +33,35 @@ public:
 
     const std::string& getLabelText() const { return m_lblName->getText(); }
 
-    Label* getKeyLabel() const { return m_lblName; }
+    // Label* getKeyLabel() const { return m_lblName; }
     Label* getValueLabel() const { return m_lblValue; }
-    Button* getMinusButton() { return m_btnMinus; }
-    Button* getPlusButton() { return m_btnPlus; }
+    // Button* getMinusButton() { return m_btnMinus; }
+    // Button* getPlusButton() { return m_btnPlus; }
 
     int getValue() const { return m_value; }
     int getMinimum() const { return m_minimum; }
     int getMaximum() const { return m_maximum; }
     int getStep() const { return m_step; }
 
+    std::function<void(int)> onValueChanged;
 
+    std::function<void()> onMinusClicked;
 
+    std::function<void()> onPlusClicked;
+
+    void setButtonTexture(const de::gpu::TexRef& tex)
+    {
+        m_btnMinus->setTexture( tex );
+        m_btnPlus->setTexture( tex );
+    }
+    void setMinusButtonTexture(const de::gpu::TexRef& tex)
+    {
+        m_btnMinus->setTexture( tex );
+    }
+    void setPlusButtonTexture(const de::gpu::TexRef& tex)
+    {
+        m_btnPlus->setTexture( tex );
+    }
 protected:
     void updateLayout();
 

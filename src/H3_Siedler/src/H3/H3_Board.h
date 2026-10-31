@@ -169,14 +169,136 @@ struct H3_Cost
 struct H3_CfgTile
 // =====================================================================
 {
-    H3_TileType tileType = H3_TileType::Unknown;
-    int chipValue = 0;
-    int i = 0;      // 2d board index x
-    int j = 0;      // 2d board index y
-    int angle60 = 0;// angle [0..5] to rotate tile in 60 degrees steps.
+    typedef float T;
+    typedef glm::tvec2<T> V2;
+
+private:
+    H3_TileType m_tileType;
+    int m_diceValue = 0;
+    int m_i = 0;      // 2d board index x
+    int m_j = 0;      // 2d board index y
+    int m_angle60 = 0;// angle [0..5] to rotate tile in 60 degrees steps.
     //H3_TRS trs;   // computed 3d transform = func(i,j,angle)
 
+    T m_x;
+    T m_y;
+
+public:
+    H3_CfgTile()
+        : m_tileType{ H3_TileType::Unknown }
+        , m_diceValue{ 0 }
+        , m_i{ 0 }
+        , m_j{ 0 }
+        , m_angle60{ 0 }
+        , m_x{ 0 }
+        , m_y{ 0 }
+    {}
+
+    void setTileType(H3_TileType tt) { m_tileType = tt; }
+    void setDiceValue(int diceValue) { m_diceValue = diceValue; }
+    void setAngle60(int angle60) { m_angle60 = angle60; }
+    void setPos(int i, int j)
+    {
+        float ts = 100.0f;
+        m_i = i;
+        m_j = j;
+        m_x = de::smesh::SMeshHexagon::computeBoardPosX(ts, ts, m_i, m_j);
+        m_y = -de::smesh::SMeshHexagon::computeBoardPosY(ts, ts, m_i, m_j);
+    }
+
+    H3_TileType tt() const { return m_tileType; }
+    int diceValue() const { return m_diceValue; }
+    int i() const { return m_i; }
+    int j() const { return m_j; }
+    int angle60() const { return m_angle60; }
+    T x() const { return m_x; }
+    T y() const { return m_y; }
+
     std::string str() const;
+
+    bool isMouseOver(float mx, float my, const V2& size, const V2& offset) const
+    {
+        const V2 mousePos(mx,my);
+        const V2 pos(x(),y());
+        const V2 scale(100,100);
+        // ===============================================
+        /// @brief The Hexagon
+        // ===============================================
+        ///
+        ///               M| x=0 | y=0 | z=0 | u=.5| v=.5|
+        ///       D       -|-----|-----|-----|-----|-----|
+        ///      / \      A|   0 |  0  | -.5 | .5  | 0   |
+        ///   C /   \ E   B| -.5 |  0  |-.25 |  0  | 0.25|
+        ///    |-----|    C| -.5 |  0  | .25 |  0  | 0.75|
+        ///    |  M  |    D| 0.0 |  0  |  .5 |  .5 | 1   |
+        ///    |-----|    E| 0.5 |  0  | .25 |  1  | 0.75|
+        ///   B \   / F   F| 0.5 |  0  |-.25 |  1  | 0.25|
+        ///      \ /
+        ///       A       triangles: BFA, BEF, BCE, CDE
+        ///
+        const V2 A = (pos + (scale * V2( 0.00, -0.50))) * size + offset;
+        const V2 B = (pos + (scale * V2(-0.50, -0.25))) * size + offset;
+        const V2 C = (pos + (scale * V2(-0.50,  0.25))) * size + offset;
+        const V2 D = (pos + (scale * V2( 0.00,  0.50))) * size + offset;
+        const V2 E = (pos + (scale * V2( 0.50,  0.25))) * size + offset;
+        const V2 F = (pos + (scale * V2( 0.50, -0.25))) * size + offset;
+        if (isPointInTriangle(mousePos,A,B,F)) return true;
+        if (isPointInTriangle(mousePos,B,E,F)) return true;
+        if (isPointInTriangle(mousePos,B,C,E)) return true;
+        if (isPointInTriangle(mousePos,C,D,E)) return true;
+        return false;
+    }
+
+    // Hilfsfunktion: Berechnet das 2D-Kreuzprodukt (Determinante) zweier Vektoren.
+    // Gibt an, auf welcher Seite des Vektors AB der Punkt P liegt.
+    static inline T sign(const V2& P, const V2& A, const V2& B)
+    {
+        return (P.x - B.x) * (A.y - B.y) - (A.x - B.x) * (P.y - B.y);
+    }
+
+    static bool
+    isPointInTriangle(const V2& P, const V2& A, const V2& B, const V2& C)
+    {
+        // Berechne die Orientierung des Punktes zu jeder der drei Kanten
+        const T d1 = sign(P, A, B);
+        const T d2 = sign(P, B, C);
+        const T d3 = sign(P, C, A);
+
+        // Prüfe, ob es Vorzeichenwechsel gibt.
+        // Wenn alle Werte >= 0 oder alle Werte <= 0 sind, liegt der Punkt im Dreieck.
+        // Das fängt auch ab, ob das Dreieck im oder gegen den Uhrzeigersinn definiert ist (Winding Order).
+        const bool has_neg = (d1 < 0) || (d2 < 0) || (d3 < 0);
+        const bool has_pos = (d1 > 0) || (d2 > 0) || (d3 > 0);
+
+        return !(has_neg && has_pos);
+    }
+
+/*
+    // Funktion prüft, ob Punkt P im Dreieck (A, B, C) liegt
+    static bool
+    isPointInTriangleExpensive(const V2& P, const Triangle2& triangle)
+    {
+        const V2& A = triangle.A;
+        const V2& B = triangle.B;
+        const V2& C = triangle.C;
+
+        // Nenner der baryzentrischen Koordinaten (doppelte Fläche des Dreiecks)
+        T det = (B.y - C.y) * (A.x - C.x) + (C.x - B.x) * (A.y - C.y);
+
+        // Schutz gegen Division durch Null (wenn das Dreieck degeneriert/eine Linie ist)
+        if (det == T(0.0)) return false;
+
+        // Berechnung der baryzentrischen Koordinaten (w_A und w_B)
+        T w_A = ((B.y - C.y) * (P.x - C.x) + (C.x - B.x) * (P.y - C.y)) / det;
+        T w_B = ((C.y - A.y) * (P.x - C.x) + (A.x - C.x) * (P.y - C.y)) / det;
+
+        // Das dritte Gewicht ergibt sich automatisch, da die Summe aller Gewichte 1 sein muss
+        T w_C = 1.0 - w_A - w_B;
+
+        // Der Punkt ist im Dreieck, wenn alle Gewichte zwischen 0 und 1 liegen
+        return (w_A >= T(0.0)) && (w_B >= T(0.0)) && (w_C >= T(0.0));
+    }
+*/
 };
 
 // ==================================================================
@@ -259,6 +381,7 @@ struct H3_Cfg
 
     H3_CfgPlayer player; // human
 
+    glm::vec2 tileSize = glm::vec2(100.f,100.f);
     // std::vector< H3_CfgPlayer > playerList;
 
     // std::vector< H3_Cost > cost4card;   // Standard

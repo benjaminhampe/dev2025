@@ -29,8 +29,13 @@ protected:
     de::gui::Button* createButton(std::string txt);
     de::gui::IntField* createIntField(std::string txt, int val, int min, int max);
     void drawBoard(const de::Recti & rect);
+
+    void resizeBoard(int minX, int minY, int maxX, int maxY);
+    void resizeBoard();
 private:
     H3_Game* m_game;
+    int m_mouseX;
+    int m_mouseY;
     de::Recti m_rcBoard;
     de::Pos2i m_relativePosToBoard;
     bool m_bHoveredBoard;

@@ -733,10 +733,16 @@ GL_VALIDATE
     // RenderStates
     m_state = State::query();
 
-    DE_DEBUG("Initial CullMode: ",m_state.culling.toString())
-    DE_DEBUG("Initial DepthTest: ",m_state.depth.toString())
-    DE_DEBUG("Initial StencilTest: ",m_state.stencil.toString())
-    DE_DEBUG("Initial BlendMode: ",m_state.blend.toString())
+    DE_DEBUG("Initial CullMode: ",m_state.culling.str())
+    DE_DEBUG("Initial DepthTest: ",m_state.depth.str())
+    DE_DEBUG("Initial StencilTest: ",m_state.stencil.str())
+    DE_DEBUG("Initial BlendMode: ",m_state.blend.str())
+    DE_DEBUG("Initial Viewport: ",m_state.viewport.str())
+    DE_DEBUG("Initial ScissorBox: ",m_state.scissor.str())
+    DE_DEBUG("Initial PointSize: ",m_state.pointSize.str())
+    DE_DEBUG("Initial LineWidth: ",m_state.lineWidth.str())
+    DE_DEBUG("Initial RasterizerDiscard: ",m_state.rasterizerDiscard.str())
+    DE_DEBUG("Initial PolygonOffset: ",m_state.polygonOffset.str())
 
     State state;
     state.culling = Culling();
@@ -745,10 +751,10 @@ GL_VALIDATE
     state.blend = Blend::disabled();
     setState(state);
 
-    DE_DEBUG("Current CullMode: ",m_state.culling.toString())
-    DE_DEBUG("Current DepthTest: ",m_state.depth.toString())
-    DE_DEBUG("Current StencilTest: ",m_state.stencil.toString())
-    DE_DEBUG("Current BlendMode: ",m_state.blend.toString())
+    DE_DEBUG("Current CullMode: ",m_state.culling.str())
+    DE_DEBUG("Current DepthTest: ",m_state.depth.str())
+    DE_DEBUG("Current StencilTest: ",m_state.stencil.str())
+    DE_DEBUG("Current BlendMode: ",m_state.blend.str())
 
     // // Enable depth testing
     // glEnable(GL_DEPTH_TEST);

@@ -7,58 +7,40 @@ namespace de {
 namespace gpu {
 
 // ===========================================================================
-// ===========================================================================
-// ===========================================================================
 
-// static
 Viewport
 Viewport::query()
 {
-    GLint vp[ 4 ]; ::glGetIntegerv( GL_VIEWPORT, vp );
-
-    Viewport viewport;
-    viewport.m_rect.x = vp[ 0 ];
-    viewport.m_rect.y = vp[ 1 ];
-    viewport.m_rect.w = vp[ 2 ];
-    viewport.m_rect.h = vp[ 3 ];
-    return viewport;
+    GLint box[ 4 ];
+    glGetIntegerv( GL_VIEWPORT, box );
+    return Viewport( box[0], box[1], box[2], box[3] );
 }
 
-// static
 Viewport
 Viewport::apply( Viewport const & alt, Viewport const & neu )
 {
     if ( alt != neu )
     {
-        if (neu.m_rect.w > 0 && neu.m_rect.h > 0)
+        if (neu.area() <= 0)
         {
+            DE_ERROR("No area")
         }
-        ::glViewport( neu.m_rect.x, neu.m_rect.y, neu.m_rect.w, neu.m_rect.h );
+        ::glViewport( neu.x(), neu.y(), neu.w(), neu.h() );
         GL_VALIDATE;
     }
     return neu;
 }
 // ===========================================================================
-// ===========================================================================
-// ===========================================================================
 
-// static
 Scissor
 Scissor::query()
 {
     Scissor scissor;
-    // Is enabled?:
     scissor.m_enabled = ( ::glIsEnabled( GL_SCISSOR_TEST ) != GL_FALSE );
 
-    // ScissorRect:
     GLint box[ 4 ];
     glGetIntegerv( GL_SCISSOR_BOX, box );
-
-    // Values stored in scissorBox:
-    scissor.m_rect.x = box[ 0 ];// scissorBox[0] = x position
-    scissor.m_rect.y = box[ 1 ];// scissorBox[1] = y position
-    scissor.m_rect.w = box[ 2 ];    // scissorBox[2] = width
-    scissor.m_rect.h = box[ 3 ];    // scissorBox[3] = height
+    scissor.m_rect = Recti( box[0], box[1], box[2], box[3] );    // scissorBox[3] = height
 
     GL_VALIDATE;
 
@@ -73,7 +55,7 @@ Scissor::apply( Scissor const & alt, Scissor const & neu )
 
     if ( neu.m_enabled )
     {
-        ::glScissor( neu.m_rect.x, neu.m_rect.y, neu.m_rect.w, neu.m_rect.h );
+        ::glScissor( neu.x(), neu.y(), neu.w(), neu.h() );
         ::glEnable( GL_SCISSOR_TEST );
     }
     else
@@ -108,10 +90,10 @@ Blend::Blend( Blend const & o )
 {}
 
 std::string
-Blend::toString() const
+Blend::str() const
 {
     std::ostringstream o;
-    o << "Blend["<< sizeof(Blend)<< "](";
+    o << "Blend(";
     if ( enabled )
     {
         o << "ON)";
@@ -228,63 +210,50 @@ Blend::fromBlendFunction( Blend::EFunction value )
     }
 }
 
-// static
 Blend
 Blend::query()
 {
     Blend blend;
-    // Blend enabled
     blend.enabled = glIsEnabled( GL_BLEND ) != GL_FALSE;
-    // Blend equation
     blend.equation = toBlendEquation( glGetInteger( GL_BLEND_EQUATION ) );
-    // Blend source RGB factor
     blend.src_rgb = toBlendFunction( glGetInteger( GL_BLEND_SRC_RGB ) );
-    // Blend destination RGB factor
     blend.dst_rgb = toBlendFunction( glGetInteger( GL_BLEND_DST_RGB ) );
-    // Blend source Alpha factor
     blend.src_a = toBlendFunction( glGetInteger( GL_BLEND_SRC_ALPHA ) );
-    // Blend destination Alpha factor
     blend.dst_a = toBlendFunction( glGetInteger( GL_BLEND_DST_ALPHA ) );
     return blend;
 }
 
-// static
 Blend
 Blend::apply( Blend const & alt, Blend const & neu )
 {
-    if ( neu == alt )
-    {
-        return neu; // Nothing todo
-    }
+    // Nothing todo
+    if ( neu == alt ) { return neu; }
 
-    //   if ( neu.enabled != alt.enabled )
-    //   {
     if ( neu.enabled )
     {
-        glEnable( GL_BLEND ); GL_VALIDATE
+        glEnable( GL_BLEND );
+        glBlendEquation( fromBlendEquation( neu.equation ) );
+        glBlendFunc(
+            fromBlendFunction( neu.src_a ),
+            fromBlendFunction( neu.dst_a ) );
 
-        glBlendEquation( fromBlendEquation( neu.equation ) ); GL_VALIDATE
-        glBlendFunc( fromBlendFunction( neu.src_a ), fromBlendFunction( neu.dst_a ) ); GL_VALIDATE
-
-    //         ::glBlendEquationSeparate(
-    //               fromBlendEquation( neu.equation ),
-    //               fromBlendEquation( neu.equation ) ); GL_VALIDATE
-    //         ::glBlendFuncSeparate(
-    //               fromBlendFunction( neu.src_rgb ),
-    //               fromBlendFunction( neu.dst_rgb ),
-    //               fromBlendFunction( neu.src_a ),
-    //               fromBlendFunction( neu.dst_a ) ); GL_VALIDATE
-    //DE_DEBUG("Blending ON")
+    //  glBlendEquationSeparate(
+    //       fromBlendEquation( neu.equation ),
+    //       fromBlendEquation( neu.equation ) );
+    //  glBlendFuncSeparate(
+    //       fromBlendFunction( neu.src_rgb ),
+    //       fromBlendFunction( neu.dst_rgb ),
+    //       fromBlendFunction( neu.src_a ),
+    //       fromBlendFunction( neu.dst_a ) );
     }
     else
     {
-        glDisable( GL_BLEND ); GL_VALIDATE
+        glDisable( GL_BLEND );
     }
-
+    GL_VALIDATE
     return neu;
 }
 
-// static
 std::string
 Blend::getEquationString( EEquation eq )
 {
@@ -299,7 +268,6 @@ Blend::getEquationString( EEquation eq )
     }
 }
 
-// static
 std::string
 Blend::getFunctionString( EFunction func )
 {
@@ -333,7 +301,6 @@ Blend::getFunctionString( EFunction func )
     }
 }
 
-// static
 Blend
 Blend::disabled()
 {
@@ -347,7 +314,6 @@ Blend::disabled()
     return blend;
 }
 
-// static
 Blend
 Blend::alphaBlend()
 {
@@ -362,7 +328,6 @@ Blend::alphaBlend()
     return blend;
 }
 
-// static
 Blend
 Blend::additive()
 {
@@ -375,7 +340,6 @@ Blend::additive()
     blend.dst_rgb = One;
     return blend;
 }
-
 
 bool
 Blend::isEnabled() const { return enabled; }
@@ -417,62 +381,50 @@ bool
 Blend::operator!=( Blend const & other ) const { return !( other == *this );   }
 
 // ===========================================================================
-// ===========================================================================
-// ===========================================================================
-
-// Default:
-// glEnable(GL_CULL_FACE);
-// glCullFace(GL_BACK);           // Cull back-facing triangles
-// glFrontFace(GL_CCW);           // Counter-clockwise = front
-
 
 std::string
-Culling::toString() const
+Culling::str() const
 {
     std::stringstream o;
     o << "Culling["<< sizeof(Culling)<< "](";
-    if ( cullMode == None ) { o << "None"; }
-    else if ( cullMode == Back ) { o << "Back"; }
-    else if ( cullMode == Front ) { o << "Front"; }
-    else if ( cullMode == FrontAndBack ) { o << "FrontAndBack"; }
+    if ( mode == None ) { o << "None"; }
+    else if ( mode == Back ) { o << "Back"; }
+    else if ( mode == Front ) { o << "Front"; }
+    else if ( mode == FrontAndBack ) { o << "FrontAndBack"; }
     o << ",";
     if ( isCCW() ) { o << "CCW"; } else { o << "CW"; }
     o << ")";
     return o.str();
 }
 
-// static
 Culling
 Culling::query()
 {
-    Culling culling;
-    bool enabled = ::glIsEnabled( GL_CULL_FACE ) != GL_FALSE; GL_VALIDATE;
-    culling.setEnabled( enabled );
+    Culling cm;
+    bool enabled = ::glIsEnabled( GL_CULL_FACE ) != GL_FALSE;
+    cm.setEnabled( enabled );
 
-    int cullMode = ::glGetInteger( GL_CULL_FACE_MODE ); GL_VALIDATE;
+    int cullMode = ::glGetInteger( GL_CULL_FACE_MODE );
     switch ( cullMode )
     {
-    case GL_BACK: culling.back(); break;
-    case GL_FRONT: culling.front(); break;
-    case GL_FRONT_AND_BACK: culling.frontAndBack(); break;
-    default: culling.back(); DE_ERROR("Unknown Cull mode, maybe not init") break;
+    case GL_BACK: cm.back(); break;
+    case GL_FRONT: cm.front(); break;
+    case GL_FRONT_AND_BACK: cm.frontAndBack(); break;
+    default: cm.back(); DE_ERROR("Unknown Cull mode, maybe not init") break;
     }
 
-    bool isCW = ( GL_CW == ::glGetInteger( GL_FRONT_FACE ) ); GL_VALIDATE;
-    if ( isCW ) culling.cw(); // GL_CCW|GL_CW
-    else        culling.ccw(); // GL_CCW|GL_CW
+    bool isCW = ( GL_CW == ::glGetInteger( GL_FRONT_FACE ) );
+    if ( isCW ) cm.cw();
+    else        cm.ccw();
 
-    return culling;
+    GL_VALIDATE
+    return cm;
 }
 
-// static
 Culling
 Culling::apply( Culling const & alt, Culling const & neu )
 {
-    if ( neu == alt )
-    {
-        return neu;
-    }
+    if ( neu == alt ) { return neu; }
 
     if ( neu.isEnabled() )
     {
@@ -505,11 +457,9 @@ Culling::apply( Culling const & alt, Culling const & neu )
 }
 
 // ===========================================================================
-// ===========================================================================
-// ===========================================================================
 
 std::string
-Depth::toString() const
+Depth::str() const
 {
     std::ostringstream o;
     o << "Depth["<< sizeof(Depth)<< "](";
@@ -526,7 +476,6 @@ Depth::toString() const
     return o.str();
 }
 
-// static
 std::string
 Depth::getString( eFunc const func )
 {
@@ -626,15 +575,9 @@ Depth::apply( Depth const & alt, Depth const & neu )
     return neu;
 }
 
-
 // ===========================================================================
-// ===========================================================================
-// ===========================================================================
-
 // Default:
 // glDisable(GL_STENCIL_TEST);    // Stencil test off by default
-
-// // If enabled:
 // glStencilMask(0xFF);           // Allow stencil writes
 // glStencilFunc(GL_ALWAYS, 0, 0xFF);
 // glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
@@ -650,9 +593,11 @@ Stencil::Stencil( bool enable )
     , stencilMask( 0xFFFFFFFF ) // 0x00 means write disabled to stencil buffer.
 {}
 
-// static
 Stencil
-Stencil::disabled() { Stencil stencil; stencil.enabled = false; return stencil; }
+Stencil::disabled()
+{
+    Stencil o; o.enabled = false; return o;
+}
 
 bool
 Stencil::isEnabled() const { return enabled; }
@@ -686,7 +631,7 @@ Stencil::operator!=( Stencil const & other ) const
 }
 
 std::string
-Stencil::toString() const
+Stencil::str() const
 {
     std::ostringstream o;
     o << "Stencil["<< sizeof(Stencil)<< "](";
@@ -735,14 +680,14 @@ Stencil::apply( Stencil const & alt, Stencil const & neu )
         //::glStencilFunc( to ); GL_VALIDATE
         //::glStencilMask(); GL_VALIDATE
         //::glStencilOp(); GL_VALIDATE
-        //DE_DEBUG( "Stencil ON ", neu.toString() )
+        //DE_DEBUG( "Stencil ON ", neu.str() )
     }
     else
     {
         ::glDisable( GL_STENCIL_TEST ); GL_VALIDATE;
         //DE_DEBUG( "Stencil OFF" )
     }
-    //      std::cout << "Changed Stencil from(" << this->toString() << " ) to( " << neu.toString() << " )\n";
+    //      std::cout << "Changed Stencil from(" << this->str() << " ) to( " << neu.str() << " )\n";
     //      m_StencilFail = neu.m_StencilFail;
     //      m_StencilKeep = neu.m_StencilKeep;
     return neu;
@@ -783,7 +728,7 @@ Stencil::getActionString( EAction action )
 // ===========================================================================
 
 std::string
-DepthRange::toString() const
+DepthRange::str() const
 {
     std::ostringstream o;
     o << "DepthRange["<< sizeof(DepthRange)<< "](near:" << n << ", far:" << f << ")";
@@ -815,7 +760,7 @@ DepthRange::apply( DepthRange const & alt, DepthRange const & neu )
 // =======================================================================
 
 std::string
-LineWidth::toString() const
+LineWidth::str() const
 {
     std::ostringstream o;
     o << "LineWidth["<< sizeof(LineWidth)<< "](m_Now:" << m_Now << ", m_Min:" << m_Min << ", m_Max:" << m_Max << ")";
@@ -856,7 +801,7 @@ LineWidth::apply( LineWidth const & alt, LineWidth const & neu )
 // =======================================================================
 
 std::string
-PointSize::toString() const
+PointSize::str() const
 {
     std::ostringstream o;
     o << "PointSize["<< sizeof(PointSize)<< "](m_Now:" << m_Now << ", m_Min:" << m_Min << ", m_Max:" << m_Max << ")";
@@ -902,7 +847,7 @@ PointSize::apply( PointSize const & alt, PointSize const & neu )
 // =======================================================================
 
 std::string
-PolygonOffset::toString() const
+PolygonOffset::str() const
 {
     std::ostringstream o;
     o << "PolygonOffset["<< sizeof(PolygonOffset)<< "](";
@@ -966,7 +911,7 @@ PolygonOffset::apply( PolygonOffset const & alt, PolygonOffset const & neu )
 // ===========================================================================
 
 std::string
-RasterizerDiscard::toString() const
+RasterizerDiscard::str() const
 {
     std::stringstream o;
     o << "RasterizerDiscard["<< sizeof(RasterizerDiscard)<< "](" << ( enabled ? "ON": "OFF") << ")";
@@ -1007,7 +952,7 @@ RasterizerDiscard::apply( RasterizerDiscard const & alt, RasterizerDiscard const
 // ===========================================================================
 
 std::string
-Clear::toString() const
+Clear::str() const
 {
     std::ostringstream o;
     o << "Clear["<< sizeof(Clear)<< "](";
@@ -1081,7 +1026,7 @@ Clear::apply( Clear const & alt, Clear const & neu )
     // Actually do clear if mask differs from 0.
     //   if ( neu.mask > 0 )
     //   {
-    //DE_DEBUG("Apply clear(", neu.toString(), ")")
+    //DE_DEBUG("Apply clear(", neu.str(), ")")
     //      ::glClear( toClearMask( neu ) );
     //      GL_VALIDATE
     //   }
@@ -1103,7 +1048,7 @@ State::State( State const & o )
 {}
 
 std::string
-State::toString() const
+State::str() const
 {
     std::ostringstream o; o <<
         "viewport(" << (viewport.isEnabled() ? 1 : 0) << "), "
@@ -1111,10 +1056,10 @@ State::toString() const
         "depth(" << (depth.isEnabled() ? 1 : 0) << "), "
         "stencil(" << (stencil.isEnabled() ? 1 : 0) << "), "
         "blend(" << (blend.isEnabled() ? 1 : 0) << "), "
-        "rastDiscard(" << rasterizerDiscard.toString() << "), "
-        "lineWidth(" << lineWidth.toString() << "), "
-        "pointSize(" << pointSize.toString() << "), "
-        "polyOffset(" << polygonOffset.toString() << ")";
+        "rastDiscard(" << rasterizerDiscard.str() << "), "
+        "lineWidth(" << lineWidth.str() << "), "
+        "pointSize(" << pointSize.str() << "), "
+        "polyOffset(" << polygonOffset.str() << ")";
     return o.str();
 }
 
@@ -1198,55 +1143,35 @@ State::operator=( State const & o )
 bool
 State::operator==( State const & o ) const
 {
-    return std::tie(viewport,scissor,culling,depth,stencil,blend,
-                    rasterizerDiscard,lineWidth,pointSize,polygonOffset)
-           == std::tie(o.viewport,o.scissor,o.culling,o.depth,o.stencil,o.blend,
-                       o.rasterizerDiscard,o.lineWidth,o.pointSize,o.polygonOffset);
+    return std::tie(viewport, scissor, culling, depth, stencil, blend,
+        rasterizerDiscard, lineWidth, pointSize, polygonOffset)
+    == std::tie(o.viewport, o.scissor, o.culling, o.depth, o.stencil, o.blend,
+      o.rasterizerDiscard, o.lineWidth, o.pointSize, o.polygonOffset);
     /*
         // if ( clear != o.clear ) return false;
         // if ( depthRange != o.depthRange ) return false;
         // if ( m_Texturing != o.m_Texturing ) return false;
-
-        if ( viewport != o.viewport ) return false;
-        if ( scissor != o.scissor ) return false;
-        if ( culling != o.culling ) return false;
-        if ( depth != o.depth ) return false;
-        if ( stencil != o.stencil ) return false;
-        if ( blend != o.blend ) return false;
-        if ( rasterizerDiscard != o.rasterizerDiscard ) return false;
-        if ( lineWidth != o.lineWidth ) return false;
-        if ( pointSize != o.pointSize ) return false;
-        if ( polygonOffset != o.polygonOffset ) return false;
-        // if ( clear != o.clear ) return false;
-        // if ( depthRange != o.depthRange ) return false;
-        // if ( m_Texturing != o.m_Texturing ) return false;
-        return true;
-        */
+    */
 }
 
 bool
 State::operator!= ( State const & rhs ) const { return !( *this == rhs ); }
 
-
 // ===========================================================================
-PrimitiveType::PrimitiveType()
+PrimitiveType::PrimitiveType() : m_type(Points)
 // ===========================================================================
-    : m_type(Points)
 {}
 
-PrimitiveType::PrimitiveType( EType type )
-    : m_type(type)
+PrimitiveType::PrimitiveType( EType type ) : m_type(type)
 {}
 
-PrimitiveType::PrimitiveType( const PrimitiveType & other )
-    : m_type(other.m_type)
+PrimitiveType::PrimitiveType( const PrimitiveType & other ) : m_type(other.m_type)
 {}
 
 PrimitiveType&
 PrimitiveType::operator=( const PrimitiveType & other )
 {
-    m_type = other.m_type;
-    return *this;
+    m_type = other.m_type; return *this;
 }
 
 //PrimitiveType::operator uint32_t() const { return m_type; }
@@ -1360,29 +1285,23 @@ PrimitiveType::toOpenGL( PrimitiveType const primitiveType )
     }
 }
 
-
 // ===========================================================================
-IndexType::IndexType()
+IndexType::IndexType() : m_type(U32)
 // ===========================================================================
-    : m_type(U32)
 {}
 
-IndexType::IndexType( EType type )
-    : m_type(type)
+IndexType::IndexType( EType type ) : m_type(type)
 {}
 
-IndexType::IndexType( const IndexType & other )
-    : m_type(other.m_type)
+IndexType::IndexType( const IndexType & other ): m_type(other.m_type)
 {}
 
 IndexType&
 IndexType::operator=( const IndexType & other )
 {
-    m_type = other.m_type;
-    return *this;
+    m_type = other.m_type; return *this;
 }
 
-//PrimitiveType::operator uint32_t() const { return m_type; }
 std::string
 IndexType::str() const
 {
@@ -1429,39 +1348,35 @@ IndexType::toOpenGL( IndexType const indexType )
 }
 
 // ===========================================================================
-SamplerOptions::SamplerOptions()
+SO::SO()
     : min(Minify::Default)
     , mag(Magnify::Default)
     , wrapS(Wrap::Default)
     , wrapT(Wrap::Default)
     , wrapR(Wrap::Default)
     , af(0) // enabled, auto increased to max level.
-{
-
-}
+{}
 
 // >= 1 means, enabled, will auto increase level to max supported 16x.
-SamplerOptions::SamplerOptions( float anisotropicFilterLevel,
-                               Minify minify,
-                               Magnify magnify,
-                               Wrap wrapmodeS,
-                               Wrap wrapmodeT,
-                               Wrap wrapmodeR )
+SO::SO( float anisotropicFilterLevel,
+        Minify minify,
+        Magnify magnify,
+        Wrap wrapmodeS,
+        Wrap wrapmodeT,
+        Wrap wrapmodeR )
     : min(minify)
     , mag(magnify)
     , wrapS(wrapmodeS)
     , wrapT(wrapmodeT)
     , wrapR(wrapmodeR)
     , af( static_cast< uint8_t >(anisotropicFilterLevel) )
-{
-
-}
+{}
 
 std::string
-SamplerOptions::str() const
+SO::str() const
 {
     std::ostringstream o;
-    //o << "SamplerOptions[" << sizeof(SamplerOptions)<<"](";
+    //o << "SO(";
     if ( af > 0 ) { o << "AF:" << af; }
     o << "|Min:";
     if ( min == Minify::Linear )               o << "L";
@@ -1487,102 +1402,72 @@ SamplerOptions::str() const
     return o.str();
 }
 
-// static
-SamplerOptions
-SamplerOptions::nearestRepeat()
+SO SO::nearestRepeat()
 {
-    return SamplerOptions( 0,
-                          SamplerOptions::Minify::Nearest,
-                          SamplerOptions::Magnify::Nearest,
-                          SamplerOptions::Wrap::Repeat,
-                          SamplerOptions::Wrap::Repeat,
-                          SamplerOptions::Wrap::Repeat);
+    return SO( 0,
+        SO::Minify::Nearest,
+        SO::Magnify::Nearest,
+        SO::Wrap::Repeat,
+        SO::Wrap::Repeat,
+        SO::Wrap::Repeat);
 }
 
-// static
-SamplerOptions
-SamplerOptions::linearRepeat()
+SO SO::linearRepeat()
 {
-    return SamplerOptions( 0,
-                          SamplerOptions::Minify::Linear,
-                          SamplerOptions::Magnify::Linear,
-                          SamplerOptions::Wrap::Repeat,
-                          SamplerOptions::Wrap::Repeat,
-                          SamplerOptions::Wrap::Repeat);
+    return SO( 0,
+        SO::Minify::Linear,
+        SO::Magnify::Linear,
+        SO::Wrap::Repeat,
+        SO::Wrap::Repeat,
+        SO::Wrap::Repeat);
 }
 
-// static
-SamplerOptions
-SamplerOptions::linearMipmapRepeat()
+SO SO::linearMipmapRepeat()
 {
-    return SamplerOptions( 0,
-                          SamplerOptions::Minify::LinearMipmapLinear,
-                          SamplerOptions::Magnify::Linear,
-                          SamplerOptions::Wrap::Repeat,
-                          SamplerOptions::Wrap::Repeat,
-                          SamplerOptions::Wrap::Repeat);
+    return SO( 0,
+        SO::Minify::LinearMipmapLinear,
+        SO::Magnify::Linear,
+        SO::Wrap::Repeat,
+        SO::Wrap::Repeat,
+        SO::Wrap::Repeat);
 }
 
-// static
-SamplerOptions
-SamplerOptions::nearestClampToEdge()
+SO SO::nearestClampToEdge()
 {
-    return SamplerOptions( 0,
-                          SamplerOptions::Minify::Nearest,
-                          SamplerOptions::Magnify::Nearest,
-                          SamplerOptions::Wrap::ClampToEdge,
-                          SamplerOptions::Wrap::ClampToEdge,
-                          SamplerOptions::Wrap::ClampToEdge);
+    return SO( 0,
+        SO::Minify::Nearest,
+        SO::Magnify::Nearest,
+        SO::Wrap::ClampToEdge,
+        SO::Wrap::ClampToEdge,
+        SO::Wrap::ClampToEdge);
 }
 
-// static
-SamplerOptions
-SamplerOptions::linearClampToEdge()
+SO SO::linearClampToEdge()
 {
-    return SamplerOptions( 0,
-                          SamplerOptions::Minify::Linear,
-                          SamplerOptions::Magnify::Linear,
-                          SamplerOptions::Wrap::ClampToEdge,
-                          SamplerOptions::Wrap::ClampToEdge,
-                          SamplerOptions::Wrap::ClampToEdge);
+    return SO( 0,
+        SO::Minify::Linear,
+        SO::Magnify::Linear,
+        SO::Wrap::ClampToEdge,
+        SO::Wrap::ClampToEdge,
+        SO::Wrap::ClampToEdge);
 }
 
-// static
-SamplerOptions
-SamplerOptions::linearMipmapClampToEdge()
+SO SO::linearMipmapClampToEdge()
 {
-    return SamplerOptions( 0,
-                          SamplerOptions::Minify::LinearMipmapLinear,
-                          SamplerOptions::Magnify::Linear,
-                          SamplerOptions::Wrap::ClampToEdge,
-                          SamplerOptions::Wrap::ClampToEdge,
-                          SamplerOptions::Wrap::ClampToEdge);
+    return SO( 0,
+        SO::Minify::LinearMipmapLinear,
+        SO::Magnify::Linear,
+        SO::Wrap::ClampToEdge,
+        SO::Wrap::ClampToEdge,
+        SO::Wrap::ClampToEdge);
 }
 
-// static
-SamplerOptions
-SamplerOptions::preset_lowp()
-{
-    return nearestRepeat();
-}
+SO SO::preset_lowp() { return nearestRepeat(); }
+SO SO::preset_mediump() { return linearMipmapRepeat(); }
+SO SO::preset_highp() { return linearMipmapClampToEdge(); }
 
-// static
-SamplerOptions
-SamplerOptions::preset_mediump()
-{
-    return linearMipmapRepeat();
-}
-
-// static
-SamplerOptions
-SamplerOptions::preset_highp()
-{
-    return linearMipmapClampToEdge();
-}
-
-// static
 std::string
-SamplerOptions::toStr( Minify const texMin )
+SO::toStr( Minify const texMin )
 {
     switch( texMin )
     {
@@ -1596,9 +1481,8 @@ SamplerOptions::toStr( Minify const texMin )
     }
 }
 
-// static
 std::string
-SamplerOptions::toStr( Magnify const texMag )
+SO::toStr( Magnify const texMag )
 {
     switch( texMag )
     {
@@ -1610,7 +1494,7 @@ SamplerOptions::toStr( Magnify const texMag )
 
 // static
 std::string
-SamplerOptions::toStr( Wrap const texWrap )
+SO::toStr( Wrap const texWrap )
 {
     switch( texWrap )
     {
@@ -1623,10 +1507,10 @@ SamplerOptions::toStr( Wrap const texWrap )
 }
 
 // static
-SamplerOptions
-SamplerOptions::parseString( std::string csv )
+SO
+SO::parseString( std::string csv )
 {
-    SamplerOptions so;
+    SO so;
     so.af = 0;
     so.min = Minify::Nearest;
     so.mag = Magnify::Nearest;
@@ -1689,61 +1573,55 @@ SamplerOptions::parseString( std::string csv )
     return so;
 }
 
-void SamplerOptions::setMin( Minify minify ) { min = minify; }
-void SamplerOptions::setMag( Magnify magnify ) { mag = magnify; }
-void SamplerOptions::setWrapS( Wrap wrap ) { wrapS = wrap; }
-void SamplerOptions::setWrapT( Wrap wrap ) { wrapT = wrap; }
-void SamplerOptions::setWrapR( Wrap wrap ) { wrapR = wrap; }
-void SamplerOptions::setAF( float anisotropicLevel ) { af = anisotropicLevel; }
+void SO::setMin( Minify minify ) { min = minify; }
+void SO::setMag( Magnify magnify ) { mag = magnify; }
+void SO::setWrapS( Wrap wrap ) { wrapS = wrap; }
+void SO::setWrapT( Wrap wrap ) { wrapT = wrap; }
+void SO::setWrapR( Wrap wrap ) { wrapR = wrap; }
+void SO::setAF( float anisotropicLevel ) { af = anisotropicLevel; }
 
-bool SamplerOptions::hasMipmaps() const
+bool SO::hasMipmaps() const
 {
     return (min == Minify::LinearMipmapLinear)
-    || (min == Minify::NearestMipmapLinear)
+        || (min == Minify::NearestMipmapLinear)
         || (min == Minify::LinearMipmapNearest)
         || (min == Minify::NearestMipmapNearest);
 }
 
-void applySamplerOptions(const SamplerOptions &so)
+void applySamplerOptions(const SO &so)
 {
-    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    // glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, maxAF );
-
     GLint magMode = GL_NEAREST; // Low quality is default.
     switch ( so.mag )
     {
-        case SamplerOptions::Magnify::Linear: magMode = GL_LINEAR; break;// High quality on demand.
+        case SO::Magnify::Linear: magMode = GL_LINEAR; break;// High quality on demand.
         default: break;
     }
 
     GLint minMode = GL_NEAREST;   // Low quality is default.
     switch ( so.min )
     {
-        case SamplerOptions::Minify::Linear: minMode = GL_LINEAR; break;
-        case SamplerOptions::Minify::NearestMipmapNearest: minMode = GL_NEAREST_MIPMAP_NEAREST; break;
-        case SamplerOptions::Minify::NearestMipmapLinear: minMode = GL_NEAREST_MIPMAP_LINEAR; break;
-        case SamplerOptions::Minify::LinearMipmapNearest: minMode = GL_LINEAR_MIPMAP_NEAREST; break;
-        case SamplerOptions::Minify::LinearMipmapLinear: minMode = GL_LINEAR_MIPMAP_LINEAR; break;
+        case SO::Minify::Linear: minMode = GL_LINEAR; break;
+        case SO::Minify::NearestMipmapNearest: minMode = GL_NEAREST_MIPMAP_NEAREST; break;
+        case SO::Minify::NearestMipmapLinear: minMode = GL_NEAREST_MIPMAP_LINEAR; break;
+        case SO::Minify::LinearMipmapNearest: minMode = GL_LINEAR_MIPMAP_NEAREST; break;
+        case SO::Minify::LinearMipmapLinear: minMode = GL_LINEAR_MIPMAP_LINEAR; break;
         default: break;
     }
 
     GLint wrapS = GL_REPEAT;
     switch ( so.wrapS )
     {
-        case SamplerOptions::Wrap::RepeatMirrored: wrapS = GL_MIRRORED_REPEAT; break;
-        case SamplerOptions::Wrap::ClampToEdge: wrapS = GL_CLAMP_TO_EDGE; break;
-        case SamplerOptions::Wrap::ClampToBorder: wrapS = GL_CLAMP_TO_BORDER; break;
+        case SO::Wrap::RepeatMirrored: wrapS = GL_MIRRORED_REPEAT; break;
+        case SO::Wrap::ClampToEdge: wrapS = GL_CLAMP_TO_EDGE; break;
+        case SO::Wrap::ClampToBorder: wrapS = GL_CLAMP_TO_BORDER; break;
         default: break;
     }
     GLint wrapT = GL_REPEAT;
     switch ( so.wrapT )
     {
-        case SamplerOptions::Wrap::RepeatMirrored: wrapT = GL_MIRRORED_REPEAT; break;
-        case SamplerOptions::Wrap::ClampToEdge: wrapT = GL_CLAMP_TO_EDGE; break;
-        case SamplerOptions::Wrap::ClampToBorder: wrapT = GL_CLAMP_TO_BORDER; break;
+        case SO::Wrap::RepeatMirrored: wrapT = GL_MIRRORED_REPEAT; break;
+        case SO::Wrap::ClampToEdge: wrapT = GL_CLAMP_TO_EDGE; break;
+        case SO::Wrap::ClampToBorder: wrapT = GL_CLAMP_TO_BORDER; break;
         default: break;
     }
 
@@ -1761,10 +1639,17 @@ void applySamplerOptions(const SamplerOptions &so)
     }
 }
 
-
 // ===========================================================================
-SurfaceFormat::SurfaceFormat( uint8_t r, uint8_t g, uint8_t b, uint8_t a,
-                             uint8_t d, uint8_t s )
+SurfaceFormat::SurfaceFormat()
+    : redBits(0)
+    , greenBits(0)
+    , blueBits(0)
+    , alphaBits(0)
+    , depthBits(0)
+    , stencilBits(0)
+{}
+
+SurfaceFormat::SurfaceFormat(u8 r, u8 g, u8 b, u8 a, u8 d, u8 s)
     : redBits(r)
     , greenBits(g)
     , blueBits(b)
@@ -1816,7 +1701,6 @@ SurfaceFormat::str() const
     return o.str();
 }
 
-// static
 std::vector< std::string >
 SurfaceFormat::splitStringInWords( std::string const & txt )
 {
@@ -1864,7 +1748,6 @@ SurfaceFormat::splitStringInWords( std::string const & txt )
     return words;
 }
 
-// static
 SurfaceFormat
 SurfaceFormat::parseString( std::string s )
 {
@@ -1913,7 +1796,7 @@ SurfaceFormat::parseString( std::string s )
 }
 
 // isFloatMask = 0x80, value 0-127
-// static
+
 PixelFormat
 SurfaceFormat::toPixelFormat( SurfaceFormat const & fmt )
 {
@@ -1995,7 +1878,7 @@ SurfaceFormat::toPixelFormat( SurfaceFormat const & fmt )
 }
 
 // isFloatMask = 0x80, value 0-127
-// static
+
 void
 SurfaceFormat::test()
 {
@@ -2025,14 +1908,5 @@ SurfaceFormat::test()
     DE_DEBUG("Test5 PixelFormat = ",pf5.str())
 }
 
-
-
-
-
-
-
 } // end namespace gpu.
 } // end namespace de.
-
-
-

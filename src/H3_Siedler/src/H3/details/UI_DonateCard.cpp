@@ -18,8 +18,8 @@ UI_DonateCard::UI_DonateCard( H3_Game* game, de::gui::Env* env, de::gui::Widget*
     m_btnSrc->setRadius(10);
 
     auto tex = m_game->getTex(H3_Tex::Scroll2,__func__);
-    m_edtDst->getMinusButton()->setTexture(tex);
-    m_edtDst->getPlusButton()->setTexture(tex);
+    m_edtDst->setMinusButtonTexture(tex);
+    m_edtDst->setPlusButtonTexture(tex);
 
     m_lblSrc->setFillColors(dbRGB(255,255,255,200));
     m_edtDst->getValueLabel()->setFillColors(dbRGB(255,255,255,200));
@@ -56,9 +56,9 @@ UI_DonateCard::UI_DonateCard( H3_Game* game, de::gui::Env* env, de::gui::Widget*
             }
         };
 
-    m_edtDst->getPlusButton()->onClicked = plus;
+    m_edtDst->onPlusClicked = plus;
 
-    m_edtDst->getMinusButton()->onClicked = minus;
+    m_edtDst->onMinusClicked = minus;
 
     m_btnSrc->onClickedLeft = plus;
 

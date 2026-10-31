@@ -25,8 +25,20 @@ struct Viewport
     Viewport() : m_rect(0,0,0,0)
     {}
 
-    Viewport(int32_t x,int32_t y, int32_t w, int32_t h) : m_rect(x,y,w,h)
+    Viewport(const Recti& r) : m_rect(r)
     {}
+
+    Viewport(int32_t x, int32_t y, int32_t w, int32_t h) : m_rect(x,y,w,h)
+    {}
+
+    int32_t x() const { return m_rect.x; }
+    int32_t y() const { return m_rect.y; }
+    int32_t w() const { return m_rect.w; }
+    int32_t h() const { return m_rect.h; }
+
+    bool empty() const { return m_rect.empty(); }
+
+    int64_t area() const { return m_rect.area(); }
 
     std::string str() const
     {
@@ -40,7 +52,7 @@ struct Viewport
     {
         return m_rect == o.m_rect;
     }
-    bool operator!=( Viewport const & o ) const { return !( o == *this ); }
+    bool operator!=(const Viewport & o) const { return !( o == *this ); }
 
     static Viewport query();
     static Viewport apply( Viewport const & alt, Viewport const & neu );
@@ -52,9 +64,17 @@ struct Scissor
 {
     Recti m_rect;
     bool m_enabled;
-    // sum = 33 Bytes
 
     Scissor() : m_rect(0,0,0,0), m_enabled( false ) {}
+
+    int32_t x() const { return m_rect.x; }
+    int32_t y() const { return m_rect.y; }
+    int32_t w() const { return m_rect.w; }
+    int32_t h() const { return m_rect.h; }
+
+    bool empty() const { return m_rect.empty(); }
+
+    int64_t area() const { return m_rect.area(); }
 
     static Scissor disabled()
     {
@@ -93,7 +113,7 @@ struct Scissor
     {
         return std::tie(m_rect,m_enabled) == std::tie(o.m_rect,o.m_enabled);
     }
-    bool operator!=( const Scissor& o ) const { return !( o == *this ); }
+    bool operator!=(const Scissor& o) const { return !( o == *this ); }
 
     static Scissor query();
     static Scissor apply( Scissor const & alt, Scissor const & neu );
@@ -121,28 +141,29 @@ struct Scissor
 struct Blend
 // ===========================================================================
 {
-    enum EEquation : uint8_t { Add = 0, Sub, ReverseSub, Min, Max, EEquationCount };
-    enum EFunction : uint8_t  { Zero = 0, One, SrcAlpha, OneMinusSrcAlpha, SrcAlphaSaturate,
+    enum EEquation : uint8_t
+    {
+        Add = 0, Sub, ReverseSub, Min, Max, EEquationCount
+    };
+    enum EFunction : uint8_t
+    {
+        Zero = 0, One, SrcAlpha, OneMinusSrcAlpha, SrcAlphaSaturate,
         ConstantAlpha, DstAlpha, OneMinusDstAlpha, SrcColor, OneMinusSrcColor,
         DstColor, OneMinusDstColor, ConstantColor, OneMinusConstantColor,
-        BlendColor, Src1Color, OneMinusSrc1Color, Src1Alpha, OneMinusSrc1Alpha, EFunctionCount };
+        BlendColor, Src1Color, OneMinusSrc1Color, Src1Alpha, OneMinusSrc1Alpha, EFunctionCount
+    };
 
-    bool enabled; // : 1;       // Byte1
-    EEquation equation; // : 7; // Byte1
-    EFunction src_a; // : 6;    // Byte2
-    EFunction dst_a; // : 6;    // Byte2/Byte3
-    EFunction src_rgb; // : 6;  // Byte3/Byte4
-    EFunction dst_rgb; // : 6;  // Byte4
-    // EEquation equationSeparate2;
-    // sum = 6(...4)Byte.
-
+    bool enabled;
+    EEquation equation;
+    EFunction src_a;
+    EFunction dst_a;
+    EFunction src_rgb;
+    EFunction dst_rgb;
 
     Blend();
-
     Blend( Blend const & o );
 
-    std::string
-    toString() const;
+    std::string str() const;
 
     bool isEnabled() const;
 
@@ -174,65 +195,75 @@ struct Blend
     static uint32_t fromBlendEquation( Blend::EEquation value  );
 };
 
-
 // ===========================================================================
 struct Culling
 // ===========================================================================
 {
-    enum ECullMode { None = 0, Back, Front, FrontAndBack, EModeCount };
-    enum EWinding { CW = 0, CCW, EWindingCount };
-    uint8_t cullMode;
-    uint8_t winding;
-
-    //   static Culling enabled( bool on ) { return on ? enabledBack() : disabled(); }
-    //   static Culling enabledBack() { return Culling( ENABLED | BACK ); }
-    //   static Culling disabled() { return Culling(); }
-
     // Default:
     // glEnable(GL_CULL_FACE);
     // glCullFace(GL_BACK);           // Cull back-facing triangles
     // glFrontFace(GL_CCW);           // Counter-clockwise = front
 
-    Culling( ECullMode mode = Back, EWinding wind = CW )
-        : cullMode( mode )
-        , winding( wind )
+    enum eMode
+    {
+        None = 0, Back, Front, FrontAndBack, eModeCount,
+        DefaultMode = Back
+    };
+    enum eWind
+    {
+        CW = 0, CCW, eWindingCount,
+        DefaultWinding = CW
+    };
+    uint8_t mode;
+    uint8_t wind;
+
+    Culling(eMode m = DefaultMode,
+            eWind w = DefaultWinding ) : mode(m), wind(w)
     {}
 
-    std::string
-    toString() const;
+    std::string str() const;
 
-    static Culling
-    query();
-
-    static Culling
-    apply( Culling const & alt, Culling const & neu );
-
+    static Culling query();
+    static Culling apply( Culling const & alt, Culling const & neu );
     static Culling enabled() { return Culling(); }
     static Culling disabled() { return Culling( None ); }
 
-    // Culling& enable() { flags |= ENABLED; return *this; }
-    // Culling& disable() { flags &= ~ENABLED; return *this; }
-    Culling& setMode( ECullMode mode ) { cullMode = mode; return *this; }
-    Culling& setWinding( EWinding wind ) { winding = wind; return *this; }
-    Culling& setEnabled( bool enable ) { if ( enable ) { cullMode = Back; } else { cullMode = None; } return *this; }
-    Culling& cw() { winding = CW; return *this; }
-    Culling& ccw() { winding = CCW; return *this; }
-    Culling& back() { cullMode = Back; return *this; }
-    Culling& front() { cullMode = Front; return *this; }
-    Culling& frontAndBack() { cullMode = FrontAndBack; return *this; }
+    Culling& setMode( eMode cullmode ) { mode = cullmode; return *this; }
+    Culling& setWinding( eWind winding ) { wind = winding; return *this; }
+    Culling& setEnabled( bool enable )
+    {
+        if ( enable )
+        {
+            mode = DefaultMode;
+        }
+        else
+        {
+            mode = None;
+        }
+        return *this;
+    }
+    Culling& cw() { wind = CW; return *this; }
+    Culling& ccw() { wind = CCW; return *this; }
+    Culling& back() { mode = Back; return *this; }
+    Culling& front() { mode = Front; return *this; }
+    Culling& frontAndBack() { mode = FrontAndBack; return *this; }
 
-    bool isEnabled() const { return cullMode != None; }
-    bool isFront() const { return cullMode == Front; }
-    bool isBack() const { return cullMode == Back; }
-    bool isFrontAndBack() const { return cullMode == FrontAndBack; }
-    bool isCW() const { return winding == CW; }
-    bool isCCW() const { return winding == CCW; }
+    bool isEnabled() const { return mode != None; }
+    bool isFront() const { return mode == Front; }
+    bool isBack() const { return mode == Back; }
+    bool isFrontAndBack() const { return mode == FrontAndBack; }
+    bool isCW() const { return wind == CW; }
+    bool isCCW() const { return wind == CCW; }
 
-    bool
-    operator== ( Culling const & o ) const { return ( o.cullMode == cullMode && o.winding == winding ); }
+    bool operator== ( Culling const & o ) const
+    {
+        return std::tie(mode,wind) == std::tie(o.mode,o.wind);
+    }
 
-    bool
-    operator!= ( Culling const & o ) const { return ( o.cullMode != cullMode || o.winding != winding ); }
+    bool operator!= ( Culling const & o ) const
+    {
+        return std::tie(mode,wind) == std::tie(o.mode,o.wind);
+    }
 
 };
 
@@ -240,6 +271,11 @@ struct Culling
 struct Depth // DepthTest
 // ===========================================================================
 {
+    // glEnable(GL_DEPTH_TEST);
+    // glDepthFunc(GL_LESS);    // Default depth comparison
+    // glDepthMask(GL_TRUE);    // Allow depth writes
+    // glClearDepth(1.0);       // Depth buffer clear value
+
     enum eFlag : uint8_t
     {
         Off = 0,
@@ -250,61 +286,43 @@ struct Depth // DepthTest
     enum eFunc : uint8_t
     {
         Less = 0,
-        LessEqual, // 1
-        Equal, // 2
-        Greater, // 3
-        GreaterEqual, // 4
-        NotEqual, // 5
-        AlwaysPass, // 6
-        Never, // 7
-        EFuncCount // 8
+        LessEqual,
+        Equal,
+        Greater,
+        GreaterEqual,
+        NotEqual,
+        AlwaysPass,
+        Never,
+        EFuncCount
     };
 
-                   //           +---------------------------+
-    uint8_t flags; // bits: msb | 4-bit eFlag | 4-bit eFunc | lsb.
-                   //           +---------------------------+
-
-    // glEnable(GL_DEPTH_TEST);
-    // glDepthFunc(GL_LESS);          // Default depth comparison
-    // glDepthMask(GL_TRUE);          // Allow depth writes
-    // glClearDepth(1.0);             // Depth buffer clear value
+    //           +---------------------------+
+    // bits: msb | 4-bit eFlag | 4-bit eFunc | lsb.
+    //           +---------------------------+
+    uint8_t flags;
 
     Depth()
         : flags( On | ZWriteEnabled | Less)
-    {
-    }
+    {}
 
     Depth( bool on, bool zWrite = true, eFunc zFunc = Less )
         : flags( uint8_t( zFunc ) )
     {
         if ( on ) flags |= On;
         if ( zWrite ) flags |= ZWriteEnabled;
-        //DE_DEBUG( "Depth create. state(",toString(),")")
     }
 
-    std::string
-    toString() const;
+    std::string str() const;
 
-    static std::string
-    getString( eFunc const func );
+    static std::string getString( eFunc const func );
+    static eFunc toDepthFunction( int32_t value );
+    static uint32_t fromDepthFunction( eFunc value  );
 
-    static eFunc
-    toDepthFunction( int32_t value );
+    static Depth query();
+    static Depth apply( Depth const & alt, Depth const & neu );
 
-    static uint32_t
-    fromDepthFunction( eFunc value  );
-
-    static Depth
-    query();
-
-    static Depth
-    apply( Depth const & alt, Depth const & neu );
-
-    static Depth
-    disabled() { return Depth( false ); }
-
-    static Depth
-    alwaysPass() { return Depth( true, false, AlwaysPass ); }
+    static Depth disabled() { return Depth( false ); }
+    static Depth alwaysPass() { return Depth( true, false, AlwaysPass ); }
 
     bool isEnabled() const { return flags & On; }
     bool isZWriteEnabled() const { return flags & ZWriteEnabled; }
@@ -329,9 +347,8 @@ struct Depth // DepthTest
         return *this;
     }
 
-    bool operator==( Depth const & o ) const { return o.flags == flags; }
-    bool operator!=( Depth const & o ) const { return o.flags != flags; }
-
+    bool operator==(const Depth& o) const { return o.flags == flags; }
+    bool operator!=(const Depth& o) const { return o.flags != flags; }
 };
 
 // ===========================================================================
@@ -389,7 +406,7 @@ struct Stencil
     uint32_t stencilMask;
 
     Stencil( bool enable = false );
-    std::string toString() const;
+    std::string str() const;
     bool isEnabled() const;
     Stencil& setEnabled( bool enable );
     bool operator==( Stencil const & other ) const;
@@ -412,8 +429,7 @@ struct DepthRange
     DepthRange( int dummy_for_SM3_Ctr = 0 ) : n( 0.2f ), f( 3123.0f ) {}
     DepthRange( float _n, float _f ) : n( _n ), f( _f ) {}
 
-    std::string
-    toString() const;
+    std::string str() const;
 
     static DepthRange
     query();
@@ -422,9 +438,8 @@ struct DepthRange
     apply( DepthRange const & alt, DepthRange const & neu );
 
     bool isValid() const { return true; }
-    bool operator==( DepthRange const & o ) const { return n == o.n && f == o.f; }
-    bool operator!=( DepthRange const & o ) const { return !( o == *this ); }
-
+    bool operator==(const DepthRange& o) const { return n == o.n && f == o.f; }
+    bool operator!=(const DepthRange& o) const { return !( o == *this ); }
 };
 
 // =======================================================================
@@ -437,14 +452,10 @@ struct LineWidth
 
     LineWidth( int dummy = 0 ) : m_Now( 1.0f ), m_Min( 1.0f ), m_Max( 100.0f ) {}
 
-    std::string
-    toString() const;
+    std::string str() const;
 
-    static LineWidth
-    query();
-
-    static LineWidth
-    apply( LineWidth const & alt, LineWidth const & neu );
+    static LineWidth query();
+    static LineWidth apply(const LineWidth& alt, const LineWidth& neu);
 
     bool isValid() const
     {
@@ -461,7 +472,6 @@ struct LineWidth
     }
 
     bool operator!=( LineWidth const & other ) const { return !( other == *this ); }
-
 };
 
 
@@ -473,16 +483,14 @@ struct PointSize
     int32_t m_Min;
     int32_t m_Max;
 
-    PointSize( int dummy = 0 ) : m_Now( 0 ), m_Min( 0 ), m_Max( 0 ) {}
+    PointSize( int dummy = 0 )
+        : m_Now( 0 ), m_Min( 0 ), m_Max( 0 )
+    {}
 
-    std::string
-    toString() const;
+    std::string str() const;
 
-    static PointSize
-    query();
-
-    static PointSize
-    apply( PointSize const & alt, PointSize const & neu );
+    static PointSize query();
+    static PointSize apply(const PointSize& alt, const PointSize& neu);
 
     bool isValid() const
     {
@@ -499,7 +507,6 @@ struct PointSize
     }
 
     bool operator!=( PointSize const & other ) const { return !( other == *this ); }
-
 };
 
 // =======================================================================
@@ -522,14 +529,10 @@ struct PolygonOffset
         , offsetUnits( offUnits )
     {}
 
-    std::string
-    toString() const;
+    std::string str() const;
 
-    static PolygonOffset
-    query();
-
-    static PolygonOffset
-    apply( PolygonOffset const & alt, PolygonOffset const & neu );
+    static PolygonOffset query();
+    static PolygonOffset apply(const PolygonOffset& alt,const PolygonOffset& neu);
 
     bool operator==( PolygonOffset const & other ) const
     {
@@ -540,7 +543,6 @@ struct PolygonOffset
     }
 
     bool operator!=( PolygonOffset const & other ) const { return !( other == *this ); }
-
 };
 
 // ===========================================================================
@@ -557,14 +559,10 @@ struct RasterizerDiscard
     // Use with caution i would say. Available at versions greater OpenGL ES 3.0
     RasterizerDiscard( bool enable = false ) : enabled( enable ) {}
 
-    std::string
-    toString() const;
+    std::string str() const;
 
-    static RasterizerDiscard
-    query();
-
-    static RasterizerDiscard
-    apply( RasterizerDiscard const & alt, RasterizerDiscard const & neu );
+    static RasterizerDiscard query();
+    static RasterizerDiscard apply(const RasterizerDiscard& alt, const RasterizerDiscard& neu);
 
     bool operator==( RasterizerDiscard const & other ) const { return other.enabled == enabled; }
     bool operator!=( RasterizerDiscard const & o ) const { return !( o == *this ); }
@@ -581,7 +579,6 @@ struct Clear
     uint8_t stencil;    // 1B
     bool enabled;       // 1B
     uint16_t mask = 0;  // 2B
-    // sum = 20Byte. -> 12B poss.
 
     Clear( int dummy = 0 )
         : enabled( true ), color( .1f, .2f, .3f, 1.0f ), depth( 1.0f ), stencil( 0 )
@@ -592,17 +589,13 @@ struct Clear
         , mask( ColorBit | DepthBit | StencilBit )
     {}
 
-    std::string
-    toString() const;
+    std::string str() const;
 
     static uint32_t
     toClearMask( Clear const & clear );
 
-    static Clear
-    query();
-
-    static Clear
-    apply( Clear const & alt, Clear const & neu );
+    static Clear query();
+    static Clear apply(const Clear& alt,const Clear& neu);
 
     bool isEnabled() const { return enabled; }
     // Chain settings together.
@@ -639,7 +632,6 @@ struct Clear
     void setColor( uint32_t rgba ) { color = dbRGBfv4( rgba ); }
     void setDepth( float depthValue = 1.0f ) { depth = depthValue; }
     void setStencil( uint8_t stencilValue = 0 ) { stencil = stencilValue; }
-
 };
 
 // =======================================================================
@@ -661,7 +653,7 @@ struct State
 
     State( int dummy = 0 );
     State( State const & o );
-    std::string toString() const;
+    std::string str() const;
     State& operator=( State const & o );
     bool operator==( State const & o ) const;
     bool operator!= ( State const & rhs ) const;
@@ -747,18 +739,19 @@ struct IndexType
 };
 
 // ===========================================================================
-struct SamplerOptions // 16 Bit
+struct SO // 16 Bit
 // ===========================================================================
 {
     enum class Minify : uint8_t // 3 Bit
-    {   Nearest = 0,
-      Linear,
-      NearestMipmapNearest,
-      NearestMipmapLinear,
-      LinearMipmapNearest,
-      LinearMipmapLinear,
-      MaxCount,
-      Default = Minify::Linear
+    {
+        Nearest = 0,
+        Linear,
+        NearestMipmapNearest,
+        NearestMipmapLinear,
+        LinearMipmapNearest,
+        LinearMipmapLinear,
+        MaxCount,
+        Default = Minify::Linear
     };
     enum class Magnify : uint8_t // 1 Bit
     {
@@ -775,7 +768,8 @@ struct SamplerOptions // 16 Bit
         ClampToEdge,
         ClampToBorder,
         MaxCount,
-        Default = Wrap::Repeat };
+        Default = Wrap::Repeat
+    };
 
     Minify min; // : 3; // : 3-bit;
     Magnify mag; // : 1;// : 1-bit;
@@ -785,9 +779,9 @@ struct SamplerOptions // 16 Bit
     uint8_t af; // : 6; // : 6-bit anisotropicFilter [0 = disabled, 1 = auto max, 2 = 2x, ..., 32 = 32x, 63 = 64x]
     // sum = 16 Bit = 2 Byte;
 
-    SamplerOptions();
-    // >= 1 means, enabled, will auto increase level to max supported 16x.
-    SamplerOptions( float anisotropicFilterLevel,
+    SO();
+    // AF >= 1 means, enabled, will auto increase level to max supported 16x.
+    SO( float anisotropicFilterLevel,
                    Minify minify = Minify::Default,
                    Magnify magnify = Magnify::Default,
                    Wrap wrapmodeS = Wrap::Default,
@@ -796,19 +790,19 @@ struct SamplerOptions // 16 Bit
 
     std::string str() const;
 
-    static SamplerOptions nearestRepeat();
-    static SamplerOptions linearRepeat();
-    static SamplerOptions linearMipmapRepeat();
-    static SamplerOptions nearestClampToEdge();
-    static SamplerOptions linearClampToEdge();
-    static SamplerOptions linearMipmapClampToEdge();
-    static SamplerOptions preset_lowp();
-    static SamplerOptions preset_mediump();
-    static SamplerOptions preset_highp();
+    static SO nearestRepeat();
+    static SO linearRepeat();
+    static SO linearMipmapRepeat();
+    static SO nearestClampToEdge();
+    static SO linearClampToEdge();
+    static SO linearMipmapClampToEdge();
+    static SO preset_lowp();
+    static SO preset_mediump();
+    static SO preset_highp();
     static std::string toStr( Minify const texMin );
     static std::string toStr( Magnify const texMag );
     static std::string toStr( Wrap const texWrap );
-    static SamplerOptions parseString( std::string csv );
+    static SO parseString( std::string csv );
     void setMin( Minify minify );
     void setMag( Magnify magnify );
     void setWrapS( Wrap wrap );
@@ -816,31 +810,28 @@ struct SamplerOptions // 16 Bit
     void setWrapR( Wrap wrap );
     void setAF( float anisotropicLevel );
     bool hasMipmaps() const;
+
+    // static void apply(const SO &so);
 };
 
-typedef SamplerOptions SO;
+typedef SO SamplerOptions;
 
-
-void applySamplerOptions(const SamplerOptions &so);
+void applySamplerOptions(const SO &so);
 
 // ===========================================================================
 struct SurfaceFormat
 // ===========================================================================
 {
     constexpr static uint8_t s_FloatMask = 0x80;
-    uint8_t redBits = 0;
-    uint8_t greenBits = 0;
-    uint8_t blueBits = 0;
-    uint8_t alphaBits = 0;
-    uint8_t depthBits = 0;
-    uint8_t stencilBits = 0;
+    u8 redBits = 0;
+    u8 greenBits = 0;
+    u8 blueBits = 0;
+    u8 alphaBits = 0;
+    u8 depthBits = 0;
+    u8 stencilBits = 0;
 
-    SurfaceFormat( uint8_t r = 0,
-                  uint8_t g = 0,
-                  uint8_t b = 0,
-                  uint8_t a = 0,
-                  uint8_t d = 0,
-                  uint8_t s = 0 );
+    SurfaceFormat();
+    SurfaceFormat(u8 r, u8 g, u8 b, u8 a = 0, u8 d = 0, u8 s = 0);
 
     std::string str() const;
 

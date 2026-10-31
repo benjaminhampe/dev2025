@@ -311,11 +311,13 @@ std::string
 H3_CfgTile::str() const
 {
     std::ostringstream o; o <<
-    "tileType(" << tileType.str() << "), "
-    "chipValue(" << chipValue << "), "
-    "i(" << i << "), "
-    "j(" << j << "), "
-    "angle60("<< angle60 << "), ";
+    "tileType(" << tt().str() << "), "
+    "diceValue(" << diceValue() << "), "
+    "i(" << i() << "), "
+    "j(" << j() << "), "
+    "angle60("<< angle60() << "), "
+    "x("<< x() << "), "
+    "y("<< y() << ")";
     //"pos("<< trs.pos << "), ";
     return o.str();
 }
@@ -512,10 +514,10 @@ void H3_Cfg::computeBounds()
 
     for (const H3_CfgTile& tile : tiles)
     {
-        min.x = std::min(min.x, tile.i);
-        min.y = std::min(min.y, tile.j);
-        max.x = std::max(max.x, tile.i);
-        max.y = std::max(max.y, tile.j);
+        min.x = std::min(min.x, tile.i());
+        min.y = std::min(min.y, tile.j());
+        max.x = std::max(max.x, tile.i());
+        max.y = std::max(max.y, tile.j());
     }
 }
 
@@ -566,11 +568,10 @@ H3_Cfg::addTile( int i, int j, H3_TileType tileType, int angle60, int diceValue 
 {
     tiles.emplace_back();
     H3_CfgTile & tile = tiles.back();
-    tile.i = i;
-    tile.j = j;
-    tile.tileType = tileType;
-    tile.chipValue = diceValue;
-    tile.angle60 = angle60;
+    tile.setPos(i,j);
+    tile.setTileType(tileType);
+    tile.setDiceValue(diceValue);
+    tile.setAngle60(angle60);
 }
 
 // static

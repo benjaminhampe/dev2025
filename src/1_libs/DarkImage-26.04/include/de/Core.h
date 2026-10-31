@@ -1890,6 +1890,9 @@ struct Recti
 
     static void test();
 
+    bool empty() const { return (w == 0) || (h == 0); }
+
+    int64_t area() const { return w * h; }
 };
 
 //=============================================================================

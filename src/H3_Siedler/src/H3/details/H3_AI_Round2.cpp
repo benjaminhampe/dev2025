@@ -34,7 +34,7 @@ void AI_Round2(H3_Game& game, const uint32_t playerId)
     std::vector<u32> visibleCorners = H3_computeVisibleCorners(game, playerId);
 
     DE_DEBUG("Player[",playerId,"] visibleCorners = ",visibleCorners.size())
-    for (size_t i = 0; i < visibleCorners.size(); ++i)
+    for (size_t i = 0; i < std::min<size_t>(10,visibleCorners.size()); ++i)
     {
         DE_DEBUG("Player[",playerId,"] visibleCorners[",i,"] ",visibleCorners[i])
     }
@@ -78,7 +78,7 @@ void AI_Round2(H3_Game& game, const uint32_t playerId)
               } );
 
     DE_DEBUG("Player[",playerId,"] candidates = ",candidates.size())
-    for (size_t i = 0; i < candidates.size(); ++i)
+    for (size_t i = 0; i < std::min<size_t>(10,candidates.size()); ++i)
     {
         DE_DEBUG("Player[",playerId,"] candidate[",i,"] ",candidates[i].str())
     }
@@ -98,7 +98,7 @@ void AI_Round2(H3_Game& game, const uint32_t playerId)
     std::vector<u32> roadCandidates = H3_computeVisibleEdges(game, playerId);
 
     DE_DEBUG("Player[",playerId,"] roadCandidates = ",roadCandidates.size())
-    for (size_t i = 0; i < roadCandidates.size(); ++i)
+    for (size_t i = 0; i < std::min<size_t>(10,roadCandidates.size()); ++i)
     {
         u32 edgeId = roadCandidates[i];
         H3_Edge & edge = H3_getEdge(game, __func__, edgeId);

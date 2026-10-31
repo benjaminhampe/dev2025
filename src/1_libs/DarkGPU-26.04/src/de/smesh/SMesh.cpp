@@ -45,7 +45,7 @@ SMaterial::toString() const
    std::ostringstream s;
 
    s << "Tex" << getTextureCount() << ", ";
-   if ( state.culling.isEnabled() ) { s << state.culling.toString(); }
+   if ( state.culling.isEnabled() ) { s << state.culling.str(); }
    if ( Wireframe ){ s << ", W"; }
    if ( FogEnable ){ s << ", F"; }
    //	illum 2

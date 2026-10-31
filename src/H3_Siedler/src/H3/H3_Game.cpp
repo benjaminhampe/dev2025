@@ -105,6 +105,7 @@ void H3_Game::destroy()
     m_tmeshFarm.destroy();
     m_tmeshCity.destroy();
 
+    m_board2DRenderer.destroy();
     m_tileRenderer.destroy();
     m_waterTileRenderer.destroy();
     //m_tileRenderer.destroy();
@@ -771,13 +772,12 @@ void H3_Game::startGame()
     {
         H3_Tile tile;
         tile.id = H3_createId();
-        tile.i = cfg.i;
-        tile.j = cfg.j;
-        tile.tt = cfg.tileType;
-        tile.chipValue = cfg.chipValue;
-        tile.angle60 = cfg.angle60;
+        tile.tt = cfg.tt();
+        tile.i = cfg.i();
+        tile.j = cfg.j();
+        tile.chipValue = cfg.diceValue();
+        tile.angle60 = cfg.angle60();
         tile.visible = true;
-        //tile.hasRobber = false;
         tile.corners.clear();
         tile.edges.clear();
         tile.next.clear();

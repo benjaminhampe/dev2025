@@ -44,16 +44,10 @@ struct H3_Board2DRenderer
     void initShader(H3_Game& game);
     void render(const glm::vec4& posTransform, const de::Recti& scissor);
 
-    void collectAndUploadInstances(
-            const H3_Game& game,
-            const H3_Cfg& cfg,
-            const glm::vec2& tileSize = glm::vec2(1,1));
+    void collectAndUploadInstances(const H3_Game& game, const H3_Cfg& cfg);
 
 private:
-    void collectInstances(
-            const H3_Game& game,
-            const H3_Cfg& cfg,
-            const glm::vec2& tileSize = glm::vec2(1,1));
+    void collectInstances(const H3_Game& game, const H3_Cfg& cfg);
 
     void uploadInstances();
 };
