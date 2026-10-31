@@ -1,4 +1,4 @@
-#include "H3_TileRenderer.h"
+#include "H3_Tile3DRenderer.h"
 #include <H3/H3_Game.h>
 #include <de_opengl.h>
 #include <de/gpu/GL_debug_layer.h>
@@ -30,22 +30,22 @@ void H3_TileRenderer_initVAO(uint32_t& vao, uint32_t& vboMat, uint32_t& vboAngle
     GL_VALIDATE;
 }
 
-H3_TileRenderer::H3_TileRenderer()
+H3_Tile3DRenderer::H3_Tile3DRenderer()
 {
     m_shader = nullptr;
 }
 
-H3_TileRenderer::~H3_TileRenderer()
+H3_Tile3DRenderer::~H3_Tile3DRenderer()
 {
 
 }
 
-void H3_TileRenderer::destroy()
+void H3_Tile3DRenderer::destroy()
 {
 
 }
 
-void H3_TileRenderer::init( H3_Game& game )
+void H3_Tile3DRenderer::init( H3_Game& game )
 {
     m_driver = game.getDriver();
 
@@ -176,7 +176,7 @@ void H3_TileRenderer::init( H3_Game& game )
 }
 
 
-void H3_TileRenderer::collectInstances(int i, const H3_Game& game)
+void H3_Tile3DRenderer::collectInstances(int i, const H3_Game& game)
 {
     m_instanceMat[i].clear();
     m_instanceAngle60[i].clear();
@@ -213,7 +213,7 @@ void H3_TileRenderer::collectInstances(int i, const H3_Game& game)
 }
 
 
-void H3_TileRenderer::uploadInstances(int i)
+void H3_Tile3DRenderer::uploadInstances(int i)
 {
     if (m_instanceMat[i].empty()) { return; }
 
@@ -230,7 +230,7 @@ void H3_TileRenderer::uploadInstances(int i)
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
-void H3_TileRenderer::collectAndUploadInstances(const H3_Game& game)
+void H3_Tile3DRenderer::collectAndUploadInstances(const H3_Game& game)
 {
     for (int i = 0; i < 6; i++)
     {
@@ -239,7 +239,7 @@ void H3_TileRenderer::collectAndUploadInstances(const H3_Game& game)
     }
 }
 
-void H3_TileRenderer::render()
+void H3_Tile3DRenderer::render()
 {
     if (!m_driver) { DE_ERROR("No driver") return; }
 

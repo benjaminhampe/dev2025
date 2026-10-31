@@ -105,14 +105,13 @@ void H3_Game::destroy()
     m_tmeshFarm.destroy();
     m_tmeshCity.destroy();
 
-    m_board2DRenderer.destroy();
-    m_tileRenderer.destroy();
+    m_tile2DRenderer.destroy();
+    m_chip2DRenderer.destroy();
+    m_tile3DRenderer.destroy();
+    m_chip3DRenderer.destroy();
     m_waterTileRenderer.destroy();
-    //m_tileRenderer.destroy();
-    m_chipRenderer.destroy();
     m_objRenderer.destroy();
     m_diceRenderer.destroy();
-    //m_uiRenderer.destroy();
     m_animatedTexRenderer.destroy();
     m_animations.destroy();
 
@@ -265,8 +264,8 @@ bool H3_Game::init( de::Window* window )
         0xFFFFFFFF,
         33);
     m_smeshChip.recalculateBoundingBox();
-    m_dcChips.m_smesh = &m_smeshChip;
-    m_dcChips.initVAO();
+    m_3dChips.m_smesh = &m_smeshChip;
+    m_3dChips.initVAO();
 
     // === Create geometry ===
     m_smeshCorner.clear();
@@ -278,8 +277,8 @@ bool H3_Game::init( de::Window* window )
         0xFFFFFFFF,
         24);
     m_smeshCorner.recalculateBoundingBox();
-    m_dcCorners.m_smesh = &m_smeshCorner;
-    m_dcCorners.initVAO();
+    m_3dCorners.m_smesh = &m_smeshCorner;
+    m_3dCorners.initVAO();
 
     // === Create geometry ===
     m_smeshEdge.clear();
@@ -291,8 +290,8 @@ bool H3_Game::init( de::Window* window )
         0xFFFFFFFF,
         21);
     m_smeshEdge.recalculateBoundingBox();
-    m_dcEdges.m_smesh = &m_smeshEdge;
-    m_dcEdges.initVAO();
+    m_3dEdges.m_smesh = &m_smeshEdge;
+    m_3dEdges.initVAO();
 
     // === Create geometry ===
     H3_ObjMeshBuffer::initRoadGeometry( m_tmeshRoad, m_roadSize );
@@ -329,14 +328,13 @@ bool H3_Game::init( de::Window* window )
     m_smeshThief.recalculateBoundingBox();
     m_smeshThief.upload();
 
-    m_board2DRenderer.init(*this);
-    m_tileRenderer.init(*this);
+    m_tile2DRenderer.init(*this);
+    m_chip2DRenderer.init( *this );
+    m_tile3DRenderer.init(*this);
+    m_chip3DRenderer.init( *this );
     m_waterTileRenderer.init( *this );
-    //m_tileRenderer.init( *this );
-    m_chipRenderer.init( *this );
     m_objRenderer.init( *this );
     m_diceRenderer.init( *this );
-    //m_uiRenderer.init( *this );
     m_animatedTexRenderer.init(m_driver);
     m_animations.init( this );
 
@@ -2272,7 +2270,7 @@ void H3_Game::drawTiles()
 {
     if (m_bUpdateDrawCall_Tiles)
     {
-        m_tileRenderer.collectAndUploadInstances(*this);
+        m_tile3DRenderer.collectAndUploadInstances(*this);
         m_waterTileRenderer.collectAndUploadInstances( *this );
 
         m_bUpdateDrawCall_Tiles = false;
@@ -2280,7 +2278,7 @@ void H3_Game::drawTiles()
     }
 
     m_driver->beginPerf("Land-Tiles");
-    m_tileRenderer.render();
+    m_tile3DRenderer.render();
     m_driver->endPerf();
 
     m_driver->beginPerf("Water-Tiles");
@@ -2347,12 +2345,12 @@ void H3_Game::drawChips()
     if (m_bUpdateDrawCall_Chips)
     {
         float phi = computeCameraAngleXZ(driver->getCamera());
-        m_dcChips.collectTiles( *this, phi );
-        m_dcChips.uploadInstances();
+        m_3dChips.collectTiles( *this, phi );
+        m_3dChips.uploadInstances();
         m_bUpdateDrawCall_Chips = false;
     }
 
-    m_chipRenderer.render( m_dcChips );
+    m_chip3DRenderer.render( m_3dChips );
     driver->endPerf();
 }
 
@@ -2365,12 +2363,12 @@ void H3_Game::drawCorners()
     if (m_bUpdateDrawCall_Corners)
     {
         float phi = computeCameraAngleXZ(driver->getCamera());
-        m_dcCorners.collectCorners( *this, phi );
-        m_dcCorners.uploadInstances();
+        m_3dCorners.collectCorners( *this, phi );
+        m_3dCorners.uploadInstances();
         m_bUpdateDrawCall_Corners = false;
     }
 
-    m_chipRenderer.render( m_dcCorners );
+    m_chip3DRenderer.render( m_3dCorners );
     driver->endPerf();
 }
 
@@ -2384,12 +2382,12 @@ void H3_Game::drawEdges()
     {
         float phi = computeCameraAngleXZ(driver->getCamera());
         //DE_DEBUG("phi = ",phi * de::Math::RAD2DEG);
-        m_dcEdges.collectEdges( *this, phi );
-        m_dcEdges.uploadInstances();
+        m_3dEdges.collectEdges( *this, phi );
+        m_3dEdges.uploadInstances();
         m_bUpdateDrawCall_Edges = false;
     }
 
-    m_chipRenderer.render( m_dcEdges );
+    m_chip3DRenderer.render( m_3dEdges );
     driver->endPerf();
 }
 

@@ -4,7 +4,7 @@
 struct H3_Game;
 
 // ===========================================================================
-struct H3_TileRenderer
+struct H3_Tile3DRenderer
 // ===========================================================================
 {
     de::gpu::VideoDriver* m_driver;
@@ -27,8 +27,8 @@ struct H3_TileRenderer
     std::vector<uint8_t> m_instanceAngle60[6];
     // std::vector<uint8_t> m_instanceLayer; // index into texture2DArray
 
-    H3_TileRenderer();
-    ~H3_TileRenderer();
+    H3_Tile3DRenderer();
+    ~H3_Tile3DRenderer();
     void destroy();
     void init(H3_Game& game);
     void render();

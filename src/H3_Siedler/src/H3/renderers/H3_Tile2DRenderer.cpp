@@ -1,9 +1,9 @@
-#include "H3_Board2DRenderer.h"
+#include "H3_Tile2DRenderer.h"
 #include <H3/H3_Game.h>
 #include <de_opengl.h>
 #include <de/gpu/GL_debug_layer.h>
 
-H3_Board2DRenderer::H3_Board2DRenderer()
+H3_Tile2DRenderer::H3_Tile2DRenderer()
     : m_driver(nullptr)
     , m_shader(nullptr)
     , m_vao(0)
@@ -12,7 +12,7 @@ H3_Board2DRenderer::H3_Board2DRenderer()
     , m_u_posTransform(-1)
 {}
 
-H3_Board2DRenderer::~H3_Board2DRenderer()
+H3_Tile2DRenderer::~H3_Tile2DRenderer()
 {
     if (m_vao || !m_tex2DArray.empty())
     {
@@ -20,7 +20,7 @@ H3_Board2DRenderer::~H3_Board2DRenderer()
     }
 }
 
-void H3_Board2DRenderer::destroy()
+void H3_Tile2DRenderer::destroy()
 {
     if (m_vao)
     {
@@ -41,7 +41,7 @@ void H3_Board2DRenderer::destroy()
     }
 }
 
-void H3_Board2DRenderer::init( H3_Game& game )
+void H3_Tile2DRenderer::init( H3_Game& game )
 {
     m_driver = game.getDriver();
 
@@ -52,7 +52,7 @@ void H3_Board2DRenderer::init( H3_Game& game )
     initTex2DArray(game);
 }
 
-void H3_Board2DRenderer::initVAO( H3_Game& game )
+void H3_Tile2DRenderer::initVAO( H3_Game& game )
 {
     glGenVertexArrays(1, &m_vao);
     glGenBuffers(1, &m_vbo_instancePos);
@@ -89,7 +89,7 @@ void H3_Board2DRenderer::initVAO( H3_Game& game )
 }
 
 
-void H3_Board2DRenderer::initShader( H3_Game& game )
+void H3_Tile2DRenderer::initShader( H3_Game& game )
 {
     m_driver = game.getDriver();
 
@@ -205,7 +205,7 @@ void H3_Board2DRenderer::initShader( H3_Game& game )
     m_u_posTransform = glGetUniformLocation(m_shader->id, "u_posTransform");
 }
 
-void H3_Board2DRenderer::initTex2DArray( H3_Game& game )
+void H3_Tile2DRenderer::initTex2DArray( H3_Game& game )
 {
     int w = 512;
     int h = 512;
@@ -266,7 +266,7 @@ void H3_Board2DRenderer::initTex2DArray( H3_Game& game )
     }
 }
 
-void H3_Board2DRenderer::render(const glm::vec4& posTransform, const de::Recti& scissor)
+void H3_Tile2DRenderer::render(const glm::vec4& posTransform, const de::Recti& scissor)
 {
     if (!m_driver) { DE_ERROR("No driver") return; }
     if (m_tex2DArray.empty()) { DE_ERROR("No tex2DArray") return; }
@@ -310,7 +310,7 @@ void H3_Board2DRenderer::render(const glm::vec4& posTransform, const de::Recti& 
 }
 
 void
-H3_Board2DRenderer::collectAndUploadInstances(const H3_Game& game, const H3_Cfg& cfg)
+H3_Tile2DRenderer::collectAndUploadInstances(const H3_Game& game, const H3_Cfg& cfg)
 {
     collectInstances( game, cfg );
     uploadInstances();
@@ -318,7 +318,7 @@ H3_Board2DRenderer::collectAndUploadInstances(const H3_Game& game, const H3_Cfg&
 
 // glm::vec2 tileSize(100,100);
 void
-H3_Board2DRenderer::collectInstances(const H3_Game& game, const H3_Cfg& cfg)
+H3_Tile2DRenderer::collectInstances(const H3_Game& game, const H3_Cfg& cfg)
 {
     m_instancePos.clear();
     m_instanceAngle60.clear();
@@ -368,7 +368,7 @@ H3_Board2DRenderer::collectInstances(const H3_Game& game, const H3_Cfg& cfg)
 }
 
 
-void H3_Board2DRenderer::uploadInstances()
+void H3_Tile2DRenderer::uploadInstances()
 {
     if (m_instancePos.empty()) { return; }
 

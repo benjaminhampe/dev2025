@@ -4,7 +4,7 @@
 struct H3_Game;
 
 // ===========================================================================
-struct H3_Board2DRenderer
+struct H3_Tile2DRenderer
 // ===========================================================================
 {
     de::gpu::VideoDriver* m_driver;
@@ -35,8 +35,8 @@ struct H3_Board2DRenderer
     std::vector<uint8_t> m_instanceAngle60;
     std::vector<uint8_t> m_instanceLayer; // index into texture2DArray
 
-    H3_Board2DRenderer();
-    ~H3_Board2DRenderer();
+    H3_Tile2DRenderer();
+    ~H3_Tile2DRenderer();
     void destroy();
     void init(H3_Game& game);
     void initVAO(H3_Game& game);

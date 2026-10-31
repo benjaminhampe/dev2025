@@ -1,4 +1,4 @@
-#include "H3_ChipRenderer.h"
+#include "H3_Chip3DRenderer.h"
 #include <H3/H3_Game.h>
 #include <de/image/Utils.h>
 #include <de_opengl.h>
@@ -33,7 +33,7 @@ namespace {
 } // end namespace anonymous.
 
 
-H3_ChipMeshBuffer::H3_ChipMeshBuffer()
+H3_Chip3DMeshBuffer::H3_Chip3DMeshBuffer()
 {
     m_smesh = nullptr;
     m_vao = 0;
@@ -45,7 +45,7 @@ H3_ChipMeshBuffer::H3_ChipMeshBuffer()
     // m_nIndices = 0;
 }
 
-void H3_ChipMeshBuffer::render() const
+void H3_Chip3DMeshBuffer::render() const
 {
     if (!m_smesh) { DE_ERROR("No smesh") return; }
 
@@ -76,7 +76,7 @@ void H3_ChipMeshBuffer::render() const
     glBindVertexArray(0);
 }
 
-void H3_ChipMeshBuffer::initVAO()
+void H3_Chip3DMeshBuffer::initVAO()
 {
     if (!m_smesh) { DE_ERROR("No smesh") return; }
 
@@ -159,7 +159,7 @@ void H3_ChipMeshBuffer::initVAO()
     GL_VALIDATE;
 }
 
-void H3_ChipMeshBuffer::uploadInstances()
+void H3_Chip3DMeshBuffer::uploadInstances()
 {
     //collectInstances( game );
 
@@ -183,7 +183,7 @@ void H3_ChipMeshBuffer::uploadInstances()
     GL_VALIDATE;
 }
 
-void H3_ChipMeshBuffer::collectEdges(const H3_Game& game, float phi)
+void H3_Chip3DMeshBuffer::collectEdges(const H3_Game& game, float phi)
 {
     // Reset
     m_instanceMat.clear();
@@ -212,7 +212,7 @@ void H3_ChipMeshBuffer::collectEdges(const H3_Game& game, float phi)
     }
 }
 
-void H3_ChipMeshBuffer::collectCorners(const H3_Game& game, float phi)
+void H3_Chip3DMeshBuffer::collectCorners(const H3_Game& game, float phi)
 {
     // Reset
     m_instanceMat.clear();
@@ -241,7 +241,7 @@ void H3_ChipMeshBuffer::collectCorners(const H3_Game& game, float phi)
     }
 }
 
-void H3_ChipMeshBuffer::collectTiles(const H3_Game& game, float phi)
+void H3_Chip3DMeshBuffer::collectTiles(const H3_Game& game, float phi)
 {
     // Reset
     m_instanceMat.clear();
@@ -304,7 +304,7 @@ void H3_ChipMeshBuffer::collectTiles(const H3_Game& game, float phi)
 }
 
 // =================================================================
-H3_ChipRenderer::H3_ChipRenderer()
+H3_Chip3DRenderer::H3_Chip3DRenderer()
 // =================================================================
 {
     m_imgSize = 70;
@@ -320,17 +320,17 @@ H3_ChipRenderer::H3_ChipRenderer()
     // m_nIndices = 0;
 }
 
-H3_ChipRenderer::~H3_ChipRenderer()
+H3_Chip3DRenderer::~H3_Chip3DRenderer()
 {
 
 }
 
-void H3_ChipRenderer::destroy()
+void H3_Chip3DRenderer::destroy()
 {
 
 }
 
-void H3_ChipRenderer::render( const H3_ChipMeshBuffer & drawcall )
+void H3_Chip3DRenderer::render( const H3_Chip3DMeshBuffer & drawcall )
 {
     if (drawcall.m_instanceMat.empty())
     {
@@ -371,7 +371,7 @@ void H3_ChipRenderer::render( const H3_ChipMeshBuffer & drawcall )
 }
 
 void
-H3_ChipRenderer::init( H3_Game & game )
+H3_Chip3DRenderer::init( H3_Game & game )
 {
     m_driver = game.getDriver();
 
@@ -379,7 +379,7 @@ H3_ChipRenderer::init( H3_Game & game )
     initTexture( game );
 }
 
-void H3_ChipRenderer::initShader()
+void H3_Chip3DRenderer::initShader()
 {
     if (!m_driver) { DE_ERROR("No driver") return; }
 
@@ -438,7 +438,7 @@ void H3_ChipRenderer::initShader()
     m_locTex = glGetUniformLocation(m_shader->id, "u_tex");
 }
 
-void H3_ChipRenderer::initTexture( H3_Game & game )
+void H3_Chip3DRenderer::initTexture( H3_Game & game )
 {
     if (!m_driver) { DE_ERROR("No driver") return; }
 

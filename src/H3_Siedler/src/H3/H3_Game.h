@@ -8,12 +8,14 @@
 #include <H3/details/UI_MainMenu.h>
 #include <H3/details/UI_Game.h>
 
-#include <H3/renderers/H3_Board2DRenderer.h>
-#include <H3/renderers/H3_ChipRenderer.h>
+#include <H3/renderers/H3_Tile2DRenderer.h>
+#include <H3/renderers/H3_Chip2DRenderer.h>
+#include <H3/renderers/H3_Tile3DRenderer.h>
+#include <H3/renderers/H3_Chip3DRenderer.h>
+#include <H3/renderers/H3_WaterTileRenderer.h>
 #include <H3/renderers/H3_ObjRenderer.h>
 #include <H3/renderers/H3_DiceRenderer.h>
-#include <H3/renderers/H3_TileRenderer.h>
-#include <H3/renderers/H3_WaterTileRenderer.h>
+
 #include <de/os/Window_WGL.h>
 #include <de/gpu/AnimatedTexRenderer.h>
 
@@ -213,9 +215,9 @@ struct H3_Game
     de::smesh::SMeshBuffer m_smeshThief;
 
     // dc == (instanced) drawcall of one SMeshBuffer.
-    H3_ChipMeshBuffer m_dcChips;
-    H3_ChipMeshBuffer m_dcCorners;
-    H3_ChipMeshBuffer m_dcEdges;
+    H3_Chip3DMeshBuffer m_3dChips;
+    H3_Chip3DMeshBuffer m_3dCorners;
+    H3_Chip3DMeshBuffer m_3dEdges;
 
     H3_Font m_font;
     H3_Img m_img;
@@ -290,12 +292,15 @@ struct H3_Game
     int m_hoverFarmId = 0;
     int m_hoverCityId = 0;
 
-    H3_Board2DRenderer m_board2DRenderer;
-    H3_ChipRenderer m_chipRenderer;
+    H3_Tile2DRenderer m_tile2DRenderer;
+    H3_Chip2DRenderer m_chip2DRenderer;
+    H3_Tile3DRenderer m_tile3DRenderer;
+    H3_Chip3DRenderer m_chip3DRenderer;
+    H3_WaterTileRenderer m_waterTileRenderer;
+
     H3_ObjRenderer m_objRenderer;
     H3_DiceRenderer m_diceRenderer;
-    H3_TileRenderer m_tileRenderer;
-    H3_WaterTileRenderer m_waterTileRenderer;
+
     de::gpu::AnimatedTexRenderer m_animatedTexRenderer;
     //de::BillboardRenderer m_billboardRenderer;
     //de::RainbowRenderer m_rainbowRenderer;

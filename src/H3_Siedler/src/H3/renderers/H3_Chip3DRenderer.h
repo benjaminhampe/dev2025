@@ -5,7 +5,7 @@
 struct H3_Game;
 
 // ===========================================================================
-struct H3_ChipMeshBuffer
+struct H3_Chip3DMeshBuffer
 // ===========================================================================
 {
     de::smesh::SMeshBuffer* m_smesh;
@@ -20,7 +20,7 @@ struct H3_ChipMeshBuffer
     std::vector<uint8_t> m_instanceLayer;
     std::vector<uint8_t> m_instanceAngle60;
 
-    H3_ChipMeshBuffer();
+    H3_Chip3DMeshBuffer();
     void initVAO();
     void render() const;
     void uploadInstances();
@@ -36,7 +36,7 @@ struct H3_ChipMeshBuffer
 };
 
 // ===========================================================================
-struct H3_ChipRenderer
+struct H3_Chip3DRenderer
 // ===========================================================================
 {
     int m_imgSize;
@@ -48,13 +48,13 @@ struct H3_ChipRenderer
 
     uint32_t m_texture2DArray;
 
-    H3_ChipRenderer();
-    ~H3_ChipRenderer();
+    H3_Chip3DRenderer();
+    ~H3_Chip3DRenderer();
 
     void destroy();
     void init( H3_Game & game );
     void initTexture( H3_Game & game );
     void initShader();
-    void render( const H3_ChipMeshBuffer & chips );
+    void render( const H3_Chip3DMeshBuffer & chips );
 };
 
