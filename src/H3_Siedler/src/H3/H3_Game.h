@@ -215,6 +215,7 @@ struct H3_Game
     de::smesh::SMeshBuffer m_smeshThief;
 
     // dc == (instanced) drawcall of one SMeshBuffer.
+    H3_ChipTexture m_chipTexture;
     H3_Chip3DMeshBuffer m_3dChips;
     H3_Chip3DMeshBuffer m_3dCorners;
     H3_Chip3DMeshBuffer m_3dEdges;

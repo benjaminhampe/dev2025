@@ -211,6 +211,7 @@ void UI_WorldCreator::drawBoard(const de::Recti & rect)
     scissor.y = driver->getScreenHeight() - (r_board.y + r_board.h);
 
     m_game->m_tile2DRenderer.render( posTransform, scissor );
+    m_game->m_chip2DRenderer.render( posTransform, scissor );
 
     if (m_bHoveredBoard)
     {
@@ -426,6 +427,7 @@ void UI_WorldCreator::resizeBoard(int minX, int minY, int maxX, int maxY)
     m_cfg.computeBounds();
 
     m_game->m_tile2DRenderer.collectAndUploadInstances(*m_game, m_cfg);
+    m_game->m_chip2DRenderer.collectAndUploadInstances(*m_game, m_cfg);
 }
 
 void UI_WorldCreator::setCfg( const H3_Cfg& cfg )

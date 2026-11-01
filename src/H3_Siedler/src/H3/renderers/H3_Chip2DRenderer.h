@@ -1,60 +1,45 @@
 #pragma once
-#include <H3/H3_Board.h>
-#include <H3/details/H3_Img.h>
-
-struct H3_Game;
-
-// ===========================================================================
-struct H3_Chip2DMeshBuffer
-// ===========================================================================
-{
-    de::smesh::SMeshBuffer* m_smesh;
-
-    uint32_t m_vao;
-    uint32_t m_vbo_vertices;
-    uint32_t m_vbo_indices;
-    uint32_t m_vbo_instanceMat;
-    uint32_t m_vbo_instanceLayer;
-
-    std::vector<glm::mat4> m_instanceMat;
-    std::vector<uint8_t> m_instanceLayer;
-    std::vector<uint8_t> m_instanceAngle60;
-
-    H3_Chip2DMeshBuffer();
-    void initVAO();
-    void render() const;
-    void uploadInstances();
-
-    // Collect visible chips for placing roads
-    void collectEdges(const H3_Game& game, float phi);
-
-    // Collect visible chips for placing farms/cities
-    void collectCorners(const H3_Game& game, float phi);
-
-    // Collect visible chips for tiles ( all tiles except water-tiles )
-    void collectTiles(const H3_Game& game, float phi);
-};
+#include "H3_Chip_Tex2DArray.h"
 
 // ===========================================================================
 struct H3_Chip2DRenderer
 // ===========================================================================
 {
-    int m_imgSize;
-
     de::gpu::VideoDriver* m_driver;
     de::gpu::Shader* m_shader;
-    int m_locViewProjMat;
-    int m_locTex;
+    H3_ChipTexture* m_chipTexture;
 
-    uint32_t m_texture2DArray;
+    // GPU Uniforms
+    int32_t m_u_screenSize;     // (w,h)
+    int32_t m_u_tex2DArray;
+    int32_t m_u_posTransform;   // vec4 (xy=offset, zw=scale)
+
+    // GPU Buffers
+    uint32_t m_vao;
+    uint32_t m_vbo_instancePos;     // vec4 (xy=offset, zw=scale)
+    uint32_t m_vbo_instanceRadius;  // vec2
+    uint32_t m_vbo_instanceLayer;   // uint8_t
+
+    // CPU Buffers
+    std::vector<glm::vec4> m_instancePos;
+    std::vector<glm::vec2> m_instanceRadius;
+    std::vector<uint8_t> m_instanceLayer; // index into texture2DArray
 
     H3_Chip2DRenderer();
     ~H3_Chip2DRenderer();
-
     void destroy();
-    void init( H3_Game & game );
-    void initTexture( H3_Game & game );
-    void initShader();
-    void render( const H3_Chip2DMeshBuffer & chips );
-};
 
+    void init(H3_Game& game, H3_ChipTexture* chipTexture);
+
+    void initVAO(H3_Game& game);
+    void initTex2DArray(H3_Game& game);
+    void initShader(H3_Game& game);
+    void render(const glm::vec4& posTransform, const de::Recti& scissor);
+
+    void collectAndUploadInstances(const H3_Game& game, const H3_Cfg& cfg);
+
+private:
+    void collectInstances(const H3_Game& game, const H3_Cfg& cfg);
+
+    void uploadInstances();
+};

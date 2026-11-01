@@ -1,8 +1,5 @@
 #pragma once
-#include <H3/H3_Board.h>
-#include <H3/details/H3_Img.h>
-
-struct H3_Game;
+#include "H3_Chip_Tex2DArray.h"
 
 // ===========================================================================
 struct H3_Chip3DMeshBuffer
@@ -39,22 +36,21 @@ struct H3_Chip3DMeshBuffer
 struct H3_Chip3DRenderer
 // ===========================================================================
 {
-    int m_imgSize;
-
     de::gpu::VideoDriver* m_driver;
     de::gpu::Shader* m_shader;
+    H3_ChipTexture* m_chipTexture;
     int m_locViewProjMat;
     int m_locTex;
-
-    uint32_t m_texture2DArray;
 
     H3_Chip3DRenderer();
     ~H3_Chip3DRenderer();
 
     void destroy();
-    void init( H3_Game & game );
-    void initTexture( H3_Game & game );
+    void init( H3_Game & game, H3_ChipTexture* chipTexture );
+
     void initShader();
     void render( const H3_Chip3DMeshBuffer & chips );
+
+    // void initTexture( H3_Game & game );
 };
 

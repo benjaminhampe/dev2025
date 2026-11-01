@@ -4,46 +4,14 @@
 #include <de_opengl.h>
 #include <de/gpu/GL_debug_layer.h>
 
-namespace {
-
-    // Used to index layer in texture2DArray
-    enum eType
-    {
-        Chip2 = 0,
-        Chip3,
-        Chip4,
-        Chip5,
-        Chip6,
-        Chip8,
-        Chip9,
-        Chip10,
-        Chip11,
-        Chip12,
-        ChipS,
-        ChipW,
-        Chip3v1,
-        ChipA,
-        ChipB,
-        ChipC,
-        ChipD,
-        ChipE,
-        eTypeCount
-    };
-
-} // end namespace anonymous.
-
-
 H3_Chip3DMeshBuffer::H3_Chip3DMeshBuffer()
-{
-    m_smesh = nullptr;
-    m_vao = 0;
-    m_vbo_vertices = 0;
-    m_vbo_indices = 0;
-    m_vbo_instanceMat = 0;
-    m_vbo_instanceLayer = 0;
-    // m_nVertices = 0;
-    // m_nIndices = 0;
-}
+    : m_smesh{ nullptr }
+    , m_vao{ 0 }
+    , m_vbo_vertices{ 0 }
+    , m_vbo_indices{ 0 }
+    , m_vbo_instanceMat{ 0 }
+    , m_vbo_instanceLayer{ 0 }
+{}
 
 void H3_Chip3DMeshBuffer::render() const
 {
@@ -207,7 +175,7 @@ void H3_Chip3DMeshBuffer::collectEdges(const H3_Game& game, float phi)
         trs.update();
 
         m_instanceMat.push_back( trs.modelMat );
-        m_instanceLayer.push_back( ChipW );
+        m_instanceLayer.push_back( H3_ChipTexture::ChipW );
         m_instanceAngle60.push_back( 0 );
     }
 }
@@ -236,7 +204,7 @@ void H3_Chip3DMeshBuffer::collectCorners(const H3_Game& game, float phi)
         trs.update();
 
         m_instanceMat.push_back( trs.modelMat );
-        m_instanceLayer.push_back( ChipS );
+        m_instanceLayer.push_back( H3_ChipTexture::ChipS );
         m_instanceAngle60.push_back( 0 );
     }
 }
@@ -257,22 +225,22 @@ void H3_Chip3DMeshBuffer::collectTiles(const H3_Game& game, float phi)
     // Collect
     for (const auto& tile : game.m_tiles)
     {
-        int layer = -1; // Unknown tex (question mark on black background)
+        uint8_t layer = H3_ChipTexture::eTypeCount;
 
         if (tile.tt.isResource())
         {
             switch( tile.chipValue )
             {
-            case 2: layer = Chip2; break;
-            case 3: layer = Chip3; break;
-            case 4: layer = Chip4; break;
-            case 5: layer = Chip5; break;
-            case 6: layer = Chip6; break;
-            case 8: layer = Chip8; break;
-            case 9: layer = Chip9; break;
-            case 10: layer = Chip10; break;
-            case 11: layer = Chip11; break;
-            case 12: layer = Chip12; break;
+            case 2: layer = H3_ChipTexture::Chip2; break;
+            case 3: layer = H3_ChipTexture::Chip3; break;
+            case 4: layer = H3_ChipTexture::Chip4; break;
+            case 5: layer = H3_ChipTexture::Chip5; break;
+            case 6: layer = H3_ChipTexture::Chip6; break;
+            case 8: layer = H3_ChipTexture::Chip8; break;
+            case 9: layer = H3_ChipTexture::Chip9; break;
+            case 10: layer = H3_ChipTexture::Chip10; break;
+            case 11: layer = H3_ChipTexture::Chip11; break;
+            case 12: layer = H3_ChipTexture::Chip12; break;
             default: break;
             }
         }
@@ -280,17 +248,17 @@ void H3_Chip3DMeshBuffer::collectTiles(const H3_Game& game, float phi)
         {
             switch( tile.tt.value )
             {
-            case H3_TileType::Port3v1: layer = Chip3v1; break;
-            case H3_TileType::PortA: layer = ChipA; break;
-            case H3_TileType::PortB: layer = ChipB; break;
-            case H3_TileType::PortC: layer = ChipC; break;
-            case H3_TileType::PortD: layer = ChipD; break;
-            case H3_TileType::PortE: layer = ChipE; break;
+            case H3_TileType::Port3v1: layer = H3_ChipTexture::Chip3v1; break;
+            case H3_TileType::PortA: layer = H3_ChipTexture::ChipA; break;
+            case H3_TileType::PortB: layer = H3_ChipTexture::ChipB; break;
+            case H3_TileType::PortC: layer = H3_ChipTexture::ChipC; break;
+            case H3_TileType::PortD: layer = H3_ChipTexture::ChipD; break;
+            case H3_TileType::PortE: layer = H3_ChipTexture::ChipE; break;
             default: break;
             }
         }
 
-        if ( layer < 0 ) continue;
+        if ( layer == H3_ChipTexture::eTypeCount ) continue;
 
         de::TRSf trs;
         trs.pos = tile.trsChip.pos;
@@ -306,24 +274,13 @@ void H3_Chip3DMeshBuffer::collectTiles(const H3_Game& game, float phi)
 // =================================================================
 H3_Chip3DRenderer::H3_Chip3DRenderer()
 // =================================================================
-{
-    m_imgSize = 70;
-    m_driver = nullptr;
-    m_shader = nullptr;
-    m_texture2DArray = 0;
-    // m_vao = 0;
-    // m_vbo_vertices = 0;
-    // m_vbo_indices = 0;
-    // m_vbo_instanceMat = 0;
-    // m_vbo_instanceLayer = 0;
-    // m_nVertices = 0;
-    // m_nIndices = 0;
-}
+    : m_driver{ nullptr }
+    , m_shader{ nullptr }
+    , m_chipTexture{ nullptr }
+{}
 
 H3_Chip3DRenderer::~H3_Chip3DRenderer()
-{
-
-}
+{}
 
 void H3_Chip3DRenderer::destroy()
 {
@@ -353,9 +310,8 @@ void H3_Chip3DRenderer::render( const H3_Chip3DMeshBuffer & drawcall )
 
     // ==== Shader: u_tex  ====
     glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D_ARRAY, m_texture2DArray);
-    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glBindTexture(GL_TEXTURE_2D_ARRAY, m_chipTexture->m_tex.id);
+    de::gpu::applySamplerOptions(m_chipTexture->m_tex.so);
     glUniform1i(m_locTex, 0);
 
     // ==== RenderStates  ====
@@ -371,12 +327,11 @@ void H3_Chip3DRenderer::render( const H3_Chip3DMeshBuffer & drawcall )
 }
 
 void
-H3_Chip3DRenderer::init( H3_Game & game )
+H3_Chip3DRenderer::init( H3_Game & game, H3_ChipTexture* chipTexture )
 {
     m_driver = game.getDriver();
-
+    m_chipTexture = chipTexture;
     initShader();
-    initTexture( game );
 }
 
 void H3_Chip3DRenderer::initShader()
@@ -437,6 +392,38 @@ void H3_Chip3DRenderer::initShader()
     m_locViewProjMat = glGetUniformLocation(m_shader->id, "u_projViewMat");
     m_locTex = glGetUniformLocation(m_shader->id, "u_tex");
 }
+
+/*
+
+namespace {
+
+    // Used to index layer in texture2DArray
+    enum eType
+    {
+        Chip2 = 0,
+        Chip3,
+        Chip4,
+        Chip5,
+        Chip6,
+        Chip8,
+        Chip9,
+        Chip10,
+        Chip11,
+        Chip12,
+        ChipS,
+        ChipW,
+        Chip3v1,
+        ChipA,
+        ChipB,
+        ChipC,
+        ChipD,
+        ChipE,
+        eTypeCount
+    };
+
+} // end namespace anonymous.
+
+
 
 void H3_Chip3DRenderer::initTexture( H3_Game & game )
 {
@@ -526,3 +513,5 @@ void H3_Chip3DRenderer::initTexture( H3_Game & game )
     glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
     GL_VALIDATE;
 }
+
+*/

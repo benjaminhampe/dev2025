@@ -115,6 +115,8 @@ void H3_Game::destroy()
     m_animatedTexRenderer.destroy();
     m_animations.destroy();
 
+    H3_ChipTexture_destroy(m_chipTexture);
+
     m_guienv.destroy();
     m_tex.destroy();
     m_font.destroy();
@@ -218,6 +220,8 @@ bool H3_Game::init( de::Window* window )
     // === init textures ===
     // ======================
     m_tex.init( *this );
+
+    H3_ChipTexture_create(*this, m_chipTexture);
 
     // =============================
     // === Setup GUI Environment ===
@@ -329,9 +333,9 @@ bool H3_Game::init( de::Window* window )
     m_smeshThief.upload();
 
     m_tile2DRenderer.init(*this);
-    m_chip2DRenderer.init( *this );
+    m_chip2DRenderer.init( *this, &m_chipTexture );
     m_tile3DRenderer.init(*this);
-    m_chip3DRenderer.init( *this );
+    m_chip3DRenderer.init( *this, &m_chipTexture );
     m_waterTileRenderer.init( *this );
     m_objRenderer.init( *this );
     m_diceRenderer.init( *this );
@@ -689,6 +693,25 @@ void H3_Game::newGame()
 void H3_Game::startGame()
 {
     m_cfg = m_uiGame->m_worldCreator->getCfg();
+
+    // Build new board
+    std::vector<H3_CfgTile> tiles;
+    tiles.reserve(m_cfg.tiles.size());
+
+    // Skip unknown tiles:
+    for (const H3_CfgTile & tile : m_cfg.tiles)
+    {
+        if (tile.tt() == H3_TileType::Unknown)
+        {
+            continue;
+        }
+        tiles.emplace_back( tile );
+    }
+
+    tiles.shrink_to_fit();
+
+    // Store
+    std::swap(m_cfg.tiles, tiles);
 
     m_cfg.dump();
 

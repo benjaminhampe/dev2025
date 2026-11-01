@@ -207,11 +207,11 @@ H3_Img::init()
         add(ChipS, baseDir + "chip_s.png", opt);    // 10
         add(ChipW, baseDir + "chip_w.png", opt);    // 11
         add(Chip3v1,baseDir+ "chip_3v1.png",opt);   // 12
-        add(ChipA, baseDir + "chip_a.jpg", opt);    // 13
-        add(ChipB, baseDir + "chip_b.png", opt);    // 14
-        add(ChipC, baseDir + "chip_c.jpg", opt);    // 15
+        add(ChipA, baseDir + "chip_a.webp", opt);   // 13
+        add(ChipB, baseDir + "chip_b.webp", opt);   // 14
+        add(ChipC, baseDir + "chip_c.webp", opt);   // 15
         add(ChipD, baseDir + "chip_d.jpg", opt);    // 16
-        add(ChipE, baseDir + "chip_e.jpg", opt);    // 17
+        add(ChipE, baseDir + "chip_e.webp", opt);   // 17
     }
 
     // gfx/dice/

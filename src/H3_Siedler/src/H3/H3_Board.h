@@ -7,6 +7,7 @@
 //#include <optional>
 //#include <de/IrrlichtDevice.h>
 #include <de/gpu/VideoDriver.h>
+#include <de/gpu/Tex2DArray.h>
 #include <de/gui/Env.h>
 #include <de/gui/Panel.h>
 #include <de/gui/Label.h>
@@ -120,7 +121,8 @@ struct H3_TileType
 {
     enum EType : uint8_t
     {
-        Unknown = 0, Water, Desert, TileA, TileB, TileC, TileD, TileE,
+        Unknown = 0, Water, Desert,
+        TileA, TileB, TileC, TileD, TileE,
         Port3v1, PortA, PortB, PortC, PortD, PortE, Count
     };
     EType value;
@@ -382,6 +384,7 @@ struct H3_Cfg
     H3_CfgPlayer player; // human
 
     glm::vec2 tileSize = glm::vec2(100.f,100.f);
+    glm::vec2 chipSize = glm::vec2( 30.f, 30.f);
     // std::vector< H3_CfgPlayer > playerList;
 
     // std::vector< H3_Cost > cost4card;   // Standard
