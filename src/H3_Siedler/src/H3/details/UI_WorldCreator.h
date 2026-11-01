@@ -2,6 +2,43 @@
 #include <H3/H3_Board.h>
 
 // ===========================================================================
+class UI_TileEditor : public de::gui::Widget
+// ===========================================================================
+{
+public:
+    UI_TileEditor(
+        H3_Game* game,
+        de::gui::Env* env,
+        de::gui::Widget* parent,
+        u32 id = 0,
+        const de::Recti& pos = de::Recti() );
+
+    ~UI_TileEditor() override;
+    void draw() override;
+    void resize(int x, int y, int w, int h) override;
+
+    void setCfg( const H3_CfgTile& tile );
+    H3_CfgTile getCfg() const;
+
+    std::function<void()> onChange;
+
+private:
+    void emit_onChange();
+
+    de::gui::IntField*
+    createIntField(std::string txt, int val, int min, int max);
+
+    H3_Game* m_game;
+    H3_CfgTile m_tile;
+
+    de::gui::IntField* m_i;
+    de::gui::IntField* m_j;
+    de::gui::IntField* m_tileType;
+    de::gui::IntField* m_diceValue;
+    de::gui::IntField* m_angle60;
+};
+
+// ===========================================================================
 class UI_WorldCreator : public de::gui::Widget
 // ===========================================================================
 {
@@ -35,6 +72,7 @@ protected:
 
     void resizeBoard(int minX, int minY, int maxX, int maxY);
     void resizeBoard();
+    void updateBoard();
 
     void draw2DHexOutline(int i,int j,
         uint32_t color, int width, const V2& offset, const V2& size);
@@ -90,6 +128,7 @@ private:
     de::gui::IntField* m_edtBuildingSpacing;
     de::gui::IntField* m_edtSkipFirstRound;
     de::gui::IntField* m_edtNumPlayers;
+    UI_TileEditor* m_tileEditor;
 
     de::gui::Button* m_btnClose;
     de::gui::Button* m_btnStart;

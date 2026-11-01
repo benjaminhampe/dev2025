@@ -7,26 +7,110 @@
 #include <de/gui/Button.h>
 #include <de/gui/IntField.h>
 
-/*
-void drawHexagon( H3_Game & game, const de::Recti& pos,
-                const uint32_t color, const de::gpu::TexRef& tex, int num )
+de::gui::IntField*
+UI_TileEditor::createIntField(std::string txt, int val, int min, int max)
 {
-    auto driver = game.getDriver();
-    driver->getScreenRenderer()->draw2DHexagon( pos, color, tex );
+    auto edt = new de::gui::IntField(txt, m_env, this, 0, de::Recti());
+    edt->setRange(min,max);
+    edt->setValue(val);
+    auto tex = m_game->getTex( H3_Tex::Scroll1, "UI_WorldCreator.createIntField()" );
+    edt->setMinusButtonTexture( tex );
+    edt->setPlusButtonTexture( tex );
+    return edt;
+}
 
-    if ( num > -1 )
+// ===========================================================================
+UI_TileEditor::UI_TileEditor( H3_Game* game, de::gui::Env* env, de::gui::Widget* parent, u32 id, const de::Recti& pos )
+// ===========================================================================
+    : de::gui::Widget(env, parent, id, pos)
+    , m_game{ game }
+{
+    m_i = createIntField("X-Col",0, -100, 100);
+    m_j = createIntField("Y-Row",0, -100, 100);
+    m_tileType = createIntField("Tile Type", 0, 0, H3_TileType::Count-1);
+    m_diceValue = createIntField("Dice Value", 8, 2, 12);
+    m_angle60 = createIntField("Angle", 0, 0, 5);
+
+    m_tileType->onValueChanged = [&] (int) { emit_onChange(); };
+    m_diceValue->onValueChanged = [&] (int) { emit_onChange(); };
+    m_angle60->onValueChanged = [&] (int) { emit_onChange(); };
+}
+
+UI_TileEditor::~UI_TileEditor()
+{
+}
+void UI_TileEditor::draw()
+{
+    if (!isVisible()) return;
+
+    if (!m_env) { DE_ERROR("No env") return; }
+    auto driver = m_env->getVideoDriver();
+    if (!driver) { DE_ERROR("No driver") return; }
+
+    const auto pos = getAbsoluteRect();
+
+    // [Draw] BackgroundTexture
+    auto bg = m_game->getTex( H3_Tex::Grunge, "UI_TileEditor" );
+    driver->getScreenQuadRenderer()->draw2DRect( pos, bg, false );
+
+    m_i->draw();
+    m_j->draw();
+    m_tileType->draw();
+    m_diceValue->draw();
+    m_angle60->draw();
+}
+
+void UI_TileEditor::resize(int X, int Y, int W, int H)
+{
+    m_rect = de::Recti(X,Y,W,H);
+
+    const float zoom = m_env->getZoom();
+    setFont( de::Font("Postamt", zoom * 16) );
+
+    int x = 0;
+    int y = 0;
+    int w = m_rect.w;
+    int ln = m_rect.h/5;
+    int h = 4*ln/5;
+
+    m_i->resize(x,y,w,h); y += ln;
+    m_j->resize(x,y,w,h); y += ln;
+    m_tileType->resize(x,y,w,h); y += ln;
+    m_diceValue->resize(x,y,w,h); y += ln;
+
+    m_angle60->resize(x,y,w,h); //y += ln;
+}
+
+void UI_TileEditor::emit_onChange()
+{
+    if (onChange)
     {
-        const float zoom = game.getZoom();
-        driver->draw2DText(
-            pos.centerX(),
-            pos.centerY(),
-            std::to_string(num),
-            0xFFFFFFFF,
-            de::Align::Centered,
-            de::Font5x8(zoom,zoom) );
+        onChange();
     }
 }
-*/
+
+void
+UI_TileEditor::setCfg( const H3_CfgTile& tile )
+{
+    m_tile = tile;
+    m_i->setValue(tile.i());
+    m_j->setValue(tile.j());
+    m_tileType->setValue( tile.tt(), true);
+    m_diceValue->setValue( tile.diceValue(), true);
+    m_angle60->setValue( tile.angle60(), true);
+}
+
+H3_CfgTile
+UI_TileEditor::getCfg() const
+{
+    H3_CfgTile cfg;
+    cfg.setPos(m_tile.i(), m_tile.j());
+    cfg.setDiceValue( m_diceValue->getValue() );
+    cfg.setTileType( m_tileType->getValue() );
+    cfg.setAngle60( m_angle60->getValue() );
+    return cfg;
+}
+
 
 // =====================================================================
 UI_WorldCreator::UI_WorldCreator( H3_Game* game, de::gui::Env* env, de::gui::Widget* parent, u32 id, const de::Recti& pos )
@@ -80,6 +164,15 @@ UI_WorldCreator::UI_WorldCreator( H3_Game* game, de::gui::Env* env, de::gui::Wid
     m_edtNumPlayers = createIntField("Num Players", 4, 2, 5);
     m_edtSkipFirstRound = createIntField("Skip First Round", 1, 0, 1);
     //m_edtSkipFirstRound = createIntField("Skip First Round", 1, 0, 1);
+
+    m_tileEditor = new UI_TileEditor(m_game,m_env,this);
+    m_tileEditor->onChange = [&] () {
+        if (m_selectedTileId > -1)
+        {
+            m_cfg.tiles[ m_selectedTileId ] = m_tileEditor->getCfg();
+            updateBoard();
+        }
+    };
 
     m_btnClose = createButton("Close");
     m_btnStart = createButton("Start");
@@ -136,6 +229,8 @@ void UI_WorldCreator::draw()
     m_edtBuildingSpacing->draw();
     m_edtNumPlayers->draw();
     m_edtSkipFirstRound->draw();
+
+    m_tileEditor->draw();
 
     m_btnClose->draw();
     m_btnStart->draw();
@@ -365,7 +460,7 @@ void UI_WorldCreator::resize(int x, int y, int w, int h)
     m_edtCardLimit->resize(bx,by,bw,bh);        by += ln + q;
     m_edtBuildingSpacing->resize(bx,by,bw,bh);  by += ln + q;
     m_edtNumPlayers->resize(bx,by,bw,bh);       by += ln + q;
-    m_edtSkipFirstRound->resize(bx,by,bw,bh);   //by += ln + q;
+    m_edtSkipFirstRound->resize(bx,by,bw,bh);   by += ln + q;
 
     // ::::: Row[2] World Body ::::
     by = y2;
@@ -374,6 +469,12 @@ void UI_WorldCreator::resize(int x, int y, int w, int h)
     bh = h - 2*p - y - 200;
     m_rcBoard = de::Recti(bx,by,bw,bh);
     // DE_DEBUG("world.rect = ",m_world->getAbsoluteRect().str())
+
+    bw = zoom * 300;
+    bh = 5*ln;
+    bx = 20;
+    by = m_rcBoard.y2() - bh;
+    m_tileEditor->resize(bx,by,bw,bh);
 
     // ::::: Row[N] Main-Buttons ::::
     bw = 400;
@@ -435,6 +536,11 @@ void UI_WorldCreator::resizeBoard(int minX, int minY, int maxX, int maxY)
     // Update
     m_cfg.computeBounds();
 
+    updateBoard();
+}
+
+void UI_WorldCreator::updateBoard()
+{
     m_game->m_tile2DRenderer.collectAndUploadInstances(*m_game, m_cfg);
     m_game->m_chip2DRenderer.collectAndUploadInstances(*m_game, m_cfg);
 }
@@ -478,11 +584,10 @@ UI_WorldCreator::getCfg()
     cfg.skipFirstRound = m_edtSkipFirstRound->getValue();
     cfg.numPlayers = m_edtNumPlayers->getValue();
     cfg.player = m_cfg.player;
-
-    // Only return non Unknown tiles
     cfg.tiles.clear();
     cfg.tiles.reserve(m_cfg.tiles.size());
 
+    // Erase 'Unknown' tiles
     for (const H3_CfgTile & tile : m_cfg.tiles)
     {
         if (tile.tt() == H3_TileType::Unknown)
@@ -491,7 +596,6 @@ UI_WorldCreator::getCfg()
         }
         cfg.tiles.emplace_back( tile );
     }
-
     cfg.tiles.shrink_to_fit();
 
     return cfg;
@@ -550,6 +654,12 @@ void UI_WorldCreator::onEvent(const de::Event& event)
             if (m_hoveredTileId > -1)
             {
                 m_selectedTileId = m_hoveredTileId;
+                m_tileEditor->setCfg( m_cfg.tiles.at( m_selectedTileId ) );
+                m_tileEditor->setVisible(true);
+            }
+            else
+            {
+                m_tileEditor->setVisible(false);
             }
         }
     }
