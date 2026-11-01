@@ -694,25 +694,6 @@ void H3_Game::startGame()
 {
     m_cfg = m_uiGame->m_worldCreator->getCfg();
 
-    // Build new board
-    std::vector<H3_CfgTile> tiles;
-    tiles.reserve(m_cfg.tiles.size());
-
-    // Skip unknown tiles:
-    for (const H3_CfgTile & tile : m_cfg.tiles)
-    {
-        if (tile.tt() == H3_TileType::Unknown)
-        {
-            continue;
-        }
-        tiles.emplace_back( tile );
-    }
-
-    tiles.shrink_to_fit();
-
-    // Store
-    std::swap(m_cfg.tiles, tiles);
-
     m_cfg.dump();
 
     // === Reset Winner ===

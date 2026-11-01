@@ -271,7 +271,7 @@ void H3_Tile3DRenderer::render()
         glDrawArraysInstanced(GL_TRIANGLES, 0, 12, m_instanceMat[i].size());
         glBindVertexArray(0);
 
-        glBindTexture( GL_TEXTURE_2D, 0 );
+        // glBindTexture( GL_TEXTURE_2D, 0 );
     }
 
     // [CleanUp]

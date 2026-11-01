@@ -19,7 +19,7 @@ public:
 
     void setRange( int min_value, int max_value );
     void setStep( int value );
-    void setValue( int value );
+    void setValue( int value, bool blockChangeSignal = false );
 
     void draw() override;
     void resize(int x, int y, int w, int h) override;

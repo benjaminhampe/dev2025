@@ -38,6 +38,16 @@ protected:
 
     void draw2DHexOutline(int i,int j,
         uint32_t color, int width, const V2& offset, const V2& size);
+
+    void on_presetPrev();
+    void on_presetNext();
+    void on_presetName();
+    void on_presetNew();
+    void on_presetClone();
+    void on_presetDelete();
+    void on_presetExport();
+    void on_presetImport();
+
 private:
     H3_Game* m_game;
     int m_mouseX;
@@ -63,7 +73,7 @@ private:
     //de::gui::Label* m_presetLabel;
     de::gui::Button* m_presetPrev;
     de::gui::Button* m_presetNext;
-    de::gui::Label*  m_presetName;
+    de::gui::Button* m_presetName;
     de::gui::Button* m_presetNew;
     de::gui::Button* m_presetClone;
     de::gui::Button* m_presetDelete;

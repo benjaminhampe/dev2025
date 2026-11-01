@@ -52,13 +52,22 @@ UI_WorldCreator::UI_WorldCreator( H3_Game* game, de::gui::Env* env, de::gui::Wid
     //m_presetLabel = new de::gui::Label("Presets:", env, this, 0, r);
     m_presetPrev = createButton("Prev");
     m_presetNext = createButton("Next");
-    m_presetName = new de::gui::Label("Preset Name", env, this, 0, de::Recti());
+    m_presetName = createButton("Preset Name");
     m_presetNew = createButton("New");
     m_presetClone = createButton("Clone");
     m_presetDelete = createButton("Del");
     m_presetExport = createButton("Export");
     m_presetImport = createButton("Import");
     //m_presetEdit = createButton("Edit");
+
+    m_presetPrev->onClicked = [&] () { on_presetPrev(); };
+    m_presetNext->onClicked = [&] () { on_presetNext(); };
+    m_presetName->onClicked = [&] () { on_presetName(); };
+    m_presetNew->onClicked = [&] () { on_presetNew(); };
+    m_presetClone->onClicked = [&] () { on_presetClone(); };
+    m_presetDelete->onClicked = [&] () { on_presetDelete(); };
+    m_presetExport->onClicked = [&] () { on_presetExport(); };
+    m_presetImport->onClicked = [&] () { on_presetImport(); };
 
     m_edtMinX = createIntField("Xmin",-3, -50, -1);
     m_edtMaxX = createIntField("Xmax", 3,   1, 50);
@@ -432,6 +441,8 @@ void UI_WorldCreator::resizeBoard(int minX, int minY, int maxX, int maxY)
 
 void UI_WorldCreator::setCfg( const H3_Cfg& cfg )
 {
+    DE_DEBUG("presetName = ",cfg.presetName)
+
     if (cfg.presetName.empty())
     {
         auto s = dbStr("setPreset() :: Got empty presetName.");
@@ -442,11 +453,11 @@ void UI_WorldCreator::setCfg( const H3_Cfg& cfg )
     m_selectedTileId = -1;
     m_cfg = cfg;
     m_cfg.computeBounds();
-    resizeBoard(m_cfg.min.x, m_cfg.min.y, m_cfg.max.x, m_cfg.max.y);
-    m_edtMinX->setValue(m_cfg.min.x);
-    m_edtMinY->setValue(m_cfg.min.y);
-    m_edtMaxX->setValue(m_cfg.max.x);
-    m_edtMaxY->setValue(m_cfg.max.y);
+    m_edtMinX->setValue(m_cfg.min.x, true);
+    m_edtMinY->setValue(m_cfg.min.y, true);
+    m_edtMaxX->setValue(m_cfg.max.x, true);
+    m_edtMaxY->setValue(m_cfg.max.y, true);
+    resizeBoard();
 
     m_presetName->setText( m_cfg.presetName );
     m_edtVictoryPoints->setValue( m_cfg.victoryPoints );
@@ -466,8 +477,23 @@ UI_WorldCreator::getCfg()
     cfg.victoryPoints = m_edtVictoryPoints->getValue();
     cfg.skipFirstRound = m_edtSkipFirstRound->getValue();
     cfg.numPlayers = m_edtNumPlayers->getValue();
-    cfg.tiles = m_cfg.tiles;
     cfg.player = m_cfg.player;
+
+    // Only return non Unknown tiles
+    cfg.tiles.clear();
+    cfg.tiles.reserve(m_cfg.tiles.size());
+
+    for (const H3_CfgTile & tile : m_cfg.tiles)
+    {
+        if (tile.tt() == H3_TileType::Unknown)
+        {
+            continue; // Skip.
+        }
+        cfg.tiles.emplace_back( tile );
+    }
+
+    cfg.tiles.shrink_to_fit();
+
     return cfg;
 }
 
@@ -506,12 +532,12 @@ void UI_WorldCreator::onEvent(const de::Event& event)
 
         if (my > 0)
         {
-            m_scale *= 1.025f;
+            m_scale *= 1.05f;
             //DE_TRACE("ZoomOut(",m_scale,") MouseWheel(",mx,",",my,")")
         }
         else if (my < 0)
         {
-            m_scale /= 1.025f;
+            m_scale /= 1.05f;
             //DE_TRACE("ZoomIn(",m_scale,") MouseWheel(",mx,",",my,")")
         }
     }
@@ -611,5 +637,248 @@ UI_WorldCreator::createIntField(std::string txt, int val, int min, int max)
     edt->setMinusButtonTexture( tex );
     edt->setPlusButtonTexture( tex );
     return edt;
+}
+
+void UI_WorldCreator::on_presetPrev()
+{
+
+}
+void UI_WorldCreator::on_presetNext()
+{
+
+}
+void UI_WorldCreator::on_presetName()
+{
+
+}
+void UI_WorldCreator::on_presetNew()
+{
+
+}
+void UI_WorldCreator::on_presetClone()
+{
+
+}
+void UI_WorldCreator::on_presetDelete()
+{
+
+}
+void UI_WorldCreator::on_presetExport()
+{
+    H3_Cfg cfg = getCfg();
+
+    auto uri_xml = dbStr("H3_preset_",cfg.presetName,".xml");
+    auto uri_hpp = dbStr("H3_preset_",cfg.presetName,".h");
+
+    DE_DEBUG("ExportXML: ",uri_xml)
+    DE_DEBUG("ExportHPP: ",uri_hpp)
+
+    tinyxml2::XMLDocument doc;
+    tinyxml2::XMLElement* preset = doc.NewElement( "preset" );
+    preset->SetAttribute( "name", cfg.presetName.c_str() );
+
+    auto victoryPoints = doc.NewElement( "victoryPoints" );
+    victoryPoints->SetText(cfg.victoryPoints);
+    preset->InsertEndChild( victoryPoints );
+
+    auto cardLimitNoSteal = doc.NewElement( "cardLimitNoSteal" );
+    cardLimitNoSteal->SetText(cfg.cardLimitNoSteal);
+    preset->InsertEndChild( cardLimitNoSteal );
+
+    auto buildingSpacing = doc.NewElement( "buildingSpacing" );
+    buildingSpacing->SetText(cfg.buildingSpacing);
+    preset->InsertEndChild( buildingSpacing );
+
+    auto numPlayers = doc.NewElement( "numPlayers" );
+    numPlayers->SetText(cfg.numPlayers);
+    preset->InsertEndChild( numPlayers );
+
+    auto useCardKnight = doc.NewElement( "useCardKnight" );
+    useCardKnight->SetText(cfg.useCardKnight);
+    preset->InsertEndChild( useCardKnight );
+
+    auto useCardVictoryPoint = doc.NewElement( "useCardVictoryPoint" );
+    useCardVictoryPoint->SetText(cfg.useCardVictoryPoint);
+    preset->InsertEndChild( useCardVictoryPoint );
+
+    auto useCardMonopol = doc.NewElement( "useCardMonopol" );
+    useCardMonopol->SetText(cfg.useCardMonopol);
+    preset->InsertEndChild( useCardMonopol );
+
+    auto useCardInvention = doc.NewElement( "useCardInvention" );
+    useCardInvention->SetText(cfg.useCardInvention);
+    preset->InsertEndChild( useCardInvention );
+
+    auto skipFirstRound = doc.NewElement( "skipFirstRound" );
+    skipFirstRound->SetText(cfg.skipFirstRound);
+    preset->InsertEndChild( skipFirstRound );
+
+    auto bonusRoadLimit = doc.NewElement( "bonusRoadLimit" );
+    bonusRoadLimit->SetText(cfg.bonusRoadLimit);
+    preset->InsertEndChild( bonusRoadLimit );
+
+    auto bonusArmyLimit = doc.NewElement( "bonusArmyLimit" );
+    bonusArmyLimit->SetText(cfg.bonusArmyLimit);
+    preset->InsertEndChild( bonusArmyLimit );
+
+    tinyxml2::XMLElement* player = doc.NewElement( "player" );
+    player->SetAttribute("name", cfg.player.name.c_str() );
+    player->SetAttribute("color", cfg.player.color );
+    player->SetAttribute("icon", cfg.player.avatar );
+    player->SetAttribute("type", cfg.player.typ.str().c_str() );
+    player->SetAttribute("connect", cfg.player.connect.str().c_str() );
+    preset->InsertEndChild( player );
+
+    tinyxml2::XMLElement* tiles = doc.NewElement( "tiles" );
+    tiles->SetAttribute("count", cfg.tiles.size() );
+
+    for (const H3_CfgTile & t : cfg.tiles)
+    {
+        tinyxml2::XMLElement* tile = doc.NewElement( "tile" );
+        tile->SetAttribute("i", t.i() );
+        tile->SetAttribute("j", t.j() );
+        tile->SetAttribute("tt", t.tt().str().c_str() );
+        tile->SetAttribute("angle60", t.angle60() );
+        tile->SetAttribute("dice", t.diceValue() );
+        tiles->InsertEndChild( tile );
+    }
+
+    preset->InsertEndChild( tiles );
+
+    doc.InsertEndChild( preset );
+    tinyxml2::XMLError err = doc.SaveFile( uri_xml.c_str() );
+    if ( err != tinyxml2::XML_SUCCESS )
+    {
+        DE_ERROR("Cant save xml ", uri_xml)
+    }
+}
+
+void UI_WorldCreator::on_presetImport()
+{
+    de::OpenFileParamsW params;
+    std::wstring wuri = dbOpenFileDlg(params);
+
+    std::string uri = de_mbstr(wuri);
+    if (!dbExistFile(uri))
+    {
+        DE_ERROR("No file ",uri)
+        return;
+    }
+
+    auto readTextAttrib = [] (tinyxml2::XMLElement* elem, std::string key)
+    {
+        std::string value;
+
+        if (!elem)
+        {
+            DE_ERROR("No elem for ",key)
+            return value;
+        }
+
+        if ( elem->Attribute( key.c_str() ) )
+        {
+            value = elem->Attribute( key.c_str() );
+        }
+        else
+        {
+            DE_ERROR("No attribute ",key)
+        }
+
+        return value;
+    };
+
+    auto readU32Elem = [] (tinyxml2::XMLElement* elem, std::string key, u32 & value)
+    {
+        auto node = elem->FirstChildElement( key.c_str() );
+        if (node && node->GetText())
+        {
+            value = std::atol(node->GetText());
+        }
+        else
+        {
+            DE_ERROR("No key=",key,".")
+        }
+    };
+
+    tinyxml2::XMLDocument doc;
+    tinyxml2::XMLError err = doc.LoadFile( uri.c_str() );
+    if ( err != tinyxml2::XML_SUCCESS )
+    {
+        DE_ERROR("No xml ", uri)
+        return;
+    }
+
+    DE_DEBUG("=========================================" )
+    DE_DEBUG("loadXml(",uri,")" )
+    DE_DEBUG("=========================================" )
+
+    tinyxml2::XMLElement* preset = doc.FirstChildElement( "preset" );
+    if ( !preset )
+    {
+        DE_ERROR("No preset node in xml ", uri)
+        return;
+    }
+
+    H3_Cfg cfg;
+    cfg.presetName = readTextAttrib(preset,"name");
+
+    // Config
+    readU32Elem(preset,"victoryPoints",cfg.victoryPoints);
+    readU32Elem(preset,"cardLimitNoSteal",cfg.cardLimitNoSteal);
+    readU32Elem(preset,"buildingSpacing",cfg.buildingSpacing);
+    readU32Elem(preset,"numPlayers",cfg.numPlayers);
+    readU32Elem(preset,"useCardKnight",cfg.useCardKnight);
+    readU32Elem(preset,"useCardVictoryPoint",cfg.useCardVictoryPoint);
+    readU32Elem(preset,"useCardMonopol",cfg.useCardMonopol);
+    readU32Elem(preset,"useCardInvention",cfg.useCardInvention);
+    readU32Elem(preset,"skipFirstRound",cfg.skipFirstRound);
+    readU32Elem(preset,"bonusRoadLimit",cfg.bonusRoadLimit);
+    readU32Elem(preset,"bonusArmyLimit",cfg.bonusArmyLimit);
+
+    // Tiles:
+    auto tiles = preset->FirstChildElement( "tiles" );
+    if (!tiles)
+    {
+        DE_ERROR("No tiles")
+        return;
+    }
+
+    if ( tiles->Attribute( "count" ) )
+    {
+        size_t nTiles = tiles->IntAttribute( "count" );
+        DE_DEBUG("Reserve space for ",nTiles," tiles")
+        cfg.tiles.reserve( nTiles );
+    }
+    else
+    {
+        DE_ERROR("No tiles attribute 'count'")
+    }
+
+    // Tiles:
+    auto tile = tiles->FirstChildElement( "tile" );
+    while (tile)
+    {
+        cfg.tiles.emplace_back();
+        H3_CfgTile& cfgTile = cfg.tiles.back();
+
+        int i = tile->IntAttribute("i");
+        int j = tile->IntAttribute("j");
+        cfgTile.setPos( i, j );
+
+        std::string tt = readTextAttrib(tile,"tt");
+        cfgTile.setTileType( H3_TileType::parse(tt) );
+
+        int angle60 = tile->IntAttribute("angle60");
+        cfgTile.setAngle60( angle60 );
+
+        int dice = tile->IntAttribute("dice");
+        cfgTile.setDiceValue( dice );
+
+        tile = tile->NextSiblingElement( "tile" );
+    }
+
+    DE_DEBUG("Loaded ",cfg.tiles.size()," tiles from uri ", uri)
+
+    setCfg(cfg);
 }
 

@@ -540,6 +540,8 @@ void H3_Cfg::computeBounds()
         max.x = std::max(max.x, tile.i());
         max.y = std::max(max.y, tile.j());
     }
+
+    DE_DEBUG("Bounds: min(",min.x,",",min.y,"), max(",max.x,",",max.y,")")
 }
 
 void

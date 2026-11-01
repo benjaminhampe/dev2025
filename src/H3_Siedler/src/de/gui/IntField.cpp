@@ -64,14 +64,14 @@ void IntField::setStep( int value )
 {
     m_step = value;
 }
-void IntField::setValue( int value )
+void IntField::setValue( int value, bool blockChangeSignal )
 {
     int oldValue = m_value;
     m_value = std::clamp( value, m_minimum, m_maximum );
     if (m_value != oldValue)
     {
         m_lblValue->setText( std::to_string(m_value) );
-        if (onValueChanged)
+        if (onValueChanged && !blockChangeSignal)
         {
             onValueChanged(m_value);
         }
