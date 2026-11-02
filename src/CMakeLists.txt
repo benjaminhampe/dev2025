@@ -7,6 +7,9 @@ add_subdirectory(AVX_Mandelbrot_de_glew)
 add_subdirectory(H3_Siedler)
 add_subdirectory(Demo3D_fltk)
 add_subdirectory(Minecraft_54k)
+# add_subdirectory(win32_InputString)
+# add_subdirectory(win32_InputStringHighDPI)
+# add_subdirectory(win32_InputStringSetFont)
 
 add_subdirectory(8-Zip)
 

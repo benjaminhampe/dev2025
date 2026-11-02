@@ -19,7 +19,8 @@ int main(int argc, char** argv)
 
     dbRandomize();
 
-    H3_Game m_game;
+    H3_Game m_game(argc,argv);
+
     auto window = new H3_Window(m_game);
 
     de::WindowOptions wo;

@@ -101,16 +101,12 @@ void H3_Chip2DRenderer::initShader( H3_Game& game )
     const std::string vs = R"(
 
         layout(location = 0) in vec4 a_instancePos;
-        layout(location = 1) in vec2 a_instanceRadius;
+        layout(location = 1) in vec2 a_instanceRadius; // Wir nehmen an, .x ist der Radius in Pixeln
         layout(location = 2) in uint a_instanceLayer;
 
         const vec2 a_vertices[6] = vec2[](
-            vec2(0.0, 1.0),
-            vec2(1.0, 1.0),
-            vec2(1.0, 0.0),
-            vec2(0.0, 1.0),
-            vec2(1.0, 0.0),
-            vec2(0.0, 0.0)
+            vec2(0.0, 1.0), vec2(1.0, 1.0), vec2(1.0, 0.0),
+            vec2(0.0, 1.0), vec2(1.0, 0.0), vec2(0.0, 0.0)
         );
 
         uniform vec2 u_screenSize;
@@ -119,38 +115,42 @@ void H3_Chip2DRenderer::initShader( H3_Game& game )
         out vec2 v_tex;
         flat out uint v_layer;
 
-        out vec2 v_center;
-        out vec2 v_radius;
+        out vec2 v_centerPixels;  // NEU: Zentrum in echten Pixeln
+        out float v_radiusPixels; // NEU: Radius als einzelner float in Pixeln
 
-        vec2 toNDC(vec2 p0, vec2 screenSize,
-                    vec2 offset1, vec2 scale1,
-                    vec2 offset2, vec2 scale2)
-        {
+        // Hilfsfunktion, um die echten Pixelkoordinaten (Y-oben) zu berechnen
+        vec2 toPixels(vec2 p0, vec2 offset1, vec2 scale1, vec2 offset2, vec2 scale2) {
             vec2 p1 = offset1 + (scale1 * p0);
             vec2 p2 = offset2 + (scale2 * p1);
-            vec2 p3 = vec2(p2.x, screenSize.y - p2.y);
+            return p2; // Das sind die Koordinaten in Pixeln (Y=0 oben)
+        }
+
+        vec2 toNDC(vec2 p2, vec2 screenSize) {
+            vec2 p3 = vec2(p2.x, screenSize.y - p2.y); // Y-Achse für OpenGL umdrehen
             return (p3 / screenSize) * 2.0 - 1.0;
         }
 
-        void main()
-        {
+        void main() {
             vec2 a_tex = a_vertices[gl_VertexID];
-            vec2 a_pos = a_tex - vec2(0.5,0.5);
-            vec2 off1 = a_instancePos.xy;
-            vec2 scl1 = a_instancePos.zw;
+            vec2 a_pos = a_tex - vec2(0.5, 0.5);
 
-            vec2 off2 = u_posTransform.xy;
-            vec2 scl2 = u_posTransform.zw;
+            vec2 off1 = a_instancePos.xy; vec2 scl1 = a_instancePos.zw;
+            vec2 off2 = u_posTransform.xy; vec2 scl2 = u_posTransform.zw;
 
-            vec2 ndc = toNDC(a_pos, u_screenSize, off1,scl1, off2,scl2);
+            // 1. Berechne Position in Pixeln (Y=0 oben)
+            vec2 pixelPos = toPixels(a_pos, off1, scl1, off2, scl2);
 
-            gl_Position = vec4(ndc, 0.0, 1.0);
+            // 2. In NDC für gl_Position umwandeln
+            gl_Position = vec4(toNDC(pixelPos, u_screenSize), 0.0, 1.0);
 
             v_tex = a_tex;
             v_layer = a_instanceLayer;
 
-            v_center = toNDC(vec2(0.5,0.5), u_screenSize, off1,scl1, off2,scl2);
-            v_radius = a_instanceRadius / u_screenSize * scl2;
+            // 3. Berechne das Zentrum in Pixeln (Y=0 oben)
+            v_centerPixels = toPixels(vec2(0.0, 0.0), off1, scl1, off2, scl2);
+
+            // 4. Skaliere den Radius mit deiner globalen Transformation (scl2.x)
+            v_radiusPixels = a_instanceRadius.x * scl2.x;
         }
     )";
 
@@ -159,20 +159,40 @@ void H3_Chip2DRenderer::initShader( H3_Game& game )
 
         out vec4 fragColor;
 
+        uniform vec2 u_screenSize;
         uniform sampler2DArray u_tex2DArray;
 
         in vec2 v_tex;
         flat in uint v_layer;
 
-        in vec2 v_center;
-        in vec2 v_radius;
+        in vec2 v_centerPixels;  // Zentrum in Pixeln (Y=0 oben)
+        in float v_radiusPixels; // Radius in Pixeln
 
-        void main()
-        {
+        void main() {
+            // 1. Texture-Farbe holen
             vec3 texCoord = vec3(v_tex.x, v_tex.y, float(v_layer));
             fragColor = texture(u_tex2DArray, texCoord);
+
+            // 2. gl_FragCoord anpassen (Y umdrehen, da gl_FragCoord Y=0 unten hat)
+            vec2 currentPixel = vec2(gl_FragCoord.x,
+                                      u_screenSize.y - gl_FragCoord.y);
+
+            // 3. Distanz im Pixelraum messen
+            float dist = length(currentPixel - v_centerPixels);
+
+            // 4. Antialiasing (1 Pixel weiche Kante, damit der Kreis perfekt glatt aussieht)
+            float edge = 1.0;
+            float alpha = 1.0 - smoothstep(v_radiusPixels - edge, v_radiusPixels, dist);
+
+            // Alpha-Wert multiplizieren statt 'discard' zu nutzen (bessere Performance)
+            fragColor.a *= alpha;
         }
+
     )";
+
+    // // Kreis mit smoothstep für weiche/harte Kanten definieren
+    // float circle = 1.0 - smoothstep(radius - edge_softness,
+    //                                 radius + edge_softness, dist);
 
     m_shader = m_driver->createShader( shaderName, vs, fs );
     m_u_screenSize = glGetUniformLocation(m_shader->id, "u_screenSize");
@@ -326,3 +346,113 @@ void H3_Chip2DRenderer::uploadInstances()
 
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
+
+
+
+/*
+ *
+
+void H3_Chip2DRenderer::initShader( H3_Game& game )
+{
+    m_driver = game.getDriver();
+
+    if (!m_driver) { DE_ERROR("No driver") return; }
+
+    const std::string shaderName = "chip2drend";
+    const std::string vs = R"(
+
+        layout(location = 0) in vec4 a_instancePos;
+        layout(location = 1) in vec2 a_instanceRadius;
+        layout(location = 2) in uint a_instanceLayer;
+
+        const vec2 a_vertices[6] = vec2[](
+            vec2(0.0, 1.0),
+            vec2(1.0, 1.0),
+            vec2(1.0, 0.0),
+            vec2(0.0, 1.0),
+            vec2(1.0, 0.0),
+            vec2(0.0, 0.0)
+        );
+
+        uniform vec2 u_screenSize;
+        uniform vec4 u_posTransform;
+
+        out vec2 v_tex;
+        flat out uint v_layer;
+
+        out vec2 v_center;
+        out vec2 v_radius;
+
+        vec2 toNDC(vec2 p0, vec2 screenSize,
+                    vec2 offset1, vec2 scale1,
+                    vec2 offset2, vec2 scale2)
+        {
+            vec2 p1 = offset1 + (scale1 * p0);
+            vec2 p2 = offset2 + (scale2 * p1);
+            vec2 p3 = vec2(p2.x, screenSize.y - p2.y);
+            return (p3 / screenSize) * 2.0 - 1.0;
+        }
+
+        void main()
+        {
+            vec2 a_tex = a_vertices[gl_VertexID];
+            vec2 a_pos = a_tex - vec2(0.5,0.5);
+            vec2 off1 = a_instancePos.xy;
+            vec2 scl1 = a_instancePos.zw;
+
+            vec2 off2 = u_posTransform.xy;
+            vec2 scl2 = u_posTransform.zw;
+
+            vec2 ndc = toNDC(a_pos, u_screenSize, off1,scl1, off2,scl2);
+
+            gl_Position = vec4(ndc, 0.0, 1.0);
+
+            v_tex = a_tex;
+            v_layer = a_instanceLayer;
+
+            v_center = toNDC(vec2(0.0,0.0), u_screenSize, off1,scl1, off2,scl2);
+            v_radius = a_instanceRadius / u_screenSize * scl2;
+        }
+    )";
+
+    // Fragment Shader Source
+    const std::string fs = R"(
+
+        out vec4 fragColor;
+
+        uniform vec2 u_screenSize;
+        uniform sampler2DArray u_tex2DArray;
+
+        in vec2 v_tex;
+        flat in uint v_layer;
+
+        in vec2 v_center;
+        in vec2 v_radius;
+
+        void main()
+        {
+            // Texture
+            vec3 texCoord = vec3(v_tex.x, v_tex.y, float(v_layer));
+            fragColor = texture(u_tex2DArray, texCoord);
+
+            // Radius
+            vec2 pos = (gl_FragCoord.xy / u_screenSize) * 2.0 - 1.0;
+            vec2 dir = pos - v_center;
+            float dist = dot(dir,dir);
+            float radius = dot(v_radius,v_radius);
+            if (dist > radius)
+                fragColor.a = 0.0;
+        }
+    )";
+
+    // // Kreis mit smoothstep für weiche/harte Kanten definieren
+    // float circle = 1.0 - smoothstep(radius - edge_softness,
+    //                                 radius + edge_softness, dist);
+
+    m_shader = m_driver->createShader( shaderName, vs, fs );
+    m_u_screenSize = glGetUniformLocation(m_shader->id, "u_screenSize");
+    m_u_tex2DArray = glGetUniformLocation(m_shader->id, "u_tex2DArray");
+    m_u_posTransform = glGetUniformLocation(m_shader->id, "u_posTransform");
+}
+
+*/

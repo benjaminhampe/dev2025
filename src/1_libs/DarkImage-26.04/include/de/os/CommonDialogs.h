@@ -12,7 +12,7 @@ int dbDesktopHeight();
 // New
 
 // ===========================================================================
-
+/*
 void dbMessageBoxA(const std::string& msg, const std::string& title = "Alert!");
 
 void dbMessageBoxW(const std::wstring& msg, const std::wstring& title = L"Alert!");
@@ -40,7 +40,7 @@ std::wstring dbPromtStrW(const std::wstring& msg, const std::wstring& title);
 inline std::string dbPromtStr(const std::string& msg, const std::string& title) { return dbPromtStrA(msg,title); }
 
 inline std::wstring dbPromtStr(const std::wstring& msg, const std::wstring& title) { return dbPromtStrW(msg,title); }
-
+*/
 // ===========================================================================
 
 /*

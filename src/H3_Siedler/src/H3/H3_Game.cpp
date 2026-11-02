@@ -20,9 +20,11 @@
 // #endif
 
 // ===========================================================================
-H3_Game::H3_Game()
+H3_Game::H3_Game(int argc, char* argv[])
 // ===========================================================================
-    : m_window(nullptr)
+    : m_argc(argc)
+    , m_argv(argv)
+    , m_window(nullptr)
     , m_driver(nullptr)
     , m_state(H3_State::Idle)
     , m_round(0)
@@ -426,8 +428,8 @@ void H3_Game::exitProgram()
 {
     if (isGameRunning())
     {
-        bool wannaExit = H3_MessageBox("Exit Game",
-                                       "Do you want to exit the running Game?");
+        bool wannaExit = H3_MessageBox(L"Exit Game",
+                                       L"Do you want to exit the running Game?");
 
         if (!wannaExit)
         {
@@ -518,7 +520,7 @@ void H3_Game::enterTrading()
 {
     DE_WARN("Not implemented")
 
-    H3_MessageBox("Trade", "DoTrade");
+    H3_MessageBox(L"Trade", L"DoTrade");
 
     // H3_GuiState guiState;
     // guiState.bBanking = true;
@@ -641,9 +643,9 @@ void H3_Game::restartGame()
 
     if (m_round > 0)
     {
-        bool wannaNewGame = H3_MessageBox("Restart Game",
-                                          "Do you want to restart the Game?\n"
-                                          "The same configuration will be used.");
+        bool wannaNewGame = H3_MessageBox(L"Restart Game",
+                                          L"Do you want to restart the Game?\n"
+                                          L"The same configuration will be used.");
 
         if (!wannaNewGame)
         {
@@ -660,9 +662,9 @@ void H3_Game::newGame()
 
     if (m_round > 0)
     {
-        bool wannaNewGame = H3_MessageBox("New Game",
-                                          "Game is already running.\n"
-                                          "Do you want to start a new Game?");
+        bool wannaNewGame = H3_MessageBox(L"New Game",
+                                          L"Game is already running.\n"
+                                          L"Do you want to start a new Game?");
 
         if (!wannaNewGame)
         {
@@ -2712,9 +2714,9 @@ void H3_Game::marqueeH3( std::wstring msg, int durationMs, uint32_t color )
     m_uiGame->m_marquee->marqueeH3(msg,durationMs,color);
 }
 
-bool H3_MessageBox(std::string title, std::string msg)
+bool H3_MessageBox(const std::wstring& title, const std::wstring& text)
 {
-    return dbPromtBool(msg, title);
+    return dbQuestionBox(title, text);
 }
 
 /*

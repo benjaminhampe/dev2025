@@ -1,11 +1,9 @@
 #pragma once
-#include <cstdint>
-#include <string>
-//#include <unordered_map>
-//#include <deque>
-//#include <array>
-//#include <optional>
-//#include <de/IrrlichtDevice.h>
+#include <DarkImage.h>
+#ifdef _WIN32
+    #include <de/os/win32/win32_MessageBox.h>
+    #include <de/os/win32/win32_PromptString.h>
+#endif
 #include <de/gpu/VideoDriver.h>
 #include <de/gpu/Tex2DArray.h>
 #include <de/gui/Env.h>

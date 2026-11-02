@@ -137,6 +137,7 @@ UI_WorldCreator::UI_WorldCreator( H3_Game* game, de::gui::Env* env, de::gui::Wid
     m_presetPrev = createButton("Prev");
     m_presetNext = createButton("Next");
     m_presetName = createButton("Preset Name");
+    m_presetName->setTexture(de::gpu::TexRef());
     m_presetNew = createButton("New");
     m_presetClone = createButton("Clone");
     m_presetDelete = createButton("Del");
@@ -759,7 +760,20 @@ void UI_WorldCreator::on_presetNext()
 }
 void UI_WorldCreator::on_presetName()
 {
+    de::PromptStringParamsW params;
+    params.title = dbStrW(L"H3_PresetName: ",de_wstr(m_cfg.presetName));
+    params.description = L"Change the preset name.";
+    params.initPrompt = de_wstr(m_cfg.presetName);
+    auto presetName = dbPromptString(params);
 
+    if (presetName.empty())
+    {
+        DE_DEBUG("Nothing todo")
+        return;
+    }
+
+    m_cfg.presetName = de_mbstr(presetName);
+    m_presetName->setText(m_cfg.presetName);
 }
 void UI_WorldCreator::on_presetNew()
 {
@@ -776,10 +790,27 @@ void UI_WorldCreator::on_presetDelete()
 void UI_WorldCreator::on_presetExport()
 {
     H3_Cfg cfg = getCfg();
+    std::string uri_xml = dbStr("H3_preset_",cfg.presetName,".xml");
+    std::string uri_hpp = dbStr("H3_preset_",cfg.presetName,".h");
 
-    auto uri_xml = dbStr("H3_preset_",cfg.presetName,".xml");
-    auto uri_hpp = dbStr("H3_preset_",cfg.presetName,".h");
+    de::SaveFileParamsW params;
+    params.initFileName = de_wstr(uri_xml);
+    params.initDir = de_wstr(m_game->getExeDir());
+    std::wstring wuri = dbSaveFileDlg(params);
 
+    if (wuri.empty())
+    {
+        DE_ERROR("No save file")
+        return;
+    }
+
+    std::string fileBase = de_mbstr( dbFileBase(wuri) );
+    std::string fileDir = de_mbstr( dbFileDir(wuri) );
+    DE_DEBUG("fileDir: ",fileDir)
+    DE_DEBUG("fileBase: ",fileBase)
+
+    uri_xml = fileDir + "/" + fileBase + ".xml";
+    uri_hpp = fileDir + "/" + fileBase + ".hpp";
     DE_DEBUG("ExportXML: ",uri_xml)
     DE_DEBUG("ExportHPP: ",uri_hpp)
 
@@ -787,49 +818,24 @@ void UI_WorldCreator::on_presetExport()
     tinyxml2::XMLElement* preset = doc.NewElement( "preset" );
     preset->SetAttribute( "name", cfg.presetName.c_str() );
 
-    auto victoryPoints = doc.NewElement( "victoryPoints" );
-    victoryPoints->SetText(cfg.victoryPoints);
-    preset->InsertEndChild( victoryPoints );
+    auto writeXmlU32 = [&] (std::string key, u32 value)
+    {
+        auto node = doc.NewElement( key.c_str() );
+        node->SetText(value);
+        preset->InsertEndChild(node);
+    };
 
-    auto cardLimitNoSteal = doc.NewElement( "cardLimitNoSteal" );
-    cardLimitNoSteal->SetText(cfg.cardLimitNoSteal);
-    preset->InsertEndChild( cardLimitNoSteal );
-
-    auto buildingSpacing = doc.NewElement( "buildingSpacing" );
-    buildingSpacing->SetText(cfg.buildingSpacing);
-    preset->InsertEndChild( buildingSpacing );
-
-    auto numPlayers = doc.NewElement( "numPlayers" );
-    numPlayers->SetText(cfg.numPlayers);
-    preset->InsertEndChild( numPlayers );
-
-    auto useCardKnight = doc.NewElement( "useCardKnight" );
-    useCardKnight->SetText(cfg.useCardKnight);
-    preset->InsertEndChild( useCardKnight );
-
-    auto useCardVictoryPoint = doc.NewElement( "useCardVictoryPoint" );
-    useCardVictoryPoint->SetText(cfg.useCardVictoryPoint);
-    preset->InsertEndChild( useCardVictoryPoint );
-
-    auto useCardMonopol = doc.NewElement( "useCardMonopol" );
-    useCardMonopol->SetText(cfg.useCardMonopol);
-    preset->InsertEndChild( useCardMonopol );
-
-    auto useCardInvention = doc.NewElement( "useCardInvention" );
-    useCardInvention->SetText(cfg.useCardInvention);
-    preset->InsertEndChild( useCardInvention );
-
-    auto skipFirstRound = doc.NewElement( "skipFirstRound" );
-    skipFirstRound->SetText(cfg.skipFirstRound);
-    preset->InsertEndChild( skipFirstRound );
-
-    auto bonusRoadLimit = doc.NewElement( "bonusRoadLimit" );
-    bonusRoadLimit->SetText(cfg.bonusRoadLimit);
-    preset->InsertEndChild( bonusRoadLimit );
-
-    auto bonusArmyLimit = doc.NewElement( "bonusArmyLimit" );
-    bonusArmyLimit->SetText(cfg.bonusArmyLimit);
-    preset->InsertEndChild( bonusArmyLimit );
+    writeXmlU32("victoryPoints",cfg.victoryPoints);
+    writeXmlU32("cardLimitNoSteal",cfg.cardLimitNoSteal);
+    writeXmlU32("buildingSpacing",cfg.buildingSpacing);
+    writeXmlU32("numPlayers",cfg.numPlayers);
+    writeXmlU32("useCardKnight",cfg.useCardKnight);
+    writeXmlU32("useCardVictoryPoint",cfg.useCardVictoryPoint);
+    writeXmlU32("useCardMonopol",cfg.useCardMonopol);
+    writeXmlU32("useCardInvention",cfg.useCardInvention);
+    writeXmlU32("skipFirstRound",cfg.skipFirstRound);
+    writeXmlU32("bonusRoadLimit",cfg.bonusRoadLimit);
+    writeXmlU32("bonusArmyLimit",cfg.bonusArmyLimit);
 
     tinyxml2::XMLElement* player = doc.NewElement( "player" );
     player->SetAttribute("name", cfg.player.name.c_str() );
@@ -860,6 +866,49 @@ void UI_WorldCreator::on_presetExport()
     if ( err != tinyxml2::XML_SUCCESS )
     {
         DE_ERROR("Cant save xml ", uri_xml)
+    }
+
+    // Write *.hpp to ease integration into program source code
+
+    std::ostringstream o; o <<
+    "H3_Cfg cfg;\n"
+    "cfg.presetName = \"" << cfg.presetName << "\";\n"
+    "cfg.victoryPoints = " << cfg.victoryPoints << ";\n"
+    "cfg.cardLimitNoSteal = " << cfg.cardLimitNoSteal << ";\n"
+    "cfg.buildingSpacing = " << cfg.buildingSpacing << ";\n"
+    "cfg.numPlayers = " << cfg.numPlayers << ";\n"
+    "cfg.useCardKnight = " << cfg.useCardKnight << ";\n"
+    "cfg.useCardVictoryPoint = " << cfg.useCardVictoryPoint << ";\n"
+    "cfg.useCardMonopol = " << cfg.useCardMonopol << ";\n"
+    "cfg.useCardInvention = " << cfg.useCardInvention << ";\n"
+    "cfg.skipFirstRound = " << cfg.skipFirstRound << ";\n"
+    "cfg.bonusRoadLimit = " << cfg.bonusRoadLimit << ";\n"
+    "cfg.bonusArmyLimit = " << cfg.bonusArmyLimit << ";\n";
+
+    for (const H3_CfgTile& tile : cfg.tiles)
+    {
+        o << "cfg.addTile("
+            << tile.i() << ","
+            << tile.j() << ","
+            << "H3_TileType::" << tile.tt().str() << ","
+            << tile.angle60() << ","
+            << tile.diceValue() << ");\n";
+    }
+
+    o <<
+    "cfg.player.name = \"" << cfg.player.name << "\";\n"
+    "cfg.player.color = " << cfg.player.color << ";\n"
+    "cfg.player.typ = H3_PlayerType::" << cfg.player.typ.str() << ";\n"
+    "cfg.player.connect = H3_PlayerConnect::" << cfg.player.connect.str() << ";\n"
+    "cfg.player.avatar = (H3_Tex::eID)" << cfg.player.avatar << ";\n";
+
+    if (dbSaveText(uri_hpp,o.str()))
+    {
+        DE_OK("Saved hpp ",uri_hpp)
+    }
+    else
+    {
+        DE_ERROR("Cannot save hpp ",uri_hpp)
     }
 }
 

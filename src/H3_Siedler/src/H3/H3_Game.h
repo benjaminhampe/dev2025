@@ -38,7 +38,7 @@
 struct H3_Game
 // ===========================================================================
 {
-    H3_Game();
+    H3_Game(int argc, char* argv[]);
     ~H3_Game();
     const de::Image& getImg( H3_Img::eID id ) const;
     de::gpu::TexRef getTex( H3_Tex::eID id, const std::string & caller ) const;
@@ -149,25 +149,7 @@ struct H3_Game
     void UI_resizeLayouts();
     void UI_updateActions();
 
-    uint32_t
-    getPlayerColor( uint32_t i ) const
-    {
-        return getDefaultPlayerColor( i );
-    }
-
-    static uint32_t
-    getDefaultPlayerColor( uint32_t i )
-    {
-        switch( i % 6 )
-        {
-        case 1: return dbRGB(255,0,0);
-        case 2: return dbRGB(255,255,0);
-        case 3: return dbRGB(0,255,0);
-        case 4: return dbRGB(0,0,255);
-        case 5: return dbRGB(255,0,255);
-        default: return 0xFFFFFFFF;
-        }
-    }
+    std::string getExeDir() const { return dbFileDir(m_argv[0]); }
 
     glm::vec3 m_tileSize = glm::vec3( 100, 10, 100 );
     glm::vec3 m_chipSize = glm::vec3( 25, 4, 25 );
@@ -180,6 +162,8 @@ struct H3_Game
     glm::vec3 m_playerSize = glm::vec3( 20, 60, 20 );
     glm::vec3 m_thiefSize = glm::vec3( 20, 60, 20 );
 
+    int m_argc;
+    char** m_argv;
     // de::IrrlichtDevice* m_device;
     de::Window* m_window;
     de::gpu::VideoDriver* m_driver;
@@ -252,7 +236,7 @@ struct H3_Game
     std::vector< H3_RankedPlayer > m_ranking;
 
     // =======================================================================
-    // struct H3_Pick m_pick;
+    // Mouse/Camera
     // =======================================================================
     bool m_isCameraMouseInputEnabled = false;
     bool m_isCameraFreeMoveEnabled = false;
@@ -266,25 +250,11 @@ struct H3_Game
     int m_lastMouseY = 0;
     int m_mouseMoveX = 0;
     int m_mouseMoveY = 0;
-    // int m_leftDragStartX = 0;
-    // int m_leftDragStartY = 0;
-    // int m_leftDragLastX = 0;
-    // int m_leftDragLastY = 0;
-    // int m_leftDragPosX = 0;
-    // int m_leftDragPosY = 0;
-    // double cylinderCamRadius = 500;
-    // double cylinderCamHeight = 300;
-    // double cylinderCamAngleY = 0;
 
     // Scene-Collision: Pick
-    // int m_mouseX = 0;
-    // int m_mouseY = 0;
     int m_pickState = 0; // 0 = none, 1 = road, 2 = farm, 3 = city, 4 = thief.
-
-    // Scene-Collision: Hover
     glm::vec3 m_hitPos;
     float m_hitDist;
-    // Scene-Collision: Hover
     int m_hoverState = 0; // 0 = none, 1 = road, 2 = farm, 3 = city, 4 = thief.
     int m_hoverTileId = 0;
     int m_hoverCornerId = 0;
@@ -321,7 +291,7 @@ struct H3_Game
 
 // void H3_Game_setHelpWindow( H3_Game & game, de::gpu::gui::Panel* window );
 
-bool H3_MessageBox(std::string title, std::string msg);
+bool H3_MessageBox(const std::wstring& title, const std::wstring& text);
 
 
 

@@ -28,8 +28,9 @@ UI_MainMenu::UI_MainMenu( H3_Game* game, de::gui::Env* env, de::gui::Widget* par
     m_btnNewGame->onClicked = [&](){ m_game->newGame(); };
     m_btnRestart->onClicked = [&](){ m_game->restartGame(); };
     m_btnOptions->onClicked = [](){
-        H3_MessageBox("Options", "Options are not implemented so yet.\n"
-                                 "Try tinkering with xml config files");
+        H3_MessageBox(L"Options",
+                      L"Options are not implemented so yet.\n"
+                      L"Try tinkering with xml config files");
     };
     m_btnHelp->onClicked = [&](){ m_game->toggleHelpWindow(); };
     m_btnExit->onClicked = [&](){ m_game->exitProgram(); };

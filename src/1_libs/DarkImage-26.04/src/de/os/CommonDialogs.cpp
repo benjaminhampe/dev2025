@@ -71,6 +71,7 @@ int dbDesktopHeight()
     return GetSystemMetrics( SM_CYSCREEN );
 }
 
+/*
 void dbMessageBoxA(const std::string& msg, const std::string& title)
 {
     MessageBoxA( nullptr, msg.c_str(), title.c_str(), MB_OK | MB_ICONQUESTION );
@@ -220,7 +221,7 @@ std::string dbPromtStrA(const std::string& msg, const std::string& title)
     return a.editText;
 }
 
-
+*/
 
 namespace {
 
