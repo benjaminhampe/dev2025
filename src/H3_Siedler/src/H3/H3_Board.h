@@ -393,6 +393,9 @@ struct H3_Cfg
     static H3_Cfg
     createStandard();
 
+    static H3_Cfg
+    createCattleMania();
+
     void dump() const;
 
     std::string

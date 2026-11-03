@@ -193,25 +193,25 @@ H3_Img::init()
 
     // gfx/chip/
     {
-        std::string baseDir = mediaDir + "gfx/chip/";   // 556KB
-        add(Chip2, baseDir + "chip_2.png", opt);    // 0
-        add(Chip3, baseDir + "chip_3.png", opt);    // 1
-        add(Chip4, baseDir + "chip_4.png", opt);    // 2
-        add(Chip5, baseDir + "chip_5.png", opt);    // 3
-        add(Chip6, baseDir + "chip_6.png", opt);    // 4
-        add(Chip8, baseDir + "chip_8.png", opt);    // 5
-        add(Chip9, baseDir + "chip_9.png", opt);    // 6
-        add(Chip10,baseDir + "chip_10.png", opt);   // 7
-        add(Chip11,baseDir + "chip_11.png", opt);   // 8
-        add(Chip12,baseDir + "chip_12.png", opt);   // 9
-        add(ChipS, baseDir + "chip_s.png", opt);    // 10
-        add(ChipW, baseDir + "chip_w.png", opt);    // 11
-        add(Chip3v1,baseDir+ "chip_3v1.png",opt);   // 12
-        add(ChipA, baseDir + "chip_a.webp", opt);   // 13
-        add(ChipB, baseDir + "chip_b.webp", opt);   // 14
-        add(ChipC, baseDir + "chip_c.webp", opt);   // 15
-        add(ChipD, baseDir + "chip_d.jpg", opt);    // 16
-        add(ChipE, baseDir + "chip_e.webp", opt);   // 17
+        std::string baseDir = mediaDir + "gfx/chip/";   // 216KB
+        add(Chip2, baseDir + "chip_2.webp", optRGB);    // 0
+        add(Chip3, baseDir + "chip_3.webp", optRGB);    // 1
+        add(Chip4, baseDir + "chip_4.webp", optRGB);    // 2
+        add(Chip5, baseDir + "chip_5.webp", optRGB);    // 3
+        add(Chip6, baseDir + "chip_6.webp", optRGB);    // 4
+        add(Chip8, baseDir + "chip_8.webp", optRGB);    // 5
+        add(Chip9, baseDir + "chip_9.webp", optRGB);    // 6
+        add(Chip10,baseDir + "chip_10.webp", optRGB);   // 7
+        add(Chip11,baseDir + "chip_11.webp", optRGB);   // 8
+        add(Chip12,baseDir + "chip_12.webp", optRGB);   // 9
+        add(ChipS, baseDir + "chip_s.webp", optRGB);    // 10
+        add(ChipW, baseDir + "chip_w.webp", optRGB);    // 11
+        add(Chip3v1,baseDir+ "chip_3v1.webp",optRGB);   // 12
+        add(ChipA, baseDir + "chip_a.webp", optRGB);   // 13
+        add(ChipB, baseDir + "chip_b.webp", optRGB);   // 14
+        add(ChipC, baseDir + "chip_c.webp", optRGB);   // 15
+        add(ChipD, baseDir + "chip_d.jpg", optRGB);    // 16
+        add(ChipE, baseDir + "chip_e.webp", optRGB);   // 17
     }
 
     // gfx/dice/
@@ -433,7 +433,7 @@ void H3_Img::save(const std::string& baseDir)
     o << "void H3_Img::load()\n";
     o << "{\n";
     o << "    de::ImageLoadOptions opt;\n";
-    o << "    opt.throwOnFail;\n";
+    o << "    opt.throwOnFail = true;\n";
     o << "\n";
     o << "    de::ImageLoadOptions optYellowToTransparent = opt;\n";
     o << "    optYellowToTransparent.outputFormat = de::PixelFormat::RGBA_32; // We stored as 24 bit\n";
@@ -463,6 +463,247 @@ void H3_Img::save(const std::string& baseDir)
 
 // We like to access the declaration of class H3_Img.#include <H3/details/H3_Img.h>
 
+#include "rc_img/img_001_satan_webp.h"	// 286.979 KB
+#include "rc_img/img_002_nx_webp.h"	// 85.8867 KB
+#include "rc_img/img_003_px_webp.h"	// 61.7363 KB
+#include "rc_img/img_004_ny_webp.h"	// 22.3594 KB
+#include "rc_img/img_005_py_webp.h"	// 90.3398 KB
+#include "rc_img/img_006_nz_webp.h"	// 92.4316 KB
+#include "rc_img/img_007_pz_webp.h"	// 98.0742 KB
+#include "rc_img/img_008_unknown_jpg.h"	// 25.3965 KB
+#include "rc_img/img_009_benni_webp.h"	// 83.3281 KB
+#include "rc_img/img_010_wood_webp.h"	// 225.432 KB
+#include "rc_img/img_011_wood2_jpg.h"	// 458.609 KB
+#include "rc_img/img_012_wood3_jpg.h"	// 199.078 KB
+#include "rc_img/img_013_thief_jpg.h"	// 4.68848 KB
+#include "rc_img/img_014_grunge_jpg.h"	// 305.324 KB
+#include "rc_img/img_015_scroll_webp.h"	// 114.58 KB
+#include "rc_img/img_016_scroll1_webp.h"	// 81.3125 KB
+#include "rc_img/img_017_scroll2_webp.h"	// 78.7695 KB
+#include "rc_img/img_018_dice_1_webp.h"	// 1.46289 KB
+#include "rc_img/img_019_dice_2_webp.h"	// 1.66797 KB
+#include "rc_img/img_020_dice_3_webp.h"	// 1.79688 KB
+#include "rc_img/img_021_dice_4_webp.h"	// 2.08984 KB
+#include "rc_img/img_022_dice_5_webp.h"	// 2.17383 KB
+#include "rc_img/img_023_dice_6_webp.h"	// 2.26172 KB
+#include "rc_img/img_024_bonus_army_webp.h"	// 24.0117 KB
+#include "rc_img/img_025_bonus_road_webp.h"	// 21.7969 KB
+#include "rc_img/img_026_card_a_jpg.h"	// 165.593 KB
+#include "rc_img/img_027_card_b_jpg.h"	// 98.3057 KB
+#include "rc_img/img_028_card_c_jpg.h"	// 115.92 KB
+#include "rc_img/img_029_card_d_jpg.h"	// 113.561 KB
+#include "rc_img/img_030_card_e_jpg.h"	// 81.7324 KB
+#include "rc_img/img_031_do_buyeventcard_webp.h"	// 6.61523 KB
+#include "rc_img/img_032_eventcard_knight_webp.h"	// 7.67969 KB
+#include "rc_img/img_033_eventcard_point_webp.h"	// 5.60352 KB
+#include "rc_img/img_034_do_bank_webp.h"	// 952 Bytes
+#include "rc_img/img_035_do_dice_webp.h"	// 1.57617 KB
+#include "rc_img/img_036_do_endturn_webp.h"	// 996 Bytes
+#include "rc_img/img_037_do_playcard_webp.h"	// 1004 Bytes
+#include "rc_img/img_038_do_trade_webp.h"	// 950 Bytes
+#include "rc_img/img_039_do_redo_webp.h"	// 602 Bytes
+#include "rc_img/img_040_do_undo_webp.h"	// 608 Bytes
+#include "rc_img/img_041_do_buycity_webp.h"	// 454 Bytes
+#include "rc_img/img_042_do_buyfarm_webp.h"	// 284 Bytes
+#include "rc_img/img_043_do_buyroad_webp.h"	// 280 Bytes
+#include "rc_img/img_044_do_cancel_webp.h"	// 976 Bytes
+#include "rc_img/img_045_do_rob_webp.h"	// 454 Bytes
+#include "rc_img/img_046_template_webp.h"	// 88 Bytes
+#include "rc_img/img_047_stat_card_webp.h"	// 130 Bytes
+#include "rc_img/img_048_stat_city_webp.h"	// 90 Bytes
+#include "rc_img/img_049_stat_farm_webp.h"	// 120 Bytes
+#include "rc_img/img_050_stat_road_webp.h"	// 104 Bytes
+#include "rc_img/img_051_stat_point_webp.h"	// 102 Bytes
+#include "rc_img/img_052_water_webp.h"	// 264.572 KB
+#include "rc_img/img_053_desert_webp.h"	// 288.852 KB
+#include "rc_img/img_054_tile_a_jpg.h"	// 103.201 KB
+#include "rc_img/img_055_tile_b_jpg.h"	// 81.5723 KB
+#include "rc_img/img_056_tile_c_jpg.h"	// 91.3477 KB
+#include "rc_img/img_057_tile_d_jpg.h"	// 152.261 KB
+#include "rc_img/img_058_tile_e_webp.h"	// 317.094 KB
+#include "rc_img/img_059_Desert_d_jpg.h"	// 1.05098 MB
+#include "rc_img/img_060_Desert_h_webp.h"	// 13.0723 KB
+#include "rc_img/img_061_A_d_jpg.h"	// 2.22354 MB
+#include "rc_img/img_062_A_h_webp.h"	// 10.5605 KB
+#include "rc_img/img_063_B_d_jpg.h"	// 1.42541 MB
+#include "rc_img/img_064_B_h_webp.h"	// 34.9805 KB
+#include "rc_img/img_065_C_d_jpg.h"	// 901.497 KB
+#include "rc_img/img_066_C_h_webp.h"	// 17.5176 KB
+#include "rc_img/img_067_D_d_jpg.h"	// 959.253 KB
+#include "rc_img/img_068_D_h_webp.h"	// 16.7676 KB
+#include "rc_img/img_069_E_d_jpg.h"	// 1.10814 MB
+#include "rc_img/img_070_E_h_webp.h"	// 13.3008 KB
+#include "rc_img/img_071_chip_2_webp.h"	// 336 Bytes
+#include "rc_img/img_072_chip_3_webp.h"	// 336 Bytes
+#include "rc_img/img_073_chip_4_webp.h"	// 314 Bytes
+#include "rc_img/img_074_chip_5_webp.h"	// 348 Bytes
+#include "rc_img/img_075_chip_6_webp.h"	// 448 Bytes
+#include "rc_img/img_076_chip_8_webp.h"	// 444 Bytes
+#include "rc_img/img_077_chip_9_webp.h"	// 378 Bytes
+#include "rc_img/img_078_chip_10_webp.h"	// 316 Bytes
+#include "rc_img/img_079_chip_11_webp.h"	// 280 Bytes
+#include "rc_img/img_080_chip_12_webp.h"	// 320 Bytes
+#include "rc_img/img_081_chip_s_webp.h"	// 286 Bytes
+#include "rc_img/img_082_chip_w_webp.h"	// 296 Bytes
+#include "rc_img/img_083_chip_3v1_webp.h"	// 752 Bytes
+#include "rc_img/img_084_chip_a_webp.h"	// 118.822 KB
+#include "rc_img/img_085_chip_b_webp.h"	// 47.6328 KB
+#include "rc_img/img_086_chip_c_webp.h"	// 19.6035 KB
+#include "rc_img/img_087_chip_d_jpg.h"	// 6.42773 KB
+#include "rc_img/img_088_chip_e_webp.h"	// 19.2383 KB
+#include "rc_img/img_089_unknown_webp.h"	// 3.04102 KB
+#include "rc_img/img_090_alexander_webp.h"	// 4.5957 KB
+#include "rc_img/img_091_asoka_webp.h"	// 4.02539 KB
+#include "rc_img/img_092_bismark_webp.h"	// 4.11133 KB
+#include "rc_img/img_093_catherine_webp.h"	// 4.0918 KB
+#include "rc_img/img_094_elizabethi_webp.h"	// 4.14063 KB
+#include "rc_img/img_095_friedrich_webp.h"	// 4.24023 KB
+#include "rc_img/img_096_gandhi_webp.h"	// 4.25586 KB
+#include "rc_img/img_097_genghis_webp.h"	// 4.10938 KB
+#include "rc_img/img_098_hatshepsut_webp.h"	// 4.29688 KB
+#include "rc_img/img_099_isabella_webp.h"	// 3.92969 KB
+#include "rc_img/img_100_louisxiv_webp.h"	// 4.30859 KB
+#include "rc_img/img_101_napoleon_webp.h"	// 4.0625 KB
+#include "rc_img/img_102_peter_webp.h"	// 4.31055 KB
+#include "rc_img/img_103_roosevelt_webp.h"	// 4.35352 KB
+#include "rc_img/img_104_shihhuangti_webp.h"	// 4.45703 KB
+#include "rc_img/img_105_Nice_pointCard_webp.h"	// 344.326 KB
+#include "rc_img/img_106_Nice_knightCard_webp.h"	// 164.613 KB
+#include "rc_img/img_107_Nice_inventCard_webp.h"	// 174.686 KB
+#include "rc_img/img_108_Nice_monopolCard_webp.h"	// 145.17 KB
+
+void H3_Img::load()
+{
+    de::ImageLoadOptions opt;
+    opt.throwOnFail = true;
+
+    de::ImageLoadOptions optYellowToTransparent = opt;
+    optYellowToTransparent.outputFormat = de::PixelFormat::RGBA_32; // We stored as 24 bit
+    optYellowToTransparent.searchColor = dbRGB(255,255,0); // yellow
+    optYellowToTransparent.replaceColor = 0; // transparent
+
+    addFromMemory((eID)1,img_001_satan_webp,293866,opt);
+    addFromMemory((eID)2,img_002_nx_webp,87948,opt);
+    addFromMemory((eID)3,img_003_px_webp,63218,opt);
+    addFromMemory((eID)4,img_004_ny_webp,22896,opt);
+    addFromMemory((eID)5,img_005_py_webp,92508,opt);
+    addFromMemory((eID)6,img_006_nz_webp,94650,opt);
+    addFromMemory((eID)7,img_007_pz_webp,100428,opt);
+    addFromMemory((eID)8,img_008_unknown_jpg,26006,opt);
+    addFromMemory((eID)9,img_009_benni_webp,85328,opt);
+    addFromMemory((eID)10,img_010_wood_webp,230842,opt);
+    addFromMemory((eID)11,img_011_wood2_jpg,469616,opt);
+    addFromMemory((eID)12,img_012_wood3_jpg,203856,opt);
+    addFromMemory((eID)13,img_013_thief_jpg,4801,opt);
+    addFromMemory((eID)14,img_014_grunge_jpg,312652,opt);
+    addFromMemory((eID)15,img_015_scroll_webp,117330,opt);
+    addFromMemory((eID)16,img_016_scroll1_webp,83264,opt);
+    addFromMemory((eID)17,img_017_scroll2_webp,80660,opt);
+    addFromMemory((eID)18,img_018_dice_1_webp,1498,opt);
+    addFromMemory((eID)19,img_019_dice_2_webp,1708,opt);
+    addFromMemory((eID)20,img_020_dice_3_webp,1840,opt);
+    addFromMemory((eID)21,img_021_dice_4_webp,2140,opt);
+    addFromMemory((eID)22,img_022_dice_5_webp,2226,opt);
+    addFromMemory((eID)23,img_023_dice_6_webp,2316,opt);
+    addFromMemory((eID)24,img_024_bonus_army_webp,24588,opt);
+    addFromMemory((eID)25,img_025_bonus_road_webp,22320,opt);
+    addFromMemory((eID)26,img_026_card_a_jpg,169567,opt);
+    addFromMemory((eID)27,img_027_card_b_jpg,100665,opt);
+    addFromMemory((eID)28,img_028_card_c_jpg,118702,opt);
+    addFromMemory((eID)29,img_029_card_d_jpg,116286,opt);
+    addFromMemory((eID)30,img_030_card_e_jpg,83694,opt);
+    addFromMemory((eID)31,img_031_do_buyeventcard_webp,6774,opt);
+    addFromMemory((eID)32,img_032_eventcard_knight_webp,7864,opt);
+    addFromMemory((eID)33,img_033_eventcard_point_webp,5738,opt);
+    addFromMemory((eID)34,img_034_do_bank_webp,952,opt);
+    addFromMemory((eID)35,img_035_do_dice_webp,1614,opt);
+    addFromMemory((eID)36,img_036_do_endturn_webp,996,opt);
+    addFromMemory((eID)37,img_037_do_playcard_webp,1004,opt);
+    addFromMemory((eID)38,img_038_do_trade_webp,950,opt);
+    addFromMemory((eID)39,img_039_do_redo_webp,602,opt);
+    addFromMemory((eID)40,img_040_do_undo_webp,608,opt);
+    addFromMemory((eID)41,img_041_do_buycity_webp,454,opt);
+    addFromMemory((eID)42,img_042_do_buyfarm_webp,284,opt);
+    addFromMemory((eID)43,img_043_do_buyroad_webp,280,opt);
+    addFromMemory((eID)44,img_044_do_cancel_webp,976,opt);
+    addFromMemory((eID)45,img_045_do_rob_webp,454,opt);
+    addFromMemory((eID)46,img_046_template_webp,88,opt);
+    addFromMemory((eID)47,img_047_stat_card_webp,130,opt);
+    addFromMemory((eID)48,img_048_stat_city_webp,90,opt);
+    addFromMemory((eID)49,img_049_stat_farm_webp,120,opt);
+    addFromMemory((eID)50,img_050_stat_road_webp,104,opt);
+    addFromMemory((eID)51,img_051_stat_point_webp,102,opt);
+    addFromMemory((eID)52,img_052_water_webp,270922,opt);
+    addFromMemory((eID)53,img_053_desert_webp,295784,opt);
+    addFromMemory((eID)54,img_054_tile_a_jpg,105678,opt);
+    addFromMemory((eID)55,img_055_tile_b_jpg,83530,opt);
+    addFromMemory((eID)56,img_056_tile_c_jpg,93540,opt);
+    addFromMemory((eID)57,img_057_tile_d_jpg,155915,opt);
+    addFromMemory((eID)58,img_058_tile_e_webp,324704,opt);
+    addFromMemory((eID)59,img_059_Desert_d_jpg,1102030,opt);
+    addFromMemory((eID)60,img_060_Desert_h_webp,13386,opt);
+    addFromMemory((eID)61,img_061_A_d_jpg,2331553,opt);
+    addFromMemory((eID)62,img_062_A_h_webp,10814,opt);
+    addFromMemory((eID)63,img_063_B_d_jpg,1494647,opt);
+    addFromMemory((eID)64,img_064_B_h_webp,35820,opt);
+    addFromMemory((eID)65,img_065_C_d_jpg,923133,opt);
+    addFromMemory((eID)66,img_066_C_h_webp,17938,opt);
+    addFromMemory((eID)67,img_067_D_d_jpg,982275,opt);
+    addFromMemory((eID)68,img_068_D_h_webp,17170,opt);
+    addFromMemory((eID)69,img_069_E_d_jpg,1161965,opt);
+    addFromMemory((eID)70,img_070_E_h_webp,13620,opt);
+    addFromMemory((eID)71,img_071_chip_2_webp,336,opt);
+    addFromMemory((eID)72,img_072_chip_3_webp,336,opt);
+    addFromMemory((eID)73,img_073_chip_4_webp,314,opt);
+    addFromMemory((eID)74,img_074_chip_5_webp,348,opt);
+    addFromMemory((eID)75,img_075_chip_6_webp,448,opt);
+    addFromMemory((eID)76,img_076_chip_8_webp,444,opt);
+    addFromMemory((eID)77,img_077_chip_9_webp,378,opt);
+    addFromMemory((eID)78,img_078_chip_10_webp,316,opt);
+    addFromMemory((eID)79,img_079_chip_11_webp,280,opt);
+    addFromMemory((eID)80,img_080_chip_12_webp,320,opt);
+    addFromMemory((eID)81,img_081_chip_s_webp,286,opt);
+    addFromMemory((eID)82,img_082_chip_w_webp,296,opt);
+    addFromMemory((eID)83,img_083_chip_3v1_webp,752,opt);
+    addFromMemory((eID)84,img_084_chip_a_webp,121674,opt);
+    addFromMemory((eID)85,img_085_chip_b_webp,48776,opt);
+    addFromMemory((eID)86,img_086_chip_c_webp,20074,opt);
+    addFromMemory((eID)87,img_087_chip_d_jpg,6582,opt);
+    addFromMemory((eID)88,img_088_chip_e_webp,19700,opt);
+    addFromMemory((eID)89,img_089_unknown_webp,3114,opt);
+    addFromMemory((eID)90,img_090_alexander_webp,4706,opt);
+    addFromMemory((eID)91,img_091_asoka_webp,4122,opt);
+    addFromMemory((eID)92,img_092_bismark_webp,4210,opt);
+    addFromMemory((eID)93,img_093_catherine_webp,4190,opt);
+    addFromMemory((eID)94,img_094_elizabethi_webp,4240,opt);
+    addFromMemory((eID)95,img_095_friedrich_webp,4342,opt);
+    addFromMemory((eID)96,img_096_gandhi_webp,4358,opt);
+    addFromMemory((eID)97,img_097_genghis_webp,4208,opt);
+    addFromMemory((eID)98,img_098_hatshepsut_webp,4400,opt);
+    addFromMemory((eID)99,img_099_isabella_webp,4024,opt);
+    addFromMemory((eID)100,img_100_louisxiv_webp,4412,opt);
+    addFromMemory((eID)101,img_101_napoleon_webp,4160,opt);
+    addFromMemory((eID)102,img_102_peter_webp,4414,opt);
+    addFromMemory((eID)103,img_103_roosevelt_webp,4458,opt);
+    addFromMemory((eID)104,img_104_shihhuangti_webp,4564,opt);
+    addFromMemory((eID)105,img_105_Nice_pointCard_webp,352590,opt);
+    addFromMemory((eID)106,img_106_Nice_knightCard_webp,168564,opt);
+    addFromMemory((eID)107,img_107_Nice_inventCard_webp,178878,opt);
+    addFromMemory((eID)108,img_108_Nice_monopolCard_webp,148654,opt);
+}
+
+
+
+
+
+// (c) 2025 by Benjamin Hampe <benjaminhampe@gmx.de>
+// This file contains the H3_Img::load() function implementation.
+// Add this .cpp file into the same folder of class H3_Img.cpp
+// Add rc_img folder into the folder of class H3_Img.cpp
+// So the #include "rc_img/..." directives can work properly.
+
+// We like to access the declaration of class H3_Img.#include <H3/details/H3_Img.h>
+/*
 #include "rc_img/img_001_satan_webp.h"	// 287.504 KB
 #include "rc_img/img_002_nx_webp.h"	// 85.9629 KB
 #include "rc_img/img_003_px_webp.h"	// 61.8594 KB
@@ -696,3 +937,4 @@ void H3_Img::load()
     addFromMemory((eID)107,img_107_Nice_inventCard_webp,178878,opt);
     addFromMemory((eID)108,img_108_Nice_monopolCard_webp,148654,opt);
 }
+*/

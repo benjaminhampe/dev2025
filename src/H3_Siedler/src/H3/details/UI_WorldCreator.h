@@ -81,7 +81,10 @@ protected:
     void updateBoard();
 
     void draw2DHexOutline(int i,int j,
-        uint32_t color, int width, const V2& offset, const V2& size);
+        u32 color, int width, const V2& offset, const V2& size);
+
+    void draw2DPortBridges(int angle60, int i, int j,
+        u32 color, int width, const V2& offset, const V2& size);
 
     void on_presetPrev();
     void on_presetNext();

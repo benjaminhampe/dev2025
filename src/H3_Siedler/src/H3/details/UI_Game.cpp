@@ -21,6 +21,7 @@ UI_Game::UI_Game( H3_Game* game, de::gui::Env* env, de::gui::Widget* parent, u32
     , m_actions(nullptr)
     , m_donateCards(nullptr)
     , m_banking(nullptr)
+    , m_bDebug(false)
 {
     setDrawChildren(true);
 

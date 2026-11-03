@@ -603,16 +603,20 @@ H3_Cfg::createStandard()
 {
     H3_Cfg cfg;
 
-    cfg.presetName = "Standard";
+    cfg.player.name = "Benni";
+    cfg.player.color = dbRGB(255,0,0);
+    cfg.player.typ = H3_PlayerType::HUMAN;
+    cfg.player.connect = H3_PlayerConnect::LOCAL;
+    cfg.player.avatar = H3_Tex::Play3;
 
-    cfg.victoryPoints = 3;      // Num points to victory (Default = 10)
+    cfg.presetName = "Standard";
+    cfg.victoryPoints = 10;      // Num points to victory (Default = 10)
     cfg.cardLimitNoSteal = 7;   // Num cards player can hold without robber steal. 0 = disable
     cfg.buildingSpacing = 1;    // Num of corners between neighboring buildings, default = 1, can be 0 for more dense use of board.
     cfg.skipFirstRound = 1;     //
     cfg.numPlayers = 4;
     cfg.bonusRoadLimit = 5;     // +2 points for 5+ connected roads
     cfg.bonusArmyLimit = 3;     // +2 points for 3+ knights
-
     cfg.useCardKnight = 1;      // +1 Knight with this card
     cfg.useCardVictoryPoint = 1;// +1 Victory point with this card
     cfg.useCardMonopol = 1;     // Take all cards of one resource of all players
@@ -662,16 +666,90 @@ H3_Cfg::createStandard()
     cfg.addTile( -0,-3, H3_TileType::Port3v1, 3 );
     cfg.addTile(  1,-3, H3_TileType::Water, 2 );
 
-    cfg.player.name = "Benni";
-    cfg.player.color = dbRGB(255,0,0);
-    cfg.player.typ = H3_PlayerType::HUMAN;
-    cfg.player.connect = H3_PlayerConnect::LOCAL;
-    cfg.player.avatar = H3_Tex::Play3;
-
     cfg.computeBounds();
     return cfg;
 }
 
+// static
+H3_Cfg
+H3_Cfg::createCattleMania()
+{
+    H3_Cfg cfg;
+
+    cfg.player.name = "Benni";
+    cfg.player.color = dbRGB(0,150,0);
+    cfg.player.typ = H3_PlayerType::CPU;
+    cfg.player.connect = H3_PlayerConnect::LOCAL;
+    cfg.player.avatar = H3_Tex::Play3;
+
+    cfg.presetName = "Cattle Mania";
+    cfg.victoryPoints = 20;     // Num points to victory (Default = 10)
+    cfg.cardLimitNoSteal = 7;   // Num cards player can hold without robber steal. 0 = disable
+    cfg.buildingSpacing = 1;    // Num of corners between neighboring buildings, default = 1, can be 0 for more dense use of board.
+    cfg.skipFirstRound = 1;     //
+    cfg.numPlayers = 5;
+    cfg.bonusRoadLimit = 5;     // +2 points for 5+ connected roads
+    cfg.bonusArmyLimit = 3;     // +2 points for 3+ knights
+    cfg.useCardKnight = 1;      // +1 Knight with this card
+    cfg.useCardVictoryPoint = 1;// +1 Victory point with this card
+    cfg.useCardMonopol = 1;     // Take all cards of one resource of all players
+    cfg.useCardInvention = 1;   // +2..+4 Arbitrary resource cards from bank
+    cfg.addTile(-2,-4,H3_TileType::Port3v1,3,2);
+    cfg.addTile(-1,-4,H3_TileType::Water,0,2);
+    cfg.addTile(0,-4,H3_TileType::PortA,2,2);
+    cfg.addTile(1,-4,H3_TileType::Water,0,2);
+    cfg.addTile(-3,-3,H3_TileType::Water,0,2);
+    cfg.addTile(-2,-3,H3_TileType::TileC,0,11);
+    cfg.addTile(-1,-3,H3_TileType::TileE,0,10);
+    cfg.addTile(0,-3,H3_TileType::TileA,0,6);
+    cfg.addTile(1,-3,H3_TileType::Port3v1,1,2);
+    cfg.addTile(-3,-2,H3_TileType::PortD,4,2);
+    cfg.addTile(-2,-2,H3_TileType::TileB,0,11);
+    cfg.addTile(-1,-2,H3_TileType::TileB,0,4);
+    cfg.addTile(0,-2,H3_TileType::Desert,0,2);
+    cfg.addTile(1,-2,H3_TileType::TileE,0,3);
+    cfg.addTile(2,-2,H3_TileType::Water,0,2);
+    cfg.addTile(-4,-1,H3_TileType::Water,0,2);
+    cfg.addTile(-3,-1,H3_TileType::TileC,0,8);
+    cfg.addTile(-2,-1,H3_TileType::TileE,0,5);
+    cfg.addTile(-1,-1,H3_TileType::TileC,0,2);
+    cfg.addTile(0,-1,H3_TileType::TileA,0,9);
+    cfg.addTile(1,-1,H3_TileType::TileD,0,8);
+    cfg.addTile(2,-1,H3_TileType::PortE,1,2);
+    cfg.addTile(-4,0,H3_TileType::Water,0,9);
+    cfg.addTile(-3,0,H3_TileType::TileD,0,9);
+    cfg.addTile(-2,0,H3_TileType::TileA,0,10);
+    cfg.addTile(-1,0,H3_TileType::TileB,0,5);
+    cfg.addTile(0,0,H3_TileType::TileA,0,6);
+    cfg.addTile(1,0,H3_TileType::TileD,0,5);
+    cfg.addTile(2,0,H3_TileType::TileC,0,4);
+    cfg.addTile(3,0,H3_TileType::Water,0,2);
+    cfg.addTile(-4,1,H3_TileType::Port3v1,4,3);
+    cfg.addTile(-3,1,H3_TileType::TileB,0,3);
+    cfg.addTile(-2,1,H3_TileType::TileD,0,12);
+    cfg.addTile(-1,1,H3_TileType::TileA,0,12);
+    cfg.addTile(0,1,H3_TileType::TileE,0,9);
+    cfg.addTile(1,1,H3_TileType::TileD,0,8);
+    cfg.addTile(2,1,H3_TileType::PortD,0,2);
+    cfg.addTile(-3,2,H3_TileType::Water,0,6);
+    cfg.addTile(-2,2,H3_TileType::TileD,0,6);
+    cfg.addTile(-1,2,H3_TileType::Desert,0,2);
+    cfg.addTile(0,2,H3_TileType::TileC,0,11);
+    cfg.addTile(1,2,H3_TileType::TileC,0,10);
+    cfg.addTile(2,2,H3_TileType::PortB,1,2);
+    cfg.addTile(-3,3,H3_TileType::Water,0,4);
+    cfg.addTile(-2,3,H3_TileType::TileB,0,4);
+    cfg.addTile(-1,3,H3_TileType::TileA,0,5);
+    cfg.addTile(0,3,H3_TileType::TileE,0,4);
+    cfg.addTile(1,3,H3_TileType::Water,0,2);
+    cfg.addTile(-2,4,H3_TileType::Port3v1,5,2);
+    cfg.addTile(-1,4,H3_TileType::Water,0,2);
+    cfg.addTile(0,4,H3_TileType::PortC,0,2);
+    cfg.addTile(1,4,H3_TileType::Port3v1,0,2);
+
+    cfg.computeBounds();
+    return cfg;
+}
 
 // static
 H3_Bank

@@ -188,6 +188,7 @@ UI_WorldCreator::UI_WorldCreator( H3_Game* game, de::gui::Env* env, de::gui::Wid
 
     // Create vector of internal presets
     m_presets.emplace_back( H3_Cfg::createStandard() );
+    m_presets.emplace_back( H3_Cfg::createCattleMania() );
     setCfg(0);
 }
 
@@ -292,6 +293,66 @@ void UI_WorldCreator::draw2DHexOutline( int i, int j, u32 color, int width,
     m.destroy();
 }
 
+void UI_WorldCreator::draw2DPortBridges(int angle60,
+    int i, int j, u32 color, int width,
+    const V2& offset, const V2& size)
+{
+    float w = 100.0f;
+    float h = 100.0f;
+    const V2 scale(w,h);
+    float x =  de::smesh::SMeshHexagon::computeBoardPosX(w,h,i,j);
+    float y = -de::smesh::SMeshHexagon::computeBoardPosY(w,h,i,j);
+    const V2 pos(x,y);
+
+    // ===============================================
+    /// @brief The Hexagon
+    // ===============================================
+    ///
+    ///               M| x=0 | y=0 | z=0 | u=.5| v=.5|
+    ///       D       -|-----|-----|-----|-----|-----|
+    ///      / \      A|   0 |  0  | -.5 | .5  | 0   |
+    ///   C /   \ E   B| -.5 |  0  |-.25 |  0  | 0.25|
+    ///    |-----|    C| -.5 |  0  | .25 |  0  | 0.75|
+    ///    |  M  |    D| 0.0 |  0  |  .5 |  .5 | 1   |
+    ///    |-----|    E| 0.5 |  0  | .25 |  1  | 0.75|
+    ///   B \   / F   F| 0.5 |  0  |-.25 |  1  | 0.25|
+    ///      \ /
+    ///       A       triangles: BFA, BEF, BCE, CDE
+    ///
+    const V2 pM = (pos + (scale * V2( 0.00,  0.00))) * size + offset;
+    const V2 pA = (pos + (scale * V2( 0.00,  0.50))) * size + offset;
+    const V2 pB = (pos + (scale * V2(-0.50,  0.25))) * size + offset;
+    const V2 pC = (pos + (scale * V2(-0.50, -0.25))) * size + offset;
+    const V2 pD = (pos + (scale * V2( 0.00, -0.50))) * size + offset;
+    const V2 pE = (pos + (scale * V2( 0.50, -0.25))) * size + offset;
+    const V2 pF = (pos + (scale * V2( 0.50,  0.25))) * size + offset;
+    de::smesh::S3DVertex M( V3(pM,0),{0,0,-1},color,{0,0});
+    de::smesh::S3DVertex A( V3(pA,0),{0,0,-1},color,{0,0});
+    de::smesh::S3DVertex B( V3(pB,0),{0,0,-1},color,{0,0});
+    de::smesh::S3DVertex C( V3(pC,0),{0,0,-1},color,{0,0});
+    de::smesh::S3DVertex D( V3(pD,0),{0,0,-1},color,{0,0});
+    de::smesh::S3DVertex E( V3(pE,0),{0,0,-1},color,{0,0});
+    de::smesh::S3DVertex F( V3(pF,0),{0,0,-1},color,{0,0});
+
+    de::smesh::SMeshBuffer m(de::gpu::PrimitiveType::Lines);
+    switch (angle60)
+    {
+        case 0: { m.addLine(M,A); m.addLine(M,B); break; }
+        case 1: { m.addLine(M,B); m.addLine(M,C); break; }
+        case 2: { m.addLine(M,C); m.addLine(M,D); break; }
+        case 3: { m.addLine(M,D); m.addLine(M,E); break; }
+        case 4: { m.addLine(M,E); m.addLine(M,F); break; }
+        case 5: { m.addLine(M,F); m.addLine(M,A); break; }
+        default: break;
+    }
+    m.upload();
+
+    auto driver = m_env->getVideoDriver();
+    driver->getScreenRenderer()->draw2D( m );
+
+    m.destroy();
+}
+
 void UI_WorldCreator::drawBoard(const de::Recti & rect)
 {
     auto driver = m_env->getVideoDriver();
@@ -317,7 +378,7 @@ void UI_WorldCreator::drawBoard(const de::Recti & rect)
 
     m_game->m_tile2DRenderer.render( posTransform, r_board );
     m_game->m_chip2DRenderer.render( posTransform, r_board );
-    m_game->m_road2DRenderer.render( posTransform, r_board );
+    //m_game->m_road2DRenderer.render( posTransform, r_board );
 
     if (m_bHoveredBoard)
     {
@@ -362,6 +423,20 @@ void UI_WorldCreator::drawBoard(const de::Recti & rect)
                 de::Font5x8(3,3,0,0,2,1));
         }
     }
+
+    // [Draw] PortBridges
+    size_t i = 0;
+    for (const H3_CfgTile & tile : m_cfg->tiles)
+    {
+        if (!tile.tt().isPort()) { continue; }
+
+        draw2DPortBridges(tile.angle60(),tile.i(),tile.j(),0xFFFFFFFF,
+            10, offset, scale);
+
+        i++;
+    }
+
+    //DE_DEBUG("Ports = ",i)
 
     driver->setScissor(de::Recti());
 }
@@ -504,7 +579,7 @@ void UI_WorldCreator::updateBoard()
 {
     m_game->m_tile2DRenderer.collectAndUploadInstances(*m_game, *m_cfg);
     m_game->m_chip2DRenderer.collectAndUploadInstances(*m_game, *m_cfg);
-    m_game->m_road2DRenderer.collectAndUploadInstances(*m_game, *m_cfg);
+    //m_game->m_road2DRenderer.collectAndUploadInstances(*m_game, *m_cfg);
 }
 
 void UI_WorldCreator::setCfg(int i)
