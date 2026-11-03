@@ -238,8 +238,10 @@ ScreenRenderer::setMaterial( smesh::SMaterial const & mtl, const Recti& pos )
         return false;
     }
 
-    const int w = m_driver->getScreenWidth();
-    const int h = m_driver->getScreenHeight();
+    // const int w = m_driver->getScreenWidth();
+    // const int h = m_driver->getScreenHeight();
+    const int w = m_driver->getViewportW();
+    const int h = m_driver->getViewportH();
     shader->setVec2f( "u_screenSize", glm::vec2( w, h ) );
 
     const TexRef& diffuseMap = mtl.getDiffuseMap();

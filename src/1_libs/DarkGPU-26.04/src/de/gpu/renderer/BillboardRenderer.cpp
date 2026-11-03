@@ -152,8 +152,10 @@ void BillboardRenderer::draw3DBillboard( smesh::SMeshBuffer & meshBuffer, const 
     shader->setMat4f( "u_modelMat", modelMat );
 
     // [ScreenSize]
-    int w = m_driver->getScreenWidth();
-    int h = m_driver->getScreenHeight();
+    // int w = m_driver->getScreenWidth();
+    // int h = m_driver->getScreenHeight();
+    const int w = m_driver->getViewportW();
+    const int h = m_driver->getViewportH();
     shader->setVec2f( "u_screenSize", glm::vec2(w,h) );
 
     // [TexDiffuse]

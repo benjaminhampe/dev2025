@@ -32,11 +32,11 @@ struct FontRenderer5x8
 {
     VideoDriver* m_driver;
     Shader* m_shader;
-    uint32_t m_vao = 0;
-    uint32_t m_vbo = 0;
-    bool m_shouldUpload = true;
-    int32_t m_screenWidthLoc = -1;
-    int32_t m_screenHeightLoc = -1;
+    uint32_t m_vao;
+    uint32_t m_vbo;
+    int32_t m_u_screenSize;
+    bool m_shouldUpload;
+
     std::vector< FontRenderer5x8_Vertex > m_vertices;
 
     FontRenderer5x8();

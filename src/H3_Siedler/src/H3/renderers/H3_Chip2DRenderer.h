@@ -32,7 +32,6 @@ struct H3_Chip2DRenderer
     void init(H3_Game& game, H3_ChipTexture* chipTexture);
 
     void initVAO(H3_Game& game);
-    void initTex2DArray(H3_Game& game);
     void initShader(H3_Game& game);
     void render(const glm::vec4& posTransform, const de::Recti& scissor);
 

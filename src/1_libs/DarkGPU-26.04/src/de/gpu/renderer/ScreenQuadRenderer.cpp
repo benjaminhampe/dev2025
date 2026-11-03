@@ -37,10 +37,13 @@ ScreenQuadRenderer::draw2DRect(const de::Recti& pos, const TexRef& ref, bool ble
     state.depth = Depth::disabled();
     if (blend) state.blend = Blend::alphaBlend();
     m_driver->setState(state);
+
     m_driver->useShader(m_shader);
 
-    const int w = m_driver->getScreenWidth();
-    const int h = m_driver->getScreenHeight();
+    // const int w = m_driver->getScreenWidth();
+    // const int h = m_driver->getScreenHeight();
+    const int w = m_driver->getViewportW();
+    const int h = m_driver->getViewportH();
     // m_shader->setVec2f("u_screenSize", glm::vec2(w,h));
     // m_shader->setVec4f("u_posTransform", glm::vec4(pos.x, pos.y, pos.w, pos.h));
     // m_driver->useTexture(ref.tex,0);

@@ -278,7 +278,7 @@ void H3_Tile2DRenderer::render(const glm::vec4& posTransform, const de::Recti& s
     state.culling = de::gpu::Culling::disabled();
     state.depth = de::gpu::Depth::disabled();
     state.blend = de::gpu::Blend::disabled();
-    state.scissor = de::gpu::Scissor::enabled(scissor);
+    //state.scissor = de::gpu::Scissor::enabled(scissor);
     m_driver->setState(state);
 
     // [Shader]

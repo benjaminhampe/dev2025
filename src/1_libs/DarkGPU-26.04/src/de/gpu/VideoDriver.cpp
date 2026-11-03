@@ -733,12 +733,12 @@ GL_VALIDATE
     // RenderStates
     m_state = State::query();
 
+    DE_DEBUG("Initial Viewport: ",m_state.viewport.str())
+    DE_DEBUG("Initial Scissor: ",m_state.scissor.str())
     DE_DEBUG("Initial CullMode: ",m_state.culling.str())
     DE_DEBUG("Initial DepthTest: ",m_state.depth.str())
     DE_DEBUG("Initial StencilTest: ",m_state.stencil.str())
     DE_DEBUG("Initial BlendMode: ",m_state.blend.str())
-    DE_DEBUG("Initial Viewport: ",m_state.viewport.str())
-    DE_DEBUG("Initial ScissorBox: ",m_state.scissor.str())
     DE_DEBUG("Initial PointSize: ",m_state.pointSize.str())
     DE_DEBUG("Initial LineWidth: ",m_state.lineWidth.str())
     DE_DEBUG("Initial RasterizerDiscard: ",m_state.rasterizerDiscard.str())
@@ -859,19 +859,7 @@ bool VideoDriver::beginRender(const glm::vec4& clearColor)
 
     const int w = getScreenWidth();
     const int h = getScreenHeight();
-    // DE_DEBUG("Screen(",w,",",h,")")
-
     if (w < 1 || h < 1) return false;
-
-    if (getCamera())
-    {
-        getCamera()->setScreenSize(w,h);
-        getCamera()->update();
-    }
-
-    // DE_BENNI("beginRender()")
-    // wglMakeCurrent(ps.hdc, self->_d->glrc);
-GL_VALIDATE
 
     if (m_rt)
     {
@@ -879,11 +867,7 @@ GL_VALIDATE
         m_rt = nullptr;
     }
 
-    glDisable(GL_SCISSOR_TEST);
-GL_VALIDATE
-    // glScissor(0,0,w,h);
-//GL_VALIDATE
-    glViewport(0,0,w,h);
+    setViewport(Recti(0,0,w,h));
 GL_VALIDATE
     glClearColor(clearColor.r, clearColor.g, clearColor.b, clearColor.a);
 GL_VALIDATE
@@ -894,12 +878,11 @@ GL_VALIDATE
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 GL_VALIDATE
 
-    // auto camera = getCamera();
-    // if (camera)
-    // {
-    //     camera->setScreenSize(w,h);
-    //     camera->update();
-    // }
+    if (getCamera())
+    {
+        getCamera()->setScreenSize(w,h);
+        getCamera()->update();
+    }
     return true;
 }
 
@@ -949,7 +932,7 @@ void VideoDriver::beginRender( IRenderTarget* rt, const glm::vec4& clearColor )
     m_rt = rt;
     int w = m_rt->w();
     int h = m_rt->h();
-    glViewport(0,0,w,h);
+    setViewport(Recti(0,0,w,h));
 
     // auto camera = getCamera();
     // if (camera)
@@ -991,6 +974,55 @@ double VideoDriver::getTime() const
 double VideoDriver::getFPS() const
 {
     return m_fps;
+}
+
+Recti
+VideoDriver::getViewport() const
+{
+    return m_viewport.m_rect;
+}
+
+int VideoDriver::getViewportX() const { return m_viewport.m_rect.x; }
+int VideoDriver::getViewportY() const { return m_viewport.m_rect.y; }
+int VideoDriver::getViewportW() const { return m_viewport.m_rect.w; }
+int VideoDriver::getViewportH() const { return m_viewport.m_rect.h; }
+
+void
+VideoDriver::setViewport(const Recti& rect)
+{
+    m_viewport.m_rect = rect;
+    int x = rect.x;
+    int y = rect.y;
+    int w = rect.w;
+    int h = rect.h;
+    if ((w > 0) && (h > 0))
+    {
+        glViewport(x,y,w,h);
+    }
+}
+
+Recti
+VideoDriver::getScissor() const
+{
+    return m_scissor.m_rect;
+}
+void
+VideoDriver::setScissor(const Recti& rect)
+{
+    m_scissor.m_rect = rect;
+    int x = rect.x;
+    int y = getScreenHeight() - (rect.y + rect.h);
+    int w = rect.w;
+    int h = rect.h;
+    if ((w > 0) && (h > 0))
+    {
+        ::glScissor( x,y,w,h );
+        ::glEnable( GL_SCISSOR_TEST );
+    }
+    else
+    {
+        ::glDisable( GL_SCISSOR_TEST );
+    }
 }
 
 State

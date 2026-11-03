@@ -7,15 +7,13 @@ namespace gpu {
 // ===========================================================================
 FontRenderer5x8::FontRenderer5x8()
 // ===========================================================================
-    : m_driver(nullptr)
-    , m_shader(nullptr)
-    , m_vao(0)
-    , m_vbo(0)
-{
-   m_shouldUpload = true;
-   m_screenWidthLoc = -1;
-   m_screenHeightLoc = -1;
-}
+    : m_driver{ nullptr }
+    , m_shader{ nullptr }
+    , m_vao{ 0 }
+    , m_vbo{ 0 }
+    , m_u_screenSize{ -1 }
+    , m_shouldUpload{ true }
+{}
 
 //FontRenderer5x8::~Font5x8Renderer(){}
 
@@ -31,16 +29,17 @@ FontRenderer5x8::init( VideoDriver* driver )
         layout(location = 0) in vec3 a_pos;
         layout(location = 1) in lowp vec4 a_color;
 
-        uniform float u_screenW;
-        uniform float u_screenH;
+        uniform vec2 u_screenSize;
 
         out vec4 v_color;
 
         void main()
         {
-            float ndc_x = ((2.0*a_pos.x) / u_screenW) - 1.0;
-            float ndc_y = ((2.0*(u_screenH - 1.0 - a_pos.y)) / u_screenH) - 1.0;
-            gl_Position = vec4( ndc_x, ndc_y, -1.0, 1.0 );
+            float x = a_pos.x;
+            float y = u_screenSize.y - a_pos.y; // - 1.0
+            vec2 ndc = ((vec2(x,y) / u_screenSize) * 2.0) - 1.0;
+            gl_Position = vec4( ndc.x, ndc.y, -1.0, 1.0 );
+
             v_color = clamp( vec4( a_color ) * (1.0 / 255.0), vec4( 0,0,0,0 ), vec4( 1,1,1,1 ) );
         }
         )";
@@ -57,10 +56,8 @@ FontRenderer5x8::init( VideoDriver* driver )
         }
         )";
 
-        m_shader = m_driver->createShader( "FontRenderer5x8", vs, fs );
-
-        m_screenWidthLoc = glGetUniformLocation( m_shader->id, "u_screenW");
-        m_screenHeightLoc = glGetUniformLocation( m_shader->id, "u_screenH");
+        m_shader = m_driver->createShader( "Font5x8Rend", vs, fs );
+        m_u_screenSize = glGetUniformLocation( m_shader->id, "u_screenSize");
 
         // std::cout << "Create: " << std::endl;
         // std::cout << "m_shader.ID = " << id << std::endl;
@@ -251,12 +248,13 @@ FontRenderer5x8::draw2DText( int x, int y, std::string const & msg, uint32_t col
     state.blend = Blend::alphaBlend();
     m_driver->setState( state );
 
-    const int screenWidth = m_driver->getScreenWidth();
-    const int screenHeight = m_driver->getScreenHeight();
-
     m_driver->useShader( m_shader );
-    glUniform1f(m_screenWidthLoc, screenWidth);
-    glUniform1f(m_screenHeightLoc, screenHeight);
+
+    // const int screenWidth = m_driver->getScreenWidth();
+    // const int screenHeight = m_driver->getScreenHeight();
+    const int w = m_driver->getViewportW();
+    const int h = m_driver->getViewportH();
+    glUniform2f(m_u_screenSize, float(w), float(h));
 
     glBindVertexArray(m_vao);
     glDrawArrays( GL_TRIANGLES, 0, GLsizei( m_vertices.size() ) );

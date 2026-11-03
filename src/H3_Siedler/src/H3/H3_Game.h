@@ -8,6 +8,7 @@
 #include <H3/details/UI_MainMenu.h>
 #include <H3/details/UI_Game.h>
 
+#include <H3/renderers/H3_2DRoadRenderer.h>
 #include <H3/renderers/H3_Tile2DRenderer.h>
 #include <H3/renderers/H3_Chip2DRenderer.h>
 #include <H3/renderers/H3_Tile3DRenderer.h>
@@ -263,6 +264,7 @@ struct H3_Game
     int m_hoverFarmId = 0;
     int m_hoverCityId = 0;
 
+    H3_2DRoadRenderer m_road2DRenderer;
     H3_Tile2DRenderer m_tile2DRenderer;
     H3_Chip2DRenderer m_chip2DRenderer;
     H3_Tile3DRenderer m_tile3DRenderer;

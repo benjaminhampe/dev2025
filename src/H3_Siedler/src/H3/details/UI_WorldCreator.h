@@ -46,7 +46,13 @@ class UI_WorldCreator : public de::gui::Widget
     typedef glm::vec3 V3;
 
 public:
-    UI_WorldCreator( H3_Game* game, de::gui::Env* env, de::gui::Widget* parent, u32 id, const de::Recti& r );
+    UI_WorldCreator(
+        H3_Game* game,
+        de::gui::Env* env,
+        de::gui::Widget* parent,
+        u32 id,
+        const de::Recti& pos );
+
     ~UI_WorldCreator() override;
     void draw() override;
     void resize(int x, int y, int w, int h) override;
@@ -55,7 +61,7 @@ public:
     // Final config:
 
     H3_Cfg getCfg();
-    void setCfg( const H3_Cfg& cfg );
+    void setCfg(int i);
 
     // PresetManager:
 
@@ -100,10 +106,11 @@ private:
     float m_scale;
     float m_off_x;
     float m_off_y;
-    std::vector< H3_CfgTile > m_tiles;
+    // std::vector< H3_CfgTile > m_tiles;
 
-    H3_Cfg m_cfg; // Current preset
-    std::unordered_map<std::string, H3_Cfg> m_presets;
+    int m_presetIndex;
+    H3_Cfg* m_cfg; // Current preset
+    std::vector<H3_Cfg> m_presets;
 
     de::gpu::TexRef m_backgroundTex;
 

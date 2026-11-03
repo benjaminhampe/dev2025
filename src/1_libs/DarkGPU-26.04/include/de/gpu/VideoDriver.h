@@ -301,6 +301,16 @@ struct VideoDriver
     double      getTime() const;
     uint64_t    getFrameCount() const;
 
+    Recti       getViewport() const;
+    void        setViewport(const Recti& rect);
+    int         getViewportX() const;
+    int         getViewportY() const;
+    int         getViewportW() const;
+    int         getViewportH() const;
+
+    Recti       getScissor() const;
+    void        setScissor(const Recti& rect);
+
     // ##################
     // ### PerfTracer ###
     // ##################
@@ -700,21 +710,9 @@ protected:
     // ####################
     int m_screenWidth;
     int m_screenHeight;
-
-    //State m_initState;
-    //SM3<State> m_state;
-
-    //SM3<Viewport> m_viewport;
-    //SM3<Scissor> m_scissor;
+    Viewport m_viewport;
+    Scissor m_scissor;
     State m_state;
-    // SM3<Culling> m_culling;
-    // SM3<Depth> m_depth;
-    // SM3<Stencil> m_stencil;
-    // SM3<Blend> m_blend;
-    //SM3<RasterizerDiscard> m_rasterizerDiscard;
-    //SM3<LineWidth> m_lineWidth;
-    //SM3<PointSize> m_pointSize;
-    //SM3<PolygonOffset> m_polygonOffset;
 
     glm::dmat4 m_modelMatrix;
     // CreateParams m_createParams;

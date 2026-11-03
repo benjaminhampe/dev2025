@@ -107,6 +107,7 @@ void H3_Game::destroy()
     m_tmeshFarm.destroy();
     m_tmeshCity.destroy();
 
+    m_road2DRenderer.destroy();
     m_tile2DRenderer.destroy();
     m_chip2DRenderer.destroy();
     m_tile3DRenderer.destroy();
@@ -334,6 +335,7 @@ bool H3_Game::init( de::Window* window )
     m_smeshThief.recalculateBoundingBox();
     m_smeshThief.upload();
 
+    m_road2DRenderer.init( *this, &m_chipTexture );
     m_tile2DRenderer.init(*this);
     m_chip2DRenderer.init( *this, &m_chipTexture );
     m_tile3DRenderer.init(*this);
@@ -361,7 +363,7 @@ bool H3_Game::init( de::Window* window )
 
     // m_driver->dumpTextures();
 
-    m_uiGame->m_worldCreator->setCfg( H3_Cfg::createStandard() );
+    m_uiGame->m_worldCreator->setCfg(0);
 
     toggleMainMenu();
     return true;
