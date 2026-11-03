@@ -188,6 +188,8 @@ UI_WorldCreator::UI_WorldCreator( H3_Game* game, de::gui::Env* env, de::gui::Wid
 
     // Create vector of internal presets
     m_presets.emplace_back( H3_Cfg::createStandard() );
+    m_presets.emplace_back( H3_Cfg::createLanding() );
+    m_presets.emplace_back( H3_Cfg::createWarmth() );
     m_presets.emplace_back( H3_Cfg::createCattleMania() );
     setCfg(0);
 }

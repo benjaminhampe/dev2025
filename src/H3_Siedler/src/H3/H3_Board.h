@@ -355,6 +355,10 @@ struct H3_CfgPlayer
     static std::string getPlayerName(int i); // H3_Img::PlayU, Play0 ... PlayF
 
     static uint32_t getPlayerColor(int i); // 6 colors 0...5
+
+    static H3_CfgPlayer
+    createBenni();
+
 };
 
 // ===========================================================================
@@ -392,6 +396,12 @@ struct H3_Cfg
 
     static H3_Cfg
     createStandard();
+
+    static H3_Cfg
+    createLanding();
+
+    static H3_Cfg
+    createWarmth();
 
     static H3_Cfg
     createCattleMania();

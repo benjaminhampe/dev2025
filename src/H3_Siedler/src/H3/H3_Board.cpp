@@ -427,6 +427,24 @@ H3_PlayerConnect::operator= (eType typ)
 //struct H3_CfgPlayer
 // ==================================================================
 
+H3_CfgPlayer::H3_CfgPlayer()
+    : typ{ H3_PlayerType::CPU }
+    , connect{ H3_PlayerConnect::LOCAL }
+    , color{ 0xFFFF00FF }
+    , avatar{ 0 }
+{
+}
+
+std::string H3_CfgPlayer::str() const
+{
+    std::ostringstream o; o <<
+    "name(" << name << "), "
+    "typ(" << typ.str() << "), "
+    "color(" << dbHex(color) << "), "
+    "avatar(" << avatar << ")";
+    return o.str();
+}
+
 // static
 std::string H3_CfgPlayer::getPlayerName(int i)
 {
@@ -468,52 +486,21 @@ uint32_t H3_CfgPlayer::getPlayerColor(int i)
     }
 }
 
-H3_CfgPlayer::H3_CfgPlayer()
-    : typ{ H3_PlayerType::CPU }
-    , connect{ H3_PlayerConnect::LOCAL }
-    , color{ 0xFFFF00FF }
-    , avatar{ 0 }
+H3_CfgPlayer
+H3_CfgPlayer::createBenni()
 {
+    H3_CfgPlayer cfg;
+    cfg.name = "Benni";
+    cfg.color = getPlayerColor(0);
+    cfg.typ = H3_PlayerType::HUMAN;
+    cfg.connect = H3_PlayerConnect::LOCAL;
+    cfg.avatar = H3_Tex::Play3;
+    return cfg;
 }
 
-std::string H3_CfgPlayer::str() const
-{
-    std::ostringstream o; o <<
-    "name(" << name << "), "
-    "typ(" << typ.str() << "), "
-    "color(" << dbHex(color) << "), "
-    "avatar(" << avatar << ")";
-    return o.str();
-}
 /*
-// static
-H3_CfgPlayer H3_CfgPlayer::createHuman()
-{
-    H3_CfgPlayer player;
-    player.name = "Benni";
-    player.avatar = H3_Tex::Play3;
-    player.color = dbRGB(255,0,0);
-
-    player.typ = H3_PlayerType::HUMAN;
-    player.connect = H3_PlayerConnect::LOCAL;
-
-    return player;
-}
-
-// static
-H3_CfgPlayer H3_CfgPlayer::createKleopatra()
-{
-    H3_CfgPlayer player;
-    player.name = "Kleopatra";
-    player.color = dbRGB(255,255,0);
-    player.typ = H3_PlayerType::CPU;
-    player.connect = H3_PlayerConnect::LOCAL;
-    player.avatar = H3_Tex::Play2;
-    return player;
-}
-
-// static
-H3_CfgPlayer H3_CfgPlayer::createAlexander()
+H3_CfgPlayer
+H3_CfgPlayer::createEnemy()
 {
     H3_CfgPlayer player;
     player.name = "Alexander";
@@ -602,12 +589,7 @@ H3_Cfg
 H3_Cfg::createStandard()
 {
     H3_Cfg cfg;
-
-    cfg.player.name = "Benni";
-    cfg.player.color = dbRGB(255,0,0);
-    cfg.player.typ = H3_PlayerType::HUMAN;
-    cfg.player.connect = H3_PlayerConnect::LOCAL;
-    cfg.player.avatar = H3_Tex::Play3;
+    cfg.player = H3_CfgPlayer::createBenni();
 
     cfg.presetName = "Standard";
     cfg.victoryPoints = 10;      // Num points to victory (Default = 10)
@@ -672,15 +654,133 @@ H3_Cfg::createStandard()
 
 // static
 H3_Cfg
+H3_Cfg::createLanding()
+{
+    H3_Cfg cfg;
+    cfg.player = H3_CfgPlayer::createBenni();
+
+    cfg.presetName = "Landing";
+    cfg.victoryPoints = 10;
+    cfg.cardLimitNoSteal = 7;
+    cfg.buildingSpacing = 1;
+    cfg.numPlayers = 4;
+    cfg.useCardKnight = 1;
+    cfg.useCardVictoryPoint = 1;
+    cfg.useCardMonopol = 1;
+    cfg.useCardInvention = 1;
+    cfg.skipFirstRound = 1;
+    cfg.bonusRoadLimit = 5;
+    cfg.bonusArmyLimit = 3;
+    cfg.addTile(-2,-3,H3_TileType::PortD,3,2);
+    cfg.addTile(-1,-3,H3_TileType::Water,3,-1);
+    cfg.addTile(0,-3,H3_TileType::Port3v1,3,-1);
+    cfg.addTile(1,-3,H3_TileType::Water,2,-1);
+    cfg.addTile(-2,-2,H3_TileType::Water,4,-1);
+    cfg.addTile(-1,-2,H3_TileType::TileB,0,5);
+    cfg.addTile(0,-2,H3_TileType::TileC,0,6);
+    cfg.addTile(1,-2,H3_TileType::TileD,0,11);
+    cfg.addTile(2,-2,H3_TileType::PortC,1,-1);
+    cfg.addTile(-3,-1,H3_TileType::Port3v1,3,-1);
+    cfg.addTile(-2,-1,H3_TileType::TileA,0,8);
+    cfg.addTile(-1,-1,H3_TileType::TileE,0,3);
+    cfg.addTile(0,-1,H3_TileType::TileC,0,4);
+    cfg.addTile(1,-1,H3_TileType::TileD,0,5);
+    cfg.addTile(2,-1,H3_TileType::Water,2,-1);
+    cfg.addTile(-3,0,H3_TileType::Water,4,-1);
+    cfg.addTile(-2,0,H3_TileType::TileC,0,9);
+    cfg.addTile(-1,0,H3_TileType::TileA,0,11);
+    cfg.addTile(0,0,H3_TileType::Desert,0,-1);
+    cfg.addTile(1,0,H3_TileType::TileA,0,3);
+    cfg.addTile(2,0,H3_TileType::TileE,0,8);
+    cfg.addTile(3,0,H3_TileType::Port3v1,1,-1);
+    cfg.addTile(-3,1,H3_TileType::PortA,4,-1);
+    cfg.addTile(-2,1,H3_TileType::TileC,0,12);
+    cfg.addTile(-1,1,H3_TileType::TileB,0,6);
+    cfg.addTile(0,1,H3_TileType::TileD,0,4);
+    cfg.addTile(1,1,H3_TileType::TileB,0,10);
+    cfg.addTile(2,1,H3_TileType::Water,1,-1);
+    cfg.addTile(-2,2,H3_TileType::Water,5,-1);
+    cfg.addTile(-1,2,H3_TileType::TileE,0,10);
+    cfg.addTile(0,2,H3_TileType::TileD,0,2);
+    cfg.addTile(1,2,H3_TileType::TileA,0,9);
+    cfg.addTile(2,2,H3_TileType::Port3v1,1,-1);
+    cfg.addTile(-2,3,H3_TileType::PortE,5,-1);
+    cfg.addTile(-1,3,H3_TileType::Water,0,-1);
+    cfg.addTile(0,3,H3_TileType::PortB,0,2);
+    cfg.addTile(1,3,H3_TileType::Water,0,-1);
+
+    cfg.computeBounds();
+    return cfg;
+}
+
+// static
+H3_Cfg
+H3_Cfg::createWarmth()
+{
+    H3_Cfg cfg;
+    cfg.player = H3_CfgPlayer::createBenni();
+
+    cfg.presetName = "Warmth";
+    cfg.victoryPoints = 10;
+    cfg.cardLimitNoSteal = 7;
+    cfg.buildingSpacing = 1;
+    cfg.numPlayers = 4;
+    cfg.useCardKnight = 1;
+    cfg.useCardVictoryPoint = 1;
+    cfg.useCardMonopol = 1;
+    cfg.useCardInvention = 1;
+    cfg.skipFirstRound = 1;
+    cfg.bonusRoadLimit = 5;
+    cfg.bonusArmyLimit = 3;
+    cfg.addTile(-2,-3,H3_TileType::Water,3,2);
+    cfg.addTile(-1,-3,H3_TileType::PortD,3,2);
+    cfg.addTile(0,-3,H3_TileType::Water,3,2);
+    cfg.addTile(1,-3,H3_TileType::Port3v1,2,2);
+    cfg.addTile(-2,-2,H3_TileType::PortA,3,2);
+    cfg.addTile(-1,-2,H3_TileType::TileE,0,8);
+    cfg.addTile(0,-2,H3_TileType::TileA,0,4);
+    cfg.addTile(1,-2,H3_TileType::TileE,0,11);
+    cfg.addTile(2,-2,H3_TileType::Water,1,2);
+    cfg.addTile(-3,-1,H3_TileType::Water,3,2);
+    cfg.addTile(-2,-1,H3_TileType::TileB,0,10);
+    cfg.addTile(-1,-1,H3_TileType::Desert,0,3);
+    cfg.addTile(0,-1,H3_TileType::TileD,0,3);
+    cfg.addTile(1,-1,H3_TileType::TileA,0,12);
+    cfg.addTile(2,-1,H3_TileType::Port3v1,1,2);
+    cfg.addTile(-3,0,H3_TileType::Port3v1,4,2);
+    cfg.addTile(-2,0,H3_TileType::TileC,0,5);
+    cfg.addTile(-1,0,H3_TileType::TileD,0,9);
+    cfg.addTile(0,0,H3_TileType::TileB,0,11);
+    cfg.addTile(1,0,H3_TileType::TileC,0,6);
+    cfg.addTile(2,0,H3_TileType::TileA,0,9);
+    cfg.addTile(3,0,H3_TileType::Water,1,2);
+    cfg.addTile(-3,1,H3_TileType::Water,4,2);
+    cfg.addTile(-2,1,H3_TileType::TileE,0,2);
+    cfg.addTile(-1,1,H3_TileType::TileC,0,4);
+    cfg.addTile(0,1,H3_TileType::TileD,0,5);
+    cfg.addTile(1,1,H3_TileType::TileD,0,10);
+    cfg.addTile(2,1,H3_TileType::PortC,1,2);
+    cfg.addTile(-2,2,H3_TileType::PortB,5,2);
+    cfg.addTile(-1,2,H3_TileType::TileA,0,6);
+    cfg.addTile(0,2,H3_TileType::TileC,0,3);
+    cfg.addTile(1,2,H3_TileType::TileB,0,8);
+    cfg.addTile(2,2,H3_TileType::Water,1,2);
+    cfg.addTile(-2,3,H3_TileType::Water,5,2);
+    cfg.addTile(-1,3,H3_TileType::PortE,5,2);
+    cfg.addTile(0,3,H3_TileType::Water,0,2);
+    cfg.addTile(1,3,H3_TileType::Port3v1,0,2);
+
+    cfg.computeBounds();
+    return cfg;
+}
+
+
+// static
+H3_Cfg
 H3_Cfg::createCattleMania()
 {
     H3_Cfg cfg;
-
-    cfg.player.name = "Benni";
-    cfg.player.color = dbRGB(0,150,0);
-    cfg.player.typ = H3_PlayerType::CPU;
-    cfg.player.connect = H3_PlayerConnect::LOCAL;
-    cfg.player.avatar = H3_Tex::Play3;
+    cfg.player = H3_CfgPlayer::createBenni();
 
     cfg.presetName = "Cattle Mania";
     cfg.victoryPoints = 20;     // Num points to victory (Default = 10)
