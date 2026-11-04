@@ -100,14 +100,6 @@ void H3_Chip3DMeshBuffer::initVAO()
     glVertexAttribDivisor(8, 1); // Per-instance divisor
     glEnableVertexAttribArray(8);
 
-    /*
-    // vbo_instanceAngle60:
-    glBindBuffer(GL_ARRAY_BUFFER, vbo_instanceAngle60); GL_VALIDATE;
-    glBufferData(GL_ARRAY_BUFFER, m_instanceAngle60.size() * sizeof(uint8_t), m_instanceAngle60.data(), GL_STATIC_DRAW);
-    glVertexAttribPointer(9, 1, GL_UNSIGNED_BYTE, GL_FALSE, sizeof(uint8_t), (void*)0);
-    glVertexAttribDivisor(9, 1); // Per-instance divisor
-    glEnableVertexAttribArray(9);
-    */
     if ( m_vbo_indices )
     {
         const auto nI = m_smesh->indices.size() * sizeof(uint32_t);
@@ -129,24 +121,22 @@ void H3_Chip3DMeshBuffer::initVAO()
 
 void H3_Chip3DMeshBuffer::uploadInstances()
 {
-    //collectInstances( game );
-
     if (m_instanceMat.empty())
     {
         return; // Nothing to upload.
     }
 
+    // DE_DEBUG("Upload ",m_instanceMat.size())
+
     // vbo_instanceMat:
     glBindBuffer(GL_ARRAY_BUFFER, m_vbo_instanceMat);
-    glBufferData(GL_ARRAY_BUFFER, m_instanceMat.size() * sizeof(glm::mat4), m_instanceMat.data(), GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, m_instanceMat.size() * sizeof(glm::mat4),
+                                  m_instanceMat.data(), GL_STATIC_DRAW);
 
     // vbo_instanceLayer:
     glBindBuffer(GL_ARRAY_BUFFER, m_vbo_instanceLayer);
-    glBufferData(GL_ARRAY_BUFFER, m_instanceLayer.size() * sizeof(uint8_t), m_instanceLayer.data(), GL_STATIC_DRAW);
-
-    // vbo_instanceAngle60:
-    //glBindBuffer(GL_ARRAY_BUFFER, vbo_instanceAngle60);
-    //glBufferData(GL_ARRAY_BUFFER, m_instanceAngle60.size() * sizeof(uint8_t), m_instanceAngle60.data(), GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, m_instanceLayer.size() * sizeof(uint8_t),
+                                  m_instanceLayer.data(), GL_STATIC_DRAW);
 
     GL_VALIDATE;
 }
@@ -340,7 +330,7 @@ void H3_Chip3DRenderer::initShader()
 
     if (m_shader) { return; } // Nothing todo.
 
-    const std::string shaderName = "ChipShader";
+    const std::string shaderName = "Chip3DRend";
 
     const std::string vs = R"(
         layout(location = 0) in vec3 a_pos;
@@ -365,7 +355,7 @@ void H3_Chip3DRenderer::initShader()
             v_color = clamp( vec4( a_color ) / 255.0, vec4( 0,0,0,0 ), vec4( 1,1,1,1 ) );
             v_texCoord = a_texCoord;
             v_texLayer = int(a_instanceLayer);
-            gl_Position = u_projViewMat * a_instanceMat * vec4(a_pos, 1.0);
+            gl_Position = (u_projViewMat * a_instanceMat) * vec4(a_pos, 1.0);
         }
     )";
 
@@ -392,126 +382,3 @@ void H3_Chip3DRenderer::initShader()
     m_locViewProjMat = glGetUniformLocation(m_shader->id, "u_projViewMat");
     m_locTex = glGetUniformLocation(m_shader->id, "u_tex");
 }
-
-/*
-
-namespace {
-
-    // Used to index layer in texture2DArray
-    enum eType
-    {
-        Chip2 = 0,
-        Chip3,
-        Chip4,
-        Chip5,
-        Chip6,
-        Chip8,
-        Chip9,
-        Chip10,
-        Chip11,
-        Chip12,
-        ChipS,
-        ChipW,
-        Chip3v1,
-        ChipA,
-        ChipB,
-        ChipC,
-        ChipD,
-        ChipE,
-        eTypeCount
-    };
-
-} // end namespace anonymous.
-
-
-
-void H3_Chip3DRenderer::initTexture( H3_Game & game )
-{
-    if (!m_driver) { DE_ERROR("No driver") return; }
-
-    if (m_texture2DArray) { return; } // Nothing todo.
-
-    std::vector<de::Image> m_images;
-    m_images.reserve( 18 );
-
-    auto addImage = [&]( H3_Img::eID id )
-    {
-        m_images.emplace_back();
-        de::Image & img = m_images.back();
-
-        img = *H3_getImg( game, id );
-
-        if (img.pixelFormat() == de::PixelFormat::R8G8B8)
-        {
-            img = img.convert(de::PixelFormat::R8G8B8A8);
-        }
-
-        int w = img.w();
-        int h = img.h();
-        if (w < h)
-        {
-            int x = 0;
-            int y = (h-w)/2;
-            img = de::ImageCutter::copyRegionRect(img,de::Recti(x,y,w,w));
-        }
-        else if (h < w)
-        {
-            int x = (w-h)/2;
-            int y = 0;
-            img = de::ImageCutter::copyRegionRect(img,de::Recti(x,y,h,h));
-        }
-
-        if ( m_imgSize != img.w() )
-        {
-            img = de::ImageScaler::resizeBicubic(img, m_imgSize, m_imgSize);
-        }
-
-        //dbSaveImage(img, dbStrJoin("chip_",uint32_t(id),".webp"));
-    };
-
-    addImage( H3_Img::Chip2);    // 0
-    addImage( H3_Img::Chip3);    // 1
-    addImage( H3_Img::Chip4);    // 2
-    addImage( H3_Img::Chip5);    // 3
-    addImage( H3_Img::Chip6);    // 4
-    addImage( H3_Img::Chip8);    // 5
-    addImage( H3_Img::Chip9);    // 6
-    addImage( H3_Img::Chip10);   // 7
-    addImage( H3_Img::Chip11);   // 8
-    addImage( H3_Img::Chip12);   // 9
-    addImage( H3_Img::ChipS);    // 10
-    addImage( H3_Img::ChipW);    // 11
-    addImage( H3_Img::Chip3v1);  // 12
-    addImage( H3_Img::ChipA);    // 13
-    addImage( H3_Img::ChipB);    // 14
-    addImage( H3_Img::ChipC);    // 15
-    addImage( H3_Img::ChipD);    // 16
-    addImage( H3_Img::ChipE);    // 17
-
-    const int n = m_images.size();
-
-    de::Image bigImage( m_imgSize, m_imgSize * n, de::PixelFormat::R8G8B8A8 );
-
-    int y = 0;
-    for (size_t i = 0; i < m_images.size(); ++i)
-    {
-        de::ImagePainter::drawImage(bigImage, m_images[i], 0, y, false);
-        y += m_imgSize;
-    }
-
-    de::replaceColor(bigImage,0x00000000, 0xFFFFFFFF);
-
-    //dbSaveImage(bigImage,"H3_chips.webp");
-
-    glGenTextures(1, &m_texture2DArray);
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D_ARRAY, m_texture2DArray);
-    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_RGBA, m_imgSize, m_imgSize, n, 0,
-                 GL_RGBA, GL_UNSIGNED_BYTE, bigImage.data());
-    glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
-    GL_VALIDATE;
-}
-
-*/

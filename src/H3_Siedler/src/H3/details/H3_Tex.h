@@ -49,6 +49,12 @@ struct H3_Tex
 
         NicePointCard, NiceKnightCard, NiceInventCard, NiceMonopolCard,
 
+        // Water128_00,
+        // Water128_39 = Water128_00 + 39,
+
+        // Water342_00,
+        // Water342_20 = Water342_00 + 20,
+
         Count,
 
         PlayUnknown = PlayU,

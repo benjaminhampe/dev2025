@@ -14,6 +14,7 @@
 #include <H3/renderers/H3_Tile3DRenderer.h>
 #include <H3/renderers/H3_Chip3DRenderer.h>
 #include <H3/renderers/H3_WaterTileRenderer.h>
+#include <H3/renderers/H3_WaterTileRenderer2.h>
 #include <H3/renderers/H3_ObjRenderer.h>
 #include <H3/renderers/H3_DiceRenderer.h>
 
@@ -264,12 +265,16 @@ struct H3_Game
     int m_hoverFarmId = 0;
     int m_hoverCityId = 0;
 
+    de::gpu::Tex2DArray m_AnimatedWaterTex128;
+    de::gpu::Tex2DArray m_AnimatedWaterTex342;
+
   //H3_2DRoadRenderer m_road2DRenderer;
     H3_Tile2DRenderer m_tile2DRenderer;
     H3_Chip2DRenderer m_chip2DRenderer;
     H3_Tile3DRenderer m_tile3DRenderer;
     H3_Chip3DRenderer m_chip3DRenderer;
     H3_WaterTileRenderer m_waterTileRenderer;
+    H3_WaterTileRenderer2 m_waterTileRenderer2;
 
     H3_ObjRenderer m_objRenderer;
     H3_DiceRenderer m_diceRenderer;

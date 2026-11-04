@@ -84,7 +84,7 @@ struct Texture
 // ===========================================================================
 {
     uint32_t m_id;     // texture id.
-    uint32_t m_target; // texture target GL_TEXTURE_2D|.
+    uint32_t m_target; // texture target GL_TEXTURE_2D|GL_TEXTURE_2D_ARRAY.
     /*
     +-------------------------------+---------------------------------------+-------------------------------------------------------------------------------+
     |   glBindTexture(target,id)    |      glGetIntegerv(target, &id)       |                            Description                                        |

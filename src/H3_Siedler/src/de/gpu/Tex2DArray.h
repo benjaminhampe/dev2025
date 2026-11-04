@@ -16,7 +16,7 @@ struct Tex2DArray
 {
     uint32_t id;
     int32_t w;          // Same width for all images.
-    int32_t h;     // Same height for all images.
+    int32_t h;          // Same height for all images.
     int32_t layers;
     int32_t mipLevels;
     uint32_t gpuFormat;

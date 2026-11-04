@@ -121,19 +121,18 @@ H3_Img::init()
 {
     std::string mediaDir = "media/H3/";
 
-    de::ImageLoadOptions opt;
-    opt.throwOnFail = true;
-
-    de::ImageLoadOptions optRGB = opt;
+    de::ImageLoadOptions optRGB;
+    optRGB.throwOnFail = true;
     optRGB.outputFormat = de::PixelFormat::R8G8B8;
 
-    de::ImageLoadOptions optRGBA = opt;
+    de::ImageLoadOptions optRGBA;
+    optRGBA.throwOnFail = true;
     optRGBA.outputFormat = de::PixelFormat::R8G8B8A8;
 
     // gfx/wallpaper
     {
         std::string baseDir = mediaDir + "gfx/wallpaper/";
-        add(Satan, baseDir + "satan.webp", opt);
+        add(Satan, baseDir + "satan.webp", optRGB);
     }
 
     // gfx/skybox/Default (ClubTropicana)
@@ -150,16 +149,16 @@ H3_Img::init()
     // gfx/base
     {
         std::string baseDir = mediaDir + "gfx/base/";
-        add(Unknown, baseDir + "unknown.jpg", opt);     //  25KB
-        add(Benni, baseDir + "benni.png", opt);         //  97KB
-        add(Wood, baseDir + "wood.webp", opt);          // 225KB
-        add(Wood2, baseDir + "wood2.jpg", opt);         // 458KB
-        add(Wood3, baseDir + "wood3.jpg", opt);         // 199KB
-        add(Thief, baseDir + "thief.jpg", opt);         //   5KB
-        add(Grunge, baseDir + "grunge.jpg", opt);       // 305KB
-        add(Scroll, baseDir + "scroll.webp", opt);      // 114KB
-        add(Scroll1, baseDir + "scroll1.webp", opt);    //  81KB
-        add(Scroll2, baseDir + "scroll2.webp", opt);    //  79KB
+        add(Unknown, baseDir + "unknown.jpg", optRGB);     //  25KB
+        add(Benni, baseDir + "benni.png", optRGBA);         //  97KB
+        add(Wood, baseDir + "wood.webp", optRGB);          // 225KB
+        add(Wood2, baseDir + "wood2.jpg", optRGB);         // 458KB
+        add(Wood3, baseDir + "wood3.jpg", optRGB);         // 199KB
+        add(Thief, baseDir + "thief.jpg", optRGB);         //   5KB
+        add(Grunge, baseDir + "grunge.jpg", optRGB);       // 305KB
+        add(Scroll, baseDir + "scroll.webp", optRGBA);      // 114KB
+        add(Scroll1, baseDir + "scroll1.webp", optRGBA);    //  81KB
+        add(Scroll2, baseDir + "scroll2.webp", optRGBA);    //  79KB
     }
 
     // gfx/tiles/
@@ -217,49 +216,49 @@ H3_Img::init()
     // gfx/dice/
     {
         std::string baseDir = mediaDir + "gfx/dice/";   // 21,4KB
-        add(Dice1, baseDir + "dice_1.png", opt);
-        add(Dice2, baseDir + "dice_2.png", opt);
-        add(Dice3, baseDir + "dice_3.png", opt);
-        add(Dice4, baseDir + "dice_4.png", opt);
-        add(Dice5, baseDir + "dice_5.png", opt);
-        add(Dice6, baseDir + "dice_6.png", opt);
+        add(Dice1, baseDir + "dice_1.png", optRGB);
+        add(Dice2, baseDir + "dice_2.png", optRGB);
+        add(Dice3, baseDir + "dice_3.png", optRGB);
+        add(Dice4, baseDir + "dice_4.png", optRGB);
+        add(Dice5, baseDir + "dice_5.png", optRGB);
+        add(Dice6, baseDir + "dice_6.png", optRGB);
     }
 
     // gfx/ui/bonus/
     {
         std::string baseDir = mediaDir + "gfx/ui/bonus/";   // 78,8KB
-        add(BonusArmy, baseDir + "bonus_army.png", opt);
-        add(BonusRoad, baseDir + "bonus_road.png", opt);
+        add(BonusArmy, baseDir + "bonus_army.png", optRGBA);
+        add(BonusRoad, baseDir + "bonus_road.png", optRGBA);
     }
 
     // gfx/ui/card1/
     {
         std::string baseDir = mediaDir + "gfx/ui/card1/";   // 575KB
-        add(CardA, baseDir + "card_a.jpg", opt);
-        add(CardB, baseDir + "card_b.jpg", opt);
-        add(CardC, baseDir + "card_c.jpg", opt);
-        add(CardD, baseDir + "card_d.jpg", opt);
-        add(CardE, baseDir + "card_e.jpg", opt);
+        add(CardA, baseDir + "card_a.jpg", optRGB);
+        add(CardB, baseDir + "card_b.jpg", optRGB);
+        add(CardC, baseDir + "card_c.jpg", optRGB);
+        add(CardD, baseDir + "card_d.jpg", optRGB);
+        add(CardE, baseDir + "card_e.jpg", optRGB);
     }
 
     // gfx/ui/card2/
     {
         std::string baseDir = mediaDir + "gfx/ui/card2/";   // 28,9KB
-        add(DoBuyEventCard, baseDir + "do_buyeventcard.png", opt);
-        add(EventCardKnight, baseDir + "eventcard_knight.png", opt);
-        add(EventCardPoint, baseDir + "eventcard_point.png", opt);
+        add(DoBuyEventCard, baseDir + "do_buyeventcard.png", optRGBA);
+        add(EventCardKnight, baseDir + "eventcard_knight.png", optRGBA);
+        add(EventCardPoint, baseDir + "eventcard_point.png", optRGBA);
     }
 
     // gfx/ui/do1/
     {
         std::string baseDir = mediaDir + "gfx/ui/do1/";     // 14,9KB
-        add(DoBank, baseDir + "do_bank.png", opt);
-        add(DoDice, baseDir + "do_dice.png", opt);
-        add(DoEndTurn, baseDir + "do_endturn.png", opt);
-        add(DoPlayCard, baseDir + "do_playcard.png", opt);
-        add(DoTrade, baseDir + "do_trade.png", opt);
-        add(DoRedo, baseDir + "do_redo.png", opt);
-        add(DoUndo, baseDir + "do_undo.png", opt);
+        add(DoBank, baseDir + "do_bank.png", optRGBA);
+        add(DoDice, baseDir + "do_dice.png", optRGBA);
+        add(DoEndTurn, baseDir + "do_endturn.png", optRGBA);
+        add(DoPlayCard, baseDir + "do_playcard.png", optRGBA);
+        add(DoTrade, baseDir + "do_trade.png", optRGBA);
+        add(DoRedo, baseDir + "do_redo.png", optRGBA);
+        add(DoUndo, baseDir + "do_undo.png", optRGBA);
     }
 
     // gfx/ui/do2/
@@ -307,10 +306,36 @@ H3_Img::init()
     // gfx/event/
     {
         std::string baseDir = mediaDir + "gfx/event/";    // 800+KB
-        add(NicePointCard, baseDir + "Nice_pointCard.webp", opt);
-        add(NiceKnightCard, baseDir + "Nice_knightCard.webp", opt);
-        add(NiceInventCard, baseDir + "Nice_inventCard.webp", opt);
-        add(NiceMonopolCard, baseDir + "Nice_monopolCard.webp", opt);
+        add(NicePointCard, baseDir + "Nice_pointCard.webp", optRGB);
+        add(NiceKnightCard, baseDir + "Nice_knightCard.webp", optRGB);
+        add(NiceInventCard, baseDir + "Nice_inventCard.webp", optRGB);
+        add(NiceMonopolCard, baseDir + "Nice_monopolCard.webp", optRGB);
+    }
+
+    // gfx/ani/h2o_128_128_40_webp/
+    {
+        std::string baseDir = mediaDir + "gfx/ani/h2o_128_128_40_webp/"; // 457KB
+        for (int i = 0; i < 40; ++i)
+        {
+            std::ostringstream o;
+            o << baseDir;
+            if (i < 10) o << "0";
+            o << i << ".webp";
+            add(H3_Img::eID(int(Water128_00) + i), o.str(), optRGB);
+        }
+    }
+
+    // gfx/ani/h2o_342_180_21_webp/
+    {
+        std::string baseDir = mediaDir + "gfx/ani/h2o_342_180_21_webp/"; // 457KB
+        for (int i = 0; i < 21; ++i)
+        {
+            std::ostringstream o;
+            o << baseDir;
+            if (i < 10) o << "0";
+            o << i << ".webp";
+            add(H3_Img::eID(int(Water342_00) + i), o.str(), optRGB);
+        }
     }
 }
 
@@ -571,6 +596,67 @@ void H3_Img::save(const std::string& baseDir)
 #include "rc_img/img_106_Nice_knightCard_webp.h"	// 164.613 KB
 #include "rc_img/img_107_Nice_inventCard_webp.h"	// 174.686 KB
 #include "rc_img/img_108_Nice_monopolCard_webp.h"	// 145.17 KB
+#include "rc_img/img_109_00_webp.h"	// 10.1973 KB
+#include "rc_img/img_110_01_webp.h"	// 10.5898 KB
+#include "rc_img/img_111_02_webp.h"	// 10.4961 KB
+#include "rc_img/img_112_03_webp.h"	// 10.5078 KB
+#include "rc_img/img_113_04_webp.h"	// 10.6602 KB
+#include "rc_img/img_114_05_webp.h"	// 12.7598 KB
+#include "rc_img/img_115_06_webp.h"	// 12.8125 KB
+#include "rc_img/img_116_07_webp.h"	// 12.7012 KB
+#include "rc_img/img_117_08_webp.h"	// 12.9336 KB
+#include "rc_img/img_118_09_webp.h"	// 12.5645 KB
+#include "rc_img/img_119_10_webp.h"	// 12.5391 KB
+#include "rc_img/img_120_11_webp.h"	// 12.5684 KB
+#include "rc_img/img_121_12_webp.h"	// 12.7715 KB
+#include "rc_img/img_122_13_webp.h"	// 12.5879 KB
+#include "rc_img/img_123_14_webp.h"	// 10.1895 KB
+#include "rc_img/img_124_15_webp.h"	// 10.3574 KB
+#include "rc_img/img_125_16_webp.h"	// 10.5137 KB
+#include "rc_img/img_126_17_webp.h"	// 10.5098 KB
+#include "rc_img/img_127_18_webp.h"	// 10.4727 KB
+#include "rc_img/img_128_19_webp.h"	// 10.4453 KB
+#include "rc_img/img_129_20_webp.h"	// 10.4785 KB
+#include "rc_img/img_130_21_webp.h"	// 10.4512 KB
+#include "rc_img/img_131_22_webp.h"	// 10.6016 KB
+#include "rc_img/img_132_23_webp.h"	// 10.623 KB
+#include "rc_img/img_133_24_webp.h"	// 10.6543 KB
+#include "rc_img/img_134_25_webp.h"	// 10.7031 KB
+#include "rc_img/img_135_26_webp.h"	// 10.6563 KB
+#include "rc_img/img_136_27_webp.h"	// 10.5859 KB
+#include "rc_img/img_137_28_webp.h"	// 12.9707 KB
+#include "rc_img/img_138_29_webp.h"	// 12.8711 KB
+#include "rc_img/img_139_30_webp.h"	// 12.8516 KB
+#include "rc_img/img_140_31_webp.h"	// 12.8691 KB
+#include "rc_img/img_141_32_webp.h"	// 12.8086 KB
+#include "rc_img/img_142_33_webp.h"	// 12.7559 KB
+#include "rc_img/img_143_34_webp.h"	// 12.6602 KB
+#include "rc_img/img_144_35_webp.h"	// 10.4727 KB
+#include "rc_img/img_145_36_webp.h"	// 12.4434 KB
+#include "rc_img/img_146_37_webp.h"	// 10.3633 KB
+#include "rc_img/img_147_38_webp.h"	// 10.5 KB
+#include "rc_img/img_148_39_webp.h"	// 10.4844 KB
+#include "rc_img/img_149_00_webp.h"	// 48.7305 KB
+#include "rc_img/img_150_01_webp.h"	// 48.8359 KB
+#include "rc_img/img_151_02_webp.h"	// 49.293 KB
+#include "rc_img/img_152_03_webp.h"	// 49.5469 KB
+#include "rc_img/img_153_04_webp.h"	// 49.5918 KB
+#include "rc_img/img_154_05_webp.h"	// 49.6172 KB
+#include "rc_img/img_155_06_webp.h"	// 49.4688 KB
+#include "rc_img/img_156_07_webp.h"	// 49.4609 KB
+#include "rc_img/img_157_08_webp.h"	// 49.5273 KB
+#include "rc_img/img_158_09_webp.h"	// 49.3633 KB
+#include "rc_img/img_159_10_webp.h"	// 49.041 KB
+#include "rc_img/img_160_11_webp.h"	// 48.8145 KB
+#include "rc_img/img_161_12_webp.h"	// 49.332 KB
+#include "rc_img/img_162_13_webp.h"	// 49.6582 KB
+#include "rc_img/img_163_14_webp.h"	// 49.666 KB
+#include "rc_img/img_164_15_webp.h"	// 49.4375 KB
+#include "rc_img/img_165_16_webp.h"	// 49.5957 KB
+#include "rc_img/img_166_17_webp.h"	// 49.416 KB
+#include "rc_img/img_167_18_webp.h"	// 49.2852 KB
+#include "rc_img/img_168_19_webp.h"	// 49.0762 KB
+#include "rc_img/img_169_20_webp.h"	// 49.0781 KB
 
 void H3_Img::load()
 {
@@ -690,6 +776,68 @@ void H3_Img::load()
     addFromMemory((eID)106,img_106_Nice_knightCard_webp,168564,opt);
     addFromMemory((eID)107,img_107_Nice_inventCard_webp,178878,opt);
     addFromMemory((eID)108,img_108_Nice_monopolCard_webp,148654,opt);
+
+    addFromMemory((eID)109,img_109_00_webp,10442,opt);
+    addFromMemory((eID)110,img_110_01_webp,10844,opt);
+    addFromMemory((eID)111,img_111_02_webp,10748,opt);
+    addFromMemory((eID)112,img_112_03_webp,10760,opt);
+    addFromMemory((eID)113,img_113_04_webp,10916,opt);
+    addFromMemory((eID)114,img_114_05_webp,13066,opt);
+    addFromMemory((eID)115,img_115_06_webp,13120,opt);
+    addFromMemory((eID)116,img_116_07_webp,13006,opt);
+    addFromMemory((eID)117,img_117_08_webp,13244,opt);
+    addFromMemory((eID)118,img_118_09_webp,12866,opt);
+    addFromMemory((eID)119,img_119_10_webp,12840,opt);
+    addFromMemory((eID)120,img_120_11_webp,12870,opt);
+    addFromMemory((eID)121,img_121_12_webp,13078,opt);
+    addFromMemory((eID)122,img_122_13_webp,12890,opt);
+    addFromMemory((eID)123,img_123_14_webp,10434,opt);
+    addFromMemory((eID)124,img_124_15_webp,10606,opt);
+    addFromMemory((eID)125,img_125_16_webp,10766,opt);
+    addFromMemory((eID)126,img_126_17_webp,10762,opt);
+    addFromMemory((eID)127,img_127_18_webp,10724,opt);
+    addFromMemory((eID)128,img_128_19_webp,10696,opt);
+    addFromMemory((eID)129,img_129_20_webp,10730,opt);
+    addFromMemory((eID)130,img_130_21_webp,10702,opt);
+    addFromMemory((eID)131,img_131_22_webp,10856,opt);
+    addFromMemory((eID)132,img_132_23_webp,10878,opt);
+    addFromMemory((eID)133,img_133_24_webp,10910,opt);
+    addFromMemory((eID)134,img_134_25_webp,10960,opt);
+    addFromMemory((eID)135,img_135_26_webp,10912,opt);
+    addFromMemory((eID)136,img_136_27_webp,10840,opt);
+    addFromMemory((eID)137,img_137_28_webp,13282,opt);
+    addFromMemory((eID)138,img_138_29_webp,13180,opt);
+    addFromMemory((eID)139,img_139_30_webp,13160,opt);
+    addFromMemory((eID)140,img_140_31_webp,13178,opt);
+    addFromMemory((eID)141,img_141_32_webp,13116,opt);
+    addFromMemory((eID)142,img_142_33_webp,13062,opt);
+    addFromMemory((eID)143,img_143_34_webp,12964,opt);
+    addFromMemory((eID)144,img_144_35_webp,10724,opt);
+    addFromMemory((eID)145,img_145_36_webp,12742,opt);
+    addFromMemory((eID)146,img_146_37_webp,10612,opt);
+    addFromMemory((eID)147,img_147_38_webp,10752,opt);
+    addFromMemory((eID)148,img_148_39_webp,10736,opt);
+    addFromMemory((eID)149,img_149_00_webp,49900,opt);
+    addFromMemory((eID)150,img_150_01_webp,50008,opt);
+    addFromMemory((eID)151,img_151_02_webp,50476,opt);
+    addFromMemory((eID)152,img_152_03_webp,50736,opt);
+    addFromMemory((eID)153,img_153_04_webp,50782,opt);
+    addFromMemory((eID)154,img_154_05_webp,50808,opt);
+    addFromMemory((eID)155,img_155_06_webp,50656,opt);
+    addFromMemory((eID)156,img_156_07_webp,50648,opt);
+    addFromMemory((eID)157,img_157_08_webp,50716,opt);
+    addFromMemory((eID)158,img_158_09_webp,50548,opt);
+    addFromMemory((eID)159,img_159_10_webp,50218,opt);
+    addFromMemory((eID)160,img_160_11_webp,49986,opt);
+    addFromMemory((eID)161,img_161_12_webp,50516,opt);
+    addFromMemory((eID)162,img_162_13_webp,50850,opt);
+    addFromMemory((eID)163,img_163_14_webp,50858,opt);
+    addFromMemory((eID)164,img_164_15_webp,50624,opt);
+    addFromMemory((eID)165,img_165_16_webp,50786,opt);
+    addFromMemory((eID)166,img_166_17_webp,50602,opt);
+    addFromMemory((eID)167,img_167_18_webp,50468,opt);
+    addFromMemory((eID)168,img_168_19_webp,50254,opt);
+    addFromMemory((eID)169,img_169_20_webp,50256,opt);
 }
 
 

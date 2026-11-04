@@ -113,13 +113,15 @@ void H3_Game::destroy()
     m_tile3DRenderer.destroy();
     m_chip3DRenderer.destroy();
     m_waterTileRenderer.destroy();
+    m_waterTileRenderer2.destroy();
     m_objRenderer.destroy();
     m_diceRenderer.destroy();
     m_animatedTexRenderer.destroy();
     m_animations.destroy();
 
     H3_ChipTexture_destroy(m_chipTexture);
-
+    m_AnimatedWaterTex128.destroy();
+    m_AnimatedWaterTex342.destroy();
     m_guienv.destroy();
     m_tex.destroy();
     m_font.destroy();
@@ -223,8 +225,9 @@ bool H3_Game::init( de::Window* window )
     // === init textures ===
     // ======================
     m_tex.init( *this );
-
     H3_ChipTexture_create(*this, m_chipTexture);
+    H3_AnimatedWaterTex128_create(*this, m_AnimatedWaterTex128);
+    H3_AnimatedWaterTex342_create(*this, m_AnimatedWaterTex342);
 
     // =============================
     // === Setup GUI Environment ===
@@ -341,6 +344,7 @@ bool H3_Game::init( de::Window* window )
     m_tile3DRenderer.init(*this);
     m_chip3DRenderer.init( *this, &m_chipTexture );
     m_waterTileRenderer.init( *this );
+    m_waterTileRenderer2.init( *this );
     m_objRenderer.init( *this );
     m_diceRenderer.init( *this );
     m_animatedTexRenderer.init(m_driver);
@@ -2279,7 +2283,8 @@ void H3_Game::drawTiles()
     if (m_bUpdateDrawCall_Tiles)
     {
         m_tile3DRenderer.collectAndUploadInstances(*this);
-        m_waterTileRenderer.collectAndUploadInstances( *this );
+        //m_waterTileRenderer.collectAndUploadInstances( *this );
+        m_waterTileRenderer2.collectAndUploadInstances( *this );
 
         m_bUpdateDrawCall_Tiles = false;
         m_bUpdateDrawCall_Chips = true;
@@ -2290,7 +2295,8 @@ void H3_Game::drawTiles()
     m_driver->endPerf();
 
     m_driver->beginPerf("Water-Tiles");
-    m_waterTileRenderer.render();
+    //m_waterTileRenderer.render();
+    m_waterTileRenderer2.render(m_AnimatedWaterTex342,1.0f);
     m_driver->endPerf();
 }
 
@@ -2352,7 +2358,8 @@ void H3_Game::drawChips()
     m_bUpdateDrawCall_Chips = true;
     if (m_bUpdateDrawCall_Chips)
     {
-        float phi = computeCameraAngleXZ(driver->getCamera());
+        float phi = computeCameraAngleY_in_degrees(driver->getCamera());
+        phi = de::Math::wrapAngle0_360(90.f - phi);
         m_3dChips.collectTiles( *this, phi );
         m_3dChips.uploadInstances();
         m_bUpdateDrawCall_Chips = false;
@@ -2370,7 +2377,8 @@ void H3_Game::drawCorners()
     m_bUpdateDrawCall_Corners = true;
     if (m_bUpdateDrawCall_Corners)
     {
-        float phi = computeCameraAngleXZ(driver->getCamera());
+        float phi = computeCameraAngleY_in_degrees(driver->getCamera());
+        phi = de::Math::wrapAngle0_360(90.f - phi);
         m_3dCorners.collectCorners( *this, phi );
         m_3dCorners.uploadInstances();
         m_bUpdateDrawCall_Corners = false;
@@ -2388,7 +2396,8 @@ void H3_Game::drawEdges()
     m_bUpdateDrawCall_Edges = true;
     if (m_bUpdateDrawCall_Edges)
     {
-        float phi = computeCameraAngleXZ(driver->getCamera());
+        float phi = computeCameraAngleY_in_degrees(driver->getCamera());
+        phi = de::Math::wrapAngle0_360(90.f - phi);
         //DE_DEBUG("phi = ",phi * de::Math::RAD2DEG);
         m_3dEdges.collectEdges( *this, phi );
         m_3dEdges.uploadInstances();

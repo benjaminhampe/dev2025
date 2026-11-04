@@ -205,6 +205,379 @@ void H3_Tile2DRenderer::initShader( H3_Game& game )
     m_u_posTransform = glGetUniformLocation(m_shader->id, "u_posTransform");
 }
 
+/*
+void drawTileBorders(de::Image& img)
+{
+    const int w = img.w();
+    const int h = img.h();
+    const u32 white = dbRGB(255,255,255);
+
+    int d = 5;
+
+    // Left
+    for (int i = 0; i < d; ++i)
+    {
+        int x1 = i;
+        int y1 = h/4;
+        int x2 = i;
+        int y2 = 3*h/4;
+        u32 color = dbRGB(15 + 50*i, 15 + 40*i, 15);
+        de::ImagePainter::drawLine(img,x1,y1,x2,y2,color);
+    }
+
+    // Right
+    for (int i = 0; i < d; ++i)
+    {
+        int x1 = w - 1 - i;
+        int y1 = h/4;
+        int x2 = w - 1 - i;
+        int y2 = 3*h/4;
+        u32 color = dbRGB(15 + 50*i, 15 + 40*i, 15);
+        de::ImagePainter::drawLine(img,x1,y1,x2,y2,color);
+    }
+
+    // TopLeft
+    for (int i = 0; i < d; ++i)
+    {
+        int x1 = w/2;
+        int y1 = i;
+        int x2 = 0;
+        int y2 = h/4 + i;
+        //u32 color = white;
+        u32 color = dbRGB(15 + 50*i, 15 + 40*i, 15);
+        de::ImagePainter::drawLine(img,x1,y1,x2,y2,color);
+    }
+
+    // TopRight
+    for (int i = 0; i < d; ++i)
+    {
+        int x1 = w/2;
+        int y1 = i;
+        int x2 = w - 1;
+        int y2 = h/4 + i;
+        //u32 color = white;
+        u32 color = dbRGB(15 + 50*i, 15 + 40*i, 15);
+        de::ImagePainter::drawLine(img,x1,y1,x2,y2,color);
+    }
+
+    // BottomLeft
+    for (int i = 0; i < d; ++i)
+    {
+        int x1 = 0;
+        int y1 = 3*h/4 - i;
+        int x2 = w/2;
+        int y2 = h - 1 - i;
+        u32 color = dbRGB(15 + 50*i, 15 + 40*i, 15);
+        de::ImagePainter::drawLine(img,x1,y1,x2,y2,color);
+    }
+
+    // BottomRight
+    for (int i = 0; i < d; ++i)
+    {
+        int x1 = w - 1;
+        int y1 = 3*h/4 - i;
+        int x2 = w/2;
+        int y2 = h - 1 - i;
+        u32 color = dbRGB(15 + 50*i, 15 + 40*i, 15);
+        de::ImagePainter::drawLine(img,x1,y1,x2,y2,color);
+    }
+
+    // Top
+    for (int i = 0; i < d; ++i)
+    {
+        int x1 = 0;
+        int y1 = i;
+        int x2 = w-1;
+        int y2 = i;
+        u32 color = dbRGB(15 + 50*i, 15 + 40*i, 15);
+        de::ImagePainter::drawLine(img,x1,y1,x2,y2,color);
+    }
+
+    // Bottom
+    for (int i = 0; i < d; ++i)
+    {
+        int x1 = 0;
+        int y1 = h - 1 - i;
+        int x2 = w-1;
+        int y2 = h - 1 - i;
+        u32 color = dbRGB(15 + 50*i, 15 + 40*i, 15);
+        de::ImagePainter::drawLine(img,x1,y1,x2,y2,color);
+    }
+
+}
+
+
+void drawTileBorder(de::Image& img, int i, u32 color, bool blend)
+{
+    const int w = img.w();
+    const int h = img.h();
+    const auto clipRect = de::Recti(i,i,w-2*i,h-2*i);
+
+    // Left
+    {
+        int x1 = i;
+        int y1 = h/4;
+        int x2 = i;
+        int y2 = 3*h/4;
+        drawLine(img,x1,y1,x2,y2,color,blend,clipRect);
+    }
+
+    // Right
+    {
+        int x1 = w - 1 - i;
+        int y1 = h/4;
+        int x2 = w - 1 - i;
+        int y2 = 3*h/4;
+        drawLine(img,x1,y1,x2,y2,color,blend,clipRect);
+    }
+
+    // TopLeft
+    {
+        int x1 = w/2;
+        int y1 = i;
+        int x2 = 0;
+        int y2 = h/4 + i;
+        drawLine(img,x1,y1,x2,y2,color,blend,clipRect);
+    }
+
+    // TopRight
+    {
+        int x1 = w/2;
+        int y1 = i;
+        int x2 = w - 1;
+        int y2 = h/4 + i;
+        drawLine(img,x1,y1,x2,y2,color,blend,clipRect);
+    }
+
+    // BottomLeft
+    {
+        int x1 = 0;
+        int y1 = 3*h/4 - i;
+        int x2 = w/2;
+        int y2 = h - 1 - i;
+        drawLine(img,x1,y1,x2,y2,color,blend,clipRect);
+    }
+
+    // BottomRight
+    {
+        int x1 = w - 1;
+        int y1 = 3*h/4 - i;
+        int x2 = w/2;
+        int y2 = h - 1 - i;
+        drawLine(img,x1,y1,x2,y2,color,blend,clipRect);
+    }
+
+    // // Top
+    // {
+    //     int x1 = 0;
+    //     int y1 = i;
+    //     int x2 = w-1;
+    //     int y2 = i;
+    //     drawLine(img,x1,y1,x2,y2,color,blend,clipRect);
+    // }
+
+    // // Bottom
+    // {
+    //     int x1 = 0;
+    //     int y1 = h - 1 - i;
+    //     int x2 = w-1;
+    //     int y2 = h - 1 - i;
+    //     drawLine(img,x1,y1,x2,y2,color,blend,clipRect);
+    // }
+}
+
+*/
+
+// Gibt alle Punkte zurück, die von der Linie berührt werden (Supercover)
+void traverseSupercoverLine(
+    const de::Pos2i& p1,
+    const de::Pos2i& p2,
+    const std::function<void(int,int)>& onSetPixel)
+{
+    int dx = std::abs(p2.x - p1.x);
+    int dy = std::abs(p2.y - p1.y);
+    int sx = (p1.x < p2.x) ? 1 : -1;
+    int sy = (p1.y < p2.y) ? 1 : -1;
+
+    // Fehlerterme für beide Richtungen separat tracken
+    int err = dx - dy;
+    int x = p1.x;
+    int y = p1.y;
+
+    // Spezieller Multiplikator zur Vermeidung von Floats bei halben Pixeln
+    int p = 2 * err;
+
+    while (true) {
+        onSetPixel(x,y);
+        if (x == p2.x && y == p2.y) break;
+
+        if (p == 0) {
+            // Die Linie geht exakt durch die Kreuzung/Ecke von 4 Pixeln.
+            // Um lückenlos zu sein, müssen beide orthogonalen Nachbarn mit rein.
+            onSetPixel(x + sx, y);
+            onSetPixel(x, y + sy);
+            x += sx;
+            y += sy;
+            err = dx - dy;
+            p = 2 * err;
+        }
+        else if (p > 0) {
+            // Schritt in X-Richtung
+            x += sx;
+            err -= dy;
+            p = 2 * err;
+        }
+        else {
+            // Schritt in Y-Richtung
+            y += sy;
+            err += dx;
+            p = 2 * err;
+        }
+    }
+}
+
+// static
+void drawSuperCoverLine(
+    de::Image& img,
+    const s32 x1,
+    const s32 y1,
+    const s32 x2,
+    const s32 y2,
+    const u32 color,
+    const bool blend,
+    const de::Recti& clipRect )
+{
+    auto my_setPixel = [&] (s32 x, s32 y)
+    {
+        if (clipRect.contains(x,y))
+        {
+            img.setPixel( x, y, color, blend );
+        }
+    };
+    traverseSupercoverLine( {x1, y1}, {x2, y2}, my_setPixel );
+}
+
+// static
+void drawLine(
+    de::Image& img,
+    const s32 x1,
+    const s32 y1,
+    const s32 x2,
+    const s32 y2,
+    const u32 color,
+    const bool blend,
+    const de::Recti& clipRect )
+{
+    auto my_setPixel = [&] (s32 x, s32 y)
+    {
+        if (clipRect.contains(x,y))
+        {
+            img.setPixel( x, y, color, blend );
+        }
+    };
+    de::Bresenham::drawLine( x1, y1, x2, y2, my_setPixel );
+}
+
+void drawTileBorder(de::Image& img, int i, u32 color, bool blend)
+{
+    const int w = img.w();
+    const int h = img.h();
+    const auto clipRect = de::Recti(i,i,w-2*i,h-2*i);
+
+    // blend = true;
+    // u32 color1 = dbRGB(255,255,255,128);
+    // u32 color2 = dbRGB(255,0,0,128);
+    // u32 color3 = dbRGB(0,255,0,128);
+    // u32 color4 = dbRGB(0,0,255,128);
+    // u32 color5 = dbRGB(255,0,255,128);
+    // u32 color6 = dbRGB(255,255,0,128);
+
+    // Left
+    {
+        int x1 = i;
+        int y1 = h/4 - 1 + i;
+        int x2 = i;
+        int y2 = 3*h/4 - i;
+        drawSuperCoverLine(img,x1,y1,x2,y2,color,blend,clipRect);
+    }
+
+    // Right
+    {
+        int x1 = w - 1 - i;
+        int y1 = h/4 - 1 + i;
+        int x2 = w - 1 - i;
+        int y2 = 3*h/4 - i;
+        drawSuperCoverLine(img,x1,y1,x2,y2,color,blend,clipRect);
+    }
+
+    // TopLeft
+    {
+        int x1 = w/2 - 1;
+        int y1 = i;
+        int x2 = i;
+        int y2 = h/4 + i;
+        drawSuperCoverLine(img,x1,y1,x2,y2,color,blend,clipRect);
+    }
+
+    // TopRight
+    {
+        int x1 = w/2;
+        int y1 = i;
+        int x2 = w - 1 - i;
+        int y2 = h/4 + i;
+        drawSuperCoverLine(img,x1,y1,x2,y2,color,blend,clipRect);
+    }
+
+    // BottomLeft
+    {
+        int x1 = i;
+        int y1 = 3*h/4 + 1 - i;
+        int x2 = w/2 - 1;
+        int y2 = h - 1 - i;
+        drawSuperCoverLine(img,x1,y1,x2,y2,color,blend,clipRect);
+    }
+
+    // BottomRight
+    {
+        int x1 = w - 1 - i;
+        int y1 = 3*h/4 + 1 - i;
+        int x2 = w/2;
+        int y2 = h - 1 - i;
+        drawSuperCoverLine(img,x1,y1,x2,y2,color,blend,clipRect);
+    }
+}
+
+void drawTileBorders(de::Image& img)
+{
+    const int w = img.w();
+    const int h = img.h();
+    const u32 white = dbRGB(255,255,255);
+
+    u32 color1 = dbRGB(15,15,15);
+    u32 color2 = dbRGB(255,255,155);
+    u32 color3 = dbRGB(255,255,255, 0);
+
+    int k = 0;
+    int d = 5;
+    for (int i = 0; i < d; ++i)
+    {
+        u32 color = de::lerpColor(color1,color2,float(i) / float(d-1));
+        drawTileBorder(img,k+i,color,false);
+    }
+    k+= d;
+
+    for (int i = 0; i < 2*d; ++i)
+    {
+        drawTileBorder(img,k+i,color2,false);
+    }
+    k+= 2*d;
+
+    for (int i = 0; i < d; ++i)
+    {
+        u32 color = de::lerpColor(color2,color3,float(i) / float(d-1));
+        drawTileBorder(img,k+i,color,true);
+    }
+}
 void H3_Tile2DRenderer::initTex2DArray( H3_Game& game )
 {
     int w = 512;
@@ -236,6 +609,13 @@ void H3_Tile2DRenderer::initTex2DArray( H3_Game& game )
     de::Image imgD = de::ImageScaler::resizeBilinear(*oriD,w,h);
     de::Image imgE = de::ImageScaler::resizeBilinear(*oriE,w,h);
 
+    drawTileBorders(imgU);
+    drawTileBorders(imgV);
+    drawTileBorders(imgA);
+    drawTileBorders(imgB);
+    drawTileBorders(imgC);
+    drawTileBorders(imgD);
+    drawTileBorders(imgE);
     // DE_DEBUG("oriU = ", oriU->str())
     // DE_DEBUG("oriW = ", oriW->str())
     // DE_DEBUG("oriV = ", oriV->str())
@@ -244,7 +624,6 @@ void H3_Tile2DRenderer::initTex2DArray( H3_Game& game )
     // DE_DEBUG("oriC = ", oriC->str())
     // DE_DEBUG("oriD = ", oriD->str())
     // DE_DEBUG("oriE = ", oriE->str())
-
     // dbSaveImage(imgU,"H3_imgU.webp");
     // dbSaveImage(imgW,"H3_imgW.webp");
     // dbSaveImage(imgV,"H3_imgV.webp");
@@ -253,6 +632,15 @@ void H3_Tile2DRenderer::initTex2DArray( H3_Game& game )
     // dbSaveImage(imgC,"H3_imgC.webp");
     // dbSaveImage(imgD,"H3_imgD.webp");
     // dbSaveImage(imgE,"H3_imgE.webp");
+
+    dbSaveImage(imgU,"H3_imgU.bmp");
+    dbSaveImage(imgW,"H3_imgW.bmp");
+    dbSaveImage(imgV,"H3_imgV.bmp");
+    dbSaveImage(imgA,"H3_imgA.bmp");
+    dbSaveImage(imgB,"H3_imgB.bmp");
+    dbSaveImage(imgC,"H3_imgC.bmp");
+    dbSaveImage(imgD,"H3_imgD.bmp");
+    dbSaveImage(imgE,"H3_imgE.bmp");
 
     std::vector<const de::Image*> imgPointers
     {
