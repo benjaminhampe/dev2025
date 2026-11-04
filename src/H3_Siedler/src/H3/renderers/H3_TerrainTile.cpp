@@ -1321,7 +1321,7 @@ BumpMapUtil::createHexagonFilterf( int w )
     auto drawLinef = [&]( int x1, int y1, int x2, int y2, float v )
     {
         auto setPixelf = [&] ( int32_t x, int32_t y ) { img.setPixel4f( x,y, glm::vec4{ v,v,v,v }, false ); };
-        Bresenham::drawLine( x1,y1,x2,y2, setPixelf );
+        Bresenham::traverseLine( x1,y1,x2,y2, setPixelf );
     };
 
     int pc = w / 6;

@@ -9,6 +9,7 @@ struct H3_Tile2DRenderer
 {
     de::gpu::VideoDriver* m_driver;
     de::gpu::Shader* m_shader;
+    de::gpu::Tex2DArray* m_tileTexture;
 
     // GPU Uniforms
     int32_t m_u_screenSize;     // (w,h)
@@ -20,9 +21,6 @@ struct H3_Tile2DRenderer
     {
         Unknown = 0, Water, Desert, TileA, TileB, TileC, TileD, TileE
     };
-
-    // GPU Uniforms
-    de::gpu::Tex2DArray m_tex2DArray;
 
     // GPU Buffers
     uint32_t m_vao;
@@ -40,7 +38,6 @@ struct H3_Tile2DRenderer
     void destroy();
     void init(H3_Game& game);
     void initVAO(H3_Game& game);
-    void initTex2DArray(H3_Game& game);
     void initShader(H3_Game& game);
     void render(const glm::vec4& posTransform, const de::Recti& scissor);
 

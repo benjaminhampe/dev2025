@@ -13,133 +13,124 @@ namespace de {
 
 // ==============================================================================
 
-
-
-// static
-void
-Bresenham::traverseCircle( int32_t radius, SetPixel_t const & setPixel )
+void Bresenham::traverseCircle( s32 radius, const SetPixel_t& setPixel )
 {
-   // Bresenham
-   int32_t i = 0;
-   int32_t j = radius;
-   int32_t F = 1 - radius;
+    // Bresenham
+    s32 i = 0;
+    s32 j = radius;
+    s32 F = 1 - radius;
 
-   while ( i < j )
-   {
-      ++i;
-      if ( F < 0 )
-      {
-         F += ( i<<1 ) - 1;
-      }
-      else
-      {
-         F += ( ( i-j ) << 1 );
-         --j;
-      }
+    while ( i < j )
+    {
+        ++i;
+        if ( F < 0 )
+        {
+            F += ( i<<1 ) - 1;
+        }
+        else
+        {
+            F += ( ( i-j ) << 1 );
+            --j;
+        }
 
-      // Verbesserungen by Benjamin Hampe (c) 2012
-      setPixel( i, j );
-   }
+        // Verbesserungen by Benjamin Hampe (c) 2012
+        setPixel( i, j );
+    }
 }
 
-// static
-void
-Bresenham::drawCircleBorder( int32_t x, int32_t y, int32_t radius, SetPixel_t const & setPixel )
+void Bresenham::traverseCircleBorder( s32 x, s32 y, s32 radius,
+                    const SetPixel_t& setPixel )
 {
-   if ( radius < 1 ) return;
-   // 'Bresenham' Algorithmus (Achtelkreis Symmetrie)
-   // ohne Trigonometrische- und Wurzel-Funktionen
-   // und Spiegelung auf Restliche 7/8
-   int32_t i = 0;
-   int32_t j = radius;
-   int32_t F = 1 - radius;
-   while ( i < j )
-   {
-      ++i;
-      if ( F < 0 )
-      {
-         F += ( i << 1 ) - 1;
-      }
-      else
-      {
-         F += ( ( i - j ) << 1 );
-         --j;
-      }
-      // Verbesserungen by Benjamin Hampe (c) 2012
-      setPixel( x+i-1,y-j ); // 1st quadrant
-      setPixel( x+j-1,y-i ); // 1st quadrant
-      setPixel( x+i-1,y+j-1 ); // 2nd quadrant
-      setPixel( x+j-1,y+i-1 ); // 2nd quadrant
-      setPixel( x-i,y+j-1 ); // 3rd quadrant
-      setPixel( x-j,y+i-1 ); // 3rd quadrant
-      setPixel( x-i,y-j ); // 4th quadrant
-      setPixel( x-j,y-i ); // 4th quadrant
-   }
+    if ( radius < 1 ) return;
+    // 'Bresenham' Algorithmus (Achtelkreis Symmetrie)
+    // ohne Trigonometrische- und Wurzel-Funktionen
+    // und Spiegelung auf Restliche 7/8
+    s32 i = 0;
+    s32 j = radius;
+    s32 F = 1 - radius;
+    while ( i < j )
+    {
+        ++i;
+        if ( F < 0 )
+        {
+            F += ( i << 1 ) - 1;
+        }
+        else
+        {
+            F += ( ( i - j ) << 1 );
+            --j;
+        }
+        // Verbesserungen by Benjamin Hampe (c) 2012
+        setPixel( x+i-1,y-j ); // 1st quadrant
+        setPixel( x+j-1,y-i ); // 1st quadrant
+        setPixel( x+i-1,y+j-1 ); // 2nd quadrant
+        setPixel( x+j-1,y+i-1 ); // 2nd quadrant
+        setPixel( x-i,y+j-1 ); // 3rd quadrant
+        setPixel( x-j,y+i-1 ); // 3rd quadrant
+        setPixel( x-i,y-j ); // 4th quadrant
+        setPixel( x-j,y-i ); // 4th quadrant
+    }
 }
 
-// static
-void
-Bresenham::traverseEllipse( int32_t a, int32_t b, SetPixel_t const & setPixel )
+void Bresenham::traverseEllipse( s32 a, s32 b, const SetPixel_t& setPixel )
 {
-   if ( a < 1 && b < 1 ) return;
-   int32_t const aa = a * a; // Ellipsen Radien Quadrate
-   int32_t const bb = b * b; // Ellipsen Radien Quadrate
+    if ( a < 1 && b < 1 ) return;
+    const s32 aa = a * a; // Ellipsen Radien Quadrate
+    const s32 bb = b * b; // Ellipsen Radien Quadrate
 
-   // Bresenham Anfangswerte
-   // Trick: nur 1/4 Ellipse berechne und restliche 3/4 durch Spiegelung (gerade Ellipse!!!)
-   int32_t ddF_x = 0;
-   int32_t ddF_y = ( aa * b ) << 1;
-   int32_t x = 0;
-   int32_t y = b;
+    // Bresenham Anfangswerte
+    // Trick: nur 1/4 Ellipse berechne und restliche 3/4 durch Spiegelung (gerade Ellipse!!!)
+    s32 ddF_x = 0;
+    s32 ddF_y = ( aa * b ) << 1;
+    s32 x = 0;
+    s32 y = b;
 
-   // Bresenham Alghorithmus
-   auto F = int32_t( std::round( f32( bb - aa * b ) + f32( aa ) * 0.25f ) );
-   while ( ddF_x < ddF_y )
-   {
-      if ( F >= 0 )
-      {
-         y     -= 1;       // south = -y dir
-         ddF_y -= aa << 1;
-         F     -= ddF_y;
-      }
-      x     += 1;          // east = +x dir
-      ddF_x += bb << 1;
-      F     += ddF_x + bb;
+    // Bresenham Alghorithmus
+    auto F = s32( std::round( f32( bb - aa * b ) + f32( aa ) * 0.25f ) );
+    while ( ddF_x < ddF_y )
+    {
+        if ( F >= 0 )
+        {
+            y     -= 1;       // south = -y dir
+            ddF_y -= aa << 1;
+            F     -= ddF_y;
+        }
+        x     += 1;          // east = +x dir
+        ddF_x += bb << 1;
+        F     += ddF_x + bb;
 
-      setPixel( x, y );
-   }
+        setPixel( x, y );
+    }
 
-   // Bresenham Alghorithmus
-   F = int32_t( std::round( f32( bb ) * ( f32( x ) + 0.5f ) * ( f32( x ) + 0.5f ) +
-                      f32( aa*(y-1)*(y-1) - aa*bb ) ) );
-   while ( y > 0 )
-   {
-      if ( F <= 0 )
-      {
-         x     += 1;        // east
-         ddF_x += bb << 1;
-         F     += ddF_x;
-      }
-      y     -= 1;           // south
-      ddF_y -= aa << 1;
-      F     += aa - ddF_y;
+    // Bresenham Alghorithmus
+    F = s32( std::round( f32( bb ) * ( f32( x ) + 0.5f ) * ( f32( x ) + 0.5f ) +
+            f32( aa*(y-1)*(y-1) - aa*bb ) ) );
+    while ( y > 0 )
+    {
+        if ( F <= 0 )
+        {
+            x     += 1;        // east
+            ddF_x += bb << 1;
+            F     += ddF_x;
+        }
+        y     -= 1;           // south
+        ddF_y -= aa << 1;
+        F     += aa - ddF_y;
 
-      setPixel( x, y );
-   }
+        setPixel( x, y );
+    }
 }
 
 /*
 
-// static
-void
-Bresenham::drawOutlineEllipse( int32_t x1, int32_t y1, int32_t x2, int32_t y2, SetPixel_t const & setPixel )
+void Bresenham::traverseEllipseBorder( s32 x1, s32 y1, s32 x2, s32 y2, const SetPixel_t& setPixel )
 {
    if ( x1 > x2 ) std::swap( x1, x2 );
    if ( y1 > y2 ) std::swap( y1, y2 );
-   int32_t const w = x2 - x1;
-   int32_t const h = y2 - y1;
-   int32_t const a = w/2;
-   int32_t const b = h/2;
+   const s32 w = x2 - x1;
+   const s32 h = y2 - y1;
+   const s32 a = w/2;
+   const s32 b = h/2;
 
    // Abbruchbedingung
    if ( a < 1 && b < 1 ) return;
@@ -150,23 +141,23 @@ Bresenham::drawOutlineEllipse( int32_t x1, int32_t y1, int32_t x2, int32_t y2, S
 //   }
 
    //if (rw==1 && rh==1) dest->setPixel(x,y,color);
-   int32_t const cx = x1 + a;
-   int32_t const cy = y1 + b;
+   const s32 cx = x1 + a;
+   const s32 cy = y1 + b;
 
-   int32_t const a2 = a * a; // Ellipsen Radien Quadrate
-   int32_t const b2 = b * b; // Ellipsen Radien Quadrate
-   int32_t x = cx;
-   int32_t y = cy;
+   const s32 a2 = a * a; // Ellipsen Radien Quadrate
+   const s32 b2 = b * b; // Ellipsen Radien Quadrate
+   s32 x = cx;
+   s32 y = cy;
 
    // Bresenham Anfangswerte
    // Trick: nur 1/4 Ellipse berechne und restliche 3/4 durch Spiegelung (gerade Ellipse!!!)
-   int32_t ddF_x=0;
-   int32_t ddF_y=((a2*b)<<1);
+   s32 ddF_x=0;
+   s32 ddF_y=((a2*b)<<1);
    x=0;
    y=b;
 
    // Bresenham Alghorithmus
-   int32_t F = dbRound32( f32( b2-a2*b ) + f32( a2 )*0.25f );
+   s32 F = dbRound32( f32( b2-a2*b ) + f32( a2 )*0.25f );
    while ( ddF_x < ddF_y )
    {
       if (F >= 0)
@@ -236,7 +227,7 @@ Bresenham::drawOutlineEllipse( int32_t x1, int32_t y1, int32_t x2, int32_t y2, S
 
 // static
 void
-Bresenham::drawFilledCircle( int32_t x, int32_t y, int32_t radius, SetPixel_t const & setPixel )
+Bresenham::drawFilledCircle( s32 x, s32 y, s32 radius, const SetPixel_t& setPixel )
 {
    if ( radius < 1 ) return;
    //
@@ -265,11 +256,11 @@ Bresenham::drawFilledCircle( int32_t x, int32_t y, int32_t radius, SetPixel_t co
    }
 
    // 'Bresenham' Algorithmus (Viertelkreis Symmetrie)
-   int32_t i = 0;
-   int32_t j = radius;
-   int32_t F = 1 - radius;
-   int32_t last_i = i;
-   int32_t last_j = j;
+   s32 i = 0;
+   s32 j = radius;
+   s32 F = 1 - radius;
+   s32 last_i = i;
+   s32 last_j = j;
 
    // DE_DEBUG("[BEGIN] cx=",x,", cy=",y,", radius=",radius )
    // size_t k = 0;
@@ -322,8 +313,8 @@ Bresenham::drawFilledCircle( int32_t x, int32_t y, int32_t radius, SetPixel_t co
 // static
 void
 Bresenham::floodFill( glm::ivec2 const & p,
-                      std::function< void( int32_t, int32_t ) > const & getPixel,
-                      std::function< void( int32_t, int32_t ) > const & setPixel,
+                      std::function< void( s32, s32 ) > const & getPixel,
+                      std::function< void( s32, s32 ) > const & setPixel,
                       DWORD newColor,
                       DWORD oldColor )
 {
@@ -360,167 +351,188 @@ Bresenham::floodFill( glm::ivec2 const & p,
 
 // static
 void
-Bresenham::drawLineH( int32_t x1, int32_t x2, int32_t y, SetPixel_t const & setPixel )
+Bresenham::traverseLineH( s32 x1, s32 x2, s32 y, const SetPixel_t& setPixel )
 {
-   //DE_DEBUG("x1=",x1,", x2=", x2, "y=", y)
-   if ( x1 > x2 ) std::swap( x1, x2 );
-   // setPixel( x1, y1 ); // always draw atleast something point
-   // if ( x1 == x2 ) return; // Nothing todo
-   for ( int32_t x = x1; x <= x2; ++x )
-   {
-      setPixel( x, y );
-   }
+    if ( x1 > x2 ) std::swap( x1, x2 );
+
+    for ( s32 x = x1; x <= x2; ++x )
+    {
+        setPixel( x, y );
+    }
 }
 
 // static
 void
-Bresenham::drawRect( Recti pos, SetPixel_t const & setPixel )
+Bresenham::traverseRect(s32 x1, s32 y1, s32 x2, s32 y2, const SetPixel_t& setPixel )
 {
-   int32_t x1 = pos.x1();
-   int32_t y1 = pos.y1();
-   int32_t x2 = pos.x2();
-   int32_t y2 = pos.y2();
-   if ( x1 > x2 ) std::swap( x1, x2 );
-   if ( y1 > y2 ) std::swap( y1, y2 );
-   for ( int32_t y = y1; y <= y2; ++y ) {
-   for ( int32_t x = x1; x <= x2; ++x ) {
-      setPixel( x, y );
-   }
-   }
+    if ( x1 > x2 ) std::swap( x1, x2 );
+    if ( y1 > y2 ) std::swap( y1, y2 );
+    for ( s32 y = y1; y <= y2; ++y ) {
+    for ( s32 x = x1; x <= x2; ++x ) {
+        setPixel( x, y );
+    }
+    }
 }
 
-
-// static
-void
-Bresenham::drawRectBorder( Recti pos, SetPixel_t const & setPixel )
+void Bresenham::traverseRectBorder(s32 x1, s32 y1, s32 x2, s32 y2, const SetPixel_t& setPixel )
 {
-   int32_t x1 = pos.x1();
-   int32_t y1 = pos.y1();
-   int32_t x2 = pos.x2();
-   int32_t y2 = pos.y2();
-   drawLine( x1, y1, x2, y1, setPixel );
-   for ( int32_t y = y1+1; y <= y2-1; ++y )
-   {
-      setPixel( x1, y );
-      setPixel( x2, y );
-   }
-   drawLine( x1, y2, x2, y2, setPixel );
+    traverseLine( x1, y1, x2, y1, setPixel );
+    for ( s32 y = y1+1; y <= y2-1; ++y )
+    {
+        setPixel( x1, y );
+        setPixel( x2, y );
+    }
+    traverseLine( x1, y2, x2, y2, setPixel );
 }
 
-
-// static
-void
-Bresenham::drawSuperCoverLine( glm::ivec2 const & A, glm::ivec2 const & B, SetPixel_t const & setPixel )
+void Bresenham::traverseSupercoverLine(
+    s32 Ax, s32 Ay,
+    s32 Bx, s32 By,
+    const SetPixel_t& onSetPixel )
 {
+    int dx = std::abs(Bx - Ax);
+    int dy = std::abs(By - Ay);
+    int sx = (Ax < Bx) ? 1 : -1;
+    int sy = (Ay < By) ? 1 : -1;
 
+    // Fehlerterme für beide Richtungen separat tracken
+    int err = dx - dy;
+    int x = Ax;
+    int y = Ay;
+
+    // Spezieller Multiplikator zur Vermeidung von Floats bei halben Pixeln
+    int p = 2 * err;
+
+    while (true)
+    {
+        onSetPixel(x,y);
+        if (x == Bx && y == By) break;
+
+        if (p == 0) {
+            // Die Linie geht exakt durch die Kreuzung/Ecke von 4 Pixeln.
+            // Um lückenlos zu sein, müssen beide orthogonalen Nachbarn mit rein.
+            onSetPixel(x + sx, y);
+            onSetPixel(x, y + sy);
+            x += sx;
+            y += sy;
+            err = dx - dy;
+            p = 2 * err;
+        }
+        else if (p > 0) {
+            // Schritt in X-Richtung
+            x += sx;
+            err -= dy;
+            p = 2 * err;
+        }
+        else {
+            // Schritt in Y-Richtung
+            y += sy;
+            err += dx;
+            p = 2 * err;
+        }
+    }
 }
 
-
-// static
-void
-Bresenham::drawLine( glm::ivec2 const & A, glm::ivec2 const & B, SetPixel_t const & setPixel )
+void Bresenham::traverseLine(
+        s32 x1, s32 y1, s32 x2, s32 y2, const SetPixel_t& setPixel )
 {
-   // This is the fastest (32-bit) implementation you will ever find!
-   int32_t const dx = std::abs( B.x - A.x );
-   int32_t const dy = std::abs( B.y - A.y );
-   if ( ( dx == 0 ) && ( dy == 0 ) ) return; // Nothing todo
+    // This is the fastest (32-bit) implementation you will ever find!
+    const s32 dx = std::abs( x2 - x1 );
+    const s32 dy = std::abs( y2 - y1 );
+    if ( ( dx == 0 ) && ( dy == 0 ) ) return; // Nothing todo
 
-   int32_t sx = 1; // sign
-   int32_t sy = 1; // sign
-   if ( A.x > B.x ) sx = -1; // we simply move negative ( mirrored )
-   if ( A.y > B.y ) sy = -1; // we simply move negative ( mirrored )
+    s32 sx = 1; // sign
+    s32 sy = 1; // sign
+    if ( x1 > x2 ) sx = -1; // we simply move negative ( mirrored )
+    if ( y1 > y2 ) sy = -1; // we simply move negative ( mirrored )
 
-   int32_t e1 = dx - dy;   // error delta has correct sign
-   int32_t e2 = 0;         // always doubled before test to increase stability
-   int32_t x = A.x;
-   int32_t y = A.y;
+    s32 e1 = dx - dy;   // error delta has correct sign
+    s32 e2 = 0;         // always doubled before test to increase stability
+    s32 x = x1;
+    s32 y = y1;
 
-   // The loop always finishes deterministicly, no numeric instability
-   // because we only use fast integer add/sub and fast shifts.
-   while( 1 )
-   {
-      setPixel( x, y );
-      // Benni optimized.
-      // Condition always met, no infinite loops here.
-      if ( ( x == B.x ) && ( y == B.y ) ) break;
-      e2 = e1 << 1; // double error before making a decision ( inc precision ).
-      if ( e2 > -dy ) { e1 -= dy; x += sx; } // move x
-      if ( e2 <  dx ) { e1 += dx; y += sy; } // move y
-   }
+    // The loop always finishes deterministicly, no numeric instability
+    // because we only use fast integer add/sub and fast shifts.
+    while( 1 )
+    {
+        setPixel( x, y );
+        // Benni optimized.
+        // Condition always met, no infinite loops here.
+        if ( ( x == x2 ) && ( y == y2 ) ) break;
+        e2 = e1 << 1; // double error before making a decision ( inc precision ).
+        if ( e2 > -dy ) { e1 -= dy; x += sx; } // move x
+        if ( e2 <  dx ) { e1 += dx; y += sy; } // move y
+    }
 }
 
-// static
-void
-Bresenham::drawTriangleBorder( glm::ivec2 const & A, glm::ivec2 const & B, glm::ivec2 const & C, SetPixel_t const & setPixel )
+void Bresenham::traverseTriangleBorder( s32 Ax, s32 Ay,
+        s32 Bx, s32 By, s32 Cx, s32 Cy, const SetPixel_t& setPixel )
 {
-   DE_DEBUG("")
-   drawLine( glm::ivec2( A.x, A.y ), glm::ivec2( B.x, B.y ), setPixel );
-   drawLine( glm::ivec2( B.x, B.y ), glm::ivec2( C.x, C.y ), setPixel );
-   drawLine( glm::ivec2( C.x, C.y ), glm::ivec2( A.x, A.y ), setPixel );
+    traverseLine( Ax, Ay, Bx, By, setPixel );
+    traverseLine( Bx, By, Cx, Cy, setPixel );
+    traverseLine( Cx, Cy, Ax, Ay, setPixel );
 }
 
-// static
-void
-Bresenham::drawTriangle( glm::ivec2 const & A,
-                         glm::ivec2 const & B,
-                         glm::ivec2 const & C,
-                         SetPixel_t const & setPixel )
+void Bresenham::traverseTriangle( s32 Ax, s32 Ay,
+        s32 Bx, s32 By, s32 Cx, s32 Cy, const SetPixel_t& setPixel )
 {
    // determinant2d) is same as crossProduct2d()
    // s = determinant(P - V1, V2) / determinant(V1, V2)
    // t = determinant(V1, P - V2) / determinant(V1, V2)
 
-   auto crossP = [] ( glm::ivec2 A, glm::ivec2 B )
-   {
-      return( A.y * B.x - A.x * B.y );
-   };
+    auto crossP = [] ( s32 Ax, s32 Ay, s32 Bx, s32 By )
+    {
+        return( Ay * Bx - Ax * By );
+    };
 
-   glm::vec2 AB = B - A;
-   glm::vec2 AC = C - A;
+    s32 ABx = Bx - Ax;
+    s32 ABy = By - Ay;
+    s32 ACx = Cx - Ax;
+    s32 ACy = Cy - Ay;
 
-   // Compute triangle bounding box
-   int32_t x_min = std::min( std::min( A.x, B.x ), C.x );
-   int32_t x_max = std::max( std::max( A.x, B.x ), C.x );
-   int32_t y_min = std::min( std::min( A.y, B.y ), C.y );
-   int32_t y_max = std::max( std::max( A.y, B.y ), C.y );
+    // Compute triangle bounding box
+    s32 x_min = std::min( std::min( Ax, Bx ), Cx );
+    s32 x_max = std::max( std::max( Ax, Bx ), Cx );
+    s32 y_min = std::min( std::min( Ay, By ), Cy );
+    s32 y_max = std::max( std::max( Ay, By ), Cy );
 
-   // Draw outside triangle border
-   //drawTriangleBorder( A, B, C, setPixel );
+    // Draw outside triangle border
+    //drawTriangleBorder( A, B, C, setPixel );
 
-   // Draw inside triangle ( does not include all border pixels )
-   for ( int32_t y = y_min; y <= y_max; ++y )
-   {
-      for ( int32_t x = x_min; x <= x_max; ++x )
-      {
-         glm::vec2 q = glm::vec2( x - A.x, y - A.y );
-         float const n = 1.0f / float( crossP( AB, AC ) );
-         float const s = n * float( crossP( q, AC ) );
-         float const t = n * float( crossP( AB, q ) );
+    // Draw inside triangle ( does not include all border pixels )
+    for ( s32 y = y_min; y <= y_max; ++y )
+    {
+        for ( s32 x = x_min; x <= x_max; ++x )
+        {
+            s32 qx = x - Ax;
+            s32 qy = y - Ay;
+            float const n = 1.0f / float( crossP( ABx,ABy, ACx, ACy ) );
+            float const s = n * float( crossP( qx,qy, ACx,ACy ) );
+            float const t = n * float( crossP( ABx,ABy, qx,qy ) );
 
-         if ( (s >= 0.0 )
-           && (t >= 0.0 )
-           && ( s + t <= 1.0 ) ) // + 3.0f*std::numeric_limits< float >::epsilon() ) )
-         {
-            setPixel( x, y );
-         }
-      }
-   }
+            // + 3.0f*std::numeric_limits< float >::epsilon() ) )
+            if ( (s >= 0.0 ) && (t >= 0.0 ) && ( s + t <= 1.0 ) )
+            {
+                setPixel( x, y );
+            }
+        }
+    }
 }
 
 
 /*
  // static
 void
-Bresenham::drawFlatTopTriangle(  int32_t A.x, int32_t B.x, int32_t A.y2,
-                                 int32_t x3, int32_t y3, SetPixel_t const & setPixel )
+Bresenham::drawFlatTopTriangle(  s32 A.x, s32 B.x, s32 A.y2,
+                                 s32 x3, s32 y3, const SetPixel_t& setPixel )
 {
    DE_DEBUG("A(",A.x,",",A.y2,"), B(",B.x,",",A.y2,"), C(",x3,",",y3,")")
 
    if ( A.x > B.x ) { std::swap( A.x, B.x ); }
-   auto connect13 = [=] ( int32_t x, int32_t y ) { Bresenham::drawLineH( x, x3, y, setPixel ); };
+   auto connect13 = [=] ( s32 x, s32 y ) { Bresenham::drawLineH( x, x3, y, setPixel ); };
    Bresenham::drawLine( A.x, A.y2, x3, y3, connect13 );
 
-   auto connect23 = [=] ( int32_t x, int32_t y ) { Bresenham::drawLineH( x, x3, y, setPixel ); };
+   auto connect23 = [=] ( s32 x, s32 y ) { Bresenham::drawLineH( x, x3, y, setPixel ); };
    Bresenham::drawLine( B.x, A.y2, x3, y3, connect23 );
 }
 
@@ -603,28 +615,28 @@ int MemblockFloodFill(int mem, int x, int y, DWORD newColor, DWORD oldColor)
 
 // static
 void
-Bresenham::drawFlatBottomTriangle(  int32_t A.x, int32_t A.y, int32_t B.x, int32_t x3, int32_t B.y3,
-                                     SetPixel_t const & setPixel )
+Bresenham::drawFlatBottomTriangle(  s32 A.x, s32 A.y, s32 B.x, s32 x3, s32 B.y3,
+                                     const SetPixel_t& setPixel )
 {
    DE_DEBUG("A(",A.x,",",A.y,"), B(",B.x,",",B.y3,"), C(",x3,",",B.y3,")")
-//   auto connect12 = [=] ( int32_t x, int32_t y ) { Bresenham::drawLineH( A.x, x, y, setPixel12 ); };
+//   auto connect12 = [=] ( s32 x, s32 y ) { Bresenham::drawLineH( A.x, x, y, setPixel12 ); };
 
-   int32_t x_min = std::min( std::min( A.x, B.x ), x3 );
-   int32_t y_min = std::min( A.y, B.y3 );
-   int32_t x_max = std::max( std::max( A.x, B.x ), x3 );
-   int32_t y_max = std::max( A.y, B.y3 );
+   s32 x_min = std::min( std::min( A.x, B.x ), x3 );
+   s32 y_min = std::min( A.y, B.y3 );
+   s32 x_max = std::max( std::max( A.x, B.x ), x3 );
+   s32 y_max = std::max( A.y, B.y3 );
 
    DE_DEBUG("x_min(",x_min,"), y_min(",y_min,"), x_max(",x_max,"), y_max(",y_max,")")
 
    std::vector< glm::ivec2 > line12;
    std::vector< glm::ivec2 > line13;
-   auto connect12 = [&] ( int32_t x, int32_t y ) { line12.emplace_back( x, y ); };
-   auto connect13 = [&] ( int32_t x, int32_t y ) { line13.emplace_back( x, y ); };
+   auto connect12 = [&] ( s32 x, s32 y ) { line12.emplace_back( x, y ); };
+   auto connect13 = [&] ( s32 x, s32 y ) { line13.emplace_back( x, y ); };
    Bresenham::drawLine( A.x, A.y, B.x, B.y3, connect12 );
    Bresenham::drawLine( A.x, A.y, x3, B.y3, connect13 );
 
-//   int32_t v_min = std::numeric_limits<int32_t>::max();
-//   int32_t v_max = std::numeric_limits<int32_t>::lowest();
+//   s32 v_min = std::numeric_limits<s32>::max();
+//   s32 v_max = std::numeric_limits<s32>::lowest();
 
 
    //if ( A.x > B.x ) { std::swap( A.x, B.x ); }
@@ -644,40 +656,21 @@ Bresenham::drawFlatBottomTriangle(  int32_t A.x, int32_t A.y, int32_t B.x, int32
 } // end namespace de.
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #if BACKUP_IMAGETOOL_DRAW
-
-
-
-
 
 PointList Tool::traverseLine( const core::position2di& A, const core::position2di& B )
 {
-   PointList dst( irr::core::abs_<int32_t>(B.X-A.X)+irr::core::abs_<int32_t>(B.Y-A.Y) );
+   PointList dst( irr::core::abs_<s32>(B.X-A.X)+irr::core::abs_<s32>(B.Y-A.Y) );
    return dst;
 }
 
-PointList Tool::traverseCircle( const core::position2di& center, int32_t radius )
+PointList Tool::traverseCircle( const core::position2di& center, s32 radius )
 {
    PointList dst( radius+3 );
    dst.set_used(0);
 
    // Bresenham
-   int32_t i,j,F;
+   s32 i,j,F;
    i = 0;
    j = radius;
    F = 1 - radius;
@@ -702,10 +695,10 @@ PointList Tool::traverseCircle( const core::position2di& center, int32_t radius 
 }
 
 
-PointList Tool::traverseEllipse( const core::position2di& center, int32_t rx, int32_t ry )
+PointList Tool::traverseEllipse( const core::position2di& center, s32 rx, s32 ry )
 {
-//	const int32_t w = dest->getDimension().Width;
-//	const int32_t h = dest->getDimension().Height;
+//	const s32 w = dest->getDimension().Width;
+//	const s32 h = dest->getDimension().Height;
 
    if (rx==ry)
       return traverseCircle( center, rx );
@@ -718,22 +711,22 @@ PointList Tool::traverseEllipse( const core::position2di& center, int32_t rx, in
    if ( (rx==0) && (ry==0) )
       return dst;
 
-   const int32_t rx2=rx*rx; // Ellipsen Radien Quadrate
-   const int32_t ry2=ry*ry; // Ellipsen Radien Quadrate
-   int32_t x = cx;
-   int32_t y = cy;
-//	const int32_t mx = cx;	 // Ellipsen Mittelpunkt
-//	const int32_t my = cy; 	 // Ellipsen Mittelpunkt
+   const s32 rx2=rx*rx; // Ellipsen Radien Quadrate
+   const s32 ry2=ry*ry; // Ellipsen Radien Quadrate
+   s32 x = cx;
+   s32 y = cy;
+//	const s32 mx = cx;	 // Ellipsen Mittelpunkt
+//	const s32 my = cy; 	 // Ellipsen Mittelpunkt
 
    // Bresenham Anfangswerte
    // Trick: nur 1/4 Ellipse berechne und restliche 3/4 durch Spiegelung (gerade Ellipse!!!)
-   int32_t ddF_x=0;
-   int32_t ddF_y=((rx2*ry)<<1);
+   s32 ddF_x=0;
+   s32 ddF_y=((rx2*ry)<<1);
    x=0;
    y=ry;
 
    // Bresenham Alghorithmus
-   int32_t F=irr::core::round32((f32)(ry2-rx2*ry)+(f32)rx2*0.25f);
+   s32 F=irr::core::round32((f32)(ry2-rx2*ry)+(f32)rx2*0.25f);
    while( ddF_x < ddF_y )
    {
       if (F >= 0)
@@ -790,7 +783,7 @@ void Tool::drawImage(
       {
          const SColor& color = src->getPixel(x,y);
 
-         drawPixel( dst, (int32_t)x+pos.X, (int32_t)y+pos.Y, color, blend);
+         drawPixel( dst, (s32)x+pos.X, (s32)y+pos.Y, color, blend);
       }
    }
 }
@@ -798,10 +791,10 @@ void Tool::drawImage(
 //! draw a line with 1 color(s) to image ( Bresenham, no AA )
 bool Tool::drawLine(
    video::IImage* dst,
-   int32_t x0,
-   int32_t y0,
-   int32_t x1,
-   int32_t y1,
+   s32 x0,
+   s32 y0,
+   s32 x1,
+   s32 y1,
    const video::SColor& color,
    bool blend )
 {
@@ -811,21 +804,21 @@ bool Tool::drawLine(
 
    if ((img_size.Width==0) || (img_size.Height==0)) return false;
 
-   const int32_t dx = core::abs_<int32_t>( x1 - x0 );
-   const int32_t dy = core::abs_<int32_t>( y1 - y0 );
+   const s32 dx = core::abs_<s32>( x1 - x0 );
+   const s32 dy = core::abs_<s32>( y1 - y0 );
 
    if ((dx==0) && (dy==0)) return false;
 
-   int32_t sx=1; // sign
-   int32_t sy=1; // sign
+   s32 sx=1; // sign
+   s32 sy=1; // sign
 
    if (x0>x1) sx = -1;
    if (y0>y1) sy = -1;
 
-   int32_t err = dx-dy;
-   int32_t e2 = 0;
-   int32_t x = x0;
-   int32_t y = y0;
+   s32 err = dx-dy;
+   s32 e2 = 0;
+   s32 x = x0;
+   s32 y = y0;
 
    while(1)
    {
@@ -845,10 +838,10 @@ bool Tool::drawLine(
 //! draw a line with 2 color(s) to image ( Bresenham, no AA )
 bool Tool::drawLine(
    video::IImage* dst,
-   int32_t x0,
-   int32_t y0,
-   int32_t x1,
-   int32_t y1,
+   s32 x0,
+   s32 y0,
+   s32 x1,
+   s32 y1,
    const video::SColor& color_a,
    const video::SColor& color_b,
    bool blend )
@@ -860,23 +853,23 @@ bool Tool::drawLine(
    if ((img_size.Width == 0) || (img_size.Height == 0))
       return false;
 
-   const int32_t dx = core::abs_<int32_t>( x1 - x0 );
-   const int32_t dy = core::abs_<int32_t>( y1 - y0 );
+   const s32 dx = core::abs_<s32>( x1 - x0 );
+   const s32 dy = core::abs_<s32>( y1 - y0 );
 
    if ((dx==0) && (dy==0)) return false;
 
-   int32_t sx = 1; // sign
-   int32_t sy = 1; // sign
+   s32 sx = 1; // sign
+   s32 sy = 1; // sign
 
    if (x0 > x1) sx = -1;
    if (y0 > y1) sy = -1;
 
-   int32_t err = dx-dy;
-   int32_t e2 = 0;
-   int32_t x = x0;
-   int32_t y = y0;
+   s32 err = dx-dy;
+   s32 e2 = 0;
+   s32 x = x0;
+   s32 y = y0;
 
-   int32_t numpixels = 0;
+   s32 numpixels = 0;
 
    // count pixels
    while (1)
@@ -908,7 +901,7 @@ bool Tool::drawLine(
 
    // actual drawing
    f32 f=0.f;
-   int32_t k=0;
+   s32 k=0;
    u32 cR=0, cG=0, cB=0, cA=0;
    while (1)
    {
@@ -945,10 +938,10 @@ bool Tool::drawLine(
    const video::SColor& color,
    bool blend )
 {
-   const int32_t x0 = core::floor32( pos.UpperLeftCorner.X );
-   const int32_t y0 = core::floor32( pos.UpperLeftCorner.Y );
-   const int32_t x1 = core::floor32( pos.LowerRightCorner.X );
-   const int32_t y1 = core::floor32( pos.LowerRightCorner.Y );
+   const s32 x0 = core::floor32( pos.UpperLeftCorner.X );
+   const s32 y0 = core::floor32( pos.UpperLeftCorner.Y );
+   const s32 x1 = core::floor32( pos.LowerRightCorner.X );
+   const s32 y1 = core::floor32( pos.LowerRightCorner.Y );
 
    return drawLine( dst, x0, y0, x1, y1, color, blend);
 }
@@ -970,10 +963,10 @@ bool Tool::drawLine(
    if ( ( img_size.Width == 0 ) || ( img_size.Height == 0 ) )
       return false;
 
-   const int32_t x0 = core::floor32( pos.UpperLeftCorner.X );
-   const int32_t y0 = core::floor32( pos.UpperLeftCorner.Y );
-   const int32_t x1 = core::floor32( pos.LowerRightCorner.X );
-   const int32_t y1 = core::floor32( pos.LowerRightCorner.Y );
+   const s32 x0 = core::floor32( pos.UpperLeftCorner.X );
+   const s32 y0 = core::floor32( pos.UpperLeftCorner.Y );
+   const s32 x1 = core::floor32( pos.LowerRightCorner.X );
+   const s32 y1 = core::floor32( pos.LowerRightCorner.Y );
 
    return drawLine( dst, x0, y0, x1, y1, color_a, color_b, blend );
 }
@@ -985,26 +978,26 @@ void Tool::drawRect(
    IImage* dst,
    const core::recti& pos,
    const SColor& color,
-   int32_t border,
+   s32 border,
    bool blend )
 {
-   int32_t x1 = pos.UpperLeftCorner.X;
-   int32_t y1 = pos.UpperLeftCorner.Y;
-   int32_t x2 = pos.LowerRightCorner.X;
-   int32_t y2 = pos.LowerRightCorner.Y;
+   s32 x1 = pos.UpperLeftCorner.X;
+   s32 y1 = pos.UpperLeftCorner.Y;
+   s32 x2 = pos.LowerRightCorner.X;
+   s32 y2 = pos.LowerRightCorner.Y;
 
    if (border==0)
    {
-      for (int32_t y=y1; y<=y2; y++)
+      for (s32 y=y1; y<=y2; y++)
       {
-         for (int32_t x=x1; x<=x2; x++)
+         for (s32 x=x1; x<=x2; x++)
          {
             if (color.getAlpha()<255)
             {
                SColor pixel = getPixelAlways( dst, x,y );
-               int32_t r = (int32_t)irr::core::clamp<f32>((f32)color.getAlpha()*(f32)color.getRed()/255.0f, 0,255.f);
-               int32_t g = (int32_t)irr::core::clamp<f32>((f32)color.getAlpha()*(f32)color.getGreen()/255.0f, 0,255.f);
-               int32_t b = (int32_t)irr::core::clamp<f32>((f32)color.getAlpha()*(f32)color.getBlue()/255.0f, 0,255.f);
+               s32 r = (s32)irr::core::clamp<f32>((f32)color.getAlpha()*(f32)color.getRed()/255.0f, 0,255.f);
+               s32 g = (s32)irr::core::clamp<f32>((f32)color.getAlpha()*(f32)color.getGreen()/255.0f, 0,255.f);
+               s32 b = (s32)irr::core::clamp<f32>((f32)color.getAlpha()*(f32)color.getBlue()/255.0f, 0,255.f);
                pixel.set( pixel.getAlpha(),
                   (u32)irr::core::s32_clamp(pixel.getRed() + r,0,255),
                   (u32)irr::core::s32_clamp(pixel.getGreen() + g,0,255),
@@ -1021,7 +1014,7 @@ void Tool::drawRect(
    }
    else if ( border >= 1)
    {
-      for (int32_t b=0; b<border; b++)
+      for (s32 b=0; b<border; b++)
       {
          drawLine( dst, x1+b,y1+b, x2-b,y1+b, color, blend);
          drawLine( dst, x1+b,y1+b, x1+b,y2-b, color, blend);
@@ -1040,22 +1033,22 @@ void Tool::drawRect(
    const SColor& topLeft,
    const SColor& topRight,
    const SColor& bottomRight,
-   int32_t border,
+   s32 border,
    bool blend )
 {
    if (border==0)
    {
-      const int32_t& x1 = pos.UpperLeftCorner.X;
-      const int32_t& x2 = pos.LowerRightCorner.X;
-      const int32_t& y1 = pos.UpperLeftCorner.Y-1;
-      const int32_t& y2 = pos.LowerRightCorner.Y-1;
+      const s32& x1 = pos.UpperLeftCorner.X;
+      const s32& x2 = pos.LowerRightCorner.X;
+      const s32& y1 = pos.UpperLeftCorner.Y-1;
+      const s32& y2 = pos.LowerRightCorner.Y-1;
 
       // common factor for all colors ( 1 / (dx * dy) )
       f32 const n_inv = irr::core::reciprocal( (f32)(x2 - x1) * (f32)(y2 - y1) );
 
-      for (int32_t y=y1; y<=y2; y++)
+      for (s32 y=y1; y<=y2; y++)
       {
-         for (int32_t x=x1; x<=x2; x++)
+         for (s32 x=x1; x<=x2; x++)
          {
             f32 const f11 = (f32)(x2 - x) * (f32)(y2 - y) * n_inv; // bottomRight
             f32 const f21 = (f32)(x - x1) * (f32)(y2 - y) * n_inv; // bottomLeft
@@ -1099,8 +1092,8 @@ void Tool::drawRect(
 //		drawLine( core::position2di(pos.LowerRightCorner.X, pos.UpperLeftCorner.Y), pos.LowerRightCorner, color, blend);
 //		drawLine( core::position2di(pos.UpperLeftCorner.X, pos.LowerRightCorner.Y), pos.LowerRightCorner, color, blend);
 //
-      const int32_t x = pos.LowerRightCorner.X-1;
-      const int32_t y = pos.LowerRightCorner.Y-1;
+      const s32 x = pos.LowerRightCorner.X-1;
+      const s32 y = pos.LowerRightCorner.Y-1;
       drawLine( dst, pos.UpperLeftCorner.X, pos.UpperLeftCorner.Y, x, pos.UpperLeftCorner.Y, topLeft, topRight, blend);
       drawLine( dst, pos.UpperLeftCorner.X, pos.UpperLeftCorner.Y, pos.UpperLeftCorner.X, y, topLeft, bottomLeft, blend);
       drawLine( dst, x, pos.UpperLeftCorner.Y, x,y, topRight, bottomRight, blend);
@@ -1179,7 +1172,7 @@ void Tool::drawRect(
 }
 
 //! draw a Bresenham-round-rect, 1 colors, filled (border=0) or outlined with border, option to blend
-void Tool::drawRoundRect( IImage* dst, const core::recti& pos, int32_t rx, int32_t ry, const SColor& color, int32_t border, bool blend)
+void Tool::drawRoundRect( IImage* dst, const core::recti& pos, s32 rx, s32 ry, const SColor& color, s32 border, bool blend)
 {
    // abort
    if (!dst)
@@ -1193,8 +1186,8 @@ void Tool::drawRoundRect( IImage* dst, const core::recti& pos, int32_t rx, int32
    if (rx==0) rx = ry;
    if (ry==0) ry = rx;
 
-   int32_t w = pos.getWidth();
-   int32_t h = pos.getHeight();
+   s32 w = pos.getWidth();
+   s32 h = pos.getHeight();
 
 //	core::position2di m = pos.getCenter();
 //	core::position2di dA( (w-1)>>1, ry);
@@ -1211,19 +1204,19 @@ void Tool::drawRoundRect( IImage* dst, const core::recti& pos, int32_t rx, int32
    if (border == 0)
    {
       // Ellipsen-Code
-      const int32_t rx2=rx*rx; // Ellipsen Radien Quadrate
-      const int32_t ry2=ry*ry; // Ellipsen Radien Quadrate
-      int32_t x = 0;
-      int32_t y = 0;
+      const s32 rx2=rx*rx; // Ellipsen Radien Quadrate
+      const s32 ry2=ry*ry; // Ellipsen Radien Quadrate
+      s32 x = 0;
+      s32 y = 0;
 
       // Bresenham Ellipse Anfangswerte
-      int32_t ddF_x=0;
-      int32_t ddF_y=((rx2*ry)<<1);
+      s32 ddF_x=0;
+      s32 ddF_y=((rx2*ry)<<1);
       x=0;
       y=ry;
 
       // Bresenham Alghorithmus
-      int32_t F=irr::core::round32((f32)(ry2-rx2*ry)+(f32)rx2*0.25f);
+      s32 F=irr::core::round32((f32)(ry2-rx2*ry)+(f32)rx2*0.25f);
       while( ddF_x < ddF_y )
       {
          if (F >= 0)
@@ -1257,8 +1250,8 @@ void Tool::drawRoundRect( IImage* dst, const core::recti& pos, int32_t rx, int32
          drawLine( dst, lowerLeft.X-x, lowerLeft.Y-y, lowerRight.X+x, lowerRight.Y-y, color, blend);
       }
 
-      int32_t y1 = pos.UpperLeftCorner.Y + ry;
-      int32_t y2 = pos.UpperLeftCorner.Y + pos.getHeight() - ry;
+      s32 y1 = pos.UpperLeftCorner.Y + ry;
+      s32 y2 = pos.UpperLeftCorner.Y + pos.getHeight() - ry;
       y = y1;
       while( y < y2 )
       {
@@ -1283,10 +1276,10 @@ void Tool::drawRoundRect( IImage* dst, const core::recti& pos, int32_t rx, int32
          }
 
          //! core::recti has flaws, i.e. it does not guarantee that UpperLeftCorner is more upper and left than LowerRightCorner !!!
-         const int32_t x1 = irr::core::s32_min( pos.UpperLeftCorner.X, pos.LowerRightCorner.X);
-         const int32_t y1 = irr::core::s32_min( pos.UpperLeftCorner.Y, pos.LowerRightCorner.Y);
-         const int32_t x2 = irr::core::s32_max( pos.UpperLeftCorner.X, pos.LowerRightCorner.X);
-         const int32_t y2 = irr::core::s32_max( pos.UpperLeftCorner.Y, pos.LowerRightCorner.Y);
+         const s32 x1 = irr::core::s32_min( pos.UpperLeftCorner.X, pos.LowerRightCorner.X);
+         const s32 y1 = irr::core::s32_min( pos.UpperLeftCorner.Y, pos.LowerRightCorner.Y);
+         const s32 x2 = irr::core::s32_max( pos.UpperLeftCorner.X, pos.LowerRightCorner.X);
+         const s32 y2 = irr::core::s32_max( pos.UpperLeftCorner.Y, pos.LowerRightCorner.Y);
 
          drawLine( dst, x1+rx, y1, x2-1-rx, y1, color, blend);
          drawLine( dst, x1+rx, y2-1, x2-1-rx, y2-1, color, blend);
@@ -1300,8 +1293,8 @@ void Tool::drawRoundRect( IImage* dst, const core::recti& pos, int32_t rx, int32
             return;
 
          tmp->fill(0);
-         drawRoundRect( tmp, core::recti(0,0,(int32_t)w, (int32_t)h), rx,ry, color, 0, false);
-         drawRoundRect( tmp, core::recti(border, border, (int32_t)w-border, (int32_t)h-border), rx,ry, 0, 0, false);
+         drawRoundRect( tmp, core::recti(0,0,(s32)w, (s32)h), rx,ry, color, 0, false);
+         drawRoundRect( tmp, core::recti(border, border, (s32)w-border, (s32)h-border), rx,ry, 0, 0, false);
 
          drawImage( tmp, dst, pos.UpperLeftCorner, tmp->getDimension(), true, false);
          tmp->drop();
@@ -1311,17 +1304,17 @@ void Tool::drawRoundRect( IImage* dst, const core::recti& pos, int32_t rx, int32
    }
 }
 
-void Tool::drawRoundRect( IImage* dst, const core::recti& pos, int32_t rx, int32_t ry, const SColor& topLeft, const SColor& topRight, const SColor& bottomRight, const SColor& bottomLeft, int32_t border, bool blend)
+void Tool::drawRoundRect( IImage* dst, const core::recti& pos, s32 rx, s32 ry, const SColor& topLeft, const SColor& topRight, const SColor& bottomRight, const SColor& bottomLeft, s32 border, bool blend)
 {
    // abort
    if (!dst)
       return;
 
    //! guarantee that UpperLeftCorner is more upperleft than LowerRightCorner
-   const int32_t x1 = irr::core::s32_min( pos.UpperLeftCorner.X, pos.LowerRightCorner.X);
-   const int32_t y1 = irr::core::s32_min( pos.UpperLeftCorner.Y, pos.LowerRightCorner.Y);
-   const int32_t x2 = irr::core::s32_max( pos.UpperLeftCorner.X, pos.LowerRightCorner.X);
-   const int32_t y2 = irr::core::s32_max( pos.UpperLeftCorner.Y, pos.LowerRightCorner.Y);
+   const s32 x1 = irr::core::s32_min( pos.UpperLeftCorner.X, pos.LowerRightCorner.X);
+   const s32 y1 = irr::core::s32_min( pos.UpperLeftCorner.Y, pos.LowerRightCorner.Y);
+   const s32 x2 = irr::core::s32_max( pos.UpperLeftCorner.X, pos.LowerRightCorner.X);
+   const s32 y2 = irr::core::s32_max( pos.UpperLeftCorner.Y, pos.LowerRightCorner.Y);
 
    core::dimension2du size( (u32)(x2-x1)+1, (u32)(y2-y1)+1 );
 
@@ -1397,7 +1390,7 @@ void Tool::drawRoundRect( IImage* dst, const core::recti& pos, int32_t rx, int32
 
 //! Bresenham circle with 1 color(s), if border <= 0 then filled/solid shape
 void Tool::drawCircle( IImage* dst, const core::position2di& center,
-   int32_t radius,	const SColor& color, int32_t border, bool blend)
+   s32 radius,	const SColor& color, s32 border, bool blend)
 {
    if ( !dst ) return;
    if ( radius < 0 ) return;
@@ -1444,7 +1437,7 @@ void Tool::drawCircle( IImage* dst, const core::position2di& center,
 
       if ( border == 0 ) // filled
       {
-         int32_t i,j,F;
+         s32 i,j,F;
          i = 0;
          j = radius;
          F = 1 - radius;
@@ -1476,7 +1469,7 @@ void Tool::drawCircle( IImage* dst, const core::position2di& center,
 
       else if (border == 1)
       {
-         int32_t i,j,F;
+         s32 i,j,F;
          i = 0;
          j = radius;
          F = 1 - radius;
@@ -1529,7 +1522,7 @@ void Tool::drawCircle( IImage* dst, const core::position2di& center,
 
 //! Bresenham circle with 2 interpolated color(s) from center to outline
 //! if (border <= 0) then filled/solid shape
-//void ImageTool::drawCircle( IImage* dst, const core::position2di& center, int32_t radius, const SColor& c1, const SColor& c2, int32_t border, bool blend)
+//void ImageTool::drawCircle( IImage* dst, const core::position2di& center, s32 radius, const SColor& c1, const SColor& c2, s32 border, bool blend)
 //{
 //	// abort
 //	if (!dst) return;

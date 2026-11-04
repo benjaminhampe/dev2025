@@ -1,5 +1,5 @@
 #pragma once
-#include "H3_Chip_Tex2DArray.h"
+#include <H3/H3_Board.h>
 
 // ===========================================================================
 struct H3_Chip2DRenderer
@@ -7,7 +7,7 @@ struct H3_Chip2DRenderer
 {
     de::gpu::VideoDriver* m_driver;
     de::gpu::Shader* m_shader;
-    H3_ChipTexture* m_chipTexture;
+    de::gpu::Tex2DArray* m_chipTexture;
 
     // GPU Uniforms
     int32_t m_u_screenSize;     // (w,h)
@@ -29,7 +29,7 @@ struct H3_Chip2DRenderer
     ~H3_Chip2DRenderer();
     void destroy();
 
-    void init(H3_Game& game, H3_ChipTexture* chipTexture);
+    void init(H3_Game& game);
 
     void initVAO(H3_Game& game);
     void initShader(H3_Game& game);

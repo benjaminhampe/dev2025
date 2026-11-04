@@ -15,7 +15,7 @@ H3_Chip2DRenderer::H3_Chip2DRenderer()
 
 H3_Chip2DRenderer::~H3_Chip2DRenderer()
 {
-    if (m_vao || m_chipTexture)
+    if (m_vao)
     {
         DE_ERROR("Forgot to call destroy()")
     }
@@ -35,20 +35,14 @@ void H3_Chip2DRenderer::destroy()
         m_vbo_instanceRadius = 0;
         m_vbo_instanceLayer = 0;
     }
-
-    if (m_chipTexture)
-    {
-        m_chipTexture = nullptr;
-    }
 }
 
-void H3_Chip2DRenderer::init( H3_Game& game, H3_ChipTexture* chipTexture )
+void H3_Chip2DRenderer::init( H3_Game& game)
 {
     m_driver = game.getDriver();
-    m_chipTexture = chipTexture;
     if (!m_driver) { DE_ERROR("No driver") return; }
-    if (!m_chipTexture) { DE_ERROR("No chipTexture") return; }
-    if (!m_chipTexture->m_tex.id) { DE_ERROR("No chipTexture id") return; }
+
+    m_chipTexture = &game.m_tex.m_chipTexture;
 
     initVAO(game);
     initShader(game);
@@ -203,8 +197,8 @@ void H3_Chip2DRenderer::initShader( H3_Game& game )
 void H3_Chip2DRenderer::render(const glm::vec4& posTransform, const de::Recti& scissor)
 {
     if (!m_driver) { DE_ERROR("No driver") return; }
-    if (!m_chipTexture) { DE_ERROR("No chipTexture") return; }
     if (!m_shader) { DE_ERROR("No shader") return; }
+    if (!m_chipTexture) { DE_ERROR("No chipTexture") return; }
     if (!m_vao) { DE_ERROR("No vao") return; }
 
     // [RenderStates]
@@ -229,9 +223,9 @@ void H3_Chip2DRenderer::render(const glm::vec4& posTransform, const de::Recti& s
     // [Shader-Uniform] u_tex2DArray
     //  m_driver->useTexture( m_tex2DArray, 0);
     glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D_ARRAY, m_chipTexture->m_tex.id);
+    glBindTexture(GL_TEXTURE_2D_ARRAY, m_chipTexture->id);
     //glBindTextureUnit(0, m_tex2DArray.id);
-    de::gpu::applySamplerOptions(m_chipTexture->m_tex.so);
+    de::gpu::applySamplerOptions(m_chipTexture->so);
     glUniform1i(m_u_tex2DArray, 0);
 
     // [VAO] Quads:

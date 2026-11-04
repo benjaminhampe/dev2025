@@ -88,6 +88,61 @@ struct H3_Tex
     std::vector<de::gpu::Texture*> m_textures;
 
     std::unordered_map<eID, de::gpu::TexRef> m_refs;
+
+    de::gpu::Tex2DArray m_tileTexture;
+    de::gpu::Tex2DArray m_chipTexture;
+    de::gpu::Tex2DArray m_AnimatedWaterTex128;
+    de::gpu::Tex2DArray m_AnimatedWaterTex342;
+
+    void createTileTexture( H3_Game& game );
+
+    void createChipTexture( H3_Game & game );
+
+    void createAnimatedWaterTex128( H3_Game & game);
+
+    void createAnimatedWaterTex342( H3_Game & game);
+};
+
+struct H3_TileTexture
+{
+    enum eType
+    {
+        Unknown = 0,
+        Water,
+        Desert,
+        TileA,
+        TileB,
+        TileC,
+        TileD,
+        TileE,
+        eTypeCount
+    };
+};
+
+struct H3_ChipTexture
+{
+    enum eType
+    {
+        Chip2 = 0,
+        Chip3,
+        Chip4,
+        Chip5,
+        Chip6,
+        Chip8,
+        Chip9,
+        Chip10,
+        Chip11,
+        Chip12,
+        ChipS,
+        ChipW,
+        Chip3v1,
+        ChipA,
+        ChipB,
+        ChipC,
+        ChipD,
+        ChipE,
+        eTypeCount
+    };
 };
 
 // =======================================================================

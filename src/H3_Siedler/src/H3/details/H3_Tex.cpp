@@ -13,7 +13,16 @@ H3_Tex::~H3_Tex()
 
 void H3_Tex::destroy()
 {
+    m_tileTexture.destroy();
+    m_chipTexture.destroy();
+    m_AnimatedWaterTex128.destroy();
+    m_AnimatedWaterTex342.destroy();
 
+    // for (de::gpu::Texture* tex : m_textures)
+    // {
+    //     tex->destroy()
+    // }
+    m_textures.clear();
 }
 
 void
@@ -388,6 +397,12 @@ H3_Tex::init( H3_Game & game )
         m_textures.push_back(texNice3);
         m_textures.push_back(texNice4);
     }
+
+    createTileTexture( game );
+    createChipTexture( game );
+    createAnimatedWaterTex128( game );
+    createAnimatedWaterTex342( game );
+
 }
 
 de::gpu::TexRef
@@ -478,4 +493,322 @@ H3_getPlayerTex(const H3_Game& game, int playerIndex0_F )
     u32 id = playerIndex0_F + static_cast<u32>(H3_Tex::PlayU);
 
     return game.getTex( static_cast<H3_Tex::eID>(id), "H3_getPlayerTex");
+}
+
+
+void H3_Tex::createChipTexture( H3_Game & game )
+{
+    std::vector<de::Image> images;
+    images.reserve( 18 );
+
+    int finalSize = 128;
+
+    auto addImage = [&]( H3_Img::eID id )
+    {
+        images.emplace_back();
+        de::Image & img = images.back();
+
+        img = *H3_getImg( game, id );
+
+        // Replace transparent color with white color.
+        if (img.a() > 0)
+        {
+            de::ImagePainter::replaceColor(img, 0, 0xFFFFFFFF);
+        }
+
+        if (img.pixelFormat() != de::PixelFormat::RGB_24)
+        {
+            img = img.convert(de::PixelFormat::RGB_24);
+        }
+
+        int w = img.w();
+        int h = img.h();
+        if (w < h)
+        {
+            int x = 0;
+            int y = (h-w)/2;
+            img = de::ImageCutter::copyRegionRect(img,de::Recti(x,y,w,w));
+        }
+        else if (h < w)
+        {
+            int x = (w-h)/2;
+            int y = 0;
+            img = de::ImageCutter::copyRegionRect(img,de::Recti(x,y,h,h));
+        }
+
+        if ( finalSize != img.w() )
+        {
+            img = de::ImageScaler::resizeBicubic(img, finalSize, finalSize);
+        }
+
+        //auto uri = dbStr("H3_Chip_Tex2DArray", finalSize, "_",int(id),".webp");
+        //dbSaveImage(img, uri);
+    };
+
+    addImage( H3_Img::Chip2);    // 0
+    addImage( H3_Img::Chip3);    // 1
+    addImage( H3_Img::Chip4);    // 2
+    addImage( H3_Img::Chip5);    // 3
+    addImage( H3_Img::Chip6);    // 4
+    addImage( H3_Img::Chip8);    // 5
+    addImage( H3_Img::Chip9);    // 6
+    addImage( H3_Img::Chip10);   // 7
+    addImage( H3_Img::Chip11);   // 8
+    addImage( H3_Img::Chip12);   // 9
+    addImage( H3_Img::ChipS);    // 10
+    addImage( H3_Img::ChipW);    // 11
+    addImage( H3_Img::Chip3v1);  // 12
+    addImage( H3_Img::ChipA);    // 13
+    addImage( H3_Img::ChipB);    // 14
+    addImage( H3_Img::ChipC);    // 15
+    addImage( H3_Img::ChipD);    // 16
+    addImage( H3_Img::ChipE);    // 17
+
+    std::vector<const de::Image*> pointers;
+    pointers.reserve( images.size() );
+
+    for (const de::Image& img : images)
+    {
+        pointers.emplace_back( &img );
+    }
+
+    de::gpu::SO so( 1.0f,
+        de::gpu::SO::Minify::LinearMipmapLinear,
+        de::gpu::SO::Magnify::Linear,
+        de::gpu::SO::Wrap::ClampToEdge,
+        de::gpu::SO::Wrap::ClampToEdge);
+    bool ok = m_chipTexture.create("chips_tex2darr", pointers, so );
+    if (!ok)
+    {
+        DE_ERROR("Failed.")
+    }
+}
+
+
+void H3_Tex::createAnimatedWaterTex128(H3_Game & game)
+{
+    std::vector<const de::Image*> pointers;
+    pointers.reserve( 40 );
+
+    for (int i = 0 ; i < 40; ++i)
+    {
+        auto id = H3_Img::eID(H3_Img::Water128_00 + i);
+        const de::Image* img = H3_getImg(game,id);
+        pointers.emplace_back( img );
+    }
+
+    de::gpu::SO so( 1.0f,
+        de::gpu::SO::Minify::LinearMipmapLinear,
+        de::gpu::SO::Magnify::Linear,
+        de::gpu::SO::Wrap::ClampToEdge,
+        de::gpu::SO::Wrap::ClampToEdge);
+
+    bool ok = m_AnimatedWaterTex128.create("h2o_128_128_40_webp", pointers, so );
+    if (!ok)
+    {
+        DE_ERROR("Failed.")
+    }
+}
+
+void H3_Tex::createAnimatedWaterTex342(H3_Game & game)
+{
+    std::vector<const de::Image*> pointers;
+    pointers.reserve( 21 );
+
+    for (int i = 0 ; i < 21; ++i)
+    {
+        auto id = H3_Img::eID(H3_Img::Water342_00 + i);
+        const de::Image* img = H3_getImg(game,id);
+        pointers.emplace_back( img );
+    }
+
+    de::gpu::SO so( 1.0f,
+        de::gpu::SO::Minify::LinearMipmapLinear,
+        de::gpu::SO::Magnify::Linear,
+        de::gpu::SO::Wrap::ClampToEdge,
+        de::gpu::SO::Wrap::ClampToEdge);
+
+    bool ok = m_AnimatedWaterTex342.create("h2o_342_180_21_webp", pointers, so );
+    if (!ok)
+    {
+        DE_ERROR("Failed.")
+    }
+}
+
+
+void drawTileBorder(de::Image& img, int i, u32 color, bool blend)
+{
+    const int w = img.w();
+    const int h = img.h();
+    const auto clipRect = de::Recti(i,i,w-2*i,h-2*i);
+
+    // blend = true;
+    // u32 color1 = dbRGB(255,255,255,128);
+    // u32 color2 = dbRGB(255,0,0,128);
+    // u32 color3 = dbRGB(0,255,0,128);
+    // u32 color4 = dbRGB(0,0,255,128);
+    // u32 color5 = dbRGB(255,0,255,128);
+    // u32 color6 = dbRGB(255,255,0,128);
+
+    // Left
+    {
+        int x1 = i;
+        int y1 = h/4 - 1 + i;
+        int x2 = i;
+        int y2 = 3*h/4 - i;
+        de::ImagePainter::drawSuperCoverLine(img,x1,y1,x2,y2,color,blend,clipRect);
+    }
+
+    // Right
+    {
+        int x1 = w - 1 - i;
+        int y1 = h/4 - 1 + i;
+        int x2 = w - 1 - i;
+        int y2 = 3*h/4 - i;
+        de::ImagePainter::drawSuperCoverLine(img,x1,y1,x2,y2,color,blend,clipRect);
+    }
+
+    // TopLeft
+    {
+        int x1 = w/2 - 1;
+        int y1 = i;
+        int x2 = i;
+        int y2 = h/4 + i;
+        de::ImagePainter::drawSuperCoverLine(img,x1,y1,x2,y2,color,blend,clipRect);
+    }
+
+    // TopRight
+    {
+        int x1 = w/2;
+        int y1 = i;
+        int x2 = w - 1 - i;
+        int y2 = h/4 + i;
+        de::ImagePainter::drawSuperCoverLine(img,x1,y1,x2,y2,color,blend,clipRect);
+    }
+
+    // BottomLeft
+    {
+        int x1 = i;
+        int y1 = 3*h/4 + 1 - i;
+        int x2 = w/2 - 1;
+        int y2 = h - 1 - i;
+        de::ImagePainter::drawSuperCoverLine(img,x1,y1,x2,y2,color,blend,clipRect);
+    }
+
+    // BottomRight
+    {
+        int x1 = w - 1 - i;
+        int y1 = 3*h/4 + 1 - i;
+        int x2 = w/2;
+        int y2 = h - 1 - i;
+        de::ImagePainter::drawSuperCoverLine(img,x1,y1,x2,y2,color,blend,clipRect);
+    }
+}
+
+void drawTileBorders(de::Image& img)
+{
+    const int w = img.w();
+    const int h = img.h();
+    const u32 white = dbRGB(255,255,255);
+
+    u32 color1 = dbRGB(15,15,15);
+    u32 color2 = dbRGB(255,255,155);
+    u32 color3 = dbRGB(255,255,255, 0);
+
+    int k = 0;
+    int d = 5;
+    for (int i = 0; i < d; ++i)
+    {
+        u32 color = de::lerpColor(color1,color2,float(i) / float(d-1));
+        drawTileBorder(img,k+i,color,false);
+    }
+    k+= d;
+
+    for (int i = 0; i < 2*d; ++i)
+    {
+        drawTileBorder(img,k+i,color2,false);
+    }
+    k+= 2*d;
+
+    for (int i = 0; i < d; ++i)
+    {
+        u32 color = de::lerpColor(color2,color3,float(i) / float(d-1));
+        drawTileBorder(img,k+i,color,true);
+    }
+}
+
+void H3_Tex::createTileTexture( H3_Game& game )
+{
+    int w = 512;
+    int h = 512;
+
+    de::gpu::SO so;
+    so.setAF( 1.0f );
+    so.setMin( de::gpu::SO::Minify::LinearMipmapLinear );
+    so.setMag( de::gpu::SO::Magnify::Linear );
+    so.setWrapR( de::gpu::SO::Wrap::Repeat );
+    so.setWrapS( de::gpu::SO::Wrap::Repeat );
+    so.setWrapT( de::gpu::SO::Wrap::Repeat );
+
+    const auto* oriU = H3_getImg( game, H3_Img::Unknown );
+    const auto* oriW = H3_getImg( game, H3_Img::TileWater );
+    const auto* oriV = H3_getImg( game, H3_Img::TileDesert );
+    const auto* oriA = H3_getImg( game, H3_Img::TileA );
+    const auto* oriB = H3_getImg( game, H3_Img::TileB );
+    const auto* oriC = H3_getImg( game, H3_Img::TileC );
+    const auto* oriD = H3_getImg( game, H3_Img::TileD );
+    const auto* oriE = H3_getImg( game, H3_Img::TileE );
+
+    de::Image imgU = de::ImageScaler::resizeBilinear(*oriU,w,h);
+    de::Image imgW = de::ImageScaler::resizeBilinear(*oriW,w,h);
+    de::Image imgV = de::ImageScaler::resizeBilinear(*oriV,w,h);
+    de::Image imgA = de::ImageScaler::resizeBilinear(*oriA,w,h);
+    de::Image imgB = de::ImageScaler::resizeBilinear(*oriB,w,h);
+    de::Image imgC = de::ImageScaler::resizeBilinear(*oriC,w,h);
+    de::Image imgD = de::ImageScaler::resizeBilinear(*oriD,w,h);
+    de::Image imgE = de::ImageScaler::resizeBilinear(*oriE,w,h);
+
+    // drawTileBorders(imgU);
+    drawTileBorders(imgV);
+    drawTileBorders(imgA);
+    drawTileBorders(imgB);
+    drawTileBorders(imgC);
+    drawTileBorders(imgD);
+    drawTileBorders(imgE);
+    // DE_DEBUG("oriU = ", oriU->str())
+    // DE_DEBUG("oriW = ", oriW->str())
+    // DE_DEBUG("oriV = ", oriV->str())
+    // DE_DEBUG("oriA = ", oriA->str())
+    // DE_DEBUG("oriB = ", oriB->str())
+    // DE_DEBUG("oriC = ", oriC->str())
+    // DE_DEBUG("oriD = ", oriD->str())
+    // DE_DEBUG("oriE = ", oriE->str())
+    // dbSaveImage(imgU,"H3_imgU.webp");
+    // dbSaveImage(imgW,"H3_imgW.webp");
+    // dbSaveImage(imgV,"H3_imgV.webp");
+    // dbSaveImage(imgA,"H3_imgA.webp");
+    // dbSaveImage(imgB,"H3_imgB.webp");
+    // dbSaveImage(imgC,"H3_imgC.webp");
+    // dbSaveImage(imgD,"H3_imgD.webp");
+    // dbSaveImage(imgE,"H3_imgE.webp");
+
+    dbSaveImage(imgU,"H3_imgU.bmp");
+    dbSaveImage(imgW,"H3_imgW.bmp");
+    dbSaveImage(imgV,"H3_imgV.bmp");
+    dbSaveImage(imgA,"H3_imgA.bmp");
+    dbSaveImage(imgB,"H3_imgB.bmp");
+    dbSaveImage(imgC,"H3_imgC.bmp");
+    dbSaveImage(imgD,"H3_imgD.bmp");
+    dbSaveImage(imgE,"H3_imgE.bmp");
+
+    std::vector<const de::Image*> imgPointers
+    {
+        &imgU, &imgW, &imgV,
+        &imgA, &imgB, &imgC, &imgD, &imgE
+    };
+
+    if (!m_tileTexture.create("hextileAtlas512", imgPointers, so))
+    {
+        DE_ERROR("Failed.")
+    }
 }

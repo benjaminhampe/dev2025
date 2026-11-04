@@ -3,11 +3,6 @@
 
 struct H3_Game;
 
-bool H3_AnimatedWaterTex128_create( H3_Game & game, de::gpu::Tex2DArray & out );
-
-bool H3_AnimatedWaterTex342_create( H3_Game & game, de::gpu::Tex2DArray & out );
-
-
 // ===========================================================================
 struct H3_WaterTileRenderer2
 // ===========================================================================

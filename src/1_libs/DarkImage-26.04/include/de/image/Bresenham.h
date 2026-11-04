@@ -6,102 +6,88 @@ namespace de {
 // ===========================================================================
 // ===   Bresenham Algorithms
 // ===========================================================================
-typedef std::function< void( int32_t, int32_t ) > SetPixel_t;
+typedef std::function< void( s32, s32 ) > SetPixel_t;
 
 // ===========================================================================
 struct Bresenham
 // ===========================================================================
 {
-   DE_CREATE_LOGGER("de.image.Bresenham")
+    static void
+    traverseEllipse( s32 a, s32 b, const SetPixel_t& setPixel );
 
-//   typedef std::vector< glm::ivec2 > PointList;
+    // static void
+    // traverseEllipseBorder( s32 x1, s32 y1, s32 x2, s32 y2, const SetPixel_t& setPixel );
 
-//   static PointList
-//   traverseCircle( int32_t x, int32_t y, int32_t radius );
+    static void
+    traverseCircle( s32 r, const SetPixel_t& setPixel );
 
-   // static PointList
-   // traverseCircle2( glm::ivec2 const & center, int32_t radius );
+    static void
+    traverseCircleBorder( s32 x, s32 y, s32 radius, const SetPixel_t& setPixel );
 
-   // static void
-   // drawPixel( int32_t x, int32_t y, SetPixel_t const & setPixel );
+    static void
+    traverseLineH( s32 x1, s32 x2, s32 y, const SetPixel_t& setPixel );
 
-   static void
-   traverseCircle( int32_t r, SetPixel_t const & setPixel );
+    static void
+    traverseLine( s32 x1, s32 y1, s32 x2, s32 y2, const SetPixel_t& setPixel );
 
-   static void
-   traverseEllipse( int32_t a, int32_t b, SetPixel_t const & setPixel );
+    inline static void
+    traverseLine( const Recti& pos, const SetPixel_t& setPixel )
+    {
+        s32 x1 = pos.x;
+        s32 y1 = pos.y;
+        s32 x2 = pos.x2();
+        s32 y2 = pos.y2();
+        traverseLine(x1,y1,x2,y2,setPixel);
+    }
 
-   // static void
-   // drawLineEllipse( int32_t x1, int32_t y1, int32_t x2, int32_t y2, SetPixel_t const & setPixel );
+    static void
+    traverseSupercoverLine( s32 x1, s32 y1, s32 x2, s32 y2, const SetPixel_t& setPixel );
 
-   static void
-   drawLineH( int32_t x1, int32_t x2, int32_t y, SetPixel_t const & setPixel );
+    static void
+    traverseRect( s32 x1, s32 y1, s32 x2, s32 y2, const SetPixel_t& setPixel );
 
-   static void
-   drawLine( glm::ivec2 const & A, glm::ivec2 const & B, SetPixel_t const & setPixel );
+    inline static void
+    traverseRect( const Recti& pos, const SetPixel_t& setPixel )
+    {
+        s32 x1 = pos.x;
+        s32 y1 = pos.y;
+        s32 x2 = pos.x2();
+        s32 y2 = pos.y2();
+        traverseRect(x1,y1,x2,y2,setPixel);
+    }
 
-   inline static void
-   drawLine( int32_t x1, int32_t y1, int32_t x2, int32_t y2, SetPixel_t const & setPixel )
-   {
-      drawLine( glm::ivec2( x1, y1 ), glm::ivec2( x2, y2 ), setPixel );
-   }
+    static void
+    traverseRectBorder( s32 x1, s32 y1, s32 x2, s32 y2, const SetPixel_t& setPixel );
 
-   static void
-   drawSuperCoverLine( glm::ivec2 const & A, glm::ivec2 const & B, SetPixel_t const & setPixel );
+    inline static void
+    traverseRectBorder( const Recti& pos, const SetPixel_t& setPixel )
+    {
+        s32 x1 = pos.x;
+        s32 y1 = pos.y;
+        s32 x2 = pos.x2();
+        s32 y2 = pos.y2();
+        traverseRectBorder(x1,y1,x2,y2,setPixel);
+    }
 
-   inline static void
-   drawSuperCoverLine( int32_t x1, int32_t y1, int32_t x2, int32_t y2, SetPixel_t const & setPixel )
-   {
-      drawSuperCoverLine( glm::ivec2( x1, y1 ), glm::ivec2( x2, y2 ), setPixel );
-   }
+    static void
+    traverseTriangle( s32 Ax, s32 Ay, s32 Bx, s32 By, s32 Cx, s32 Cy, const SetPixel_t& setPixel );
 
-   static void
-   drawRect( Recti pos, SetPixel_t const & setPixel );
+    static void
+    traverseTriangleBorder( s32 Ax, s32 Ay, s32 Bx, s32 By, s32 Cx, s32 Cy, const SetPixel_t& setPixel );
 
-   static void
-   drawRectBorder( Recti pos, SetPixel_t const & setPixel );
+/*
+    static void
+    traverseLine( glm::ivec2 const & A, glm::ivec2 const & B, const SetPixel_t& setPixel );
 
-//   static void
-//   drawRect( int32_t x1, int32_t y1, int32_t x2, int32_t y2, SetPixel_t const & setPixel );
+    static void
+    traverseSupercoverLine( glm::ivec2 const & A, glm::ivec2 const & B, const SetPixel_t& setPixel );
 
-//   static void
-//   drawRectBorder( glm::ivec2 const & A, glm::ivec2 const & B, SetPixel_t const & setPixel );
+    static void
+    drawTriangle( glm::ivec2 const & A, glm::ivec2 const & B, glm::ivec2 const & C, const SetPixel_t& setPixel );
 
-//   inline static void
-//   drawRectBorder( int32_t x1, int32_t y1, int32_t x2, int32_t y2, SetPixel_t const & setPixel )
-//   {
-//      drawRectBorder( glm::ivec2( x1, y1 ), glm::ivec2( x2, y2 ), setPixel );
-//   }
-
-   static void
-   drawTriangle( glm::ivec2 const & A, glm::ivec2 const & B, glm::ivec2 const & C, SetPixel_t const & setPixel );
-
-   static void
-   drawTriangleBorder( glm::ivec2 const & A, glm::ivec2 const & B, glm::ivec2 const & C, SetPixel_t const & setPixel );
-
-   inline static void
-   drawTriangleBorder( int32_t x1, int32_t y1, int32_t x2, int32_t y2, int32_t x3, int32_t y3, SetPixel_t const & setPixel )
-   {
-      drawTriangleBorder( glm::ivec2( x1, y1 ), glm::ivec2( x2, y2 ), glm::ivec2( x3, y3 ), setPixel );
-   }
-
-//   void
-//   floodFill( glm::ivec2 const & p,
-//            std::function< void( int32_t, int32_t ) > const & getPixel,
-//            std::function< void( int32_t, int32_t ) > const & setPixel,
-//            SetPixel_t const & setPixel );
-
-
-//   static void
-//   drawFlatTopTriangle( int32_t x1, int32_t x2, int32_t y12, int32_t x3, int32_t y3,
-//                        SetPixel_t const & setPixel );
-
-//   static void
-//   drawFlatBottomTriangle(  int32_t x1, int32_t y1, int32_t x2, int32_t x3, int32_t y23,
-//                            SetPixel_t const & setPixel);
-   static void
-   drawCircleBorder( int32_t x, int32_t y, int32_t radius, SetPixel_t const & setPixel );
-
+    static void
+    drawTriangleBorder( glm::ivec2 const & A, glm::ivec2 const & B, glm::ivec2 const & C, const SetPixel_t& setPixel );
+*/
 };
 
 } // end namespace de.

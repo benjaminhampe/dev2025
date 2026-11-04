@@ -201,7 +201,6 @@ struct H3_Game
     de::smesh::SMeshBuffer m_smeshThief;
 
     // dc == (instanced) drawcall of one SMeshBuffer.
-    H3_ChipTexture m_chipTexture;
     H3_Chip3DMeshBuffer m_3dChips;
     H3_Chip3DMeshBuffer m_3dCorners;
     H3_Chip3DMeshBuffer m_3dEdges;
@@ -264,9 +263,6 @@ struct H3_Game
     int m_hoverRoadId = 0;
     int m_hoverFarmId = 0;
     int m_hoverCityId = 0;
-
-    de::gpu::Tex2DArray m_AnimatedWaterTex128;
-    de::gpu::Tex2DArray m_AnimatedWaterTex342;
 
   //H3_2DRoadRenderer m_road2DRenderer;
     H3_Tile2DRenderer m_tile2DRenderer;

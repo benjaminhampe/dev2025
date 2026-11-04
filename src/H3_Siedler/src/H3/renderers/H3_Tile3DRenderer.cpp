@@ -3,46 +3,36 @@
 #include <de_opengl.h>
 #include <de/gpu/GL_debug_layer.h>
 
-void H3_TileRenderer_initVAO(uint32_t& vao, uint32_t& vboMat, uint32_t& vboAngle60)
-{
-    glGenVertexArrays(1, &vao);
-    glGenBuffers(1, &vboMat);
-    glGenBuffers(1, &vboAngle60);
-    glBindVertexArray(vao);
-
-    // vbo_instanceMat:
-    glBindBuffer(GL_ARRAY_BUFFER, vboMat);
-    for (int i = 0; i < 4; i++)
-    {
-        glVertexAttribPointer(i, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void*)(sizeof(float) * i * 4));
-        glVertexAttribDivisor(i, 1); // Update per instance
-        glEnableVertexAttribArray(i);
-    }
-
-    // vbo_instanceAngle60:
-    glBindBuffer(GL_ARRAY_BUFFER, vboAngle60);
-    glVertexAttribPointer(4, 1, GL_UNSIGNED_BYTE, GL_FALSE, sizeof(uint8_t), (void*)0);
-    glVertexAttribDivisor(4, 1); // Per-instance divisor
-    glEnableVertexAttribArray(4);
-
-    glBindVertexArray(0);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    GL_VALIDATE;
-}
-
 H3_Tile3DRenderer::H3_Tile3DRenderer()
-{
-    m_shader = nullptr;
-}
+    : m_driver(nullptr)
+    , m_shader(nullptr)
+    , m_tileTexture(nullptr)
+    , m_u_pvMat(-1)
+    , m_u_tex(-1)
+{}
 
 H3_Tile3DRenderer::~H3_Tile3DRenderer()
 {
-
+    if (m_vao)
+    {
+        DE_ERROR("Forgot to call destroy")
+    }
 }
 
 void H3_Tile3DRenderer::destroy()
 {
+    if (m_vao)
+    {
+        glDeleteVertexArrays(1, &m_vao);
+        glDeleteBuffers(1, &m_vbo_instanceMat);
+        glDeleteBuffers(1, &m_vbo_instanceAngle60);
+        glDeleteBuffers(1, &m_vbo_instanceLayer);
 
+        m_vao = 0;
+        m_vbo_instanceMat = 0;
+        m_vbo_instanceAngle60 = 0;
+        m_vbo_instanceLayer = 0;
+    }
 }
 
 void H3_Tile3DRenderer::init( H3_Game& game )
@@ -51,43 +41,9 @@ void H3_Tile3DRenderer::init( H3_Game& game )
 
     if (!m_driver) { DE_ERROR("No driver") return; }
 
-    de::gpu::SO so;
-    so.setAF( 1.0f );
-    so.setMin( de::gpu::SO::Minify::LinearMipmapLinear );
-    so.setMag( de::gpu::SO::Magnify::Linear );
-    so.setWrapR( de::gpu::SO::Wrap::Repeat );
-    so.setWrapS( de::gpu::SO::Wrap::Repeat );
-    so.setWrapT( de::gpu::SO::Wrap::Repeat );
+    m_tileTexture = &game.m_tex.m_tileTexture;
 
-    const auto imgTileA = H3_getImg( game, H3_Img::TileA );
-    const auto imgTileB = H3_getImg( game, H3_Img::TileB );
-    const auto imgTileC = H3_getImg( game, H3_Img::TileC );
-    const auto imgTileD = H3_getImg( game, H3_Img::TileD );
-    const auto imgTileE = H3_getImg( game, H3_Img::TileE );
-    const auto imgTileF = H3_getImg( game, H3_Img::TileDesert );
-
-    auto texA = m_driver->createTexture2D( "H3_TTexA", *imgTileA, so);
-    auto texB = m_driver->createTexture2D( "H3_TTexB", *imgTileB, so);
-    auto texC = m_driver->createTexture2D( "H3_TTexC", *imgTileC, so);
-    auto texD = m_driver->createTexture2D( "H3_TTexD", *imgTileD, so);
-    auto texE = m_driver->createTexture2D( "H3_TTexE", *imgTileE, so);
-    auto texF = m_driver->createTexture2D( "H3_TTexF", *imgTileF, so);
-    m_tex[0] = de::gpu::TexRef(texA);
-    m_tex[1] = de::gpu::TexRef(texB);
-    m_tex[2] = de::gpu::TexRef(texC);
-    m_tex[3] = de::gpu::TexRef(texD);
-    m_tex[4] = de::gpu::TexRef(texE);
-    m_tex[5] = de::gpu::TexRef(texF);
-
-    //initVAO();
-
-    for (int i = 0; i < 6; ++i)
-    {
-        H3_TileRenderer_initVAO(
-                m_vao[i],
-                m_vbo_instanceMat[i],
-                m_vbo_instanceAngle60[i]);
-    }
+    initVAO();
 
     const std::string shaderName = "h3flatTil";
     const std::string vs = R"(
@@ -109,11 +65,8 @@ void H3_Tile3DRenderer::init( H3_Game& game )
         ///
 
         layout(location = 0) in mat4 a_instanceMat; // (mat4 spans 4 attribute locations)
-        layout(location = 4) in float a_instanceAngle60; // index into uvcoords
-
-        uniform mat4 u_projViewMat;
-
-        out vec2 v_texCoord;
+        layout(location = 4) in uint a_instanceAngle60;
+        layout(location = 5) in uint a_instanceLayer;
 
         const vec2 a_position[6] = vec2[](
             vec2( 0.00, -0.50), // A=0
@@ -141,14 +94,22 @@ void H3_Tile3DRenderer::init( H3_Game& game )
             2, 3, 4  // CDE
         );
 
+        uniform mat4 u_projViewMat;
+
+        out vec2 v_texCoord;
+        flat out uint v_texLayer;
+
         void main()
         {
             const uint i = a_indices[gl_VertexID];
             const uint k = (i + uint(a_instanceAngle60)) % 6;
-            v_texCoord = a_texcoord[k];
+
             const float x = a_position[i].x;
             const float z = a_position[i].y;
             gl_Position = u_projViewMat * a_instanceMat * vec4(x, 0.0, z, 1.0);
+
+            v_texCoord = a_texcoord[k];
+            v_texLayer = a_instanceLayer;
         }
         )";
 
@@ -156,87 +117,132 @@ void H3_Tile3DRenderer::init( H3_Game& game )
     const std::string fs = R"(
 
         out vec4 fragColor;
-        in vec2 v_texCoord;
 
-        uniform sampler2D u_tex;
+        uniform sampler2DArray u_tex;
+
+        in vec2 v_texCoord;
+        flat in uint v_texLayer;
 
         void main()
         {
-            fragColor = texture(u_tex, v_texCoord);
+            vec3 texCoord = vec3(v_texCoord.x, v_texCoord.y, float(v_texLayer));
+            fragColor = texture(u_tex, texCoord);
         }
     )";
 
     m_shader = m_driver->createShader( shaderName, vs, fs );
-    m_loc_pvMat = glGetUniformLocation(m_shader->id, "u_projViewMat");
-    m_loc_tex = glGetUniformLocation(m_shader->id, "u_tex");
-
-    //m_loc_timeInSec = glGetUniformLocation(m_shader->id, "u_timeInSec");
-    //m_loc_gradientMap = glGetUniformLocation(m_shader->id, "u_gradientMap");
-    //m_loc_dudvMap = glGetUniformLocation(m_shader->id, "u_dudvMap");
+    m_u_pvMat = glGetUniformLocation(m_shader->id, "u_projViewMat");
+    m_u_tex = glGetUniformLocation(m_shader->id, "u_tex");
 }
 
-
-void H3_Tile3DRenderer::collectInstances(int i, const H3_Game& game)
+void H3_Tile3DRenderer::initVAO()
 {
-    m_instanceMat[i].clear();
-    m_instanceAngle60[i].clear();
-    //m_instanceLayer.clear();
+    glGenVertexArrays(1, &m_vao);
+    glGenBuffers(1, &m_vbo_instanceMat);
+    glGenBuffers(1, &m_vbo_instanceAngle60);
+    glGenBuffers(1, &m_vbo_instanceLayer);
+    glBindVertexArray(m_vao);
+
+    // vbo_instanceMat:
+    glBindBuffer(GL_ARRAY_BUFFER, m_vbo_instanceMat);
+    for (int i = 0; i < 4; i++)
+    {
+        glVertexAttribPointer(i, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void*)(sizeof(float) * i * 4));
+        glVertexAttribDivisor(i, 1); // Update per instance
+        glEnableVertexAttribArray(i);
+    }
+
+    // vbo_instanceAngle60:
+    glBindBuffer(GL_ARRAY_BUFFER, m_vbo_instanceAngle60);
+    glVertexAttribIPointer(4, 1, GL_UNSIGNED_BYTE, sizeof(uint8_t), (void*)0);
+    glVertexAttribDivisor(4, 1); // Per-instance divisor
+    glEnableVertexAttribArray(4);
+
+    // vbo_instanceLayer:
+    glBindBuffer(GL_ARRAY_BUFFER, m_vbo_instanceLayer);
+    glVertexAttribIPointer(5, 1, GL_UNSIGNED_BYTE, sizeof(uint8_t), (void*)0);
+    glVertexAttribDivisor(5, 1); // Per-instance divisor
+    glEnableVertexAttribArray(5);
+
+    glBindVertexArray(0);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    GL_VALIDATE;
+}
+
+void H3_Tile3DRenderer::collectInstances(const H3_Game& game)
+{
+    m_instanceMat.clear();
+    m_instanceAngle60.clear();
+    m_instanceLayer.clear();
 
     const size_t n = game.m_tiles.size();
-    m_instanceMat[i].reserve(n);
-    m_instanceAngle60[i].reserve(n);
-    //m_instanceLayer.reserve(n);
-
-    H3_TileType tt = H3_TileType::Desert;
-    switch (i)
-    {
-        case 0: tt = H3_TileType::TileA; break;
-        case 1: tt = H3_TileType::TileB; break;
-        case 2: tt = H3_TileType::TileC; break;
-        case 3: tt = H3_TileType::TileD; break;
-        case 4: tt = H3_TileType::TileE; break;
-        default: break;
-    }
+    m_instanceMat.reserve(n);
+    m_instanceAngle60.reserve(n);
+    m_instanceLayer.reserve(n);
 
     for (const auto& tile : game.m_tiles)
     {
-        if ( tile.tt != tt ) continue; // Skip all non 'tt' tiles
+        // [Instance] a_instanceLayer
+        uint8_t layer = H3_TileTexture::eTypeCount;
+        switch (tile.tt)
+        {
+            // case H3_TileType::Unknown: layer = Unknown; break;
+            // case H3_TileType::Water: layer = H3_TileTexture::Water; break;
+            case H3_TileType::Desert: layer = H3_TileTexture::Desert; break;
+            case H3_TileType::TileA: layer = H3_TileTexture::TileA; break;
+            case H3_TileType::TileB: layer = H3_TileTexture::TileB; break;
+            case H3_TileType::TileC: layer = H3_TileTexture::TileC; break;
+            case H3_TileType::TileD: layer = H3_TileTexture::TileD; break;
+            case H3_TileType::TileE: layer = H3_TileTexture::TileE; break;
+            default: break;
+        }
 
+        if (layer == H3_TileTexture::eTypeCount)
+        {
+            continue; // Skip all else, we draw Water separately
+        }
+
+        m_instanceLayer.emplace_back( layer );
+
+        // [Instance] a_instanceAngle60
+        m_instanceAngle60.emplace_back( tile.angle60 );
+
+        // [Instance] a_instanceMat
         de::TRSf trs;
         trs.pos = tile.pos;
         trs.rotate = glm::vec3(0,0,0);
         trs.scale = game.m_tileSize;
         trs.update();
-        m_instanceMat[i].push_back( trs.modelMat );
-        m_instanceAngle60[i].emplace_back( tile.angle60 );
+        m_instanceMat.emplace_back( trs.modelMat );
     }
 }
 
-
-void H3_Tile3DRenderer::uploadInstances(int i)
+void H3_Tile3DRenderer::uploadInstances()
 {
-    if (m_instanceMat[i].empty()) { return; }
+    if (m_instanceMat.empty()) { return; }
 
-    glBindBuffer(GL_ARRAY_BUFFER, m_vbo_instanceMat[i]);
+    glBindBuffer(GL_ARRAY_BUFFER, m_vbo_instanceMat);
     glBufferData(GL_ARRAY_BUFFER,
-                    m_instanceMat[i].size() * sizeof(glm::mat4),
-                    m_instanceMat[i].data(), GL_STATIC_DRAW);
+                    m_instanceMat.size() * sizeof(glm::mat4),
+                    m_instanceMat.data(), GL_STATIC_DRAW);
 
-    glBindBuffer(GL_ARRAY_BUFFER, m_vbo_instanceAngle60[i]);
+    glBindBuffer(GL_ARRAY_BUFFER, m_vbo_instanceAngle60);
     glBufferData(GL_ARRAY_BUFFER,
-                    m_instanceAngle60[i].size() * sizeof(uint8_t),
-                    m_instanceAngle60[i].data(), GL_STATIC_DRAW);
+                    m_instanceAngle60.size() * sizeof(uint8_t),
+                    m_instanceAngle60.data(), GL_STATIC_DRAW);
+
+    glBindBuffer(GL_ARRAY_BUFFER, m_vbo_instanceLayer);
+    glBufferData(GL_ARRAY_BUFFER,
+                    m_instanceLayer.size() * sizeof(uint8_t),
+                    m_instanceLayer.data(), GL_STATIC_DRAW);
 
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
 void H3_Tile3DRenderer::collectAndUploadInstances(const H3_Game& game)
 {
-    for (int i = 0; i < 6; i++)
-    {
-        collectInstances( i, game );
-        uploadInstances( i );
-    }
+    collectInstances(game );
+    uploadInstances();
 }
 
 void H3_Tile3DRenderer::render()
@@ -253,26 +259,19 @@ void H3_Tile3DRenderer::render()
     glm::mat4 pvMat(1.0f);
     auto camera = m_driver->getCamera();
     if (camera) { pvMat = camera->getViewProjectionMatrix(); }
-    glUniformMatrix4fv(m_loc_pvMat, 1, GL_FALSE, glm::value_ptr(pvMat));
+    glUniformMatrix4fv(m_u_pvMat, 1, GL_FALSE, glm::value_ptr(pvMat));
 
-    for (int i = 0; i < 6; i++)
-    {
-        if (!m_vao[i] || m_instanceMat[i].empty())
-        {
-            continue; // Nothing to draw.
-        }
+    // m_driver->useTexture( m_tileTexture.tex, 0);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D_ARRAY, m_tileTexture->id); // Binde die native GL-id deines Arrays
+    glUniform1i(m_u_tex, 0);
 
-        // [Uniform] sampler2D
-        m_driver->useTexture( m_tex[i].tex, 0);
-        glUniform1i(m_loc_tex, 0);
+    // [Render]
+    glBindVertexArray(m_vao);
+    glDrawArraysInstanced(GL_TRIANGLES, 0, 12, m_instanceMat.size());
+    glBindVertexArray(0);
 
-        // [Render]
-        glBindVertexArray(m_vao[i]);
-        glDrawArraysInstanced(GL_TRIANGLES, 0, 12, m_instanceMat[i].size());
-        glBindVertexArray(0);
-
-        // glBindTexture( GL_TEXTURE_2D, 0 );
-    }
+    // glBindTexture( GL_TEXTURE_2D, 0 );
 
     // [CleanUp]
     GL_VALIDATE;

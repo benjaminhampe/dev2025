@@ -14,20 +14,20 @@ namespace de {
 struct Span
 // ===========================================================================
 {
-   int32_t y;
-   int32_t x1;
-   int32_t x2;
-   uint32_t color;
+   s32 y;
+   s32 x1;
+   s32 x2;
+   u32 color;
 };
 
 struct ImageRGBA32
 {
-    int w, h;
+    s32 w, h;
     std::vector<uint8_t> pixels; // RGBA: 4 Kanäle pro Pixel
 };
 
 // Hilfsfunktion für Lanczos-Kernel
-double lanczosKernel(double x, int a)
+double lanczosKernel(double x, s32 a)
 {
     if (x == 0.0) return 1.0;
     if (x < -a || x > a) return 0.0;
@@ -35,13 +35,13 @@ double lanczosKernel(double x, int a)
 }
 
 // Neuberechnung eines Pixels
-uint8_t getPixel(const ImageRGBA32& img, int x, int y, int c)
+uint8_t getPixel(const ImageRGBA32& img, s32 x, s32 y, s32 c)
 {
     if (x < 0 || x >= img.w || y < 0 || y >= img.h) return 0;
     return img.pixels[4 * (y * img.w + x) + c];
 }
 
-ImageRGBA32 resizeLanczos(const ImageRGBA32& src, int newWidth, int newHeight, int a = 3)
+ImageRGBA32 resizeLanczos(const ImageRGBA32& src, s32 newWidth, s32 newHeight, s32 a = 3)
 {
     ImageRGBA32 dst;
     dst.w = newWidth;
@@ -51,21 +51,21 @@ ImageRGBA32 resizeLanczos(const ImageRGBA32& src, int newWidth, int newHeight, i
     double scaleX = static_cast<double>(src.w) / newWidth;
     double scaleY = static_cast<double>(src.h) / newHeight;
 
-    for (int y = 0; y < newHeight; ++y) {
-        for (int x = 0; x < newWidth; ++x) {
-            for (int c = 0; c < 4; ++c) { // Für RGBA-Kanäle
+    for (s32 y = 0; y < newHeight; ++y) {
+        for (s32 x = 0; x < newWidth; ++x) {
+            for (s32 c = 0; c < 4; ++c) { // Für RGBA-Kanäle
                 double srcX = (x + 0.5) * scaleX - 0.5;
                 double srcY = (y + 0.5) * scaleY - 0.5;
-                int srcXInt = static_cast<int>(srcX);
-                int srcYInt = static_cast<int>(srcY);
+                s32 srcXInt = static_cast<s32>(srcX);
+                s32 srcYInt = static_cast<s32>(srcY);
 
                 double pixelValue = 0.0;
                 double weightSum = 0.0;
 
-                for (int dy = -a + 1; dy < a; ++dy) {
-                    for (int dx = -a + 1; dx < a; ++dx) {
-                        int sampleX = srcXInt + dx;
-                        int sampleY = srcYInt + dy;
+                for (s32 dy = -a + 1; dy < a; ++dy) {
+                    for (s32 dx = -a + 1; dx < a; ++dx) {
+                        s32 sampleX = srcXInt + dx;
+                        s32 sampleY = srcYInt + dy;
                         double weight = lanczosKernel(srcX - sampleX, a) * lanczosKernel(srcY - sampleY, a);
 
                         pixelValue += getPixel(src, sampleX, sampleY, c) * weight;
@@ -73,7 +73,7 @@ ImageRGBA32 resizeLanczos(const ImageRGBA32& src, int newWidth, int newHeight, i
                     }
                 }
 
-                dst.pixels[4 * (y * newWidth + x) + c] = std::clamp(static_cast<int>(pixelValue / weightSum + 0.5), 0, 255);
+                dst.pixels[4 * (y * newWidth + x) + c] = std::clamp(static_cast<s32>(pixelValue / weightSum + 0.5), 0, 255);
             }
         }
     }
@@ -81,11 +81,11 @@ ImageRGBA32 resizeLanczos(const ImageRGBA32& src, int newWidth, int newHeight, i
     return dst;
 }
 
-int main() {
+s32 main() {
     // Beispielcode
     ImageRGBA32 image = { 2, 2, {255, 0, 0, 255, 0, 255, 0, 255, 0, 0, 255, 255, 255, 255, 255, 255} };
-    int newWidth = 4;
-    int newHeight = 4;
+    s32 newWidth = 4;
+    s32 newHeight = 4;
 
     ImageRGBA32 resizedImage = resizeLanczos(image, newWidth, newHeight);
 
@@ -98,181 +98,190 @@ int main() {
 struct ImagePainter
 // ===========================================================================
 {
-   DE_CREATE_LOGGER("de.ImagePainter")
+    static Font5x8::TextSize
+    getTextSize5x8( std::string const & msg, Font5x8 font = Font5x8() );
+
+    static void
+    drawText5x8(
+        Image & img,
+        s32 x,
+        s32 y,
+        std::string const & msg,
+        u32 color,
+        Font5x8 font = Font5x8(),
+        Align align = Align::Default,
+        bool blend = false );
+
+    #ifdef DE_USE_TRUETYPE_FONTS
+
+    static TextSize
+    getTextSize( std::wstring const & msg, Font font = Font() );
+
+    static void
+    drawText( Image & img, s32 x, s32 y, std::wstring const & msg, u32 color,
+    Font font = Font(), Align align = Align::Default, bool blend = false );
+
+    #endif
+
+    static void
+    brighten( Image & img, float brightness );
+
+    static void
+    computeSaturation(
+        const Image& img, u32 & color_min, u32 & color_max );
+
+    static void
+    autoSaturate( Image & img );
+
+    static void
+    replaceColor( Image & img,
+        u32 search_color = 0xFFFFFFFF,
+        u32 replace_color = 0x00000000 );
+
+    static void
+    makeTransparent( Image & img, u32 search_color = 0xFFFFFFFF )
+    {
+        replaceColor( img, search_color );
+    }
+
+    static void
+    fill( Image & img, u32 color );
+    static void
+    floodFill( Image & img, s32 x, s32 y, u32 newColor, u32 oldColor );
+
+    static u32
+    getPixel( Image & img, s32 x, s32 y, u32 colorKey = 0x00000000 );
+    static void
+    setPixel( Image & img, s32 x, s32 y, u32 color, bool blend = false );
+
+    static void
+    drawImage( Image & img, const Image& src, s32 x, s32 y, bool blend = false );
+
+    static void
+    drawLineH( Image & img, s32 x1, s32 x2, s32 y, u32 color, bool blend = false );
+
+    static void
+    drawLine( Image & img, s32 x1, s32 y1, s32 x2, s32 y2, u32 color, bool blend = false );
+
+    static void
+    drawLine( Image & img, const Recti& r, u32 color, bool blend = false );
+
+    static void
+    drawLine( de::Image& img, s32 x1, s32 y1, s32 x2, s32 y2, u32 color, bool blend, const de::Recti& clipRect );
+
+    static void
+    drawSuperCoverLine( de::Image& img,
+        s32 x1, s32 y1, s32 x2, s32 y2, u32 color, bool blend);
+
+    static void
+    drawSuperCoverLine( de::Image& img,
+        s32 x1, s32 y1, s32 x2, s32 y2, u32 color, bool blend,
+        const de::Recti& clipRect );
+
+    // inline static void
+    // drawLine( Image & img, glm::ivec2 const & a, glm::ivec2 const & b, u32 color, bool blend = false )
+    // {
+    //     drawLine( img, a.x, a.y, b.x, b.y, color, blend );
+    // }
+
+    // Recti stores higher precision and makes more beautiful results.
+    static void
+    drawLineGrid( Image & img, const Recti& pos, u32 color, bool blend = false );
+    static void
+    drawLineGridX( Image & img, const Recti& pos, u32 color, bool blend = false );
+    static void
+    drawLineGridY( Image & img, const Recti& pos, u32 color, bool blend = false );
+    static void
+    drawLineMark( Image & img, s32 x, s32 y, u32 color, bool blend = false );
+    static void
+    drawDot( Image & img, s32 x, s32 y, s32 w, u32 color, bool blend = false );
+
+    // ==== Rect ===
+
+    // Quad ABCD:  --> u
+    //             |
+    // B---C       v
+    // |\  |
+    // | \ |
+    // |  \|    (ccw) ACB + ADC
+    // A---D    (cw) ABC + ACD
+    //
+    static void
+    drawRect( Image & img, const Recti& pos,
+        u32 colorA, u32 colorB,
+        u32 colorC, u32 colorD, bool blend = false );
+
+    static void
+    drawRect( Image & img, const Recti& pos, u32 color, bool blend = false );
+
+    static void
+    drawRect( Image & img, s32 x1, s32 y1, s32 x2, s32 y2, u32 color, bool blend = false )
+    {
+        drawRect( img, Recti::fromPoints( x1, y1, x2, y2 ), color, blend );
+    }
+    // static void
+    // drawRect( Image & img, glm::ivec2 const & a, glm::ivec2 const & b, u32 color, bool blend = false )
+    // {
+    //     drawRect( img, Recti::fromPoints( a.x, a.y, b.x, b.y), color, blend );
+    // }
 
 
-   static Font5x8::TextSize
-   getTextSize5x8( std::string const & msg, Font5x8 font = Font5x8() );
-
-   static void
-   drawText5x8(Image & img, int32_t x, int32_t y, std::string const & msg,
-               uint32_t color, Font5x8 font = Font5x8(),
-               Align align = Align::Default, bool blend = false );
-
-#ifdef DE_USE_TRUETYPE_FONTS
-
-   static TextSize
-   getTextSize( std::wstring const & msg, Font font = Font() );
-
-   static void
-   drawText( Image & img, int32_t x, int32_t y, std::wstring const & msg, uint32_t color,
-             Font font = Font(), Align align = Align::Default, bool blend = false );
-
-#endif
-
-   static void
-   brighten( Image & img, float brightness );
-
-   static void
-   computeSaturation( Image const & img, uint32_t & color_min, uint32_t & color_max );
-
-   static void
-   autoSaturate( Image & img );
-
-   static void
-   replaceColor( Image & img,
-      uint32_t search_color = 0xFFFFFFFF,
-      uint32_t replace_color = 0x00000000 );
-
-   static void
-   makeTransparent( Image & img, uint32_t search_color = 0xFFFFFFFF )
-   {
-      replaceColor( img, search_color );
-   }
-
-   static void
-   fill( Image & img, uint32_t color );
-   static uint32_t
-   getPixel( Image & img, int32_t x, int32_t y, uint32_t colorKey = 0x00000000 );
-   static void
-   setPixel( Image & img, int32_t x, int32_t y, uint32_t color, bool blend = false );
-
-
-   static void
-   drawImage( Image & img, Image const & src, int32_t x, int32_t y, bool blend = false );
-
-   static void
-   drawLineH( Image & img, int32_t x1, int32_t x2, int32_t y, uint32_t color, bool blend = false );
-
-   static void
-   drawLine( Image & img, int32_t x1, int32_t y1, int32_t x2, int32_t y2, uint32_t color, bool blend = false );
-   inline static void
-   drawLine( Image & img, glm::ivec2 const & a, glm::ivec2 const & b, uint32_t color, bool blend = false )
-   {
-      drawLine( img, a.x, a.y, b.x, b.y, color, blend );
-   }
-   inline static void
-   drawLine( Image & img, Recti const & r, uint32_t color, bool blend = false )
-   {
-      drawLine( img, r.x1(), r.y1(), r.x2(), r.y2(), color, blend );
-   }
-
-
-   // Recti stores higher precision and makes more beautiful results.
-   static void
-   drawLineGrid( Image & img, Recti const & pos, uint32_t color, bool blend = false );
-   static void
-   drawLineGridX( Image & img, Recti const & pos, uint32_t color, bool blend = false );
-   static void
-   drawLineGridY( Image & img, Recti const & pos, uint32_t color, bool blend = false );
-   static void
-   drawLineMark( Image & img, int32_t x, int32_t y, uint32_t color, bool blend = false );
-   static void
-   drawDot( Image & img, int32_t x, int32_t y, int32_t w, uint32_t color, bool blend = false );
-
-// ==== Rect ===
-
-   // Quad ABCD:  --> u
-   //             |
-   // B---C       v
-   // |\  |
-   // | \ |
-   // |  \|    (ccw) ACB + ADC
-   // A---D    (cw) ABC + ACD
-   //
-   static void
-   drawRect( Image & img, Recti const & pos,
-            uint32_t colorA, uint32_t colorB,
-            uint32_t colorC, uint32_t colorD, bool blend = false );
-
-   static void
-   drawRect( Image & img, Recti const & pos, uint32_t color, bool blend = false );
-
-   static void
-   drawRect( Image & img, int32_t x1, int32_t y1, int32_t x2, int32_t y2, uint32_t color, bool blend = false )
-   {
-      drawRect( img, Recti::fromPoints( x1, y1, x2, y2 ), color, blend );
-   }
-   static void
-   drawRect( Image & img, glm::ivec2 const & a, glm::ivec2 const & b, uint32_t color, bool blend = false )
-   {
-      drawRect( img, Recti::fromPoints( a.x, a.y, b.x, b.y), color, blend );
-   }
-
-
-// ==== RectBorder ===
-   static void
-   drawRectBorder( Image & img, Recti const & pos, uint32_t color, bool blend = false );
+    // ==== RectBorder ===
+    static void
+    drawRectBorder( Image & img, const Recti& pos, u32 color, bool blend = false );
 
 //   static void
-//   drawRectBorder( Image & img, int32_t x1, int32_t y1, int32_t x2, int32_t y2, uint32_t color, bool blend = false )
+//   drawRectBorder( Image & img, s32 x1, s32 y1, s32 x2, s32 y2, u32 color, bool blend = false )
 //   {
 //      drawRectBorder( img, Recti::fromPoints( x1, y1, x2, y2 ), color, blend );
 //   }
 //   inline static void
-//   drawRectBorder( Image & img, glm::ivec2 const & a, glm::ivec2 const & b, uint32_t color, bool blend = false )
+//   drawRectBorder( Image & img, glm::ivec2 const & a, glm::ivec2 const & b, u32 color, bool blend = false )
 //   {
 //      drawRectBorder( img, a.x, a.y, b.x, b.y, color, blend );
 //   }
 
-   static void
-   drawTriangleBorder( Image & img, int32_t x1, int32_t y1, int32_t x2, int32_t y2,
-                     int32_t x3, int32_t y3, uint32_t color, bool blend = false );
-   static void
-   drawTriangle( Image & img,
-      glm::ivec2 const & A,
-      glm::ivec2 const & B,
-      glm::ivec2 const & C, uint32_t color, bool blend = false );
+    static void
+    drawTriangleBorder( Image & img, s32 x1, s32 y1, s32 x2, s32 y2,
+                 s32 x3, s32 y3, u32 color, bool blend = false );
 
-/*
-   static void
-   floodFill(  int32_t x,
-               int32_t y,
-               uint32_t newColor,
-               uint32_t oldColor );
-*/
+    static void
+    drawTriangle( Image & img,
+        glm::ivec2 const & A,
+        glm::ivec2 const & B,
+        glm::ivec2 const & C, u32 color, bool blend = false );
 
 // Circle/Ellipse + RoundRect
 
-   static void
-   drawCircle( Image & img, Recti const & pos, uint32_t color, bool blend = false );
-   static void
-   drawCircleBorder( Image & img, Recti const & pos, uint32_t color, bool blend = false );
+    static void
+    drawCircle( Image & img, const Recti& pos, u32 color, bool blend = false );
+    static void
+    drawCircleBorder( Image & img, const Recti& pos, u32 color, bool blend = false );
 
-   static void
-   drawRoundRect( Image & img, Recti const & pos, int rx, int ry, uint32_t color, bool blend = false );
-   static void
-   drawRoundRectBorder( Image & img, Recti const & pos, int rx, int ry, Pen const & pen, bool blend = false );
+    static void
+    drawRoundRect( Image & img, const Recti& pos, s32 rx, s32 ry, u32 color, bool blend = false );
+    static void
+    drawRoundRectBorder( Image & img, const Recti& pos, s32 rx, s32 ry, Pen const & pen, bool blend = false );
 
-// RoundRect helpers
+    // RoundRect helpers
 
-   static void
-   drawCircleA( Image & img, Recti const & pos, uint32_t color, bool blend = false );
-   static void
-   drawCircleB( Image & img, Recti const & pos, uint32_t color, bool blend = false );
-   static void
-   drawCircleC( Image & img, Recti const & pos, uint32_t color, bool blend = false );
-   static void
-   drawCircleD( Image & img, Recti const & pos, uint32_t color, bool blend = false );
+    static void
+    drawCircleA( Image & img, const Recti& pos, u32 color, bool blend = false );
+    static void
+    drawCircleB( Image & img, const Recti& pos, u32 color, bool blend = false );
+    static void
+    drawCircleC( Image & img, const Recti& pos, u32 color, bool blend = false );
+    static void
+    drawCircleD( Image & img, const Recti& pos, u32 color, bool blend = false );
 
-   static void
-   drawCircleBorderA( Image & img, Recti const & pos, Pen const & pen, bool blend = false );
-   static void
-   drawCircleBorderB( Image & img, Recti const & pos, Pen const & pen, bool blend = false );
-   static void
-   drawCircleBorderC( Image & img, Recti const & pos, Pen const & pen, bool blend = false );
-   static void
-   drawCircleBorderD( Image & img, Recti const & pos, Pen const & pen, bool blend = false );
+    static void
+    drawCircleBorderA( Image & img, const Recti& pos, Pen const & pen, bool blend = false );
+    static void
+    drawCircleBorderB( Image & img, const Recti& pos, Pen const & pen, bool blend = false );
+    static void
+    drawCircleBorderC( Image & img, const Recti& pos, Pen const & pen, bool blend = false );
+    static void
+    drawCircleBorderD( Image & img, const Recti& pos, Pen const & pen, bool blend = false );
 
 };
 
@@ -284,13 +293,13 @@ struct ImageCutter
 public:
 
    static Image
-   copyRegionRect( Image const & src, Recti region ); // , uint32_t clearColor = 0x00000000
+   copyRegionRect( const Image& src, Recti region ); // , u32 clearColor = 0x00000000
 
    static Image
-   copyRegionHexagon( Image const & src, Recti region, uint32_t clearColor = 0x00000000 );
+   copyRegionHexagon( const Image& src, Recti region, u32 clearColor = 0x00000000 );
 
    static Image
-   copyRegionEllipse( Image const & src, Recti region, uint32_t clearColor = 0x00000000 );
+   copyRegionEllipse( const Image& src, Recti region, u32 clearColor = 0x00000000 );
 };
 
 // ===========================================================================
@@ -301,7 +310,7 @@ struct ImageRepeat
 public:
 
    static Image
-   repeatImage( Image const & src, int w, int h, bool preserveAspect );
+   repeatImage( const Image& src, s32 w, s32 h, bool preserveAspect );
 
 //! returns a (u,v) repeated image (tiles will be scaled bilinear if necessary)
 //IImage*
@@ -329,79 +338,79 @@ public:
    rotate180( Image & img );
 
    static Image
-   rotateLeft( Image const & img );
+   rotateLeft( const Image& img );
 
    static Image
-   rotateRight( Image const & img );
+   rotateRight( const Image& img );
 
    static Image
-   rotate( Image const & img, float angleDegreesCCW, uint32_t colorKey );
+   rotate( const Image& img, float angleDegreesCCW, u32 colorKey );
 
    /// Shifts an image by 'n' pixels vertical-lines left (can be negative)
    static void
-   shiftLeft( Image & img, int32_t n_shifts = 1 );
+   shiftLeft( Image & img, s32 n_shifts = 1 );
 
    /// Shifts an image by 'n' pixels vertical-lines right (can be negative)
    static void
-   shiftRight( Image & img, int32_t n_shifts = 1 );
+   shiftRight( Image & img, s32 n_shifts = 1 );
 
    /// Shifts an image by 'n' pixels horizontal-lines up (can be negative)
    static void
-   shiftUp( Image & img, int32_t n_shifts = 1 );
+   shiftUp( Image & img, s32 n_shifts = 1 );
 
    /// Shifts an image by 'n' pixels horizontal-lines down (can be negative)
    static void
-   shiftDown( Image & img, int32_t n_shifts = 1 );
+   shiftDown( Image & img, s32 n_shifts = 1 );
 
    static Image
-   skewH( Image const & src, float angle );
+   skewH( const Image& src, float angle );
 
    static Image
-   skewV( Image const & src, float angle );
+   skewV( const Image& src, float angle );
 };
 
 // ===========================================================================
 struct ImageScaler
 // ===========================================================================
 {
-   // int scaleOp = 0 - nearest
-   // int scaleOp = 1 - bilinear
-   // int scaleOp = 2 - bicubique
+   // s32 scaleOp = 0 - nearest
+   // s32 scaleOp = 1 - bilinear
+   // s32 scaleOp = 2 - bicubique
    static Image
-   resize( Image const & src, int w, int h, int scaleOp = 1, uint32_t colorKey = 0x00000000 );
+   resize( const Image& src, s32 w, s32 h, s32 scaleOp = 1, u32 colorKey = 0x00000000 );
 
    // The word 'resize()' is more precise regarding what he function does
    // - a fixed size as new size is given, not a multiple of the old size (scaling)
    static Image
-   resizeNearest( Image const & src, int w, int h, uint32_t colorKey = 0x00000000 );
-   //                          int color_planes, bool bPreserveAspect, bool bSharpen)
+   resizeNearest( const Image& src, s32 w, s32 h, u32 colorKey = 0x00000000 );
+   //                          s32 color_planes, bool bPreserveAspect, bool bSharpen)
    static Image
-   resizeBilinear( Image const & src, int w, int h, uint32_t colorKey = 0x00000000 );
+   resizeBilinear( const Image& src, s32 w, s32 h, u32 colorKey = 0x00000000 );
    //                           E_COLOR_PLANE planes, bool bPreserveAspect, bool bSharpen) const
    static Image
-   resizeBicubic( Image const & src, int w, int h, uint32_t colorKey = 0x00000000 );
+   resizeBicubic( const Image& src, s32 w, s32 h, u32 colorKey = 0x00000000 );
    //
 
-   static uint32_t
-   getNearestPixel( Image const & src, float fx, float fy, uint32_t colorKey = 0x00000000 );
+   static u32
+   getNearestPixel( const Image& src, float fx, float fy, u32 colorKey = 0x00000000 );
 
-   //static uint32_t
-   //getBilinearPixelFast( IImage* src, float fx, float fy, E_COLOR_PLANE planes, uint32_t* colorKey);
+   //static u32
+   //getBilinearPixelFast( IImage* src, float fx, float fy, E_COLOR_PLANE planes, u32* colorKey);
 
-   static uint32_t
-   getBilinearPixel( Image const & src, float fx, float fy, uint32_t colorKey = 0x00000000 );
+   static u32
+   getBilinearPixel( const Image& src, float fx, float fy, u32 colorKey = 0x00000000 );
 
    static float
    getBicubicFactor( float const arg );
 
-   static uint32_t
-   getBicubicPixel( Image const & src, float fx, float fy, uint32_t* colorKey = nullptr );
+   static u32
+   getBicubicPixel( const Image& src, float fx, float fy, u32* colorKey = nullptr );
 
    static Image
-   scaleImage( Image const & src, int w, int h, bool preserveAspect );
+   scaleImage( const Image& src, s32 w, s32 h, bool preserveAspect );
 
    static bool
-   resizeBicubic( Image & dst, Image const & src, uint32_t colorKey = 0x00000000 );
+   resizeBicubic( Image & dst, const Image& src, u32 colorKey = 0x00000000 );
 };
 
 // ===========================================================================
@@ -415,16 +424,16 @@ struct ImageResizef
     static V4
     getBilinearPixelf( const Image & src, float fx, float fy, const V4& colorKey = V4() );
 
-    // int scaleOp = 0 - nearest
-    // int scaleOp = 1 - bilinear
-    // int scaleOp = 2 - bicubic
+    // s32 scaleOp = 0 - nearest
+    // s32 scaleOp = 1 - bilinear
+    // s32 scaleOp = 2 - bicubic
     static Image
-    resizef( const Image & src, int w, int h, int scaleOp = 1, const V4& colorKey = V4() );
+    resizef( const Image & src, s32 w, s32 h, s32 scaleOp = 1, const V4& colorKey = V4() );
 
     static Image
-    resizeNearestf( const Image & src, int w, int h, const V4& colorKey = V4() );
+    resizeNearestf( const Image & src, s32 w, s32 h, const V4& colorKey = V4() );
     static Image
-    resizeBilinearf( const Image & src, int w, int h, const V4& colorKey = V4() );
+    resizeBilinearf( const Image & src, s32 w, s32 h, const V4& colorKey = V4() );
 };
 
 // ===========================================================================
@@ -484,15 +493,15 @@ template < typename T > struct ImageFilter // : public virtual IReferenceCounted
    T factor;		  // factor
    T offset;		  // offset
 
-   T get(int32_t index)
+   T get(s32 index)
    {
       index = index%9;
-      int32_t col = index%3;
-      int32_t row = (index-col)/3;
+      s32 col = index%3;
+      s32 row = (index-col)/3;
       return (pixels[row][col]/factor) + offset;
    }
 
-   T get(int32_t row, int32_t col)
+   T get(s32 row, s32 col)
    {
       if (row<0) row=0;
       if (row>2) row=2;

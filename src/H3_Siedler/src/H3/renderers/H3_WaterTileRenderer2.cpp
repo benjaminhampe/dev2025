@@ -4,59 +4,6 @@
 #include <de_opengl.h>
 #include <de/gpu/GL_debug_layer.h>
 
-bool
-H3_AnimatedWaterTex128_create( H3_Game & game, de::gpu::Tex2DArray & tex2DArray )
-{
-    std::vector<const de::Image*> pointers;
-    pointers.reserve( 40 );
-
-    for (int i = 0 ; i < 40; ++i)
-    {
-        auto id = H3_Img::eID(H3_Img::Water128_00 + i);
-        const de::Image* img = H3_getImg(game,id);
-        pointers.emplace_back( img );
-    }
-
-    de::gpu::SO so( 1.0f,
-        de::gpu::SO::Minify::LinearMipmapLinear,
-        de::gpu::SO::Magnify::Linear,
-        de::gpu::SO::Wrap::ClampToEdge,
-        de::gpu::SO::Wrap::ClampToEdge);
-
-    bool ok = tex2DArray.create("h2o_128_128_40_webp", pointers, so );
-    if (!ok)
-    {
-        DE_ERROR("Failed.")
-    }
-    return ok;
-}
-
-bool
-H3_AnimatedWaterTex342_create( H3_Game & game, de::gpu::Tex2DArray & tex2DArray )
-{
-    std::vector<const de::Image*> pointers;
-    pointers.reserve( 21 );
-
-    for (int i = 0 ; i < 21; ++i)
-    {
-        auto id = H3_Img::eID(H3_Img::Water342_00 + i);
-        const de::Image* img = H3_getImg(game,id);
-        pointers.emplace_back( img );
-    }
-
-    de::gpu::SO so( 1.0f,
-        de::gpu::SO::Minify::LinearMipmapLinear,
-        de::gpu::SO::Magnify::Linear,
-        de::gpu::SO::Wrap::ClampToEdge,
-        de::gpu::SO::Wrap::ClampToEdge);
-
-    bool ok = tex2DArray.create("h2o_342_180_21_webp", pointers, so );
-    if (!ok)
-    {
-        DE_ERROR("Failed.")
-    }
-    return ok;
-}
 
 //===========================================================
 H3_WaterTileRenderer2::H3_WaterTileRenderer2()

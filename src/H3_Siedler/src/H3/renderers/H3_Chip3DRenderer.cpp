@@ -300,8 +300,8 @@ void H3_Chip3DRenderer::render( const H3_Chip3DMeshBuffer & drawcall )
 
     // ==== Shader: u_tex  ====
     glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D_ARRAY, m_chipTexture->m_tex.id);
-    de::gpu::applySamplerOptions(m_chipTexture->m_tex.so);
+    glBindTexture(GL_TEXTURE_2D_ARRAY, m_chipTexture->id);
+    de::gpu::applySamplerOptions(m_chipTexture->so);
     glUniform1i(m_locTex, 0);
 
     // ==== RenderStates  ====
@@ -317,10 +317,10 @@ void H3_Chip3DRenderer::render( const H3_Chip3DMeshBuffer & drawcall )
 }
 
 void
-H3_Chip3DRenderer::init( H3_Game & game, H3_ChipTexture* chipTexture )
+H3_Chip3DRenderer::init( H3_Game & game )
 {
     m_driver = game.getDriver();
-    m_chipTexture = chipTexture;
+    m_chipTexture = &game.m_tex.m_chipTexture;
     initShader();
 }
 
