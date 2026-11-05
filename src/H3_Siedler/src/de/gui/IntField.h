@@ -45,9 +45,9 @@ public:
 
     std::function<void(int)> onValueChanged;
 
-    std::function<void()> onMinusClicked;
+    // std::function<void()> onMinusClicked;
 
-    std::function<void()> onPlusClicked;
+    // std::function<void()> onPlusClicked;
 
     void setButtonTexture(const de::gpu::TexRef& tex)
     {

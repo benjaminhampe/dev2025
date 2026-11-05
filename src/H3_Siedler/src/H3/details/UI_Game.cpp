@@ -232,9 +232,10 @@ void UI_Game::updateLayouts()
     if (m_donateCards)
     {
         // ::::: Panel body ::::
-        int dim = 8 * std::min(w,h) / 10;
-        int panel_w = dim;
-        int panel_h = dim;
+        int dim_h = 6 * std::min(w,h) / 10;
+        int max_w = 8 * w / 10;
+        int panel_w = std::min(max_w, 4*dim_h/3);
+        int panel_h = dim_h;
         int panel_x = (w - panel_w)/2;
         int panel_y = (h - panel_h)/2;
         m_donateCards->resize(panel_x, panel_y, panel_w, panel_h);

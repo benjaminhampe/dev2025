@@ -19,7 +19,7 @@ public:
 
     void setCardData( int cardType, int amount );
 
-    int getCardData() const { return m_edtDst->getValue(); }
+    int getCardData() const { return m_edtDonate->getValue(); }
 public:
     std::function<void(int)> onValueChanged;
 
@@ -27,15 +27,15 @@ private:
     // [Necessary Game Logic]
     H3_Game* m_game;
     int32_t m_cardType;
-    int m_cardAmount;
+    int m_maxDonate;
 
     de::Recti m_r_head;
     de::Recti m_r_body;
     de::Recti m_r_foot;
 
-    de::gui::IntField* m_edtDst;
-    de::gui::Button* m_btnSrc;
-    de::gui::Label* m_lblSrc;
+    de::gui::IntField* m_edtDonate;
+    de::gui::Button* m_btnCard;
+    de::gui::Label* m_lblRemain;
 
 
 };

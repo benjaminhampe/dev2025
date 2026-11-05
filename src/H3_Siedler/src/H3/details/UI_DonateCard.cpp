@@ -9,60 +9,62 @@ UI_DonateCard::UI_DonateCard( H3_Game* game, de::gui::Env* env, de::gui::Widget*
     : de::gui::Widget(env, parent, id, pos)
     , m_game(game)
     , m_cardType(1)
-    , m_cardAmount(1)
+    , m_maxDonate(0)
 {
-    m_edtDst = new de::gui::IntField("",env,this,0);
-    m_btnSrc = new de::gui::Button("",env,this,0);
-    m_lblSrc = new de::gui::Label("",env,this,0);
+    m_edtDonate = new de::gui::IntField("",env,this,0);
+    m_btnCard = new de::gui::Button("",env,this,0);
+    m_lblRemain = new de::gui::Label("",env,this,0);
 
-    m_btnSrc->setRadius(10);
+    m_btnCard->setRadius(10);
 
     auto tex = m_game->getTex(H3_Tex::Scroll2,__func__);
-    m_edtDst->setMinusButtonTexture(tex);
-    m_edtDst->setPlusButtonTexture(tex);
+    m_edtDonate->setMinusButtonTexture(tex);
+    m_edtDonate->setPlusButtonTexture(tex);
 
-    m_lblSrc->setFillColors(dbRGB(255,255,255,200));
-    m_edtDst->getValueLabel()->setFillColors(dbRGB(255,255,255,200));
+    m_lblRemain->setFillColors(dbRGB(255,255,255,200));
+    m_edtDonate->getValueLabel()->setFillColors(dbRGB(255,255,255,200));
 
-    auto plus = [&] ()
+    m_edtDonate->onValueChanged = [&] (int val)
         {
-            int dst = m_edtDst->getValue();
-            if (dst < m_cardAmount)
+            m_lblRemain->setText(std::to_string(m_maxDonate - val));
+
+            if (onValueChanged)
+            {
+                onValueChanged(val);
+            }
+        };
+
+    m_btnCard->onClickedLeft = [&] ()
+        {
+            int dst = m_edtDonate->getValue();
+            if (dst < m_maxDonate)
             {
                 dst++;
-                m_edtDst->setValue(dst);
-                m_lblSrc->setText(std::to_string(m_cardAmount - dst));
+                m_edtDonate->setValue(dst, true);
+                m_lblRemain->setText(std::to_string(m_maxDonate - dst));
             }
 
             if (onValueChanged)
             {
-                onValueChanged(m_edtDst->getValue());
+                onValueChanged(m_edtDonate->getValue());
             }
         };
 
-    auto minus = [&] ()
+    m_btnCard->onClickedRight = [&] ()
         {
-            int dst = m_edtDst->getValue();
+            int dst = m_edtDonate->getValue();
             if (dst > 0)
             {
                 dst--;
-                m_edtDst->setValue(dst);
-                m_lblSrc->setText(std::to_string(m_cardAmount - dst));
+                m_edtDonate->setValue(dst, true);
+                m_lblRemain->setText(std::to_string(m_maxDonate - dst));
             }
 
             if (onValueChanged)
             {
-                onValueChanged(m_edtDst->getValue());
+                onValueChanged(m_edtDonate->getValue());
             }
         };
-
-    m_edtDst->onPlusClicked = plus;
-
-    m_edtDst->onMinusClicked = minus;
-
-    m_btnSrc->onClickedLeft = plus;
-
-    m_btnSrc->onClickedRight = minus;
 }
 
 UI_DonateCard::~UI_DonateCard()
@@ -72,9 +74,9 @@ UI_DonateCard::~UI_DonateCard()
 void UI_DonateCard::setCardData( int cardType, int amount )
 {
     m_cardType = cardType;
-    m_cardAmount = amount;
-    m_edtDst->setRange(0,amount);
-    m_edtDst->setValue(0);
+    m_maxDonate = amount;
+    m_edtDonate->setRange(0,amount);
+    m_edtDonate->setValue(0);
 
     de::gpu::TexRef m_tex;
     switch (cardType)
@@ -87,9 +89,8 @@ void UI_DonateCard::setCardData( int cardType, int amount )
         default: break;
     }
 
-    m_btnSrc->setTexture(m_tex);
-
-    m_lblSrc->setText(std::to_string(amount));
+    m_btnCard->setTexture(m_tex);
+    m_lblRemain->setText(std::to_string(amount));
 }
 
 void UI_DonateCard::draw()
@@ -99,9 +100,9 @@ void UI_DonateCard::draw()
         return;
     }
 
-    m_edtDst->draw();
-    m_btnSrc->draw();
-    m_lblSrc->draw();
+    m_edtDonate->draw();
+    m_btnCard->draw();
+    m_lblRemain->draw();
 
 }
 
@@ -122,7 +123,7 @@ void UI_DonateCard::resize(int X, int Y, int W, int H)
     m_r_body = de::Recti(x,y,w,h2); y += h2 + p;
     m_r_foot = de::Recti(x,y,w,h1);
 
-    m_edtDst->resize(m_r_head.x,m_r_head.y,m_r_head.w,m_r_head.h);
-    m_btnSrc->resize(m_r_body.x,m_r_body.y,m_r_body.w,m_r_body.h);
-    m_lblSrc->resize(m_r_foot.x,m_r_foot.y,m_r_foot.w,m_r_foot.h);
+    m_edtDonate->resize(m_r_head.x,m_r_head.y,m_r_head.w,m_r_head.h);
+    m_btnCard->resize(m_r_body.x,m_r_body.y,m_r_body.w,m_r_body.h);
+    m_lblRemain->resize(m_r_foot.x,m_r_foot.y,m_r_foot.w,m_r_foot.h);
 }

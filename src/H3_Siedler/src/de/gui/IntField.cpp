@@ -22,18 +22,12 @@ IntField::IntField( const std::string& label, Env* env, Widget* parent, u32 id, 
     m_btnMinus->onClicked = [&]()
     {
         setValue(m_value - m_step);
-        if (onMinusClicked)
-        {
-            onMinusClicked();
-        }
+        //if (onMinusClicked) { onMinusClicked(); }
     };
     m_btnPlus->onClicked = [&]()
     {
         setValue(m_value + m_step);
-        if (onPlusClicked)
-        {
-            onPlusClicked();
-        }
+        //if (onPlusClicked) { onPlusClicked(); }
     };
 
     setDrawChildren(false);
@@ -42,6 +36,23 @@ IntField::IntField( const std::string& label, Env* env, Widget* parent, u32 id, 
 IntField::~IntField()
 {
     // DE_DEBUG("")
+}
+
+void IntField::setValue( int value, bool blockChangeSignal )
+{
+    int oldValue = m_value;
+    m_value = std::clamp( value, m_minimum, m_maximum );
+    if (m_value == oldValue)
+    {
+        return;
+    }
+
+    m_lblValue->setText( std::to_string(m_value) );
+
+    if (onValueChanged && !blockChangeSignal)
+    {
+        onValueChanged(m_value);
+    }
 }
 
 void IntField::setFont( const Font& font )
@@ -63,20 +74,6 @@ void IntField::setRange( int min_value, int max_value )
 void IntField::setStep( int value )
 {
     m_step = value;
-}
-void IntField::setValue( int value, bool blockChangeSignal )
-{
-    int oldValue = m_value;
-    m_value = std::clamp( value, m_minimum, m_maximum );
-    if (m_value != oldValue)
-    {
-        m_lblValue->setText( std::to_string(m_value) );
-        if (onValueChanged && !blockChangeSignal)
-        {
-            onValueChanged(m_value);
-        }
-    }
-    // updateLayout();
 }
 
 void IntField::draw()
@@ -106,7 +103,7 @@ void IntField::updateLayout()
 
     float zoom = m_env->getZoom();
 
-    auto ts = dbTextSize( de_wstr(text), font );
+    // auto ts = dbTextSize( de_wstr(text), font );
 
     if (m_lblName->getText().empty())
     {
