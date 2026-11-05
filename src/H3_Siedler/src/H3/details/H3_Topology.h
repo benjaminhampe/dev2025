@@ -97,7 +97,7 @@ void
 H3_computeCornersForFarm( H3_Game& game, uint32_t playerId );
 */
 
-float H3_getDiceChance( int diceSum );
+int H3_getDiceChance( int diceSum );
 
 float H3_getDiceChanceOfCorner( const H3_Game& game, uint32_t cornerId );
 

@@ -4,6 +4,10 @@
 #include <vector>
 #include <algorithm>
 
+
+
+
+
 /*
 KI-Strategie	Beschreibung                            Mathematische Anpassung
 

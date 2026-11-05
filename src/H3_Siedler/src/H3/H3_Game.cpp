@@ -2,6 +2,7 @@
 #include <de/os/CommonDialogs.h>
 #include <H3/details/H3_Topology.h>
 #include <H3/details/H3_AI.h>
+#include <H3/details/H3_AI_ThiefPlacement.h>
 #include <de_opengl.h>
 #include <de/gpu/GL_debug_layer.h>
 
@@ -1213,6 +1214,8 @@ void H3_Game::doDice()
         {
             enterDonateCards( human_player->id );
         }
+
+        enterThiefPlacement();
     }
     else
     {
@@ -1319,7 +1322,7 @@ void H3_Game::enterDonateCards( uint32_t playerId )
     if (cards <= m_cfg.cardLimitNoSteal)
     {
         DE_DEBUG("Player[",player.id,"] ",player.name," has only ",cards," cards. No donation.")
-        enterThiefPlacement();
+        // enterThiefPlacement();
         return;
     }
 
@@ -1336,7 +1339,6 @@ void H3_Game::enterDonateCards( uint32_t playerId )
     m_uiGame->pushState( guiState );
 
     m_uiGame->m_donateCards->startDonation( player.id );
-
 }
 
 void H3_Game::enterThiefPlacement()
@@ -1346,13 +1348,13 @@ void H3_Game::enterThiefPlacement()
         m_state != H3_State::UseKnightCard )
     {
         DE_ERROR("Invalid state ", m_state.str())
-        enterIdle();
-        return;
+        //enterIdle();
+        //return;
     }
 
     m_state = H3_State::PlaceThief;
 
-    auto & player = getCurrentPlayer();
+    H3_Player & player = getCurrentPlayer();
 
     DE_DEBUG(player.name," places thief to tile")
 
@@ -1360,12 +1362,13 @@ void H3_Game::enterThiefPlacement()
 
     marqueeH1(L"Place thief to another Tile", 2000, player.color);
 
-    if (player.typ == H3_PlayerType::CPU)
-    {
-        DE_WARN("AI should do something here...")
-    }
-
     UI_updateActions();
+
+    if (player.typ != H3_PlayerType::HUMAN)
+    {
+        AI_ThiefPlacement(*this, m_playerId);
+        enterIdle();
+    }
 }
 
 void H3_Game::leaveThiefPlacement( H3_Tile& tile )
@@ -1508,16 +1511,19 @@ void H3_Game::stealRandomCard( int playerFromId, int playerToId )
     H3_Player & playerFrom = getPlayer( playerFromId );
     H3_Player & playerTo = getPlayer( playerToId );
 
-    if (playerFrom.state.bank.sum() < 1)
+    int sum = playerFrom.state.bank.sum();
+    if (sum < 1)
     {
-        std::wostringstream o;
-        o << "Too bad, player [" << playerFrom.name.c_str() << "] has no cards to steal.";
-        marqueeH3(o.str(), 2000, playerTo.color);
+        auto s = dbStr("Too bad, player[",playerFrom.name,"] has no cards to steal.");
+        marqueeH3(de_wstr(s), 2000, playerTo.color);
         return;
     }
 
     // Get random index into bank of victim
     int cardIndex = rand() % playerFrom.state.bank.sum();
+
+    auto s = dbStr("Steals card ",cardIndex+1," of ",sum," cards.");
+    marqueeH3(de_wstr(s), 2000, playerTo.color);
 
     // Get tileType at victim's bank index
     H3_TileType tt = playerFrom.state.bank.getTileTypeFromCardIndex( cardIndex );

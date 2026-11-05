@@ -759,22 +759,22 @@ void H3_createTopology( H3_Game& game ) // Game road network topology
     }
 }
 
-float H3_getDiceChance( int diceSum )
+int H3_getDiceChance( int diceSum )
 {
     switch ( diceSum )
     {
-    case 2:  return 1.f/36.f; // (1+1)
-    case 3:  return 2.f/36.f; // (1+2), (2+1)
-    case 4:  return 3.f/36.f; // (1+3), (2+2), (3+1)
-    case 5:  return 4.f/36.f; // (1+4), (2+3), (3+2), (4+1)
-    case 6:  return 5.f/36.f; // (1+5), (2+4), (3+3), (4+2), (5+1)
-    case 7:  return 6.f/36.f; // (1+6), (2+5), (3+4), (4+3), (5+2), (6+1)
-    case 8:  return 5.f/36.f; // (2+6), (3+5), (4+4), (5+3), (6+2)
-    case 9:  return 4.f/36.f; // (3+6), (4+5), (5+4), (6+3),
-    case 10: return 3.f/36.f; // (4+6), (5+5), (6+4)
-    case 11: return 2.f/36.f; // (5+6), (6+5)
-    case 12: return 1.f/36.f; // (6+6)
-    default: return 0.f;
+    case 2:  return 1; // (1+1)
+    case 3:  return 2; // (1+2), (2+1)
+    case 4:  return 3; // (1+3), (2+2), (3+1)
+    case 5:  return 4; // (1+4), (2+3), (3+2), (4+1)
+    case 6:  return 5; // (1+5), (2+4), (3+3), (4+2), (5+1)
+    case 7:  return 6; // (1+6), (2+5), (3+4), (4+3), (5+2), (6+1)
+    case 8:  return 5; // (2+6), (3+5), (4+4), (5+3), (6+2)
+    case 9:  return 4; // (3+6), (4+5), (5+4), (6+3),
+    case 10: return 3; // (4+6), (5+5), (6+4)
+    case 11: return 2; // (5+6), (6+5)
+    case 12: return 1; // (6+6)
+    default: return 0;
     }
 }
 

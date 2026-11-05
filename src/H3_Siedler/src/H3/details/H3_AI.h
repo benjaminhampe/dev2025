@@ -34,16 +34,7 @@ void CPU_doRound1( H3_Game & game );
 // void CPU_doRound3( H3_Game & game );
 void CPU_doRoundN( H3_Game & game );
 
-void AI_donateCardsToRobber( H3_Game & game, int playerId );
 
-
-
-
-
-
-
-
-float H3_getDiceChance( int diceSum );
 
 struct FarmMatch
 {
