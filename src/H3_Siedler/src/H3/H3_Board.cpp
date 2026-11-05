@@ -1188,18 +1188,20 @@ std::string H3_Corner::str() const
     std::ostringstream o; o <<
     "id(" << id << "), "
     "owner(" << owner << "), "
-    "building_type(" << building_type << "), "
-    "visible(" << visible << "), "
-
+    "built(" << building_type << "), "
+    // "visible(" << visible << "), "
     "tiles" << H3_Util::str(tiles) << ", "
     "edges" << H3_Util::str(edges) << ", "
-    "next" << H3_Util::str(next) << ", "
-
-    "trs(" << trs.str() << ")";
+    "next" << H3_Util::str(next);
+    // ", trs(" << trs.str() << ")";
     return o.str();
 }
 
-H3_Corner::H3_Corner() {}
+H3_Corner::H3_Corner()
+    : id{ 0 }
+    , owner{ 0 }
+    , building_type{ 0 }
+{}
 
 // Connect corner with max 3 corners
 // One corner per call. Corner must be unique.
@@ -1246,17 +1248,20 @@ std::string H3_Edge::str() const
     std::ostringstream o; o <<
     "id(" << id << "), "
     "owner(" << owner << "), "
-    "visible(" << visible << "), "
+    // "visible(" << visible << "), "
 
     "tiles" << H3_Util::str(tiles) << ", "
     "corners" << H3_Util::str(corners) << ", "
-    "edges" << H3_Util::str(next) << ", "
+    "edges" << H3_Util::str(next);
 
-    "trs(" << trs.str() << ")";
+    //", trs(" << trs.str() << ")";
     return o.str();
 }
 
-H3_Edge::H3_Edge() {}
+H3_Edge::H3_Edge()
+    : id{ 0 }
+    , owner{ 0 }
+{}
 
 // Connect edge with max 4 next edges
 bool H3_Edge::addEdgeId( const u32 edgeId )
@@ -1288,24 +1293,32 @@ H3_Tile::str() const
 {
     std::stringstream o; o <<
     "id(" << id << "), "
-    "chipValue(" << chipValue << "), "
+    "dice(" << chipValue << "), "
     "i(" << i << "), "
     "j(" << j << "), "
-    "angle60("<< angle60 << "), "
-    "tileType(" << tt.str() << "), "
-    "visible("<< visible << "), "
+    "ang60("<< angle60 << "), "
+    "tt(" << tt.str() << "), "
+    // "visible("<< visible << "), "
     "pos("<< pos << "), "
 
     "tiles" << H3_Util::str(next) << ", "
     "corners" << H3_Util::str(corners) << ", "
-    "edges" << H3_Util::str(edges) << ", "
+    "edges" << H3_Util::str(edges);
 
-    "trsChip(" << trsChip.str() << ")";
+    //", trsChip(" << trsChip.str() << ")";
 
     return o.str();
 }
 
-H3_Tile::H3_Tile() {}
+H3_Tile::H3_Tile()
+    : id{ 0 }
+    , chipValue{ 0 }
+    , i{ 0 }
+    , j{ 0 }
+    , angle60{ 0 }
+    , tt{ H3_TileType::Unknown }
+    , pos{ 0,0,0 }
+{}
 
 int H3_Tile::getDiceChance() const
 {

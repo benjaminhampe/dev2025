@@ -31,18 +31,18 @@ void AI_Round2(H3_Game& game, const uint32_t playerId)
 {
     H3_Player & player = game.getPlayer(playerId);
 
-    std::vector<u32> visibleCorners = H3_computeVisibleCorners(game, playerId);
+    game.doBuyFarm();
 
-    DE_DEBUG("Player[",playerId,"] visibleCorners = ",visibleCorners.size())
-    for (size_t i = 0; i < std::min<size_t>(10,visibleCorners.size()); ++i)
+    DE_DEBUG("Player[",playerId,"] visibleCorners = ",game.m_visibleCorners.size())
+    for (size_t i = 0; i < std::min<size_t>(10,game.m_visibleCorners.size()); ++i)
     {
-        DE_DEBUG("Player[",playerId,"] visibleCorners[",i,"] ",visibleCorners[i])
+        DE_DEBUG("Player[",playerId,"] visibleCorners[",i,"] ",game.m_visibleCorners[i])
     }
 
     std::vector<RatedCorner> candidates;
-    candidates.reserve( visibleCorners.size() );
+    candidates.reserve( game.m_visibleCorners.size() );
 
-    for (u32 cornerId : visibleCorners)
+    for (u32 cornerId : game.m_visibleCorners)
     {
         H3_Corner & corner = H3_getCorner(game, __func__, cornerId);
 
@@ -84,7 +84,6 @@ void AI_Round2(H3_Game& game, const uint32_t playerId)
     }
 
     // DEM_DEBUG("BuyFarm with Match ", match.toString() )
-    game.doBuyFarm();
     RatedCorner& candidate = candidates.front();
     H3_Corner & corner = H3_getCorner( game, __func__, candidate.cornerId );
     game.finalizeBuyFarm( corner );
@@ -93,21 +92,38 @@ void AI_Round2(H3_Game& game, const uint32_t playerId)
     // Buy Road
 
     game.enterIdle();
-
-
-    std::vector<u32> roadCandidates = H3_computeVisibleEdges(game, playerId);
-
-    DE_DEBUG("Player[",playerId,"] roadCandidates = ",roadCandidates.size())
-    for (size_t i = 0; i < std::min<size_t>(10,roadCandidates.size()); ++i)
-    {
-        u32 edgeId = roadCandidates[i];
-        H3_Edge & edge = H3_getEdge(game, __func__, edgeId);
-        DE_DEBUG("Player[",playerId,"] roadCandidates[",i,"] ",edgeId)
-    }
-
     game.doBuyRoad();
-    H3_Edge & edge = H3_getEdge( game, __func__, roadCandidates.front() );
+
+// <debug>
+    DE_DEBUG("Player[",playerId,"] visibleEdges = ",game.m_visibleEdges.size())
+    for (size_t i = 0; i < std::min<size_t>(10,game.m_visibleEdges.size()); ++i)
+    {
+        u32 edgeId = game.m_visibleEdges[i];
+        H3_Edge & edge = H3_getEdge(game, __func__, edgeId);
+        DE_DEBUG("Player[",playerId,"] visibleEdges[",i,"] ",edgeId)
+    }
+// </debug>
+
+// <fatal>
+    if (game.m_visibleEdges.empty())
+    {
+        std::ostringstream o;
+        o << "No visibleEdges, need atleast one to place a road.";
+        throw std::runtime_error(o.str());
+    }
+// </fatal>
+
+// <logic id="Choose random edge">
+    int n = game.m_visibleEdges.size();
+    int i = 0;
+    if (n > 1)
+    {
+        i = rand() % n;
+    }
+    u32 edgeId = game.m_visibleEdges.at(i);
+    H3_Edge & edge = H3_getEdge( game, __func__, edgeId );
     game.finalizeBuyRoad( edge );
+// </logic>
 
     game.doEndTurn();
 

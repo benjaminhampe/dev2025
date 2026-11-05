@@ -496,6 +496,183 @@ H3_getPlayerTex(const H3_Game& game, int playerIndex0_F )
 }
 
 
+void drawTileBorder(de::Image& img, int i, u32 color, bool blend)
+{
+    const int w = img.w();
+    const int h = img.h();
+    const auto clipRect = de::Recti(i,i,w-2*i,h-2*i);
+
+    // blend = true;
+    // u32 color1 = dbRGB(255,255,255,128);
+    // u32 color2 = dbRGB(255,0,0,128);
+    // u32 color3 = dbRGB(0,255,0,128);
+    // u32 color4 = dbRGB(0,0,255,128);
+    // u32 color5 = dbRGB(255,0,255,128);
+    // u32 color6 = dbRGB(255,255,0,128);
+
+    // Left
+    {
+        int x1 = i;
+        int y1 = h/4 - 1 + i;
+        int x2 = i;
+        int y2 = 3*h/4 - i;
+        de::ImagePainter::drawSuperCoverLine(img,x1,y1,x2,y2,color,blend,clipRect);
+    }
+
+    // Right
+    {
+        int x1 = w - 1 - i;
+        int y1 = h/4 - 1 + i;
+        int x2 = w - 1 - i;
+        int y2 = 3*h/4 - i;
+        de::ImagePainter::drawSuperCoverLine(img,x1,y1,x2,y2,color,blend,clipRect);
+    }
+
+    // TopLeft
+    {
+        int x1 = w/2 - 1;
+        int y1 = i;
+        int x2 = i;
+        int y2 = h/4 + i;
+        de::ImagePainter::drawSuperCoverLine(img,x1,y1,x2,y2,color,blend,clipRect);
+    }
+
+    // TopRight
+    {
+        int x1 = w/2;
+        int y1 = i;
+        int x2 = w - 1 - i;
+        int y2 = h/4 + i;
+        de::ImagePainter::drawSuperCoverLine(img,x1,y1,x2,y2,color,blend,clipRect);
+    }
+
+    // BottomLeft
+    {
+        int x1 = i;
+        int y1 = 3*h/4 + 1 - i;
+        int x2 = w/2 - 1;
+        int y2 = h - 1 - i;
+        de::ImagePainter::drawSuperCoverLine(img,x1,y1,x2,y2,color,blend,clipRect);
+    }
+
+    // BottomRight
+    {
+        int x1 = w - 1 - i;
+        int y1 = 3*h/4 + 1 - i;
+        int x2 = w/2;
+        int y2 = h - 1 - i;
+        de::ImagePainter::drawSuperCoverLine(img,x1,y1,x2,y2,color,blend,clipRect);
+    }
+}
+
+void drawTileBorders(de::Image& img)
+{
+    const int w = img.w();
+    const int h = img.h();
+    const u32 white = dbRGB(255,255,255);
+
+    u32 color1 = dbRGB(15,15,15);
+    u32 color2 = dbRGB(255,255,155);
+    u32 color3 = dbRGB(255,255,255, 0);
+
+    int k = 0;
+    int d = 5;
+    for (int i = 0; i < d; ++i)
+    {
+        u32 color = de::lerpColor(color1,color2,float(i) / float(d-1));
+        drawTileBorder(img,k+i,color,false);
+    }
+    k+= d;
+
+    for (int i = 0; i < d; ++i)
+    {
+        drawTileBorder(img,k+i,color2,false);
+    }
+    k+= d;
+
+    for (int i = 0; i < d; ++i)
+    {
+        u32 color = de::lerpColor(color2,color3,float(i) / float(d-1));
+        drawTileBorder(img,k+i,color,true);
+    }
+}
+
+void H3_Tex::createTileTexture( H3_Game& game )
+{
+    int w = 512;
+    int h = 512;
+
+    de::gpu::SO so;
+    so.setAF( 1.0f );
+    so.setMin( de::gpu::SO::Minify::LinearMipmapLinear );
+    so.setMag( de::gpu::SO::Magnify::Linear );
+    so.setWrapR( de::gpu::SO::Wrap::Repeat );
+    so.setWrapS( de::gpu::SO::Wrap::Repeat );
+    so.setWrapT( de::gpu::SO::Wrap::Repeat );
+
+    const auto* oriU = H3_getImg( game, H3_Img::Unknown );
+    const auto* oriW = H3_getImg( game, H3_Img::TileWater );
+    const auto* oriV = H3_getImg( game, H3_Img::TileDesert );
+    const auto* oriA = H3_getImg( game, H3_Img::TileA );
+    const auto* oriB = H3_getImg( game, H3_Img::TileB );
+    const auto* oriC = H3_getImg( game, H3_Img::TileC );
+    const auto* oriD = H3_getImg( game, H3_Img::TileD );
+    const auto* oriE = H3_getImg( game, H3_Img::TileE );
+
+    de::Image imgU = de::ImageScaler::resizeBilinear(*oriU,w,h);
+    de::Image imgW = de::ImageScaler::resizeBilinear(*oriW,w,h);
+    de::Image imgV = de::ImageScaler::resizeBilinear(*oriV,w,h);
+    de::Image imgA = de::ImageScaler::resizeBilinear(*oriA,w,h);
+    de::Image imgB = de::ImageScaler::resizeBilinear(*oriB,w,h);
+    de::Image imgC = de::ImageScaler::resizeBilinear(*oriC,w,h);
+    de::Image imgD = de::ImageScaler::resizeBilinear(*oriD,w,h);
+    de::Image imgE = de::ImageScaler::resizeBilinear(*oriE,w,h);
+
+    // drawTileBorders(imgU);
+    drawTileBorders(imgV);
+    drawTileBorders(imgA);
+    drawTileBorders(imgB);
+    drawTileBorders(imgC);
+    drawTileBorders(imgD);
+    drawTileBorders(imgE);
+    // DE_DEBUG("oriU = ", oriU->str())
+    // DE_DEBUG("oriW = ", oriW->str())
+    // DE_DEBUG("oriV = ", oriV->str())
+    // DE_DEBUG("oriA = ", oriA->str())
+    // DE_DEBUG("oriB = ", oriB->str())
+    // DE_DEBUG("oriC = ", oriC->str())
+    // DE_DEBUG("oriD = ", oriD->str())
+    // DE_DEBUG("oriE = ", oriE->str())
+    // dbSaveImage(imgU,"H3_imgU.webp");
+    // dbSaveImage(imgW,"H3_imgW.webp");
+    // dbSaveImage(imgV,"H3_imgV.webp");
+    // dbSaveImage(imgA,"H3_imgA.webp");
+    // dbSaveImage(imgB,"H3_imgB.webp");
+    // dbSaveImage(imgC,"H3_imgC.webp");
+    // dbSaveImage(imgD,"H3_imgD.webp");
+    // dbSaveImage(imgE,"H3_imgE.webp");
+
+    dbSaveImage(imgU,"H3_imgU.bmp");
+    dbSaveImage(imgW,"H3_imgW.bmp");
+    dbSaveImage(imgV,"H3_imgV.bmp");
+    dbSaveImage(imgA,"H3_imgA.bmp");
+    dbSaveImage(imgB,"H3_imgB.bmp");
+    dbSaveImage(imgC,"H3_imgC.bmp");
+    dbSaveImage(imgD,"H3_imgD.bmp");
+    dbSaveImage(imgE,"H3_imgE.bmp");
+
+    std::vector<const de::Image*> imgPointers
+    {
+        &imgU, &imgW, &imgV,
+        &imgA, &imgB, &imgC, &imgD, &imgE
+    };
+
+    if (!m_tileTexture.create("hextileAtlas512", imgPointers, so))
+    {
+        DE_ERROR("Failed.")
+    }
+}
+
 void H3_Tex::createChipTexture( H3_Game & game )
 {
     std::vector<de::Image> images;
@@ -636,179 +813,3 @@ void H3_Tex::createAnimatedWaterTex342(H3_Game & game)
 }
 
 
-void drawTileBorder(de::Image& img, int i, u32 color, bool blend)
-{
-    const int w = img.w();
-    const int h = img.h();
-    const auto clipRect = de::Recti(i,i,w-2*i,h-2*i);
-
-    // blend = true;
-    // u32 color1 = dbRGB(255,255,255,128);
-    // u32 color2 = dbRGB(255,0,0,128);
-    // u32 color3 = dbRGB(0,255,0,128);
-    // u32 color4 = dbRGB(0,0,255,128);
-    // u32 color5 = dbRGB(255,0,255,128);
-    // u32 color6 = dbRGB(255,255,0,128);
-
-    // Left
-    {
-        int x1 = i;
-        int y1 = h/4 - 1 + i;
-        int x2 = i;
-        int y2 = 3*h/4 - i;
-        de::ImagePainter::drawSuperCoverLine(img,x1,y1,x2,y2,color,blend,clipRect);
-    }
-
-    // Right
-    {
-        int x1 = w - 1 - i;
-        int y1 = h/4 - 1 + i;
-        int x2 = w - 1 - i;
-        int y2 = 3*h/4 - i;
-        de::ImagePainter::drawSuperCoverLine(img,x1,y1,x2,y2,color,blend,clipRect);
-    }
-
-    // TopLeft
-    {
-        int x1 = w/2 - 1;
-        int y1 = i;
-        int x2 = i;
-        int y2 = h/4 + i;
-        de::ImagePainter::drawSuperCoverLine(img,x1,y1,x2,y2,color,blend,clipRect);
-    }
-
-    // TopRight
-    {
-        int x1 = w/2;
-        int y1 = i;
-        int x2 = w - 1 - i;
-        int y2 = h/4 + i;
-        de::ImagePainter::drawSuperCoverLine(img,x1,y1,x2,y2,color,blend,clipRect);
-    }
-
-    // BottomLeft
-    {
-        int x1 = i;
-        int y1 = 3*h/4 + 1 - i;
-        int x2 = w/2 - 1;
-        int y2 = h - 1 - i;
-        de::ImagePainter::drawSuperCoverLine(img,x1,y1,x2,y2,color,blend,clipRect);
-    }
-
-    // BottomRight
-    {
-        int x1 = w - 1 - i;
-        int y1 = 3*h/4 + 1 - i;
-        int x2 = w/2;
-        int y2 = h - 1 - i;
-        de::ImagePainter::drawSuperCoverLine(img,x1,y1,x2,y2,color,blend,clipRect);
-    }
-}
-
-void drawTileBorders(de::Image& img)
-{
-    const int w = img.w();
-    const int h = img.h();
-    const u32 white = dbRGB(255,255,255);
-
-    u32 color1 = dbRGB(15,15,15);
-    u32 color2 = dbRGB(255,255,155);
-    u32 color3 = dbRGB(255,255,255, 0);
-
-    int k = 0;
-    int d = 5;
-    for (int i = 0; i < d; ++i)
-    {
-        u32 color = de::lerpColor(color1,color2,float(i) / float(d-1));
-        drawTileBorder(img,k+i,color,false);
-    }
-    k+= d;
-
-    for (int i = 0; i < 2*d; ++i)
-    {
-        drawTileBorder(img,k+i,color2,false);
-    }
-    k+= 2*d;
-
-    for (int i = 0; i < d; ++i)
-    {
-        u32 color = de::lerpColor(color2,color3,float(i) / float(d-1));
-        drawTileBorder(img,k+i,color,true);
-    }
-}
-
-void H3_Tex::createTileTexture( H3_Game& game )
-{
-    int w = 512;
-    int h = 512;
-
-    de::gpu::SO so;
-    so.setAF( 1.0f );
-    so.setMin( de::gpu::SO::Minify::LinearMipmapLinear );
-    so.setMag( de::gpu::SO::Magnify::Linear );
-    so.setWrapR( de::gpu::SO::Wrap::Repeat );
-    so.setWrapS( de::gpu::SO::Wrap::Repeat );
-    so.setWrapT( de::gpu::SO::Wrap::Repeat );
-
-    const auto* oriU = H3_getImg( game, H3_Img::Unknown );
-    const auto* oriW = H3_getImg( game, H3_Img::TileWater );
-    const auto* oriV = H3_getImg( game, H3_Img::TileDesert );
-    const auto* oriA = H3_getImg( game, H3_Img::TileA );
-    const auto* oriB = H3_getImg( game, H3_Img::TileB );
-    const auto* oriC = H3_getImg( game, H3_Img::TileC );
-    const auto* oriD = H3_getImg( game, H3_Img::TileD );
-    const auto* oriE = H3_getImg( game, H3_Img::TileE );
-
-    de::Image imgU = de::ImageScaler::resizeBilinear(*oriU,w,h);
-    de::Image imgW = de::ImageScaler::resizeBilinear(*oriW,w,h);
-    de::Image imgV = de::ImageScaler::resizeBilinear(*oriV,w,h);
-    de::Image imgA = de::ImageScaler::resizeBilinear(*oriA,w,h);
-    de::Image imgB = de::ImageScaler::resizeBilinear(*oriB,w,h);
-    de::Image imgC = de::ImageScaler::resizeBilinear(*oriC,w,h);
-    de::Image imgD = de::ImageScaler::resizeBilinear(*oriD,w,h);
-    de::Image imgE = de::ImageScaler::resizeBilinear(*oriE,w,h);
-
-    // drawTileBorders(imgU);
-    drawTileBorders(imgV);
-    drawTileBorders(imgA);
-    drawTileBorders(imgB);
-    drawTileBorders(imgC);
-    drawTileBorders(imgD);
-    drawTileBorders(imgE);
-    // DE_DEBUG("oriU = ", oriU->str())
-    // DE_DEBUG("oriW = ", oriW->str())
-    // DE_DEBUG("oriV = ", oriV->str())
-    // DE_DEBUG("oriA = ", oriA->str())
-    // DE_DEBUG("oriB = ", oriB->str())
-    // DE_DEBUG("oriC = ", oriC->str())
-    // DE_DEBUG("oriD = ", oriD->str())
-    // DE_DEBUG("oriE = ", oriE->str())
-    // dbSaveImage(imgU,"H3_imgU.webp");
-    // dbSaveImage(imgW,"H3_imgW.webp");
-    // dbSaveImage(imgV,"H3_imgV.webp");
-    // dbSaveImage(imgA,"H3_imgA.webp");
-    // dbSaveImage(imgB,"H3_imgB.webp");
-    // dbSaveImage(imgC,"H3_imgC.webp");
-    // dbSaveImage(imgD,"H3_imgD.webp");
-    // dbSaveImage(imgE,"H3_imgE.webp");
-
-    dbSaveImage(imgU,"H3_imgU.bmp");
-    dbSaveImage(imgW,"H3_imgW.bmp");
-    dbSaveImage(imgV,"H3_imgV.bmp");
-    dbSaveImage(imgA,"H3_imgA.bmp");
-    dbSaveImage(imgB,"H3_imgB.bmp");
-    dbSaveImage(imgC,"H3_imgC.bmp");
-    dbSaveImage(imgD,"H3_imgD.bmp");
-    dbSaveImage(imgE,"H3_imgE.bmp");
-
-    std::vector<const de::Image*> imgPointers
-    {
-        &imgU, &imgW, &imgV,
-        &imgA, &imgB, &imgC, &imgD, &imgE
-    };
-
-    if (!m_tileTexture.create("hextileAtlas512", imgPointers, so))
-    {
-        DE_ERROR("Failed.")
-    }
-}

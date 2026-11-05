@@ -18,6 +18,7 @@ void CPU_doRound1( H3_Game & game )
     game.doEndTurn();
 }
 
+#if 0
 /*
 struct CornerRating
 {
@@ -92,107 +93,7 @@ u32 findBestInitialPlaces( H3_Game & game, int playerId )
 */
 
 
-std::vector< FarmMatch >
-CPU_findBestFarm( H3_Game & game, uint32_t playerId )
-{
-    H3_computeCornersForFarm( game, playerId );
 
-    std::vector< FarmMatch > farmMatches;
-
-    for ( size_t i = 0; i < game.m_corners.size(); ++i )
-    {
-        auto& corner = game.m_corners[ i ];
-        if ( corner.owner > 0 )
-        {
-            continue;
-        }
-
-        // We want to know how many unique tile types this corner has...
-        std::map< H3_TileType, int > ttc;
-
-        for ( size_t k = 0; k < corner.tiles.size(); ++k )
-        {
-            int tileId = corner.tiles[ k ];
-            if ( !tileId ) continue;
-            auto& tile = H3_getTile( game, __func__, tileId );
-            ttc[ tile.tt ]++;
-        }
-
-        FarmMatch match;
-        match.corner = corner.id;
-        match.prob = float( corner.tiles.size() );
-        match.prob *= float( ttc.size() );  // How many different ress this tile corner
-
-        for ( size_t k = 0; k < corner.tiles.size(); ++k )
-        {
-            int tileId = corner.tiles[ k ];
-            if ( !tileId ) continue;
-            auto& tile = H3_getTile( game, __func__, tileId );
-            match.prob += H3_getDiceChance( tile.chipValue );  // How many different ress this tile corner
-        }
-
-        farmMatches.emplace_back( std::move( match ) );
-    }
-
-    std::sort( farmMatches.begin(), farmMatches.end(),
-    [] ( FarmMatch const & a, FarmMatch const & b ) { return a.prob > b.prob; });
-
-    //   DEM_DEBUG("FarmMatches.size() = ", farmMatches.size() )
-    //   for ( size_t i = 0; i < std::min( farmMatches.size(), size_t(10) ); ++i )
-    //   {
-    //      DEM_DEBUG("FarmMatches[",i,"] = ", farmMatches[ i ].toString() )
-    //   }
-
-    return farmMatches;
-}
-
-
-std::vector< RoadMatch >
-CPU_findBestRoad( H3_Game & game, uint32_t playerId )
-{
-    std::vector< RoadMatch > roadMatches;
-
-    //   PioPlayer & player = H3_getCurrentPlayer( __func__, game );
-
-    //   DEM_DEBUG("game.round = ", game.round )
-    //   DEM_DEBUG("player.id = ", player.id )
-    //   DEM_DEBUG("player.name = ", player.name )
-    //   DEM_DEBUG("player.farms.size() = ", player.farms.size() )
-
-    H3_computeEdgesForRoad( game, playerId );
-
-    if ( game.m_round < 4 )
-    {
-
-    }
-
-    for ( size_t i = 0; i < game.m_edges.size(); ++i )
-    {
-        H3_Edge & edge = game.m_edges[ i ];
-        //DEM_DEBUG("edge[",i,"].id = ", edge.id )
-
-        RoadMatch match;
-        match.edge = edge.id;
-        match.prob = 1.0; // make distance dependent smaller
-        roadMatches.emplace_back( std::move( match ) );
-    }
-
-    std::sort( roadMatches.begin(), roadMatches.end(),
-              [] ( RoadMatch const & a, RoadMatch const & b )
-              {
-                  return a.prob > b.prob;
-              } );
-
-
-    //   DEM_DEBUG("RoadMatches.size() = ", roadMatches.size() )
-    //   for ( size_t i = 0; i < std::min( roadMatches.size(), size_t(10) ); ++i )
-    //   {
-    //      DEM_DEBUG("RoadMatches[",i,"] = ", roadMatches[ i ].toString() )
-    //   }
-
-
-    return roadMatches;
-}
 
 
 void CPU_doRound2( H3_Game & game )
@@ -382,6 +283,110 @@ void CPU_doRound3( H3_Game & game )
 
     game.doEndTurn();
 
+}
+
+#endif
+
+std::vector< FarmMatch >
+CPU_findBestFarm( H3_Game & game, uint32_t playerId )
+{
+    // H3_computeCornersForFarm( game, playerId );
+
+    std::vector< FarmMatch > farmMatches;
+
+    for ( size_t i = 0; i < game.m_corners.size(); ++i )
+    {
+        auto& corner = game.m_corners[ i ];
+        if ( corner.owner > 0 )
+        {
+            continue;
+        }
+
+        // We want to know how many unique tile types this corner has...
+        std::map< H3_TileType, int > ttc;
+
+        for ( size_t k = 0; k < corner.tiles.size(); ++k )
+        {
+            int tileId = corner.tiles[ k ];
+            if ( !tileId ) continue;
+            auto& tile = H3_getTile( game, __func__, tileId );
+            ttc[ tile.tt ]++;
+        }
+
+        FarmMatch match;
+        match.corner = corner.id;
+        match.prob = float( corner.tiles.size() );
+        match.prob *= float( ttc.size() );  // How many different ress this tile corner
+
+        for ( size_t k = 0; k < corner.tiles.size(); ++k )
+        {
+            int tileId = corner.tiles[ k ];
+            if ( !tileId ) continue;
+            auto& tile = H3_getTile( game, __func__, tileId );
+            match.prob += H3_getDiceChance( tile.chipValue );  // How many different ress this tile corner
+        }
+
+        farmMatches.emplace_back( std::move( match ) );
+    }
+
+    std::sort( farmMatches.begin(), farmMatches.end(),
+    [] ( FarmMatch const & a, FarmMatch const & b ) { return a.prob > b.prob; });
+
+    //   DEM_DEBUG("FarmMatches.size() = ", farmMatches.size() )
+    //   for ( size_t i = 0; i < std::min( farmMatches.size(), size_t(10) ); ++i )
+    //   {
+    //      DEM_DEBUG("FarmMatches[",i,"] = ", farmMatches[ i ].toString() )
+    //   }
+
+    return farmMatches;
+}
+
+
+std::vector< RoadMatch >
+CPU_findBestRoad( H3_Game & game, uint32_t playerId )
+{
+    std::vector< RoadMatch > roadMatches;
+
+    //   PioPlayer & player = H3_getCurrentPlayer( __func__, game );
+
+    //   DEM_DEBUG("game.round = ", game.round )
+    //   DEM_DEBUG("player.id = ", player.id )
+    //   DEM_DEBUG("player.name = ", player.name )
+    //   DEM_DEBUG("player.farms.size() = ", player.farms.size() )
+
+    // H3_computeEdgesForRoad( game, playerId );
+
+    if ( game.m_round < 4 )
+    {
+
+    }
+
+    for ( size_t i = 0; i < game.m_edges.size(); ++i )
+    {
+        H3_Edge & edge = game.m_edges[ i ];
+        //DEM_DEBUG("edge[",i,"].id = ", edge.id )
+
+        RoadMatch match;
+        match.edge = edge.id;
+        match.prob = 1.0; // make distance dependent smaller
+        roadMatches.emplace_back( std::move( match ) );
+    }
+
+    std::sort( roadMatches.begin(), roadMatches.end(),
+              [] ( RoadMatch const & a, RoadMatch const & b )
+              {
+                  return a.prob > b.prob;
+              } );
+
+
+    //   DEM_DEBUG("RoadMatches.size() = ", roadMatches.size() )
+    //   for ( size_t i = 0; i < std::min( roadMatches.size(), size_t(10) ); ++i )
+    //   {
+    //      DEM_DEBUG("RoadMatches[",i,"] = ", roadMatches[ i ].toString() )
+    //   }
+
+
+    return roadMatches;
 }
 
 void CPU_doRoundN( H3_Game & game )

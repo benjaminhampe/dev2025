@@ -112,8 +112,8 @@ std::string TextureFormat_str(uint32_t internalFormat)
 
 Tex2DArray::Tex2DArray()
     : id{ 0 }
-    , w{ 0 }         // Same width for all images.
-    , h{ 0 }     // Same height for all images.
+    , w{ 0 }
+    , h{ 0 }
     , layers{ 0 }
     , mipLevels{ 1 }
     , gpuFormat{ 0 }

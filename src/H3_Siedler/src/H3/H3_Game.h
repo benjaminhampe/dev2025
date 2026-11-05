@@ -108,8 +108,14 @@ struct H3_Game
     void stealRandomCard( int playerFrom, int playerTo );
 
     int findPlayer( const u32 playerId ) const;
-    H3_Player& getPlayer( const u32 playerId );
-    H3_Player& getCurrentPlayer();
+
+    H3_Player&
+    getPlayer( const u32 playerId );
+    const H3_Player&
+    getPlayer( const u32 playerId ) const;
+
+    H3_Player&
+    getCurrentPlayer();
 
     bool isGameRunning() const { return m_round > 0; }
 
@@ -222,6 +228,9 @@ struct H3_Game
     std::vector<H3_Player*> m_enemies;  // Used for faster drawing UI_CpuPlayer
 
     // Board objects
+    std::vector<u32> m_visibleCorners;
+    std::vector<u32> m_visibleEdges;
+
     H3_Thief                m_thief;
     std::vector< H3_Card >  m_cards;
     std::vector< H3_Road >  m_roads;

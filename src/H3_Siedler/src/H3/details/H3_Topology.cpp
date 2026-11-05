@@ -63,6 +63,58 @@ H3_getEdge( const H3_Game& game, const std::string& caller, const u32 edgeId )
     return v[ std::distance(v.cbegin(),it) ];
 }
 
+const H3_Road&
+H3_getRoad( const H3_Game& game, const std::string& caller, const u32 id )
+{
+    auto & g = game.m_roads;
+
+    auto it = std::find_if( g.begin(), g.end(),
+       [=] (const auto& cached) { return cached.id == id; });
+
+    if (it == g.end())
+    {
+        std::ostringstream o;
+        o << __func__ << "["<<caller<<"()] :: No road id " << id << " of " << g.size();
+        throw std::runtime_error( o.str() );
+    }
+    return g[ std::distance(g.begin(),it) ];
+}
+
+const H3_Farm&
+H3_getFarm( const H3_Game& game, const std::string& caller, const u32 id )
+{
+    auto & g = game.m_farms;
+
+    auto it = std::find_if( g.begin(), g.end(),
+        [=] (const auto& cached) { return cached.id == id; });
+
+    if (it == g.end())
+    {
+        std::ostringstream o;
+        o << __func__ << "["<<caller<<"()] :: No farm id " << id << " of " << g.size();
+        throw std::runtime_error( o.str() );
+    }
+    return g[ std::distance(g.begin(),it) ];
+}
+
+const H3_City&
+H3_getCity( const H3_Game& game, const std::string& caller, const u32 id )
+{
+    auto & g = game.m_citys;
+
+    auto it = std::find_if( g.begin(), g.end(),
+        [=] (const auto& cached) { return cached.id == id; });
+
+    if (it == g.end())
+    {
+        std::ostringstream o;
+        o << __func__ << "["<<caller<<"()] :: No city id " << id << " of " << g.size();
+        throw std::runtime_error( o.str() );
+    }
+    return g[ std::distance(g.begin(),it) ];
+}
+
+
 // ===========================================================================
 std::vector< u32 >
 H3_findTilesFromCornerPos( const H3_Game& game, const glm::vec3& cornerPos )
@@ -688,10 +740,23 @@ void H3_createTopology( H3_Game& game ) // Game road network topology
     H3_Topology_connectNextEdges( game );
     DE_TRACE("Topology :: End")
 
-    // for (size_t i = 0; i < game.m_edges.size(); ++i)
-    // {
-    //     DE_WARN("Edge[",i,"] ", game.m_edges[i].str())
-    // }
+    for (size_t i = 0; i < game.m_tiles.size(); ++i)
+    {
+        auto s = i<10 ? "0" : "";
+        DE_WARN("Tile[",s,i,"] ", game.m_tiles[i].str())
+    }
+
+    for (size_t i = 0; i < game.m_corners.size(); ++i)
+    {
+        auto s = i<10 ? "0" : "";
+        DE_WARN("Corner[",s,i,"] ", game.m_corners[i].str())
+    }
+
+    for (size_t i = 0; i < game.m_edges.size(); ++i)
+    {
+        auto s = i<10 ? "0" : "";
+        DE_WARN("Edge[",s,i,"] ", game.m_edges[i].str())
+    }
 }
 
 float H3_getDiceChance( int diceSum )
@@ -784,6 +849,7 @@ H3_Bank H3_countResourceTilesOfCorner(const H3_Game& game, uint32_t cornerId )
     return bank;
 }
 
+/*
 void H3_computeEdgesForRoad( H3_Game & game, uint32_t playerId )
 {
     // Reset all edges to invisible:
@@ -996,8 +1062,6 @@ void H3_computeCornersForFarm( H3_Game& game, uint32_t playerId )
 }
 
 
-
-
 std::vector<u32>
 H3_computeVisibleCorners( const H3_Game& game, const uint32_t playerId )
 {
@@ -1149,15 +1213,77 @@ H3_computeVisibleCorners( const H3_Game& game, const uint32_t playerId )
     return cornerIds;
 }
 
+std::vector<u32>
+H3_computeVisibleEdgesRound2and3( const H3_Game & game, const uint32_t playerId )
+{
+    if (playerId < 1)
+    {
+        DE_DEBUG("No playerId ", playerId)
+        return {};
+    }
+
+    const H3_Player & player = game.getPlayer(playerId);
+
+    if (game.m_round == 2 && player.state.farms.size() != 1)
+    {
+        DE_ERROR("Player[",player.id,"] ",player.name," must have one farm!")
+        return {};
+    }
+
+    if (game.m_round == 3 && player.state.farms.size() != 2)
+    {
+        DE_ERROR("Player[",player.id,"] ",player.name," must have two farms!")
+        return {};
+    }
+
+    std::vector<u32> edgeIds;
+
+    u32 farmId = 0;
+
+    if (game.m_round == 2)
+    {
+        farmId = player.state.farms[0];
+    }
+    else
+    {
+        farmId = player.state.farms[1];
+    }
+
+    const H3_Corner & corner = H3_getCorner(game, __func__, farmId);
+    for (u32 edgeId : corner.edges)
+    {
+        const H3_Edge& edge = H3_getEdge(game, __func__, edgeId);
+        if (edge.owner < 1)
+        {
+            edgeIds.emplace_back(edge.id);
+        }
+    }
+
+    return edgeIds;
+}
+
 
 std::vector<u32>
 H3_computeVisibleEdges( const H3_Game & game, const uint32_t playerId )
 {
     if (playerId < 1)
     {
-        DE_DEBUG("Invalid playerId ", playerId)
+        DE_ERROR("No playerId ", playerId)
         return {};
     }
+
+    if (game.m_round < 2)
+    {
+        DE_ERROR("Invalid round ", game.m_round)
+        return {};
+    }
+
+    if (game.m_round == 2 || game.m_round == 3)
+    {
+        return H3_computeVisibleEdgesRound2and3(game,playerId);
+    }
+
+    // ===== Round4+ =====
 
     std::vector<H3_Edge> edges = game.m_edges;
 
@@ -1225,5 +1351,341 @@ H3_computeVisibleEdges( const H3_Game & game, const uint32_t playerId )
     return edgeIds;
 }
 
+
+
+*/
+
+
+std::vector<u32>
+H3_computeVisibleEdgesRound2and3( const H3_Game & game, const uint32_t playerId )
+{
+    if (playerId < 1)
+    {
+        DE_DEBUG("No playerId ", playerId)
+        return {};
+    }
+
+    const H3_Player & player = game.getPlayer(playerId);
+
+    if (game.m_round == 2 && player.state.farms.size() != 1)
+    {
+        DE_ERROR("Player[",player.id,"] ",player.name," must have one farm!")
+        return {};
+    }
+
+    if (game.m_round == 3 && player.state.farms.size() != 2)
+    {
+        DE_ERROR("Player[",player.id,"] ",player.name," must have two farms!")
+        return {};
+    }
+
+    std::vector<u32> edgeIds;
+
+    u32 farmId = 0;
+
+    if (game.m_round == 2)
+    {
+        farmId = player.state.farms[0];
+    }
+    else
+    {
+        farmId = player.state.farms[1];
+    }
+
+    const H3_Farm & farm = H3_getFarm(game, __func__, farmId);
+
+    const H3_Corner & corner = H3_getCorner(game, __func__, farm.cornerId);
+
+    for (u32 edgeId : corner.edges)
+    {
+        const H3_Edge& edge = H3_getEdge(game, __func__, edgeId);
+        if (edge.owner < 1)
+        {
+            edgeIds.emplace_back(edge.id);
+        }
+    }
+
+    return edgeIds;
+}
+
+
+std::vector<u32>
+H3_computeVisibleEdges( const H3_Game & game, const uint32_t playerId )
+{
+    if (playerId < 1)
+    {
+        DE_ERROR("No playerId ", playerId)
+        return {};
+    }
+
+    if (game.m_round < 2)
+    {
+        DE_ERROR("Invalid round ", game.m_round)
+        return {};
+    }
+
+    if (game.m_round == 2 || game.m_round == 3)
+    {
+        return H3_computeVisibleEdgesRound2and3(game,playerId);
+    }
+
+    // ===== Round4+ =====
+
+    std::vector<u32> visibleEdges;
+
+    const H3_Player & player = game.getPlayer(playerId);
+
+    // Search player.roads for neighboring non-owned edges.
+    for (u32 roadId : player.state.roads)
+    {
+        const H3_Road& road = H3_getRoad(game,__func__,roadId);
+
+        const H3_Edge& edge = H3_getEdge(game,__func__,road.edgeId);
+
+        for (u32 nextEdgeId : edge.next)
+        {
+            const H3_Edge& nextEdge = H3_getEdge(game,__func__,nextEdgeId);
+
+            if (nextEdge.owner > 0)
+            {
+                continue;
+            }
+
+            H3_Util::push_back_unique(visibleEdges, nextEdgeId);
+        }
+    }
+
+    // Search player.farms for neighboring non-owned edges.
+    for (u32 farmId : player.state.farms)
+    {
+        const H3_Farm& farm = H3_getFarm(game,__func__,farmId);
+
+        const H3_Corner& corner = H3_getCorner(game,__func__,farm.cornerId);
+
+        for (u32 edgeId : corner.edges)
+        {
+            const H3_Edge& edge = H3_getEdge(game,__func__,edgeId);
+
+            if (edge.owner > 0)
+            {
+                continue;
+            }
+
+            H3_Util::push_back_unique(visibleEdges, edgeId);
+        }
+    }
+
+    // Search player.cities for neighboring non-owned edges.
+    for (u32 cityId : player.state.citys)
+    {
+        const H3_City& city = H3_getCity(game,__func__,cityId);
+
+        const H3_Corner& corner = H3_getCorner(game,__func__,city.cornerId);
+
+        for (u32 edgeId : corner.edges)
+        {
+            const H3_Edge& edge = H3_getEdge(game,__func__,edgeId);
+
+            if (edge.owner > 0)
+            {
+                continue;
+            }
+
+            H3_Util::push_back_unique(visibleEdges, edgeId);
+        }
+    }
+
+    return visibleEdges;
+}
+
+
+std::vector<u32>
+H3_computeVisibleCornersRound23( const H3_Game & game, const uint32_t playerId )
+{
+    if (game.m_round != 2 && game.m_round != 3)
+    {
+        DE_ERROR("Bad round ",game.m_round)
+        return {};
+    }
+
+    if (playerId < 1)
+    {
+        DE_DEBUG("No playerId ", playerId)
+        return {};
+    }
+
+    const H3_Player & player = game.getPlayer(playerId);
+
+    if (game.m_round != 2 && game.m_round != 3)
+    {
+        DE_ERROR("Bad round [",game.m_round,"] ",player.name," must have one farm!")
+        return {};
+    }
+
+    std::vector<u32> edgeIds;
+
+    u32 farmId = 0;
+
+    if (game.m_round == 2)
+    {
+        farmId = player.state.farms[0];
+    }
+    else
+    {
+        farmId = player.state.farms[1];
+    }
+
+    const H3_Farm & farm = H3_getFarm(game, __func__, farmId);
+
+    const H3_Corner & corner = H3_getCorner(game, __func__, farm.cornerId);
+
+    for (u32 edgeId : corner.edges)
+    {
+        const H3_Edge& edge = H3_getEdge(game, __func__, edgeId);
+        if (edge.owner < 1)
+        {
+            edgeIds.emplace_back(edge.id);
+        }
+    }
+
+    return edgeIds;
+}
+
+std::vector<u32>
+H3_computeVisibleCorners( const H3_Game& game, const uint32_t playerId )
+{
+    if (playerId < 1)
+    {
+        DE_ERROR("No playerId ", playerId)
+        return {};
+    }
+
+    if (game.m_round < 2)
+    {
+        DE_ERROR("Invalid round ", game.m_round)
+        return {};
+    }
+
+    std::vector<u32> visibleCorners;
+
+    // Initial placement rounds:
+    // Player can place all around map
+    if (game.m_round == 2 || game.m_round == 3)
+    {
+        if (game.m_cfg.buildingSpacing == 0)
+        {
+            for (const H3_Corner& corner : game.m_corners)
+            {
+                if (corner.owner > 0) continue;
+                H3_Util::push_back_unique(visibleCorners, corner.id);
+            }
+        }
+        else
+        {
+            // Important is that corners are not already owned by someone
+            // and that those corners have one empty corner in between.
+            for (const H3_Corner& corner : game.m_corners)
+            {
+                // [1.] Corner not already owned.
+                if (corner.owner > 0) continue;
+
+                // [2.] Next corner not already owned.
+                bool bOwnedNextCorner = false;
+                for (u32 nextCornerId : corner.next)
+                {
+                    const H3_Corner& next = H3_getCorner(game, __func__, nextCornerId);
+                    if (next.owner > 0)
+                    {
+                        bOwnedNextCorner = true;
+                        break;
+                    }
+                }
+
+                if (!bOwnedNextCorner)
+                {
+                    H3_Util::push_back_unique(visibleCorners, corner.id);
+                }
+            }
+        }
+    }
+    // Normal Round:
+    else
+    {
+        const H3_Player & player = game.getPlayer(playerId);
+
+        // Normal Round:
+        if (game.m_cfg.buildingSpacing == 0)
+        {
+            // Traverse all roads of player.
+            // Traverse all corners of each road
+            // if corner not owned then add_unique(cornerId)
+            for (u32 roadId : player.state.roads)
+            {
+                const H3_Road& road = H3_getRoad(game,__func__, roadId);
+                const H3_Edge& edge = H3_getEdge(game,__func__, road.edgeId);
+
+                for (u32 cornerId : edge.corners)
+                {
+                    const H3_Corner& corner = H3_getCorner(game,__func__, cornerId);
+                    if (corner.owner > 0) continue;
+                    H3_Util::push_back_unique(visibleCorners, corner.id);
+                }
+            }
+        }
+        else
+        {
+            // Traverse all edge of player roads.
+            // Traverse all corners of each edge
+            // Traverse all next corners of corner
+            for (u32 roadId : player.state.roads)
+            {
+                const H3_Road& road = H3_getRoad(game,__func__, roadId);
+                const H3_Edge& edge = H3_getEdge(game,__func__, road.edgeId);
+
+                for (u32 cornerId : edge.corners)
+                {
+                    const H3_Corner& corner = H3_getCorner(game,__func__, cornerId);
+                    if (corner.owner > 0) continue;
+
+                    // [2.] Next corner not already owned.
+                    bool bOwnedNextCorner = false;
+                    for (u32 nextId : corner.next)
+                    {
+                        const H3_Corner& next = H3_getCorner(game, __func__, nextId);
+                        if (next.owner > 0)
+                        {
+                            bOwnedNextCorner = true;
+                            break;
+                        }
+                    }
+
+                    // [3.]
+                    if (!bOwnedNextCorner)
+                    {
+                        // [3.]
+                        bool bOwnsEdge = false;
+                        for (u32 edgeId : corner.edges)
+                        {
+                            const H3_Edge& edge = H3_getEdge(game, __func__, edgeId);
+                            if (edge.owner == playerId)
+                            {
+                                bOwnsEdge = true;
+                                break;
+                            }
+
+                        }
+                        // [4.] Finally we set this corner visible
+                        if (bOwnsEdge)
+                        {
+                            H3_Util::push_back_unique(visibleCorners, corner.id);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    return visibleCorners;
+}
 
 

@@ -21,6 +21,16 @@ H3_getCorner( const H3_Game& game, const std::string& caller, const u32 cornerId
 const H3_Edge&
 H3_getEdge( const H3_Game& game, const std::string& caller, const u32 edgeId );
 
+const H3_Road&
+H3_getRoad( const H3_Game& game, const std::string& caller, const u32 roadId );
+
+const H3_Farm&
+H3_getFarm( const H3_Game& game, const std::string& caller, const u32 farmId );
+
+const H3_City&
+H3_getCity( const H3_Game& game, const std::string& caller, const u32 cityId );
+
+
 // =======================================================================
 // Tile
 // =======================================================================
@@ -79,13 +89,13 @@ void H3_Topology_connectCornersWithEdges( H3_Game& game );
 void H3_Topology_connectNextCorners( H3_Game& game );
 void H3_Topology_connectNextEdges( H3_Game& game );
 
-
+/*
 void
 H3_computeEdgesForRoad( H3_Game & game, uint32_t playerId );
 
 void
 H3_computeCornersForFarm( H3_Game& game, uint32_t playerId );
-
+*/
 
 float H3_getDiceChance( int diceSum );
 
@@ -96,7 +106,6 @@ int H3_numPort3v1AtCorner( const H3_Game& game, uint32_t cornerId );
 H3_Bank H3_numPort2v1AtCorner( const H3_Game& game, uint32_t cornerId );
 
 H3_Bank H3_countResourceTilesOfCorner( const H3_Game& game, uint32_t cornerId );
-
 
 
 std::vector<u32>

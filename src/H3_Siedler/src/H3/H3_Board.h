@@ -509,11 +509,9 @@ struct H3_BonusRoad
 struct H3_Corner
 // =====================================================================
 {
-    u32 id = 0;
-    u32 owner = 0; // player id
-    u32 building_type = 0; // default: none = 0, farm = 1, city = 2, bespin sky city = 3
-    bool visible = true;
-    // bool enabled = true; // not disabled by thief, can generate rescards
+    u32 id;
+    u32 owner; // player id
+    u32 building_type; // default: none = 0, farm = 1, city = 2, bespin sky city = 3
     de::TRSf trs;    // Computed 3d model space transform
     de::Box3f collisionBoundingBox;
     std::vector<de::Triangle3f> collisionTriangles;
@@ -543,9 +541,8 @@ struct H3_Corner
 struct H3_Edge
 // =====================================================================
 {
-    u32 id = 0;
-    u32 owner = 0; // playerId, has road if != 0
-    bool visible = true;
+    u32 id;
+    u32 owner;
     de::TRSf trs;    // Computed 3d model space transform
     de::Box3f collisionBoundingBox;
     std::vector<de::Triangle3f> collisionTriangles;
@@ -571,14 +568,14 @@ struct H3_Edge
 struct H3_Tile
 // =====================================================================
 {
-    u32 id = 0;
-    int chipValue = 0;
-    int i = 0;      // 2d board index x
-    int j = 0;      // 2d board index y
-    int angle60 = 0;// angle [0..5] to rotate tile in 60 degrees steps.
-    H3_TileType tt = H3_TileType::Unknown;
-    bool visible = true;
-    glm::vec3 pos = glm::vec3(0,0,0);
+    u32 id;
+    int chipValue;
+    int i;      // 2d board index x
+    int j;      // 2d board index y
+    int angle60;// angle [0..5] to rotate tile in 60 degrees steps.
+    H3_TileType tt;
+    // bool visible = true;
+    glm::vec3 pos;
     de::TRSf trsChip;
     de::Box3f collisionBoundingBox;
     std::vector<de::Triangle3f> collisionTriangles;

@@ -1,5 +1,6 @@
 #include "H3_Chip3DRenderer.h"
 #include <H3/H3_Game.h>
+#include <H3/details/H3_Topology.h>
 #include <de/image/Utils.h>
 #include <de_opengl.h>
 #include <de/gpu/GL_debug_layer.h>
@@ -141,23 +142,28 @@ void H3_Chip3DMeshBuffer::uploadInstances()
     GL_VALIDATE;
 }
 
-void H3_Chip3DMeshBuffer::collectEdges(const H3_Game& game, float phi)
+void H3_Chip3DMeshBuffer::collectEdges(H3_Game& game, float phi)
 {
+    if (!game.m_bUpdateDrawCall_Edges)
+    {
+        return;
+    }
+
     // Reset
     m_instanceMat.clear();
     m_instanceLayer.clear();
     m_instanceAngle60.clear();
 
     // Reserve
-    const auto n = game.m_edges.size();
+    const auto n = game.m_visibleEdges.size();
     m_instanceMat.reserve(n);
     m_instanceLayer.reserve(n);
     m_instanceAngle60.reserve(n);
 
     // Collect
-    for (const auto& edge : game.m_edges)
+    for (u32 edgeId : game.m_visibleEdges)
     {
-        if (!edge.visible) continue;
+        const H3_Edge& edge = H3_getEdge(game, __func__, edgeId);
 
         de::TRSf trs;
         trs.pos = edge.trs.pos;
@@ -168,25 +174,32 @@ void H3_Chip3DMeshBuffer::collectEdges(const H3_Game& game, float phi)
         m_instanceLayer.push_back( H3_ChipTexture::ChipW );
         m_instanceAngle60.push_back( 0 );
     }
+
+    game.m_bUpdateDrawCall_Edges = false;
 }
 
-void H3_Chip3DMeshBuffer::collectCorners(const H3_Game& game, float phi)
+void H3_Chip3DMeshBuffer::collectCorners(H3_Game& game, float phi)
 {
+    if (!game.m_bUpdateDrawCall_Corners)
+    {
+        return;
+    }
+
     // Reset
     m_instanceMat.clear();
     m_instanceLayer.clear();
     m_instanceAngle60.clear();
 
     // Reserve
-    const auto n = game.m_corners.size();
+    const auto n = game.m_visibleCorners.size();
     m_instanceMat.reserve(n);
     m_instanceLayer.reserve(n);
     m_instanceAngle60.reserve(n);
 
     // Collect
-    for (const auto& corner : game.m_corners)
+    for (u32 cornerId : game.m_visibleCorners)
     {
-        if (!corner.visible) continue;
+        const H3_Corner& corner = H3_getCorner(game, __func__, cornerId);
 
         de::TRSf trs;
         trs.pos = corner.trs.pos;
@@ -197,10 +210,17 @@ void H3_Chip3DMeshBuffer::collectCorners(const H3_Game& game, float phi)
         m_instanceLayer.push_back( H3_ChipTexture::ChipS );
         m_instanceAngle60.push_back( 0 );
     }
+
+    game.m_bUpdateDrawCall_Corners = false;
 }
 
-void H3_Chip3DMeshBuffer::collectTiles(const H3_Game& game, float phi)
+void H3_Chip3DMeshBuffer::collectTiles(H3_Game& game, float phi)
 {
+    if (!game.m_bUpdateDrawCall_Chips)
+    {
+        return;
+    }
+
     // Reset
     m_instanceMat.clear();
     m_instanceLayer.clear();
@@ -213,7 +233,7 @@ void H3_Chip3DMeshBuffer::collectTiles(const H3_Game& game, float phi)
     m_instanceAngle60.reserve(n);
 
     // Collect
-    for (const auto& tile : game.m_tiles)
+    for (const H3_Tile& tile : game.m_tiles)
     {
         uint8_t layer = H3_ChipTexture::eTypeCount;
 
@@ -259,6 +279,8 @@ void H3_Chip3DMeshBuffer::collectTiles(const H3_Game& game, float phi)
         m_instanceLayer.push_back( layer );
         m_instanceAngle60.push_back( 0 );
     }
+
+    game.m_bUpdateDrawCall_Chips = false;
 }
 
 // =================================================================

@@ -770,6 +770,8 @@ void H3_Game::startGame()
     m_tiles.clear();
     m_corners.clear();
     m_edges.clear();
+    m_visibleCorners.clear();
+    m_visibleEdges.clear();
 
     // === Board (Tiles) ===
     for (const auto& cfg : m_cfg.tiles)
@@ -781,7 +783,7 @@ void H3_Game::startGame()
         tile.j = cfg.j();
         tile.chipValue = cfg.diceValue();
         tile.angle60 = cfg.angle60();
-        tile.visible = true;
+        // tile.visible = true;
         tile.corners.clear();
         tile.edges.clear();
         tile.next.clear();
@@ -827,8 +829,10 @@ void H3_Game::startGame()
     }
 
     H3_createTopology( *this );
-    H3_computeCornersForFarm( *this, 0 );
-    H3_computeEdgesForRoad( *this, 0 );
+    m_visibleCorners = H3_computeVisibleCorners(*this, 0);
+    m_visibleEdges = H3_computeVisibleEdges(*this, 0);
+    // H3_computeCornersForFarm( *this, 0 );
+    // H3_computeEdgesForRoad( *this, 0 );
 
     m_bUpdateDrawCall_Tiles = true;
     m_bUpdateDrawCall_Chips = true;
@@ -1550,8 +1554,8 @@ void H3_Game::doPlaceCancel()
     UI_logCancel( *this );
 
     m_state = H3_State::Idle;
-    H3_computeCornersForFarm( *this, m_playerId );
-    H3_computeEdgesForRoad( *this, m_playerId );
+    m_visibleCorners = H3_computeVisibleCorners(*this, m_playerId);
+    m_visibleEdges = H3_computeVisibleEdges(*this, m_playerId);
     m_bUpdateDrawCall_Corners = true;
     m_bUpdateDrawCall_Edges = true;
     enterIdle();
@@ -1569,7 +1573,7 @@ void H3_Game::doBuyRoad()
 
     m_state = H3_State::PlaceRoad;
     UI_updateActions();
-    H3_computeEdgesForRoad( *this, m_playerId );
+    m_visibleEdges = H3_computeVisibleEdges(*this, m_playerId);
     m_bUpdateDrawCall_Edges = true;
 }
 
@@ -1634,7 +1638,7 @@ void H3_Game::finalizeBuyRoad( H3_Edge & edge )
     UI_logBuyRoad( *this, edge.id );
 
     m_state = H3_State::Idle;
-    H3_computeEdgesForRoad( *this, m_playerId );
+    m_visibleEdges.clear();
     m_bUpdateDrawCall_Edges = true;
     m_bUpdateDrawCall_Roads = true;
     enterIdle();
@@ -1652,7 +1656,7 @@ void H3_Game::doBuyFarm()
 
     m_state = H3_State::PlaceFarm;
     UI_updateActions();
-    H3_computeCornersForFarm( *this, m_playerId );
+    m_visibleCorners = H3_computeVisibleCorners(*this, m_playerId);
     m_bUpdateDrawCall_Corners = true;
 }
 
@@ -1737,7 +1741,7 @@ void H3_Game::finalizeBuyFarm( H3_Corner & corner )
     }
 
     UI_logBuyFarm( *this, corner.id );
-    H3_computeCornersForFarm( *this, 0 );
+    m_visibleCorners.clear();
     m_bUpdateDrawCall_Corners = true;
     m_bUpdateDrawCall_Farms = true;
     enterIdle();
@@ -1820,6 +1824,7 @@ void H3_Game::finalizeBuyCity( H3_Farm & farm )
     auto& city = m_citys.back();
     city.id = H3_createId();
     city.owner = player.id;
+    city.cornerId = corner.id;
     city.color = player.color;
     city.trs.pos = corner.trs.pos;
     city.trs.rotate = corner.trs.rotate;
@@ -2060,9 +2065,11 @@ void H3_Game::pick()
     m_hitPos = glm::vec3(0,0,0);
 
     // [Intersect 3D] Corners:
-    for (const H3_Corner& corner : m_corners)
+
+    for (u32 cornerId : m_visibleCorners)
     {
-        if (!corner.visible) continue;
+        const H3_Corner& corner = H3_getCorner(*this, __func__, cornerId);
+        // if (!corner.visible) continue;
         de::IntersectResult<float> hitResult;
         if (de::intersectRay<float>( corner.collisionTriangles, ray, hitResult ))
         {
@@ -2076,9 +2083,10 @@ void H3_Game::pick()
     }
 
     // [Intersect 3D] Edges:
-    for (const H3_Edge & edge : m_edges)
+    for (u32 edgeId : m_visibleEdges)
     {
-        if (!edge.visible) continue;
+        const H3_Edge & edge = H3_getEdge(*this, __func__, edgeId);
+        //if (!edge.visible) continue;
         de::IntersectResult<float> hitResult;
         if ( de::intersectRay<float>( edge.collisionTriangles, ray, hitResult ) )
         {
@@ -2139,7 +2147,7 @@ void H3_Game::pick()
     // [Intersect 3D] Tiles:
     for (const H3_Tile & tile : m_tiles)
     {
-        if (!tile.visible) continue;
+        // if (!tile.visible) continue;
         de::IntersectResult<float> hitResult;
         if ( de::intersectRay<float>( tile.collisionTriangles, ray, hitResult ) )
         {
@@ -2171,6 +2179,24 @@ int H3_Game::findPlayer( const u32 playerId ) const
 }
 
 H3_Player& H3_Game::getPlayer( const u32 playerId )
+{
+    int found = findPlayer(playerId);
+    if (found < 0)
+    {
+        std::ostringstream o;
+        o << __func__ << "() :: Invalid playerId " << playerId;
+        o << ", PlayerCount = " << m_players.size() << "\n";
+        for ( size_t i = 0; i < m_players.size(); ++i )
+        {
+            o << "Player[" << i << "] = " << m_players[i].id << "\n";
+        }
+        throw std::runtime_error( o.str() );
+    }
+
+    return m_players[ found ];
+}
+
+const H3_Player& H3_Game::getPlayer( const u32 playerId ) const
 {
     int found = findPlayer(playerId);
     if (found < 0)
