@@ -223,8 +223,8 @@ FontTTF::openMemory( const uint8_t* pBytes, size_t nBytes )
         return;
     }
 
-    DE_DEBUG("Font Family Name: ", m_ftFace->family_name)
-    DE_DEBUG("Font Style Name: ", m_ftFace->style_name)
+    // DE_DEBUG("Font Family Name: ", m_ftFace->family_name)
+    // DE_DEBUG("Font Style Name: ", m_ftFace->style_name)
 
     m_Uri = m_ftFace->family_name;
 

@@ -245,7 +245,7 @@ FontManager::getFont( const Font& font )
         return nullptr;
     }
 
-    DE_DEBUG("Added font(", font.toString(), "), family(", family.toString(), ")")
+    // DE_DEBUG("Added font(", font.toString(), "), family(", family.toString(), ")")
     m_Fonts.push_back( face );
     return m_Fonts.back();
 }

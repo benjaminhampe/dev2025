@@ -68,8 +68,8 @@ void UI_Game::updateVisibleActions()
         m_actions->updateVisibility();
     }
 
-    H3_Game & game = *m_game;
-    UI_Stats_update( game );
+    //H3_Game & game = *m_game;
+    //UI_Stats_update( game );
     //UIBanking_update( game );
 }
 

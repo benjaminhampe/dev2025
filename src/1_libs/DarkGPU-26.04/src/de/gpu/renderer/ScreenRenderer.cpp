@@ -181,14 +181,19 @@ void
 ScreenRenderer::draw2DRoundRect( const Recti& pos, const glm::ivec2& r, const uint32_t color, const TexRef& tex, int tess )
 {
     smesh::SMeshBuffer m( PrimitiveType::Triangles );
-    smesh::SMeshRoundRect::addXY( m,
-                           glm::vec3(pos.x + 0.5f*pos.w, pos.y + 0.5f*pos.h, 0),
-                           pos.w,
-                           pos.h,
-                           r.x,
-                           r.y,
-                           tess,
-                           color, color);
+    smesh::SMeshRoundRect::addXY(
+        m,
+        glm::vec3(pos.x + 0.5f*pos.w,
+                  pos.y + 0.5f*pos.h, 0),
+        pos.w,
+        pos.h,
+        r.x,
+        r.y,
+        tess,
+        color,
+        color
+    );
+
     m.upload();
     m.setTexture( 0, tex );
     draw2D( m );

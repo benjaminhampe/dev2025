@@ -297,6 +297,9 @@ struct H3_Game
     bool m_bUpdateDrawCall_Farms = true;
     bool m_bUpdateDrawCall_Citys = true;
 
+
+public:
+    std::string playerStr() const;
 };
 
 // void H3_Game_setWindow( H3_Game & game, de::Window* window );

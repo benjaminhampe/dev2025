@@ -45,35 +45,17 @@ H3_Game::~H3_Game()
     //m_audioEngine.stop();
 }
 
-u32 H3_Game::computeWinnerId()
+std::string H3_Game::playerStr() const
 {
-    DE_DEBUG("")
-
-    // TODO: Comment those out and do them only when necessary
-    computeBonusRoad();
-    computeBonusArmy();
-
-    u32 winnerId = 0;
-    u32 maxPoints = 0;
-
-    for ( H3_Player & player : m_players )
+    if (m_playerId < 1)
     {
-        player.state.updateVictoryPoints();
-
-        if (maxPoints < player.state.victoryPoints)
-        {
-            maxPoints = player.state.victoryPoints;
-            winnerId = player.id;
-        }
+        return dbStr("R[",m_round,"].T[",m_turn,"].P[",m_playerId,"] ");
     }
-
-    if (maxPoints < m_cfg.victoryPoints)
+    else
     {
-        DE_DEBUG("No winner, maxPoints(",maxPoints,"), playerId(",winnerId,")")
-        return 0;
+        const H3_Player & player = getPlayer(m_playerId);
+        return dbStr("R[",m_round,"].T[",m_turn,"].P[",player.id,"|",player.name,"] ");
     }
-
-    return winnerId;
 }
 
 void H3_Game::requestClose()
@@ -505,9 +487,42 @@ void H3_Game::UI_resizeLayouts()
     if (m_uiGame) { m_uiGame->resize(0,0,w,h); }
 }
 
+
+u32 H3_Game::computeWinnerId()
+{
+    DE_DEBUG(playerStr())
+
+    // TODO: Comment those out and do them only when necessary
+    computeBonusRoad();
+    computeBonusArmy();
+
+    u32 winnerId = 0;
+    u32 maxPoints = 0;
+
+    for ( H3_Player & player : m_players )
+    {
+        player.state.updateVictoryPoints();
+
+        if (maxPoints < player.state.victoryPoints)
+        {
+            maxPoints = player.state.victoryPoints;
+            winnerId = player.id;
+        }
+    }
+
+    DE_DEBUG(playerStr(),"maxPoints(",maxPoints,"), winnerId(",winnerId,")")
+
+    if (maxPoints < m_cfg.victoryPoints)
+    {
+        return 0;
+    }
+
+    return winnerId;
+}
+
 void H3_Game::enterBanking()
 {
-    DE_WARN("playerId = ",m_playerId)
+    DE_DEBUG(playerStr())
 
     m_uiGame->m_banking->startBanking(m_playerId);
 
@@ -519,7 +534,8 @@ void H3_Game::enterBanking()
 
 void H3_Game::enterTrading()
 {
-    DE_WARN("Not implemented")
+    DE_DEBUG(playerStr())
+    DE_ERROR("Not implemented")
 
     H3_MessageBox(L"Trade", L"DoTrade");
 
@@ -530,15 +546,17 @@ void H3_Game::enterTrading()
 
 void H3_Game::computeBonusRoad()
 {
-    DE_WARN("Not implemented")
+    DE_DEBUG(playerStr())
 
     if (m_cfg.bonusRoadLimit < 1) // Disabled game feature
     {
-        DE_WARN("BonusRoad:disabled")
+        DE_WARN(playerStr(),"BonusRoad:disabled")
         m_bonusRoad.owner = 0;
         m_bonusRoad.roads = 0;
         return; // Reset and abort.
     }
+
+    DE_ERROR(playerStr(),"Not implemented")
 
     // Finally enough connected roads for a new owner, and a new owner ....
 
@@ -553,9 +571,11 @@ void H3_Game::computeBonusRoad()
 
 void H3_Game::computeBonusArmy()
 {
+    DE_DEBUG(playerStr())
+
     if (m_cfg.bonusArmyLimit < 1) // Disabled game feature
     {
-        DE_WARN("BonusArmy:disabled")
+        DE_WARN(playerStr(),"BonusArmy:disabled")
         m_bonusArmy.owner = 0;
         m_bonusArmy.knights = 0;
         return; // Reset and abort.
@@ -586,14 +606,14 @@ void H3_Game::computeBonusArmy()
 
     if (knights < m_cfg.bonusArmyLimit)
     {
-        DE_DEBUG("No bonusArmy. ownerId(",ownerId,"), knights(",knights,"), threshold(",m_cfg.bonusArmyLimit,")")
+        DE_DEBUG(playerStr(),"No bonusArmy. ownerId(",ownerId,"), knights(",knights,"), threshold(",m_cfg.bonusArmyLimit,")")
         return; // No bonus to give.
     }
 
     int found = findPlayer(ownerId);
     if (found < 0)
     {
-        DE_DEBUG("Invalid ownerId(",ownerId,"), knights(",knights,"), threshold(",m_cfg.bonusArmyLimit,")")
+        DE_DEBUG(playerStr(),"Invalid ownerId(",ownerId,"), knights(",knights,"), threshold(",m_cfg.bonusArmyLimit,")")
         return; // No bonus to give.
     }
 
@@ -603,10 +623,10 @@ void H3_Game::computeBonusArmy()
     // New owner?
     if (owner.id != m_bonusArmy.owner) // Same owner, minor update.
     {
-        auto s = dbStr("BonusArmy goes to ",ownerId," with ",knights," knights");
+        auto s = dbStr(playerStr(),"BonusArmy goes to ",ownerId," with ",knights," knights");
         marqueeH3(de_wstr(s),2000,owner.color);
 
-        DE_DEBUG("[",ownerId,"] ",owner.name," got BonusArmy with ",knights, " knights")
+        DE_DEBUG(playerStr(),"[",ownerId,"] ",owner.name," got BonusArmy with ",knights, " knights")
 
         // TODO: trigger some animation or so ...
     }
@@ -619,12 +639,12 @@ void H3_Game::computeBonusArmy()
 
 void H3_Game::enterWinnerScreen()
 {
+    DE_DEBUG(playerStr(),"winnerId(",m_winnerId,")")
+
     if ( m_state != H3_State::Idle )
     {
-        DE_ERROR("Incorrect state ", m_state.str())
+        DE_ERROR(playerStr(),"bad state ", m_state.str())
     }
-
-    DE_DEBUG("winnerId(",m_winnerId,")")
 
     if (m_winnerId == 0)
     {
@@ -894,6 +914,7 @@ void H3_Game::startGame()
 
 void H3_Game::computeNextPlayer()
 {
+    // DE_DEBUG(playerStr()," :: Before")
     int index = 0;
 
     // ... by start order
@@ -916,30 +937,19 @@ void H3_Game::computeNextPlayer()
         }
 
         m_playerId = m_ranking.at( index ).playerId;
-
-        DE_DEBUG("Round[",m_round,"].Turn[",m_turn,"] Computed playerId(",m_playerId,"), index(",index,")")
-        for (size_t i = 0; i < m_ranking.size(); ++i)
-        {
-            const H3_RankedPlayer& r = m_ranking[i];
-            const H3_Player& p = getPlayer(r.playerId);
-
-            DE_DEBUG("Ranking[",i,"] "
-                "rank(",r.rank,"), "
-                "name(",p.name,"), "
-                "id(",p.id,"), "
-                "color(",dbHex(p.color),")")
-        }
     }
+
+    DE_DEBUG(playerStr()," :: After")
 }
 
 void H3_Game::enterRound()
 {
-    DE_DEBUG("")
+    DE_DEBUG(playerStr())
 
     // Prepare new round
     if ( m_turn != 1 )
     {
-        DE_ERROR("Invalid turn ",m_turn)
+        DE_ERROR(playerStr(),"Invalid turn ",m_turn)
     }
 
     // Check win condition
@@ -969,9 +979,7 @@ void H3_Game::enterRound()
 
     H3_Player& player = getPlayer(m_playerId);
 
-    DE_DEBUG("Round[",m_round,"], "
-         "player[",player.id,"](",player.name,"), "
-         "dice(",player.state.dice.sum(),")" )
+    DE_DEBUG(playerStr(),"dice(",player.state.dice.sum(),")")
 
     if (m_round == 1)
     {
@@ -1019,7 +1027,7 @@ void H3_Game::enterRound()
 
 void H3_Game::enterTurn()
 {
-    DE_DEBUG("")
+    DE_DEBUG(playerStr())
 
     m_state = H3_State::Idle;
 
@@ -1027,8 +1035,7 @@ void H3_Game::enterTurn()
 
     H3_Player& player = getPlayer(m_playerId);
 
-    DE_DEBUG("Round[",m_round,"].Turn[",m_turn,"].Player[",player.id,"]"
-                " ",player.name,", dice(",player.state.dice.sum(),")" )
+    DE_DEBUG(playerStr()," dice(",player.state.dice.sum(),")" )
 
     if (player.typ == H3_PlayerType::HUMAN)
     {
@@ -1061,20 +1068,21 @@ void H3_Game::enterTurn()
 
 void H3_Game::doEndTurn()
 {
+    DE_DEBUG(playerStr())
+
     if ( m_state != H3_State::Idle )
     {
-        DE_ERROR("Incorrect state ", m_state.str())
+        DE_ERROR(playerStr(),"bad state ", m_state.str())
         return;
     }
 
     UI_logEndTurn( *this );
 
-    auto& player = getCurrentPlayer();
+    const H3_Player& player = getCurrentPlayer();
 
-    DE_DEBUG("[EndTurn] "
+    DE_DEBUG(playerStr(),"[TurnEnd] "
              "turn(",m_turn,"), "
              "round(",m_round,"), "
-             "player[",player.id,"](",player.name,"), "
              "dice(",player.state.dice.sum(),")" )
 
     m_turn++;
@@ -1082,13 +1090,10 @@ void H3_Game::doEndTurn()
     // End of Round:
     if ( m_turn > m_players.size() )
     {
-        {
-            H3_Player& player = getCurrentPlayer();
-            DE_DEBUG("[EndRound] "
-                 "round(",m_round,"), "
-                 "player[",player.id,"](",player.name,"), "
-                 "dice(",player.state.dice.sum(),")" )
-        }
+        DE_DEBUG(playerStr(),"[RoundEnd] "
+             "turn(",m_turn,"), "
+             "round(",m_round,"), "
+             "dice(",player.state.dice.sum(),")" )
 
         m_turn = 1;   // Next turn
         m_round++;    // Next round
@@ -1104,7 +1109,7 @@ void H3_Game::doEndTurn()
 
 void H3_Game::enterIdle()
 {
-    DE_DEBUG("")
+    DE_DEBUG(playerStr())
 
     m_state = H3_State::Idle;
 
@@ -1120,7 +1125,8 @@ void H3_Game::enterIdle()
 
 void H3_Game::computeRanking()
 {
-    DE_DEBUG("")
+    DE_DEBUG(playerStr(),"DiceRanking after first round...")
+
     m_ranking.clear();
     m_ranking.reserve( m_players.size() );
 
@@ -1138,29 +1144,31 @@ void H3_Game::computeRanking()
                   return a.diceSum > b.diceSum;
               } );
 
-    DE_DEBUG( "DiceRanking after first round...")
     for ( size_t i = 0; i < m_ranking.size(); ++i )
     {
         auto & item = m_ranking[ i ];
-        DE_DEBUG( "DiceRank[",i,"] "
-                                 "playerId = ", item.playerId, ", "
-                 "diceSum = ", item.diceSum )
+        const H3_Player & player = getPlayer(item.playerId);
+
+        DE_DEBUG(playerStr(),"Rank[",i,"] "
+                "Player(",player.id,"|",player.name,"), "
+                "Dice(", item.diceSum,")" )
     }
 }
 
 void H3_Game::doDice()
 {
+    DE_DEBUG(playerStr())
+
     if ( m_state != H3_State::Idle )
     {
-        DE_ERROR("Incorrect state, ", m_state.str())
+        DE_ERROR(playerStr(),"bad state, ", m_state.str())
     }
 
     auto& player = getCurrentPlayer();
 
     if (player.state.dice.sum())
     {
-        DE_ERROR("player[",player.id,"] ",player.name," already threw "
-            "dice(",player.state.dice.a," + ",player.state.dice.b,").")
+        DE_ERROR(playerStr(),"did already dice(",player.state.dice.a," + ",player.state.dice.b,").")
         return;
     }
 
@@ -1172,18 +1180,11 @@ void H3_Game::doDice()
 
     player.state.dice = m_dice;
 
-
-    DE_DEBUG("player[",player.id,"] ",player.name," "
-            "dice(",player.state.dice.a," + ",player.state.dice.b,").")
-
-    auto s1 = dbStr(
-        "Player[", player.id, "] ", player.name, " has "
-        "Dice Values (", int(player.state.dice.a), " + ", int(player.state.dice.b), ")"
-        );
-
+    DE_DEBUG(playerStr(),"dice(",player.state.dice.a," + ",player.state.dice.b,").")
 
     m_animations.addAnimation( new H3_Dice2DAnimation(this) );
 
+    auto s1 = dbStr(playerStr(),"has Dice Values (", int(player.state.dice.a), " + ", int(player.state.dice.b), ")");
     marqueeH3( de_wstr(s1), 2000, player.color );
 
     UI_logDice( *this );
@@ -1230,7 +1231,7 @@ void H3_Game::doDice()
                 // Skip tile with thief...
                 if (tile.id == m_thief.occupiedTileId)
                 {
-                    DE_DEBUG("Tile[",tile.str(),"] has Thief")
+                    DE_DEBUG(playerStr(),"Tile[",tile.str(),"] has Thief")
                     continue;
                 }
 
@@ -1250,7 +1251,7 @@ void H3_Game::doDice()
                                 tile.tt,
                                 corner.building_type );
 
-DE_DEBUG("Player(",player.id,") ",player.name," got ",corner.building_type," ",tile.tt.str() )
+DE_DEBUG(playerStr()," got ",corner.building_type," ",tile.tt.str() )
 
                 // <Begin> Animations:
 
@@ -1302,6 +1303,8 @@ DE_DEBUG("Player(",player.id,") ",player.name," got ",corner.building_type," ",t
 
 void H3_Game::enterDonateCards( uint32_t playerId )
 {
+    DE_DEBUG(playerStr())
+
     // if (m_state != H3_State::Dice)
     // {
     //     DE_ERROR("Invalid state ", m_state.str())
@@ -1313,7 +1316,7 @@ void H3_Game::enterDonateCards( uint32_t playerId )
 
     if (player.typ != H3_PlayerType::HUMAN)
     {
-        DE_ERROR("Player[",player.id,"] ",player.name," is not a Human.")
+        DE_ERROR(playerStr(),"is not a Human.")
         enterIdle();
         return;
     }
@@ -1321,14 +1324,14 @@ void H3_Game::enterDonateCards( uint32_t playerId )
     const uint32_t cards = player.state.bank.sum();
     if (cards <= m_cfg.cardLimitNoSteal)
     {
-        DE_DEBUG("Player[",player.id,"] ",player.name," has only ",cards," cards. No donation.")
+        DE_DEBUG(playerStr(),"has only ",cards," cards. No donation.")
         // enterThiefPlacement();
         return;
     }
 
     m_state = H3_State::DonateCards;
 
-    DE_DEBUG("Player[",player.id,"] ",player.name," has ",cards," cards. "
+    DE_DEBUG(playerStr(),"has ",cards," cards. "
             "Must donate ", cards/2, ". "
             "cardLimitNoSteal(",m_cfg.cardLimitNoSteal,")")
 
@@ -1343,11 +1346,13 @@ void H3_Game::enterDonateCards( uint32_t playerId )
 
 void H3_Game::enterThiefPlacement()
 {
+    DE_DEBUG(playerStr())
+
     if (m_state != H3_State::Dice &&
         m_state != H3_State::DonateCards &&
         m_state != H3_State::UseKnightCard )
     {
-        DE_ERROR("Invalid state ", m_state.str())
+        DE_ERROR(playerStr(),"bad state ", m_state.str())
         //enterIdle();
         //return;
     }
@@ -1356,11 +1361,12 @@ void H3_Game::enterThiefPlacement()
 
     H3_Player & player = getCurrentPlayer();
 
-    DE_DEBUG(player.name," places thief to tile")
+    DE_DEBUG(playerStr(),"places thief on new tile...")
 
     m_animations.addAnimation( new H3_ArrowToThiefAnimation(this) );
 
-    marqueeH1(L"Place thief to another Tile", 2000, player.color);
+    auto s = dbStr(playerStr(),"place thief...");
+    marqueeH1(de_wstr(s), 2000, player.color);
 
     UI_updateActions();
 
@@ -1373,24 +1379,24 @@ void H3_Game::enterThiefPlacement()
 
 void H3_Game::leaveThiefPlacement( H3_Tile& tile )
 {
+    DE_DEBUG(playerStr())
+
     if (m_state != H3_State::PlaceThief )
     {
-        DE_ERROR("Invalid state ", m_state.str())
-        m_state = H3_State::Idle;
-        return;
+        DE_ERROR(playerStr(),"bad state ", m_state.str())
+        //m_state = H3_State::Idle;
+        //return;
     }
 
     if (m_thief.occupiedTileId == tile.id)
     {
-        DE_WARN("Cannot place robber on same tile ", tile.id)
+        DE_WARN(playerStr(),"thief must be placed on different tile ", tile.id)
         return;
     }
 
-    DE_OK("")
-
     // Place Thief:
     m_thief.occupiedTileId = tile.id;
-    m_thief.trs.pos = tile.pos + glm::vec3(20,0,-30);
+    m_thief.trs.pos = tile.pos + glm::vec3(0,10,0);
     m_thief.trs.update();
 
     // Get list of owners that are not the current player.
@@ -1434,46 +1440,58 @@ void H3_Game::leaveThiefPlacement( H3_Tile& tile )
 
 void H3_Game::leaveThiefOutro( H3_Corner& corner )
 {
+    DE_DEBUG(playerStr())
+
     if (m_state != H3_State::StealRandomCard)
     {
-        DE_ERROR("Invalid state ",m_state.str())
+        DE_ERROR(playerStr(),"bad state ",m_state.str())
     }
 
-    // [1.] Corner must be on Robber's tile...
-    H3_Tile & tileOfRobber = H3_getTile(*this, __func__, m_thief.occupiedTileId);
+    // [1.] Selected corner must be at thiefTile...
+    const H3_Tile & tile = H3_getTile(*this, __func__, m_thief.occupiedTileId);
 
     // [1.] Find corner on Robber's tile:
     auto itFound = std::find_if(
-        tileOfRobber.corners.begin(),
-        tileOfRobber.corners.end(),
-        [&] ( uint32_t cornerOfRobberTile )
+        tile.corners.begin(),
+        tile.corners.end(),
+        [&] ( u32 cornerId )
         {
-            return cornerOfRobberTile == corner.id;
+            return cornerId == corner.id;
         });
 
     // [1.] Corner is NOT on Robber's tile
-    if (itFound == tileOfRobber.corners.end())
+    if (itFound == tile.corners.end())
     {
-        DE_WARN("Not a corner of Robber's tile")
+        DE_WARN(playerStr(),"not a corner of Thief's tile")
         return;
     }
 
-    // [2.] Stealing card only possible if corner has owner
-    //      different from current player.
-    if (corner.owner > 0 && corner.owner != m_playerId)
+    // [2.]
+    if (corner.owner < 1)
     {
-        stealRandomCard( corner.owner, m_playerId );
+        DE_WARN(playerStr(),"cannot steal card from non owned corner.")
+        return;
     }
 
-    // [3.] Reset state and update
+    // [3.]
+    if (corner.owner == m_playerId)
+    {
+        DE_WARN(playerStr(),"cannot steal card from yourself")
+        return;
+    }
+
+    // [4.] Steal card and return to idle...
+    stealRandomCard( corner.owner, m_playerId );
     enterIdle();
 }
 
 void H3_Game::leaveThiefOutro( H3_Edge& edge )
 {
+    DE_DEBUG(playerStr())
+
     if (m_state != H3_State::StealRandomCard)
     {
-        DE_ERROR("Invalid state ",m_state.str())
+        DE_ERROR(playerStr(),"bad state ",m_state.str())
     }
 
     // [1.] Corner must be on Robber's tile...
@@ -1491,7 +1509,7 @@ void H3_Game::leaveThiefOutro( H3_Edge& edge )
     // [1.] Corner is NOT on Robber's tile
     if (itFound == tileOfRobber.edges.end())
     {
-        DE_WARN("Not an edge of Robber's tile")
+        DE_WARN(playerStr(),"not an edge of Robber's tile")
         return;
     }
 
@@ -1537,31 +1555,34 @@ void H3_Game::stealRandomCard( int playerFromId, int playerToId )
 
 void H3_Game::enterUseKnightCard()
 {
+    DE_DEBUG(playerStr())
+
     if (m_state != H3_State::Idle )
     {
-        DE_ERROR("Invalid state ", m_state.str())
-        m_state = H3_State::Idle;
+        DE_ERROR(playerStr(),"bad state ", m_state.str())
         return;
     }
 
-    UI_updateActions();
+    enterIdle();
 }
 
 void H3_Game::doPlaceCancel()
 {
+    DE_DEBUG(playerStr())
+
     if (m_state != H3_State::PlaceRoad &&
         m_state != H3_State::PlaceFarm &&
         m_state != H3_State::PlaceCity )
     {
-        DE_ERROR("Invalid state ", m_state.str())
+        DE_ERROR(playerStr(),"bad state ", m_state.str())
         return;
     }
 
     UI_logCancel( *this );
 
     m_state = H3_State::Idle;
-    m_visibleCorners = H3_computeVisibleCorners(*this, m_playerId);
-    m_visibleEdges = H3_computeVisibleEdges(*this, m_playerId);
+    m_visibleCorners.clear();
+    m_visibleEdges.clear();
     m_bUpdateDrawCall_Corners = true;
     m_bUpdateDrawCall_Edges = true;
     enterIdle();
@@ -1569,11 +1590,11 @@ void H3_Game::doPlaceCancel()
 
 void H3_Game::doBuyRoad()
 {
-    DE_DEBUG("BuyRoad")
+    DE_DEBUG(playerStr())
 
     if ( m_state != H3_State::Idle )
     {
-        DE_ERROR("Incorrect state ", m_state.str())
+        DE_ERROR(playerStr(),"bad state ", m_state.str())
         return;
     }
 
@@ -1585,27 +1606,25 @@ void H3_Game::doBuyRoad()
 
 void H3_Game::finalizeBuyRoad( H3_Edge & edge )
 {
-    //DE_DEBUG("EndRoad(", edge.pos, ")")
+    DE_DEBUG(playerStr())
 
     if ( m_state != H3_State::PlaceRoad )
     {
-        DE_ERROR("Incorrect state ", m_state.str())
+        DE_ERROR(playerStr(),"bad state ", m_state.str())
         return;
     }
 
     if ( edge.owner > 0 )
     {
-        DE_ERROR("Error, cant build on Edge owned by player ", edge.owner )
-        //H3_doPlaceCancel( game );
+        DE_ERROR(playerStr(),"edge owned by playerId ", edge.owner )
         return;
     }
 
     auto& player = getCurrentPlayer();
 
-    if ( !player.state.bank.canBuyRoad() && m_round >= 4 )
+    if ( !player.state.bank.canBuyRoad() && m_round > 3 )
     {
-        DE_ERROR("Error, player ", player.id, " has not enought resources" )
-        //H3_doPlaceCancel( game );
+        DE_ERROR(playerStr(),"cannot buy road." )
         return;
     }
 
@@ -1652,11 +1671,11 @@ void H3_Game::finalizeBuyRoad( H3_Edge & edge )
 
 void H3_Game::doBuyFarm()
 {
-    DE_DEBUG("")
+    DE_DEBUG(playerStr())
 
     if ( m_state != H3_State::Idle )
     {
-        DE_ERROR("Incorrect state ", m_state.str())
+        DE_ERROR(playerStr(),"bad state ", m_state.str())
         return;
     }
 
@@ -1668,17 +1687,17 @@ void H3_Game::doBuyFarm()
 
 void H3_Game::finalizeBuyFarm( H3_Corner & corner )
 {
-    DE_DEBUG("")
+    DE_DEBUG(playerStr())
 
     if ( m_state != H3_State::PlaceFarm )
     {
-        DE_ERROR("Incorrect state ", m_state.str())
+        DE_ERROR(playerStr(),"bad state ", m_state.str())
         return;
     }
 
     if ( corner.owner > 0 )
     {
-        DE_ERROR("Corner already owned by playerId ", corner.owner )
+        DE_ERROR(playerStr(),"corner already owned by playerId ", corner.owner )
         return;
     }
 
@@ -1686,7 +1705,7 @@ void H3_Game::finalizeBuyFarm( H3_Corner & corner )
 
     if ( !player.state.bank.canBuyFarm() && m_round > 3 )
     {
-        DE_ERROR("Player ", player.id, " cannot afford a farm." )
+        DE_ERROR(playerStr(),"cannot buy farm.")
         return;
     }
 
@@ -1742,7 +1761,8 @@ void H3_Game::finalizeBuyFarm( H3_Corner & corner )
     {
         if (!player.state.bank.buyFarm())
         {
-            throw std::runtime_error("Cannot buy farm");
+            auto s = dbStr(playerStr(),"Cannot buy farm");
+            throw std::runtime_error(s);
         }
     }
 
@@ -1759,69 +1779,63 @@ void H3_Game::doBuyCity()
 {
     if ( m_state != H3_State::Idle )
     {
-        DE_ERROR("Incorrect state ", m_state)
+        DE_ERROR(playerStr(),"bad state ", m_state.str())
         return;
     }
 
     H3_Player & player = getPlayer(m_playerId);
     bool bCanBuy = player.state.bank.canBuyCity();
-
-    if (m_bDebugLogic)
-    {
-        DE_DEBUG("Player[",player.id,"] ",player.name, " canBuyCity = ",bCanBuy)
-        DE_ERROR("State ", m_state.str())
-    }
-
     if (!bCanBuy)
     {
-        DE_ERROR("Invalid state ", m_state.str())
+        DE_ERROR(playerStr(),"cannot buy city.")
         return;
     }
 
+    DE_DEBUG(playerStr(),"canBuyCity = ",bCanBuy)
     m_state = H3_State::PlaceCity;
     UI_updateActions();
 }
 
 void H3_Game::finalizeBuyCity( H3_Farm & farm )
 {
-    DE_DEBUG("H3_finalizeBuyCity()")
+    DE_DEBUG(playerStr())
 
     H3_Player & player = getCurrentPlayer();
 
     if ( m_state != H3_State::PlaceCity )
     {
-        DE_ERROR("Incorrect state ", m_state.str())
+        DE_ERROR(playerStr(),"bad state ", m_state.str())
         return;
     }
 
     if ( m_round < 4 )
     {
-        DE_ERROR("Incorrect round ", m_round)
+        DE_ERROR(playerStr(),"bad round ", m_round)
         return;
     }
 
     if ( farm.owner != m_playerId )
     {
-        DE_ERROR("Player[", player.id,"] ",player.name," is not farm owner. Farm:", farm.id)
+        DE_ERROR(playerStr(),"is not farm owner. Farm:", farm.id)
         return;
     }
 
     if ( !player.state.bank.canBuyCity() )
     {
-        DE_ERROR("Player[", player.id,"] ",player.name," cannot afford a city" )
+        DE_ERROR(playerStr(),"cannot buy city." )
         return;
     }
 
     H3_Corner & corner = H3_getCorner(*this, __func__, farm.cornerId);
     if ( corner.building_type != 1 )
     {
-        DE_ERROR("Player[", player.id,"] ",player.name," corner[",corner.id,"] has no farm.")
+        DE_ERROR(playerStr(),"corner[",corner.id,"] has no farm.")
         return;
     }
 
     if ( !player.state.bank.buyCity() )
     {
-        DE_ERROR("Player[", player.id,"] ",player.name," cannot buy a city ", player.state.bank.str() )
+        DE_ERROR(playerStr(),"cannot buy a city ", player.state.bank.str() )
         return;
     }
 
@@ -1862,7 +1876,8 @@ void H3_Game::finalizeBuyCity( H3_Farm & farm )
         [&] ( const uint32_t cachedFarmId ) { return cachedFarmId == farm.id; } );
     if (itFarmId == player.state.farms.end())
     {
-        throw std::runtime_error("Invalid itFarmId");
+        auto s = dbStr(playerStr(),"Invalid itFarmId");
+        throw std::runtime_error(s);
     }
     else
     {
@@ -1881,7 +1896,8 @@ void H3_Game::finalizeBuyCity( H3_Farm & farm )
 
     if (itFarm == m_farms.end())
     {
-        throw std::runtime_error("Invalid itFarm");
+        auto s = dbStr(playerStr(),"Invalid(2) itFarmId");
+        throw std::runtime_error(s);
     }
     else
     {
@@ -1903,22 +1919,24 @@ void H3_Game::finalizeBuyCity( H3_Farm & farm )
 
 void H3_Game::doBuyCard()
 {
+    DE_DEBUG(playerStr())
+
     if ( m_state != H3_State::Idle )
     {
-        DE_ERROR("Incorrect state ", m_state.str())
+        DE_ERROR(playerStr(),"bad state ", m_state.str())
         return;
     }
 
     auto& player = getCurrentPlayer();
     if ( !player.state.bank.canBuyCard() )
     {
-        DE_ERROR("Error, player ", player.id, " has not enought resources" )
+        DE_ERROR(playerStr(),"has not enough resources")
         return;
     }
 
     if ( !player.state.bank.buyCard() )
     {
-        DE_ERROR("Error, buy failed player ", player.id )
+        DE_ERROR(playerStr(),"cannot buy card")
         return;
     }
 
@@ -1945,81 +1963,83 @@ void H3_Game::doBuyCard()
 
 void H3_Game::doBank()
 {
+    DE_DEBUG(playerStr())
     if ( m_state != H3_State::Idle )
     {
-        DE_ERROR("No correct idle state")
+        DE_ERROR(playerStr(),"bad state ",m_state.str())
         return;
     }
-    DE_DEBUG("DoBank")
+
     UI_updateActions();
 }
 
 void H3_Game::doTrade()
 {
+    DE_DEBUG(playerStr())
+
     if ( m_state != H3_State::Idle )
     {
-        DE_ERROR("No correct idle state")
+        DE_ERROR(playerStr(),"bad state ",m_state.str())
         return;
     }
-    DE_DEBUG("DoTrade")
+
     UI_updateActions();
 }
 
 void H3_Game::revealPointCard()
 {
+    DE_DEBUG(playerStr())
+
     if ( m_state != H3_State::Idle )
     {
-        DE_ERROR("Incorrect state ", m_state)
+        DE_ERROR(playerStr(),"bad state ",m_state.str())
         return;
     }
 
     auto & player = getCurrentPlayer();
 
-    DE_DEBUG("Reveal pointCard of player ",player.name)
-
-    UI_updateActions();
+    enterIdle();
 }
 void H3_Game::revealKnightCard()
 {
+    DE_DEBUG(playerStr())
+
     if ( m_state != H3_State::Idle )
     {
-        DE_ERROR("Incorrect state ", m_state)
+        DE_ERROR(playerStr(),"bad state ",m_state.str())
         return;
     }
 
     auto & player = getCurrentPlayer();
 
-    DE_DEBUG("Reveal pointCard of player ",player.name)
-
-    // computeBonusArmy()
-
     enterThiefPlacement();
 
-    UI_updateActions();
+    enterIdle();
 }
 void H3_Game::revealInventCard()
 {
+    DE_DEBUG(playerStr())
+
     if ( m_state != H3_State::Idle )
     {
-        DE_ERROR("Incorrect state ", m_state)
+        DE_ERROR(playerStr(),"bad state ",m_state.str())
         return;
     }
 
-    //m_state = H3_State::PlaceCity;
-    //UI_updateActions();
+    enterIdle();
 }
 void H3_Game::revealMonopolCard()
 {
+    DE_DEBUG(playerStr())
+
     if ( m_state != H3_State::Idle )
     {
-        DE_ERROR("Incorrect state ", m_state)
+        DE_ERROR(playerStr(),"bad state ",m_state.str())
         return;
     }
 
-    //m_state = H3_State::PlaceCity;
-    //UI_updateActions();
+    enterIdle();
 }
-
 
 void H3_Game::pick()
 {

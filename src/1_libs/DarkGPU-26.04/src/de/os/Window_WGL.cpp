@@ -1204,7 +1204,7 @@ WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
         }
         case WM_SETFOCUS:
         {
-            DE_OK("WM_SETFOCUS")
+            //DE_OK("WM_SETFOCUS")
             if (self)
             {
                 self->_d->m_bFocused = true;
@@ -1213,7 +1213,7 @@ WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
         }
         case WM_KILLFOCUS:
         {
-            DE_OK("WM_KILLFOCUS")
+            //DE_OK("WM_KILLFOCUS")
             if (self)
             {
                 self->_d->m_bFocused = false;

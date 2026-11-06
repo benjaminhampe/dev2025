@@ -183,10 +183,6 @@ void UI_Stats_render(H3_Game & game)
     const auto scr_w = driver->getScreenWidth();
     const auto scr_h = driver->getScreenHeight();
 
-    const auto playerTex = game.getTex((H3_Tex::eID)player.avatar, __func__ );
-    const auto playerName = player.name;
-    const auto playerColor = player.color;
-
     const float zoom = game.getZoom();
     de::Font5x8 font(zoom*2,zoom*2,0,0,1,1);
 
@@ -201,50 +197,50 @@ void UI_Stats_render(H3_Game & game)
     int wT = 5 * w + 2*p;
     int hT = h0 + h1 + h2 + 2*p;
 
-    int x = 0;
-    int y = scr_h - 1 - p - h2 - s - h1 - p - h0 - p;
+    int x = p;
+    int y = scr_h - 1 - hT;
 
-    x = p;
-    y = scr_h - 1 - hT;
-
-    auto r = glm::ivec2(8,8);
+    auto radius = glm::ivec2(8,8);
 
     driver->getScreenRenderer()->draw2DRoundRect(
-        de::Recti(x,y,wT,hT), r, playerColor);
+        de::Recti(x,y,wT,hT), radius, player.color);
 
+    auto ico = game.getTex((H3_Tex::eID)player.avatar, __func__ );
     driver->getScreenRenderer()->draw2DRoundRect(
-        de::Recti(x+p,y+p,h0,h0), r, 0xFFFFFFFF, playerTex, 13);
+        de::Recti(x+p,y+p,h0,h0),
+        radius,
+        0xFFFFFFFF,
+        ico,
+        13);
 
     auto drawStat = [&](int x, int y, int w, int h,
-                                 int texId, int value, de::Font5x8 font )
+                        int texId, int value, de::Font5x8 font )
     {
         const auto tex = game.getTex(H3_Tex::eID(texId), __func__);
-        const auto str = std::to_string( value );
 
         driver->getScreenRenderer()->draw2DRoundRect(
-            de::Recti(x+p,y+p,h0,h0), r, 0xFFFFFFFF, tex, 13);
+            de::Recti(x+p,y+p,h0,h0), radius, 0xFFFFFFFF, tex, 13);
 
         const float zoom = game.getZoom();
 
-        auto ts = font.getTextSize( str );
+        const auto s = std::to_string( value );
+        const auto ts = font.getTextSize( s );
 
-        int s = zoom;
         int tw = ts.width;
         int th = (ts.height / 8) * 7;
 
-        auto r_num = de::Recti(x + w - 3 - s - tw,
-                               y + h - 3 - s - th,
-                               tw + 2*s,
-                               th + 2*s);
+        auto rc = de::Recti(x + w - 3 - zoom - tw,
+                               y + h - 3 - zoom - th,
+                               tw + 2*zoom,
+                               th + 2*zoom);
 
-        driver->getScreenRenderer()->
-            draw2DRect( r_num, dbRGB(0,0,0,128) );
+        // driver->getScreenRenderer()->
+        //     draw2DRect( rc, dbRGB(0,0,0,128) );
 
-        driver->
-            draw2DText(
-                r_num.x + 1,
-                r_num.y + 1,
-                str,
+        driver->draw2DText(
+                rc.x + 1,
+                rc.y + 1,
+                s,
                 dbRGB(255,255,255),
                 de::Align::Default,
                 font );
@@ -264,8 +260,7 @@ void UI_Stats_render(H3_Game & game)
     drawStat(x,y,w,h2, H3_Tex::StatRoad, player.state.roads.size(), font); x += w + s;
     drawStat(x,y,w,h2, H3_Tex::StatFarm, player.state.farms.size(), font); x += w + s;
     drawStat(x,y,w,h2, H3_Tex::StatCity, player.state.citys.size(), font); x += w + s;
-    drawStat(x,y,w,h2, H3_Tex::StatCard,
-                       player.state.knightCards.size(), font); x += w + s;
+    drawStat(x,y,w,h2, H3_Tex::StatCard, player.state.knightCards.size(), font); x += w + s;
 
     // Cards
     int wC = zoom * 39;
@@ -284,11 +279,11 @@ void UI_Stats_render(H3_Game & game)
     drawStat(x,y,wB,hB, H3_Tex::BonusRoad, player.state.hasBonusRoad, font); // x += wB + p;
 }
 
-
+/*
 void UI_Stats_update( H3_Game & game )
 {
     // Nothing todo (yet), render method does gathering.
-    /*
+
     UI_Stats_show( game );
 
 
@@ -403,28 +398,24 @@ void UI_Stats_update( H3_Game & game )
         UI_get( game, H3_UI::LblStatPointCard, __func__ ).visible = true;
         UI_get( game, H3_UI::LblStatPointCard, __func__ ).msg = std::to_string( player.pointCards.size() );
     }
-    */
 }
 
-/*
 void UI_Stats_setVisible( H3_Game & game, bool bVisible )
 {
 }
-
-void UI_Stats_hide( H3_Game & game ) { UI_Stats_setVisible( game, false ); }
-
-void UI_Stats_show( H3_Game & game ) { UI_Stats_setVisible( game, true ); }
-*/
-
-
-/*
+void UI_Stats_hide( H3_Game & game )
+{
+    UI_Stats_setVisible( game, false );
+}
+void UI_Stats_show( H3_Game & game )
+{
+    UI_Stats_setVisible( game, true );
+}
 void UI_drawDlgLooseCards( H3_Game & game )
 {
     auto driver = game.getDriver();
     if ( !driver ) { DE_ERROR("No driver") return; }
 }
-
-
 int UI_computeBankRatio( H3_Game & game, int bankingMode )
 {
     H3_Player & player = H3_getCurrentPlayer( game );

@@ -6,17 +6,17 @@
 
 void AI_donateCardsToRobber(H3_Game & game, u32 playerId)
 {
-    H3_Player & player = game.getPlayer( playerId );
+    DE_DEBUG(game.playerStr())
 
-    int cardLimit = game.m_cfg.cardLimitNoSteal;
+    const int cardLimit = game.m_cfg.cardLimitNoSteal;
+
+    H3_Player & player = game.getPlayer( playerId );
 
     if (player.state.bank.sum() <= cardLimit)
     {
-        DE_BENNI("Player[",player.name,"] is below CardLimit")
+        DE_BENNI(game.playerStr(),"is below CardLimit")
         return;
     }
-
-    DE_DEBUG("")
 
     H3_Bank bank = player.state.bank;
 
@@ -73,23 +73,21 @@ void AI_donateCardsToRobber(H3_Game & game, u32 playerId)
     bank.D = D;
     bank.E = E;
 
-    DE_OK("Player[",player.name,"] has to donate ", maxLose, " to robber.")
-    DE_OK("Before Bank = ", player.state.bank.str())
-    DE_OK("Donate Bank = ", bank.str())
+    DE_OK(game.playerStr(),"has to donate ", maxLose, " to robber.")
+    DE_OK(game.playerStr(),"before Bank = ", player.state.bank.str())
+    DE_OK(game.playerStr(),"donate Bank = ", bank.str())
 
     if (!player.state.bank.buy( bank ))
     {
-        DE_ERROR("Cannot buy")
+        DE_ERROR(game.playerStr(),"Cannot buy")
     }
 
-    DE_OK("Robbed Bank = ", player.state.bank.str())
+    DE_OK(game.playerStr(),"robbed Bank = ", player.state.bank.str())
 }
 
 void AI_ThiefPlacement(H3_Game& game, u32 playerId)
 {
-    H3_Player & player = game.getPlayer(playerId);
-
-    DE_DEBUG("Player[",player.id,"] ", player.name)
+    DE_DEBUG(game.playerStr())
 
     // ===================================================
     // PlacementThief: Score Data
@@ -151,6 +149,7 @@ void AI_ThiefPlacement(H3_Game& game, u32 playerId)
     for (const H3_Tile& tile : game.m_tiles)
     {
         if (tile.id == thiefTileId) continue;
+        if (tile.tt.isWaterOrPort()) continue;
 
         candidates.emplace_back();
         Candidate & c = candidates.back();
@@ -174,25 +173,26 @@ void AI_ThiefPlacement(H3_Game& game, u32 playerId)
     // ===================================================
 
 // <debug>
-    DE_DEBUG("Candidates = ", candidates.size())
+    DE_DEBUG(game.playerStr(),"Candidates = ", candidates.size())
 
     size_t firstTen = std::min<size_t>(10,candidates.size());
     for (size_t i = 0; i < firstTen; ++i)
     {
-        DE_DEBUG("Candidate[",i,"] ", candidates[i].str())
+        DE_DEBUG(game.playerStr(),"Candidate[",i,"] ", candidates[i].str())
     }
 // </debug>
 
     if (firstTen == 0)
     {
-        throw std::runtime_error("firstTen = 0");
+        auto s = dbStr(game.playerStr(),"firstTen = 0");
+        throw std::runtime_error(s);
     }
 
     int index = size_t( rand() ) % firstTen;
     const Candidate& decided = candidates[ index ];
 
 // <debug>
-    DE_DEBUG("Player[",player.id,"] ", player.name, " decided for candidate ", index)
+    DE_DEBUG(game.playerStr(),"decided for candidate ", index)
 // </debug>
 
     // ===================================================
@@ -223,23 +223,23 @@ void AI_ThiefPlacement(H3_Game& game, u32 playerId)
     }
 
 // <debug>
-    DE_DEBUG("Player[",player.id,"] ", player.name, " can steal from ", H3_Util::str(owners))
+    DE_DEBUG(game.playerStr(),"can steal from ", H3_Util::str(owners))
 // </debug>
 
     if (owners.empty())
     {
-        DE_DEBUG("Player[",player.id,"] ", player.name, " nothing to steal")
+        DE_DEBUG(game.playerStr(),"nothing to steal")
     }
     else if (owners.size() == 1)
     {
-        DE_DEBUG("Player[",player.id,"] ", player.name, " auto steals from ",game.getPlayer(owners[0]).name)
+        DE_DEBUG(game.playerStr(),"auto steals from ",game.getPlayer(owners[0]).name)
         game.stealRandomCard( owners[0], playerId );
     }
     else
     {
         int n = owners.size();
         int i = rand() % n;
-        DE_DEBUG("Player[",player.id,"] ", player.name, " random-steals from ",game.getPlayer(owners[i]).name)
+        DE_DEBUG(game.playerStr(),"random-steals from ",game.getPlayer(owners[i]).name)
         game.stealRandomCard( owners[i], playerId );
     }
 }

@@ -740,6 +740,7 @@ void H3_createTopology( H3_Game& game ) // Game road network topology
     H3_Topology_connectNextEdges( game );
     DE_TRACE("Topology :: End")
 
+/*
     for (size_t i = 0; i < game.m_tiles.size(); ++i)
     {
         auto s = i<10 ? "0" : "";
@@ -757,6 +758,7 @@ void H3_createTopology( H3_Game& game ) // Game road network topology
         auto s = i<10 ? "0" : "";
         DE_WARN("Edge[",s,i,"] ", game.m_edges[i].str())
     }
+*/
 }
 
 int H3_getDiceChance( int diceSum )

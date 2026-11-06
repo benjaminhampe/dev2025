@@ -17,7 +17,7 @@ void H3_drawText( H3_Game & game, int x, int y, const std::string& msg, const ui
                  const de::Align align, const de::Font & font,
                 uint32_t bgColor = 0x80000000, int padding = 5 );
 
-void UI_Stats_update( H3_Game & game );
+// void UI_Stats_update( H3_Game & game );
 void UI_Stats_render( H3_Game & game );
 // void UI_Stats_setVisible( H3_Game & game, bool bVisible );
 // void UI_Stats_hide( H3_Game & game );
