@@ -528,7 +528,7 @@ void H3_Cfg::computeBounds()
         max.y = std::max(max.y, tile.j());
     }
 
-    DE_DEBUG("Bounds: min(",min.x,",",min.y,"), max(",max.x,",",max.y,")")
+    // DE_DEBUG("Bounds: min(",min.x,",",min.y,"), max(",max.x,",",max.y,")")
 }
 
 void
@@ -1738,7 +1738,7 @@ H3_Player::~H3_Player()
     auto p = reinterpret_cast<AI_Data*>(ai_data);
     if (p)
     {
-        DE_DEBUG("Delete AI_Data ", id)
+        // DE_DEBUG("Delete AI_Data ", id)
         delete p;
         ai_data = nullptr;
     }

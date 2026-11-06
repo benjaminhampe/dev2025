@@ -210,7 +210,7 @@ Tex2DArray::create(const std::string& name, const std::vector<const Image*>& ima
         return false;
     }
 
-    DE_DEBUG("Image vector, ",images.size())
+    // DE_DEBUG("Image vector, ",images.size())
 
     // Bilder in Level 0 hochladen
     int32_t img_w = images[0]->w();
@@ -303,7 +303,7 @@ Tex2DArray::create(const std::string& name, const std::vector<const Image*>& ima
 
     glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
 
-    DE_DEBUG("Created Tex2DArray ",str())
+    // DE_DEBUG("Created Tex2DArray ",str())
     return true;
 }
 

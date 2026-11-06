@@ -435,7 +435,7 @@ bool Window_WGL::create( WindowOptions params )
 
     const HMODULE hInstance = GetModuleHandleW(nullptr);
     const HWND parentHwnd = (HWND)params.parent; //(HWND)parent;
-    DE_DEBUG("Created parentHwnd ",(void*)parentHwnd)
+    //DE_DEBUG("Created parentHwnd ",(void*)parentHwnd)
 
     static const std::wstring className = makeUniqueWindowClass();
     static bool reg = false;
@@ -463,7 +463,7 @@ bool Window_WGL::create( WindowOptions params )
             }
         }
 
-        DE_DEBUG("Registered window class ",de_mbstr(className))
+        // DE_DEBUG("Registered window class ",de_mbstr(className))
         reg = true;
     }
 
@@ -520,6 +520,7 @@ bool Window_WGL::create( WindowOptions params )
 
     SetFocus(_d->hWnd);
 
+/*
     if (IsWindowUnicode(_d->hWnd))
     {
         DE_DEBUG("Created Unicode window.")
@@ -528,6 +529,7 @@ bool Window_WGL::create( WindowOptions params )
     {
         DE_DEBUG("Created Ansi window.")
     }
+*/
 
     _d->m_hInstance = hInstance;
     _d->hDC = GetDC(_d->hWnd);
@@ -537,7 +539,7 @@ bool Window_WGL::create( WindowOptions params )
         return false;
     }
 
-    DE_DEBUG("Created hDC.")
+    // DE_DEBUG("Created hDC.")
     PIXELFORMATDESCRIPTOR pfd = {
         sizeof(PIXELFORMATDESCRIPTOR),
         1,
@@ -552,7 +554,7 @@ bool Window_WGL::create( WindowOptions params )
         return false;
     }
 
-    DE_DEBUG("pf = ",pf)
+    // DE_DEBUG("pf = ",pf)
     SetPixelFormat(_d->hDC, pf, &pfd);
 
     _d->hGL = wglCreateContext(_d->hDC);
@@ -562,7 +564,7 @@ bool Window_WGL::create( WindowOptions params )
         return false;
     }
 
-    DE_DEBUG("Created hGL")
+    // DE_DEBUG("Created hGL")
     wglMakeCurrent(_d->hDC, _d->hGL);
 
     ensureDesktopOpenGL();
@@ -574,10 +576,10 @@ bool Window_WGL::create( WindowOptions params )
     }
     else
     {
-        DE_OK("Multi-Touch gestures activated.");
+        // DE_OK("Multi-Touch gestures activated.");
     }
 
-    DE_DEBUG("Desktop(",desktopW,",",desktopH,"), Window(",windowW,",",windowH,")")
+    // DE_DEBUG("Desktop(",desktopW,",",desktopH,"), Window(",windowW,",",windowH,")")
 
     // customInit():
 
@@ -974,7 +976,7 @@ WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 
     if (msg == WM_NCCREATE)
     {
-        DE_OK("WM_NCCREATE")
+        // DE_OK("WM_NCCREATE")
         // CREATESTRUCT* cs = (CREATESTRUCT*)lParam;
         // SetWindowLongPtr(hwnd, GWLP_USERDATA, (LONG_PTR)cs->lpCreateParams);
 
@@ -987,7 +989,7 @@ WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
     // leiten wir sie sicher an DefWindowProcW weiter.
     if (!self)
     {
-        DE_ERROR("No self")
+        //DE_ERROR("No self")
         //return DefWindowProcW(hwnd, msg, wParam, lParam);
     }
 
@@ -1163,7 +1165,7 @@ WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
         // }
         case WM_CREATE:
         {
-            DE_OK("WM_CREATE ", hwnd)
+            //DE_OK("WM_CREATE ", hwnd)
             // FPS-Timer
             SetTimer(hwnd, 123, 1000 / 60, NULL); // ~60 FPS Timer (16.6ms)
             break;
@@ -1178,7 +1180,7 @@ WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
             {
                 isInitialized = true;
 
-                DE_OK("WM_SHOWWINDOW - Das Fenster ist zu 100% fertig und sichtbar!")
+                // DE_OK("WM_SHOWWINDOW - Das Fenster ist zu 100% fertig und sichtbar!")
 /*
                 // 1. Hole die echten finalen Maße
                 RECT r;
@@ -1222,7 +1224,7 @@ WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
         }
         case WM_CLOSE:
         {
-            DE_TRACE("WM_CLOSE ", hwnd)
+            // DE_TRACE("WM_CLOSE ", hwnd)
 
             if (self && self->_d->m_hideOnClose)
             {
@@ -1246,7 +1248,7 @@ WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
         }
         case WM_DESTROY:
         {
-            DE_OK("WM_DESTROY ",hwnd)
+            // DE_OK("WM_DESTROY ",hwnd)
 
             // 1. Eigene Ressourcen freigeben (z. B. OpenGL)
             if (self)
@@ -1267,7 +1269,7 @@ WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
         }
         case WM_QUIT:
         {
-            DE_OK("WM_QUIT ",hwnd)
+            // DE_OK("WM_QUIT ",hwnd)
             break;
         }
         case WM_TIMER:
@@ -1352,7 +1354,7 @@ WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
                 }
                 else
                 {
-                    DE_ERROR("No HDC and or hGL")
+                    // DE_ERROR("No HDC and or hGL")
                 }
             }
             return 0;

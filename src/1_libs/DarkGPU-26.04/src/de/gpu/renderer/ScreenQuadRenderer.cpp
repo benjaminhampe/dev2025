@@ -38,24 +38,25 @@ ScreenQuadRenderer::draw2DRect(const de::Recti& pos, const TexRef& ref, bool ble
     if (blend) state.blend = Blend::alphaBlend();
     m_driver->setState(state);
 
+    // [Shader]
     m_driver->useShader(m_shader);
 
-    // const int w = m_driver->getScreenWidth();
-    // const int h = m_driver->getScreenHeight();
+    // [Uniform] u_screenSize
     const int w = m_driver->getViewportW();
     const int h = m_driver->getViewportH();
-    // m_shader->setVec2f("u_screenSize", glm::vec2(w,h));
-    // m_shader->setVec4f("u_posTransform", glm::vec4(pos.x, pos.y, pos.w, pos.h));
-    // m_driver->useTexture(ref.tex,0);
-    // m_shader->setInt("u_tex",0);
-    // m_shader->setVec4f("u_texTransform", ref.coords);
-
     glUniform2f(m_u_screenSize, (float)w, (float)h);
+
+    // [Uniform] u_posTransform
     glUniform4f(m_u_posTransform, pos.x, pos.y, pos.w, pos.h);
-    glBindTextureUnit(0, ref.tex->id());
-    glUniform1i(m_u_tex, 0);
+
+    // [Uniform] u_tex
+    int unit = m_driver->useTexture( ref.tex );
+    glUniform1i(m_u_tex, unit);
+
+    // [Uniform] u_texTransform
     glUniform4fv(m_u_texTransform, 1, glm::value_ptr(ref.coords));
 
+    // [VAO]:
     glBindVertexArray(m_vao);
     glDrawArrays(GL_TRIANGLES, 0, 6);
     glBindVertexArray(0);

@@ -2219,9 +2219,8 @@ void HMeshRenderer::setMaterial( const HMaterial & material )
     glUniformMatrix4fv(m_uloc_viewMat, 1, GL_FALSE, glm::value_ptr( viewMat ));
 
     // [Uniform] u_diffuseMap
-    int stage = 0;
-    m_driver->useTexture(material.diffuseMap.tex, stage);
-    glUniform1i(m_uloc_diffuseMap, stage);
+    int unit = m_driver->useTexture(material.diffuseMap.tex);
+    glUniform1i(m_uloc_diffuseMap, unit);
 
     // [Uniform] u_lightPos0 + u_lightColor0
     const auto & l0 = m_driver->getLights().at(0);

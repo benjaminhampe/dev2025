@@ -250,8 +250,8 @@ bool AnimatedTexRenderer::setMaterial( const Material& material )
     shader->setMat4f( "u_modelMat", m_driver->getModelMatrix() );
 
     const auto& tex = material.tex;
-    glBindTextureUnit(0,tex.id);
-    applySamplerOptions(tex.so);
+    // int unit = m_driver->useTexture(tex, 0);
+    glBindTextureUnit(0, tex.id);
     shader->setInt("u_tex",0);
     shader->setFloat("u_texLayer",material.layer);
     //shader->setVec4f( "u_texTransform",  );

@@ -130,6 +130,12 @@ void H3_WaterTileRenderer::render()
         return; // Nothing to draw.
     }
 
+    // [RenderStates]
+    de::gpu::State state;
+    state.blend = de::gpu::Blend::alphaBlend();
+    m_driver->setState( state );
+
+    // [ShaderData]
     m_driver->useShader(m_shader);
 
     // [Uniform] timeInSec
@@ -142,22 +148,13 @@ void H3_WaterTileRenderer::render()
     glUniformMatrix4fv(m_loc_pvMat, 1, GL_FALSE, glm::value_ptr(pvMat));
 
     // [Uniform] sampler2D
-    m_driver->useTexture( m_diffuseMap.tex, 0);
-    glUniform1i(m_loc_diffuseMap, 0);
-
-    // [RenderStates]
-    de::gpu::State state;
-    state.blend = de::gpu::Blend::alphaBlend();
-    m_driver->setState( state );
+    int unit = m_driver->useTexture( m_diffuseMap.tex);
+    glUniform1i(m_loc_diffuseMap, unit);
 
     // [Render]
     glBindVertexArray(m_vao);
     glDrawArraysInstanced(GL_TRIANGLES, 0, 12, m_instanceMat.size());
-
-    // [CleanUp]
     glBindVertexArray(0);
-    glBindTexture( GL_TEXTURE_2D, 0 );
-    GL_VALIDATE;
 }
 
 void H3_WaterTileRenderer::initShader()

@@ -37,7 +37,7 @@ H3_Game::H3_Game(int argc, char* argv[])
 // , m_capTimerId(0)
 {
     //m_audioEngine.play();
-    DE_OK()
+    //DE_OK()
 }
 
 H3_Game::~H3_Game()
@@ -66,7 +66,7 @@ void H3_Game::requestClose()
 
 void H3_Game::destroy()
 {
-    DE_DEBUG()
+    // DE_DEBUG()
 
     requestClose();
 
@@ -113,7 +113,7 @@ void H3_Game::destroy()
         m_driver->close();
         delete m_driver;
         m_driver = nullptr;
-        DE_INFO("Closed driver.")
+        // DE_INFO("Closed driver.")
     }
 
     if (m_window)
@@ -121,7 +121,7 @@ void H3_Game::destroy()
         m_window->destroy();
         delete m_window;
         m_window = nullptr;
-        DE_INFO("Closed window.")
+        // DE_INFO("Closed window.")
     }
 }
 
@@ -148,14 +148,13 @@ void H3_Game::resize(int w, int h)
 
 bool H3_Game::init( de::Window* window )
 {
-    DE_INFO("")
     m_isCameraMouseInputEnabled = true;
     m_window = window;
     m_driver = new de::gpu::VideoDriver();
 
     int w = m_window->getClientRect().w;
     int h = m_window->getClientRect().h;
-    DE_INFO("Got client size(",w,",",h,").")
+    // DE_INFO("Got client size(",w,",",h,").")
 
     if ( !m_driver->open( w, h ) )
     {
@@ -227,7 +226,7 @@ bool H3_Game::init( de::Window* window )
     m_smeshSun.setLighting(0);
     m_smeshSun.recalculateBoundingBox();
     m_smeshSun.upload();
-    DE_BENNI(m_smeshSun.str())
+    // DE_BENNI(m_smeshSun.str())
 
     // === Create geometry ===
     m_thief.triangles.clear();
@@ -389,7 +388,8 @@ void H3_Game::draw()
     else
     {
         auto wallpaper = getTex(H3_Tex::Satan, "draw().wallpaper");
-        driver->getScreenRenderer()->draw2DRect(de::Recti(0,0,w,h),0xFFFFFFFF, wallpaper);
+        driver->getScreenRenderer()->
+            draw2DRect(de::Recti(0,0,w,h),0xFFFFFFFF, wallpaper);
     }
 
     driver->beginPerf("GUIEnv");
@@ -717,7 +717,7 @@ void H3_Game::startGame()
 {
     m_cfg = m_uiGame->m_worldCreator->getCfg();
 
-    m_cfg.dump();
+    // m_cfg.dump();
 
     // === Reset Winner ===
     m_winnerId = 0;
@@ -768,7 +768,6 @@ void H3_Game::startGame()
         player.state.bank.E = 7;
     #endif
     }
-    DE_DEBUG("Created players = ", m_players.size())
 
     for (auto& player : m_players)
     {
@@ -781,8 +780,10 @@ void H3_Game::startGame()
             m_enemies.emplace_back(&player);
         }
     }
-    DE_DEBUG("Stored enemies = ", m_enemies.size())
-    DE_DEBUG("Stored humans = ", m_humans.size())
+
+    // DE_DEBUG("Created players = ", m_players.size())
+    // DE_DEBUG("Stored enemies = ", m_enemies.size())
+    // DE_DEBUG("Stored humans = ", m_humans.size())
 
     const auto tileTriangles = m_smeshTile.createCollisionTriangles();
     const auto chipTriangles = m_smeshChip.createCollisionTriangles();

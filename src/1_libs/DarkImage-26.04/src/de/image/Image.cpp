@@ -1919,6 +1919,8 @@ ImageCodecManager::convertFile( std::string loadName, std::string saveName ) con
 
 ImageCodecManager::ImageCodecManager()
 {
+    m_debugLevel = 0;
+
     initThreadPool();
 
 #ifdef DE_IMAGE_READER_JPG_ENABLED
@@ -2055,41 +2057,39 @@ ImageCodecManager::ImageCodecManager()
    m_Writer.push_back( new image::ImageWriterHtmlTable );
 #endif
 
-#ifdef _DEBUG
-   DE_DEBUG("Add image codec readers and writers")
-   DE_DEBUG("Supported image reader: ", m_Reader.size())
-   DE_DEBUG("Supported image writer: ", m_Writer.size())
-   // AsciiArt::test();
-#endif
+    if (m_debugLevel > 0)
+    {
+        DE_DEBUG("Add image codec readers and writers")
+        DE_DEBUG("Supported image reader: ", m_Reader.size())
+        DE_DEBUG("Supported image writer: ", m_Writer.size())
+        // AsciiArt::test();
+    }
+
 }
 
 ImageCodecManager::~ImageCodecManager()
 {
-#ifdef _DEBUG
-    DE_DEBUG("Released ",m_Reader.size()," ImageReader")
-    DE_DEBUG("Released ",m_Writer.size()," ImageWriter")
-    // std::string load_ext = //getSupportedReadExtensions();
-    // std::string save_ext = //getSupportedWriteExtensions();
-    // DE_DEBUG("Released ",m_Reader.size()," ImageReader with FileFormats: ", load_ext )
-    // DE_DEBUG("Released ",m_Writer.size()," ImageWriter with FileFormats: ", save_ext )
-#endif
-   for ( size_t i = 0; i < m_Reader.size(); ++i )
-   {
-      if ( m_Reader[ i ] )
-      {
-         delete m_Reader[ i ];
-      }
-   }
-   m_Reader.clear();
+    if (m_debugLevel > 0)
+    {
+        DE_DEBUG("Released ",m_Reader.size()," ImageReader")
+        DE_DEBUG("Released ",m_Writer.size()," ImageWriter")
+        // std::string load_ext = //getSupportedReadExtensions();
+        // std::string save_ext = //getSupportedWriteExtensions();
+        // DE_DEBUG("Released ",m_Reader.size()," ImageReader with FileFormats: ", load_ext )
+        // DE_DEBUG("Released ",m_Writer.size()," ImageWriter with FileFormats: ", save_ext )
+    }
 
-   for ( size_t i = 0; i < m_Writer.size(); ++i )
-   {
-      if ( m_Writer[ i ] )
-      {
-         delete m_Writer[ i ];
-      }
-   }
-   m_Writer.clear();
+    for (auto reader : m_Reader)
+    {
+        if ( reader ) { delete reader; }
+    }
+    m_Reader.clear();
+
+    for (auto writer : m_Writer)
+    {
+        if ( writer ) { delete writer; }
+    }
+    m_Writer.clear();
 
    // clearImages();
 }

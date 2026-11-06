@@ -243,25 +243,26 @@ ScreenRenderer::setMaterial( smesh::SMaterial const & mtl, const Recti& pos )
         return false;
     }
 
-    // const int w = m_driver->getScreenWidth();
-    // const int h = m_driver->getScreenHeight();
+    // [Uniform] u_screenSize
     const int w = m_driver->getViewportW();
     const int h = m_driver->getViewportH();
     shader->setVec2f( "u_screenSize", glm::vec2( w, h ) );
 
+    // [Uniform] u_tex + u_texTransform
     const TexRef& diffuseMap = mtl.getDiffuseMap();
     if (diffuseMap.tex)
     {
-        if (!m_driver->useTexture(diffuseMap.tex,0))
+        int unit = m_driver->useTexture(diffuseMap.tex);
+        if (unit < 0)
         {
             DE_ERROR("Fail diffuseMap ",diffuseMap.str())
             return false;
         }
-        shader->setInt( "u_tex", 0 );
+        shader->setInt( "u_tex", unit );
         shader->setVec4f( "u_texTransform", diffuseMap.coords );
     }
 
-    State state; //  = mtl.state;
+    State state;
     state.depth = Depth::disabled();
     state.culling = Culling::disabled();
     state.blend = Blend::alphaBlend();

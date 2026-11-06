@@ -527,8 +527,9 @@ H3_ObjShader::H3_ObjShader()
 void H3_ObjShader::init( H3_Game & game )
 {
     m_driver = game.getDriver();
+    m_texWood = game.getTex(H3_Tex::Wood, "H3_ObjShader::initTexture()" ).tex;
+
     initShader();
-    initTexture( game );
 }
 
 void H3_ObjShader::initShader()
@@ -640,25 +641,19 @@ void H3_ObjShader::initShader()
 
 }
 
-void
-H3_ObjShader::initTexture( H3_Game & game )
-{
-    if (!m_driver) { DE_ERROR("No driver") return; }
-
-    if (m_texWood) return;
-
-    m_texWood = game.getTex(H3_Tex::Wood, "H3_ObjShader::initTexture()" ).tex;
-}
-
 void H3_ObjShader::setMaterial()
 {
     if (!m_driver) { DE_ERROR("No driver") return; }
-
     if (!m_shader) { DE_ERROR("No shader") return; }
+    if (m_texWood.empty()) { DE_ERROR("No texWood") return; }
 
-    if (!m_texWood) { DE_ERROR("No texWood") return; }
 
-    // ==== Shader ====
+    de::gpu::State state;
+    state.culling = de::gpu::Culling::disabled();
+    state.blend = de::gpu::Blend::disabled();
+    m_driver->setState( state );
+
+    // [Shader]
     m_driver->useShader(m_shader);
 
     // [Uniform] projMat + viewMat
@@ -676,18 +671,14 @@ void H3_ObjShader::setMaterial()
     glUniformMatrix4fv(m_uloc_viewMat, 1, GL_FALSE, glm::value_ptr( viewMat ));
 
     // [Uniform] u_diffuseMap
-    m_driver->useTexture(m_texWood, 0);
-    glUniform1i(m_uloc_diffuseMap, 0);
+    int unit = m_driver->useTexture(m_texWood.tex);
+    glUniform1i(m_uloc_diffuseMap, unit);
 
     // [Uniform] u_lightPos0 + u_lightColor0
     const auto & l0 = m_driver->getLights().at(0);
     glUniform3fv(m_uloc_lightPos0, 1, glm::value_ptr( l0.pos ));
     glUniform3fv(m_uloc_lightColor0, 1, glm::value_ptr( l0.color ));
 
-    de::gpu::State state;
-    state.culling = de::gpu::Culling::disabled();
-    state.blend = de::gpu::Blend::disabled();
-    m_driver->setState( state );
 }
 
 void H3_ObjShader::unsetMaterial()

@@ -501,6 +501,7 @@ class ImageCodecManager
     std::vector< IImageWriter* > m_Writer;
     //std::vector< Image* > m_Images;
 
+    int m_debugLevel;
     ThreadPoolWithTasks m_threadPoolWithTasks;
 
 public:

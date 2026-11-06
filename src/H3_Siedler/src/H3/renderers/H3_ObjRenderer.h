@@ -112,14 +112,13 @@ struct H3_ObjShader
     int m_uloc_lightPos0;
     int m_uloc_lightColor0;
 
-    de::gpu::Texture* m_texWood;
+    de::gpu::TexRef m_texWood;
 
     H3_ObjShader();
     //~H3_ObjShader();
 
     void init( H3_Game & game );
     void initShader();
-    void initTexture( H3_Game & game );
 
     void setMaterial();
     void unsetMaterial();

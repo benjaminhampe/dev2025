@@ -334,25 +334,22 @@ SMaterialRenderer::setMaterial( const SMaterial& mtl )
         }
     }
 
-    uint32_t texStage = 0;
-
     // [DiffuseMap] <RGB> color + <A> opacity
     const gpu::TexRef& diffuseMap = mtl.getDiffuseMap();
     if (diffuseMap.tex)
     {
-        m_driver->useTexture( diffuseMap.tex, texStage );
-        shader->setInt( "u_diffuseMap", texStage );
+        int unit = m_driver->useTexture( diffuseMap.tex, 0 );
+        shader->setInt( "u_diffuseMap", unit );
         shader->setVec4f( "u_diffuseMapTransform", diffuseMap.coords );
         shader->setVec2f( "u_diffuseMapRepeat", diffuseMap.repeat );
-        texStage++;
     }
 
     // [TexBump] <RGB> normalMap + <A> bumpMap
     const gpu::TexRef& bumpMap = mtl.getBumpMap();
     if (bumpMap.tex)
     {
-        m_driver->useTexture( bumpMap.tex, texStage );
-        shader->setInt( "u_bumpMap", texStage );
+        int unit = m_driver->useTexture( bumpMap.tex, 1 );
+        shader->setInt( "u_bumpMap", unit );
         shader->setVec1f( "u_bumpMapScale", mtl.BumpScale );
         shader->setVec4f( "u_bumpMapTransform", bumpMap.coords );
         shader->setVec2f( "u_bumpMapRepeat", bumpMap.repeat );

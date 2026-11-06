@@ -33,11 +33,13 @@ void AI_Round2(H3_Game& game, const uint32_t playerId)
 
     game.doBuyFarm();
 
+/*
     DE_DEBUG("Player[",playerId,"] visibleCorners = ",game.m_visibleCorners.size())
     for (size_t i = 0; i < std::min<size_t>(10,game.m_visibleCorners.size()); ++i)
     {
         DE_DEBUG("Player[",playerId,"] visibleCorners[",i,"] ",game.m_visibleCorners[i])
     }
+*/
 
     std::vector<RatedCorner> candidates;
     candidates.reserve( game.m_visibleCorners.size() );
@@ -77,11 +79,13 @@ void AI_Round2(H3_Game& game, const uint32_t playerId)
                   return a.rating > b.rating;
               } );
 
+/*
     DE_DEBUG("Player[",playerId,"] candidates = ",candidates.size())
     for (size_t i = 0; i < std::min<size_t>(10,candidates.size()); ++i)
     {
         DE_DEBUG("Player[",playerId,"] candidate[",i,"] ",candidates[i].str())
     }
+*/
 
     // DEM_DEBUG("BuyFarm with Match ", match.toString() )
     RatedCorner& candidate = candidates.front();
@@ -94,6 +98,7 @@ void AI_Round2(H3_Game& game, const uint32_t playerId)
     game.enterIdle();
     game.doBuyRoad();
 
+/*
 // <debug>
     DE_DEBUG("Player[",playerId,"] visibleEdges = ",game.m_visibleEdges.size())
     for (size_t i = 0; i < std::min<size_t>(10,game.m_visibleEdges.size()); ++i)
@@ -103,13 +108,12 @@ void AI_Round2(H3_Game& game, const uint32_t playerId)
         DE_DEBUG("Player[",playerId,"] visibleEdges[",i,"] ",edgeId)
     }
 // </debug>
+*/
 
 // <fatal>
     if (game.m_visibleEdges.empty())
     {
-        std::ostringstream o;
-        o << "No visibleEdges, need atleast one to place a road.";
-        throw std::runtime_error(o.str());
+        throw std::runtime_error("No visibleEdges for a road.");
     }
 // </fatal>
 

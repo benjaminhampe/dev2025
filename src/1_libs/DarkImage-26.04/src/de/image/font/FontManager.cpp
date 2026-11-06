@@ -21,7 +21,7 @@ FontManager::addFamily( const Font& font, const uint8_t* dataPtr, const uint64_t
     int32_t foundFamily = findFamily( font.family() );
     if ( foundFamily < 0 )
     {
-        DE_DEBUG(font.family(),", font(",font.toString(),")" )
+        //DE_DEBUG(font.family(),", font(",font.toString(),")" )
         FontFamily fontFamily;
         fontFamily.family = font.family();
         //fontFamily.uri = uri;

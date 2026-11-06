@@ -529,7 +529,7 @@ void UI_WorldCreator::resizeBoard()
     int minY = m_edtMinY->getValue();
     int maxX = m_edtMaxX->getValue();
     int maxY = m_edtMaxY->getValue();
-    DE_DEBUG("min(",minX,",",minY,"), max(",maxX,",",maxY,")")
+    //DE_DEBUG("min(",minX,",",minY,"), max(",maxX,",",maxY,")")
     resizeBoard(minX,minY,maxX,maxY);
 }
 
@@ -600,7 +600,7 @@ void UI_WorldCreator::setCfg(int i)
 
     m_cfg = &m_presets.at(i);
 
-    DE_DEBUG("presetName = ",m_cfg->presetName)
+    // DE_DEBUG("presetName = ",m_cfg->presetName)
 
     m_cfg->computeBounds();
 

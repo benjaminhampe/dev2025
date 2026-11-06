@@ -111,8 +111,8 @@ struct SkyboxRenderer
 
    VideoDriver* m_driver;
    Shader* m_shader;
-   int m_locMVP;
-   int m_locTex;
+   int m_u_mvp;
+   int m_u_texCube;
 
    uint32_t m_vao;
    uint32_t m_vbo;

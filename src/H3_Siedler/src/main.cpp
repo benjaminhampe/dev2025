@@ -4,7 +4,7 @@
 
 int main(int argc, char** argv)
 {
-    DE_WARN("Start program")
+    // DE_WARN("Start program")
 
     // try {
 

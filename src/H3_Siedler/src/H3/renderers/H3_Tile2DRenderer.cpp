@@ -221,29 +221,23 @@ void H3_Tile2DRenderer::render(const glm::vec4& posTransform, const de::Recti& s
     // [Shader]
     m_driver->useShader(m_shader);
 
-    // [Shader-Uniform] u_screenSize
+    // [Uniform] u_screenSize
     const int w = m_driver->getScreenWidth();
     const int h = m_driver->getScreenHeight();
     glUniform2f(m_u_screenSize, (float)w, (float)h);
 
-    // [Shader-Uniform] u_posTransform
+    // [Uniform] u_posTransform
     glUniform4fv(m_u_posTransform, 1, glm::value_ptr(posTransform));
 
-    // [Shader-Uniform] u_tex2DArray
-    //  m_driver->useTexture( m_tex2DArray, 0);
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D_ARRAY, m_tileTexture->id); // Binde die native GL-id deines Arrays
-    //glBindTextureUnit(0, m_tileTexture->id);
+    // [Uniform] u_tex2DArray
+    // int unit = m_driver->useTexture(m_tileTexture);
+    glBindTextureUnit(0, m_tileTexture->id);
     glUniform1i(m_u_tex2DArray, 0);
 
     // [VAO]:
     glBindVertexArray(m_vao);
     glDrawArraysInstanced(GL_TRIANGLES, 0, 12, m_instancePos.size());
     glBindVertexArray(0);
-
-    // [CleanUp]
-    // glBindTexture( GL_TEXTURE_2D, 0 );
-    GL_VALIDATE;
 }
 
 void

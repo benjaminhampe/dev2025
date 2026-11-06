@@ -90,14 +90,15 @@ SkyboxRenderer::loadCubemap( std::vector<std::string> const & faces )
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE); GL_VALIDATE
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE); GL_VALIDATE
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE); GL_VALIDATE
-    glBindTexture(GL_TEXTURE_CUBE_MAP, 0); GL_VALIDATE
+    glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
     return textureID;
 }
-
 
 SkyboxRenderer::SkyboxRenderer()
     : m_driver( nullptr )
     , m_shader( nullptr )
+    , m_u_mvp(-1)
+    , m_u_texCube(-1)
     , m_vao(0)
     , m_vbo(0)
     , m_cubeMap(0)
@@ -206,24 +207,23 @@ SkyboxRenderer::render()
 
     if ( !m_shader ) { DE_ERROR("No shader") return; }
     if ( !m_cubeMap ) { DE_ERROR("No cubeMap") return; }
-
-
+    if ( !m_vao ) { DE_ERROR("No vao") return; }
 
     //glDepthMask(GL_FALSE);
     //glEnable(GL_DEPTH_TEST);
     //glDisable(GL_CULL_FACE);
 
-    // === RenderStates ===
+    // [RenderStates]
     State state;
     state.depth = Depth::alwaysPass();
     state.culling = Culling();
     state.blend = Blend::disabled();
     m_driver->setState( state );
 
-    // === Shader ===
+    // [Shader]
     m_driver->useShader( m_shader );
 
-    // === ShaderUniform: MVP matrix ===
+    // [Uniform] u_mvp
     const float d = 4800.0f;
     const glm::mat4 Ry = glm::rotate(glm::mat4(1.0f), -90.0f, glm::vec3(0,1,0));
     const glm::mat4 S = glm::scale(glm::mat4(1.0f), glm::vec3(d,d,d));
@@ -239,32 +239,16 @@ SkyboxRenderer::render()
         viewProjMat = camera->getViewProjectionMatrix();
     }
     const glm::mat4 mvp = viewProjMat * M;
-    glUniformMatrix4fv(m_locMVP, 1, GL_FALSE, glm::value_ptr(mvp)); GL_VALIDATE
+    glUniformMatrix4fv(m_u_mvp, 1, GL_FALSE, glm::value_ptr(mvp)); GL_VALIDATE
 
-    // === ShaderUniform: CubeMap sampler ===
-    //glActiveTexture(GL_TEXTURE0);
-    //glBindTexture(GL_TEXTURE_CUBE_MAP, m_cubeMap);
-    glBindTextureUnit(0, m_cubeMap); GL_VALIDATE
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR); GL_VALIDATE
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR); GL_VALIDATE
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE); GL_VALIDATE
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE); GL_VALIDATE
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE); GL_VALIDATE
-    glUniform1i(m_locTex, 0); GL_VALIDATE
+    // [Uniform] u_tex3DCubeMap
+    glBindTextureUnit(0, m_cubeMap);
+    glUniform1i(m_u_texCube, 0);
 
-    if (m_vao < 1)
-    {
-        DE_ERROR("m_vao < 1")
-    }
-    // === Render geometry ===
+    // [VAO]
     glBindVertexArray(m_vao); GL_VALIDATE
     glDrawArrays(GL_TRIANGLES, 0, 36); GL_VALIDATE
-
-    glBindTexture(GL_TEXTURE_CUBE_MAP,0);
-
     glBindVertexArray(0); GL_VALIDATE
-    glBindTextureUnit(0, 0); GL_VALIDATE
-
     //glDepthMask(GL_TRUE);
 }
 
@@ -297,18 +281,18 @@ SkyboxRenderer::initShader()
 
         in vec3 v_texCoords;
 
-        uniform samplerCube u_tex;
+        uniform samplerCube u_texCube;
 
         void main()
         {
-            fragColor = texture(u_tex, v_texCoords);
+            fragColor = texture(u_texCube, v_texCoords);
         }
     )";
 
     m_shader = m_driver->createShader( shaderName, vs, fs );
 
-    m_locMVP = glGetUniformLocation(m_shader->id, "u_mvp"); GL_VALIDATE
-    m_locTex = glGetUniformLocation(m_shader->id, "u_tex"); GL_VALIDATE
+    m_u_mvp = glGetUniformLocation(m_shader->id, "u_mvp"); GL_VALIDATE
+    m_u_texCube = glGetUniformLocation(m_shader->id, "u_texCube"); GL_VALIDATE
 }
 
 void

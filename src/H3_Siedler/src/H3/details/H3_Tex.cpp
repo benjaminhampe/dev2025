@@ -643,23 +643,15 @@ void H3_Tex::createTileTexture( H3_Game& game )
     // DE_DEBUG("oriC = ", oriC->str())
     // DE_DEBUG("oriD = ", oriD->str())
     // DE_DEBUG("oriE = ", oriE->str())
-    // dbSaveImage(imgU,"H3_imgU.webp");
-    // dbSaveImage(imgW,"H3_imgW.webp");
-    // dbSaveImage(imgV,"H3_imgV.webp");
-    // dbSaveImage(imgA,"H3_imgA.webp");
-    // dbSaveImage(imgB,"H3_imgB.webp");
-    // dbSaveImage(imgC,"H3_imgC.webp");
-    // dbSaveImage(imgD,"H3_imgD.webp");
-    // dbSaveImage(imgE,"H3_imgE.webp");
 
-    dbSaveImage(imgU,"H3_imgU.bmp");
-    dbSaveImage(imgW,"H3_imgW.bmp");
-    dbSaveImage(imgV,"H3_imgV.bmp");
-    dbSaveImage(imgA,"H3_imgA.bmp");
-    dbSaveImage(imgB,"H3_imgB.bmp");
-    dbSaveImage(imgC,"H3_imgC.bmp");
-    dbSaveImage(imgD,"H3_imgD.bmp");
-    dbSaveImage(imgE,"H3_imgE.bmp");
+    // dbSaveImage(imgU,"H3_imgU.bmp");
+    // dbSaveImage(imgW,"H3_imgW.bmp");
+    // dbSaveImage(imgV,"H3_imgV.bmp");
+    // dbSaveImage(imgA,"H3_imgA.bmp");
+    // dbSaveImage(imgB,"H3_imgB.bmp");
+    // dbSaveImage(imgC,"H3_imgC.bmp");
+    // dbSaveImage(imgD,"H3_imgD.bmp");
+    // dbSaveImage(imgE,"H3_imgE.bmp");
 
     std::vector<const de::Image*> imgPointers
     {

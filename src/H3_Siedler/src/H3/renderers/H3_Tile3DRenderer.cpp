@@ -261,19 +261,13 @@ void H3_Tile3DRenderer::render()
     if (camera) { pvMat = camera->getViewProjectionMatrix(); }
     glUniformMatrix4fv(m_u_pvMat, 1, GL_FALSE, glm::value_ptr(pvMat));
 
-    // m_driver->useTexture( m_tileTexture.tex, 0);
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D_ARRAY, m_tileTexture->id); // Binde die native GL-id deines Arrays
+    // [Uniform] Tex2DArray
+    // int unit = m_driver->useTexture( m_tileTexture.tex, 0);
+    glBindTextureUnit(0, m_tileTexture->id);
     glUniform1i(m_u_tex, 0);
 
     // [Render]
     glBindVertexArray(m_vao);
     glDrawArraysInstanced(GL_TRIANGLES, 0, 12, m_instanceMat.size());
     glBindVertexArray(0);
-
-    // glBindTexture( GL_TEXTURE_2D, 0 );
-
-    // [CleanUp]
-    GL_VALIDATE;
 }
-

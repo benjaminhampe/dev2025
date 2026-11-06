@@ -188,6 +188,11 @@ void H3_Chip2DRenderer::initShader( H3_Game& game )
     // float circle = 1.0 - smoothstep(radius - edge_softness,
     //                                 radius + edge_softness, dist);
 
+    // de::gpu::State state;
+    // state.blend = de::gpu::Blend::alphaBlend();
+    // //state.scissor = de::gpu::Scissor::enabled(scissor);
+    // m_driver->setState(state);
+
     m_shader = m_driver->createShader( shaderName, vs, fs );
     m_u_screenSize = glGetUniformLocation(m_shader->id, "u_screenSize");
     m_u_tex2DArray = glGetUniformLocation(m_shader->id, "u_tex2DArray");
@@ -200,6 +205,7 @@ void H3_Chip2DRenderer::render(const glm::vec4& posTransform, const de::Recti& s
     if (!m_shader) { DE_ERROR("No shader") return; }
     if (!m_chipTexture) { DE_ERROR("No chipTexture") return; }
     if (!m_vao) { DE_ERROR("No vao") return; }
+    if (m_instancePos.empty()) { DE_ERROR("No instances") return; }
 
     // [RenderStates]
     de::gpu::State state;
@@ -221,11 +227,8 @@ void H3_Chip2DRenderer::render(const glm::vec4& posTransform, const de::Recti& s
     glUniform4fv(m_u_posTransform, 1, glm::value_ptr(posTransform));
 
     // [Shader-Uniform] u_tex2DArray
-    //  m_driver->useTexture( m_tex2DArray, 0);
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D_ARRAY, m_chipTexture->id);
-    //glBindTextureUnit(0, m_tex2DArray.id);
-    de::gpu::applySamplerOptions(m_chipTexture->so);
+    // int unit = m_driver->useTexture( diffuseMap.tex, 0 );
+    glBindTextureUnit(0, m_chipTexture->id);
     glUniform1i(m_u_tex2DArray, 0);
 
     // [VAO] Quads:
@@ -315,7 +318,7 @@ H3_Chip2DRenderer::collectInstances(const H3_Game& game, const H3_Cfg& cfg)
 
     }
 
-    DE_ERROR("Collected ", m_instancePos.size(), " instances")
+    //DE_ERROR("Collected ", m_instancePos.size(), " instances")
 }
 
 void H3_Chip2DRenderer::uploadInstances()

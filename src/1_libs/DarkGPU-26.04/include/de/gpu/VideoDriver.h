@@ -272,7 +272,7 @@ struct VideoDriver
     // IrrlichtDevice*     getIrrlichtDevice();
 
     bool
-    open(int w, int h);
+    open(int w, int h, int debugLevel = 0);
 
     void
     close();
@@ -492,8 +492,8 @@ struct VideoDriver
         return tex;
     }
 
-    bool
-    useTexture( Texture* tex, int stage );
+    int
+    useTexture( Texture* tex, int stage = -1 );
 
     //bool
     //useTexture( TexRef ref, int stage = 0 );
@@ -710,6 +710,7 @@ protected:
     // ####################
     int m_screenWidth;
     int m_screenHeight;
+    int m_debugLevel;
     Viewport m_viewport;
     Scissor m_scissor;
     State m_state;
@@ -731,6 +732,7 @@ protected:
     bool m_useCoreProfile;        // Brings <core> word, read from GL_RENDERER ? ( not read yet )
     bool m_useGLES;               // Brings <es> word, read from -DBENNI_USE_ES or GL_RENDERER ?
     // bool m_bPrintShaderTexts;
+
     std::unordered_map< std::string, Shader* > m_shaders;
 
     PerfTracer m_perfTracer;

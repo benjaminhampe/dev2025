@@ -401,11 +401,10 @@ PostFxRenderer::setMaterial( PostFx_Material const & mtl, const Recti& pos )
     const int h = m_driver->getScreenHeight();
     shader->setVec2f( "u_screenSize", glm::vec2( w, h ) );
 
-    int stage = 0;
     if (mtl.diffuseMap.tex)
     {
-        m_driver->useTexture(mtl.diffuseMap.tex, stage);
-        shader->setInt( "u_tex", stage );
+        int unit = m_driver->useTexture(mtl.diffuseMap.tex);
+        shader->setInt( "u_tex", unit );
         shader->setVec4f( "u_texTransform", mtl.diffuseMap.coords );
     }
 

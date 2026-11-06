@@ -208,7 +208,7 @@ void UI_Game::resize(int x, int y, int w, int h)
     }
 
 
-    DE_DEBUG("Resize(",x,",",y,",",w,",",h,")")
+    // DE_DEBUG("Resize(",x,",",y,",",w,",",h,")")
 
     m_rect = de::Recti(x, y, w, h);
     updateLayouts();

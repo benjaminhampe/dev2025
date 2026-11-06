@@ -321,9 +321,7 @@ void H3_Chip3DRenderer::render( const H3_Chip3DMeshBuffer & drawcall )
     glUniformMatrix4fv(m_locViewProjMat, 1, GL_FALSE, glm::value_ptr( projViewMat ));
 
     // ==== Shader: u_tex  ====
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D_ARRAY, m_chipTexture->id);
-    de::gpu::applySamplerOptions(m_chipTexture->so);
+    glBindTextureUnit(0, m_chipTexture->id);
     glUniform1i(m_locTex, 0);
 
     // ==== RenderStates  ====

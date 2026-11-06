@@ -162,8 +162,8 @@ void BillboardRenderer::draw3DBillboard( smesh::SMeshBuffer & meshBuffer, const 
     const TexRef& diffuseMap = mtl.getDiffuseMap();
     if ( diffuseMap.tex )
     {
-        m_driver->useTexture(diffuseMap.tex,0);
-        shader->setInt("u_tex", 0);
+        int unit = m_driver->useTexture(diffuseMap.tex);
+        shader->setInt("u_tex", unit);
         shader->setVec4f("u_texTransform", diffuseMap.coords);
     }
 

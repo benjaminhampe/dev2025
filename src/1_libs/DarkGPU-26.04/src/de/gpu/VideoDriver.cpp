@@ -34,14 +34,56 @@ VideoDriver* createVideoDriver( int w, int h, uint64_t windowId)
 }
 
 #ifdef USE_GL_DEBUG_CALLBACK
+
+std::string dbgSourceStr(u32 debugSource)
+{
+    switch (debugSource)
+    {
+    case GL_DEBUG_SOURCE_API: return "API"; // Direkt aus den offiziellen OpenGL-Funktionsaufrufen.
+    case GL_DEBUG_SOURCE_WINDOW_SYSTEM: return "WINDOW_SYSTEM"; // Vom Fenstermanager oder dem Betriebssystem (z. B. Probleme mit dem Kontext).
+    case GL_DEBUG_SOURCE_SHADER_COMPILER: return "SHADER_COMPILER"; // Vom Shader-Compiler (z. B. Warnungen beim Kompilieren von GLSL).
+    case GL_DEBUG_SOURCE_THIRD_PARTY: return "THIRD_PARTY"; // Von einer externen Applikation oder Middleware (z. B. einer GUI-Bibliothek).
+    case GL_DEBUG_SOURCE_APPLICATION: return "APPLICATION"; // Von dir selbst (du kannst mit glDebugMessageInsert eigene Nachrichten einspeisen).
+    case GL_DEBUG_SOURCE_OTHER: return "OTHER"; // Keine der oben genannten Quellen.
+    default: return dbStr("UNKNOWN_SOURCE_",dbHex(debugSource));
+    }
+}
+
+std::string dbgTypeStr(u32 debugType)
+{
+    switch (debugType)
+    {
+    case GL_DEBUG_TYPE_ERROR: return "ERROR";
+    case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR: return "DEPRECATED_BEHAVIOR";
+    case GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR: return "UNDEFINED_BEHAVIOR";
+    case GL_DEBUG_TYPE_PORTABILITY: return "PORTABILITY";
+    case GL_DEBUG_TYPE_PERFORMANCE: return "PERFORMANCE";
+    case GL_DEBUG_TYPE_OTHER: return "OTHER";
+    case GL_DEBUG_TYPE_MARKER: return "MARKER";
+    case GL_DEBUG_TYPE_PUSH_GROUP: return "PUSH_GROUP";
+    case GL_DEBUG_TYPE_POP_GROUP: return "POP_GROUP";
+    default: return dbStr("UNKNOWN_TYPE_",dbHex(debugType));
+    }
+}
+
+std::string dbgSeverStr(u32 debugSeverity)
+{
+    switch (debugSeverity)
+    {
+    case GL_DEBUG_SEVERITY_HIGH: return "HIGH";
+    case GL_DEBUG_SEVERITY_MEDIUM: return "MEDIUM";
+    case GL_DEBUG_SEVERITY_LOW: return "LOW";
+    case GL_DEBUG_SEVERITY_NOTIFICATION: return "INFO";
+    default: return dbStr("UNKNOWN_SEVERITY_",dbHex(debugSeverity));
+    }
+}
+
 static void APIENTRY VD_DebugMessageCallback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar* message, const void* userParam)
 {
-    std::ostringstream o;
-    o << "GL CALLBACK: " << (type == GL_DEBUG_TYPE_ERROR ? "** GL ERROR **" : "")
-      << " type = 0x" << std::hex << type <<
-        ", severity = 0x" << severity <<
-        ", message = " << message << std::endl;
-    DE_ERROR(o.str())
+    DE_ERROR("GL[",dbgTypeStr(type),"] "
+        "source(",dbgSourceStr(source),"), "
+        "severity(",dbgSeverStr(severity),")")
+    DE_ERROR("message(",message,")")
 }
 #endif
 
@@ -665,9 +707,13 @@ IrrlichtDevice* VideoDriver::getIrrlichtDevice()
 }
 */
 
-bool VideoDriver::open(int w, int h)
+bool VideoDriver::open(int w, int h, int debugLevel)
 {
-    DE_OK("w(",w,"), h(",h,")")
+    m_debugLevel = debugLevel;
+    if (m_debugLevel > 0)
+    {
+        DE_OK("w(",w,"), h(",h,")")
+    }
     m_screenWidth = w;
     m_screenHeight = h;
     m_shader = nullptr;
@@ -692,25 +738,26 @@ GL_VALIDATE
     // s_GL_VENDOR = (char const*)glGetString(GL_VENDOR);
     // s_GL_RENDERER = (char const*)glGetString(GL_RENDERER);
     // s_GL_SHADING_LANGUAGE_VERSION = (char const*)glGetString(GL_SHADING_LANGUAGE_VERSION);
+    if (m_debugLevel > 0)
+    {
+        DE_OK("GL_VERSION = ", glGetStdString(GL_VERSION))
+        DE_OK("GL_VENDOR = ", glGetStdString(GL_VENDOR))
+        DE_OK("GL_RENDERER = ", glGetStdString(GL_RENDERER))
+        DE_OK("GL_SHADING_LANGUAGE_VERSION = ", glGetStdString(GL_SHADING_LANGUAGE_VERSION))
+        auto extensionList = glGetStdString(GL_EXTENSIONS);
+        auto extensions = StringUtil::split(extensionList,' ');
+        DE_OK("GL_EXTENSIONS = ", extensions.size())
+        if (m_debugLevel > 1)
+        {
+            for (size_t i = 0; i < extensions.size(); ++i)
+            {
+                DE_TRACE("GL_EXTENSION[",i,"] ", extensions[i])
+            }
 
-    auto extensionList = glGetStdString(GL_EXTENSIONS);
-    // DE_INFO("GL_EXTENSIONS = ", extensionList)
-GL_VALIDATE
-    auto extensions = StringUtil::split(extensionList,' ');
-    DE_INFO("GL_EXTENSIONS = ", extensions.size())
-    // for (size_t i = 0; i < extensions.size(); ++i)
-    // {
-    //     DE_INFO("GL_EXTENSION[",i,"] ", extensions[i])
-    // }
-    DE_INFO("GL_VERSION = ", glGetStdString(GL_VERSION))
-GL_VALIDATE
-    DE_INFO("GL_VENDOR = ", glGetStdString(GL_VENDOR))
-GL_VALIDATE
-    DE_INFO("GL_RENDERER = ", glGetStdString(GL_RENDERER))
-GL_VALIDATE
-    DE_INFO("GL_SHADING_LANGUAGE_VERSION = ", glGetStdString(GL_SHADING_LANGUAGE_VERSION))
-GL_VALIDATE
-    //dumpVideoModes();
+            //dumpVideoModes();
+        }
+    }
+
 
 // Effing spam on JUCE + IntelDriver -> deactivate, i know how to program gfx.
 #ifdef USE_GL_DEBUG_CALLBACK
@@ -732,17 +779,19 @@ GL_VALIDATE
 
     // RenderStates
     m_state = State::query();
-
-    DE_DEBUG("Initial Viewport: ",m_state.viewport.str())
-    DE_DEBUG("Initial Scissor: ",m_state.scissor.str())
-    DE_DEBUG("Initial CullMode: ",m_state.culling.str())
-    DE_DEBUG("Initial DepthTest: ",m_state.depth.str())
-    DE_DEBUG("Initial StencilTest: ",m_state.stencil.str())
-    DE_DEBUG("Initial BlendMode: ",m_state.blend.str())
-    DE_DEBUG("Initial PointSize: ",m_state.pointSize.str())
-    DE_DEBUG("Initial LineWidth: ",m_state.lineWidth.str())
-    DE_DEBUG("Initial RasterizerDiscard: ",m_state.rasterizerDiscard.str())
-    DE_DEBUG("Initial PolygonOffset: ",m_state.polygonOffset.str())
+    if (m_debugLevel > 0)
+    {
+        DE_DEBUG("Initial Viewport: ",m_state.viewport.str())
+        DE_DEBUG("Initial Scissor: ",m_state.scissor.str())
+        DE_DEBUG("Initial CullMode: ",m_state.culling.str())
+        DE_DEBUG("Initial DepthTest: ",m_state.depth.str())
+        DE_DEBUG("Initial StencilTest: ",m_state.stencil.str())
+        DE_DEBUG("Initial BlendMode: ",m_state.blend.str())
+        DE_DEBUG("Initial PointSize: ",m_state.pointSize.str())
+        DE_DEBUG("Initial LineWidth: ",m_state.lineWidth.str())
+        DE_DEBUG("Initial RasterizerDiscard: ",m_state.rasterizerDiscard.str())
+        DE_DEBUG("Initial PolygonOffset: ",m_state.polygonOffset.str())
+    }
 
     State state;
     state.culling = Culling();
@@ -751,10 +800,13 @@ GL_VALIDATE
     state.blend = Blend::disabled();
     setState(state);
 
-    DE_DEBUG("Current CullMode: ",m_state.culling.str())
-    DE_DEBUG("Current DepthTest: ",m_state.depth.str())
-    DE_DEBUG("Current StencilTest: ",m_state.stencil.str())
-    DE_DEBUG("Current BlendMode: ",m_state.blend.str())
+    if (m_debugLevel > 0)
+    {
+        DE_DEBUG("Current CullMode: ",m_state.culling.str())
+        DE_DEBUG("Current DepthTest: ",m_state.depth.str())
+        DE_DEBUG("Current StencilTest: ",m_state.stencil.str())
+        DE_DEBUG("Current BlendMode: ",m_state.blend.str())
+    }
 
     // // Enable depth testing
     // glEnable(GL_DEPTH_TEST);
@@ -1110,41 +1162,45 @@ std::string VideoDriver::getShaderVersionHeader() const
    return s.str();
 }
 
-bool VideoDriver::useTexture( Texture* tex, int stage )
+int VideoDriver::useTexture( Texture* tex, int stage )
 {
+    if (!tex)
+    {
+        DE_ERROR("nullptr")
+        return -1;
+    }
+
+    if (!tex->id())
+    {
+        DE_ERROR("No handle ", tex->str())
+        return -1;
+    }
+
     if (stage < 0)
     {
-        DE_ERROR("Invalid stage ", stage)
+        //DE_WARN("Auto")
         stage = 0;
     }
 
-    if (tex)
-    {
-        if (!tex->id())
-        {
-            DE_ERROR("Tex exists, but no GPU handle ", tex->str())
-            return false;
-        }
+    int unit = stage;
+    glBindTextureUnit(unit, tex->id());
 
-        glBindTextureUnit(stage,tex->id());
 
-        // glActiveTexture(GL_TEXTURE0 + stage);
-        // GL_VALIDATE
-        // glBindTexture(tex->target(), tex->id());
-        // GL_VALIDATE
-        m_texMgr.applySamplerOptions(tex->so());
-    }
-    else
-    {
-        DE_WARN("Unbind texture ", tex->str())
-        glBindTextureUnit(stage,0);
 
-        // glActiveTexture(GL_TEXTURE0 + stage); GL_VALIDATE
-        // glBindTexture(GL_TEXTURE_2D, 0); GL_VALIDATE
-//        return false;
-    }
+    //de::gpu::applySamplerOptions(m_chipTexture->so);
+    // Das Sampler-Objekt fest an Unit 0 binden (Modernes OpenGL)
+    // GLuint samplerId;
+    // glGenSamplers(1, &samplerId);
 
-    return true;
+    // // Konfiguration einmalig setzen (Beispiel für Linear + Clamp)
+    // glSamplerParameteri(samplerId, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    // glSamplerParameteri(samplerId, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    // glSamplerParameteri(samplerId, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    // glSamplerParameteri(samplerId, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    //glBindSampler(0, m_chipTexture->samplerId);
+
+
+    return unit;
 }
 
 bool VideoDriver::useShader( Shader* shader )
