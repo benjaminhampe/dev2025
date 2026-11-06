@@ -824,6 +824,10 @@ GL_VALIDATE
     // // Smooth shading (optional for older OpenGL versions)
     //glShadeModel(GL_SMOOTH);
 
+    // WICHTIG: Erzwinge Byte-Alignment für den
+    //          CPU-Upload (behebt RGB-Padding Fehler)
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+
     setClearColor( glm::vec4{0.1f,0.1f,0.1f,1.0f} );
 GL_VALIDATE
     setClearDepth( 1.0f );
@@ -1184,8 +1188,6 @@ int VideoDriver::useTexture( Texture* tex, int stage )
 
     int unit = stage;
     glBindTextureUnit(unit, tex->id());
-
-
 
     //de::gpu::applySamplerOptions(m_chipTexture->so);
     // Das Sampler-Objekt fest an Unit 0 binden (Modernes OpenGL)

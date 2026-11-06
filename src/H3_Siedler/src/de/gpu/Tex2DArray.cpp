@@ -265,7 +265,7 @@ Tex2DArray::create(const std::string& name, const std::vector<const Image*>& ima
     glTexStorage3D(
         GL_TEXTURE_2D_ARRAY,
         mipLevels,
-        gpuFormat,
+        gpuFormat, // internalFormat
         w,
         h,
         layers);
@@ -275,14 +275,11 @@ Tex2DArray::create(const std::string& name, const std::vector<const Image*>& ima
     GLenum cpuFormat = (img_fmt == PixelFormat::R8G8B8)
                      ? GL_RGB : GL_RGBA;
 
-    // WICHTIG: Erzwinge Byte-Alignment für den CPU-Upload (behebt RGB-Padding Fehler)
-    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-
     // Bilder in Level 0 hochladen
     for (GLsizei i = 0; i < layers; ++i)
     {
         glTexSubImage3D(
-            GL_TEXTURE_2D_ARRAY,//GLenum target
+            GL_TEXTURE_2D_ARRAY,// GLenum target
             0,                  // GLint level
             0,                  // GLint xoffset
             0,                  // GLint yoffset

@@ -644,18 +644,28 @@ GT_loadTexture2D( std::string const & uri, SamplerOptions const & so, ImageLoadO
 // ===========================================================================
 Texture::Texture()
 // ===========================================================================
-    : m_id(0), m_target(0), m_w(0), m_h(0), m_layer(0), m_unit(-1)
-    , m_preset(0), m_format(0), m_dataType(0), m_so(), m_fmt(PixelFormat::Unknown)
+    : m_id(0)
+    , m_target(0)
+    , m_unit(-1)
+    , m_mipLevels(0)
+    , m_w(0)
+    , m_h(0)
+    , m_layers(0)
+    , m_gpuFormat(0)
+    , m_cpuFormat(0)
+    , m_dataType(0)
+    , m_so()
+    , m_fmt(PixelFormat::Unknown)
 {}
 
-void Texture::set( uint32_t preset, uint32_t format, uint32_t dataType)
+void Texture::set( uint32_t gpuFormat, uint32_t cpuFormat, uint32_t dataType)
 {
-    m_preset = preset;
-    m_format = format;
+    m_gpuFormat = gpuFormat;
+    m_cpuFormat = cpuFormat;
     m_dataType = dataType;
-    // DE_BENNI("m_preset(",StringUtil::hex(m_preset),"), "
-    //          "m_format(",StringUtil::hex(m_format),"), "
-    //          "m_dataType(",StringUtil::hex(m_dataType),")")
+    // DE_BENNI("cpuFormat(",StringUtil::hex(cpuFormat),"), "
+    //          "cpuFormat(",StringUtil::hex(cpuFormat),"), "
+    //          "dataType(",StringUtil::hex(dataType),")")
 }
 
 std::string Texture::str() const
@@ -663,8 +673,11 @@ std::string Texture::str() const
     std::ostringstream o; o <<
     "name:" << m_name << "|"
     "id:" << m_id << "|"
-    "d:" << m_w << "," << m_h << "," << m_layer << "|"
-    "u:" << m_unit << "|"
+    "unit:" << m_unit << "|"
+    "w:" << m_w << "|"
+    "h:" << m_h << "|"
+    "layers:" << m_layers << "|"
+
     "" << pixelFormatStr() << "|"
     "" << m_target << "|"
     "so:" << m_so.str();
@@ -764,8 +777,6 @@ TexRef::empty() const
     return !tex || !tex->id() || (coords.z <= e) || (coords.w <= e);
 }
 
-
-// static
 glm::vec4
 TexRef::computeCoords( Texture* tex, Recti _pos)
 {
@@ -1133,7 +1144,7 @@ GL_VALIDATE
     tex->m_w = w;
     tex->m_h = h;
     tex->m_fmt = fmt;
-    tex->m_layer = 0;
+    tex->m_layers = 0;
 
          if (fmt == PixelFormat::R8)        { tex->set( GL_RED, GL_RED, GL_UNSIGNED_BYTE ); }
     else if (fmt == PixelFormat::R8G8B8)    { tex->set( GL_RGB8, GL_RGB, GL_UNSIGNED_BYTE); } // GL_SRGB
@@ -1150,34 +1161,28 @@ GL_VALIDATE
     else if (fmt == PixelFormat::S8)        { tex->set( GL_STENCIL_INDEX8, GL_STENCIL_INDEX, GL_UNSIGNED_BYTE); }
     else                                    { DE_ERROR( "Unsupported tex format ", fmt.str()) return false; }
 
-    tex->m_unit = 0;
-    glActiveTexture( GL_TEXTURE0 + tex->m_unit );
-GL_VALIDATE
-    glBindTexture( tex->m_target, tex->m_id );
+    tex->m_unit = -1;
+    glBindTexture( GL_TEXTURE_2D, tex->m_id );
 GL_VALIDATE
 
     applySamplerOptions( tex->m_so );
 
-    glTexImage2D(tex->m_target,       // GLenum target
-                 tex->m_layer,      // GLint level
-                 tex->m_preset,    // GLenum internalFormat
+    glTexImage2D(tex->m_target,     // GLenum target
+                 0,                 // GLint level
+                 tex->m_gpuFormat,  // GLenum internalFormat
                  w,                 // GLsizei width
                  h,                 // GLsizei height
                  0,                 // GLint border
-                 tex->m_format,    // GLenum internalDataFormat
-                 tex->m_dataType,  // GLenum internalDataType
+                 tex->m_cpuFormat,  // GLenum internalDataFormat
+                 tex->m_dataType,   // GLenum internalDataType
                  pixels );          // void* pixel_data, if any, can be nullptr.
-GL_VALIDATE
 
     if (tex->m_so.hasMipmaps())
     {
         glGenerateMipmap( tex->m_target );
-GL_VALIDATE
     }
 
-    GL_VALIDATE
-
-    // glBindTexture( tex->m_target, 0 );
+    glBindTexture( tex->m_target, 0 );
     return true;
 }
 

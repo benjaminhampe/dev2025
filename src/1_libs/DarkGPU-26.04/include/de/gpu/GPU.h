@@ -85,6 +85,13 @@ struct Texture
 {
     uint32_t m_id;     // texture id.
     uint32_t m_target; // texture target GL_TEXTURE_2D|GL_TEXTURE_2D_ARRAY.
+    int32_t  m_unit;   // {-1} = unbound, {0 ... N-1} = bound to specific tex unit.
+    uint32_t m_mipLevels;
+    uint32_t m_w;      // texture width.
+    uint32_t m_h;      // texture height.
+    uint32_t m_layers; // texture layer.
+    uint32_t m_gpuFormat; // GL_RED;
+
     /*
     +-------------------------------+---------------------------------------+-------------------------------------------------------------------------------+
     |   glBindTexture(target,id)    |      glGetIntegerv(target, &id)       |                            Description                                        |
@@ -102,13 +109,8 @@ struct Texture
     | GL_TEXTURE_2D_MULTISAMPLE_ARRAY (0x9102) | GL_TEXTURE_BINDING_2D_MULTISAMPLE_ARRAY (0x9102) | Array of multisample 2D textures.                       |
     +-------------------------------+----------+----------------------------+---------------------+---------------------------------------------------------+
     */
-    uint32_t m_w;      // texture width.
-    uint32_t m_h;      // texture height.
-    uint32_t m_layer;  // texture layer.
-    int32_t  m_unit;   // {-1} = unbound, {0 ... N-1} = bound to specific tex unit.
-    uint32_t m_preset; // internalFormat = GL_RED;
-    uint32_t m_format; // intCategory = GL_RGB;
-    uint32_t m_dataType;// intDataType = GL_FLOAT|GL_UNSIGNED_BYTE|etc...;
+    uint32_t m_cpuFormat; // GL_RGB;
+    uint32_t m_dataType;// GL_FLOAT|GL_UNSIGNED_BYTE|etc...;
     SamplerOptions m_so;
     PixelFormat m_fmt;  // PixelFormat
     std::string m_name;
@@ -124,46 +126,13 @@ struct Texture
     uint32_t target() const { return m_target; }
     uint32_t w() const { return m_w; }
     uint32_t h() const { return m_h; }
-    uint32_t layer() const { return m_layer; }
+    uint32_t layers() const { return m_layers; }
     int32_t unit() const { return m_unit; }
     PixelFormat pixelFormat() const { return m_fmt; }
     std::string pixelFormatStr() const { return PixelFormat::getString( m_fmt ); }
     const SamplerOptions & so() const { return m_so; }
     SamplerOptions & so() { return m_so; }
 };
-
-/*
-uint32_t
-GT_createTexHandle();
-
-void
-GT_deleteTexHandle( uint32_t & texId );
-
-// returns valid stage (texunit) of bound texture on success.
-// returns -2 on fail.
-// if stage is -1, then no glActiveTexture is called
-int
-GT_bindTex2D( uint32_t texId, int stage = 0 );
-
-void
-GT_unbindTex2D( int stage = 0 );
-
-void
-GT_applyTex2DOptions( SamplerOptions const & so );
-
-bool
-GT_uploadTex2D( Texture & tex, int w, int h, void const* const pixels, PixelFormat fmt,
-               SamplerOptions const & so = SamplerOptions() );
-
-bool
-GT_uploadTex2D( Texture & tex, Image const & img, SamplerOptions const & so = SamplerOptions() );
-
-bool
-GT_createTexture2D( Texture & tex, Image const & img, SamplerOptions const & so = SamplerOptions() );
-
-bool
-GT_loadTexture2D( Texture & tex, std::string const & uri, SamplerOptions const & so = SamplerOptions(), ImageLoadOptions const & lo = ImageLoadOptions() );
-*/
 
 // ===========================================================================
 struct TexRef

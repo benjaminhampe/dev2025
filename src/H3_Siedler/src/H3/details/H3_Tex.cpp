@@ -402,7 +402,6 @@ H3_Tex::init( H3_Game & game )
     createChipTexture( game );
     createAnimatedWaterTex128( game );
     createAnimatedWaterTex342( game );
-
 }
 
 de::gpu::TexRef

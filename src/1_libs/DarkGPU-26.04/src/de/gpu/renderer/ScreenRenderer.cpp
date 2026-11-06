@@ -285,7 +285,7 @@ ScreenRenderer::unsetMaterial( smesh::SMaterial const & mtl )
 std::string
 ScreenRenderer::createShaderName( smesh::SMaterial const & material )
 {
-   std::ostringstream s; s << "scrb2d";
+   std::ostringstream s; s << "scrDV2d";
    if ( material.hasDiffuseMap() ) s << "+Td";
    if ( material.CloudTransparent ) s << "+cloud";
    return s.str();
