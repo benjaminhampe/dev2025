@@ -153,7 +153,7 @@ void H3_Game::initLoadScreen( de::Window* window )
 
     int w = m_window->getClientRect().w;
     int h = m_window->getClientRect().h;
-    DE_INFO("WindowClientSize(",w,",",h,").")
+    // DE_INFO("WindowClientSize(",w,",",h,").")
 
     if ( !m_driver->open( w, h ) )
     {
@@ -2051,27 +2051,6 @@ void H3_Game::pick()
     auto camera = driver->getCamera();
     if ( !camera ) { DE_ERROR("No camera") return; }
 
-    // PickUI - Collision-Detection 2D Game UI
-    /*
-    H3_UI & ui = game.m_ui;
-    ui.m_hoverElement = 0;
-
-    for ( int i = 0; i < ui.m_elements.size(); ++i )
-    {
-        auto & elem = ui.m_elements[ i ];
-        if ( !elem.visible ) continue;
-        if ( elem.typ == H3_UIElem::Button )
-        {
-            if ( elem.pos.contains( game.m_mouseX, game.m_mouseY ) )
-            {
-                //DEM_DEBUG("Hit element ", i, ", name:", dbStr(elem.text) )
-                ui.m_hoverElement = elem.id;
-                break;
-            }
-        }
-    }
-    */
-
     // Reset pick:
     m_hoverTileId = 0;
     m_hoverCornerId = 0;
@@ -2080,24 +2059,22 @@ void H3_Game::pick()
     m_hoverFarmId = 0;
     m_hoverCityId = 0;
 
-    // [Intersect 2D] UI collision has precedence over 3D.
+    // [Intersect] 2D Game UI collision has precedence over 3D.
     auto hoverElement = m_guienv.pick( m_mouseX, m_mouseY );
     if ( hoverElement )
     {
         return;
     }
 
-    // [Intersect 3D] Tiles + Edges + Corners + Farms (for placing City)
+    // [Intersect] 3D:
     de::Ray3f ray = camera->computeRayf( m_mouseX, m_mouseY );
     m_hitDist = std::numeric_limits< float >::max();
     m_hitPos = glm::vec3(0,0,0);
 
-    // [Intersect 3D] Corners:
-
+    // [Intersect] 3D Corners:
     for (u32 cornerId : m_visibleCorners)
     {
         const H3_Corner& corner = H3_getCorner(*this, __func__, cornerId);
-        // if (!corner.visible) continue;
         de::IntersectResult<float> hitResult;
         if (de::intersectRay<float>( corner.collisionTriangles, ray, hitResult ))
         {
@@ -2110,11 +2087,10 @@ void H3_Game::pick()
         }
     }
 
-    // [Intersect 3D] Edges:
+    // [Intersect] 3D Edges:
     for (u32 edgeId : m_visibleEdges)
     {
         const H3_Edge & edge = H3_getEdge(*this, __func__, edgeId);
-        //if (!edge.visible) continue;
         de::IntersectResult<float> hitResult;
         if ( de::intersectRay<float>( edge.collisionTriangles, ray, hitResult ) )
         {
@@ -2172,10 +2148,9 @@ void H3_Game::pick()
         }
     }
 
-    // [Intersect 3D] Tiles:
+    // [Intersect] 3D Tiles:
     for (const H3_Tile & tile : m_tiles)
     {
-        // if (!tile.visible) continue;
         de::IntersectResult<float> hitResult;
         if ( de::intersectRay<float>( tile.collisionTriangles, ray, hitResult ) )
         {
@@ -2263,9 +2238,7 @@ void H3_Game::updateWindowTitle()
 
     const int desktopW = dbDesktopWidth();
     const int desktopH = dbDesktopHeight();
-    const de::Recti r1 = m_window->getWindowRect();
-    const de::Recti r2 = m_window->getClientRect();
-
+    const auto windowRect = m_window->getWindowRect();
     const int fps = (m_driver) ? m_driver->getFPS() : 0;
     const int scrW = (m_driver) ? m_driver->getScreenWidth() : 0;
     const int scrH = (m_driver) ? m_driver->getScreenHeight() : 0;
@@ -2274,11 +2247,8 @@ void H3_Game::updateWindowTitle()
         "FPS(" << fps << "), "
         "Zoom(" << int(getZoom()*100.f) << "%), "
         "Screen("<<scrW << "," << scrH << "), "
-        // "Client("<< r2.str() << "), "
-        "Window("<<r1.str()<<"), "
+        "Window("<<windowRect.str()<<"), "
         "Desktop("<<desktopW<<","<<desktopH<<")";
-
-    // DE_DEBUG(o.str())
 
     m_window->setWindowTitle( de_wstr(o.str()) );
 }
@@ -2296,18 +2266,18 @@ void H3_Game::drawSun()
     auto driver = getDriver();
     driver->beginPerf("Sun");
 
+    // Move the sun:
+    auto & sun = driver->getLights()[0];
+    const float sun_radius = 600.0f;
+/*
     static auto tStart = driver->getTime();
     static auto tLast = 0; // = driver->getTime() - tStart;
     auto tNow = driver->getTime() - tStart;
     auto dt = tNow - tLast;
     tLast = tNow;
 
-    // Move the sun:
-    auto & sun = driver->getLights()[0];
-
     static float sun_angleY = 0.0f;
     static float sun_sign = 1.0f;
-    const float sun_radius = 600.0f;
     const float sun_speed = 1.0f; // 3 sec
 
     sun_angleY += sun_speed * dt;
@@ -2318,12 +2288,22 @@ void H3_Game::drawSun()
 
     glm::vec3 sun_pos(sun_radius * sin( de::Math::DEG2RAD * sun_angleY ),
                       1200.0f,
-                      sun_radius * cos( de::Math::DEG2RAD * sun_angleY ));
-
-    sun.pos = sun_pos;
+                      -sun_radius * cos( de::Math::DEG2RAD * sun_angleY ));
 
     glm::mat4 sun_mat = glm::translate( glm::mat4(1.0f), sun_pos );
-    driver->setModelMatrix(sun_mat);
+*/
+    de::TRSf trs;
+    //trs.pos = glm::vec3(0,1200.0f,-sun_radius);
+
+    auto camera = driver->getCamera();
+    auto pos = camera->getPos();
+    auto tar = camera->getTarget();
+    auto dir = glm::normalize(tar - pos) * 100.0;
+    sun.pos = pos - dir;
+    trs.pos = sun.pos;
+    trs.update();
+
+    driver->setModelMatrix(trs.modelMat);
     driver->getSMaterialRenderer()->draw3D( m_smeshSun );
     driver->endPerf();
 }
@@ -2333,7 +2313,6 @@ void H3_Game::drawTiles()
     if (m_bUpdateDrawCall_Tiles)
     {
         m_tile3DRenderer.collectAndUploadInstances(*this);
-        //m_waterTileRenderer.collectAndUploadInstances( *this );
         m_waterTileRenderer2.collectAndUploadInstances( *this );
 
         m_bUpdateDrawCall_Tiles = false;
@@ -2345,7 +2324,6 @@ void H3_Game::drawTiles()
     m_driver->endPerf();
 
     m_driver->beginPerf("Water-Tiles");
-    //m_waterTileRenderer.render();
     m_waterTileRenderer2.render(m_tex.m_AnimatedWaterTex342,1.0f);
     m_driver->endPerf();
 }

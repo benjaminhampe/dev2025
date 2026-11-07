@@ -429,12 +429,6 @@ bool Window_WGL::create( WindowOptions params )
 {
     int desktopW = GetSystemMetrics( SM_CXSCREEN );
     int desktopH = GetSystemMetrics( SM_CYSCREEN );
-
-    int windowW = std::min(params.width,desktopW);
-    int windowH = std::min(params.height,desktopH);
-    int windowX = std::max(0, (desktopW - windowW)/2);
-    int windowY = std::max(0, (desktopH - windowH)/2);
-
     const HMODULE hInstance = GetModuleHandleW(nullptr);
     const HWND parentHwnd = (HWND)params.parent; //(HWND)parent;
     //DE_DEBUG("Created parentHwnd ",(void*)parentHwnd)
@@ -500,6 +494,18 @@ bool Window_WGL::create( WindowOptions params )
         dwExStyle |= WS_EX_APPWINDOW; // Zeigt das Fenster korrekt in der Taskleiste an
     }
 
+    RECT desiredClientRect;
+    desiredClientRect.left = 0;
+    desiredClientRect.top = 0;
+    desiredClientRect.right = std::min(params.width,desktopW);
+    desiredClientRect.bottom = std::min(params.height,desktopH);
+    AdjustWindowRect( &desiredClientRect, dwStyle, FALSE );
+
+    int windowW = desiredClientRect.right - desiredClientRect.left;
+    int windowH = desiredClientRect.bottom - desiredClientRect.top;
+    int windowX = std::max(0, (desktopW - windowW) / 2);
+    int windowY = std::max(0, (desktopH - windowH) / 2);
+
     std::wstring winTitle = makeUniqueWindowTitle();
         //  : params.title;
 
@@ -526,6 +532,16 @@ bool Window_WGL::create( WindowOptions params )
     SetFocus(_d->hWnd);
 
 /*
+    // 4. WICHTIG: SWP_FRAMECHANGED zwingt Windows, den Rahmen und die Titelleiste
+    // basierend auf dem neuen Stil komplett neu und sauber zu zeichnen!
+    SetWindowPos( _d->hWnd,
+        HWND_TOP,
+        windowX,
+        windowY,
+        windowW,
+        windowH,
+        SWP_FRAMECHANGED | SWP_SHOWWINDOW | SWP_NOACTIVATE);
+
     if (IsWindowUnicode(_d->hWnd))
     {
         DE_DEBUG("Created Unicode window.")

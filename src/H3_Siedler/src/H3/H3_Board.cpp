@@ -2,9 +2,9 @@
 #include <H3/details/H3_Tex.h>
 #include <H3/details/H3_AI.h>
 
-glm::vec3 H3_tileSize = glm::vec3( 100, 100, 5 );
-glm::vec3 H3_chipSize = glm::vec3( 25, 25, 4 );
-glm::vec3 H3_cornerSize = glm::vec3( 20, 20, 3 );
+glm::vec3 H3_tileSize = glm::vec3( 93, 100, 5 );
+glm::vec3 H3_chipSize = glm::vec3( 25, 25, 3 );
+glm::vec3 H3_cornerSize = glm::vec3( 20, 20, 2.5f );
 glm::vec3 H3_edgeSize = glm::vec3( 18, 18, 2 );
 glm::vec3 H3_cardSize = glm::vec3( 60, 100, 5 );
 glm::vec3 H3_roadSize = glm::vec3( 30, 6,  6 );

@@ -32,7 +32,7 @@ struct SMeshHexagon
     add(int i_min, int i_max,
         int j_min, int j_max,
         SMeshBuffer & mb,
-        float w = 100.0f, float h = 100.0f,
+        f32 w = 100.0f, f32 h = 100.0f,
         bool forceIndices = false,
         glm::vec3 const & pos = glm::vec3( 0.0f ) );
 
@@ -40,22 +40,22 @@ struct SMeshHexagon
     add(int i,
         int j,
         SMeshBuffer & mb,
-        float w = 100.0f, float h = 100.0f,
-        uint32_t color = 0xFFFFFFFF,
+        f32 w = 100.0f, f32 h = 100.0f,
+        u32 color = 0xFFFFFFFF,
         bool forceIndices = false,
         glm::vec3 const & pos = glm::vec3( 0.0f ) );
 
     static void
     addM4(SMeshBuffer & mb,
-          float w = 100.0f, float h = 100.0f,
-          uint32_t color = 0xFFFFFFFF,
+          f32 w = 100.0f, f32 h = 100.0f,
+          u32 color = 0xFFFFFFFF,
           bool forceIndices = false,
           glm::dmat4 const & trs = glm::dmat4( 1.0 ) );
 
     static void
     add(SMeshBuffer & mb,
-        float w, float h,
-        uint32_t color,
+        f32 w, f32 h,
+        u32 color,
         bool forceIndices = false,
         glm::vec3 const & pos = glm::vec3( 0.0f ) );
 
@@ -63,74 +63,74 @@ struct SMeshHexagon
     getNeighborTileIndex( int corner, int i, int j );
 
     static glm::vec2
-    getNeighborTilePos( int corner, float w, float h, int i, int j );
+    getNeighborTilePos( int corner, f32 w, f32 h, int i, int j );
 
-    static float
-    computeBoardPosX( float w, float h, int i, int j );
+    static f32
+    computeBoardPosX( f32 w, f32 h, int i, int j );
 
-    static float
-    computeBoardPosY( float w, float h, int i, int j );
+    static f32
+    computeBoardPosY( f32 w, f32 h, int i, int j );
 
     static glm::ivec2
-    computeTileIndex( float x, float y, float w, float h );
+    computeTileIndex( f32 x, f32 y, f32 w, f32 h );
 
 
-    static glm::vec3 cornerA3( float w, float h );
-    static glm::vec3 cornerB3( float w, float h );
-    static glm::vec3 cornerC3( float w, float h );
-    static glm::vec3 cornerD3( float w, float h );
-    static glm::vec3 cornerE3( float w, float h );
-    static glm::vec3 cornerF3( float w, float h );
+    static glm::vec3 cornerA3( f32 w, f32 h );
+    static glm::vec3 cornerB3( f32 w, f32 h );
+    static glm::vec3 cornerC3( f32 w, f32 h );
+    static glm::vec3 cornerD3( f32 w, f32 h );
+    static glm::vec3 cornerE3( f32 w, f32 h );
+    static glm::vec3 cornerF3( f32 w, f32 h );
 
     static glm::vec2 lineCenter( glm::vec2 const & a, glm::vec2 const & b );
 
-    static glm::vec2 cornerA( float w, float h );
-    static glm::vec2 cornerB( float w, float h );
-    static glm::vec2 cornerC( float w, float h );
-    static glm::vec2 cornerD( float w, float h );
-    static glm::vec2 cornerE( float w, float h );
-    static glm::vec2 cornerF( float w, float h );
+    static glm::vec2 cornerA( f32 w, f32 h );
+    static glm::vec2 cornerB( f32 w, f32 h );
+    static glm::vec2 cornerC( f32 w, f32 h );
+    static glm::vec2 cornerD( f32 w, f32 h );
+    static glm::vec2 cornerE( f32 w, f32 h );
+    static glm::vec2 cornerF( f32 w, f32 h );
 
-    static glm::vec2 edgeAB( float w, float h );
-    static glm::vec2 edgeBC( float w, float h );
-    static glm::vec2 edgeCD( float w, float h );
-    static glm::vec2 edgeDE( float w, float h );
-    static glm::vec2 edgeEF( float w, float h );
-    static glm::vec2 edgeFA( float w, float h );
+    static glm::vec2 edgeAB( f32 w, f32 h );
+    static glm::vec2 edgeBC( f32 w, f32 h );
+    static glm::vec2 edgeCD( f32 w, f32 h );
+    static glm::vec2 edgeDE( f32 w, f32 h );
+    static glm::vec2 edgeEF( f32 w, f32 h );
+    static glm::vec2 edgeFA( f32 w, f32 h );
 
     static glm::vec2
-    getCorner( int i, float w, float h );
+    getCorner( int i, f32 w, f32 h );
 
     static std::vector< glm::vec2 >
-    getCorners( float w, float h );
+    getCorners( f32 w, f32 h );
 
     static std::vector< glm::vec3 >
-    getCornersXZ( float w, float h );
+    getCornersXZ( f32 w, f32 h );
 
     static glm::vec2
-    getEdge( int i, float w, float h );
+    getEdge( int i, f32 w, f32 h );
 
-    static float
+    static f32
     computeAngle( glm::vec2 const & v );
 
-    static float
-    computeCornerAngle( int i, float w, float h );
+    static f32
+    computeCornerAngle( int i, f32 w, f32 h );
 
-    static float
-    computeEdgeAngle( int i, float w, float h );
+    static f32
+    computeEdgeAngle( int i, f32 w, f32 h );
 
     /*
-    static float
-    computeEdgeAngle( int i, float w, float h );
+    static f32
+    computeEdgeAngle( int i, f32 w, f32 h );
 
     static void
-    test( float w, float h );
+    test( f32 w, f32 h );
 
     static SMeshBuffer*
-    create( float w, float h, uint32_t color );
+    create( f32 w, f32 h, u32 color );
 
     static void
-    add( SMeshBuffer & out, int i, int j, float w, float h, uint32_t color );
+    add( SMeshBuffer & out, int i, int j, f32 w, f32 h, u32 color );
     */
 };
 
@@ -159,20 +159,20 @@ struct SMeshBox
     static void
     add(SMeshBuffer & o,
         glm::vec3 a, glm::vec3 b, glm::vec3 c, glm::vec3 d,
-        glm::vec3 e, glm::vec3 f, glm::vec3 g, glm::vec3 h, uint32_t color = 0xFFFFFFFF);
+        glm::vec3 e, glm::vec3 f, glm::vec3 g, glm::vec3 h, u32 color = 0xFFFFFFFF);
 
     static void
     add(SMeshBuffer & o,
-        glm::vec3 cubeSize, glm::vec3 pos, uint32_t color = 0xFFFFFFFF);
+        glm::vec3 cubeSize, glm::vec3 pos, u32 color = 0xFFFFFFFF);
 
     static void
     addLines(SMeshBuffer & o,
              glm::vec3 a, glm::vec3 b, glm::vec3 c, glm::vec3 d,
-             glm::vec3 e, glm::vec3 f, glm::vec3 g, glm::vec3 h, uint32_t color = 0xFFFFFFFF);
+             glm::vec3 e, glm::vec3 f, glm::vec3 g, glm::vec3 h, u32 color = 0xFFFFFFFF);
 
     static void
     addLines(SMeshBuffer & o,
-             glm::vec3 cubeSize, glm::vec3 pos, uint32_t color = 0xFFFFFFFF);
+             glm::vec3 cubeSize, glm::vec3 pos, u32 color = 0xFFFFFFFF);
 };
 
 // @brief Benni book example 2021
@@ -180,18 +180,18 @@ struct SMeshBox
 struct Generic3DCone
 // =========================================================================
 {
-   // uint32_t getVertexCount();
-   typedef std::function<uint32_t()> FN_GET_VERTEXCOUNT;
-   // void addVertex( float x, float y, float z, float nx, float ny, float nz, uint32_t color, float u, float v) ;
-   typedef std::function<void(float, float, float, float, float, float, uint32_t, float, float )> FN_ADD_VERTEX;
-   // void addIndex( uint32_t index );
-   typedef std::function<void(uint32_t)> FN_ADD_INDEX;
+   // u32 getVertexCount();
+   typedef std::function<u32()> FN_GET_VERTEXCOUNT;
+   // void addVertex( f32 x, f32 y, f32 z, f32 nx, f32 ny, f32 nz, u32 color, f32 u, f32 v) ;
+   typedef std::function<void(f32, f32, f32, f32, f32, f32, u32, f32, f32 )> FN_ADD_VERTEX;
+   // void addIndex( u32 index );
+   typedef std::function<void(u32)> FN_ADD_INDEX;
 
    static void
    addTrianglesXZ(
-      float rx, float h, float rz,
-      uint32_t innerColor,
-      uint32_t outerColor,
+      f32 rx, f32 h, f32 rz,
+      u32 innerColor,
+      u32 outerColor,
       int32_t tessCircle,
       int32_t tessHeight,
       FN_GET_VERTEXCOUNT const & getVertexCount,
@@ -206,7 +206,7 @@ struct SMeshCone
 {
    static void
    addXZ( SMeshBuffer & o, glm::vec3 const & siz,
-         uint32_t iColor = 0xAFFFFFFF, uint32_t oColor = 0xFFFFFFFF,
+         u32 iColor = 0xAFFFFFFF, u32 oColor = 0xFFFFFFFF,
          int32_t tessCircle = 12,
          int32_t tessHeight = 1 );
 };
@@ -245,8 +245,8 @@ struct SMeshPolyLine
    static bool
    addTriangleStrip( SMeshBuffer & o,
         std::vector< glm::vec2 > const & points,
-        uint32_t color = 0xFFFFFFFF,
-        float lineWidth = 1.0f,
+        u32 color = 0xFFFFFFFF,
+        f32 lineWidth = 1.0f,
         LineCap lineCap = LineCap::Square,
         LineJoin lineJoin = LineJoin::Bevel );
 
@@ -272,7 +272,7 @@ struct SMeshPolyLine
    //
    static void
    addExtrudedLine( SMeshBuffer & o, glm::vec2 const & a, glm::vec2 const & b,
-         uint32_t colorA = 0xFFFFFFFF, uint32_t colorB = 0xFFFFFFFF, float lineWidth = 1.0f,
+         u32 colorA = 0xFFFFFFFF, u32 colorB = 0xFFFFFFFF, f32 lineWidth = 1.0f,
          LineCap lineCap = LineCap::Square );
 };
 
@@ -283,12 +283,12 @@ struct SMeshRect
 
    static void
    addLine2D( SMeshBuffer & o,
-              int ax, int ay, int bx, int by, uint32_t colorA, uint32_t colorB );
+              int ax, int ay, int bx, int by, u32 colorA, u32 colorB );
 
    static void
    add( SMeshBuffer & o,
-        V3 const & a, V3 const & b, V3 const & c, V3 const & d, uint32_t color = 0xFFFFFFFF,
-        float u1 = 0.0f, float v1 = 0.0f, float u2 = 1.0f, float v2 = 1.0f );
+        V3 const & a, V3 const & b, V3 const & c, V3 const & d, u32 color = 0xFFFFFFFF,
+        f32 u1 = 0.0f, f32 v1 = 0.0f, f32 u2 = 1.0f, f32 v2 = 1.0f );
 
    //
    //  B +-----+ C --> +x, +u
@@ -298,8 +298,8 @@ struct SMeshRect
    //    |           Normal -z shows towards viewer
    //   +v = -y      Pos.z is always -1, so its at near plane.
    static void
-   add( SMeshBuffer & o, Recti const & pos, uint32_t colorA, uint32_t colorB,
-        uint32_t colorC, uint32_t colorD, gpu::TexRef const & ref );
+   add( SMeshBuffer & o, Recti const & pos, u32 colorA, u32 colorB,
+        u32 colorC, u32 colorD, gpu::TexRef const & ref );
 
    //
    //  B +-----+ C --> +x, +u
@@ -311,12 +311,12 @@ struct SMeshRect
    //
    static void
    addOutline( SMeshBuffer & o, Recti const & pos,
-               uint32_t color,
+               u32 color,
                gpu::TexRef const & ref, int borderWidth );
 
    static void
    addOutline( SMeshBuffer & o, Recti const & pos,
-              uint32_t colorA, uint32_t colorB, uint32_t colorC, uint32_t colorD,
+              u32 colorA, u32 colorB, u32 colorC, u32 colorD,
               gpu::TexRef const & ref, int borderWidth );
 
 };
@@ -345,17 +345,17 @@ struct SMeshRect
 struct Generic2DTriangleRoundRect
 // =========================================================================
 {
-   typedef std::function<uint32_t()> GET_VERTEXCOUNT;
-   // void addVertex( float x, float y, uint32_t color )
-   typedef std::function<void(float,float, uint32_t)> ADD_VERTEX;
-   // void addVertex( float x, float y, float z, float nx, float ny, float nz, uint32_t color, float u, float v )
-   //typedef std::function<void(float,float,float, float,float,float, uint32_t, float,float )> ADD_VERTEX;
-   typedef std::function<void(uint32_t)> ADD_INDEX;
+   typedef std::function<u32()> GET_VERTEXCOUNT;
+   // void addVertex( f32 x, f32 y, u32 color )
+   typedef std::function<void(f32,f32, u32)> ADD_VERTEX;
+   // void addVertex( f32 x, f32 y, f32 z, f32 nx, f32 ny, f32 nz, u32 color, f32 u, f32 v )
+   //typedef std::function<void(f32,f32,f32, f32,f32,f32, u32, f32,f32 )> ADD_VERTEX;
+   typedef std::function<void(u32)> ADD_INDEX;
 
    static void
    addTriangles(
-      float w, float h, float rx, float ry,
-      uint32_t tess, uint32_t innerColor, uint32_t outerColor,
+      f32 w, f32 h, f32 rx, f32 ry,
+      u32 tess, u32 innerColor, u32 outerColor,
       GET_VERTEXCOUNT const & getVertexCount,
       ADD_VERTEX const & addVertex,
       ADD_INDEX const & addIndex );
@@ -368,27 +368,27 @@ struct SMeshRoundRect
    static void
    addXY( SMeshBuffer & o,
          glm::vec3 const & pos,
-         float w, float h, float rx, float ry,
+         f32 w, f32 h, f32 rx, f32 ry,
          int32_t tess = 13,
-         uint32_t innerColor = 0xFFFFFFFF,
-         uint32_t outerColor = 0xFFFFFFFF );
+         u32 innerColor = 0xFFFFFFFF,
+         u32 outerColor = 0xFFFFFFFF );
 
    static void
    addXZ( SMeshBuffer & o,
          glm::vec3 const & pos,
-         float w, float h, float rx, float ry,
+         f32 w, f32 h, f32 rx, f32 ry,
          int32_t tess = 13,
-         uint32_t innerColor = 0xFFFFFFFF,
-         uint32_t outerColor = 0xFFFFFFFF );
+         u32 innerColor = 0xFFFFFFFF,
+         u32 outerColor = 0xFFFFFFFF );
 };
 
 void
 addRoundRect( SMeshBuffer & o,
     Recti const & pos,
-    float zIndex = 0.0f,
+    f32 zIndex = 0.0f,
     glm::ivec2 const & radius = glm::ivec2(8,8),
-    uint32_t outerColor = 0xffffffff,
-    uint32_t innerColor = 0xffffffff,
+    u32 outerColor = 0xffffffff,
+    u32 innerColor = 0xffffffff,
     gpu::TexRef const & ref = gpu::TexRef(),
     int tess = 13 );
 
@@ -415,24 +415,24 @@ addRoundRect( SMeshBuffer & o,
 //
 void
 addRoundRectOutline( SMeshBuffer & o,
-    Recti const & pos, float zIndex = 0.0f,
+    Recti const & pos, f32 zIndex = 0.0f,
     glm::ivec2 const & radius = glm::ivec2(8,8),
-    uint32_t color = 0xffffffff,
+    u32 color = 0xffffffff,
     gpu::TexRef const & ref = gpu::TexRef(),
     int borderWidth = 1,
-    uint32_t tess = 13 );
+    u32 tess = 13 );
 
 // =========================================================================
 // Circle
 // =========================================================================
 
 void
-addCircle( SMeshBuffer & o, Recti const & pos, uint32_t outerColor,
-           uint32_t innerColor, gpu::TexRef const & ref, uint32_t tess = 12 );
+addCircle( SMeshBuffer & o, Recti const & pos, u32 outerColor,
+           u32 innerColor, gpu::TexRef const & ref, u32 tess = 12 );
 
 void
-addCircleOutline( SMeshBuffer & o, Recti const & pos, uint32_t color,
-                  gpu::TexRef const & ref, int borderWidth, uint32_t tess = 12 );
+addCircleOutline( SMeshBuffer & o, Recti const & pos, u32 color,
+                  gpu::TexRef const & ref, int borderWidth, u32 tess = 12 );
 
 // =========================================================================
 struct SMeshCircle
@@ -440,19 +440,19 @@ struct SMeshCircle
 {
    static void
    addXY( SMeshBuffer & o, glm::vec2 const & siz,
-          uint32_t color, uint32_t tessRadial = 33 );
+          u32 color, u32 tessRadial = 33 );
 
    static void
    addXY( SMeshBuffer & o, glm::vec2 const & siz,
-          uint32_t innerColor, uint32_t outerColor, uint32_t tessRadial );
+          u32 innerColor, u32 outerColor, u32 tessRadial );
 
    static void
    addXZ( SMeshBuffer & o, glm::vec2 const & siz,
-          uint32_t color, uint32_t tessRadial = 33 );
+          u32 color, u32 tessRadial = 33 );
 
    static void
    addXZ( SMeshBuffer & o, glm::vec2 const & siz,
-          uint32_t innerColor, uint32_t outerColor, uint32_t tessRadial );
+          u32 innerColor, u32 outerColor, u32 tessRadial );
 };
 
 
@@ -461,18 +461,18 @@ struct SMeshCircle
 struct Generic2DTriangleRing
 // =========================================================================
 {
-   // uint32_t getVertexCount();
-   typedef std::function<uint32_t()> GET_VERTEXCOUNT;
-   // void addVertex( float x, float y, uint32_t color );
-   typedef std::function<void(float, float, uint32_t)> ADD_VERTEX;
-   // void addIndex( uint32_t index );
-   typedef std::function<void(uint32_t)> ADD_INDEX;
+   // u32 getVertexCount();
+   typedef std::function<u32()> GET_VERTEXCOUNT;
+   // void addVertex( f32 x, f32 y, u32 color );
+   typedef std::function<void(f32, f32, u32)> ADD_VERTEX;
+   // void addIndex( u32 index );
+   typedef std::function<void(u32)> ADD_INDEX;
 
    static void
    addIndexedTriangles(
-      float outer_x, float outer_y,
-      float inner_x, float inner_y,
-      int32_t tess, uint32_t innerColor, uint32_t outerColor,
+      f32 outer_x, f32 outer_y,
+      f32 inner_x, f32 inner_y,
+      int32_t tess, u32 innerColor, u32 outerColor,
       GET_VERTEXCOUNT const & getVertexCount,
       ADD_VERTEX const & addVertex,
       ADD_INDEX const & addIndex );
@@ -484,24 +484,24 @@ struct SMeshRing
 {
    static void
    addXY( SMeshBuffer & o,
-         float ow,
-         float oh,
-         float iw,
-         float ih,
-         uint32_t innerColor = 0xFFFFFFFF,
-         uint32_t outerColor = 0xFFFFFFFF,
+         f32 ow,
+         f32 oh,
+         f32 iw,
+         f32 ih,
+         u32 innerColor = 0xFFFFFFFF,
+         u32 outerColor = 0xFFFFFFFF,
          int32_t tess = 13,
          glm::vec3 const & pos = glm::vec3(0,0,0) );
 
    static void
    addXZ(
       SMeshBuffer & o,
-      float ow,
-      float oh,
-      float iw,
-      float ih,
-      uint32_t innerColor = 0xFFFFFFFF,
-      uint32_t outerColor = 0xFFFFFFFF,
+      f32 ow,
+      f32 oh,
+      f32 iw,
+      f32 ih,
+      u32 innerColor = 0xFFFFFFFF,
+      u32 outerColor = 0xFFFFFFFF,
       int32_t tess = 13,
       glm::vec3 const & pos = glm::vec3(0,0,0) );
 };
@@ -513,16 +513,16 @@ struct SMeshRing
 struct SMeshPolyHull
 {
    static void
-   addLeftStripXY( SMeshBuffer & o, std::vector< glm::vec3 > const & points, float height,
-                   uint32_t color = 0xFFFFFFFF, glm::vec3 const & pos = glm::vec3(0,0,0) );
+   addLeftStripXY( SMeshBuffer & o, std::vector< glm::vec3 > const & points, f32 height,
+                   u32 color = 0xFFFFFFFF, glm::vec3 const & pos = glm::vec3(0,0,0) );
 
    static void
-   addLeftStripXZ( SMeshBuffer & o, std::vector< glm::vec3 > const & points, float height,
-                   uint32_t color = 0xFFFFFFFF, glm::vec3 const & pos = glm::vec3(0,0,0) );
+   addLeftStripXZ( SMeshBuffer & o, std::vector< glm::vec3 > const & points, f32 height,
+                   u32 color = 0xFFFFFFFF, glm::vec3 const & pos = glm::vec3(0,0,0) );
 
    static void
-   addRightStrip( SMeshBuffer & o, std::vector< glm::vec3 > const & points, float height,
-                  uint32_t color = 0xFFFFFFFF, glm::vec3 const & pos = glm::vec3(0,0,0) );
+   addRightStrip( SMeshBuffer & o, std::vector< glm::vec3 > const & points, f32 height,
+                  u32 color = 0xFFFFFFFF, glm::vec3 const & pos = glm::vec3(0,0,0) );
 };
 
 // =========================================================================
@@ -533,14 +533,14 @@ struct SMeshCylinderHull
 
    static void
    addXY( SMeshBuffer & o,
-        float dx, float dy, float h,
-        uint32_t color = 0xFFFFFFFF, int tessCirc = 33,
+        f32 dx, f32 dy, f32 h,
+        u32 color = 0xFFFFFFFF, int tessCirc = 33,
         V3 const & pos = V3(0,0,0) );
 
    static void
    addXZ( SMeshBuffer & o,
-        float dx, float h, float dz,
-        uint32_t color = 0xFFFFFFFF, int tessCirc = 33,
+        f32 dx, f32 h, f32 dz,
+        u32 color = 0xFFFFFFFF, int tessCirc = 33,
         V3 const & pos = V3(0,0,0) );
 };
 
@@ -549,17 +549,17 @@ struct SMeshCylinder
 // =========================================================================
 {
    static void
-   addXY( SMeshBuffer & o, float dx, float dy, float h,
-          uint32_t color = 0xFFFFFFFF, uint32_t tessCirc = 33 );
+   addXY( SMeshBuffer & o, f32 dx, f32 dy, f32 h,
+          u32 color = 0xFFFFFFFF, u32 tessCirc = 33 );
 
    static void
-   addXZ( SMeshBuffer & o, float dx, float h, float dz,
-          uint32_t color = 0xFFFFFFFF, uint32_t tessCirc = 33 );
+   addXZ( SMeshBuffer & o, f32 dx, f32 h, f32 dz,
+          u32 color = 0xFFFFFFFF, u32 tessCirc = 33 );
 
    static void
-   addXZ( SMeshBuffer & o, float bottom_dx, float bottom_dz,
-          float top_dx, float top_dz, float cylinder_h,
-          uint32_t color = 0xFFFFFFFF, uint32_t tessCirc = 33, uint32_t tessHull = 11,
+   addXZ( SMeshBuffer & o, f32 bottom_dx, f32 bottom_dz,
+          f32 top_dx, f32 top_dz, f32 cylinder_h,
+          u32 color = 0xFFFFFFFF, u32 tessCirc = 33, u32 tessHull = 11,
           glm::vec3 const & offset = glm::vec3() );
 
 };
@@ -571,14 +571,14 @@ struct SMeshTube
    static void
    add( SMeshBuffer & o,
         // Describes outer cylinder
-        float dx, // (outer) cylinder width
-        float dz, // (outer) cylinder depth
-        float hy, // (outer) cylinder height
+        f32 dx, // (outer) cylinder width
+        f32 dz, // (outer) cylinder depth
+        f32 hy, // (outer) cylinder height
         // Describes inner cylinder, rx,ry define the extrusion relative inside to dx,dy.
         // They define the inside border width and are not absolute values like dx,dy.
-        float rx, // inside going border-width ( inside cylinder width cx = dx - rx )
-        float rz, // inside going border-depth ( inside cylinder depth cz = dz - rz )
-        uint32_t color = 0xFFFFFFFF, // one color to rule them all (vertices).
+        f32 rx, // inside going border-width ( inside cylinder width cx = dx - rx )
+        f32 rz, // inside going border-depth ( inside cylinder depth cz = dz - rz )
+        u32 color = 0xFFFFFFFF, // one color to rule them all (vertices).
         int32_t tessCircle = 13, // tesselation of top and bottom ring = num ring segments
         int32_t tessHeight = 1 ); // tesselation of cylinder hull height ( y-direction )
 };
@@ -591,39 +591,38 @@ struct SMeshSphere
    // [Latitude] Rotation um die x/z-Achse in degrees: meridian plane (yx or yz)
    //
    static glm::vec3
-   computeSphereNormal( float lon, float lat ); // in degrees
+   computeSphereNormal( f32 lon, f32 lat ); // in degrees
 
    static void
    add( SMeshBuffer & o,
          glm::vec3 const & siz = glm::vec3(100,100,100),
-         uint32_t color = 0xFFFFFFFF,
-         uint32_t tessLon = 9,
-         uint32_t tessLat = 9,
+         u32 color = 0xFFFFFFFF,
+         u32 tessLon = 9,
+         u32 tessLat = 9,
          glm::vec3 const & offset = glm::vec3() );
 };
-
 
 void
 addSphere( SMeshBuffer & o,
       glm::vec3 const & siz = glm::vec3(100,100,100),
       glm::vec3 const & offset = glm::vec3(),
-      uint32_t tessLon = 3, uint32_t tessLat = 3, uint32_t color = 0xFFFFFFFF );
+      u32 tessLon = 3, u32 tessLat = 3, u32 color = 0xFFFFFFFF );
 
 // =========================================================================
 struct SMeshUpperHalfSphere
 // =========================================================================
 {
    typedef glm::vec3 V3;
-   typedef uint32_t u32;
+   typedef u32 u32;
 
    // [Longitude] Rotation um die y-Achse in degrees, equatorial xz plane is ground plane +Y is north pole
    // [Latitude] Rotation um die x/z-Achse in degrees: meridian plane (yx or yz)
    static V3
-   computeSphereNormal( float lon, float lat ); // in degrees
+   computeSphereNormal( f32 lon, f32 lat ); // in degrees
 
    static void
-   add( SMeshBuffer & o, V3 const & siz = V3(100,100,100), uint32_t color = 0xFFFFFFFF,
-         uint32_t tessLon = 3, uint32_t tessLat = 3, V3 const & offset = V3() );
+   add( SMeshBuffer & o, V3 const & siz = V3(100,100,100), u32 color = 0xFFFFFFFF,
+         u32 tessLon = 3, u32 tessLat = 3, V3 const & offset = V3() );
 };
 
 // =========================================================================
@@ -631,7 +630,7 @@ struct SMeshHexagonHull
 // =========================================================================
 {
     static SMeshBuffer
-    create( float w, float h, float height, uint32_t color );
+    create( f32 w, f32 h, f32 height, u32 color );
 };
 
 /*
@@ -643,9 +642,9 @@ struct SMeshHexagonHull
 //};
 
 static SMeshBuffer
-create( float w, float h, float lineWidth, uint32_t color )
+create( f32 w, f32 h, f32 lineWidth, u32 color )
 {
-   auto addPolyLine = [&] ( SMeshBuffer & o, PointList const & points, float lineWidth, uint32_t color )
+   auto addPolyLine = [&] ( SMeshBuffer & o, PointList const & points, f32 lineWidth, u32 color )
    {
       if ( points.size() < 2 )
       {
@@ -675,7 +674,7 @@ create( float w, float h, float lineWidth, uint32_t color )
 }
 
 void
-addPioneerCity( SMesh & out, float dx, float dy, float dz, uint32_t color )
+addPioneerCity( SMesh & out, f32 dx, f32 dy, f32 dz, u32 color )
 {
    out.setName( "PioCity" );
 
@@ -691,7 +690,7 @@ addPioneerCity( SMesh & out, float dx, float dy, float dz, uint32_t color )
    out.addMesh( house );
 }
 
-   static float
+   static f32
    computeAngle( glm::vec2 const & v )
    {
       glm::vec2 const y(0,1);
@@ -699,7 +698,7 @@ addPioneerCity( SMesh & out, float dx, float dy, float dz, uint32_t color )
    }
 
    static std::vector< Triangle3f >
-   getTriangles( float w, float h, glm::vec3 const & offset = glm::vec3() )
+   getTriangles( f32 w, f32 h, glm::vec3 const & offset = glm::vec3() )
    {
       glm::vec3 A = offset + cornerA( w,h );
       glm::vec3 B = offset + cornerB( w,h );
@@ -711,7 +710,7 @@ addPioneerCity( SMesh & out, float dx, float dy, float dz, uint32_t color )
    }
 
    static SMeshBuffer*
-   create( float w, float h, uint32_t color = 0xFFFFFFFF );
+   create( f32 w, f32 h, u32 color = 0xFFFFFFFF );
 
    // Connect Corners.Tiles
    static glm::ivec2
@@ -736,7 +735,7 @@ addPioneerCity( SMesh & out, float dx, float dy, float dz, uint32_t color )
    }
 
    SMeshBuffer*
-   MeshHexagon::create( float w, float h, uint32_t color )
+   MeshHexagon::create( f32 w, f32 h, u32 color )
    {
      SMeshBuffer* o = SMeshBufferTool::createTriangles();
      S3DVertex const A( 0.0f,    -.5f*h, 0.0f, 0,0,1, color, 0.5f, 1.0f  );
@@ -753,8 +752,8 @@ addPioneerCity( SMesh & out, float dx, float dy, float dz, uint32_t color )
      return o;
    }
 
-   static float
-   computeEdgeAngle( int i, float w, float h )
+   static f32
+   computeEdgeAngle( int i, f32 w, f32 h )
    {
       glm::vec3 p, q;
 
@@ -769,12 +768,12 @@ addPioneerCity( SMesh & out, float dx, float dy, float dz, uint32_t color )
          default: throw std::runtime_error("Invalid i in computeEdgeAngle()");
       }
 
-      float phi = computeAngle( q - p );
+      f32 phi = computeAngle( q - p );
       DE_DEBUG("i=",i,", w=",w,", h=",h,", p=",p,", q=",q, ", phi=",phi)
    }
 
-   static float
-   getEdgeAngle( int i, float w, float h )
+   static f32
+   getEdgeAngle( int i, f32 w, f32 h )
    {
       // i = i % 6;
       switch ( i )

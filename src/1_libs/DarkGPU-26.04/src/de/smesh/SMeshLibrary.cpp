@@ -3,6 +3,21 @@
 namespace de {
 namespace smesh {
 
+f32 de_fma( f32 a, f32 b, f32 c ) // a * b + c
+{
+   return (a * b) + c;
+}
+
+f32 de_lerp( f32 a, f32 b, f32 t = 0.5f )
+{
+   return de_fma( b-a, t, a ); //return a + (b-a) * t;
+}
+
+f32 randomf32InRange( f32 range_min = 0.0f, f32 range_max = 1.0f )
+{
+   return ((range_max - range_min) * (f32(rand()%65536)/f32(65536.0f))) + range_min;
+}
+
 // =========================================================================
 /// @brief The Hexagon ( ver_2018 ):
 // =========================================================================
@@ -19,10 +34,8 @@ namespace smesh {
 ///       A       triangles: ABF, BCE, BEF, CDE
 ///
 
-// static
-void
-SMeshHexagon::add( int i_min, int i_max, int j_min, int j_max,
-    SMeshBuffer & mb, float w, float h, bool forceIndices, glm::vec3 const & pos )
+void SMeshHexagon::add( int i_min, int i_max, int j_min, int j_max,
+    SMeshBuffer & mb, f32 w, f32 h, bool forceIndices, const glm::vec3 & pos )
 {
     for ( int j = j_min; j < j_max; ++j )
     {
@@ -33,35 +46,33 @@ SMeshHexagon::add( int i_min, int i_max, int j_min, int j_max,
     }
 }
 
-// static
-void
-SMeshHexagon::add( int i, int j, SMeshBuffer & mb, float w, float h, uint32_t color,
-    bool forceIndices, glm::vec3 const & pos )
+void SMeshHexagon::add( int i, int j, SMeshBuffer & mb, f32 w, f32 h, u32 color,
+    bool forceIndices, const glm::vec3 & pos )
 {
-    float x = computeBoardPosX(w,h,i,j);
-    float z = computeBoardPosY(w,h,i,j);
+    f32 x = computeBoardPosX(w,h,i,j);
+    f32 z = computeBoardPosY(w,h,i,j);
     add( mb, w, h, color, forceIndices, pos + V3(x,0,z) );
 }
 
 // static
 void
-SMeshHexagon::addM4( SMeshBuffer & mb, float w, float h, uint32_t color,
-                    bool forceIndices, glm::dmat4 const & trs )
+SMeshHexagon::addM4( SMeshBuffer & mb, f32 w, f32 h, u32 color,
+                    bool forceIndices, const glm::dmat4 & trs )
 {
     bool useIndices = forceIndices || mb.getIndexCount() > 0;
-    V3 const n(0,1,0);
+    const V3 n(0,1,0);
     V3 vA = V3d(trs*V4d(V3d(     0,0,-.5f*h ), 1 ));
     V3 vB = V3d(trs*V4d(V3d(-.5f*w,0,-.25f*h), 1));
     V3 vC = V3d(trs*V4d(V3d(-.5f*w,0, .25f*h), 1));
     V3 vD = V3d(trs*V4d(V3d(     0,0, .5f*h ), 1));
     V3 vE = V3d(trs*V4d(V3d(0.5f*w,0, .25f*h), 1));
     V3 vF = V3d(trs*V4d(V3d(0.5f*w,0,-.25f*h), 1));
-    S3DVertex const A( vA, n, color, V2(.5f, 1 ) );
-    S3DVertex const B( vB, n, color, V2(0, .75f ));
-    S3DVertex const C( vC, n, color, V2(0, .25f ));
-    S3DVertex const D( vD, n, color, V2(.5f, 0 ) );
-    S3DVertex const E( vE, n, color, V2(1, .25f ));
-    S3DVertex const F( vF, n, color, V2(1, .75f ));
+    const S3DVertex A( vA, n, color, V2(.5f, 1 ) );
+    const S3DVertex B( vB, n, color, V2(0, .75f ));
+    const S3DVertex C( vC, n, color, V2(0, .25f ));
+    const S3DVertex D( vD, n, color, V2(.5f, 0 ) );
+    const S3DVertex E( vE, n, color, V2(1, .25f ));
+    const S3DVertex F( vF, n, color, V2(1, .75f ));
     if ( useIndices )
     {
         size_t v = mb.getVertexCount();
@@ -113,17 +124,17 @@ SMeshHexagon::addM4( SMeshBuffer & mb, float w, float h, uint32_t color,
 
 // static
 void
-SMeshHexagon::add( SMeshBuffer & mb, float w, float h, uint32_t color,
-                    bool forceIndices, glm::vec3 const & pos )
+SMeshHexagon::add( SMeshBuffer & mb, f32 w, f32 h, u32 color,
+                    bool forceIndices, const glm::vec3 & pos )
 {
     bool useIndices = forceIndices || mb.getIndexCount() > 0;
-    V3 const n(0,1,0);
-    S3DVertex const A( pos+V3(     0,0,-.5f*h ), n, color, V2(.5f, 1 ) );
-    S3DVertex const B( pos+V3(-.5f*w,0,-.25f*h), n, color, V2(0, .75f ));
-    S3DVertex const C( pos+V3(-.5f*w,0, .25f*h), n, color, V2(0, .25f ));
-    S3DVertex const D( pos+V3(     0,0, .5f*h ), n, color, V2(.5f, 0 ) );
-    S3DVertex const E( pos+V3(0.5f*w,0, .25f*h), n, color, V2(1, .25f ));
-    S3DVertex const F( pos+V3(0.5f*w,0,-.25f*h), n, color, V2(1, .75f ));
+    const V3 n(0,1,0);
+    const S3DVertex A( pos+V3(     0,0,-.5f*h ), n, color, V2(.5f, 1 ) );
+    const S3DVertex B( pos+V3(-.5f*w,0,-.25f*h), n, color, V2(0, .75f ));
+    const S3DVertex C( pos+V3(-.5f*w,0, .25f*h), n, color, V2(0, .25f ));
+    const S3DVertex D( pos+V3(     0,0, .5f*h ), n, color, V2(.5f, 0 ) );
+    const S3DVertex E( pos+V3(0.5f*w,0, .25f*h), n, color, V2(1, .25f ));
+    const S3DVertex F( pos+V3(0.5f*w,0,-.25f*h), n, color, V2(1, .75f ));
 
     bool bFlip = false;
     if ( useIndices )
@@ -187,7 +198,7 @@ SMeshHexagon::getNeighborTileIndex( int corner, int i, int j )
 
 // static
 glm::vec2
-SMeshHexagon::getNeighborTilePos( int corner, float w, float h, int i, int j )
+SMeshHexagon::getNeighborTilePos( int corner, f32 w, f32 h, int i, int j )
 {
     glm::ivec2 n = getNeighborTileIndex( corner, i, j );
     return glm::vec2( computeBoardPosX( w,h,n.x,n.y),
@@ -195,80 +206,58 @@ SMeshHexagon::getNeighborTilePos( int corner, float w, float h, int i, int j )
 }
 
 // static
-float
-SMeshHexagon::computeBoardPosX( float w, float h, int i, int j )
+f32
+SMeshHexagon::computeBoardPosX( f32 w, f32 h, int i, int j )
 {
-    //float x = 0.5f * float( Math::safeMod( j, 2 ) == 1 ) + float( i );
+    //f32 x = 0.5f * f32( Math::safeMod( j, 2 ) == 1 ) + f32( i );
     //return x * w;
-    //return (0.5f * j + float( i )) * w;
-    float x = 0.5f * float( Math::safeMod( j, 2 ) == 1 ) + float( i );
+    //return (0.5f * j + f32( i )) * w;
+    f32 x = 0.5f * f32( Math::safeMod( j, 2 ) == 1 ) + f32( i );
     return x * w;
 }
 
 // static
-float
-SMeshHexagon::computeBoardPosY( float w, float h, int i, int j )
+f32
+SMeshHexagon::computeBoardPosY( f32 w, f32 h, int i, int j )
 {
-    //float y = 3.0f/4.0f * float( j );
+    //f32 y = 3.0f/4.0f * f32( j );
     //return y * h;
-    return h * 3.0f/4.0f * float( j );
+    return h * 3.0f/4.0f * f32( j );
 }
 
 // static
 glm::ivec2
-SMeshHexagon::computeTileIndex( float x, float y, float w, float h )
+SMeshHexagon::computeTileIndex( f32 x, f32 y, f32 w, f32 h )
 {
     int j = int( y / h );
     int i = int( x/w - (0.5f * j) );
     return glm::ivec2(i,j);
 }
 
-// static
-glm::vec3 SMeshHexagon::cornerA3( float w, float h ) { return glm::vec3( 0.0f,   0.0f,  -.5f*h ); }
-// static
-glm::vec3 SMeshHexagon::cornerB3( float w, float h ) { return glm::vec3( -.5f*w, 0.0f, -.25f*h ); }
-// static
-glm::vec3 SMeshHexagon::cornerC3( float w, float h ) { return glm::vec3( -.5f*w, 0.0f,  .25f*h ); }
-// static
-glm::vec3 SMeshHexagon::cornerD3( float w, float h ) { return glm::vec3( 0.0f,   0.0f,   .5f*h ); }
-// static
-glm::vec3 SMeshHexagon::cornerE3( float w, float h ) { return glm::vec3( 0.5f*w, 0.0f,  .25f*h ); }
-// static
-glm::vec3 SMeshHexagon::cornerF3( float w, float h ) { return glm::vec3( 0.5f*w, 0.0f, -.25f*h ); }
+glm::vec3 SMeshHexagon::cornerA3( f32 w, f32 h ) { return glm::vec3( 0.0f,   0.0f,  -.5f*h ); }
+glm::vec3 SMeshHexagon::cornerB3( f32 w, f32 h ) { return glm::vec3( -.5f*w, 0.0f, -.25f*h ); }
+glm::vec3 SMeshHexagon::cornerC3( f32 w, f32 h ) { return glm::vec3( -.5f*w, 0.0f,  .25f*h ); }
+glm::vec3 SMeshHexagon::cornerD3( f32 w, f32 h ) { return glm::vec3( 0.0f,   0.0f,   .5f*h ); }
+glm::vec3 SMeshHexagon::cornerE3( f32 w, f32 h ) { return glm::vec3( 0.5f*w, 0.0f,  .25f*h ); }
+glm::vec3 SMeshHexagon::cornerF3( f32 w, f32 h ) { return glm::vec3( 0.5f*w, 0.0f, -.25f*h ); }
 
-// static
-glm::vec2
-SMeshHexagon::lineCenter( glm::vec2 const & a, glm::vec2 const & b ) { return a + ( b - a ) * 0.5f; }
+glm::vec2 SMeshHexagon::lineCenter( glm::vec2 const & a, glm::vec2 const & b ) { return a + ( b - a ) * 0.5f; }
 
-// static
-glm::vec2 SMeshHexagon::cornerA( float w, float h ) { return glm::vec2( 0.0f,    -.5f*h ); }
-// static
-glm::vec2 SMeshHexagon::cornerB( float w, float h ) { return glm::vec2( -0.5f*w, -.25f*h ); }
-// static
-glm::vec2 SMeshHexagon::cornerC( float w, float h ) { return glm::vec2( -0.5f*w, .25f*h ); }
-// static
-glm::vec2 SMeshHexagon::cornerD( float w, float h ) { return glm::vec2( 0.0f,     .5f*h ); }
-// static
-glm::vec2 SMeshHexagon::cornerE( float w, float h ) { return glm::vec2( 0.5f*w,  .25f*h ); }
-// static
-glm::vec2 SMeshHexagon::cornerF( float w, float h ) { return glm::vec2( 0.5f*w, -.25f*h ); }
+glm::vec2 SMeshHexagon::cornerA( f32 w, f32 h ) { return glm::vec2( 0.0f,    -.5f*h ); }
+glm::vec2 SMeshHexagon::cornerB( f32 w, f32 h ) { return glm::vec2( -0.5f*w, -.25f*h ); }
+glm::vec2 SMeshHexagon::cornerC( f32 w, f32 h ) { return glm::vec2( -0.5f*w, .25f*h ); }
+glm::vec2 SMeshHexagon::cornerD( f32 w, f32 h ) { return glm::vec2( 0.0f,     .5f*h ); }
+glm::vec2 SMeshHexagon::cornerE( f32 w, f32 h ) { return glm::vec2( 0.5f*w,  .25f*h ); }
+glm::vec2 SMeshHexagon::cornerF( f32 w, f32 h ) { return glm::vec2( 0.5f*w, -.25f*h ); }
 
-// static
-glm::vec2 SMeshHexagon::edgeAB( float w, float h ) { return lineCenter( cornerA(w,h), cornerB(w,h)); }
-// static
-glm::vec2 SMeshHexagon::edgeBC( float w, float h ) { return lineCenter( cornerB(w,h), cornerC(w,h)); }
-// static
-glm::vec2 SMeshHexagon::edgeCD( float w, float h ) { return lineCenter( cornerC(w,h), cornerD(w,h)); }
-// static
-glm::vec2 SMeshHexagon::edgeDE( float w, float h ) { return lineCenter( cornerD(w,h), cornerE(w,h)); }
-// static
-glm::vec2 SMeshHexagon::edgeEF( float w, float h ) { return lineCenter( cornerE(w,h), cornerF(w,h)); }
-// static
-glm::vec2 SMeshHexagon::edgeFA( float w, float h ) { return lineCenter( cornerF(w,h), cornerA(w,h)); }
+glm::vec2 SMeshHexagon::edgeAB( f32 w, f32 h ) { return lineCenter( cornerA(w,h), cornerB(w,h)); }
+glm::vec2 SMeshHexagon::edgeBC( f32 w, f32 h ) { return lineCenter( cornerB(w,h), cornerC(w,h)); }
+glm::vec2 SMeshHexagon::edgeCD( f32 w, f32 h ) { return lineCenter( cornerC(w,h), cornerD(w,h)); }
+glm::vec2 SMeshHexagon::edgeDE( f32 w, f32 h ) { return lineCenter( cornerD(w,h), cornerE(w,h)); }
+glm::vec2 SMeshHexagon::edgeEF( f32 w, f32 h ) { return lineCenter( cornerE(w,h), cornerF(w,h)); }
+glm::vec2 SMeshHexagon::edgeFA( f32 w, f32 h ) { return lineCenter( cornerF(w,h), cornerA(w,h)); }
 
-// static
-glm::vec2
-SMeshHexagon::getCorner( int i, float w, float h )
+glm::vec2 SMeshHexagon::getCorner( int i, f32 w, f32 h )
 {
     switch ( i )
     {
@@ -282,18 +271,16 @@ SMeshHexagon::getCorner( int i, float w, float h )
     }
 }
 
-// static
 std::vector< glm::vec2 >
-SMeshHexagon::getCorners( float w, float h )
+SMeshHexagon::getCorners( f32 w, f32 h )
 {
     return std::vector< glm::vec2 > {
                                   cornerA( w,h ), cornerB( w,h ), cornerC( w,h ),
                                   cornerD( w,h ), cornerE( w,h ), cornerF( w,h ) };
 }
 
-// static
 std::vector< glm::vec3 >
-SMeshHexagon::getCornersXZ( float w, float h )
+SMeshHexagon::getCornersXZ( f32 w, f32 h )
 {
     auto a = cornerA( w,h );
     auto b = cornerB( w,h );
@@ -311,9 +298,7 @@ SMeshHexagon::getCornersXZ( float w, float h )
                                   glm::vec3( f.x, 0, f.y ) };
 }
 
-// static
-glm::vec2
-SMeshHexagon::getEdge( int i, float w, float h )
+glm::vec2 SMeshHexagon::getEdge( int i, f32 w, f32 h )
 {
     switch ( i )
     {
@@ -327,19 +312,15 @@ SMeshHexagon::getEdge( int i, float w, float h )
     }
 }
 
-// static
-float
-SMeshHexagon::computeAngle( glm::vec2 const & v )
+f32 SMeshHexagon::computeAngle( glm::vec2 const & v )
 {
-    float phi = atan2( v.y, v.x ) * Math::RAD2DEG;
+    f32 phi = atan2( v.y, v.x ) * Math::RAD2DEG;
     //DE_DEBUG("atan2( ",v," ) = ", phi)
     if ( phi < 0.0f ) phi += 360.0f;
     return phi;
 }
 
-// static
-float
-SMeshHexagon::computeCornerAngle( int i, float w, float h )
+f32 SMeshHexagon::computeCornerAngle( int i, f32 w, f32 h )
 {
     switch ( i )
     {
@@ -353,9 +334,7 @@ SMeshHexagon::computeCornerAngle( int i, float w, float h )
     }
 }
 
-// static
-float
-SMeshHexagon::computeEdgeAngle( int i, float w, float h )
+f32 SMeshHexagon::computeEdgeAngle( int i, f32 w, f32 h )
 {
     switch ( i ) // -153.435f;
     {
@@ -369,123 +348,11 @@ SMeshHexagon::computeEdgeAngle( int i, float w, float h )
     }
 }
 
-/*
-// static
-float
-SMeshHexagon::computeEdgeAngle( int i, float w, float h )
-{
-    switch ( i )
-    {
-    case 0: return 90.0f - 26.5651f;
-    case 1: return 90.0f;
-    case 2: return 90.0f - 153.435f;
-    case 3: return 90.0f - 26.565f;
-    case 4: return 90.0f;
-    case 5: return 90.0f - 153.435f;
-    default: throw std::runtime_error("Invalid i in computeEdgeAngle()");
-    }
-}
-
-// static
-float
-SMeshHexagon::computeEdgeAngle( int i, float w, float h )
-{
-   switch ( i )
-   {
-   case 0: return 90-153.435f;
-   case 1: return 0.0f;
-   case 2: return 90-26.5651f;
-   case 3: return 90-153.435f;
-   case 4: return 0.0f;
-   case 5: return 90-26.565f;
-   default: throw std::runtime_error("Invalid i in computeEdgeAngle()");
-   }
-}
-
-// static
-void
-SMeshHexagon::test( float w, float h )
-{
-    DE_DEBUG("MeshHexagon Angles for w(",w,"), h(",h,")")
-    for ( int i = 0; i < 6; ++i )
-    {
-        DE_DEBUG("MeshHexagon.CornerAngle[", i,"] = ", computeCornerAngle( i,w,h ) )
-    }
-    for ( int i = 0; i < 6; ++i )
-    {
-        DE_DEBUG("MeshHexagon.EdgeAngle[", i,"] = ", computeEdgeAngle( i,w,h ) )
-    }
-}
-
-// static
-SMeshBuffer*
-SMeshHexagon::create( float w, float h, uint32_t color )
-{
- SMeshBuffer* o = SMeshBufferTool::createTriangles();
- S3DVertex const A( 0.0f,    -.5f*h, 0.0f, 0,0,1, color, 0.5f, 1.0f  );
- S3DVertex const B( -0.5f*w,-.25f*h, 0.0f, 0,0,1, color, 0.0f, 0.75f );
- S3DVertex const C( -0.5f*w, .25f*h, 0.0f, 0,0,1, color, 0.0f, 0.25f );
- S3DVertex const D( 0.0f,     .5f*h, 0.0f, 0,0,1, color, 0.5f, 0.0f  );
- S3DVertex const E( 0.5f*w,  .25f*h, 0.0f, 0,0,1, color, 1.0f, 0.25f );
- S3DVertex const F( 0.5f*w, -.25f*h, 0.0f, 0,0,1, color, 1.0f, 0.75f );
- Triangle::addFront( *o, B, A, F );
- Triangle::addFront( *o, B, F, E );
- Triangle::addFront( *o, B, E, C );
- Triangle::addFront( *o, C, E, D );
- o.recalculateBoundingBox();
- return o;
-}
-
-// static
-void
-SMeshHexagon::add( SMeshBuffer & out, int i, int j, float w, float h, uint32_t color )
-{
-  SMeshBuffer o( PrimitiveType::Triangles );
-
-  auto addTriangle = [&] ( glm::vec3 p, glm::vec3 q )
-  {
-     glm::vec3 a = glm::vec3( q.x, q.y - 0.5f * height, q.z );
-     glm::vec3 b = glm::vec3( q.x, q.y + 0.5f * height, q.z );
-     glm::vec3 c = glm::vec3( p.x, p.y + 0.5f * height, p.z );
-     glm::vec3 d = glm::vec3( p.x, p.y - 0.5f * height, p.z );
-     glm::vec3 n = Math::getNormal3D( a,b,c );
-     S3DVertex A( a.x, a.y, a.z, n.x,n.y,n.z, color, 0,1 );
-     S3DVertex B( b.x, b.y, b.z, n.x,n.y,n.z, color, 0,0 );
-     S3DVertex C( c.x, c.y, c.z, n.x,n.y,n.z, color, 1,0 );
-     S3DVertex D( d.x, d.y, d.z, n.x,n.y,n.z, color, 1,1 );
-     o.addQuad( A,B,C,D );
-  };
-
-     glm::vec3 a = points[ 0 ];
-     for ( size_t i = 1; i < points.size(); ++i )
-     {
-        glm::vec3 b = points[ i ];
-        addHullSegment( a, b );
-        a = b;
-     }
-
-     addHullSegment( points[ points.size() - 1 ], points[ 0 ] );
-  };
-
-  auto corners = MeshHexagon::getCorners(w,h);
-  std::vector< glm::vec3 > points;
-  points.reserve( corners.size() );
-  for ( auto const & p : corners )
-  {
-     points.emplace_back( p.x, 0.0f, p.y );
-  }
-
-  addLeftStripXZ( points, height, color );
-  o.Material.setCulling( false );
-  o.Material.setBlend( Blend::alphaBlend() );
-  return o;
-}
-*/
 // =========================================================================
 void SMeshBox::add( SMeshBuffer & o,
                    glm::vec3 a, glm::vec3 b, glm::vec3 c, glm::vec3 d,
                    glm::vec3 e, glm::vec3 f, glm::vec3 g, glm::vec3 h,
-                   uint32_t color )
+                   u32 color )
 {
     { // Front quad ABCD + Back quad HGFE
         S3DVertex A( a.x, a.y, a.z, 0,0,-1, color, 0.0,0.0 );
@@ -525,54 +392,14 @@ void SMeshBox::add( SMeshBuffer & o,
         S3DVertex D( d.x, d.y, d.z, 0,-1,0, color, 0.0,1.0 );
         o.addQuad( A,E,H,D );
     }
-/*
-    { // Front quad ABCD + Back quad HGFE
-        S3DVertex A( a.x, a.y, a.z, 0,0,-1, color, 0.0,1.0 );
-        S3DVertex B( b.x, b.y, b.z, 0,0,-1, color, 0.0,0.0 );
-        S3DVertex C( c.x, c.y, c.z, 0,0,-1, color, 1.0,0.0 );
-        S3DVertex D( d.x, d.y, d.z, 0,0,-1, color, 1.0,1.0 );
-        o.addQuad( A,B,C,D );
-        S3DVertex E( e.x, e.y, e.z, 0,0,1, color, 0.0,1.0 );
-        S3DVertex F( f.x, f.y, f.z, 0,0,1, color, 0.0,0.0 );
-        S3DVertex G( g.x, g.y, g.z, 0,0,1, color, 1.0,0.0 );
-        S3DVertex H( h.x, h.y, h.z, 0,0,1, color, 1.0,1.0 );
-        o.addQuad( H,G,F,E );
-    }
-
-    { // Wall R+L quad DCGH + EFBA
-        S3DVertex D( d.x, d.y, d.z, 0,0,1, color, 0.0,1.0 );
-        S3DVertex C( c.x, c.y, c.z, 0,0,1, color, 0.0,0.0 );
-        S3DVertex G( g.x, g.y, g.z, 0,0,1, color, 1.0,0.0 );
-        S3DVertex H( h.x, h.y, h.z, 0,0,1, color, 1.0,1.0 );
-        o.addQuad( D,C,G,H );
-        S3DVertex E( e.x, e.y, e.z, 0,0,-1, color, 0.0,1.0 );
-        S3DVertex F( f.x, f.y, f.z, 0,0,-1, color, 0.0,0.0 );
-        S3DVertex B( b.x, b.y, b.z, 0,0,-1, color, 1.0,0.0 );
-        S3DVertex A( a.x, a.y, a.z, 0,0,-1, color, 1.0,1.0 );
-        o.addQuad( E,F,B,A );
-    }
-
-    { // Top quad BFGC + Bottom quad AEHD
-        S3DVertex B( b.x, b.y, b.z, 0,1,0, color, 0.0,1.0 );
-        S3DVertex F( f.x, f.y, f.z, 0,1,0, color, 0.0,0.0 );
-        S3DVertex G( g.x, g.y, g.z, 0,1,0, color, 1.0,0.0 );
-        S3DVertex C( c.x, c.y, c.z, 0,1,0, color, 1.0,1.0 );
-        o.addQuad( B,F,G,C );
-        S3DVertex A( a.x, a.y, a.z, 0,-1,0, color, 0.0,1.0 );
-        S3DVertex E( e.x, e.y, e.z, 0,-1,0, color, 0.0,0.0 );
-        S3DVertex H( h.x, h.y, h.z, 0,-1,0, color, 1.0,0.0 );
-        S3DVertex D( d.x, d.y, d.z, 0,-1,0, color, 1.0,1.0 );
-        o.addQuad( A,E,H,D );
-    }
-*/
 }
 
 void
-SMeshBox::add( SMeshBuffer & o, glm::vec3 cubeSize, glm::vec3 pos, uint32_t color )
+SMeshBox::add( SMeshBuffer & o, glm::vec3 cubeSize, glm::vec3 pos, u32 color )
 {
-    float dx = cubeSize.x * 0.5f;
-    float dy = cubeSize.y * 0.5f;
-    float dz = cubeSize.z * 0.5f;
+    f32 dx = cubeSize.x * 0.5f;
+    f32 dy = cubeSize.y * 0.5f;
+    f32 dz = cubeSize.z * 0.5f;
     auto a = pos + glm::vec3( -dx, -dy, -dz );
     auto b = pos + glm::vec3( -dx,  dy, -dz );
     auto c = pos + glm::vec3(  dx,  dy, -dz );
@@ -588,7 +415,7 @@ SMeshBox::add( SMeshBuffer & o, glm::vec3 cubeSize, glm::vec3 pos, uint32_t colo
 void SMeshBox::addLines( SMeshBuffer & o,
       glm::vec3 a, glm::vec3 b, glm::vec3 c, glm::vec3 d,
       glm::vec3 e, glm::vec3 f, glm::vec3 g, glm::vec3 h,
-      uint32_t color )
+      u32 color )
 {
     o.vertices.push_back(S3DVertex( a.x, a.y, a.z, 0,0,1, color, 0,1 )); // = 0
     o.vertices.push_back(S3DVertex( b.x, b.y, b.z, 0,0,1, color, 0,0 )); // = 1
@@ -628,11 +455,11 @@ void SMeshBox::addLines( SMeshBuffer & o,
 }
 
 void
-SMeshBox::addLines( SMeshBuffer & o, glm::vec3 cubeSize, glm::vec3 pos, uint32_t color )
+SMeshBox::addLines( SMeshBuffer & o, glm::vec3 cubeSize, glm::vec3 pos, u32 color )
 {
-   float dx = cubeSize.x * 0.5f;
-   float dy = cubeSize.y * 0.5f;
-   float dz = cubeSize.z * 0.5f;
+   f32 dx = cubeSize.x * 0.5f;
+   f32 dy = cubeSize.y * 0.5f;
+   f32 dz = cubeSize.z * 0.5f;
    auto a = pos + glm::vec3( -dx, -dy, -dz );
    auto b = pos + glm::vec3( -dx,  dy, -dz );
    auto c = pos + glm::vec3(  dx,  dy, -dz );
@@ -646,9 +473,9 @@ SMeshBox::addLines( SMeshBuffer & o, glm::vec3 cubeSize, glm::vec3 pos, uint32_t
 
 // =========================================================================
 void Generic3DCone::addTrianglesXZ(
-   float rx, float h, float rz,
-   uint32_t innerColor,
-   uint32_t outerColor,
+   f32 rx, f32 h, f32 rz,
+   u32 innerColor,
+   u32 outerColor,
    int32_t tessCircle,
    int32_t tessHeight,
    FN_GET_VERTEXCOUNT const & getVertexCount,
@@ -664,19 +491,19 @@ void Generic3DCone::addTrianglesXZ(
    texcoords.reserve( tessCircle + 1 );
    texcoords.emplace_back( 0.5f, 0.5f );
 
-   float const angleStep = float( ( 2.0 * M_PI ) / double( tessCircle ) );
+   f32 const angleStep = f32( ( 2.0 * M_PI ) / double( tessCircle ) );
    for ( int32_t i = 0; i < tessCircle; ++i )
    {
-      float const phi = angleStep * float( i );
-      float const c = ::cosf( phi );
-      float const s = ::sinf( phi );
+      f32 const phi = angleStep * f32( i );
+      f32 const c = ::cosf( phi );
+      f32 const s = ::sinf( phi );
       positions.emplace_back( rx*c, 0.0f, rz*s );
       texcoords.emplace_back( 0.5f*c+0.5f, 0.5f*s+0.5f );
    }
 
-   auto addTriangle = [&] ( uint32_t iA, uint32_t iB )
+   auto addTriangle = [&] ( u32 iA, u32 iB )
    {
-      const uint32_t v = getVertexCount();
+      const u32 v = getVertexCount();
       const glm::vec3& m = positions[ 0 ];
       const glm::vec3& a = positions[ iA ];
       const glm::vec3& b = positions[ iB ];
@@ -693,14 +520,14 @@ void Generic3DCone::addTrianglesXZ(
    {
       if ( i == tessCircle - 1 )
       {
-         uint32_t A = 1 + i;
-         uint32_t B = 1;
+         u32 A = 1 + i;
+         u32 B = 1;
          addTriangle( A, B );
       }
       else
       {
-         uint32_t A = 1 + i;
-         uint32_t B = 2 + i;
+         u32 A = 1 + i;
+         u32 B = 2 + i;
          addTriangle( A, B );
       }
    }
@@ -708,17 +535,17 @@ void Generic3DCone::addTrianglesXZ(
 }
 
 // =========================================================================
-void SMeshCone::addXZ( SMeshBuffer & o, glm::vec3 const & siz,
-      uint32_t iColor, uint32_t oColor, int32_t tessCircle, int32_t tessHeight )
+void SMeshCone::addXZ( SMeshBuffer & o, const glm::vec3 & siz,
+      u32 iColor, u32 oColor, int32_t tessCircle, int32_t tessHeight )
 {
-   float rx = siz.x * 0.5f;
-   float h = siz.y * 0.5f;
-   float rz = siz.z * 0.5f;
+   f32 rx = siz.x * 0.5f;
+   f32 h = siz.y * 0.5f;
+   f32 rz = siz.z * 0.5f;
    auto getVertexCount = [&] () { return o.getVertexCount(); };
-   auto addIndex = [&] ( uint32_t index ) { o.addIndex( index ); };
-   auto addVertex = [&] ( float px, float py, float pz,
-                          float nx, float ny, float nz,
-                          uint32_t color, float u, float v )
+   auto addIndex = [&] ( u32 index ) { o.addIndex( index ); };
+   auto addVertex = [&] ( f32 px, f32 py, f32 pz,
+                          f32 nx, f32 ny, f32 nz,
+                          u32 color, f32 u, f32 v )
    {
       o.addVertex( S3DVertex( px,py,pz, nx,ny,nz, color, u,v ) );
    };
@@ -759,7 +586,7 @@ SMeshPolyLine::getNormal2D( glm::vec2 const & m ) { return glm::normalize( glm::
 //
 bool
 SMeshPolyLine::addTriangleStrip( SMeshBuffer & o, std::vector< glm::vec2 > const & points,
-     uint32_t color, float lineWidth, LineCap lineCap, LineJoin lineJoin )
+     u32 color, f32 lineWidth, LineCap lineCap, LineJoin lineJoin )
 {
    auto n = points.size();
    if ( n < 2 ) { return false; } // Not a polyline.
@@ -767,10 +594,10 @@ SMeshPolyLine::addTriangleStrip( SMeshBuffer & o, std::vector< glm::vec2 > const
 
    o.setPrimitiveType( gpu::PrimitiveType::TriangleStrip );
 
-   auto addVertex = [ & ] ( glm::vec2 const & pos, glm::vec2 const & nrm, uint32_t color, float u, float v )
+   auto addVertex = [ & ] ( glm::vec2 const & pos, glm::vec2 const & nrm, u32 color, f32 u, f32 v )
    {
-      float x = (nrm.x * 0.5f * lineWidth) + pos.x; // Extrude pos in direction of nrm
-      float y = (nrm.y * 0.5f * lineWidth) + pos.y; // Extrude pos in direction of nrm
+      f32 x = (nrm.x * 0.5f * lineWidth) + pos.x; // Extrude pos in direction of nrm
+      f32 y = (nrm.y * 0.5f * lineWidth) + pos.y; // Extrude pos in direction of nrm
       o.addVertex( S3DVertex( x,y,0, 0,0,-1, color, u,v ) ); // Write extruded pos and always normal -Z, since its 2D XY plane.
       o.addIndex();
    };
@@ -779,7 +606,7 @@ SMeshPolyLine::addTriangleStrip( SMeshBuffer & o, std::vector< glm::vec2 > const
    // PolyLine algo from Benni for Bevel,Miter and RoundJoin,
    // cant use TriangleStrip because of poss. RoundJoin? ( RoundJoin as TriangleStrip can be wasteful )
    //
-   float dist = 0.0f;
+   f32 dist = 0.0f;
    glm::vec2 A,B;
    A = points[ 0 ]; // Fetch A
    B = points[ 1 ]; // Fetch B
@@ -855,7 +682,7 @@ SMeshPolyLine::addTriangleStrip( SMeshBuffer & o, std::vector< glm::vec2 > const
 //
 void
 SMeshPolyLine::addExtrudedLine( SMeshBuffer & o, glm::vec2 const & a, glm::vec2 const & b,
-      uint32_t colorA, uint32_t colorB, float lineWidth, LineCap lineCap )
+      u32 colorA, u32 colorB, f32 lineWidth, LineCap lineCap )
 {
    o.setPrimitiveType( gpu::PrimitiveType::Triangles );
 
@@ -864,14 +691,14 @@ SMeshPolyLine::addExtrudedLine( SMeshBuffer & o, glm::vec2 const & a, glm::vec2 
                         glm::vec2 const & c_pos, glm::vec2 const & c_nrm,
                         glm::vec2 const & d_pos, glm::vec2 const & d_nrm )
    {
-      float ax = (a_nrm.x * 0.5f * lineWidth) + a_pos.x; // Extrude pos in direction of nrm
-      float ay = (a_nrm.y * 0.5f * lineWidth) + a_pos.y; // Extrude pos in direction of nrm
-      float bx = (b_nrm.x * 0.5f * lineWidth) + b_pos.x; // Extrude pos in direction of nrm
-      float by = (b_nrm.y * 0.5f * lineWidth) + b_pos.y; // Extrude pos in direction of nrm
-      float cx = (c_nrm.x * 0.5f * lineWidth) + c_pos.x; // Extrude pos in direction of nrm
-      float cy = (c_nrm.y * 0.5f * lineWidth) + c_pos.y; // Extrude pos in direction of nrm
-      float dx = (d_nrm.x * 0.5f * lineWidth) + d_pos.x; // Extrude pos in direction of nrm
-      float dy = (d_nrm.y * 0.5f * lineWidth) + d_pos.y; // Extrude pos in direction of nrm
+      f32 ax = (a_nrm.x * 0.5f * lineWidth) + a_pos.x; // Extrude pos in direction of nrm
+      f32 ay = (a_nrm.y * 0.5f * lineWidth) + a_pos.y; // Extrude pos in direction of nrm
+      f32 bx = (b_nrm.x * 0.5f * lineWidth) + b_pos.x; // Extrude pos in direction of nrm
+      f32 by = (b_nrm.y * 0.5f * lineWidth) + b_pos.y; // Extrude pos in direction of nrm
+      f32 cx = (c_nrm.x * 0.5f * lineWidth) + c_pos.x; // Extrude pos in direction of nrm
+      f32 cy = (c_nrm.y * 0.5f * lineWidth) + c_pos.y; // Extrude pos in direction of nrm
+      f32 dx = (d_nrm.x * 0.5f * lineWidth) + d_pos.x; // Extrude pos in direction of nrm
+      f32 dy = (d_nrm.y * 0.5f * lineWidth) + d_pos.y; // Extrude pos in direction of nrm
       o.addVertex( S3DVertex( ax,ay,0, 0,0,-1, colorA, 0,0 ) ); // A
       o.addVertex( S3DVertex( bx,by,0, 0,0,-1, colorB, 0,0 ) ); // B
       o.addVertex( S3DVertex( cx,cy,0, 0,0,-1, colorB, 0,0 ) ); // C
@@ -909,7 +736,7 @@ SMeshPolyLine::addExtrudedLine( SMeshBuffer & o, glm::vec2 const & a, glm::vec2 
 
 void
 SMeshRect::addLine2D( SMeshBuffer & o, int ax, int ay, int bx, int by,
-                      uint32_t colorA, uint32_t colorB )
+                      u32 colorA, u32 colorB )
 {
    o.setPrimitiveType( gpu::PrimitiveType::Lines );
    o.vertices.reserve( 2 );
@@ -918,8 +745,8 @@ SMeshRect::addLine2D( SMeshBuffer & o, int ax, int ay, int bx, int by,
 }
 
 void
-SMeshRect::add( SMeshBuffer & o, V3 const & a, V3 const & b, V3 const & c, V3 const & d,
-                uint32_t color, float u1, float v1, float u2, float v2 )
+SMeshRect::add( SMeshBuffer & o, const V3 & a, const V3 & b, const V3 & c, const V3 & d,
+                u32 color, f32 u1, f32 v1, f32 u2, f32 v2 )
 {
    auto n = Math::getNormal3D( a,b,c );
    o.addQuad(  S3DVertex( a.x, a.y, a.z, n.x,n.y,n.z, color, u1,v2 ),
@@ -937,7 +764,7 @@ SMeshRect::add( SMeshBuffer & o, V3 const & a, V3 const & b, V3 const & c, V3 co
 //   +v = -y      Pos.z is always -1, so its at near plane.
 void
 SMeshRect::add( SMeshBuffer & o, Recti const & pos,
-     uint32_t colorA, uint32_t colorB, uint32_t colorC, uint32_t colorD,
+     u32 colorA, u32 colorB, u32 colorC, u32 colorD,
                     gpu::TexRef const & ref )
 {
     const int w = pos.w; // pos.w() > 0 ? pos.w() : ref.w();
@@ -976,7 +803,7 @@ SMeshRect::add( SMeshBuffer & o, Recti const & pos,
 //   +v = -y      Pos.z is always -1, so its at near plane.
 //
 void
-SMeshRect::addOutline( SMeshBuffer & o, Recti const & pos, uint32_t color,
+SMeshRect::addOutline( SMeshBuffer & o, Recti const & pos, u32 color,
                         gpu::TexRef const & ref, int borderWidth )
 {
     int w = pos.w; //pos.w() > 0 ? pos.w() : ref.w();
@@ -1011,8 +838,8 @@ SMeshRect::addOutline( SMeshBuffer & o, Recti const & pos, uint32_t color,
 }
 
 void
-SMeshRect::addOutline( SMeshBuffer & o, Recti const & pos, uint32_t colorA, uint32_t colorB,
-            uint32_t colorC, uint32_t colorD, gpu::TexRef const & ref, int borderWidth )
+SMeshRect::addOutline( SMeshBuffer & o, Recti const & pos, u32 colorA, u32 colorB,
+            u32 colorC, u32 colorD, gpu::TexRef const & ref, int borderWidth )
 {
     int w = pos.w; //pos.w() > 0 ? pos.w() : ref.w();
    int h = pos.h; //pos.h() > 0 ? pos.h() : ref.h();
@@ -1064,42 +891,37 @@ SMeshRect::addOutline( SMeshBuffer & o, Recti const & pos, uint32_t colorA, uint
    o.addLine( D4, A4 );
 }
 
-
-
-
-
 // =========================================================================
-void
-Generic2DTriangleRoundRect::addTriangles(
-   float w, float h, float rx, float ry,
-   uint32_t tess, uint32_t innerColor, uint32_t outerColor,
+void Generic2DTriangleRoundRect::addTriangles(
+   f32 w, f32 h, f32 rx, f32 ry,
+   u32 tess, u32 innerColor, u32 outerColor,
    GET_VERTEXCOUNT const & getVertexCount,
    ADD_VERTEX const & addVertex,
    ADD_INDEX const & addIndex )
 {
-   uint32_t const vStart = getVertexCount();
+   u32 const vStart = getVertexCount();
 
-   auto addIndexedTriangle = [&] ( uint32_t iA, uint32_t iB, uint32_t iC )
+   auto addIndexedTriangle = [&] ( u32 iA, u32 iB, u32 iC )
    {
       addIndex( vStart + iA );   // input ABC (cw), output ACB (ccw)
       addIndex( vStart + iC );
       addIndex( vStart + iB );
    };
 
-   auto addIndexedQuad = [&] ( uint32_t iA, uint32_t iB, uint32_t iC, uint32_t iD )
+   auto addIndexedQuad = [&] ( u32 iA, u32 iB, u32 iC, u32 iD )
    {
       addIndexedTriangle( iA,iB,iC );   // input ABC (cw)
       addIndexedTriangle( iA,iC,iD );   // input ACD (cw)
    };
 
-   float const x0 = -0.5f * w;
-   float const x1 = -0.5f * w + rx;
-   float const x2 = 0.5f * w - rx;
-   float const x3 = 0.5f * w;
-   float const y0 = -0.5f * h;
-   float const y1 = -0.5f * h + ry;
-   float const y2 = 0.5f * h - ry;
-   float const y3 = 0.5f * h;
+   f32 const x0 = -0.5f * w;
+   f32 const x1 = -0.5f * w + rx;
+   f32 const x2 = 0.5f * w - rx;
+   f32 const x3 = 0.5f * w;
+   f32 const y0 = -0.5f * h;
+   f32 const y1 = -0.5f * h + ry;
+   f32 const y2 = 0.5f * h - ry;
+   f32 const y3 = 0.5f * h;
 
    // Add 12 vertices for 5 main quads
    addVertex( x1, y2, innerColor ); // A=0
@@ -1116,23 +938,23 @@ Generic2DTriangleRoundRect::addTriangles(
    addVertex( x1, y3, outerColor ); // L=B
 
    // Add 20 indices for 5 main quads
-   uint32_t const INDEX_A = 0;
-   uint32_t const INDEX_B = 1;
-   uint32_t const INDEX_C = 2;
-   uint32_t const INDEX_D = 3;
-   uint32_t const INDEX_E = 4;
-   uint32_t const INDEX_F = 5;
-   uint32_t const INDEX_G = 6;
-   uint32_t const INDEX_H = 7;
-   uint32_t const INDEX_I = 8;
-   uint32_t const INDEX_J = 9;
-   uint32_t const INDEX_K = 10;
-   uint32_t const INDEX_L = 11;
-   uint32_t const INDEX_TOPLEFT = 12 + 0*tess;
-   uint32_t const INDEX_TOPRIGHT = 12 + 1*tess;
-   uint32_t const INDEX_BOTTOMRIGHT = 12 + 2*tess;
-   uint32_t const INDEX_BOTTOMLEFT = 12 + 3*tess;
-   //uint32_t const INDEX_END = 12 + 4*tess;
+   u32 const INDEX_A = 0;
+   u32 const INDEX_B = 1;
+   u32 const INDEX_C = 2;
+   u32 const INDEX_D = 3;
+   u32 const INDEX_E = 4;
+   u32 const INDEX_F = 5;
+   u32 const INDEX_G = 6;
+   u32 const INDEX_H = 7;
+   u32 const INDEX_I = 8;
+   u32 const INDEX_J = 9;
+   u32 const INDEX_K = 10;
+   u32 const INDEX_L = 11;
+   u32 const INDEX_TOPLEFT = 12 + 0*tess;
+   u32 const INDEX_TOPRIGHT = 12 + 1*tess;
+   u32 const INDEX_BOTTOMRIGHT = 12 + 2*tess;
+   u32 const INDEX_BOTTOMLEFT = 12 + 3*tess;
+   //u32 const INDEX_END = 12 + 4*tess;
    addIndexedQuad( INDEX_B, INDEX_G, INDEX_H, INDEX_C ); // Top BGHC
    addIndexedQuad( INDEX_E, INDEX_F, INDEX_B, INDEX_A ); // Center EFBA
    addIndexedQuad( INDEX_A, INDEX_B, INDEX_C, INDEX_D ); // Center ABCD
@@ -1144,58 +966,58 @@ Generic2DTriangleRoundRect::addTriangles(
    //
    struct SinCos
    {
-      float s,c;
+      f32 s,c;
       SinCos() : s(0.f), c(0.f) {}
-      SinCos(float _s,float _c) : s(_s), c(_c) {}
+      SinCos(f32 _s,f32 _c) : s(_s), c(_c) {}
    };
    std::vector< SinCos > lookUpTable;
    lookUpTable.reserve( tess );
 
-   float phi_step = float( 0.5 * M_PI ) / float( tess+1 );
-   float phi = phi_step; // phi_start > 0° and phi_end < 90°
-   for ( uint32_t i = 0; i < tess; ++i )
+   f32 phi_step = f32( 0.5 * M_PI ) / f32( tess+1 );
+   f32 phi = phi_step; // phi_start > 0° and phi_end < 90°
+   for ( u32 i = 0; i < tess; ++i )
    {
       lookUpTable.emplace_back( ::sinf( phi ), ::cosf( phi ) );
       phi += phi_step;
    }
 
    // 1. topLeft FGB (cw) quarter circle
-   for ( uint32_t i = 0; i < tess; ++i )
+   for ( u32 i = 0; i < tess; ++i )
    {
-      float x = x1 - rx * lookUpTable[ i ].c;   // Vertices already in correct index order.
-      float y = y1 - ry * lookUpTable[ i ].s;
+      f32 x = x1 - rx * lookUpTable[ i ].c;   // Vertices already in correct index order.
+      f32 y = y1 - ry * lookUpTable[ i ].s;
       addVertex( x, y, outerColor );
    }
    // 2. topRight HIC (cw) quarter circle
    for ( int32_t i = int32_t(tess) - 1; i >= 0; --i )
    {
-      float x = x2 + rx * lookUpTable[ i ].c;   // Add vertices in reverse (--i) order
-      float y = y1 - ry * lookUpTable[ i ].s;   // to build indices in correct order.
+      f32 x = x2 + rx * lookUpTable[ i ].c;   // Add vertices in reverse (--i) order
+      f32 y = y1 - ry * lookUpTable[ i ].s;   // to build indices in correct order.
       addVertex( x, y, outerColor );
    }
    // 3. bottomRight JKD (cw) quarter circle
-   for ( uint32_t i = 0; i < tess; ++i )
+   for ( u32 i = 0; i < tess; ++i )
    {
-      float x = x2 + rx * lookUpTable[ i ].c;   // Vertices already in correct index order.
-      float y = y2 + ry * lookUpTable[ i ].s;
+      f32 x = x2 + rx * lookUpTable[ i ].c;   // Vertices already in correct index order.
+      f32 y = y2 + ry * lookUpTable[ i ].s;
       addVertex( x, y, outerColor );
    }
    // 4. bottomLeft LEA (cw) quarter circle
    for ( int32_t i = int32_t(tess) - 1; i >= 0; --i )
    {
-      float x = x1 - rx * lookUpTable[ i ].c;   // Add vertices in reverse (--i) order
-      float y = y2 + ry * lookUpTable[ i ].s;   // to build indices in correct order.
+      f32 x = x1 - rx * lookUpTable[ i ].c;   // Add vertices in reverse (--i) order
+      f32 y = y2 + ry * lookUpTable[ i ].s;   // to build indices in correct order.
       addVertex( x, y, outerColor );
    }
 
    // add 4*tess CornerIndices:
 
    // 1. topLeft FGB (cw) quarter circle, glm::vec3 B( x1, 0.f, y2 );
-   for ( uint32_t i = 0; i < tess; ++i )
+   for ( u32 i = 0; i < tess; ++i )
    {
-      uint32_t F = INDEX_TOPLEFT + i;
-      uint32_t G = INDEX_TOPLEFT + i + 1;
-      uint32_t B = INDEX_B;   // const (center)
+      u32 F = INDEX_TOPLEFT + i;
+      u32 G = INDEX_TOPLEFT + i + 1;
+      u32 B = INDEX_B;   // const (center)
       if ( i == 0 )             { F = INDEX_F; } // StartTriangle
       else if ( i == tess - 1 ) { G = INDEX_G; } // EndTriangle
       else                      {}               // MiddleTriangle
@@ -1203,11 +1025,11 @@ Generic2DTriangleRoundRect::addTriangles(
    }
 
    // 2. topRight HIC (cw) quarter circle, glm::vec3 C( x2, 0.f, y2 );
-   for ( uint32_t i = 0; i < tess; ++i )
+   for ( u32 i = 0; i < tess; ++i )
    {
-      uint32_t H = INDEX_TOPRIGHT + i;
-      uint32_t I = INDEX_TOPRIGHT + i + 1;
-      uint32_t C = INDEX_C;   // const (center)
+      u32 H = INDEX_TOPRIGHT + i;
+      u32 I = INDEX_TOPRIGHT + i + 1;
+      u32 C = INDEX_C;   // const (center)
       if ( i == 0 )             { H = INDEX_H; } // StartTriangle
       else if ( i == tess - 1 ) { I = INDEX_I; } // EndTriangle
       else                      {}               // MiddleTriangle
@@ -1215,11 +1037,11 @@ Generic2DTriangleRoundRect::addTriangles(
    }
 
    // 3. bottomRight JKD (cw) quarter circle, glm::vec3 D( x2, 0.f, y1 );
-   for ( uint32_t i = 0; i < tess; ++i )
+   for ( u32 i = 0; i < tess; ++i )
    {
-      uint32_t J = INDEX_BOTTOMRIGHT + i;
-      uint32_t K = INDEX_BOTTOMRIGHT + i + 1;
-      uint32_t D = INDEX_D;   // const (center)
+      u32 J = INDEX_BOTTOMRIGHT + i;
+      u32 K = INDEX_BOTTOMRIGHT + i + 1;
+      u32 D = INDEX_D;   // const (center)
       if ( i == 0 )             { J = INDEX_J;  } // StartTriangle
       else if ( i == tess - 1 ) { K = INDEX_K;  } // EndTriangle
       else                      {}                // MiddleTriangle
@@ -1227,11 +1049,11 @@ Generic2DTriangleRoundRect::addTriangles(
    }
 
    // 4. bottomLeft LEA (cw) quarter circle, glm::vec3 A( x1, 0.f, y1 );
-   for ( uint32_t i = 0; i < tess; ++i )
+   for ( u32 i = 0; i < tess; ++i )
    {
-      uint32_t L = INDEX_BOTTOMLEFT + i;
-      uint32_t E = INDEX_BOTTOMLEFT + i + 1;
-      uint32_t A = INDEX_A;   // const (center)
+      u32 L = INDEX_BOTTOMLEFT + i;
+      u32 E = INDEX_BOTTOMLEFT + i + 1;
+      u32 A = INDEX_A;   // const (center)
       if ( i == 0 )             { L = INDEX_L; } // StartTriangle
       else if ( i == tess - 1 ) { E = INDEX_E; } // EndTriangle
       else                      {}               // MiddleTriangle
@@ -1243,22 +1065,22 @@ Generic2DTriangleRoundRect::addTriangles(
 // =========================================================================
 void
 SMeshRoundRect::addXY( SMeshBuffer & o,
-      glm::vec3 const & pos,
-      float w, float h, float rx, float ry,
-      int32_t tess, uint32_t innerColor, uint32_t outerColor )
+      const glm::vec3 & pos,
+      f32 w, f32 h, f32 rx, f32 ry,
+      int32_t tess, u32 innerColor, u32 outerColor )
 {
    auto getVertexCount = [&] () { return o.getVertexCount(); };
-   auto addVertex = [&] ( float x, float y, uint32_t color )
+   auto addVertex = [&] ( f32 x, f32 y, u32 color )
    {
-      float px = pos.x + x;
-      float py = pos.y + y;
-      float pz = pos.z;
-      float u = 0.5f + x / w;
-      float v = 0.5f + y / h;
+      f32 px = pos.x + x;
+      f32 py = pos.y + y;
+      f32 pz = pos.z;
+      f32 u = 0.5f + x / w;
+      f32 v = 0.5f + y / h;
       o.addVertex( S3DVertex( px,py,pz, 0,0,-1, color, u,v ) );
    };
 
-   auto addIndex = [&] ( uint32_t index ) { o.addIndex( index ); };
+   auto addIndex = [&] ( u32 index ) { o.addIndex( index ); };
 
    Generic2DTriangleRoundRect::addTriangles( w, h, rx, ry, tess, innerColor, outerColor,
       getVertexCount, addVertex, addIndex );
@@ -1268,22 +1090,22 @@ SMeshRoundRect::addXY( SMeshBuffer & o,
 
 void
 SMeshRoundRect::addXZ( SMeshBuffer & o,
-      glm::vec3 const & pos,
-      float w, float h, float rx, float ry,
-      int32_t tess, uint32_t innerColor, uint32_t outerColor )
+      const glm::vec3 & pos,
+      f32 w, f32 h, f32 rx, f32 ry,
+      int32_t tess, u32 innerColor, u32 outerColor )
 {
    auto getVertexCount = [&] () { return o.getVertexCount(); };
-   auto addVertex = [&] ( float x, float y, uint32_t color )
+   auto addVertex = [&] ( f32 x, f32 y, u32 color )
    {
-      float px = pos.x + x;
-      float py = pos.y;
-      float pz = pos.z + y;
-      float u = 0.5f + x / w;
-      float v = 0.5f - y / h;
+      f32 px = pos.x + x;
+      f32 py = pos.y;
+      f32 pz = pos.z + y;
+      f32 u = 0.5f + x / w;
+      f32 v = 0.5f - y / h;
       o.addVertex( S3DVertex( px,py,pz, 0,0,-1, color, u,v ) );
    };
 
-   auto addIndex = [&] ( uint32_t index ) { o.addIndex( index ); };
+   auto addIndex = [&] ( u32 index ) { o.addIndex( index ); };
 
    Generic2DTriangleRoundRect::addTriangles( w, h, rx, ry, tess, innerColor, outerColor,
       getVertexCount, addVertex, addIndex );
@@ -1294,10 +1116,10 @@ SMeshRoundRect::addXZ( SMeshBuffer & o,
 void
 addRoundRect( SMeshBuffer & o,
       Recti const & pos,
-      float zIndex,
+      f32 zIndex,
       glm::ivec2 const & radius,
-      uint32_t outerColor,
-      uint32_t innerColor,
+      u32 outerColor,
+      u32 innerColor,
       gpu::TexRef const & ref, int tess )
 {
    int w = pos.w;
@@ -1339,9 +1161,9 @@ addRoundRect( SMeshBuffer & o,
 // y3 ---+   L---K
 //
 void
-addRoundRectOutline( SMeshBuffer & o, Recti const & pos, float zIndex,
+addRoundRectOutline( SMeshBuffer & o, Recti const & pos, f32 zIndex,
                      glm::ivec2 const & radius,
-                     uint32_t color, gpu::TexRef const & ref, int borderWidth, uint32_t tess )
+                     u32 color, gpu::TexRef const & ref, int borderWidth, u32 tess )
 {
    int w = pos.w;
    int h = pos.h;
@@ -1354,30 +1176,30 @@ addRoundRectOutline( SMeshBuffer & o, Recti const & pos, float zIndex,
    }
 
    glm::vec2 off( w/2 + 1 + pos.x, h/2 + pos.y );
-   float const rx = radius.x;
-   float const ry = radius.y;
-   float const x0 = -0.5f * w;
-   float const x1 = -0.5f * w + rx;
-   float const x2 = 0.5f * w - rx;
-   float const x3 = 0.5f * w;
-   float const y0 = -0.5f * h;
-   float const y1 = -0.5f * h + ry;
-   float const y2 = 0.5f * h - ry;
-   float const y3 = 0.5f * h;
+   f32 const rx = radius.x;
+   f32 const ry = radius.y;
+   f32 const x0 = -0.5f * w;
+   f32 const x1 = -0.5f * w + rx;
+   f32 const x2 = 0.5f * w - rx;
+   f32 const x3 = 0.5f * w;
+   f32 const y0 = -0.5f * h;
+   f32 const y1 = -0.5f * h + ry;
+   f32 const y2 = 0.5f * h - ry;
+   f32 const y3 = 0.5f * h;
 
 // [SinCosLookUpTable] for a quarter circle
    struct SinCos
    {
-      float s,c;
+      f32 s,c;
       SinCos() : s(0.f), c(0.f) {}
-      SinCos(float _s,float _c) : s(_s), c(_c) {}
+      SinCos(f32 _s,f32 _c) : s(_s), c(_c) {}
    };
    std::vector< SinCos > lookUpTable;
    lookUpTable.reserve( tess );
 
-   float phi_step = float( 0.5 * M_PI ) / float( tess+1 );
-   float phi = phi_step; // phi_start > 0° and phi_end < 90°
-   for ( uint32_t i = 0; i < tess; ++i )
+   f32 phi_step = f32( 0.5 * M_PI ) / f32( tess+1 );
+   f32 phi = phi_step; // phi_start > 0° and phi_end < 90°
+   for ( u32 i = 0; i < tess; ++i )
    {
       lookUpTable.emplace_back( ::sinf( phi ), ::cosf( phi ) );
       phi += phi_step;
@@ -1386,7 +1208,7 @@ addRoundRectOutline( SMeshBuffer & o, Recti const & pos, float zIndex,
 
    std::vector< glm::vec2 > points;
 
-   auto addPoint = [&] ( float x, float y )
+   auto addPoint = [&] ( f32 x, f32 y )
    {
       points.emplace_back( off.x + x, off.y + y );
    };
@@ -1398,10 +1220,10 @@ addRoundRectOutline( SMeshBuffer & o, Recti const & pos, float zIndex,
    }
 
    // 1. topLeft FGB (cw) quarter circle
-   for ( uint32_t i = 0; i < tess; ++i )
+   for ( u32 i = 0; i < tess; ++i )
    {
-      float x = x1 - rx * lookUpTable[ i ].c;   // Vertices already in correct index order.
-      float y = y1 - ry * lookUpTable[ i ].s;
+      f32 x = x1 - rx * lookUpTable[ i ].c;   // Vertices already in correct index order.
+      f32 y = y1 - ry * lookUpTable[ i ].s;
       addPoint( x, y );
    }
 
@@ -1414,8 +1236,8 @@ addRoundRectOutline( SMeshBuffer & o, Recti const & pos, float zIndex,
    // 2. topRight HIC (cw) quarter circle
    for ( int32_t i = int32_t(tess) - 1; i >= 0; --i )
    {
-      float x = x2 + rx * lookUpTable[ i ].c;   // Add vertices in reverse (--i) order
-      float y = y1 - ry * lookUpTable[ i ].s;   // to build indices in correct order.
+      f32 x = x2 + rx * lookUpTable[ i ].c;   // Add vertices in reverse (--i) order
+      f32 y = y1 - ry * lookUpTable[ i ].s;   // to build indices in correct order.
       addPoint( x, y );
    }
 
@@ -1427,10 +1249,10 @@ addRoundRectOutline( SMeshBuffer & o, Recti const & pos, float zIndex,
 
 
    // 3. bottomRight JKD (cw) quarter circle
-   for ( uint32_t i = 0; i < tess; ++i )
+   for ( u32 i = 0; i < tess; ++i )
    {
-      float x = x2 + rx * lookUpTable[ i ].c;   // Vertices already in correct index order.
-      float y = y2 + ry * lookUpTable[ i ].s;
+      f32 x = x2 + rx * lookUpTable[ i ].c;   // Vertices already in correct index order.
+      f32 y = y2 + ry * lookUpTable[ i ].s;
       addPoint( x, y );
    }
 
@@ -1443,8 +1265,8 @@ addRoundRectOutline( SMeshBuffer & o, Recti const & pos, float zIndex,
    // 4. bottomLeft LEA (cw) quarter circle
    for ( int32_t i = int32_t(tess) - 1; i >= 0; --i )
    {
-      float x = x1 - rx * lookUpTable[ i ].c;   // Add vertices in reverse (--i) order
-      float y = y2 + ry * lookUpTable[ i ].s;   // to build indices in correct order.
+      f32 x = x1 - rx * lookUpTable[ i ].c;   // Add vertices in reverse (--i) order
+      f32 y = y2 + ry * lookUpTable[ i ].s;   // to build indices in correct order.
       addPoint( x, y );
    }
 
@@ -1453,13 +1275,13 @@ addRoundRectOutline( SMeshBuffer & o, Recti const & pos, float zIndex,
    SMeshPolyLine::addTriangleStrip( o, points, color, borderWidth, LineCap::None, LineJoin::Bevel );
 
    // Set color between black and white to all vertices depending on their u value.
-   float uMax = o.vertices.back().tex.x;
+   f32 uMax = o.vertices.back().tex.x;
    for ( size_t i = 0; i < o.vertices.size(); ++i )
    {
       o.vertices[ i ].pos.z = zIndex;
-      float u = o.vertices[ i ].tex.x;
+      f32 u = o.vertices[ i ].tex.x;
       uint8_t r = static_cast<uint8_t>( std::clamp( int(std::lround( 255.0f * u / uMax )), 0, 255 ) );
-      uint32_t color = dbRGB( r,r,r );
+      u32 color = dbRGB( r,r,r );
       o.vertices[ i ].color = color;
    }
 }
@@ -1488,7 +1310,7 @@ addRoundRectOutline( SMeshBuffer & o, Recti const & pos, float zIndex,
 //
 void
 S2DRoundRectOutline::add( SMeshBuffer & o, Recti const & pos, glm::ivec2 const & radius,
-      uint32_t color, TexRef const & ref, int borderWidth, int tess )
+      u32 color, TexRef const & ref, int borderWidth, int tess )
 {
    S2DPolyLine::
    int w = pos.getWidth();
@@ -1505,21 +1327,21 @@ S2DRoundRectOutline::add( SMeshBuffer & o, Recti const & pos, glm::ivec2 const &
    glm::vec3 off( w/2 + 1 + pos.x, h/2 + pos.y, 0.0f );
    //o.moreVertices( 8 + 4*tess );
    //o.moreIndices( 8 + 8*(tess+1) );
-   float const rx = radius.x;
-   float const ry = radius.y;
-   float const x0 = -0.5f * w;
-   float const x1 = -0.5f * w + rx;
-   float const x2 = 0.5f * w - rx;
-   float const x3 = 0.5f * w;
-   float const y0 = -0.5f * h;
-   float const y1 = -0.5f * h + ry;
-   float const y2 = 0.5f * h - ry;
-   float const y3 = 0.5f * h;
+   f32 const rx = radius.x;
+   f32 const ry = radius.y;
+   f32 const x0 = -0.5f * w;
+   f32 const x1 = -0.5f * w + rx;
+   f32 const x2 = 0.5f * w - rx;
+   f32 const x3 = 0.5f * w;
+   f32 const y0 = -0.5f * h;
+   f32 const y1 = -0.5f * h + ry;
+   f32 const y2 = 0.5f * h - ry;
+   f32 const y3 = 0.5f * h;
 
-   auto addVertex = [&] ( float x, float y )
+   auto addVertex = [&] ( f32 x, f32 y )
    {
-      float uCoord = 0.5f + x / w;
-      float vCoord = 0.5f + y / h;
+      f32 uCoord = 0.5f + x / w;
+      f32 vCoord = 0.5f + y / h;
       o.addVertex( S3DVertex( off.x + x, off.y + y,-1, 0,0,-1, color, uCoord,vCoord ) );   // input ABC (cw), output ACB (ccw)
    };
 
@@ -1532,18 +1354,18 @@ S2DRoundRectOutline::add( SMeshBuffer & o, Recti const & pos, glm::ivec2 const &
    addVertex( x2, y3 ); // K=6
    addVertex( x1, y3 ); // L=7
 
-   uint32_t const INDEX_E = 0;
-   uint32_t const INDEX_F = 1;
-   uint32_t const INDEX_G = 2;
-   uint32_t const INDEX_H = 3;
-   uint32_t const INDEX_I = 4;
-   uint32_t const INDEX_J = 5;
-   uint32_t const INDEX_K = 6;
-   uint32_t const INDEX_L = 7;
-   uint32_t const INDEX_TOPLEFT = 8 + 0*tess;
-   uint32_t const INDEX_TOPRIGHT = 8 + 1*tess;
-   uint32_t const INDEX_BOTTOMRIGHT = 8 + 2*tess;
-   uint32_t const INDEX_BOTTOMLEFT = 8 + 3*tess;
+   u32 const INDEX_E = 0;
+   u32 const INDEX_F = 1;
+   u32 const INDEX_G = 2;
+   u32 const INDEX_H = 3;
+   u32 const INDEX_I = 4;
+   u32 const INDEX_J = 5;
+   u32 const INDEX_K = 6;
+   u32 const INDEX_L = 7;
+   u32 const INDEX_TOPLEFT = 8 + 0*tess;
+   u32 const INDEX_TOPRIGHT = 8 + 1*tess;
+   u32 const INDEX_BOTTOMRIGHT = 8 + 2*tess;
+   u32 const INDEX_BOTTOMLEFT = 8 + 3*tess;
    o.addIndexedLine( INDEX_E, INDEX_F );
    o.addIndexedLine( INDEX_G, INDEX_H );
    o.addIndexedLine( INDEX_I, INDEX_J );
@@ -1553,57 +1375,57 @@ S2DRoundRectOutline::add( SMeshBuffer & o, Recti const & pos, glm::ivec2 const &
    //
    struct SinCos
    {
-      float s,c;
+      f32 s,c;
       SinCos() : s(0.f), c(0.f) {}
-      SinCos(float _s,float _c) : s(_s), c(_c) {}
+      SinCos(f32 _s,f32 _c) : s(_s), c(_c) {}
    };
    std::vector< SinCos > lookUpTable;
    lookUpTable.reserve( tess );
 
-   float phi_step = float( 0.5 * M_PI ) / float( tess+1 );
-   float phi = phi_step; // phi_start > 0° and phi_end < 90°
-   for ( uint32_t i = 0; i < tess; ++i )
+   f32 phi_step = f32( 0.5 * M_PI ) / f32( tess+1 );
+   f32 phi = phi_step; // phi_start > 0° and phi_end < 90°
+   for ( u32 i = 0; i < tess; ++i )
    {
       lookUpTable.emplace_back( ::sinf( phi ), ::cosf( phi ) );
       phi += phi_step;
    }
 
    // 1. topLeft FGB (cw) quarter circle
-   for ( uint32_t i = 0; i < tess; ++i )
+   for ( u32 i = 0; i < tess; ++i )
    {
-      float x = x1 - rx * lookUpTable[ i ].c;   // Vertices already in correct index order.
-      float y = y1 - ry * lookUpTable[ i ].s;
+      f32 x = x1 - rx * lookUpTable[ i ].c;   // Vertices already in correct index order.
+      f32 y = y1 - ry * lookUpTable[ i ].s;
       addVertex( x, y );
    }
    // 2. topRight HIC (cw) quarter circle
    for ( int32_t i = tess - 1; i >= 0; --i )
    {
-      float x = x2 + rx * lookUpTable[ i ].c;   // Add vertices in reverse (--i) order
-      float y = y1 - ry * lookUpTable[ i ].s;   // to build indices in correct order.
+      f32 x = x2 + rx * lookUpTable[ i ].c;   // Add vertices in reverse (--i) order
+      f32 y = y1 - ry * lookUpTable[ i ].s;   // to build indices in correct order.
       addVertex( x, y );
    }
    // 3. bottomRight JKD (cw) quarter circle
-   for ( uint32_t i = 0; i < tess; ++i )
+   for ( u32 i = 0; i < tess; ++i )
    {
-      float x = x2 + rx * lookUpTable[ i ].c;   // Vertices already in correct index order.
-      float y = y2 + ry * lookUpTable[ i ].s;
+      f32 x = x2 + rx * lookUpTable[ i ].c;   // Vertices already in correct index order.
+      f32 y = y2 + ry * lookUpTable[ i ].s;
       addVertex( x, y );
    }
    // 4. bottomLeft LEA (cw) quarter circle
    for ( int32_t i = tess - 1; i >= 0; --i )
    {
-      float x = x1 - rx * lookUpTable[ i ].c;   // Add vertices in reverse (--i) order
-      float y = y2 + ry * lookUpTable[ i ].s;   // to build indices in correct order.
+      f32 x = x1 - rx * lookUpTable[ i ].c;   // Add vertices in reverse (--i) order
+      f32 y = y2 + ry * lookUpTable[ i ].s;   // to build indices in correct order.
       addVertex( x, y );
    }
 
    // add 4*tess CornerIndices:
 
    // 1. topLeft FGB (cw) quarter circle, glm::vec3 B( x1, 0.f, y2 );
-   for ( uint32_t i = 0; i < tess; ++i )
+   for ( u32 i = 0; i < tess; ++i )
    {
-      uint32_t iF = INDEX_TOPLEFT + i;
-      uint32_t iG = INDEX_TOPLEFT + i + 1;
+      u32 iF = INDEX_TOPLEFT + i;
+      u32 iG = INDEX_TOPLEFT + i + 1;
       if ( i == 0 )             { iF = INDEX_F; } // StartTriangle
       else if ( i == tess - 1 ) { iG = INDEX_G; } // EndTriangle
       else                      {}                // MiddleTriangle
@@ -1611,10 +1433,10 @@ S2DRoundRectOutline::add( SMeshBuffer & o, Recti const & pos, glm::ivec2 const &
    }
 
    // 2. topRight HIC (cw) quarter circle, glm::vec3 C( x2, 0.f, y2 );
-   for ( uint32_t i = 0; i < tess; ++i )
+   for ( u32 i = 0; i < tess; ++i )
    {
-      uint32_t iH = INDEX_TOPRIGHT + i;
-      uint32_t iI = INDEX_TOPRIGHT + i + 1;
+      u32 iH = INDEX_TOPRIGHT + i;
+      u32 iI = INDEX_TOPRIGHT + i + 1;
       if ( i == 0 )             { iH = INDEX_H; } // StartTriangle
       else if ( i == tess - 1 ) { iI = INDEX_I; } // EndTriangle
       else                      {}                // MiddleTriangle
@@ -1622,10 +1444,10 @@ S2DRoundRectOutline::add( SMeshBuffer & o, Recti const & pos, glm::ivec2 const &
    }
 
    // 3. bottomRight JKD (cw) quarter circle, glm::vec3 D( x2, 0.f, y1 );
-   for ( uint32_t i = 0; i < tess; ++i )
+   for ( u32 i = 0; i < tess; ++i )
    {
-      uint32_t iJ = INDEX_BOTTOMRIGHT + i;
-      uint32_t iK = INDEX_BOTTOMRIGHT + i + 1;
+      u32 iJ = INDEX_BOTTOMRIGHT + i;
+      u32 iK = INDEX_BOTTOMRIGHT + i + 1;
       if ( i == 0 )             { iJ = INDEX_J;  } // StartTriangle
       else if ( i == tess - 1 ) { iK = INDEX_K;  } // EndTriangle
       else                      {}                 // MiddleTriangle
@@ -1633,10 +1455,10 @@ S2DRoundRectOutline::add( SMeshBuffer & o, Recti const & pos, glm::ivec2 const &
    }
 
    // 4. bottomLeft LEA (cw) quarter circle, glm::vec3 A( x1, 0.f, y1 );
-   for ( uint32_t i = 0; i < tess; ++i )
+   for ( u32 i = 0; i < tess; ++i )
    {
-      uint32_t iL = INDEX_BOTTOMLEFT + i;
-      uint32_t iE = INDEX_BOTTOMLEFT + i + 1;
+      u32 iL = INDEX_BOTTOMLEFT + i;
+      u32 iE = INDEX_BOTTOMLEFT + i + 1;
       if ( i == 0 )             { iL = INDEX_L; } // StartTriangle
       else if ( i == tess - 1 ) { iE = INDEX_E; } // EndTriangle
       else                      {}               // MiddleTriangle
@@ -1646,91 +1468,9 @@ S2DRoundRectOutline::add( SMeshBuffer & o, Recti const & pos, glm::ivec2 const &
 */
 
 
-
-
-// =========================================================================
-// Circle
-// =========================================================================
-/*
-void
-addCircle( SMeshBuffer & o, Recti const & pos,
-      uint32_t outerColor, uint32_t innerColor, TexRef const & ref, uint32_t tess )
-{
-   float rx = 0.5f * pos.w;
-   float ry = 0.5f * pos.h;
-
-   o.setPrimitiveType( PrimitiveType::Triangles );
-   o.setBlend( Blend::alphaBlend() );
-   if ( ref.tex )
-   {
-      o.setTexture( 0, ref );
-   }
-
-   // Add center point
-   uint32_t v = o.getVertexCount();
-   o.addVertex( S3DVertex( 0,0,0, 0,0,-1, innerColor, 0.5f, 0.5f ) );
-
-   float const angleStep = float( ( 2.0 * M_PI ) / double( tess ) );
-//      float const outwardX = float( radius.x ) / float( tessOutwards );
-//      float const outwardY = float( radius.y ) / float( tessOutwards );
-
-   for ( uint32_t i = 0; i <= tess; ++i )
-   {
-      float const phi = angleStep * float( i );
-      float const s = ::sinf( phi );
-      float const c = ::cosf( phi );
-//   for ( uint32_t j = 0; j <= tessOutwards; ++j )
-//   {
-      float x = rx * c; // * float( j ) * outwardX);
-      float y = ry * s; // * float( j ) * outwardY);
-      float u = std::clamp( 0.5f + 0.5f * c, 0.0001f, 0.9999f );
-      float v = std::clamp( 0.5f - 0.5f * s, 0.0001f, 0.9999f );
-      o.addVertex( S3DVertex( x,y,0, 0,0,-1, outerColor, u, v ) );
-//         }
-   }
-
-   for ( uint32_t i = 0; i < tess; ++i )
-   {
-//   for ( uint32_t j = 0; j < tessOutwards; ++j )
-//   {
-      uint32_t M = v;
-      uint32_t A = v + 1 + i;
-      uint32_t B = v + 2 + i;
-      o.addIndexedTriangle( M, A, B );
-//   }
-   }
-}
-
-void addCircleOutline( SMeshBuffer & o, Recti const & pos,
-      uint32_t color, TexRef const & ref, int borderWidth, uint32_t tess )
-{
-   float rx = 0.5f * pos.w;
-   float ry = 0.5f * pos.h;
-
-   std::vector< glm::vec2 > points;
-   float const angleStep = float( ( 2.0 * M_PI ) / double( tess ) );
-   for ( uint32_t i = 0; i <= tess; ++i )
-   {
-      float const phi = angleStep * float( i );
-      float const x = rx * ::cosf( phi );
-      float const y = ry * ::sinf( phi );
-      points.emplace_back( x, y );
-   }
-   points.emplace_back( points.front() );
-
-   SMeshPolyLine::addTriangleStrip( o, points, color, borderWidth, LineCap::Square, LineJoin::Bevel );
-   o.setBlend( Blend::alphaBlend() );
-   if ( ref.tex )
-   {
-      o.setTexture( 0, ref );
-   }
-
-}
-*/
-
 // =========================================================================
 void
-SMeshCircle::addXY( SMeshBuffer & o, glm::vec2 const & siz, uint32_t color, uint32_t tessRadial )
+SMeshCircle::addXY( SMeshBuffer & o, glm::vec2 const & siz, u32 color, u32 tessRadial )
 {
    addXY( o, siz, color, color, tessRadial );
 }
@@ -1739,45 +1479,45 @@ void
 SMeshCircle::addXY(
       SMeshBuffer & o,
       glm::vec2 const & siz,
-      uint32_t innerColor,
-      uint32_t outerColor,
-      uint32_t tessRadial ) // bool forceIndices = false
+      u32 innerColor,
+      u32 outerColor,
+      u32 tessRadial ) // bool forceIndices = false
 {
    glm::vec2 radius = siz * 0.5f;
 
    //bool useIndices = o.getIndexCount() > 0 || forceIndices;
 
    // Add center point
-   uint32_t v = o.getVertexCount();
+   u32 v = o.getVertexCount();
    o.addVertex( S3DVertex( 0,0,0, 0,0,-1, innerColor, 0.5f, 0.5f ) );
 
-   float const angleStep = float( ( 2.0 * M_PI ) / double( tessRadial ) );
-//      float const outwardX = float( radius.x ) / float( tessOutwards );
-//      float const outwardY = float( radius.y ) / float( tessOutwards );
+   f32 const angleStep = f32( ( 2.0 * M_PI ) / double( tessRadial ) );
+//      f32 const outwardX = f32( radius.x ) / f32( tessOutwards );
+//      f32 const outwardY = f32( radius.y ) / f32( tessOutwards );
 
-   for ( uint32_t i = 0; i <= tessRadial; ++i )
+   for ( u32 i = 0; i <= tessRadial; ++i )
    {
-      float const phi = angleStep * float( i );
-      float const s = ::sinf( phi );
-      float const c = ::cosf( phi );
+      f32 const phi = angleStep * f32( i );
+      f32 const s = ::sinf( phi );
+      f32 const c = ::cosf( phi );
 
-//         for ( uint32_t j = 0; j <= tessOutwards; ++j )
+//         for ( u32 j = 0; j <= tessOutwards; ++j )
 //         {
-      float x = (radius.x * c); // * float( j ) * outwardX);
-      float y = (radius.y * s); // * float( j ) * outwardY);
-      float u = std::clamp( 0.5f + 0.5f * c, 0.0001f, 0.9999f );
-      float v = std::clamp( 0.5f - 0.5f * s, 0.0001f, 0.9999f );
+      f32 x = (radius.x * c); // * f32( j ) * outwardX);
+      f32 y = (radius.y * s); // * f32( j ) * outwardY);
+      f32 u = std::clamp( 0.5f + 0.5f * c, 0.0001f, 0.9999f );
+      f32 v = std::clamp( 0.5f - 0.5f * s, 0.0001f, 0.9999f );
       o.addVertex( S3DVertex( x,y,0, 0,0,-1, outerColor, u, v ) );
 //         }
    }
 
-   for ( uint32_t i = 0; i < tessRadial; ++i )
+   for ( u32 i = 0; i < tessRadial; ++i )
    {
-//         for ( uint32_t j = 0; j < tessOutwards; ++j )
+//         for ( u32 j = 0; j < tessOutwards; ++j )
 //         {
-         uint32_t M = v;
-         uint32_t A = v + 1 + i;
-         uint32_t B = v + 1 + i + 1;
+         u32 M = v;
+         u32 A = v + 1 + i;
+         u32 B = v + 1 + i + 1;
          o.addIndexedTriangle( M, A, B );
 //         }
    }
@@ -1785,49 +1525,49 @@ SMeshCircle::addXY(
 
 
 void
-SMeshCircle::addXZ( SMeshBuffer & o, glm::vec2 const & siz, uint32_t color, uint32_t tessRadial )
+SMeshCircle::addXZ( SMeshBuffer & o, glm::vec2 const & siz, u32 color, u32 tessRadial )
 {
    addXZ( o, siz, color, color, tessRadial );
 }
 
 void
-SMeshCircle::addXZ( SMeshBuffer & o, glm::vec2 const & siz, uint32_t innerColor, uint32_t outerColor, uint32_t tessRadial )
+SMeshCircle::addXZ( SMeshBuffer & o, glm::vec2 const & siz, u32 innerColor, u32 outerColor, u32 tessRadial )
 {
    glm::vec2 radius = siz * 0.5f;
 
    //bool useIndices = o.getIndexCount() > 0 || forceIndices;
 
    // Add center point
-   uint32_t v = o.getVertexCount();
+   u32 v = o.getVertexCount();
    o.addVertex( S3DVertex( 0,0,0, 0,1,0, innerColor, 0.5f, 0.5f ) );
 
-   float const angleStep = float( ( 2.0 * M_PI ) / double( tessRadial ) );
-//      float const outwardX = float( radius.x ) / float( tessOutwards );
-//      float const outwardY = float( radius.y ) / float( tessOutwards );
+   f32 const angleStep = f32( ( 2.0 * M_PI ) / double( tessRadial ) );
+//      f32 const outwardX = f32( radius.x ) / f32( tessOutwards );
+//      f32 const outwardY = f32( radius.y ) / f32( tessOutwards );
 
-   for ( uint32_t i = 0; i <= tessRadial; ++i )
+   for ( u32 i = 0; i <= tessRadial; ++i )
    {
-      float const phi = angleStep * float( i );
-      float const s = ::sinf( phi );
-      float const c = ::cosf( phi );
+      f32 const phi = angleStep * f32( i );
+      f32 const s = ::sinf( phi );
+      f32 const c = ::cosf( phi );
 
-//         for ( uint32_t j = 0; j <= tessOutwards; ++j )
+//         for ( u32 j = 0; j <= tessOutwards; ++j )
 //         {
-      float x = (radius.x * c); // * float( j ) * outwardX);
-      float z = (radius.y * s); // * float( j ) * outwardY);
-      float u = std::clamp( 0.5f + 0.5f * c, 0.0001f, 0.9999f );
-      float v = std::clamp( 0.5f - 0.5f * s, 0.0001f, 0.9999f );
+      f32 x = (radius.x * c); // * f32( j ) * outwardX);
+      f32 z = (radius.y * s); // * f32( j ) * outwardY);
+      f32 u = std::clamp( 0.5f + 0.5f * c, 0.0001f, 0.9999f );
+      f32 v = std::clamp( 0.5f - 0.5f * s, 0.0001f, 0.9999f );
       o.addVertex( S3DVertex( x,0,z, 0,1,0, outerColor, u, v ) );
 //         }
    }
 
-   for ( uint32_t i = 0; i < tessRadial; ++i )
+   for ( u32 i = 0; i < tessRadial; ++i )
    {
-//         for ( uint32_t j = 0; j < tessOutwards; ++j )
+//         for ( u32 j = 0; j < tessOutwards; ++j )
 //         {
-         uint32_t M = v;
-         uint32_t A = v + 1 + i;
-         uint32_t B = v + 1 + i + 1;
+         u32 M = v;
+         u32 A = v + 1 + i;
+         u32 B = v + 1 + i + 1;
          o.addIndexedTriangle( M, B, A );
 //         }
    }
@@ -1836,71 +1576,71 @@ SMeshCircle::addXZ( SMeshBuffer & o, glm::vec2 const & siz, uint32_t innerColor,
 // =========================================================================
 void
 Generic2DTriangleRing::addIndexedTriangles(
-   float outer_x, float outer_y,
-   float inner_x, float inner_y,
-   int32_t tess, uint32_t innerColor, uint32_t outerColor,
+   f32 outer_x, f32 outer_y,
+   f32 inner_x, f32 inner_y,
+   int32_t tess, u32 innerColor, u32 outerColor,
    GET_VERTEXCOUNT const & getVertexCount,
    ADD_VERTEX const & addVertex,
    ADD_INDEX const & addIndex )
 {
-   uint32_t const vStart = getVertexCount();
+   u32 const vStart = getVertexCount();
 
-   auto addIndexedQuad = [&] ( uint32_t a, uint32_t b, uint32_t c, uint32_t d )
+   auto addIndexedQuad = [&] ( u32 a, u32 b, u32 c, u32 d )
    {
       addIndex( a ); addIndex( c ); addIndex( b ); // ABC (cw) = ACB (ccw)
       addIndex( a ); addIndex( d ); addIndex( c ); // ACD (cw) = ADC (ccw)
    };
 
-   float const ix = 0.5f * inner_x;
-   float const iy = 0.5f * inner_y;
-   float const ox = 0.5f * outer_x; // a,b are radia, not sizes.
-   float const oy = 0.5f * outer_y;
-   float const phi_step = float( ( 2.0 * M_PI ) / double( tess ) ); // 0 to 2pi
+   f32 const ix = 0.5f * inner_x;
+   f32 const iy = 0.5f * inner_y;
+   f32 const ox = 0.5f * outer_x; // a,b are radia, not sizes.
+   f32 const oy = 0.5f * outer_y;
+   f32 const phi_step = f32( ( 2.0 * M_PI ) / double( tess ) ); // 0 to 2pi
 
    // inner ring vertices
    for ( int32_t i = 0; i <= tess; ++i )
    {
-      float const phi = phi_step * float( i );
-      float const s = -::sinf( phi );
-      float const c =  ::cosf( phi );
+      f32 const phi = phi_step * f32( i );
+      f32 const s = -::sinf( phi );
+      f32 const c =  ::cosf( phi );
       addVertex( ix * s, iy * c, innerColor );
    }
 
    // outer ring vertices
    for ( int32_t i = 0; i <= tess; ++i )
    {
-      float const phi = phi_step * float( i );
-      float const s = -::sinf( phi );
-      float const c =  ::cosf( phi );
+      f32 const phi = phi_step * f32( i );
+      f32 const s = -::sinf( phi );
+      f32 const c =  ::cosf( phi );
       addVertex( ox * s, oy * c, outerColor );
    }
 
    // ring quad indices
    for ( int32_t i = 0; i < tess; ++i )
    {
-      uint32_t A = vStart + i;
-      uint32_t B = vStart + i + tess + 1;
-      uint32_t C = vStart + i + tess + 2;
-      uint32_t D = vStart + i + 1;
+      u32 A = vStart + i;
+      u32 B = vStart + i + tess + 1;
+      u32 C = vStart + i + tess + 2;
+      u32 D = vStart + i + 1;
       addIndexedQuad( B, A, D, C );
    }
 }
 
 // =========================================================================
 void
-SMeshRing::addXY( SMeshBuffer & o, float ow, float oh, float iw, float ih,
-                  uint32_t innerColor, uint32_t outerColor, int32_t tess,
-                  glm::vec3 const & pos )
+SMeshRing::addXY( SMeshBuffer & o, f32 ow, f32 oh, f32 iw, f32 ih,
+                  u32 innerColor, u32 outerColor, int32_t tess,
+                  const glm::vec3 & pos )
 {
    auto getVertexCount = [&] () { return o.getVertexCount(); };
-   auto addIndex = [&] ( uint32_t index ) { o.addIndex( index ); };
-   auto addVertex = [&] ( float px, float py, uint32_t color )
+   auto addIndex = [&] ( u32 index ) { o.addIndex( index ); };
+   auto addVertex = [&] ( f32 px, f32 py, u32 color )
    {
-      float x = pos.x + px;
-      float y = pos.y + py;
-      float z = pos.z;
-      float u = 0.5f + px / ow;
-      float v = 0.5f - py / oh;
+      f32 x = pos.x + px;
+      f32 y = pos.y + py;
+      f32 z = pos.z;
+      f32 u = 0.5f + px / ow;
+      f32 v = 0.5f - py / oh;
       o.addVertex( S3DVertex( x,y,z, 0,0,1, color, u,v ) );
    };
 
@@ -1909,69 +1649,65 @@ SMeshRing::addXY( SMeshBuffer & o, float ow, float oh, float iw, float ih,
 }
 
 void
-SMeshRing::addXZ( SMeshBuffer & o, float ow, float oh, float iw, float ih,
-                  uint32_t innerColor, uint32_t outerColor, int32_t tess,
-                  glm::vec3 const & pos )
+SMeshRing::addXZ( SMeshBuffer & o, f32 ow, f32 oh, f32 iw, f32 ih,
+                  u32 innerColor, u32 outerColor, int32_t tess,
+                  const glm::vec3 & pos )
 {
    iw *= 0.5f;
    ow *= 0.5f;
    ih *= 0.5f;
    oh *= 0.5f;
 
-   uint32_t const vStart = o.getVertexCount();
+   u32 const vStart = o.getVertexCount();
 
-   float const phi_step = float( ( 2.0 * M_PI ) / double( tess ) ); // 0 to 2pi
+   f32 const phi_step = f32( ( 2.0 * M_PI ) / double( tess ) ); // 0 to 2pi
 
    // Inner ring vertices
    for ( int32_t i = 0; i <= tess; ++i )
    {
-      float const phi = phi_step * float( i );
-      float const s = ::sinf( phi );
-      float const c = ::cosf( phi );
-      float const x = pos.x + iw * c;
-      float const y = pos.y;
-      float const z = pos.z + ih * s;
-      float const u = 0.5f - 0.5f * c;
-      float const v = 0.5f - 0.5f * s;
+      f32 const phi = phi_step * f32( i );
+      f32 const s = ::sinf( phi );
+      f32 const c = ::cosf( phi );
+      f32 const x = pos.x + iw * c;
+      f32 const y = pos.y;
+      f32 const z = pos.z + ih * s;
+      f32 const u = 0.5f - 0.5f * c;
+      f32 const v = 0.5f - 0.5f * s;
       o.addVertex( S3DVertex( x, y, z, 0,1,0, innerColor, u,v ) );
    }
 
    // Outer ring vertices
    for ( int32_t i = 0; i <= tess; ++i )
    {
-      float const phi = phi_step * float( i );
-      float const s = ::sinf( phi );
-      float const c = ::cosf( phi );
-      float const x = pos.x + ow * c;
-      float const y = pos.y;
-      float const z = pos.z + oh * s;
-      float const u = 0.5f - 0.5f * c;
-      float const v = 0.5f - 0.5f * s;
+      f32 const phi = phi_step * f32( i );
+      f32 const s = ::sinf( phi );
+      f32 const c = ::cosf( phi );
+      f32 const x = pos.x + ow * c;
+      f32 const y = pos.y;
+      f32 const z = pos.z + oh * s;
+      f32 const u = 0.5f - 0.5f * c;
+      f32 const v = 0.5f - 0.5f * s;
       o.addVertex( S3DVertex( x, y, z, 0,1,0, outerColor, u,v ) );
    }
 
    // Build quads
    for ( int32_t i = 0; i < tess; ++i )
    {
-      uint32_t A = vStart + i;
-      uint32_t B = A + tess + 1;
-      uint32_t C = A + tess + 2;
-      uint32_t D = A + 1;
+      u32 A = vStart + i;
+      u32 B = A + tess + 1;
+      u32 C = A + tess + 2;
+      u32 D = A + 1;
       o.addIndexedQuad( B, A, D, C );
    }
-
 }
-
-
-
 
 // =========================================================================
 /// @brief PolyHull
 // =========================================================================
 void
 SMeshPolyHull::addLeftStripXY( SMeshBuffer & o,
-                std::vector< glm::vec3 > const & points, float height,
-                uint32_t color, glm::vec3 const & pos )
+                std::vector< glm::vec3 > const & points, f32 height,
+                u32 color, const glm::vec3 & pos )
 {
    auto addHullSegment = [&] ( glm::vec3 a, glm::vec3 b )
    {
@@ -2000,11 +1736,10 @@ SMeshPolyHull::addLeftStripXY( SMeshBuffer & o,
    addHullSegment( points[ points.size() - 1 ], points[ 0 ] );
 }
 
-
 void
 SMeshPolyHull::addLeftStripXZ( SMeshBuffer & o,
-                std::vector< glm::vec3 > const & points, float height,
-                uint32_t color, glm::vec3 const & pos )
+                std::vector< glm::vec3 > const & points, f32 height,
+                u32 color, const glm::vec3 & pos )
 {
    auto addHullSegment = [&] ( glm::vec3 a, glm::vec3 b )
    {
@@ -2035,8 +1770,8 @@ SMeshPolyHull::addLeftStripXZ( SMeshBuffer & o,
 
 void
 SMeshPolyHull::addRightStrip( SMeshBuffer & o,
-               std::vector< glm::vec3 > const & points, float height,
-               uint32_t color, glm::vec3 const & pos )
+               std::vector< glm::vec3 > const & points, f32 height,
+               u32 color, const glm::vec3 & pos )
 {
 
    auto addHullSegment = [&] ( glm::vec3 a, glm::vec3 b )
@@ -2069,22 +1804,22 @@ SMeshPolyHull::addRightStrip( SMeshBuffer & o,
 // =========================================================================
 void
 SMeshCylinderHull::addXY( SMeshBuffer & o,
-     float dx, float dy, float h,
-     uint32_t color, int tessCirc, V3 const & pos )
+     f32 dx, f32 dy, f32 h,
+     u32 color, int tessCirc, const V3 & pos )
 {
    std::vector< V3 > points;
    points.reserve( tessCirc + 1 );
-   float angleStart = 0.0f;     // from 0 degrees
-   float angleEnd = float( 2.0 * M_PI ); // to 90 degrees
-   float angleStep = ( angleEnd - angleStart) / float( tessCirc );
-   float a = 0.5f * dx;
-   float b = 0.5f * dy;
+   f32 angleStart = 0.0f;     // from 0 degrees
+   f32 angleEnd = f32( 2.0 * M_PI ); // to 90 degrees
+   f32 angleStep = ( angleEnd - angleStart) / f32( tessCirc );
+   f32 a = 0.5f * dx;
+   f32 b = 0.5f * dy;
 
    for ( int i = 0; i <= tessCirc; ++i )
    {
-      float phi = angleStart + angleStep * float( i );
-      float x = a * ::cosf( phi );
-      float y = b * ::sinf( phi );
+      f32 phi = angleStart + angleStep * f32( i );
+      f32 x = a * ::cosf( phi );
+      f32 y = b * ::sinf( phi );
       points.emplace_back( x, y, 0.0f );
    }
 
@@ -2093,22 +1828,22 @@ SMeshCylinderHull::addXY( SMeshBuffer & o,
 
 void
 SMeshCylinderHull::addXZ( SMeshBuffer & o,
-     float dx, float h, float dz,
-     uint32_t color, int tessCirc, V3 const & pos )
+     f32 dx, f32 h, f32 dz,
+     u32 color, int tessCirc, const V3 & pos )
 {
    std::vector< V3 > points;
    points.reserve( tessCirc + 1 );
-   float angleStart = 0.0f;     // from 0 degrees
-   float angleEnd = float( 2.0 * M_PI ); // to 90 degrees
-   float angleStep = ( angleEnd - angleStart) / float( tessCirc );
-   float a = 0.5f * dx;
-   float b = 0.5f * dz;
+   f32 angleStart = 0.0f;     // from 0 degrees
+   f32 angleEnd = f32( 2.0 * M_PI ); // to 90 degrees
+   f32 angleStep = ( angleEnd - angleStart) / f32( tessCirc );
+   f32 a = 0.5f * dx;
+   f32 b = 0.5f * dz;
 
    for ( int i = 0; i <= tessCirc; ++i )
    {
-      float phi = angleStart + angleStep * float( i );
-      float x = a * ::cosf( phi );
-      float z = b * ::sinf( phi );
+      f32 phi = angleStart + angleStep * f32( i );
+      f32 x = a * ::cosf( phi );
+      f32 z = b * ::sinf( phi );
       points.emplace_back( x, 0.0f, z );
    }
 
@@ -2117,64 +1852,45 @@ SMeshCylinderHull::addXZ( SMeshBuffer & o,
 
 // =========================================================================
 void
-SMeshCylinder::addXY( SMeshBuffer & o,
-       float dx, float dy, float h,
-       uint32_t color, uint32_t tessCirc )
+SMeshCylinder::addXY( SMeshBuffer & o, f32 dx, f32 dy, f32 h,
+                      u32 color, u32 tessCirc )
 {
-   glm::vec3 circleOffset( 0, 0, 0.5f * h );
-   glm::vec2 circleSize( dx, dy );
-   uint32_t vStart = o.getVertexCount();
-   SMeshCircle::addXY( o, circleSize, color, tessCirc );
-   SMeshBufferTool::translateVertices( o, circleOffset, vStart );
-   //vStart = o.getVertexCount();
-   SMeshCylinderHull::addXY( o, dx,dy,h, color, tessCirc );
+    glm::vec3 circleOffset( 0, 0, 0.5f * h );
+    glm::vec2 circleSize( dx, dy );
+    u32 vStart = o.getVertexCount();
+    SMeshCircle::addXY( o, circleSize, color, tessCirc );
+    SMeshBufferTool::translateVertices( o, circleOffset, vStart );
+    SMeshCylinderHull::addXY( o, dx,dy,h, color, tessCirc );
 }
 
 void
-SMeshCylinder::addXZ( SMeshBuffer & o,
-       float dx, float h, float dz,
-       uint32_t color, uint32_t tessCirc )
+SMeshCylinder::addXZ( SMeshBuffer & o, f32 dx, f32 h, f32 dz,
+                      u32 color, u32 tessCirc )
 {
-   glm::vec3 circleOffset( 0, 0.5f * h, 0 );
-   glm::vec2 circleSize( dx, dz );
-   uint32_t vStart = o.getVertexCount();
-   SMeshCircle::addXZ( o, circleSize, color, tessCirc );
-   SMeshBufferTool::translateVertices( o, circleOffset, vStart );
-   //vStart = o.getVertexCount();
-   SMeshCylinderHull::addXZ( o, dx,h,dz, color, tessCirc );
-}
-
-float de_fma( float a, float b, float c ) // a * b + c
-{
-   return (a * b) + c;
-}
-
-float de_lerp( float a, float b, float t = 0.5f )
-{
-   return de_fma( b-a, t, a ); //return a + (b-a) * t;
-}
-
-float randomFloatInRange( float range_min = 0.0f, float range_max = 1.0f )
-{
-   return ((range_max - range_min) * (float(rand()%65536)/float(65536.0f))) + range_min;
+    glm::vec3 circleOffset( 0, 0.5f * h, 0 );
+    glm::vec2 circleSize( dx, dz );
+    u32 vStart = o.getVertexCount();
+    SMeshCircle::addXZ( o, circleSize, color, tessCirc );
+    SMeshBufferTool::translateVertices( o, circleOffset, vStart );
+    SMeshCylinderHull::addXZ( o, dx,h,dz, color, tessCirc );
 }
 
 void
-SMeshCylinder::addXZ( SMeshBuffer & o, float bottom_dx, float bottom_dz,
-       float top_dx, float top_dz, float cylinder_h,
-       uint32_t color, uint32_t tessCircle, uint32_t tessHull, glm::vec3 const & offset )
+SMeshCylinder::addXZ( SMeshBuffer & o, f32 bottom_dx, f32 bottom_dz,
+       f32 top_dx, f32 top_dz, f32 cylinder_h,
+       u32 color, u32 tessCircle, u32 tessHull, const glm::vec3 & offset )
 {
    // BEGIN: Create lookup table for a unit-circle
    std::vector< glm::vec2 > unitCircle; //x,y,u,v for full radius
    unitCircle.reserve( tessCircle + 1 );
-   float angleStart = 0.0f;     // from 0 degrees
-   float angleEnd = float( 2.0 * M_PI ); // to 90 degrees
-   float angleStep = ( angleEnd - angleStart) / float( tessCircle - 1 );
+   f32 angleStart = 0.0f;     // from 0 degrees
+   f32 angleEnd = f32( 2.0 * M_PI ); // to 90 degrees
+   f32 angleStep = ( angleEnd - angleStart) / f32( tessCircle - 1 );
    for ( size_t i = 0; i < tessCircle; ++i )
    {
-      float phi = angleStart + angleStep * float( i );
-      float cx = ::cosf( phi );
-      float sy = ::sinf( phi );
+      f32 phi = angleStart + angleStep * f32( i );
+      f32 cx = ::cosf( phi );
+      f32 sy = ::sinf( phi );
       unitCircle.emplace_back( cx, sy );
    }
    unitCircle.emplace_back( unitCircle[ 0 ] );
@@ -2182,23 +1898,23 @@ SMeshCylinder::addXZ( SMeshBuffer & o, float bottom_dx, float bottom_dz,
    // END: Create lookup table for a unit-circle
 
    // BEGIN: Vertex positions, to be reused.
-   float top_a = 0.5f * top_dx;
-   float top_b = 0.5f * top_dz;
-   float bot_a = 0.5f * bottom_dx;
-   float bot_b = 0.5f * bottom_dz;
+   f32 top_a = 0.5f * top_dx;
+   f32 top_b = 0.5f * top_dz;
+   f32 bot_a = 0.5f * bottom_dx;
+   f32 bot_b = 0.5f * bottom_dz;
    std::vector< glm::vec3 > a_pos; // reusable vertex pos
    a_pos.reserve( (tessHull + 1) * (tessCircle + 1) );
    for ( size_t j = 0; j < tessHull+1; ++j )
    {
-      float t = float(j)/float(tessHull-1);
+      f32 t = f32(j)/f32(tessHull-1);
       for ( size_t i = 0; i < tessCircle; ++i )
       {
          glm::vec2 c = unitCircle[ i ];
-         float r = randomFloatInRange(0.98,1.02);
-         //float g = randomFloatInRange(0.98,1.02);
-         float x = offset.x + (c.x * de_lerp( bot_a, top_a, t ) * r);
-         float y = offset.y + (t * cylinder_h);
-         float z = offset.z + (c.y * de_lerp( bot_b, top_b, t ) * r);
+         f32 r = randomf32InRange(0.98,1.02);
+         //f32 g = randomf32InRange(0.98,1.02);
+         f32 x = offset.x + (c.x * de_lerp( bot_a, top_a, t ) * r);
+         f32 y = offset.y + (t * cylinder_h);
+         f32 z = offset.z + (c.y * de_lerp( bot_b, top_b, t ) * r);
          a_pos.emplace_back( x,y,z );
       }
       a_pos.emplace_back( a_pos[ j*(tessCircle+1) ] );
@@ -2243,7 +1959,6 @@ SMeshCylinder::addXZ( SMeshBuffer & o, float bottom_dx, float bottom_dz,
    }
 }
 
-
 // =========================================================================
 // Tube
 // =========================================================================
@@ -2251,42 +1966,40 @@ SMeshCylinder::addXZ( SMeshBuffer & o, float bottom_dx, float bottom_dz,
 void
 SMeshTube::add( SMeshBuffer & o,
       // Describes outer cylinder
-      float dx, // (outer) cylinder width
-      float dz, // (outer) cylinder depth
-      float hy, // (outer) cylinder height
+      f32 dx, // (outer) cylinder width
+      f32 dz, // (outer) cylinder depth
+      f32 hy, // (outer) cylinder height
       // Describes inner cylinder, rx,ry define the extrusion relative inside to dx,dy.
       // They define the inside border width and are not absolute values like dx,dy.
-      float rx, // inside going border-width ( inside cylinder width cx = dx - rx )
-      float rz, // inside going border-depth ( inside cylinder depth cz = dz - rz )
-      uint32_t color, // one color to rule them all (vertices).
+      f32 rx, // inside going border-width ( inside cylinder width cx = dx - rx )
+      f32 rz, // inside going border-depth ( inside cylinder depth cz = dz - rz )
+      u32 color, // one color to rule them all (vertices).
       int32_t tessCircle,// tesselation of top and bottom ring = num ring segments
       int32_t tessHeight )// tesselation of cylinder hull height ( y-direction )
 {
    SMeshRing::addXZ( o, dx, dz, rx, rz, color, color, tessCircle );
-
 }
-
 
 // =========================================================================
 // Sphere
 // =========================================================================
 
 glm::vec3
-SMeshSphere::computeSphereNormal( float lon, float lat ) // in degrees
+SMeshSphere::computeSphereNormal( f32 lon, f32 lat ) // in degrees
 {
    if ( lat >= 89.999f ) { return glm::vec3( 0,1,0 ); } // NorthPole
    else if ( lat <= -89.999f ) { return glm::vec3( 0,-1,0 ); } // SouthPole
-   float lon_rad = lon * Math::DEG2RAD;
-   float lat_rad = lat * Math::DEG2RAD;
-   float x = ::cosf( lon_rad ) * ::cosf( lat_rad );
-   float y =                     ::sinf( lat_rad );
-   float z = ::sinf( lon_rad ) * ::cosf( lat_rad );
+   f32 lon_rad = lon * Math::DEG2RAD;
+   f32 lat_rad = lat * Math::DEG2RAD;
+   f32 x = ::cosf( lon_rad ) * ::cosf( lat_rad );
+   f32 y =                     ::sinf( lat_rad );
+   f32 z = ::sinf( lon_rad ) * ::cosf( lat_rad );
    return glm::vec3( x,y,z );
 }
 
 void
-SMeshSphere::add( SMeshBuffer & o, glm::vec3 const & siz, uint32_t color,
-                  uint32_t tessLon, uint32_t tessLat, glm::vec3 const & offset )
+SMeshSphere::add( SMeshBuffer & o, const glm::vec3 & siz, u32 color,
+                  u32 tessLon, u32 tessLat, const glm::vec3 & offset )
 {
    o.setPrimitiveType( gpu::PrimitiveType::Triangles );
    if ( tessLat < 3 ) tessLat = 3;
@@ -2295,16 +2008,16 @@ SMeshSphere::add( SMeshBuffer & o, glm::vec3 const & siz, uint32_t color,
    glm::vec3 radius = siz * 0.5f;
 
    // u-step
-   float lonStep = 360.0f / float( tessLon );
-   float lonStart = 0.0f; // Greenwich
-   //float lonEnd = 360.0f;
-   float lonUV = 1.0f / float( tessLon );
+   f32 lonStep = 360.0f / f32( tessLon );
+   f32 lonStart = 0.0f; // Greenwich
+   //f32 lonEnd = 360.0f;
+   f32 lonUV = 1.0f / f32( tessLon );
 
    // v-step
-   float latStep = -180.0f / float( tessLat );
-   float latStart = 90.0f;
-   //float latEnd = -90.0f;
-   float latUV = 1.0f / float( tessLat );
+   f32 latStep = -180.0f / f32( tessLat );
+   f32 latStart = 90.0f;
+   //f32 latEnd = -90.0f;
+   f32 latUV = 1.0f / f32( tessLat );
 
    // Predict and reserve memory, indexed quads.
    o.moreVertices( 4 * tessLon * tessLat );
@@ -2313,10 +2026,10 @@ SMeshSphere::add( SMeshBuffer & o, glm::vec3 const & siz, uint32_t color,
    auto addQuad = [&] ( int32_t ix, int32_t iy )
    {
       //DE_DEBUG("addQuad( i=",ix,", j=", iy, " )")
-      float lon1 = lonStart + lonStep * ix;
-      float lon2 = lonStart + lonStep * ( ix + 1 );
-      float lat1 = latStart + latStep * iy;
-      float lat2 = latStart + latStep * ( iy + 1 );
+      f32 lon1 = lonStart + lonStep * ix;
+      f32 lon2 = lonStart + lonStep * ( ix + 1 );
+      f32 lat1 = latStart + latStep * iy;
+      f32 lat2 = latStart + latStep * ( iy + 1 );
       glm::vec3 na = computeSphereNormal( lon1, lat2 );
       glm::vec3 nb = computeSphereNormal( lon1, lat1 );
       glm::vec3 nc = computeSphereNormal( lon2, lat1 );
@@ -2325,10 +2038,10 @@ SMeshSphere::add( SMeshBuffer & o, glm::vec3 const & siz, uint32_t color,
       glm::vec3 b = nb * radius + offset;
       glm::vec3 c = nc * radius + offset;
       glm::vec3 d = nd * radius + offset;
-      uint32_t colorA = color;
-      uint32_t colorB = color;
-      uint32_t colorC = color;
-      uint32_t colorD = color;
+      u32 colorA = color;
+      u32 colorB = color;
+      u32 colorC = color;
+      u32 colorD = color;
       S3DVertex A( a.x,a.y,a.z, na.x,na.y,na.z, colorA, lonUV * ix, latUV * (iy+1) );
       S3DVertex B( b.x,b.y,b.z, nb.x,nb.y,nb.z, colorB, lonUV * ix, latUV * (iy) );
       S3DVertex C( c.x,c.y,c.z, nc.x,nc.y,nc.z, colorC, lonUV * (ix+1), latUV * (iy) );
@@ -2345,10 +2058,9 @@ SMeshSphere::add( SMeshBuffer & o, glm::vec3 const & siz, uint32_t color,
    }
 }
 
-
 void
-addSphere( SMeshBuffer & o, glm::vec3 const & siz, glm::vec3 const & offset,
-           uint32_t tessLon, uint32_t tessLat, uint32_t color )
+addSphere( SMeshBuffer & o, const glm::vec3 & siz, const glm::vec3 & offset,
+           u32 tessLon, u32 tessLat, u32 color )
 {
    SMeshSphere::add( o, siz, color, tessLon, tessLat, offset );
 }
@@ -2358,39 +2070,39 @@ addSphere( SMeshBuffer & o, glm::vec3 const & siz, glm::vec3 const & offset,
 // =========================================================================
 
 SMeshUpperHalfSphere::V3
-SMeshUpperHalfSphere::computeSphereNormal( float lon, float lat ) // in degrees
+SMeshUpperHalfSphere::computeSphereNormal( f32 lon, f32 lat ) // in degrees
 {
    if ( lat >= 89.999f ) { return V3( 0,1,0 ); } // NorthPole
    else if ( lat <= -89.999f ) { return V3( 0,-1,0 ); } // SouthPole
-   float lon_rad = lon * Math::DEG2RAD;
-   float lat_rad = lat * Math::DEG2RAD;
-   float x = ::cosf( lon_rad ) * ::cosf( lat_rad );
-   float y =                     ::sinf( lat_rad );
-   float z = ::sinf( lon_rad ) * ::cosf( lat_rad );
+   f32 lon_rad = lon * Math::DEG2RAD;
+   f32 lat_rad = lat * Math::DEG2RAD;
+   f32 x = ::cosf( lon_rad ) * ::cosf( lat_rad );
+   f32 y =                     ::sinf( lat_rad );
+   f32 z = ::sinf( lon_rad ) * ::cosf( lat_rad );
    return glm::vec3( x,y,z );
 }
 
 void
-SMeshUpperHalfSphere::add( SMeshBuffer & o, V3 const & siz, uint32_t color,
-                           uint32_t tessLon, uint32_t tessLat, V3 const & offset )
+SMeshUpperHalfSphere::add( SMeshBuffer & o, const V3 & siz, u32 color,
+                           u32 tessLon, u32 tessLat, const V3 & offset )
 {
    o.setPrimitiveType( gpu::PrimitiveType::Triangles );
    if ( tessLat < 3 ) tessLat = 3;
    if ( tessLon < 3 ) tessLon = 3;
 
    // x-step
-   float lonStep = 360.0f / float( tessLon );
-   float lonStart = 0.0f; // Greenwich
-   //float lonEnd = 360.0f;
+   f32 lonStep = 360.0f / f32( tessLon );
+   f32 lonStart = 0.0f; // Greenwich
+   //f32 lonEnd = 360.0f;
 
    // y-step
-   float latStep = -180.0f / float( tessLat );
-   float latStart = 90.0f;
-   //float latEnd = -90.0f;
+   f32 latStep = -180.0f / f32( tessLat );
+   f32 latStart = 90.0f;
+   //f32 latEnd = -90.0f;
 
    // tex-coord-steps
-   float du = 1.0f / float( tessLon );
-   float dv = 1.0f / float( tessLat );
+   f32 du = 1.0f / f32( tessLon );
+   f32 dv = 1.0f / f32( tessLat );
 
    // Predict and reserve memory, indexed quads.
    o.moreVertices( 4 * tessLon * tessLat );
@@ -2400,10 +2112,10 @@ SMeshUpperHalfSphere::add( SMeshBuffer & o, V3 const & siz, uint32_t color,
    {
       //DE_DEBUG("addQuad( i=",ix,", j=", iy, " )")
       glm::vec3 radius = siz * 0.5f;
-      float lon1 = lonStart + lonStep * ix;
-      float lon2 = lonStart + lonStep * ( ix + 1 );
-      float lat1 = latStart + latStep * iy;
-      float lat2 = latStart + latStep * ( iy + 1 );
+      f32 lon1 = lonStart + lonStep * ix;
+      f32 lon2 = lonStart + lonStep * ( ix + 1 );
+      f32 lat1 = latStart + latStep * iy;
+      f32 lat2 = latStart + latStep * ( iy + 1 );
       glm::vec3 na = computeSphereNormal( lon1, lat2 );
       glm::vec3 nb = computeSphereNormal( lon1, lat1 );
       glm::vec3 nc = computeSphereNormal( lon2, lat1 );
@@ -2412,10 +2124,10 @@ SMeshUpperHalfSphere::add( SMeshBuffer & o, V3 const & siz, uint32_t color,
       glm::vec3 b = nb * radius + offset;
       glm::vec3 c = nc * radius + offset;
       glm::vec3 d = nd * radius + offset;
-      uint32_t colorA = color;
-      uint32_t colorB = color;
-      uint32_t colorC = color;
-      uint32_t colorD = color;
+      u32 colorA = color;
+      u32 colorB = color;
+      u32 colorC = color;
+      u32 colorD = color;
       S3DVertex A( a.x,a.y,a.z, na.x,na.y,na.z, colorA, du * ix, dv * (iy+1) );
       S3DVertex B( b.x,b.y,b.z, nb.x,nb.y,nb.z, colorB, du * ix, dv * (iy) );
       S3DVertex C( c.x,c.y,c.z, nc.x,nc.y,nc.z, colorC, du * (ix+1), dv * (iy) );
@@ -2434,13 +2146,12 @@ SMeshUpperHalfSphere::add( SMeshBuffer & o, V3 const & siz, uint32_t color,
 
 
 // =========================================================================
-// static
 SMeshBuffer
-SMeshHexagonHull::create( float w, float h, float height, uint32_t color )
+SMeshHexagonHull::create( f32 w, f32 h, f32 height, u32 color )
 {
     SMeshBuffer o( gpu::PrimitiveType::Triangles );
 
-    auto addLeftStripXZ = [&] ( std::vector< glm::vec3 > const & points, float height, uint32_t color )
+    auto addLeftStripXZ = [&] ( std::vector< glm::vec3 > const & points, f32 height, u32 color )
     {
         if ( points.size() < 2 )
         {
@@ -2487,14 +2198,101 @@ SMeshHexagonHull::create( float w, float h, float height, uint32_t color )
 }
 
 
+
+} // end namespace gpu.
+} // end namespace de.
+
+
+
+
+
+
+// =========================================================================
+// Circle
+// =========================================================================
 /*
+void
+addCircle( SMeshBuffer & o, Recti const & pos,
+      u32 outerColor, u32 innerColor, TexRef const & ref, u32 tess )
+{
+   f32 rx = 0.5f * pos.w;
+   f32 ry = 0.5f * pos.h;
+
+   o.setPrimitiveType( PrimitiveType::Triangles );
+   o.setBlend( Blend::alphaBlend() );
+   if ( ref.tex )
+   {
+      o.setTexture( 0, ref );
+   }
+
+   // Add center point
+   u32 v = o.getVertexCount();
+   o.addVertex( S3DVertex( 0,0,0, 0,0,-1, innerColor, 0.5f, 0.5f ) );
+
+   f32 const angleStep = f32( ( 2.0 * M_PI ) / double( tess ) );
+//      f32 const outwardX = f32( radius.x ) / f32( tessOutwards );
+//      f32 const outwardY = f32( radius.y ) / f32( tessOutwards );
+
+   for ( u32 i = 0; i <= tess; ++i )
+   {
+      f32 const phi = angleStep * f32( i );
+      f32 const s = ::sinf( phi );
+      f32 const c = ::cosf( phi );
+//   for ( u32 j = 0; j <= tessOutwards; ++j )
+//   {
+      f32 x = rx * c; // * f32( j ) * outwardX);
+      f32 y = ry * s; // * f32( j ) * outwardY);
+      f32 u = std::clamp( 0.5f + 0.5f * c, 0.0001f, 0.9999f );
+      f32 v = std::clamp( 0.5f - 0.5f * s, 0.0001f, 0.9999f );
+      o.addVertex( S3DVertex( x,y,0, 0,0,-1, outerColor, u, v ) );
+//         }
+   }
+
+   for ( u32 i = 0; i < tess; ++i )
+   {
+//   for ( u32 j = 0; j < tessOutwards; ++j )
+//   {
+      u32 M = v;
+      u32 A = v + 1 + i;
+      u32 B = v + 2 + i;
+      o.addIndexedTriangle( M, A, B );
+//   }
+   }
+}
+
+void addCircleOutline( SMeshBuffer & o, Recti const & pos,
+      u32 color, TexRef const & ref, int borderWidth, u32 tess )
+{
+   f32 rx = 0.5f * pos.w;
+   f32 ry = 0.5f * pos.h;
+
+   std::vector< glm::vec2 > points;
+   f32 const angleStep = f32( ( 2.0 * M_PI ) / double( tess ) );
+   for ( u32 i = 0; i <= tess; ++i )
+   {
+      f32 const phi = angleStep * f32( i );
+      f32 const x = rx * ::cosf( phi );
+      f32 const y = ry * ::sinf( phi );
+      points.emplace_back( x, y );
+   }
+   points.emplace_back( points.front() );
+
+   SMeshPolyLine::addTriangleStrip( o, points, color, borderWidth, LineCap::Square, LineJoin::Bevel );
+   o.setBlend( Blend::alphaBlend() );
+   if ( ref.tex )
+   {
+      o.setTexture( 0, ref );
+   }
+
+}
+
 // =========================================================================
 struct SMeshUpperHalfSphere
 // =========================================================================
 {
    // @brief Benni book example 2021
    typedef glm::vec3 V3;
-   typedef uint32_t u32;
+   typedef u32 u32;
 
    static void
    add( SMeshBuffer & o, V3 siz, V3 pos, u32 tessCircle = 15,  u32 tessRows = 15, u32 color = 0xAFFFFFFF )
@@ -2505,40 +2303,40 @@ struct SMeshUpperHalfSphere
       o.addVertex( S3DVertex( 0,ry,0, 0,1,0, color, 0.5f,0.5f ) );
 
       // Vertices[v+1 to v+tessCircle*tessRows ] = other vertices
-      float const sxz = 1.f / (float)tessCircle;
-      float const sy = 1.f / (float)tessRows;
+      f32 const sxz = 1.f / (f32)tessCircle;
+      f32 const sy = 1.f / (f32)tessRows;
 
       SinCosTablef sincosA(tessCircle);
-      SinCosTablef sincosB(tessRows, float(0.0), float( 0.5*M_PI ) );
+      SinCosTablef sincosB(tessRows, f32(0.0), f32( 0.5*M_PI ) );
 
-      for (uint32_t j=0; j<tessRows; ++j)
+      for (u32 j=0; j<tessRows; ++j)
       {
-         for (uint32_t i=0; i<tessCircle; ++i)
+         for (u32 i=0; i<tessCircle; ++i)
          {
-            float const sinA = sincosA[i].s;
-            float const cosA = sincosA[i].c;
-            float const sinB = sincosB[j].s;
-            float const cosB = sincosB[j].c;
-            float const nx = -sinA * cosB;				// equals the normal at point radius*(x,y,z)
-            float const ny =  sinB;					// equals the normal at point radius*(x,y,z)
-            float const nz =  cosA * cosB;				// equals the normal at point radius*(x,y,z)
-            float const u = 0.5f-0.5f*cosB * sinA; // not finished
-            float const v = 0.5f-0.5f*cosB * cosA; // not finished
+            f32 const sinA = sincosA[i].s;
+            f32 const cosA = sincosA[i].c;
+            f32 const sinB = sincosB[j].s;
+            f32 const cosB = sincosB[j].c;
+            f32 const nx = -sinA * cosB;				// equals the normal at point radius*(x,y,z)
+            f32 const ny =  sinB;					// equals the normal at point radius*(x,y,z)
+            f32 const nz =  cosA * cosB;				// equals the normal at point radius*(x,y,z)
+            f32 const u = 0.5f-0.5f*cosB * sinA; // not finished
+            f32 const v = 0.5f-0.5f*cosB * cosA; // not finished
             o.addVertex( S3DVertex( rx*nx,ry*ny,rz*nz, nx,ny,nz, color, u,v ) );
          }
       }
 
       // push indices
-      for ( uint32_t j = 0; j < tessRows; ++j )
+      for ( u32 j = 0; j < tessRows; ++j )
       {
-         for ( uint32_t i = 0; i < tessCircle; ++i )
+         for ( u32 i = 0; i < tessCircle; ++i )
          {
             // top row contains just triangles, no quads
             if ( j == tessRows - 1 )
             {
-               uint32_t i0 = v + 1 + (j)*tessCircle + (i);    // A
-               uint32_t i1 = v + 1 + (j)*tessCircle + (i+1);  // B
-               uint32_t i2 = v;    // C - top center
+               u32 i0 = v + 1 + (j)*tessCircle + (i);    // A
+               u32 i1 = v + 1 + (j)*tessCircle + (i+1);  // B
+               u32 i2 = v;    // C - top center
                if ( i == tessCircle - 1 )
                {
                   i0 = v + 1 + (j)*tessCircle + (i);	// A
@@ -2550,10 +2348,10 @@ struct SMeshUpperHalfSphere
             // bottom to top-1 rows consist of quad segments (each of 2 triangles)
             else
             {
-               uint32_t i0 = v + 1 + (j)*tessCircle + (i);	// A
-               uint32_t i1 = v + 1 + (j+1)*tessCircle + (i);	// B
-               uint32_t i2 = v + 1 + (j+1)*tessCircle + (i+1);// C
-               uint32_t i3 = v + 1 + (j)*tessCircle + (i+1);	// D
+               u32 i0 = v + 1 + (j)*tessCircle + (i);	// A
+               u32 i1 = v + 1 + (j+1)*tessCircle + (i);	// B
+               u32 i2 = v + 1 + (j+1)*tessCircle + (i+1);// C
+               u32 i3 = v + 1 + (j)*tessCircle + (i+1);	// D
                if ( i == tessCircle - 1 )
                {
                   i0 = v + 1 + (j)*tessCircle + (i);	// A
@@ -2579,50 +2377,50 @@ struct SUpperHalfSphere
       SMeshBuffer & o,
       glm::vec3 siz,
       glm::vec3 pos,
-      uint32_t tessCircle = 15,
-      uint32_t tessRows = 15,
-      uint32_t color = 0xAFFFFFFF )
+      u32 tessCircle = 15,
+      u32 tessRows = 15,
+      u32 color = 0xAFFFFFFF )
    {
-      uint32_t v = o.getVertexCount();
+      u32 v = o.getVertexCount();
 
       // TopCenter vertex
       o.addVertex( S3DVertex( 0,ry,0, 0,1,0, color, 0.5f,0.5f ) );
 
       // Vertices[v+1 to v+tessCircle*tessRows ] = other vertices
-      float const sxz = 1.f / (float)tessCircle;
-      float const sy = 1.f / (float)tessRows;
+      f32 const sxz = 1.f / (f32)tessCircle;
+      f32 const sy = 1.f / (f32)tessRows;
 
       SinCosTablef sincosA(tessCircle);
-      SinCosTablef sincosB(tessRows, float(0.0), float( 0.5*M_PI ) );
+      SinCosTablef sincosB(tessRows, f32(0.0), f32( 0.5*M_PI ) );
 
-      for (uint32_t j=0; j<tessRows; ++j)
+      for (u32 j=0; j<tessRows; ++j)
       {
-         for (uint32_t i=0; i<tessCircle; ++i)
+         for (u32 i=0; i<tessCircle; ++i)
          {
-            float const sinA = sincosA[i].s;
-            float const cosA = sincosA[i].c;
-            float const sinB = sincosB[j].s;
-            float const cosB = sincosB[j].c;
-            float const nx = -sinA * cosB;				// equals the normal at point radius*(x,y,z)
-            float const ny =  sinB;					// equals the normal at point radius*(x,y,z)
-            float const nz =  cosA * cosB;				// equals the normal at point radius*(x,y,z)
-            float const u = 0.5f-0.5f*cosB * sinA; // not finished
-            float const v = 0.5f-0.5f*cosB * cosA; // not finished
+            f32 const sinA = sincosA[i].s;
+            f32 const cosA = sincosA[i].c;
+            f32 const sinB = sincosB[j].s;
+            f32 const cosB = sincosB[j].c;
+            f32 const nx = -sinA * cosB;				// equals the normal at point radius*(x,y,z)
+            f32 const ny =  sinB;					// equals the normal at point radius*(x,y,z)
+            f32 const nz =  cosA * cosB;				// equals the normal at point radius*(x,y,z)
+            f32 const u = 0.5f-0.5f*cosB * sinA; // not finished
+            f32 const v = 0.5f-0.5f*cosB * cosA; // not finished
             o.addVertex( S3DVertex( rx*nx,ry*ny,rz*nz, nx,ny,nz, color, u,v ) );
          }
       }
 
       // push indices
-      for ( uint32_t j = 0; j < tessRows; ++j )
+      for ( u32 j = 0; j < tessRows; ++j )
       {
-         for ( uint32_t i = 0; i < tessCircle; ++i )
+         for ( u32 i = 0; i < tessCircle; ++i )
          {
             // top row contains just triangles, no quads
             if ( j == tessRows - 1 )
             {
-               uint32_t i0 = v + 1 + (j)*tessCircle + (i);    // A
-               uint32_t i1 = v + 1 + (j)*tessCircle + (i+1);  // B
-               uint32_t i2 = v;    // C - top center
+               u32 i0 = v + 1 + (j)*tessCircle + (i);    // A
+               u32 i1 = v + 1 + (j)*tessCircle + (i+1);  // B
+               u32 i2 = v;    // C - top center
                if ( i == tessCircle - 1 )
                {
                   i0 = v + 1 + (j)*tessCircle + (i);	// A
@@ -2634,10 +2432,10 @@ struct SUpperHalfSphere
             // bottom to top-1 rows consist of quad segments (each of 2 triangles)
             else
             {
-               uint32_t i0 = v + 1 + (j)*tessCircle + (i);	// A
-               uint32_t i1 = v + 1 + (j+1)*tessCircle + (i);	// B
-               uint32_t i2 = v + 1 + (j+1)*tessCircle + (i+1);// C
-               uint32_t i3 = v + 1 + (j)*tessCircle + (i+1);	// D
+               u32 i0 = v + 1 + (j)*tessCircle + (i);	// A
+               u32 i1 = v + 1 + (j+1)*tessCircle + (i);	// B
+               u32 i2 = v + 1 + (j+1)*tessCircle + (i+1);// C
+               u32 i3 = v + 1 + (j)*tessCircle + (i+1);	// D
                if ( i == tessCircle - 1 )
                {
                   i0 = v + 1 + (j)*tessCircle + (i);	// A
@@ -2659,48 +2457,48 @@ struct SLowerHalfSphere
    // @brief Benni book example 2021
    static void
    add( SMeshBuffer & o,
-         float rx = 50, float ry = 50, float rz = 50,
-         uint32_t tessCircle = 15, uint32_t tessRows = 15,
-         float x = 0.f, float y = 0.f, float z = 0.f,
-         uint32_t color = 0xAFFFFFFF )
+         f32 rx = 50, f32 ry = 50, f32 rz = 50,
+         u32 tessCircle = 15, u32 tessRows = 15,
+         f32 x = 0.f, f32 y = 0.f, f32 z = 0.f,
+         u32 color = 0xAFFFFFFF )
    {
-      uint32_t const vStart = o.getVertexCount();
+      u32 const vStart = o.getVertexCount();
 
       // Vertices[vStart] = top center vertex
       o.addVertex( S3DVertex( 0,-ry,0, 0,1,0, color, 0.5f,0.5f ) );
 
       // Vertices[vStart+1 to vStart+tessCircle*tessRows ] = other vertices
       SinCosTablef sincosA(tessCircle);
-      SinCosTablef sincosB(tessRows, float(0.0), float( 0.5*M_PI ) );
+      SinCosTablef sincosB(tessRows, f32(0.0), f32( 0.5*M_PI ) );
 
-      for (uint32_t j=0; j<tessRows; ++j)
+      for (u32 j=0; j<tessRows; ++j)
       {
-         for (uint32_t i=0; i<tessCircle; ++i)
+         for (u32 i=0; i<tessCircle; ++i)
          {
-            float const sinA = sincosA[i].s;
-            float const cosA = sincosA[i].c;
-            float const sinB = sincosB[j].s;
-            float const cosB = sincosB[j].c;
-            float const nx = -sinA * cosB;				// equals the normal at point radius*(x,y,z)
-            float const ny = -sinB;					// equals the normal at point radius*(x,y,z)
-            float const nz =  cosA * cosB;				// equals the normal at point radius*(x,y,z)
-            float const u = 0.5f-0.5f*cosB * sinA; // not finished
-            float const v = 0.5f-0.5f*cosB * cosA; // not finished
+            f32 const sinA = sincosA[i].s;
+            f32 const cosA = sincosA[i].c;
+            f32 const sinB = sincosB[j].s;
+            f32 const cosB = sincosB[j].c;
+            f32 const nx = -sinA * cosB;				// equals the normal at point radius*(x,y,z)
+            f32 const ny = -sinB;					// equals the normal at point radius*(x,y,z)
+            f32 const nz =  cosA * cosB;				// equals the normal at point radius*(x,y,z)
+            f32 const u = 0.5f-0.5f*cosB * sinA; // not finished
+            f32 const v = 0.5f-0.5f*cosB * cosA; // not finished
             o.addVertex( S3DVertex( rx*nx,ry*ny,rz*nz, nx,ny,nz, color, u,v ) );
          }
       }
 
       // push indices
-      for ( uint32_t j = 0; j < tessRows; ++j )
+      for ( u32 j = 0; j < tessRows; ++j )
       {
-         for ( uint32_t i = 0; i < tessCircle; ++i )
+         for ( u32 i = 0; i < tessCircle; ++i )
          {
             // top row contains just triangles, no quads
             if ( j == tessRows - 1 )
             {
-               uint32_t i0 = vStart + 1 + (j)*tessCircle + (i);    // A
-               uint32_t i1 = vStart + 1 + (j)*tessCircle + (i+1);  // B
-               uint32_t i2 = vStart;    // C - top center
+               u32 i0 = vStart + 1 + (j)*tessCircle + (i);    // A
+               u32 i1 = vStart + 1 + (j)*tessCircle + (i+1);  // B
+               u32 i2 = vStart;    // C - top center
                if ( i == tessCircle - 1 )
                {
                   i0 = vStart + 1 + (j)*tessCircle + (i);	// A
@@ -2712,10 +2510,10 @@ struct SLowerHalfSphere
             // bottom to top-1 rows consist of quad segments (each of 2 triangles)
             else
             {
-               uint32_t i0 = vStart + 1 + (j)*tessCircle + (i);	// A
-               uint32_t i1 = vStart + 1 + (j+1)*tessCircle + (i);	// B
-               uint32_t i2 = vStart + 1 + (j+1)*tessCircle + (i+1);// C
-               uint32_t i3 = vStart + 1 + (j)*tessCircle + (i+1);	// D
+               u32 i0 = vStart + 1 + (j)*tessCircle + (i);	// A
+               u32 i1 = vStart + 1 + (j+1)*tessCircle + (i);	// B
+               u32 i2 = vStart + 1 + (j+1)*tessCircle + (i+1);// C
+               u32 i3 = vStart + 1 + (j)*tessCircle + (i+1);	// D
                if ( i == tessCircle - 1 )
                {
                   i0 = vStart + 1 + (j)*tessCircle + (i);	// A
@@ -2729,331 +2527,316 @@ struct SLowerHalfSphere
       }
    }
 };
+
+
+static f3232_t
+getAngleABC( glm::vec2 const & A, glm::vec2 const & B, glm::vec2 const & C )
+{
+auto const ABx = f3264_t( B.x ) - f3264_t( A.x );
+auto const ABy = f3264_t( B.y ) - f3264_t( A.y );
+auto const BCx = f3264_t( C.x ) - f3264_t( B.x );
+auto const BCy = f3264_t( C.y ) - f3264_t( B.y );
+auto const phiAB = ::atan2( ABy, ABx );
+auto const phiBC = ::atan2( BCy, BCx );
+auto const phiABC = static_cast< f3232_t >( phiBC - phiAB );
+#if 0
+std::cout << __FUNCTION__ << " :: phi(" << phiABC << "), ";
+if ( phiABC > 0.0f )
+{
+std::cout << "Left=CCW";
+}
+else
+{
+std::cout << "Right=CW";
+}
+
+std::cout << ", A(" << A << "), B(" << B << "), C(" << C << "), "
+<< "AB(" << B - A << "), phiAB(" << phiAB << ")"
+<< "BC(" << C - B << "), phiBC(" << phiBC << ")"
+<< "\n";
+#endif
+return phiABC;
+}
+
+static bool
+addTriangles( SMeshBuffer & o,
+std::vector< glm::vec2 > const & points,
+u32 color = 0xFFFFFFFF,
+f32 lineWidth = 1.0f,
+LineCap::ELineCap lineCap = LineCap::None,
+LineJoin::ELineJoin lineJoin = LineJoin::None )
+{
+//      u32 ghost = 0x80FFFFFF;
+//      u32 black = 0xFF000000;
+//      u32 white = 0xFFFFFFFF;
+//      u32 red = 0xFFFF0000;
+//      u32 green = 0xFF00FF00;
+//      u32 blue = 0xFF0000FF;
+//      u32 yellow = 0xFFFFFF00;
+//      u32 orange = 0xFFFF8000;
+
+auto n = points.size();
+//auto v = getVertexCount();
+
+DE_DEBUG("[Begin] Polyline caps:", int(lineCap), ", join:", int(lineJoin), ", "
+"n:",n," )" )
+if ( n < 2 )
+{
+if ( n == 1 )
+{
+DE_ERROR("INFORMATION-LOSS!")
+}
+return false; // nothing todo, empty input
+}
+
+
+auto addVertex = [ & ] ( glm::vec2 const & pos, glm::vec2 const & nrm, u32 color, f32 u, f32 v )
+{
+f32 x = (nrm.x * lineWidth) + pos.x;
+f32 y = (nrm.y * lineWidth) + pos.y;
+o.addVertex( S3DVertex( x,y,0, 0,0,-1, color, u,v ) );
+};
+
+// [LineCapStart]
+//
+//    SL-----AL
+//    |     /|
+//    |    / |    --> dAB
+//    S------A------------B
+//    |  /   |      |
+//    | /    |      v
+//    SR-----AR     +nAB
+//
+auto addLineCapStart = [ & ] ( glm::vec2 const & A, glm::vec2 const & B, u32 color, LineCap::ELineCap lineCap )
+{
+DE_DEBUG( "StartLineCap A(",A,"), B(",B,"), color(",color,")")
+auto v = o.getVertexCount();
+auto dAB = glm::normalize( B - A );
+auto nAB = getOrtho2D( dAB );      // Compute normal nAB
+u32 colorSL = varyColor( color, 30 );
+u32 colorSR = varyColor( color, 30 );
+u32 colorAL = color;
+u32 colorAR = varyColor( color, 30 );
+
+addVertex( A, -nAB - dAB, colorSL, 0,0 ); // SL
+addVertex( A,  nAB - dAB, colorSR, 0,0 ); // SR
+addVertex( A, -nAB,       colorAL, 0,0 ); // AL
+addVertex( A,  nAB,       colorAR, 0,0 ); // AR
+o.addIndexedQuad( v, v + 1, v + 2, v + 3 );
+};
+
+// [LineCapEnd]
+//                 BL-----EL
+//                 |     /|
+//      --> dAB    |    / |
+//    A------------B------E
+//      |          |  /   |
+//      v          | /    |
+//      nAB        BR-----ER
+//
+auto addLineCapEnd = [ & ] ( glm::vec2 const & A, glm::vec2 const & B, u32 color, LineCap::ELineCap lineCap )
+{
+DE_DEBUG( "EndLineCap A(",A,"), B(",B,"), color(",color,")" )
+auto v = o.getVertexCount();
+auto dAB = glm::normalize( B - A );
+auto nAB = getOrtho2D( dAB );      // Compute normal nAB
+u32 colorBL = varyColor( color, 30 );
+u32 colorBR = varyColor( color, 30 );
+u32 colorEL = color;
+u32 colorER = varyColor( color, 30 );
+addVertex( B, -nAB,       colorBL, 0,0 ); // BL
+addVertex( B,  nAB,       colorBR, 0,0 ); // BR
+addVertex( B, -nAB + dAB, colorEL, 0,0 ); // EL
+addVertex( B,  nAB + dAB, colorER, 0,0 ); // ER
+o.addIndexedQuad( v, v + 1, v + 2, v + 3 );
+};
+
+// [SegmentAB] A normal Segment AB, BC, CD, etc.. to p[ N-2 ]p[ N-1 ] for N >= 2
+//
+//    AL-----BL   A,B are stored, and their normal displacements +-nAB.
+//    |     /|
+//    |    / |
+//    A------B
+//    |  /   |
+//    | /    |
+//    AR-----BR
+//
+auto addSegment = [ & ] ( glm::vec2 const & A, glm::vec2 const & B, u32 color )
+{
+auto v = o.getVertexCount();
+auto dAB = glm::normalize( B - A );
+auto nAB = getOrtho2D( dAB );      // Compute normal nAB
+DE_DEBUG( "Segment A(",A,"), B(",B,"), dAB(",dAB,"), nAB(",nAB,")" )
+addVertex( A, -nAB, color, 0,0 );                  // AL
+addVertex( A,  nAB, varyColor( color, 30 ), 0,0 ); // AR
+addVertex( B, -nAB, varyColor( color, 30 ), 0,0 ); // BL
+addVertex( B,  nAB, varyColor( color, 30 ), 0,0 ); // BR
+o.addIndexedQuad( v, v + 1, v + 2, v + 3 );
+};
+
+// Add Line Join between points A,B,C with possible type Bevel, Miter or Round )
+// turn left ( math positive, ccw )
+//
+//     DL---C----DR
+//      \    \    \        // SL = B - 0.5 ( nAB + nBC );
+//       \    \    \       // CR = B + nBC;
+//        \    \    \      // BR = B + nAB;
+//         \    \    \
+// AL-------SL   \    \
+// |    ----  -   \    \
+// |----        -  \    \
+// A----------------B----CR
+// |--------        |    /\
+// |        --------|  /   \
+// AR---------------BR------+
+//
+// turn right ( math negative, cw )
+//
+// AL---------------BL------+    AL,AR,BL + AR,BL,
+// |        --------| \    /
+// |--------        |   \ /    Bevel + Miter
+// A----------CR----B----CL
+// |----      /    /|   /
+// |    ---- / -  / |  /
+// AR-------/----/--BR/
+//         /    /    /        // SR = B + 0.5 ( nAB + nBC );
+//        /    /    /         // BL = B - nBC;
+//       /    /    /          // CL = B - nAB;
+//      /    /    /
+//     DR---C----DL
+auto addLineJoin = [ & ] ( glm::vec2 const & A, glm::vec2 const & B, glm::vec2 const & C, LineJoin::ELineJoin const & lineJoin )
+{
+auto v = o.getVertexCount();
+auto n00 = glm::vec2( 0, 0 );
+auto nAB = getNormal2D( B - A );
+auto nBC = getNormal2D( C - B );
+auto phi = getAngleABC( A, B, C );    // Compute angle between vector AB and BC
+
+#ifdef USE_POINT_SKIPPING
+// if (parallel) then combine both segments by skipping this one.
+if ( std::abs( phi ) < 0.00001f || std::abs( phi - Math::TWO_PI ) < 0.00001f )
+{
+B = C;                        // Skip current segment
+nAB = getNormal2D( B - A );   // Update normal nAB
+std::cout << __FUNCTION__ << " :: Skip parallel point(" << i << ")\n";
+continue;
+}
+#endif
+// Right Line Join ( Bevel, Miter or Round )
+if ( phi > 0.0f ) // turn left ( math positive, ccw )
+{
+DE_DEBUG("LeftLineJoin phi(",phi,"), join(", int(lineJoin),"), A(",A,"), B(",B,"), C(",C,")" )
+if ( lineJoin == LineJoin::Bevel )
+{
+//addVertex3D( B, n00, color );  // B
+//addVertex3D( B, nAB, color );  // BR = B + nAB
+//addVertex3D( B, nBC, color );  // CR = B + nBC
+//addIndexedTriangle( v, v + 1, v + 2 ); // Bevel Triangle B,BR,CR
+o.addIndexedTriangle( v + 1, v, v - 1 ); // Bevel Triangle CR,CL,BR
+}
+}
+// Left Line Join, CL, BL, CR ( Bevel, Miter or Round )
+else
+{
+DE_DEBUG("RightLineJoin phi(",phi,"), join(",int(lineJoin),"), A(",A,"), B(",B,"), C(",C,")" )
+if ( lineJoin == LineJoin::Bevel )
+{
+//addVertex3D( B,  n00, color ); // B
+//addVertex3D( B, -nBC, color ); // CL
+//addVertex3D( B, -nAB, color ); // BL
+//addIndexedTriangle( v, v + 1, v + 2 ); // Left Bevel Triangle B,CL,BL ccw;
+o.addIndexedTriangle( v, v - 2, v + 1 ); // Bevel Triangle CL,BL,CR
+}
+}
+};
+
+//
+// PolyLine algo from Benni for Bevel,Miter and RoundJoin,
+// cant use TriangleStrip because of poss. RoundJoin? ( RoundJoin as TriangleStrip can be wasteful )
+//
+//u32 baseColor = green;
+glm::vec2 A,B,C; // We also need normals for both line-segments AB and BC
+A = points[ 0 ];    // Fetch A
+B = points[ 1 ];    // Fetch B
+addLineCapStart( A,B, 0xFFAA3388, lineCap );
+addSegment( A,B, color );
+for ( size_t i = 2; i < n; ++i )
+{
+C = points[ i ]; // Fetch C
+// Add Join ABC
+f3232_t phi = getAngleABC( A,B,C ); // Compute angle between AB and BC just for debug coloring
+u32 color = 0xFF00FFFF;
+if ( phi < 0.0f ) { color = 0xFFFF00FF; }
+addLineJoin( A,B,C, lineJoin );
+// Add Segment BC
+addSegment( B,C, varyColor( color,30 ) );
+// Next point
+A = B;
+B = C;
+}
+addLineCapEnd( A,B, 0xFFAAC388, lineCap );
+return true;
+}
+
+static void
+add( SMeshBuffer & o, std::vector< glm::vec2 > const & points,
+u32 color = 0xFFFFFFFF, int lineWidth = 1 )
+{
+if ( points.size() < 2 ) { return; }
+
+f32 radius = (0.5f * lineWidth);
+
+auto addSegment = [&] ( glm::vec2 const & a, glm::vec2 const & b )
+{
+glm::vec2 m = Math::getNormal2D( glm::vec2( b ) - glm::vec2( a ) );
+glm::vec2 n = glm::vec2( m.x, m.y ) * radius;
+SQuad::add( o, glm::vec3( a - n, 0),
+glm::vec3( b - n, 0),
+glm::vec3( b + n, 0),
+glm::vec3( a + n, 0), color );
+};
+
+glm::vec3 a = points[ 0 ];
+
+
+
+for ( size_t i = 1; i < points.size(); ++i )
+{
+glm::vec3 b = points[ i ];
+addSegment( a, b );
+a = b;
+}
+}
+
+static void
+addBilligUndIncorrect( SMeshBuffer & o, std::vector< glm::vec2 > const & points,
+u32 color = 0xFFFFFFFF, int lineWidth = 1 )
+{
+if ( points.size() < 2 )
+{
+return;
+}
+
+f32 radius = (0.5f * lineWidth);
+
+auto addSegment = [&] ( glm::vec2 const & a, glm::vec2 const & b )
+{
+glm::vec2 m = Math::getNormal2D( glm::vec2( b ) - glm::vec2( a ) );
+glm::vec2 n = glm::vec2( m.x, m.y ) * radius;
+SQuad::add( o, glm::vec3( a - n, 0),
+glm::vec3( b - n, 0),
+glm::vec3( b + n, 0),
+glm::vec3( a + n, 0), color );
+};
+
+glm::vec3 a = points[ 0 ];
+for ( size_t i = 1; i < points.size(); ++i )
+{
+glm::vec3 b = points[ i ];
+addSegment( a, b );
+a = b;
+}
+}
+
 */
-
-} // end namespace gpu.
-} // end namespace de.
-
-
-
-
-
-
-
-
-/*
-
-
-
-
-   static float32_t
-   getAngleABC( glm::vec2 const & A, glm::vec2 const & B, glm::vec2 const & C )
-   {
-      auto const ABx = float64_t( B.x ) - float64_t( A.x );
-      auto const ABy = float64_t( B.y ) - float64_t( A.y );
-      auto const BCx = float64_t( C.x ) - float64_t( B.x );
-      auto const BCy = float64_t( C.y ) - float64_t( B.y );
-      auto const phiAB = ::atan2( ABy, ABx );
-      auto const phiBC = ::atan2( BCy, BCx );
-      auto const phiABC = static_cast< float32_t >( phiBC - phiAB );
-   #if 0
-      std::cout << __FUNCTION__ << " :: phi(" << phiABC << "), ";
-      if ( phiABC > 0.0f )
-      {
-         std::cout << "Left=CCW";
-      }
-      else
-      {
-         std::cout << "Right=CW";
-      }
-
-      std::cout << ", A(" << A << "), B(" << B << "), C(" << C << "), "
-         << "AB(" << B - A << "), phiAB(" << phiAB << ")"
-         << "BC(" << C - B << "), phiBC(" << phiBC << ")"
-         << "\n";
-   #endif
-      return phiABC;
-   }
-
-   static bool
-   addTriangles( SMeshBuffer & o,
-        std::vector< glm::vec2 > const & points,
-        uint32_t color = 0xFFFFFFFF,
-        float lineWidth = 1.0f,
-        LineCap::ELineCap lineCap = LineCap::None,
-        LineJoin::ELineJoin lineJoin = LineJoin::None )
-   {
-//      uint32_t ghost = 0x80FFFFFF;
-//      uint32_t black = 0xFF000000;
-//      uint32_t white = 0xFFFFFFFF;
-//      uint32_t red = 0xFFFF0000;
-//      uint32_t green = 0xFF00FF00;
-//      uint32_t blue = 0xFF0000FF;
-//      uint32_t yellow = 0xFFFFFF00;
-//      uint32_t orange = 0xFFFF8000;
-
-      auto n = points.size();
-      //auto v = getVertexCount();
-
-      DE_DEBUG("[Begin] Polyline caps:", int(lineCap), ", join:", int(lineJoin), ", "
-                        "n:",n," )" )
-      if ( n < 2 )
-      {
-         if ( n == 1 )
-         {
-            DE_ERROR("INFORMATION-LOSS!")
-         }
-         return false; // nothing todo, empty input
-      }
-
-
-      auto addVertex = [ & ] ( glm::vec2 const & pos, glm::vec2 const & nrm, uint32_t color, float u, float v )
-      {
-         float x = (nrm.x * lineWidth) + pos.x;
-         float y = (nrm.y * lineWidth) + pos.y;
-         o.addVertex( S3DVertex( x,y,0, 0,0,-1, color, u,v ) );
-      };
-
-      // [LineCapStart]
-      //
-      //    SL-----AL
-      //    |     /|
-      //    |    / |    --> dAB
-      //    S------A------------B
-      //    |  /   |      |
-      //    | /    |      v
-      //    SR-----AR     +nAB
-      //
-      auto addLineCapStart = [ & ] ( glm::vec2 const & A, glm::vec2 const & B, uint32_t color, LineCap::ELineCap lineCap )
-      {
-         DE_DEBUG( "StartLineCap A(",A,"), B(",B,"), color(",color,")")
-         auto v = o.getVertexCount();
-         auto dAB = glm::normalize( B - A );
-         auto nAB = getOrtho2D( dAB );      // Compute normal nAB
-         uint32_t colorSL = varyColor( color, 30 );
-         uint32_t colorSR = varyColor( color, 30 );
-         uint32_t colorAL = color;
-         uint32_t colorAR = varyColor( color, 30 );
-
-         addVertex( A, -nAB - dAB, colorSL, 0,0 ); // SL
-         addVertex( A,  nAB - dAB, colorSR, 0,0 ); // SR
-         addVertex( A, -nAB,       colorAL, 0,0 ); // AL
-         addVertex( A,  nAB,       colorAR, 0,0 ); // AR
-         o.addIndexedQuad( v, v + 1, v + 2, v + 3 );
-      };
-
-      // [LineCapEnd]
-      //                 BL-----EL
-      //                 |     /|
-      //      --> dAB    |    / |
-      //    A------------B------E
-      //      |          |  /   |
-      //      v          | /    |
-      //      nAB        BR-----ER
-      //
-      auto addLineCapEnd = [ & ] ( glm::vec2 const & A, glm::vec2 const & B, uint32_t color, LineCap::ELineCap lineCap )
-      {
-         DE_DEBUG( "EndLineCap A(",A,"), B(",B,"), color(",color,")" )
-         auto v = o.getVertexCount();
-         auto dAB = glm::normalize( B - A );
-         auto nAB = getOrtho2D( dAB );      // Compute normal nAB
-         uint32_t colorBL = varyColor( color, 30 );
-         uint32_t colorBR = varyColor( color, 30 );
-         uint32_t colorEL = color;
-         uint32_t colorER = varyColor( color, 30 );
-         addVertex( B, -nAB,       colorBL, 0,0 ); // BL
-         addVertex( B,  nAB,       colorBR, 0,0 ); // BR
-         addVertex( B, -nAB + dAB, colorEL, 0,0 ); // EL
-         addVertex( B,  nAB + dAB, colorER, 0,0 ); // ER
-         o.addIndexedQuad( v, v + 1, v + 2, v + 3 );
-      };
-
-      // [SegmentAB] A normal Segment AB, BC, CD, etc.. to p[ N-2 ]p[ N-1 ] for N >= 2
-      //
-      //    AL-----BL   A,B are stored, and their normal displacements +-nAB.
-      //    |     /|
-      //    |    / |
-      //    A------B
-      //    |  /   |
-      //    | /    |
-      //    AR-----BR
-      //
-      auto addSegment = [ & ] ( glm::vec2 const & A, glm::vec2 const & B, uint32_t color )
-      {
-         auto v = o.getVertexCount();
-         auto dAB = glm::normalize( B - A );
-         auto nAB = getOrtho2D( dAB );      // Compute normal nAB
-         DE_DEBUG( "Segment A(",A,"), B(",B,"), dAB(",dAB,"), nAB(",nAB,")" )
-         addVertex( A, -nAB, color, 0,0 );                  // AL
-         addVertex( A,  nAB, varyColor( color, 30 ), 0,0 ); // AR
-         addVertex( B, -nAB, varyColor( color, 30 ), 0,0 ); // BL
-         addVertex( B,  nAB, varyColor( color, 30 ), 0,0 ); // BR
-         o.addIndexedQuad( v, v + 1, v + 2, v + 3 );
-      };
-
-      // Add Line Join between points A,B,C with possible type Bevel, Miter or Round )
-      // turn left ( math positive, ccw )
-      //
-      //     DL---C----DR
-      //      \    \    \        // SL = B - 0.5 ( nAB + nBC );
-      //       \    \    \       // CR = B + nBC;
-      //        \    \    \      // BR = B + nAB;
-      //         \    \    \
-      // AL-------SL   \    \
-      // |    ----  -   \    \
-      // |----        -  \    \
-      // A----------------B----CR
-      // |--------        |    /\
-      // |        --------|  /   \
-      // AR---------------BR------+
-      //
-      // turn right ( math negative, cw )
-      //
-      // AL---------------BL------+    AL,AR,BL + AR,BL,
-      // |        --------| \    /
-      // |--------        |   \ /    Bevel + Miter
-      // A----------CR----B----CL
-      // |----      /    /|   /
-      // |    ---- / -  / |  /
-      // AR-------/----/--BR/
-      //         /    /    /        // SR = B + 0.5 ( nAB + nBC );
-      //        /    /    /         // BL = B - nBC;
-      //       /    /    /          // CL = B - nAB;
-      //      /    /    /
-      //     DR---C----DL
-      auto addLineJoin = [ & ] ( glm::vec2 const & A, glm::vec2 const & B, glm::vec2 const & C, LineJoin::ELineJoin const & lineJoin )
-      {
-         auto v = o.getVertexCount();
-         auto n00 = glm::vec2( 0, 0 );
-         auto nAB = getNormal2D( B - A );
-         auto nBC = getNormal2D( C - B );
-         auto phi = getAngleABC( A, B, C );    // Compute angle between vector AB and BC
-
-         #ifdef USE_POINT_SKIPPING
-         // if (parallel) then combine both segments by skipping this one.
-         if ( std::abs( phi ) < 0.00001f || std::abs( phi - Math::TWO_PI ) < 0.00001f )
-         {
-            B = C;                        // Skip current segment
-            nAB = getNormal2D( B - A );   // Update normal nAB
-            std::cout << __FUNCTION__ << " :: Skip parallel point(" << i << ")\n";
-            continue;
-         }
-         #endif
-         // Right Line Join ( Bevel, Miter or Round )
-         if ( phi > 0.0f ) // turn left ( math positive, ccw )
-         {
-            DE_DEBUG("LeftLineJoin phi(",phi,"), join(", int(lineJoin),"), A(",A,"), B(",B,"), C(",C,")" )
-            if ( lineJoin == LineJoin::Bevel )
-            {
-               //addVertex3D( B, n00, color );  // B
-               //addVertex3D( B, nAB, color );  // BR = B + nAB
-               //addVertex3D( B, nBC, color );  // CR = B + nBC
-               //addIndexedTriangle( v, v + 1, v + 2 ); // Bevel Triangle B,BR,CR
-               o.addIndexedTriangle( v + 1, v, v - 1 ); // Bevel Triangle CR,CL,BR
-            }
-         }
-         // Left Line Join, CL, BL, CR ( Bevel, Miter or Round )
-         else
-         {
-            DE_DEBUG("RightLineJoin phi(",phi,"), join(",int(lineJoin),"), A(",A,"), B(",B,"), C(",C,")" )
-            if ( lineJoin == LineJoin::Bevel )
-            {
-               //addVertex3D( B,  n00, color ); // B
-               //addVertex3D( B, -nBC, color ); // CL
-               //addVertex3D( B, -nAB, color ); // BL
-               //addIndexedTriangle( v, v + 1, v + 2 ); // Left Bevel Triangle B,CL,BL ccw;
-               o.addIndexedTriangle( v, v - 2, v + 1 ); // Bevel Triangle CL,BL,CR
-            }
-         }
-      };
-
-      //
-      // PolyLine algo from Benni for Bevel,Miter and RoundJoin,
-      // cant use TriangleStrip because of poss. RoundJoin? ( RoundJoin as TriangleStrip can be wasteful )
-      //
-      //uint32_t baseColor = green;
-      glm::vec2 A,B,C; // We also need normals for both line-segments AB and BC
-      A = points[ 0 ];    // Fetch A
-      B = points[ 1 ];    // Fetch B
-      addLineCapStart( A,B, 0xFFAA3388, lineCap );
-      addSegment( A,B, color );
-      for ( size_t i = 2; i < n; ++i )
-      {
-         C = points[ i ]; // Fetch C
-         // Add Join ABC
-         float32_t phi = getAngleABC( A,B,C ); // Compute angle between AB and BC just for debug coloring
-         uint32_t color = 0xFF00FFFF;
-         if ( phi < 0.0f ) { color = 0xFFFF00FF; }
-         addLineJoin( A,B,C, lineJoin );
-         // Add Segment BC
-         addSegment( B,C, varyColor( color,30 ) );
-         // Next point
-         A = B;
-         B = C;
-      }
-      addLineCapEnd( A,B, 0xFFAAC388, lineCap );
-      return true;
-   }
-
-   static void
-   add( SMeshBuffer & o, std::vector< glm::vec2 > const & points,
-        uint32_t color = 0xFFFFFFFF, int lineWidth = 1 )
-   {
-      if ( points.size() < 2 ) { return; }
-
-      float radius = (0.5f * lineWidth);
-
-      auto addSegment = [&] ( glm::vec2 const & a, glm::vec2 const & b )
-      {
-         glm::vec2 m = Math::getNormal2D( glm::vec2( b ) - glm::vec2( a ) );
-         glm::vec2 n = glm::vec2( m.x, m.y ) * radius;
-         SQuad::add( o, glm::vec3( a - n, 0),
-                        glm::vec3( b - n, 0),
-                        glm::vec3( b + n, 0),
-                        glm::vec3( a + n, 0), color );
-      };
-
-      glm::vec3 a = points[ 0 ];
-
-
-
-      for ( size_t i = 1; i < points.size(); ++i )
-      {
-         glm::vec3 b = points[ i ];
-         addSegment( a, b );
-         a = b;
-      }
-   }
-
-   static void
-   addBilligUndIncorrect( SMeshBuffer & o, std::vector< glm::vec2 > const & points,
-        uint32_t color = 0xFFFFFFFF, int lineWidth = 1 )
-   {
-      if ( points.size() < 2 )
-      {
-         return;
-      }
-
-      float radius = (0.5f * lineWidth);
-
-      auto addSegment = [&] ( glm::vec2 const & a, glm::vec2 const & b )
-      {
-         glm::vec2 m = Math::getNormal2D( glm::vec2( b ) - glm::vec2( a ) );
-         glm::vec2 n = glm::vec2( m.x, m.y ) * radius;
-         SQuad::add( o, glm::vec3( a - n, 0),
-                        glm::vec3( b - n, 0),
-                        glm::vec3( b + n, 0),
-                        glm::vec3( a + n, 0), color );
-      };
-
-      glm::vec3 a = points[ 0 ];
-      for ( size_t i = 1; i < points.size(); ++i )
-      {
-         glm::vec3 b = points[ i ];
-         addSegment( a, b );
-         a = b;
-      }
-   }
-
-   */
 

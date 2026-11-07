@@ -22,7 +22,7 @@ H3_Window::~H3_Window()
 
 void H3_Window::createEvent(const de::Recti& r_client)
 {
-    DE_DEBUG()
+    // DE_DEBUG()
 }
 
 void H3_Window::moveEvent( const de::MoveEvent& event )
