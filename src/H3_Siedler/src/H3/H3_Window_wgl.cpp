@@ -22,7 +22,7 @@ H3_Window::~H3_Window()
 
 void H3_Window::createEvent(const de::Recti& r_client)
 {
-    m_game.init(this);
+    DE_DEBUG()
 }
 
 void H3_Window::moveEvent( const de::MoveEvent& event )
@@ -231,8 +231,7 @@ void H3_Window::mouseReleaseEvent( const de::MouseReleaseEvent& event )
             }
             else if (m_game.m_state == H3_State::PlaceCity && m_game.m_hoverFarmId)
             {
-                H3_Farm & farm = H3_getFarm(m_game, __func__, m_game.m_hoverFarmId);
-                m_game.finalizeBuyCity( farm );
+                m_game.finalizeBuyCity( m_game.m_hoverFarmId );
             }
             else if (m_game.m_state == H3_State::PlaceThief && m_game.m_hoverTileId)
             {

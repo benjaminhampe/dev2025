@@ -25,8 +25,9 @@ UI_TileEditor::UI_TileEditor( H3_Game* game, de::gui::Env* env, de::gui::Widget*
     : de::gui::Widget(env, parent, id, pos)
     , m_game{ game }
 {
-    m_i = createIntField("X-Col",0, -100, 100);
-    m_j = createIntField("Y-Row",0, -100, 100);
+    int maxRowsOrCols = 200;
+    m_i = createIntField("X-Col",0, -maxRowsOrCols/2, maxRowsOrCols/2);
+    m_j = createIntField("Y-Row",0, -maxRowsOrCols/2, maxRowsOrCols/2);
     m_tileType = createIntField("Tile Type", 0, 0, H3_TileType::Count-1);
     m_diceValue = createIntField("Dice Value", 8, 2, 12);
     m_angle60 = createIntField("Angle", 0, 0, 5);
@@ -245,11 +246,11 @@ void UI_WorldCreator::draw()
 void UI_WorldCreator::draw2DHexOutline( int i, int j, u32 color, int width,
                                         const V2& offset, const V2& size)
 {
-    float w = 100.0f;
-    float h = 100.0f;
-    const V2 scale(w,h);
-    float x =  de::smesh::SMeshHexagon::computeBoardPosX(w,h,i,j);
-    float y = -de::smesh::SMeshHexagon::computeBoardPosY(w,h,i,j);
+    const float tw = H3_tileSize.x;
+    const float th = H3_tileSize.y;
+    const V2 scale(tw,th);
+    float x =  de::smesh::SMeshHexagon::computeBoardPosX(tw,th,i,j);
+    float y = -de::smesh::SMeshHexagon::computeBoardPosY(tw,th,i,j);
     const V2 pos(x,y);
 
     // ===============================================
@@ -299,11 +300,11 @@ void UI_WorldCreator::draw2DPortBridges(int angle60,
     int i, int j, u32 color, int width,
     const V2& offset, const V2& size)
 {
-    float w = 100.0f;
-    float h = 100.0f;
-    const V2 scale(w,h);
-    float x =  de::smesh::SMeshHexagon::computeBoardPosX(w,h,i,j);
-    float y = -de::smesh::SMeshHexagon::computeBoardPosY(w,h,i,j);
+    const float tw = H3_tileSize.x;
+    const float th = H3_tileSize.y;
+    const V2 scale(tw,th);
+    float x =  de::smesh::SMeshHexagon::computeBoardPosX(tw,th,i,j);
+    float y = -de::smesh::SMeshHexagon::computeBoardPosY(tw,th,i,j);
     const V2 pos(x,y);
 
     // ===============================================

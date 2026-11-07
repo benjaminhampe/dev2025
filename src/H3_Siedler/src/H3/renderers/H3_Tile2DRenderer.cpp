@@ -266,7 +266,7 @@ H3_Tile2DRenderer::collectInstances(const H3_Game& game, const H3_Cfg& cfg)
         uint8_t layer = H3_TileTexture::eTypeCount;
         switch (tile.tt())
         {
-            // case H3_TileType::Unknown: layer = Unknown; break;
+            case H3_TileType::Unknown: layer = H3_TileTexture::Unknown; break;
             case H3_TileType::Water: layer = H3_TileTexture::Water; break;
             case H3_TileType::Desert: layer = H3_TileTexture::Desert; break;
             case H3_TileType::TileA: layer = H3_TileTexture::TileA; break;
@@ -295,8 +295,8 @@ H3_Tile2DRenderer::collectInstances(const H3_Game& game, const H3_Cfg& cfg)
         glm::vec4 & pos = m_instancePos.back();
         pos.x = tile.x();
         pos.y = tile.y();
-        pos.z = cfg.tileSize.x;
-        pos.w = cfg.tileSize.y;
+        pos.z = H3_tileSize.x;
+        pos.w = H3_tileSize.y;
 
         // [Instance] a_instanceAngle60
         m_instanceAngle60.emplace_back( tile.angle60() );

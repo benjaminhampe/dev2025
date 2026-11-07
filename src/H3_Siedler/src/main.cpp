@@ -24,8 +24,8 @@ int main(int argc, char** argv)
     auto window = new H3_Window(m_game);
 
     de::WindowOptions wo;
-    wo.width = 1024;
-    wo.height = 768;
+    wo.width = 1600;
+    wo.height = 899;
     if ( !window->create( wo ) )
     {
         DE_ERROR("Cant create window, abort main().")
@@ -40,6 +40,10 @@ int main(int argc, char** argv)
     //window->run();
     window->bringToFront();
     //window->run();
+
+
+    m_game.initLoadScreen(window);
+    m_game.init();
 
     // MainLoop:
     double m_timeStart = dbTimeInSeconds();

@@ -102,7 +102,9 @@ void H3_WaterTileRenderer2::collectInstances(const H3_Game& game)
         de::TRSf trs;
         trs.pos = tile.pos;
         trs.rotate = glm::vec3(0,0,0);
-        trs.scale = game.m_tileSize;
+        trs.scale.x = H3_tileSize.x;
+        trs.scale.y = H3_tileSize.z;
+        trs.scale.z = H3_tileSize.y;
         trs.update();
         m_instanceMat.push_back( trs.modelMat );
         m_instanceAngle60.emplace_back( tile.angle60 );

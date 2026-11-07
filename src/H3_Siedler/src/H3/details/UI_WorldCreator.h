@@ -105,7 +105,6 @@ private:
     de::Recti m_rcBoard;
     de::Pos2i m_relativePosToBoard;
     bool m_bHoveredBoard;
-    //float m_tileSize = 100.f;
     float m_scale;
     float m_off_x;
     float m_off_y;

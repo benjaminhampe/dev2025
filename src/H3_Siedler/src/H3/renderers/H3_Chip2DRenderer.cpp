@@ -205,7 +205,7 @@ void H3_Chip2DRenderer::render(const glm::vec4& posTransform, const de::Recti& s
     if (!m_shader) { DE_ERROR("No shader") return; }
     if (!m_chipTexture) { DE_ERROR("No chipTexture") return; }
     if (!m_vao) { DE_ERROR("No vao") return; }
-    if (m_instancePos.empty()) { DE_ERROR("No instances") return; }
+    if (m_instancePos.empty()) { /* DE_ERROR("No instances") */ return; }
 
     // [RenderStates]
     de::gpu::State state;
@@ -306,12 +306,12 @@ H3_Chip2DRenderer::collectInstances(const H3_Game& game, const H3_Cfg& cfg)
         glm::vec4 pos;
         pos.x = tile.x();
         pos.y = tile.y();
-        pos.z = cfg.chipSize.x;
-        pos.w = cfg.chipSize.y;
+        pos.z = H3_chipSize.x;
+        pos.w = H3_chipSize.y;
         m_instancePos.emplace_back( pos );
 
         // [Instance] a_instanceRadius
-        m_instanceRadius.emplace_back( cfg.chipSize * 0.5f );
+        m_instanceRadius.emplace_back( glm::vec2(H3_chipSize) * 0.5f );
 
         // [Instance] a_instanceLayer
         m_instanceLayer.emplace_back( layer );

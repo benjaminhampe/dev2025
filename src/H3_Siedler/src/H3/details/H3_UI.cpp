@@ -134,10 +134,10 @@ void UI_drawRoundStats( H3_Game & game)
 
     u32 bg = 0x80000000;
     int padd = 5;
-    driver->draw2DText(x,y,s0,dbRGB(255,225,100),align,font1,bg,padd); y += ln1;
-    driver->draw2DText(x,y,s1,dbRGB(255,100,100),align,font1,bg,padd); y += ln1;
-    driver->draw2DText(x,y,s2,dbRGB(255,150,100),align,font1,bg,padd); y += ln1;
-    driver->draw2DText(x,y,s3,dbRGB(255,200,100),align,font1,bg,padd); y += ln1;
+    driver->draw2DText(x,y,s0,dbRGB(255,225,101),align,font1,bg,padd); y += ln1;
+    driver->draw2DText(x,y,s1,dbRGB(255,101,101),align,font1,bg,padd); y += ln1;
+    driver->draw2DText(x,y,s2,dbRGB(255,150,101),align,font1,bg,padd); y += ln1;
+    driver->draw2DText(x,y,s3,dbRGB(255,200,101),align,font1,bg,padd); y += ln1;
 
     auto camera = driver->getCamera();
     if ( camera )
@@ -146,7 +146,7 @@ void UI_drawRoundStats( H3_Game & game)
         auto s2 = dbStr("Camera-Target(",glm::ivec3(camera->getTarget()),")");
         auto s3 = dbStr("Camera-Angle(",camera->getAng(),")");
 
-        driver->draw2DText(x,y,s1,dbRGB(100,200,100),align,font1,bg,padd); y += ln1;
+        driver->draw2DText(x,y,s1,dbRGB(101,201,101),align,font1,bg,padd); y += ln1;
         driver->draw2DText(x,y,s2,dbRGB(125,215,125),align,font1,bg,padd); y += ln1;
         driver->draw2DText(x,y,s3,dbRGB(145,225,145),align,font1,bg,padd); y += ln1;
     }

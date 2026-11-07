@@ -48,7 +48,8 @@ struct H3_Game
     float getZoom() const;
     void setZoom( float zoom );
 
-    bool init( de::Window* window );
+    void initLoadScreen( de::Window* window );
+    void init();
     void resize( int w, int h );
     void destroy();
     void requestClose();
@@ -95,7 +96,7 @@ struct H3_Game
     void doBuyFarm();
     void finalizeBuyFarm( H3_Corner & corner );
     void doBuyCity();
-    void finalizeBuyCity( H3_Farm & farm );
+    void finalizeBuyCity( u32 farmId );
     void doBuyCard();
     void doBank();
     void doTrade();
@@ -159,16 +160,6 @@ struct H3_Game
 
     std::string getExeDir() const { return dbFileDir(m_argv[0]); }
 
-    glm::vec3 m_tileSize = glm::vec3( 100, 10, 100 );
-    glm::vec3 m_chipSize = glm::vec3( 25, 4, 25 );
-    glm::vec3 m_cornerSize = glm::vec3( 20, 3, 20 );
-    glm::vec3 m_edgeSize = glm::vec3( 18, 2, 18 );
-    glm::vec3 m_cardSize = glm::vec3( 60, 5, 100 );
-    glm::vec3 m_roadSize = glm::vec3( 30, 6,  6 );
-    glm::vec3 m_farmSize = glm::vec3( 10, 10, 10 );
-    glm::vec3 m_citySize = glm::vec3( 20, 10, 10 );
-    glm::vec3 m_playerSize = glm::vec3( 20, 60, 20 );
-    glm::vec3 m_thiefSize = glm::vec3( 20, 60, 20 );
 
     int m_argc;
     char** m_argv;

@@ -116,8 +116,22 @@ H3_Img::add( eID id, const std::string& uri, const de::ImageLoadOptions& opt )
     //dbSaveImage( *pImage, dbStrJoin("img_",id,".webp"));
 }
 
-void
-H3_Img::init()
+void H3_Img::initLoadScreen()
+{
+    std::string mediaDir = "media/H3/";
+
+    de::ImageLoadOptions optRGB;
+    optRGB.throwOnFail = true;
+    optRGB.outputFormat = de::PixelFormat::R8G8B8;
+
+    // gfx/wallpaper
+    {
+        std::string baseDir = mediaDir + "gfx/wallpaper/";
+        add(Satan, baseDir + "satan.webp", optRGB);
+    }
+}
+
+void H3_Img::init()
 {
     std::string mediaDir = "media/H3/";
 
@@ -128,12 +142,6 @@ H3_Img::init()
     de::ImageLoadOptions optRGBA;
     optRGBA.throwOnFail = true;
     optRGBA.outputFormat = de::PixelFormat::R8G8B8A8;
-
-    // gfx/wallpaper
-    {
-        std::string baseDir = mediaDir + "gfx/wallpaper/";
-        add(Satan, baseDir + "satan.webp", optRGB);
-    }
 
     // gfx/skybox/Default (ClubTropicana)
     {
@@ -658,6 +666,14 @@ void H3_Img::save(const std::string& baseDir)
 #include "rc_img/img_168_19_webp.h"	// 49.0762 KB
 #include "rc_img/img_169_20_webp.h"	// 49.0781 KB
 
+void H3_Img::loadLoadScreen()
+{
+    de::ImageLoadOptions opt;
+    opt.throwOnFail = true;
+
+    addFromMemory((eID)1,img_001_satan_webp,293866,opt);
+}
+
 void H3_Img::load()
 {
     de::ImageLoadOptions opt;
@@ -668,7 +684,6 @@ void H3_Img::load()
     optYellowToTransparent.searchColor = dbRGB(255,255,0); // yellow
     optYellowToTransparent.replaceColor = 0; // transparent
 
-    addFromMemory((eID)1,img_001_satan_webp,293866,opt);
     addFromMemory((eID)2,img_002_nx_webp,87948,opt);
     addFromMemory((eID)3,img_003_px_webp,63218,opt);
     addFromMemory((eID)4,img_004_ny_webp,22896,opt);

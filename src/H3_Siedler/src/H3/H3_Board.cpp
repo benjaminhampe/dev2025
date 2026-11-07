@@ -2,6 +2,17 @@
 #include <H3/details/H3_Tex.h>
 #include <H3/details/H3_AI.h>
 
+glm::vec3 H3_tileSize = glm::vec3( 100, 100, 5 );
+glm::vec3 H3_chipSize = glm::vec3( 25, 25, 4 );
+glm::vec3 H3_cornerSize = glm::vec3( 20, 20, 3 );
+glm::vec3 H3_edgeSize = glm::vec3( 18, 18, 2 );
+glm::vec3 H3_cardSize = glm::vec3( 60, 100, 5 );
+glm::vec3 H3_roadSize = glm::vec3( 30, 6,  6 );
+glm::vec3 H3_farmSize = glm::vec3( 10, 10, 10 );
+glm::vec3 H3_citySize = glm::vec3( 20, 10, 10 );
+glm::vec3 H3_thiefSize = glm::vec3( 20, 20, 60 );
+glm::vec3 H3_playerSize = glm::vec3( 20, 20, 60 );
+
 // =====================================================================
 void LineBoxAnim::draw( de::gpu::VideoDriver* driver )
 // =====================================================================
@@ -1343,11 +1354,14 @@ bool
 H3_Tile::isWaterOrPort() const { return tt.isWaterOrPort(); }
 
 int
-H3_Tile::getCornerIndex( glm::vec3 const & tileSize, H3_Corner & corner ) const
+H3_Tile::getCornerIndex( H3_Corner & corner ) const
 {
+    const float tw = H3_tileSize.x;
+    const float th = H3_tileSize.y;
+
     for ( int i = 0; i < 6; ++i )
     {
-        auto relPos = de::smesh::SMeshHexagon::getCorner( i, tileSize.x, tileSize.z );
+        auto relPos = de::smesh::SMeshHexagon::getCorner( i, tw, th );
         auto cornerPos = pos + glm::vec3( relPos.x, 0.0f, relPos.y );
         if ( dbEquals( cornerPos, corner.trs.pos ) )
         {

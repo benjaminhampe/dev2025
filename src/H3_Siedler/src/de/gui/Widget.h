@@ -71,21 +71,6 @@ public:
     const std::string& getName() const { return m_name; }
     void setName( const std::string & name ) { m_name = name; }
 
-/*
-    enum eWidgetFlag
-    {
-        eWF_None = 0,       // 0000 0000
-        eWF_Visible = 1,    // 0000 0001
-        eWF_Enabled = 2,    // 0000 0010
-        eWF_Hovered = 4,    // 0000 0100
-        eWF_Pickable = 8,   // 0000 1000
-        eWF_Pressed = 16,   // 0001 0000
-        eWF_Released = 32,  // 0010 0000
-        eWF_DrawChildren = 64, // 0100 0000
-        eWF_Drawing = 128,  // 1000 0000
-        eWF_FlagMask = 0x7F
-    };
-*/
     bool isVisible() const { return m_bVisible; }
     void setVisible( bool visible ) { m_bVisible = visible; }
 

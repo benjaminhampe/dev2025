@@ -146,15 +146,14 @@ void H3_Game::resize(int w, int h)
     }
 }
 
-bool H3_Game::init( de::Window* window )
+void H3_Game::initLoadScreen( de::Window* window )
 {
-    m_isCameraMouseInputEnabled = true;
     m_window = window;
     m_driver = new de::gpu::VideoDriver();
 
     int w = m_window->getClientRect().w;
     int h = m_window->getClientRect().h;
-    // DE_INFO("Got client size(",w,",",h,").")
+    DE_INFO("WindowClientSize(",w,",",h,").")
 
     if ( !m_driver->open( w, h ) )
     {
@@ -163,8 +162,25 @@ bool H3_Game::init( de::Window* window )
         delete m_driver;
         m_window = nullptr;
         m_driver = nullptr;
-        return false;
+        return;
     }
+
+    // m_img.initLoadScreen();
+    m_img.loadLoadScreen();
+    m_tex.initLoadScreen( *this );
+    auto satan = getTex(H3_Tex::Satan, __func__);
+    m_window->run();
+    m_window->makeCurrent();
+    m_driver->resize(w,h);
+    m_driver->beginRender();
+    m_driver->getScreenQuadRenderer()->draw2DRect(de::Recti(0,0,w,h), satan);
+    m_driver->endRender();
+    m_window->swapBuffers();
+}
+
+void H3_Game::init()
+{
+    m_isCameraMouseInputEnabled = true;
 
     // ===================
     // === Setup images ===
@@ -235,8 +251,8 @@ bool H3_Game::init( de::Window* window )
     m_smeshTile.clear();
     de::smesh::SMeshHexagon::add(
         m_smeshTile,
-        m_tileSize.x,
-        m_tileSize.z,
+        H3_tileSize.x,
+        H3_tileSize.y,
         0xFFFFFFFF );
     m_smeshTile.recalculateBoundingBox();
 
@@ -244,9 +260,9 @@ bool H3_Game::init( de::Window* window )
     m_smeshChip.clear();
     de::smesh::SMeshCylinder::addXZ(
         m_smeshChip,
-        m_chipSize.x,
-        m_chipSize.y,
-        m_chipSize.z,
+        H3_chipSize.x,
+        H3_chipSize.z,
+        H3_chipSize.y,
         0xFFFFFFFF,
         33);
     m_smeshChip.recalculateBoundingBox();
@@ -257,9 +273,9 @@ bool H3_Game::init( de::Window* window )
     m_smeshCorner.clear();
     de::smesh::SMeshCylinder::addXZ(
         m_smeshCorner,
-        m_cornerSize.x,
-        m_cornerSize.y,
-        m_cornerSize.z,
+        H3_cornerSize.x,
+        H3_cornerSize.z,
+        H3_cornerSize.y,
         0xFFFFFFFF,
         24);
     m_smeshCorner.recalculateBoundingBox();
@@ -270,9 +286,9 @@ bool H3_Game::init( de::Window* window )
     m_smeshEdge.clear();
     de::smesh::SMeshCylinder::addXZ(
         m_smeshEdge,
-        m_edgeSize.x,
-        m_edgeSize.y,
-        m_edgeSize.z,
+        H3_edgeSize.x,
+        H3_edgeSize.z,
+        H3_edgeSize.y,
         0xFFFFFFFF,
         21);
     m_smeshEdge.recalculateBoundingBox();
@@ -280,21 +296,24 @@ bool H3_Game::init( de::Window* window )
     m_3dEdges.initVAO();
 
     // === Create geometry ===
-    H3_ObjMeshBuffer::initRoadGeometry( m_tmeshRoad, m_roadSize );
+    glm::vec3 roadSize(H3_roadSize.x, H3_roadSize.z, H3_roadSize.y);
+    H3_ObjMeshBuffer::initRoadGeometry( m_tmeshRoad, roadSize );
     m_tmeshRoad.upload();
     m_smeshRoad = H3_ObjMeshBuffer::toSMesh( m_tmeshRoad );
     m_smeshRoad.material.DiffuseMap = getTex( H3_Tex::Wood, "m_smeshRoad" );
     m_smeshRoad.upload();
 
     // === Create geometry ===
-    H3_ObjMeshBuffer::initFarmGeometry( m_tmeshFarm, m_farmSize );
+    glm::vec3 farmSize(H3_farmSize.x, H3_farmSize.z, H3_farmSize.y);
+    H3_ObjMeshBuffer::initFarmGeometry( m_tmeshFarm, farmSize );
     m_tmeshFarm.upload();
     m_smeshFarm = H3_ObjMeshBuffer::toSMesh( m_tmeshFarm );
     m_smeshFarm.material.DiffuseMap = getTex( H3_Tex::Wood, "m_smeshFarm" );
     m_smeshFarm.upload();
 
     // === Create geometry ===
-    H3_ObjMeshBuffer::initCityGeometry( m_tmeshCity, m_citySize );
+    glm::vec3 citySize(H3_citySize.x, H3_citySize.z, H3_citySize.y);
+    H3_ObjMeshBuffer::initCityGeometry( m_tmeshCity, citySize );
     m_tmeshCity.upload();
     m_smeshCity = H3_ObjMeshBuffer::toSMesh( m_tmeshCity );
     m_smeshCity.material.DiffuseMap = getTex( H3_Tex::Wood, "m_smeshCity" );
@@ -302,9 +321,10 @@ bool H3_Game::init( de::Window* window )
 
     // === Create geometry ===
     m_smeshThief.clear();
+    glm::vec3 thiefSize(H3_thiefSize.x, H3_thiefSize.z, H3_thiefSize.y);
     de::smesh::SMeshCone::addXZ(
         m_smeshThief,
-        m_thiefSize,
+        thiefSize,
         0xFFFFFFFF,
         0xFFFFFFFF,
         21,
@@ -346,7 +366,6 @@ bool H3_Game::init( de::Window* window )
     m_uiGame->m_worldCreator->setCfg(0);
 
     toggleMainMenu();
-    return true;
 }
 
 void H3_Game::draw()
@@ -810,10 +829,10 @@ void H3_Game::startGame()
         tile.edges.clear();
         tile.next.clear();
 
-        const auto& tx = m_tileSize.x;
-        const auto& tz = m_tileSize.z;
-        const auto x = de::smesh::SMeshHexagon::computeBoardPosX(tx,tz,tile.i,tile.j);
-        const auto z = de::smesh::SMeshHexagon::computeBoardPosY(tx,tz,tile.i,tile.j);
+        const auto tw = H3_tileSize.x;
+        const auto th = H3_tileSize.y;
+        const auto x = de::smesh::SMeshHexagon::computeBoardPosX(tw,th,tile.i,tile.j);
+        const auto z = de::smesh::SMeshHexagon::computeBoardPosY(tw,th,tile.i,tile.j);
         tile.pos = glm::vec3(x,0,z);
 
         // Collision aabbox:
@@ -832,9 +851,11 @@ void H3_Game::startGame()
 
         if (tile.tt.hasChip())
         {
-            tile.trsChip.pos = tile.pos + glm::vec3(0, m_chipSize.y * 0.5f,0);
+            tile.trsChip.pos = tile.pos + glm::vec3(0, H3_chipSize.z * 0.5f,0);
             tile.trsChip.rotate = glm::vec3(0,0,0);
-            tile.trsChip.scale = m_chipSize;
+
+            glm::vec3 chipSize(H3_chipSize.x, H3_chipSize.z, H3_chipSize.y);
+            tile.trsChip.scale = chipSize;
 
             switch (tile.tt.value)
             {
@@ -1185,7 +1206,7 @@ void H3_Game::doDice()
 
     m_animations.addAnimation( new H3_Dice2DAnimation(this) );
 
-    auto s1 = dbStr(playerStr(),"has Dice Values (", int(player.state.dice.a), " + ", int(player.state.dice.b), ")");
+    auto s1 = dbStr("Player[",player.id,"] ",player.name," did dice (", int(player.state.dice.a), " + ", int(player.state.dice.b), ")");
     marqueeH3( de_wstr(s1), 2000, player.color );
 
     UI_logDice( *this );
@@ -1366,7 +1387,7 @@ void H3_Game::enterThiefPlacement()
 
     m_animations.addAnimation( new H3_ArrowToThiefAnimation(this) );
 
-    auto s = dbStr(playerStr(),"place thief...");
+    auto s = dbStr("Player[",player.id,"] ",player.name," places thief...");
     marqueeH1(de_wstr(s), 2000, player.color);
 
     UI_updateActions();
@@ -1632,7 +1653,7 @@ void H3_Game::finalizeBuyRoad( H3_Edge & edge )
     // Create H3_Road:
     m_roads.emplace_back();
     auto& road = m_roads.back();
-    road.id = int( m_roads.size() );
+    road.id = H3_createId();
     road.owner = player.id;
     road.edgeId = edge.id;
     road.color = player.color;
@@ -1704,24 +1725,28 @@ void H3_Game::finalizeBuyFarm( H3_Corner & corner )
 
     H3_Player & player = getCurrentPlayer();
 
-    if ( !player.state.bank.canBuyFarm() && m_round > 3 )
+    if ( m_round > 3 && !player.state.bank.canBuyFarm() )
     {
         DE_ERROR(playerStr(),"cannot buy farm.")
         return;
     }
 
-    // Create H3_Farm:
+    if ( m_round > 3 && !player.state.bank.buyFarm() )
+    {
+        auto s = dbStr(playerStr(),"buy farm failed!");
+        throw std::runtime_error(s);
+    }
+
+    // [Create] H3_Farm
     m_farms.emplace_back();
     auto& farm = m_farms.back();
-    farm.id = int( m_farms.size() );
+    farm.id = H3_createId();
     farm.owner = player.id;
     farm.cornerId = corner.id;
     farm.color = player.color;
     farm.trs.pos = corner.trs.pos;
     farm.trs.rotate = corner.trs.rotate;
     farm.trs.update();
-
-    // Create H3_Farm::collisionTriangles:
     const auto farmTriangles = m_smeshFarm.createCollisionTriangles();
     farm.collisionTriangles.clear();
     farm.collisionTriangles.reserve( farmTriangles.size() );
@@ -1733,12 +1758,13 @@ void H3_Game::finalizeBuyFarm( H3_Corner & corner )
         farm.collisionTriangles.emplace_back(A,B,C);
     }
 
-    player.state.farms.emplace_back( m_farms.back().id );
-    player.state.victoryPoints++;
-    // player.didBuyFarm++;
-
+    // [Update] H3_Corner
     corner.building_type = 1; // Farm
     corner.owner = player.id;
+
+    // [Update] H3_Player
+    player.state.farms.emplace_back( farm.id );
+    player.state.updateVictoryPoints();
 
     // TODO: Repair to only use 2 edges of port tile:
     for ( int tileId : corner.tiles )
@@ -1758,22 +1784,11 @@ void H3_Game::finalizeBuyFarm( H3_Corner & corner )
         }
     }
 
-    if ( m_round > 3 )
-    {
-        if (!player.state.bank.buyFarm())
-        {
-            auto s = dbStr(playerStr(),"Cannot buy farm");
-            throw std::runtime_error(s);
-        }
-    }
-
     UI_logBuyFarm( *this, corner.id );
     m_visibleCorners.clear();
     m_bUpdateDrawCall_Corners = true;
     m_bUpdateDrawCall_Farms = true;
     enterIdle();
-
-    // Winner is computed in doEndTurn();
 }
 
 void H3_Game::doBuyCity()
@@ -1797,33 +1812,35 @@ void H3_Game::doBuyCity()
     UI_updateActions();
 }
 
-void H3_Game::finalizeBuyCity( H3_Farm & farm )
+void H3_Game::finalizeBuyCity( u32 farmId )
 {
-    DE_DEBUG(playerStr())
+    m_hoverFarmId = 0;
+    m_hoverCityId = 0;
 
-    H3_Player & player = getCurrentPlayer();
+    DE_DEBUG(playerStr())
 
     if ( m_state != H3_State::PlaceCity )
     {
         DE_ERROR(playerStr(),"bad state ", m_state.str())
         return;
     }
-
     if ( m_round < 4 )
     {
         DE_ERROR(playerStr(),"bad round ", m_round)
         return;
     }
 
-    if ( farm.owner != m_playerId )
-    {
-        DE_ERROR(playerStr(),"is not farm owner. Farm:", farm.id)
-        return;
-    }
-
+    H3_Player & player = getCurrentPlayer();
     if ( !player.state.bank.canBuyCity() )
     {
         DE_ERROR(playerStr(),"cannot buy city." )
+        return;
+    }
+
+    H3_Farm & farm = H3_getFarm(*this, __func__, farmId);
+    if ( farm.owner != player.id )
+    {
+        DE_ERROR(playerStr(),"is not farm owner. Farm:", farm.id, ", owner(",farm.owner,")")
         return;
     }
 
@@ -1833,26 +1850,41 @@ void H3_Game::finalizeBuyCity( H3_Farm & farm )
         DE_ERROR(playerStr(),"corner[",corner.id,"] has no farm.")
         return;
     }
+    if ( corner.owner != player.id )
+    {
+        DE_ERROR(playerStr(),"corner[",corner.id,"] is not owned by player(",player.id,").")
+        return;
+    }
+    if ( corner.id != farm.cornerId )
+    {
+        DE_ERROR(playerStr(),"corner[",corner.id,"] differs from farm.cornerId(",farm.cornerId,").")
+        return;
+    }
 
+    // [BuyCity]
     if ( !player.state.bank.buyCity() )
     {
         DE_ERROR(playerStr(),"cannot buy a city ", player.state.bank.str() )
         return;
     }
 
+    // [Delete] H3_Farm
+    m_farms.erase(std::remove_if(m_farms.begin(), m_farms.end(),
+        [&](const H3_Farm & cached)
+        {
+            return cached.id == farmId;
+        }), m_farms.end());
+
     // [Create] H3_City:
     m_citys.emplace_back();
-    auto& city = m_citys.back();
-    city.id = H3_createId();
+    H3_City& city = m_citys.back();
+    city.id = farmId;
     city.owner = player.id;
     city.cornerId = corner.id;
     city.color = player.color;
     city.trs.pos = corner.trs.pos;
     city.trs.rotate = corner.trs.rotate;
     city.trs.update();
-    //city.collisitonTriangles:
-
-    // [Create] H3_City::collisionTriangles:
     const auto cityTriangles = m_smeshCity.createCollisionTriangles();
     city.collisionTriangles.clear();
     city.collisionTriangles.reserve( cityTriangles.size() );
@@ -1864,57 +1896,26 @@ void H3_Game::finalizeBuyCity( H3_Farm & farm )
         city.collisionTriangles.emplace_back(A,B,C);
     }
 
-    player.state.citys.emplace_back( m_citys.back().id );
-    player.state.citys.emplace_back( m_citys.back().id );
-    // player.didBuyCity++;
+    // [Update] H3_Corner
+    corner.building_type = 2;  // City
+    corner.owner = player.id;  // Player is owner
 
-    auto & game = *this;
+    // [Update] H3_Player
+    player.state.farms.erase(
+        std::remove_if(player.state.farms.begin(), player.state.farms.end(),
+        [&](u32 cached)
+        {
+            return cached == farmId;
+        }), player.state.farms.end());
+    player.state.citys.emplace_back( city.id ); // Should be old farmId
+    player.state.updateVictoryPoints();
 
-    // ======================================
-    // Erase 'farm.id' from 'player.farms':
-    // ======================================
-    auto itFarmId = std::find_if( player.state.farms.begin(), player.state.farms.end(),
-        [&] ( const uint32_t cachedFarmId ) { return cachedFarmId == farm.id; } );
-    if (itFarmId == player.state.farms.end())
-    {
-        auto s = dbStr(playerStr(),"Invalid itFarmId");
-        throw std::runtime_error(s);
-    }
-    else
-    {
-        // Erase player's farmId
-        player.state.farms.erase( itFarmId );
-    }
-
-    // ======================================
-    // Erase 'farm' from 'board.m_farms';
-    // ======================================
-    auto itFarm = std::remove_if( m_farms.begin(), m_farms.end(),
-        [&](const H3_Farm& cachedFarm)
-    {
-        return cachedFarm.id == farm.id;
-    });
-
-    if (itFarm == m_farms.end())
-    {
-        auto s = dbStr(playerStr(),"Invalid(2) itFarmId");
-        throw std::runtime_error(s);
-    }
-    else
-    {
-        m_farms.erase(itFarm, m_farms.end());
-    }
-
-    // ======================================
-    //
-    player.state.victoryPoints++;
-    corner.building_type = 2; // City
-
-    //DE_DEBUG("EndCity()")
     UI_logBuyCity( *this, corner.id );
-    m_state = H3_State::Idle;
     m_bUpdateDrawCall_Farms = true;
     m_bUpdateDrawCall_Citys = true;
+
+    // TODO: add firework animation over city.
+
     enterIdle();
 }
 
@@ -2265,15 +2266,17 @@ void H3_Game::updateWindowTitle()
     const de::Recti r1 = m_window->getWindowRect();
     const de::Recti r2 = m_window->getClientRect();
 
-    int fps = (m_driver) ? m_driver->getFPS() : 0;
-
+    const int fps = (m_driver) ? m_driver->getFPS() : 0;
+    const int scrW = (m_driver) ? m_driver->getScreenWidth() : 0;
+    const int scrH = (m_driver) ? m_driver->getScreenHeight() : 0;
     std::ostringstream o; o <<
-        "Siedler 3D (c) 2025 by BenjaminHampe@gmx.de | "
+        "Siedler3D (c) 2026 by BenjaminHampe@gmx.de | "
         "FPS(" << fps << "), "
         "Zoom(" << int(getZoom()*100.f) << "%), "
-        "Desktop("<<desktopW<<","<<desktopH<<"), "
+        "Screen("<<scrW << "," << scrH << "), "
+        // "Client("<< r2.str() << "), "
         "Window("<<r1.str()<<"), "
-        "Client("<<r2.str()<<")";
+        "Desktop("<<desktopW<<","<<desktopH<<")";
 
     // DE_DEBUG(o.str())
 
@@ -2355,7 +2358,10 @@ void H3_Game::drawPortBridges()
     auto rend = driver->getSMaterialRenderer();
 
     de::smesh::SMeshBuffer bridge;
-    de::smesh::SMeshBox::add( bridge, m_roadSize, {0,0,0}, 0xFFFFFFFF );
+
+    glm::vec3 roadSize(H3_roadSize.x, H3_roadSize.z, H3_roadSize.y);
+
+    de::smesh::SMeshBox::add( bridge, roadSize, {0,0,0}, 0xFFFFFFFF );
     bridge.primitiveType = de::gpu::PrimitiveType::Triangles;
     bridge.material.Lighting = 1;
     bridge.material.setTexture( 0, getTex(H3_Tex::Wood2, "H3_Game::drawPortBridges()") );
@@ -2368,7 +2374,7 @@ void H3_Game::drawPortBridges()
         int ang60 = tile.angle60;
 
         // Draw bridge A:
-        auto cornerA_pos2 = de::smesh::SMeshHexagon::getCorner(ang60, m_tileSize.x, m_tileSize.z);
+        auto cornerA_pos2 = de::smesh::SMeshHexagon::getCorner(ang60, H3_tileSize.x, H3_tileSize.y);
         auto cornerA_pos3 = glm::vec3(cornerA_pos2.x, 0, cornerA_pos2.y);
         auto cornerA_ang = atan2( cornerA_pos2.y, cornerA_pos2.x ) * de::Math::RAD2DEG;
         cornerA_ang = de::Math::wrapAngle0_360(180.0f - cornerA_ang);
@@ -2380,7 +2386,7 @@ void H3_Game::drawPortBridges()
         rend->draw3D(bridge);
 
         // Draw bridge B:
-        auto cornerB_pos2 = de::smesh::SMeshHexagon::getCorner((ang60 + 1) % 6, m_tileSize.x, m_tileSize.z);
+        auto cornerB_pos2 = de::smesh::SMeshHexagon::getCorner((ang60 + 1) % 6, H3_tileSize.x, H3_tileSize.y);
         auto cornerB_pos3 = glm::vec3(cornerB_pos2.x, 0, cornerB_pos2.y);
         auto cornerB_ang = atan2( cornerB_pos2.y, cornerB_pos2.x ) * de::Math::RAD2DEG;
         cornerB_ang = de::Math::wrapAngle0_360(180.0f - cornerB_ang);
@@ -2573,9 +2579,9 @@ void H3_Game::drawHoveredEdge()
     auto rend = driver->getLine3DRenderer();
 
     de::Box3f bbox;
-    const auto a = m_edgeSize.x * 0.5f;
-    const auto b = m_edgeSize.y;
-    const auto c = m_edgeSize.z * 0.5f;
+    const auto a = H3_edgeSize.x * 0.5f;
+    const auto b = H3_edgeSize.z;
+    const auto c = H3_edgeSize.y * 0.5f;
     bbox.m_Min = edge.trs.transform( glm::vec3(-a,0,-c) );
     bbox.m_Max = edge.trs.transform( glm::vec3( a,b, c) );
 
@@ -2613,9 +2619,9 @@ void H3_Game::drawHoveredCorner()
     auto rend = driver->getLine3DRenderer();
 
     de::Box3f bbox;
-    const auto a = m_cornerSize.x * 0.5f;
-    const auto b = m_cornerSize.y;
-    const auto c = m_cornerSize.z * 0.5f;
+    const auto a = H3_cornerSize.x * 0.5f;
+    const auto b = H3_cornerSize.z;
+    const auto c = H3_cornerSize.y * 0.5f;
     bbox.m_Min = corner.trs.transform( glm::vec3(-a,0,-c) );
     bbox.m_Max = corner.trs.transform( glm::vec3( a,b, c) );
     driver->resetModelMatrix();
@@ -2682,12 +2688,14 @@ void H3_Game::drawHoveredTile()
     trsHull.update();
 
     // Hull-Points:
-    auto A = de::smesh::SMeshHexagon::cornerA3(m_tileSize.x,m_tileSize.z);
-    auto B = de::smesh::SMeshHexagon::cornerB3(m_tileSize.x,m_tileSize.z);
-    auto C = de::smesh::SMeshHexagon::cornerC3(m_tileSize.x,m_tileSize.z);
-    auto D = de::smesh::SMeshHexagon::cornerD3(m_tileSize.x,m_tileSize.z);
-    auto E = de::smesh::SMeshHexagon::cornerE3(m_tileSize.x,m_tileSize.z);
-    auto F = de::smesh::SMeshHexagon::cornerF3(m_tileSize.x,m_tileSize.z);
+    float tw = H3_tileSize.x;
+    float th = H3_tileSize.y;
+    auto A = de::smesh::SMeshHexagon::cornerA3(tw,th);
+    auto B = de::smesh::SMeshHexagon::cornerB3(tw,th);
+    auto C = de::smesh::SMeshHexagon::cornerC3(tw,th);
+    auto D = de::smesh::SMeshHexagon::cornerD3(tw,th);
+    auto E = de::smesh::SMeshHexagon::cornerE3(tw,th);
+    auto F = de::smesh::SMeshHexagon::cornerF3(tw,th);
     // std::vector<glm::vec3> corners{ A,B,C,D,E,F };
 
     float h = 32.0;

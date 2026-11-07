@@ -47,7 +47,7 @@ H3_Tex::add( H3_Game & game, eID texId, H3_Img::eID imgId,
 }
 
 void
-H3_Tex::init( H3_Game & game )
+H3_Tex::initLoadScreen( H3_Game & game )
 {
     m_driver = game.getDriver();
 
@@ -63,6 +63,20 @@ H3_Tex::init( H3_Game & game )
     {
         add( game, Satan, H3_Img::Satan, so);
     }
+}
+
+void
+H3_Tex::init( H3_Game & game )
+{
+    m_driver = game.getDriver();
+
+    de::gpu::SamplerOptions so;
+    so.setAF( 1.0f );
+    so.setMin( de::gpu::SamplerOptions::Minify::Linear );
+    so.setMag( de::gpu::SamplerOptions::Magnify::Linear );
+    so.setWrapR( de::gpu::SamplerOptions::Wrap::Repeat );
+    so.setWrapS( de::gpu::SamplerOptions::Wrap::Repeat );
+    so.setWrapT( de::gpu::SamplerOptions::Wrap::Repeat );
 
     // gfx/base
     {

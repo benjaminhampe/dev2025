@@ -900,6 +900,7 @@ void VideoDriver::resize( int w, int h )
 
     m_screenWidth = w;
     m_screenHeight = h;
+    m_viewport = Recti(0,0,w,h);
 
     if (getCamera())
     {

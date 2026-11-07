@@ -430,8 +430,10 @@ bool Window_WGL::create( WindowOptions params )
     int desktopW = GetSystemMetrics( SM_CXSCREEN );
     int desktopH = GetSystemMetrics( SM_CYSCREEN );
 
-    int windowW = desktopW / 2 - 100;
-    int windowH = desktopH - 300;
+    int windowW = std::min(params.width,desktopW);
+    int windowH = std::min(params.height,desktopH);
+    int windowX = std::max(0, (desktopW - windowW)/2);
+    int windowY = std::max(0, (desktopH - windowH)/2);
 
     const HMODULE hInstance = GetModuleHandleW(nullptr);
     const HWND parentHwnd = (HWND)params.parent; //(HWND)parent;
@@ -506,7 +508,10 @@ bool Window_WGL::create( WindowOptions params )
         className.c_str(), // lpszClassName,
         winTitle.c_str(),
         dwStyle,
-        0, 0, windowW, windowH,
+        windowX,
+        windowY,
+        windowW,
+        windowH,
         parentHwnd,
         nullptr,
         hInstance,

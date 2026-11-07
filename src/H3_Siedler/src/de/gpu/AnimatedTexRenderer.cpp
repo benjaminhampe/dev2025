@@ -7,8 +7,10 @@ namespace gpu {
 
 void createBubbleAnimation(std::vector<Image> & images)
 {
+    size_t totalFrames = 100;
+    size_t totalBubbles = 101;
     images.clear();
-    images.reserve(100);
+    images.reserve(totalFrames);
 
     struct Bubble
     {
@@ -19,8 +21,8 @@ void createBubbleAnimation(std::vector<Image> & images)
         uint32_t color = 0xFFFFFFFF;
     };
     std::vector<Bubble> bubbles;
-    bubbles.reserve(100);
-    for (int i = 0; i < 100; i++)
+    bubbles.reserve(totalBubbles);
+    for (int i = 0; i < totalBubbles; i++)
     {
         bubbles.emplace_back();
         Bubble & b = bubbles.back();
@@ -34,7 +36,7 @@ void createBubbleAnimation(std::vector<Image> & images)
 
     int scr_w = 256;
     int scr_h = 128;
-    for (int i = 0; i < 100; i++)
+    for (int i = 0; i < totalFrames; i++)
     {
         images.emplace_back();
         Image & img = images.back();
@@ -76,13 +78,15 @@ void createBubbleAnimation(std::vector<Image> & images)
 
 void loadExplosionImages(std::vector<Image> & images)
 {
+    size_t totalFrames = 100;
+
     // "C:\GitHub\dev2025\src\H3_Siedler\media\H3\gfx\explosion02_webp\explosion02-frame001.webp"
     std::string mediaDir = "media/H3/gfx/explosion02_webp/explosion02-frame";
 
     images.clear();
-    images.reserve(100);
+    images.reserve(totalFrames);
 
-    for (int i = 1; i <= 100; i++)
+    for (int i = 1; i <= totalFrames; i++)
     {
         std::string s = "";
         if (i < 100) s += "0";

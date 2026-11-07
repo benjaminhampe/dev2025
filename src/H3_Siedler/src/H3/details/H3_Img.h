@@ -63,8 +63,10 @@ struct H3_Img
     H3_Img();
     ~H3_Img();
     void destroy();
+    void initLoadScreen();
     void init();
     void load();
+    void loadLoadScreen();
     void save(const std::string& baseDir);
     void clear();
 

@@ -391,7 +391,7 @@ CPU_findBestRoad( H3_Game & game, uint32_t playerId )
 
 void CPU_doRoundN( H3_Game & game )
 {
-    auto& player = game.getCurrentPlayer();
+    H3_Player& player = game.getCurrentPlayer();
     if (player.typ != H3_PlayerType::CPU)
     {
         DE_ERROR("No CPU player ", player.id)
@@ -403,6 +403,12 @@ void CPU_doRoundN( H3_Game & game )
     }
 
     game.doDice();
+
+    std::vector<u32> roadPlaces = H3_computeVisibleEdges(game, player.id);
+    std::vector<u32> farmPlaces = H3_computeVisibleCorners(game, player.id);
+
+
+
 
     if ( player.state.bank.canBuyFarm() )
     {

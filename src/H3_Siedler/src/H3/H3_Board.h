@@ -42,6 +42,17 @@ struct H3_Action;
 struct H3_ActionLog;
 struct H3_Game;
 
+extern glm::vec3 H3_tileSize;
+extern glm::vec3 H3_chipSize;
+extern glm::vec3 H3_cornerSize;
+extern glm::vec3 H3_edgeSize;
+extern glm::vec3 H3_cardSize;
+extern glm::vec3 H3_roadSize;
+extern glm::vec3 H3_farmSize;
+extern glm::vec3 H3_citySize;
+extern glm::vec3 H3_thiefSize;
+extern glm::vec3 H3_playerSize;
+
 // =====================================================================
 struct LineBoxAnim
 // =====================================================================
@@ -199,11 +210,12 @@ public:
     void setAngle60(int angle60) { m_angle60 = angle60; }
     void setPos(int i, int j)
     {
-        float ts = 100.0f;
         m_i = i;
         m_j = j;
-        m_x = de::smesh::SMeshHexagon::computeBoardPosX(ts, ts, m_i, m_j);
-        m_y = -de::smesh::SMeshHexagon::computeBoardPosY(ts, ts, m_i, m_j);
+        float tw = H3_tileSize.x;
+        float th = H3_tileSize.y;
+        m_x = de::smesh::SMeshHexagon::computeBoardPosX(tw,th, m_i, m_j);
+        m_y = -de::smesh::SMeshHexagon::computeBoardPosY(tw,th, m_i, m_j);
     }
 
     H3_TileType tt() const { return m_tileType; }
@@ -220,7 +232,7 @@ public:
     {
         const V2 mousePos(mx,my);
         const V2 pos(x(),y());
-        const V2 scale(100,100);
+        const V2 scale(H3_tileSize.x,H3_tileSize.y);
         // ===============================================
         /// @brief The Hexagon
         // ===============================================
@@ -385,8 +397,6 @@ struct H3_Cfg
 
     H3_CfgPlayer player; // human
 
-    glm::vec2 tileSize = glm::vec2(100.f,100.f);
-    glm::vec2 chipSize = glm::vec2( 30.f, 30.f);
     // std::vector< H3_CfgPlayer > playerList;
 
     // std::vector< H3_Cost > cost4card;   // Standard
@@ -586,7 +596,7 @@ struct H3_Tile
 
     H3_Tile();
     bool isWaterOrPort() const;
-    int getCornerIndex( glm::vec3 const & tileSize, H3_Corner & corner ) const;
+    int getCornerIndex( H3_Corner & corner ) const;
     // Connect tiles with max. 6 neighbor tiles
     bool addTileId( const u32 tileId );
     // Connect tile with max. 6 unique edges

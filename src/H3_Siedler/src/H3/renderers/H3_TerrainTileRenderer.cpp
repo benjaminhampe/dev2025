@@ -5,8 +5,10 @@
 namespace {
 
 void createSMeshTile( de::smesh::SMeshBuffer & o, de::gpu::VideoDriver* driver,
-    glm::vec3 tileSize, de::Image bumpMap, const de::gpu::TexRef& diffuseMap )
+    de::Image bumpMap, const de::gpu::TexRef& diffuseMap )
 {
+    glm::vec3 tileSize(H3_tileSize.x, H3_tileSize.z, H3_tileSize.y);
+
     DE_BENNI("Loaded bumpMap = ", dbStrBytes(bumpMap.computeMemoryConsumption()) )
 
     de::gpu::BumpMapUtil::saturateHeightmap( bumpMap );
@@ -95,13 +97,12 @@ void H3_TerrainTileRenderer::init( H3_Game & game )
     de::smesh::SMeshBuffer m_meshTileD; // Italia
     de::smesh::SMeshBuffer m_meshTileE; // Alpen
 
-    auto ts = game.m_tileSize;
-    createSMeshTile( m_meshTileDesert, m_driver, ts, game.getImg(H3_Img::TileDesert_H), game.getTex(H3_Tex::TileDesert_D, "m_meshTileDesert"));
-    createSMeshTile( m_meshTileA, m_driver, ts, game.getImg(H3_Img::TileA_H), game.getTex(H3_Tex::TileA_D, "m_meshTileA"));
-    createSMeshTile( m_meshTileB, m_driver, ts, game.getImg(H3_Img::TileB_H), game.getTex(H3_Tex::TileB_D, "m_meshTileB"));
-    createSMeshTile( m_meshTileC, m_driver, ts, game.getImg(H3_Img::TileC_H), game.getTex(H3_Tex::TileC_D, "m_meshTileC"));
-    createSMeshTile( m_meshTileD, m_driver, ts, game.getImg(H3_Img::TileD_H), game.getTex(H3_Tex::TileD_D, "m_meshTileD"));
-    createSMeshTile( m_meshTileE, m_driver, ts, game.getImg(H3_Img::TileE_H), game.getTex(H3_Tex::TileE_D, "m_meshTileE"));
+    createSMeshTile( m_meshTileDesert, m_driver, game.getImg(H3_Img::TileDesert_H), game.getTex(H3_Tex::TileDesert_D, "m_meshTileDesert"));
+    createSMeshTile( m_meshTileA, m_driver, game.getImg(H3_Img::TileA_H), game.getTex(H3_Tex::TileA_D, "m_meshTileA"));
+    createSMeshTile( m_meshTileB, m_driver, game.getImg(H3_Img::TileB_H), game.getTex(H3_Tex::TileB_D, "m_meshTileB"));
+    createSMeshTile( m_meshTileC, m_driver, game.getImg(H3_Img::TileC_H), game.getTex(H3_Tex::TileC_D, "m_meshTileC"));
+    createSMeshTile( m_meshTileD, m_driver, game.getImg(H3_Img::TileD_H), game.getTex(H3_Tex::TileD_D, "m_meshTileD"));
+    createSMeshTile( m_meshTileE, m_driver, game.getImg(H3_Img::TileE_H), game.getTex(H3_Tex::TileE_D, "m_meshTileE"));
 
     // de::gpu::BumpMapUtil::testNevada( m_meshTileDesert, m_driver );
     // de::gpu::BumpMapUtil::testMountWilder( m_meshTileA, m_driver );
@@ -218,7 +219,6 @@ void H3_TerrainTileRenderer::collectAndUploadInstances(const H3_Game& game)
     // and then finally converted to HMesh for fast rendering.
     // Uses f16 vertices to increase render speed. (reduce GPU memory)
     // Indices are still uint32_t.
-    auto ts = game.m_tileSize;
 
     auto mkHMeshDrawCall = [&]( de::gpu::HMesh & hmesh, H3_TileType tt )
     {
@@ -231,7 +231,9 @@ void H3_TerrainTileRenderer::collectAndUploadInstances(const H3_Game& game)
             de::TRSf trs;
             trs.pos = t.pos;
             trs.rotate = glm::vec3(0,0,0);
-            trs.scale = glm::vec3(ts.x * 0.5f, ts.y, ts.z * 0.5f);
+            trs.scale.x = H3_tileSize.x * 0.5f;
+            trs.scale.y = H3_tileSize.z;
+            trs.scale.z = H3_tileSize.y * 0.5f;
             trs.update();
 
             hmesh.m_instanceMat.push_back( trs.modelMat );
