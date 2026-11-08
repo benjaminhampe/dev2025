@@ -1,6 +1,8 @@
 #include "H3_Img.h"
 #include <H3/H3_Game.h>
 
+std::string H3_mediaDir = "media/H3/";
+
 const de::Image*
 H3_getImg( const H3_Game & game, const H3_Img::eID id )
 {
@@ -118,23 +120,19 @@ H3_Img::add( eID id, const std::string& uri, const de::ImageLoadOptions& opt )
 
 void H3_Img::initLoadScreen()
 {
-    std::string mediaDir = "media/H3/";
-
     de::ImageLoadOptions optRGB;
     optRGB.throwOnFail = true;
     optRGB.outputFormat = de::PixelFormat::R8G8B8;
 
     // gfx/wallpaper
     {
-        std::string baseDir = mediaDir + "gfx/wallpaper/";
+        std::string baseDir = H3_mediaDir + "gfx/wallpaper/";
         add(Satan, baseDir + "satan.webp", optRGB);
     }
 }
 
 void H3_Img::init()
 {
-    std::string mediaDir = "media/H3/";
-
     de::ImageLoadOptions optRGB;
     optRGB.throwOnFail = true;
     optRGB.outputFormat = de::PixelFormat::R8G8B8;
@@ -145,7 +143,7 @@ void H3_Img::init()
 
     // gfx/skybox/Default (ClubTropicana)
     {
-        std::string baseDir = mediaDir + "gfx/skybox/Default/";
+        std::string baseDir = H3_mediaDir + "gfx/skybox/Default/";
         add(Sky1NegX, baseDir + "nx.webp", optRGB);     // 85,8KB
         add(Sky1PosX, baseDir + "px.webp", optRGB);     // 61,7KB
         add(Sky1NegY, baseDir + "ny.webp", optRGB);     // 22,3KB
@@ -156,7 +154,7 @@ void H3_Img::init()
 
     // gfx/base
     {
-        std::string baseDir = mediaDir + "gfx/base/";
+        std::string baseDir = H3_mediaDir + "gfx/base/";
         add(Unknown, baseDir + "unknown.jpg", optRGB);     //  25KB
         add(Benni, baseDir + "benni.png", optRGBA);         //  97KB
         add(Wood, baseDir + "wood.webp", optRGB);          // 225KB
@@ -171,7 +169,7 @@ void H3_Img::init()
 
     // gfx/tiles/
     {
-        std::string baseDir = mediaDir + "gfx/tiles/";  // 1,26MB
+        std::string baseDir = H3_mediaDir + "gfx/tiles/";  // 1,26MB
         add(TileWater, baseDir + "water.webp", optRGB);
         add(TileDesert, baseDir + "desert.webp", optRGB);
         add(TileA, baseDir + "tile_a.jpg", optRGB);
@@ -181,26 +179,9 @@ void H3_Img::init()
         add(TileE, baseDir + "tile_e.webp", optRGB);
     }
 
-    // gfx/tiles2/ -> Satellite DiffuseMaps + HeightMaps
-    {
-        std::string baseDir = mediaDir + "gfx/tiles2/";  // 7,72MB
-        add(TileDesert_D, baseDir + "Desert_d.jpg", optRGB);
-        add(TileDesert_H, baseDir + "Desert_h.webp", optRGB);
-        add(TileA_D, baseDir + "A_d.jpg", optRGB);
-        add(TileA_H, baseDir + "A_h.webp", optRGB);
-        add(TileB_D, baseDir + "B_d.jpg", optRGB);
-        add(TileB_H, baseDir + "B_h.webp", optRGB);
-        add(TileC_D, baseDir + "C_d.jpg", optRGB);
-        add(TileC_H, baseDir + "C_h.webp", optRGB);
-        add(TileD_D, baseDir + "D_d.jpg", optRGB);
-        add(TileD_H, baseDir + "D_h.webp", optRGB);
-        add(TileE_D, baseDir + "E_d.jpg", optRGB);
-        add(TileE_H, baseDir + "E_h.webp", optRGB);
-    }
-
     // gfx/chip/
     {
-        std::string baseDir = mediaDir + "gfx/chip/";   // 216KB
+        std::string baseDir = H3_mediaDir + "gfx/chip/";   // 216KB
         add(Chip2, baseDir + "chip_2.webp", optRGB);    // 0
         add(Chip3, baseDir + "chip_3.webp", optRGB);    // 1
         add(Chip4, baseDir + "chip_4.webp", optRGB);    // 2
@@ -223,7 +204,7 @@ void H3_Img::init()
 
     // gfx/dice/
     {
-        std::string baseDir = mediaDir + "gfx/dice/";   // 21,4KB
+        std::string baseDir = H3_mediaDir + "gfx/dice/";   // 21,4KB
         add(Dice1, baseDir + "dice_1.png", optRGB);
         add(Dice2, baseDir + "dice_2.png", optRGB);
         add(Dice3, baseDir + "dice_3.png", optRGB);
@@ -234,14 +215,14 @@ void H3_Img::init()
 
     // gfx/ui/bonus/
     {
-        std::string baseDir = mediaDir + "gfx/ui/bonus/";   // 78,8KB
+        std::string baseDir = H3_mediaDir + "gfx/ui/bonus/";   // 78,8KB
         add(BonusArmy, baseDir + "bonus_army.png", optRGBA);
         add(BonusRoad, baseDir + "bonus_road.png", optRGBA);
     }
 
     // gfx/ui/card1/
     {
-        std::string baseDir = mediaDir + "gfx/ui/card1/";   // 575KB
+        std::string baseDir = H3_mediaDir + "gfx/ui/card1/";   // 575KB
         add(CardA, baseDir + "card_a.jpg", optRGB);
         add(CardB, baseDir + "card_b.jpg", optRGB);
         add(CardC, baseDir + "card_c.jpg", optRGB);
@@ -251,7 +232,7 @@ void H3_Img::init()
 
     // gfx/ui/card2/
     {
-        std::string baseDir = mediaDir + "gfx/ui/card2/";   // 28,9KB
+        std::string baseDir = H3_mediaDir + "gfx/ui/card2/";   // 28,9KB
         add(DoBuyEventCard, baseDir + "do_buyeventcard.png", optRGBA);
         add(EventCardKnight, baseDir + "eventcard_knight.png", optRGBA);
         add(EventCardPoint, baseDir + "eventcard_point.png", optRGBA);
@@ -259,7 +240,7 @@ void H3_Img::init()
 
     // gfx/ui/do1/
     {
-        std::string baseDir = mediaDir + "gfx/ui/do1/";     // 14,9KB
+        std::string baseDir = H3_mediaDir + "gfx/ui/do1/";     // 14,9KB
         add(DoBank, baseDir + "do_bank.png", optRGBA);
         add(DoDice, baseDir + "do_dice.png", optRGBA);
         add(DoEndTurn, baseDir + "do_endturn.png", optRGBA);
@@ -271,7 +252,7 @@ void H3_Img::init()
 
     // gfx/ui/do2/
     {
-        std::string baseDir = mediaDir + "gfx/ui/do2/";     // 5,3KB
+        std::string baseDir = H3_mediaDir + "gfx/ui/do2/";     // 5,3KB
         add(DoBuyCity, baseDir + "do_buycity.png", optRGBA);
         add(DoBuyFarm, baseDir + "do_buyfarm.png", optRGBA);
         add(DoBuyRoad, baseDir + "do_buyroad.png", optRGBA);
@@ -282,7 +263,7 @@ void H3_Img::init()
 
     // gfx/ui/player/
     {
-        std::string baseDir = mediaDir + "gfx/ui/player/";  // 87,4KB
+        std::string baseDir = H3_mediaDir + "gfx/ui/player/";  // 87,4KB
         add(PlayU, baseDir + "unknown.png", optRGB);
         add(Play1, baseDir + "alexander.png", optRGB);
         add(Play2, baseDir + "asoka.png", optRGB);
@@ -303,7 +284,7 @@ void H3_Img::init()
 
     // gfx/ui/stat/
     {
-        std::string baseDir = mediaDir + "gfx/ui/stat/";    // 1,19KB
+        std::string baseDir = H3_mediaDir + "gfx/ui/stat/";    // 1,19KB
         add(StatCard, baseDir + "stat_card.png", optRGB);
         add(StatCity, baseDir + "stat_city.png", optRGB);
         add(StatFarm, baseDir + "stat_farm.png", optRGB);
@@ -313,7 +294,7 @@ void H3_Img::init()
 
     // gfx/event/
     {
-        std::string baseDir = mediaDir + "gfx/event/";    // 800+KB
+        std::string baseDir = H3_mediaDir + "gfx/event/";    // 800+KB
         add(NicePointCard, baseDir + "Nice_pointCard.webp", optRGB);
         add(NiceKnightCard, baseDir + "Nice_knightCard.webp", optRGB);
         add(NiceInventCard, baseDir + "Nice_inventCard.webp", optRGB);
@@ -322,7 +303,7 @@ void H3_Img::init()
 
     // gfx/ani/h2o_128_128_40_webp/
     {
-        std::string baseDir = mediaDir + "gfx/ani/h2o_128_128_40_webp/"; // 457KB
+        std::string baseDir = H3_mediaDir + "gfx/ani/h2o_128_128_40_webp/"; // 457KB
         for (int i = 0; i < 40; ++i)
         {
             std::ostringstream o;
@@ -335,7 +316,7 @@ void H3_Img::init()
 
     // gfx/ani/h2o_342_180_21_webp/
     {
-        std::string baseDir = mediaDir + "gfx/ani/h2o_342_180_21_webp/"; // 457KB
+        std::string baseDir = H3_mediaDir + "gfx/ani/h2o_342_180_21_webp/"; // 457KB
         for (int i = 0; i < 21; ++i)
         {
             std::ostringstream o;
@@ -344,6 +325,30 @@ void H3_Img::init()
             o << i << ".webp";
             add(H3_Img::eID(int(Water342_00) + i), o.str(), optRGB);
         }
+    }
+}
+
+void H3_Img::initTerrain()
+{
+    de::ImageLoadOptions optRGB;
+    optRGB.throwOnFail = true;
+    optRGB.outputFormat = de::PixelFormat::R8G8B8;
+
+    // gfx/tiles2/ -> Satellite DiffuseMaps + HeightMaps
+    {
+        std::string baseDir = H3_mediaDir + "gfx/tiles2/";  // 7,72MB
+        add(TileDesert_D, baseDir + "Desert_d.jpg", optRGB);
+        add(TileDesert_H, baseDir + "Desert_h.webp", optRGB);
+        add(TileA_D, baseDir + "A_d.jpg", optRGB);
+        add(TileA_H, baseDir + "A_h.webp", optRGB);
+        add(TileB_D, baseDir + "B_d.jpg", optRGB);
+        add(TileB_H, baseDir + "B_h.webp", optRGB);
+        add(TileC_D, baseDir + "C_d.jpg", optRGB);
+        add(TileC_H, baseDir + "C_h.webp", optRGB);
+        add(TileD_D, baseDir + "D_d.jpg", optRGB);
+        add(TileD_H, baseDir + "D_h.webp", optRGB);
+        add(TileE_D, baseDir + "E_d.jpg", optRGB);
+        add(TileE_H, baseDir + "E_h.webp", optRGB);
     }
 }
 
@@ -674,6 +679,25 @@ void H3_Img::loadLoadScreen()
     addFromMemory((eID)1,img_001_satan_webp,293866,opt);
 }
 
+void H3_Img::loadTerrain()
+{
+    de::ImageLoadOptions opt;
+    opt.throwOnFail = true;
+
+    addFromMemory((eID)59,img_059_Desert_d_jpg,1102030,opt);
+    addFromMemory((eID)60,img_060_Desert_h_webp,13386,opt);
+    addFromMemory((eID)61,img_061_A_d_jpg,2331553,opt);
+    addFromMemory((eID)62,img_062_A_h_webp,10814,opt);
+    addFromMemory((eID)63,img_063_B_d_jpg,1494647,opt);
+    addFromMemory((eID)64,img_064_B_h_webp,35820,opt);
+    addFromMemory((eID)65,img_065_C_d_jpg,923133,opt);
+    addFromMemory((eID)66,img_066_C_h_webp,17938,opt);
+    addFromMemory((eID)67,img_067_D_d_jpg,982275,opt);
+    addFromMemory((eID)68,img_068_D_h_webp,17170,opt);
+    addFromMemory((eID)69,img_069_E_d_jpg,1161965,opt);
+    addFromMemory((eID)70,img_070_E_h_webp,13620,opt);
+}
+
 void H3_Img::load()
 {
     de::ImageLoadOptions opt;
@@ -741,18 +765,7 @@ void H3_Img::load()
     addFromMemory((eID)56,img_056_tile_c_jpg,93540,opt);
     addFromMemory((eID)57,img_057_tile_d_jpg,155915,opt);
     addFromMemory((eID)58,img_058_tile_e_webp,324704,opt);
-    addFromMemory((eID)59,img_059_Desert_d_jpg,1102030,opt);
-    addFromMemory((eID)60,img_060_Desert_h_webp,13386,opt);
-    addFromMemory((eID)61,img_061_A_d_jpg,2331553,opt);
-    addFromMemory((eID)62,img_062_A_h_webp,10814,opt);
-    addFromMemory((eID)63,img_063_B_d_jpg,1494647,opt);
-    addFromMemory((eID)64,img_064_B_h_webp,35820,opt);
-    addFromMemory((eID)65,img_065_C_d_jpg,923133,opt);
-    addFromMemory((eID)66,img_066_C_h_webp,17938,opt);
-    addFromMemory((eID)67,img_067_D_d_jpg,982275,opt);
-    addFromMemory((eID)68,img_068_D_h_webp,17170,opt);
-    addFromMemory((eID)69,img_069_E_d_jpg,1161965,opt);
-    addFromMemory((eID)70,img_070_E_h_webp,13620,opt);
+
     addFromMemory((eID)71,img_071_chip_2_webp,336,opt);
     addFromMemory((eID)72,img_072_chip_3_webp,336,opt);
     addFromMemory((eID)73,img_073_chip_4_webp,314,opt);

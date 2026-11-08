@@ -1,7 +1,7 @@
 #pragma once
 #include <H3/H3_Board.h>
 
-class H3_Game;
+extern std::string H3_mediaDir;
 
 // =======================================================================
 struct H3_Img
@@ -63,10 +63,15 @@ struct H3_Img
     H3_Img();
     ~H3_Img();
     void destroy();
+
     void initLoadScreen();
     void init();
+    void initTerrain();
+
     void load();
     void loadLoadScreen();
+    void loadTerrain();
+
     void save(const std::string& baseDir);
     void clear();
 

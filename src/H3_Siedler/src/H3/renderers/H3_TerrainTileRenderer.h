@@ -1,14 +1,12 @@
 #pragma once
 #include <H3/H3_Board.h>
-
 #include "H3_TerrainTile.h"
-
-struct H3_Game;
 
 // ===========================================================================
 struct H3_TerrainTileRenderer
 // ===========================================================================
 {
+    H3_Game* m_game;
     de::gpu::VideoDriver* m_driver;
 
     de::gpu::HMeshRenderer m_hmeshRenderer;

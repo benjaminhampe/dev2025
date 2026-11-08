@@ -32,7 +32,7 @@ H3_Game::H3_Game(int argc, char* argv[])
     , m_turn(0)
     , m_playerId(0)
     , m_winnerId(0)
-    , m_drawAdvancedTerrain(1)
+    , m_drawAdvancedTerrain(0)
     , m_bPaintEvents{ false }
     , m_bShouldRun{ true }
     , m_bDebugLogic{ true }
@@ -194,6 +194,10 @@ void H3_Game::init()
     //m_img.init();
     //m_img.save("media/H3/atlas");
     m_img.load();
+    if (m_drawAdvancedTerrain)
+    {
+        m_img.loadTerrain();
+    }
 
     // ==================
     // === Setup fonts ===
@@ -226,6 +230,10 @@ void H3_Game::init()
     // === init textures ===
     // ======================
     m_tex.init( *this );
+    if (m_drawAdvancedTerrain)
+    {
+        m_tex.initTerrain(*this);
+    }
 
     // =============================
     // === Setup GUI Environment ===
@@ -2223,11 +2231,10 @@ void H3_Game::drawSkybox()
 
 void H3_Game::drawSun()
 {
-    auto driver = getDriver();
-    driver->beginPerf("Sun");
+    m_driver->beginPerf("Sun");
 
     // Move the sun:
-    auto & sun = driver->getLights()[0];
+    auto & sun = m_driver->getLights()[0];
     const float sun_radius = 600.0f;
 /*
     static auto tStart = driver->getTime();
@@ -2255,7 +2262,7 @@ void H3_Game::drawSun()
     de::TRSf trs;
     //trs.pos = glm::vec3(0,1200.0f,-sun_radius);
 
-    auto camera = driver->getCamera();
+    auto camera = m_driver->getCamera();
     auto pos = camera->getPos();
     auto tar = camera->getTarget();
     auto dir = glm::normalize(tar - pos);
@@ -2266,9 +2273,10 @@ void H3_Game::drawSun()
     //m_driver->getLights().at(0).pos = pos - dir;
     m_driver->getLights().at(0).dir = dir; // Sun is directional
 
-    driver->setModelMatrix(trs.modelMat);
-    driver->getSMaterialRenderer()->draw3D( m_smeshSun );
-    driver->endPerf();
+    m_driver->setModelMatrix(trs.modelMat);
+    m_driver->getSMaterialRenderer()->draw3D( m_smeshSun );
+
+    m_driver->endPerf();
 }
 
 void H3_Game::drawTiles()

@@ -111,23 +111,6 @@ H3_Tex::init( H3_Game & game )
         add( game, TileE, H3_Img::TileE, so);
     }
 
-    // gfx/tiles2
-    {
-        de::gpu::SO so2;
-        so2.setAF( 1.0f );
-        so2.setMag( de::gpu::SO::Magnify::Linear );
-        so2.setMin( de::gpu::SO::Minify::LinearMipmapLinear );
-        so2.setWrapR( de::gpu::SO::Wrap::ClampToEdge );
-        so2.setWrapS( de::gpu::SO::Wrap::ClampToEdge );
-        so2.setWrapT( de::gpu::SO::Wrap::ClampToEdge );
-        add( game, TileDesert_D, H3_Img::TileDesert, so2);
-        add( game, TileA_D, H3_Img::TileA_D, so2);
-        add( game, TileB_D, H3_Img::TileB_D, so2);
-        add( game, TileC_D, H3_Img::TileC_D, so2);
-        add( game, TileD_D, H3_Img::TileD_D, so2);
-        add( game, TileE_D, H3_Img::TileE_D, so2);
-    }
-
     // gfx/chips
     {
         add( game, Chip2, H3_Img::Chip2, so );   // 0
@@ -416,6 +399,27 @@ H3_Tex::init( H3_Game & game )
     createChipTexture( game );
     createAnimatedWaterTex128( game );
     createAnimatedWaterTex342( game );
+}
+
+void
+H3_Tex::initTerrain( H3_Game & game )
+{
+    // gfx/tiles2
+    {
+        de::gpu::SO so2;
+        so2.setAF( 1.0f );
+        so2.setMag( de::gpu::SO::Magnify::Linear );
+        so2.setMin( de::gpu::SO::Minify::LinearMipmapLinear );
+        so2.setWrapR( de::gpu::SO::Wrap::ClampToEdge );
+        so2.setWrapS( de::gpu::SO::Wrap::ClampToEdge );
+        so2.setWrapT( de::gpu::SO::Wrap::ClampToEdge );
+        add( game, TileDesert_D, H3_Img::TileDesert, so2);
+        add( game, TileA_D, H3_Img::TileA_D, so2);
+        add( game, TileB_D, H3_Img::TileB_D, so2);
+        add( game, TileC_D, H3_Img::TileC_D, so2);
+        add( game, TileD_D, H3_Img::TileD_D, so2);
+        add( game, TileE_D, H3_Img::TileE_D, so2);
+    }
 }
 
 de::gpu::TexRef

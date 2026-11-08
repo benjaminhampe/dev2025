@@ -66,6 +66,8 @@ void createSMeshTile( de::smesh::SMeshBuffer & o, de::gpu::VideoDriver* driver,
 }
 
 H3_TerrainTileRenderer::H3_TerrainTileRenderer()
+    : m_game{ nullptr }
+    , m_driver{ nullptr }
 {
 }
 
@@ -86,9 +88,16 @@ void H3_TerrainTileRenderer::destroy()
 
 void H3_TerrainTileRenderer::init( H3_Game & game )
 {
+    m_game = &game;
     m_driver = game.getDriver();
 
     m_hmeshRenderer.init( m_driver );
+
+    if (game.m_drawAdvancedTerrain < 1)
+    {
+        return;
+    }
+
     // === Create hexagon tiles geometry ===
     de::smesh::SMeshBuffer m_meshTileDesert; // Nevada
     de::smesh::SMeshBuffer m_meshTileA; // Mt Wilder
@@ -121,6 +130,11 @@ void H3_TerrainTileRenderer::init( H3_Game & game )
 
 void H3_TerrainTileRenderer::render()
 {
+    if (m_game->m_drawAdvancedTerrain < 1)
+    {
+        return;
+    }
+
     if (!m_driver)
     {
         DE_ERROR("No driver")
