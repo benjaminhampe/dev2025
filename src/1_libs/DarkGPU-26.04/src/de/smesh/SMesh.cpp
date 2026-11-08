@@ -1240,7 +1240,7 @@ SMeshBufferTool::computeNormals( SMeshBuffer & o )
     if ( o.getPrimitiveType() != gpu::PrimitiveType::Triangles )
     {
         //throw std::runtime_error( "Unsupported PrimType for recomputeNormals()");
-        //DE_ERROR("No triangles ", o.getName())
+        DE_ERROR("No triangles ", o.str())
         return;
     }
 

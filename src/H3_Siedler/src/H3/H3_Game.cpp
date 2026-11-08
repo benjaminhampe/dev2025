@@ -31,6 +31,13 @@ H3_Game::H3_Game(int argc, char* argv[])
     , m_round(0)
     , m_turn(0)
     , m_playerId(0)
+    , m_winnerId(0)
+    , m_drawAdvancedTerrain(1)
+    , m_bPaintEvents{ false }
+    , m_bShouldRun{ true }
+    , m_bDebugLogic{ true }
+    //, m_fpsTimerId;  // Screen FPS...
+    //, m_capTimerId;  // Window title update...
     , m_uiMenu(nullptr)
     , m_uiGame(nullptr)
 // , m_fpsTimerId(0)
@@ -90,7 +97,7 @@ void H3_Game::destroy()
     m_tmeshFarm.destroy();
     m_tmeshCity.destroy();
 
-  //m_road2DRenderer.destroy();
+    m_terrainTileRenderer.destroy();
     m_tile2DRenderer.destroy();
     m_chip2DRenderer.destroy();
     m_tile3DRenderer.destroy();
@@ -165,7 +172,6 @@ void H3_Game::initLoadScreen( de::Window* window )
         return;
     }
 
-    // m_img.initLoadScreen();
     m_img.loadLoadScreen();
     m_tex.initLoadScreen( *this );
     auto satan = getTex(H3_Tex::Satan, __func__);
@@ -229,68 +235,39 @@ void H3_Game::init()
     // =========================
     // === init lights (sun) ===
     // =========================
-    m_driver->addLight(
-        glm::vec3(0,300,0),
-        glm::vec3(1,1,0.9));
+    m_driver->addLight( glm::vec3(0,300,0), glm::vec3(1,1,0.9) );
 
-    de::smesh::SMeshSphere::add(
-        m_smeshSun,
-        glm::vec3(50,50,50),
-        dbRGB(255,255,200),
-        33, 33);
+    de::smesh::SMeshSphere::add( m_smeshSun, glm::vec3(50,50,50), dbRGB(255,255,200), 33, 33);
     m_smeshSun.name = "m_sunMesh";
     m_smeshSun.setLighting(0);
     m_smeshSun.recalculateBoundingBox();
     m_smeshSun.upload();
-    // DE_BENNI(m_smeshSun.str())
 
     // === Create geometry ===
     m_thief.triangles.clear();
 
     // === Create geometry ===
     m_smeshTile.clear();
-    de::smesh::SMeshHexagon::add(
-        m_smeshTile,
-        H3_tileSize.x,
-        H3_tileSize.y,
-        0xFFFFFFFF );
+    de::smesh::SMeshHexagon::add( m_smeshTile, H3_tileSize.x, H3_tileSize.y, 0xFFFFFFFF );
     m_smeshTile.recalculateBoundingBox();
 
     // === Create geometry ===
     m_smeshChip.clear();
-    de::smesh::SMeshCylinder::addXZ(
-        m_smeshChip,
-        H3_chipSize.x,
-        H3_chipSize.z,
-        H3_chipSize.y,
-        0xFFFFFFFF,
-        33);
+    de::smesh::SMeshCylinder::addXZ( m_smeshChip, H3_chipSize.x, H3_chipSize.z, H3_chipSize.y, 0xFFFFFFFF, 33);
     m_smeshChip.recalculateBoundingBox();
     m_3dChips.m_smesh = &m_smeshChip;
     m_3dChips.initVAO();
 
     // === Create geometry ===
     m_smeshCorner.clear();
-    de::smesh::SMeshCylinder::addXZ(
-        m_smeshCorner,
-        H3_cornerSize.x,
-        H3_cornerSize.z,
-        H3_cornerSize.y,
-        0xFFFFFFFF,
-        24);
+    de::smesh::SMeshCylinder::addXZ( m_smeshCorner, H3_cornerSize.x, H3_cornerSize.z, H3_cornerSize.y, 0xFFFFFFFF, 24);
     m_smeshCorner.recalculateBoundingBox();
     m_3dCorners.m_smesh = &m_smeshCorner;
     m_3dCorners.initVAO();
 
     // === Create geometry ===
     m_smeshEdge.clear();
-    de::smesh::SMeshCylinder::addXZ(
-        m_smeshEdge,
-        H3_edgeSize.x,
-        H3_edgeSize.z,
-        H3_edgeSize.y,
-        0xFFFFFFFF,
-        21);
+    de::smesh::SMeshCylinder::addXZ( m_smeshEdge, H3_edgeSize.x, H3_edgeSize.z, H3_edgeSize.y, 0xFFFFFFFF, 21);
     m_smeshEdge.recalculateBoundingBox();
     m_3dEdges.m_smesh = &m_smeshEdge;
     m_3dEdges.initVAO();
@@ -334,13 +311,13 @@ void H3_Game::init()
     m_smeshThief.recalculateBoundingBox();
     m_smeshThief.upload();
 
-  //m_road2DRenderer.init(*this);
     m_tile2DRenderer.init(*this);
     m_chip2DRenderer.init(*this);
     m_tile3DRenderer.init(*this);
     m_chip3DRenderer.init(*this);
     m_waterTileRenderer.init(*this);
     m_waterTileRenderer2.init(*this);
+    m_terrainTileRenderer.init(*this);
     m_objRenderer.init(*this);
     m_diceRenderer.init(*this);
     m_animatedTexRenderer.init(m_driver);
@@ -358,7 +335,7 @@ void H3_Game::init()
     m_uiGame->setVisible( false );
 
     // m_fpsTimerId = m_device->startTimer(33);
-    m_capTimerId = m_window->startTimer(200);
+    // m_capTimerId = m_window->startTimer(200);
     m_bPaintEvents = true;
 
     // m_driver->dumpTextures();
@@ -804,17 +781,18 @@ void H3_Game::startGame()
     // DE_DEBUG("Stored enemies = ", m_enemies.size())
     // DE_DEBUG("Stored humans = ", m_humans.size())
 
+    //==========================================
+    // Convert CfgBoard into real Board
+    //==========================================
     const auto tileTriangles = m_smeshTile.createCollisionTriangles();
     const auto chipTriangles = m_smeshChip.createCollisionTriangles();
-
-    // === Board (Tiles + Players) ===
     m_tiles.clear();
     m_corners.clear();
     m_edges.clear();
     m_visibleCorners.clear();
     m_visibleEdges.clear();
-
-    // === Board (Tiles) ===
+    const auto tw = H3_tileSize.x;
+    const auto th = H3_tileSize.y;
     for (const auto& cfg : m_cfg.tiles)
     {
         H3_Tile tile;
@@ -824,21 +802,13 @@ void H3_Game::startGame()
         tile.j = cfg.j();
         tile.chipValue = cfg.diceValue();
         tile.angle60 = cfg.angle60();
-        // tile.visible = true;
         tile.corners.clear();
         tile.edges.clear();
         tile.next.clear();
-
-        const auto tw = H3_tileSize.x;
-        const auto th = H3_tileSize.y;
-        const auto x = de::smesh::SMeshHexagon::computeBoardPosX(tw,th,tile.i,tile.j);
-        const auto z = de::smesh::SMeshHexagon::computeBoardPosY(tw,th,tile.i,tile.j);
+        f32 x = de::smesh::SMeshHexagon::computeBoardPosX(tw,th,tile.i,tile.j);
+        f32 z = de::smesh::SMeshHexagon::computeBoardPosY(tw,th,tile.i,tile.j);
         tile.pos = glm::vec3(x,0,z);
-
-        // Collision aabbox:
         tile.collisionBoundingBox = m_smeshTile.boundingBox + tile.pos;
-
-        // Collision triangles:
         tile.collisionTriangles.clear();
         tile.collisionTriangles.reserve( tileTriangles.size() );
         for (const auto& triangle : tileTriangles)
@@ -848,23 +818,13 @@ void H3_Game::startGame()
             auto C = tile.pos + triangle.C;
             tile.collisionTriangles.emplace_back(A,B,C);
         }
-
         if (tile.tt.hasChip())
         {
-            tile.trsChip.pos = tile.pos + glm::vec3(0, H3_chipSize.z * 0.5f,0);
-            tile.trsChip.rotate = glm::vec3(0,0,0);
-
-            glm::vec3 chipSize(H3_chipSize.x, H3_chipSize.z, H3_chipSize.y);
-            tile.trsChip.scale = chipSize;
-
-            switch (tile.tt.value)
-            {
-            case H3_TileType::TileA: tile.trsChip.pos += glm::vec3(0,7,0); break;
-            case H3_TileType::TileD: tile.trsChip.pos += glm::vec3(0,5,0); break;
-            case H3_TileType::TileE: tile.trsChip.pos += glm::vec3(0,8,0); break;
-            default: break;
-            }
-
+            tile.trsChip.pos = tile.pos;
+            tile.trsChip.pos.y += H3_chipSize.z;
+            tile.trsChip.scale.x = H3_chipSize.x;
+            tile.trsChip.scale.y = H3_chipSize.z;
+            tile.trsChip.scale.z = H3_chipSize.y;
             tile.trsChip.update();
         }
 
@@ -2298,10 +2258,13 @@ void H3_Game::drawSun()
     auto camera = driver->getCamera();
     auto pos = camera->getPos();
     auto tar = camera->getTarget();
-    auto dir = glm::normalize(tar - pos) * 100.0;
-    sun.pos = pos - dir;
-    trs.pos = sun.pos;
+    auto dir = glm::normalize(tar - pos);
+    //sun.pos = pos - dir;
+    trs.pos = pos - (dir * 100.0);
     trs.update();
+
+    //m_driver->getLights().at(0).pos = pos - dir;
+    m_driver->getLights().at(0).dir = -dir; // Sun is directional
 
     driver->setModelMatrix(trs.modelMat);
     driver->getSMaterialRenderer()->draw3D( m_smeshSun );
@@ -2312,6 +2275,7 @@ void H3_Game::drawTiles()
 {
     if (m_bUpdateDrawCall_Tiles)
     {
+        m_terrainTileRenderer.collectAndUploadInstances(*this);
         m_tile3DRenderer.collectAndUploadInstances(*this);
         m_waterTileRenderer2.collectAndUploadInstances( *this );
 
@@ -2319,13 +2283,18 @@ void H3_Game::drawTiles()
         m_bUpdateDrawCall_Chips = true;
     }
 
+    if (m_drawAdvancedTerrain < 1)
+    {
     m_driver->beginPerf("Land-Tiles");
     m_tile3DRenderer.render();
     m_driver->endPerf();
+    }
 
     m_driver->beginPerf("Water-Tiles");
     m_waterTileRenderer2.render(m_tex.m_AnimatedWaterTex342,1.0f);
     m_driver->endPerf();
+
+    m_terrainTileRenderer.render();
 }
 
 void H3_Game::drawPortBridges()

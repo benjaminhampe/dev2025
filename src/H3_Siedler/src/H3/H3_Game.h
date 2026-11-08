@@ -17,7 +17,7 @@
 #include <H3/renderers/H3_WaterTileRenderer2.h>
 #include <H3/renderers/H3_ObjRenderer.h>
 #include <H3/renderers/H3_DiceRenderer.h>
-
+#include <H3/renderers/H3_TerrainTileRenderer.h>
 #include <de/os/Window_WGL.h>
 #include <de/gpu/AnimatedTexRenderer.h>
 
@@ -177,12 +177,13 @@ struct H3_Game
     int m_turn;     // current round index
     int m_playerId;   // current Player index
     uint32_t m_winnerId;
+    int m_drawAdvancedTerrain;
 
-    bool m_bPaintEvents = false;
-    bool m_bShouldRun = true;
-    bool m_bDebugLogic = true;
-    uint32_t m_fpsTimerId;  // Screen FPS...
-    uint32_t m_capTimerId;  // Window title update...
+    bool m_bPaintEvents;
+    bool m_bShouldRun;
+    bool m_bDebugLogic;
+    //uint32_t m_fpsTimerId;  // Screen FPS...
+    //uint32_t m_capTimerId;  // Window title update...
 
     de::smesh::SMeshBuffer m_smeshSun;
     de::smesh::SMeshBuffer m_smeshTile;
@@ -271,7 +272,7 @@ struct H3_Game
     H3_Chip3DRenderer m_chip3DRenderer;
     H3_WaterTileRenderer m_waterTileRenderer;
     H3_WaterTileRenderer2 m_waterTileRenderer2;
-
+    H3_TerrainTileRenderer m_terrainTileRenderer;
     H3_ObjRenderer m_objRenderer;
     H3_DiceRenderer m_diceRenderer;
 

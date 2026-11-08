@@ -203,6 +203,9 @@ void H3_Chip3DMeshBuffer::collectCorners(H3_Game& game, float phi)
 
         de::TRSf trs;
         trs.pos = corner.trs.pos;
+
+
+
         trs.rotate.y = phi;
         trs.update();
 
@@ -270,8 +273,26 @@ void H3_Chip3DMeshBuffer::collectTiles(H3_Game& game, float phi)
 
         if ( layer == H3_ChipTexture::eTypeCount ) continue;
 
+
+
         de::TRSf trs;
         trs.pos = tile.trsChip.pos;
+
+        // Advanced 3D Terrain offset.
+        if (game.m_drawAdvancedTerrain > 0)
+        {
+            glm::vec3 terrainOffset(0,0,0);
+
+            switch (tile.tt.value)
+            {
+                case H3_TileType::TileA: terrainOffset.y = 7.0f; break;
+                case H3_TileType::TileD: terrainOffset.y = 5.0f; break;
+                case H3_TileType::TileE: terrainOffset.y = 8.0f; break;
+                default: break;
+            }
+            trs.pos += terrainOffset;
+        }
+
         trs.rotate.y = phi;
         trs.update();
 

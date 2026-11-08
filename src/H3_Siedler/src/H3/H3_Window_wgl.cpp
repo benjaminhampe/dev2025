@@ -48,10 +48,10 @@ void H3_Window::timerEvent( const de::TimerEvent& event )
     // {
     //     m_game.getWindow()->update();
     // }
-    if ( event.id == m_game.m_capTimerId )
-    {
-        m_game.updateWindowTitle();
-    }
+    // if ( event.id == m_game.m_capTimerId )
+    // {
+    //     m_game.updateWindowTitle();
+    // }
 }
 
 void H3_Window::keyPressEvent( const de::KeyPressEvent& event )
@@ -404,11 +404,11 @@ void H3_Window::mouseWheelEvent( const de::MouseWheelEvent& event )
         {
             if ( event.y < 0.0f )
             {
-                camera->move( -2.5f );
+                camera->move( -7.5f );
             }
             else if ( event.y > 0.0f )
             {
-                camera->move( 2.5f );
+                camera->move( 7.5f );
             }
         }
         /*

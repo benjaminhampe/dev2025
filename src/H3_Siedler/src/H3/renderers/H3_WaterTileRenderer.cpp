@@ -122,7 +122,6 @@ void H3_WaterTileRenderer::collectInstances(const H3_Game& game)
     }
 }
 
-
 void H3_WaterTileRenderer::render()
 {
     if (!m_driver) { DE_ERROR("No driver") return; }

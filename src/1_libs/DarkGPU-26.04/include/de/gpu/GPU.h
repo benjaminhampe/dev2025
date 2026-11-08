@@ -211,8 +211,9 @@ typedef std::vector<TexRef> TexRefs;
 struct Light
 // ===========================================================================
 {
-    glm::vec3 pos = glm::vec3(0.f,500.f,0.f);
-    glm::vec3 color = glm::vec3(1.f,1.f,.8f);
+    glm::vec3 pos = glm::vec3(0,500,0);
+    glm::vec3 dir = glm::vec3(0,-1,0);
+    glm::vec3 color = glm::vec3(1,1,.8f);
     int typ = 0;
     float maxdist = 1000.0f; // distance
     //glm::vec3 siz;   // world size of light source

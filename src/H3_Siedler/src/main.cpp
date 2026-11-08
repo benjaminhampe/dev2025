@@ -2,6 +2,32 @@
 #include <H3/H3_Window_wgl.h>
 #include "../res/resource.h" // setWindowIcon(aaaa)
 
+// [ViewMatrix]
+inline void moveXZ( de::gpu::Camera* camera, de::gpu::Camera::T dt )
+{
+    auto delta = camera->getDir() * (camera->m_MoveSpeed * dt);
+    auto deltaXZ = delta;
+    deltaXZ.y = de::gpu::Camera::T(0);
+
+    camera->m_Pos += deltaXZ;
+    camera->m_Target += deltaXZ;
+    camera->m_IsDirtyView = true;
+    camera->update();
+}
+
+// [ViewMatrix]
+inline void strafeXZ( de::gpu::Camera* camera, de::gpu::Camera::T dt )
+{
+    auto delta = camera->getRight() * (camera->m_MoveSpeed * dt);
+    auto deltaXZ = delta;
+    deltaXZ.y = de::gpu::Camera::T(0);
+
+    camera->m_Pos += deltaXZ;
+    camera->m_Target += deltaXZ;
+    camera->m_IsDirtyView = true;
+    camera->update();
+}
+
 int main(int argc, char** argv)
 {
     // DE_WARN("Start program")
@@ -19,9 +45,9 @@ int main(int argc, char** argv)
 
     dbRandomize();
 
-    H3_Game m_game(argc,argv);
+    H3_Game game(argc,argv);
 
-    auto window = new H3_Window(m_game);
+    auto window = new H3_Window(game);
 
     de::WindowOptions wo;
     wo.width = 1600;
@@ -42,8 +68,8 @@ int main(int argc, char** argv)
     //window->run();
 
 
-    m_game.initLoadScreen(window);
-    m_game.init();
+    game.initLoadScreen(window);
+    game.init();
 
     // MainLoop:
     double m_timeStart = dbTimeInSeconds();
@@ -53,7 +79,7 @@ int main(int argc, char** argv)
     double m_timeLastWindowTitleUpdate = 0.0;
     // fpsComputer.reset();
 
-    while (m_game.run())
+    while (game.run())
     {
         // fpsComputer.tick();
         m_timeNow = dbTimeInSeconds() - m_timeStart;
@@ -65,45 +91,77 @@ int main(int argc, char** argv)
         {
             m_timeLastRenderUpdate = m_timeNow;
 
-            auto window = m_game.getWindow();
+            auto window = game.getWindow();
             auto r_draw = window->getClientRect();
             window->makeCurrent();
-            m_game.resize(r_draw.w, r_draw.h);
-            m_game.draw();
+            game.resize(r_draw.w, r_draw.h);
+            game.draw();
             window->swapBuffers();
         }
 
         // camera
         // -----
-        double fMoveSpeed = 75.5;
+        double fMoveSpeed = 150.5;
         double dtCameraUpdate = m_timeNow - m_timeLastCameraUpdate;
         if ( dtCameraUpdate >= (1.0 / 200.0) )
         {
             m_timeLastCameraUpdate = m_timeNow;
 
-            auto window = m_game.getWindow();
-            auto driver = m_game.getDriver();
+            auto window = game.getWindow();
+            auto driver = game.getDriver();
             if (driver)
             {
                 // Move camera
                 auto camera = driver->getCamera();
                 if (camera)
                 {
-                    if (window->getKeyState(de::KEY_UP) || window->getKeyState(de::KEY_W))
+                    if (window->getKeyState(de::KEY_UP) ||
+                        window->getKeyState(de::KEY_W))
                     {
-                        camera->move(fMoveSpeed*dtCameraUpdate);
+                        if (game.m_isCameraFreeMoveEnabled)
+                        {
+                            camera->move(fMoveSpeed*dtCameraUpdate);
+                        }
+                        else
+                        {
+                            moveXZ(camera,fMoveSpeed*dtCameraUpdate);
+                        }
                     }
-                    if (window->getKeyState(de::KEY_DOWN) || window->getKeyState(de::KEY_S))
+                    if (window->getKeyState(de::KEY_DOWN) ||
+                        window->getKeyState(de::KEY_S))
                     {
-                        camera->move(-fMoveSpeed*dtCameraUpdate);
+                        if (game.m_isCameraFreeMoveEnabled)
+                        {
+                            camera->move(-fMoveSpeed*dtCameraUpdate);
+                        }
+                        else
+                        {
+                            moveXZ(camera,-fMoveSpeed*dtCameraUpdate);
+                        }
                     }
-                    if (window->getKeyState(de::KEY_LEFT) || window->getKeyState(de::KEY_A))
+                    if (window->getKeyState(de::KEY_LEFT) ||
+                        window->getKeyState(de::KEY_A))
                     {
-                        camera->strafe(-fMoveSpeed*dtCameraUpdate);
+                        if (game.m_isCameraFreeMoveEnabled)
+                        {
+                            camera->strafe(-fMoveSpeed*dtCameraUpdate);
+                        }
+                        else
+                        {
+                            strafeXZ(camera,-fMoveSpeed*dtCameraUpdate);
+                        }
                     }
-                    if (window->getKeyState(de::KEY_RIGHT) || window->getKeyState(de::KEY_D))
+                    if (window->getKeyState(de::KEY_RIGHT) ||
+                        window->getKeyState(de::KEY_D))
                     {
-                        camera->strafe(fMoveSpeed*dtCameraUpdate);
+                        if (game.m_isCameraFreeMoveEnabled)
+                        {
+                            camera->strafe(fMoveSpeed*dtCameraUpdate);
+                        }
+                        else
+                        {
+                            strafeXZ(camera,fMoveSpeed*dtCameraUpdate);
+                        }
                     }
                 }
                 else
@@ -124,12 +182,12 @@ int main(int argc, char** argv)
         {
             m_timeLastWindowTitleUpdate = m_timeNow;
 
-            m_game.updateWindowTitle();
+            game.updateWindowTitle();
         }
     }
 
     DE_WARN("ExitProgram.")
-    m_game.destroy();
+    game.destroy();
 
     // }
     // catch (const std::exception& e) {

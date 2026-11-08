@@ -591,7 +591,7 @@ struct SMeshSphere
    // [Latitude] Rotation um die x/z-Achse in degrees: meridian plane (yx or yz)
    //
    static glm::vec3
-   computeSphereNormal( f32 lon, f32 lat ); // in degrees
+   computeNormal( f32 lon_degrees, f32 lat_degrees );
 
    static void
    add( SMeshBuffer & o,
@@ -617,8 +617,8 @@ struct SMeshUpperHalfSphere
 
    // [Longitude] Rotation um die y-Achse in degrees, equatorial xz plane is ground plane +Y is north pole
    // [Latitude] Rotation um die x/z-Achse in degrees: meridian plane (yx or yz)
-   static V3
-   computeSphereNormal( f32 lon, f32 lat ); // in degrees
+   // static V3
+   // computeSphereNormal( f32 lon, f32 lat ); // in degrees
 
    static void
    add( SMeshBuffer & o, V3 const & siz = V3(100,100,100), u32 color = 0xFFFFFFFF,
