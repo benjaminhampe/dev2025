@@ -2264,7 +2264,7 @@ void H3_Game::drawSun()
     trs.update();
 
     //m_driver->getLights().at(0).pos = pos - dir;
-    m_driver->getLights().at(0).dir = -dir; // Sun is directional
+    m_driver->getLights().at(0).dir = dir; // Sun is directional
 
     driver->setModelMatrix(trs.modelMat);
     driver->getSMaterialRenderer()->draw3D( m_smeshSun );
