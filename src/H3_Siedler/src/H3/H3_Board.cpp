@@ -1,6 +1,6 @@
 #include "H3_Board.h"
 #include <H3/details/H3_Tex.h>
-#include <H3/details/H3_AI.h>
+#include <H3/details/H3_AI_Data.h>
 
 glm::vec3 H3_tileSize = glm::vec3( 93, 100, 5 );
 glm::vec3 H3_chipSize = glm::vec3( 25, 25, 3 );
@@ -122,7 +122,7 @@ H3_State::getString( eState state )
         case DonateCards: return "DonateCards";
         case PlaceThief: return "PlaceThief";
         case StealRandomCard: return "StealRandomCard";
-        case UseKnightCard: return "UseKnightCard";
+        case RevealKnightCard: return "RevealKnightCard";
         //case UseMonopolyCard: return "UseMonopolyCard";
         //case UseInventionCard: return "UseInventionCard";
         //case UseVictoryCard: return "UseVictoryCard";
@@ -1825,4 +1825,20 @@ H3_Bank H3_Player::getBankingRatios() const
     ratios.D = getBankingRatio(3);
     ratios.E = getBankingRatio(4);
     return ratios;
+}
+
+H3_Dice H3_Player::getDice() const
+{
+    if (state.dice.a < 1)
+    {
+        if (history.empty())
+        {
+            return {}; // No valid dice
+        }
+        return history.back().dice;
+    }
+    else
+    {
+        return state.dice;
+    }
 }

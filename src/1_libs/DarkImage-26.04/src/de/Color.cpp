@@ -1,5 +1,14 @@
 #include <de/Color.h>
 
+std::string dbStrColor( de::u32 color )
+{
+    const int r = dbRGB_R(color);
+    const int g = dbRGB_G(color);
+    const int b = dbRGB_B(color);
+    const int a = dbRGB_A(color);
+    return dbStr(r,",",g,",",b,",",a);
+}
+
 namespace de {
 
 /*

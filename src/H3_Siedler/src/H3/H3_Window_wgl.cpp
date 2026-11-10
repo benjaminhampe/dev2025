@@ -235,8 +235,7 @@ void H3_Window::mouseReleaseEvent( const de::MouseReleaseEvent& event )
             }
             else if (m_game.m_state == H3_State::PlaceThief && m_game.m_hoverTileId)
             {
-                H3_Tile & tile = H3_getTile(m_game, __func__, m_game.m_hoverTileId);
-                m_game.leaveThiefPlacement( tile );
+                m_game.leaveThiefPlacement( m_game.m_hoverTileId );
             }
             else if (m_game.m_state == H3_State::StealRandomCard)
             {
@@ -244,19 +243,19 @@ void H3_Window::mouseReleaseEvent( const de::MouseReleaseEvent& event )
                 {
                     H3_Road & road = H3_getRoad(m_game, __func__, m_game.m_hoverRoadId);
                     H3_Edge & edge = H3_getEdge(m_game, __func__, road.edgeId);
-                    m_game.leaveThiefOutro( edge );
+                    m_game.leaveStealCard( edge );
                 }
                 else if (m_game.m_hoverFarmId)
                 {
                     H3_Farm & farm = H3_getFarm(m_game, __func__, m_game.m_hoverFarmId);
                     H3_Corner & corner = H3_getCorner(m_game, __func__, farm.cornerId);
-                    m_game.leaveThiefOutro( corner );
+                    m_game.leaveStealCard( corner );
                 }
                 else if (m_game.m_hoverCityId)
                 {
                     H3_City & city = H3_getCity(m_game, __func__, m_game.m_hoverCityId);
                     H3_Corner & corner = H3_getCorner(m_game, __func__, city.cornerId);
-                    m_game.leaveThiefOutro( corner );
+                    m_game.leaveStealCard( corner );
                 }
             }
             else

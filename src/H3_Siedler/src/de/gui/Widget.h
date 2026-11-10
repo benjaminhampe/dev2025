@@ -28,9 +28,10 @@ public:
     enum eWidgetState
     {
         eWS_Idle = 0,
-        eWS_Hovered = 1,
-        eWS_Pressed = 2,
-        eWS_Released = 3,
+        eWS_Hovered,
+        eWS_Pressed,
+        eWS_Released,
+        eWS_Count
     };
 
     Widget( Env* env, Widget* parent = nullptr, u32 id = 0, const Recti& r = de::Recti() );

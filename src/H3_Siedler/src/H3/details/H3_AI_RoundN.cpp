@@ -1,22 +1,322 @@
-#include <H3/details/H3_AI.h>
+#include <H3/details/H3_AI_RoundN.h>
 #include <H3/H3_Game.h>
 #include <H3/details/H3_Topology.h>
 
-void CPU_doRound1( H3_Game & game )
+// =============================================================
+// Determine if player could buy something
+// taking (4:1, 3:1, 2:1) banking into account.
+H3_Bank H3_computeBankings( const H3_Player& player, const H3_Bank& cost )
 {
-    const auto & player = game.getCurrentPlayer();
+    const H3_Bank& bank = player.state.bank;
+    int A = bank.A - cost.A;
+    int B = bank.B - cost.B;
+    int C = bank.C - cost.C;
+    int D = bank.D - cost.D;
+    int E = bank.E - cost.E;
+
+    H3_Bank bankable;
+
+    const H3_Bank& ratio = player.getBankingRatios();
+    if (A > 1) { bankable.A = A / ratio.A; }
+    if (B > 1) { bankable.B = B / ratio.B; }
+    if (C > 1) { bankable.C = C / ratio.C; }
+    if (D > 1) { bankable.D = D / ratio.D; }
+    if (E > 1) { bankable.E = E / ratio.E; }
+
+    return bankable;
+}
+
+bool H3_bankingTransaction( H3_Game & game, u32 playerId, H3_TileType giveType, H3_TileType wishType )
+{
+    auto & player = game.getPlayer( playerId );
+
+    const H3_Bank options = H3_computeBankings(player);
+    const H3_Bank ratio = player.getBankingRatios();
+    const H3_Bank before = player.state.bank;
+
+    bool bOK = false;
+    switch (giveType)
+    {
+        case H3_TileType::TileA:
+        {
+            if (options.A > 0) {
+                player.state.bank.subAmount( giveType, ratio.A );
+                player.state.bank.addAmount( wishType, 1 );
+                bOK = true;
+            }
+            break;
+        }
+        case H3_TileType::TileB:
+        {
+            if (options.B > 0) {
+                player.state.bank.subAmount( giveType, ratio.B );
+                player.state.bank.addAmount( wishType, 1 );
+                bOK = true;
+            }
+            break;
+        }
+        case H3_TileType::TileC:
+        {
+            if (options.C > 0) {
+                player.state.bank.subAmount( giveType, ratio.C );
+                player.state.bank.addAmount( wishType, 1 );
+                bOK = true;
+            }
+            break;
+        }
+        case H3_TileType::TileD:
+        {
+            if (options.D > 0) {
+                player.state.bank.subAmount( giveType, ratio.D );
+                player.state.bank.addAmount( wishType, 1 );
+                bOK = true;
+            }
+            break;
+        }
+        case H3_TileType::TileE:
+        {
+            if (options.E > 0) {
+                player.state.bank.subAmount( giveType, ratio.E );
+                player.state.bank.addAmount( wishType, 1 );
+                bOK = true;
+            }
+            break;
+        }
+        default: break;
+    }
+
+    if (bOK)
+    {
+        DE_DEBUG("Banking ",wishType.str()," ",ratio.A,":1 ",wishType.str(), ". Before",before.str(), ", After",player.state.bank.str() )
+    }
+
+    return bOK;
+}
+
+/*
+// Determine if player could buy something
+// taking (4:1, 3:1, 2:1) banking into account.
+H3_Bank H3_canBankBuy( H3_Game & game, u32 playerId, const H3_Bank& cost )
+{
+    const auto & player = game.getPlayer( playerId );
+
+    const H3_Bank& bank = player.state.bank;
+
+    if (bank.canBuy(cost)) return {};
+
+    //
+    int dA = bank.A - cost.A;
+    int dB = bank.B - cost.B;
+    int dC = bank.C - cost.C;
+    int dD = bank.D - cost.D;
+    int dE = bank.E - cost.E;
+
+    H3_Bank ratio = player.getBankingRatios();
+
+    int bankableA = 0;
+    int bankableB = 0;
+    int bankableC = 0;
+    int bankableD = 0;
+    int bankableE = 0;
+    if (dA > 0) { bankableA = dA / ratio.A; }
+    if (dB > 0) { bankableB = dB / ratio.B; }
+    if (dC > 0) { bankableC = dC / ratio.C; }
+    if (dD > 0) { bankableD = dD / ratio.D; }
+    if (dE > 0) { bankableE = dE / ratio.E; }
+
+    int deficitSum = 0;
+    if (dA < 0) deficitSum -= dA;
+    if (dB < 0) deficitSum -= dB;
+    if (dC < 0) deficitSum -= dC;
+    if (dD < 0) deficitSum -= dD;
+    if (dE < 0) deficitSum -= dE;
+
+    int bankableSum = 0;
+    bankableSum += bankableA;
+    bankableSum += bankableB;
+    bankableSum += bankableC;
+    bankableSum += bankableD;
+    bankableSum += bankableE;
+
+    if (deficitSum > bankableSum) return {};
+
+    H3_Bank final = cost;
+
+    int decidedSum = 0;
+    while (decidedSum < deficitSum)
+    {
+        if (bankableE > 0)
+        {
+            final.E += ratio.E;
+            bankableE--; decidedSum++;
+            if (decidedSum >= deficitSum) break;
+        }
+        if (bankableD > 0)
+        {
+            final.D += ratio.D;
+            bankableD--; decidedSum++;
+            if (decidedSum >= deficitSum) break;
+        }
+        if (bankableC > 0)
+        {
+            final.C += ratio.C;
+            bankableC--; decidedSum++;
+            if (decidedSum >= deficitSum) break;
+        }
+        if (bankableB > 0)
+        {
+            final.B += ratio.B;
+            bankableB--;  decidedSum++;
+            if (decidedSum >= deficitSum) break;
+        }
+        if (bankableA > 0)
+        {
+            final.A += ratio.A;
+            bankableA--; decidedSum++;
+            if (decidedSum >= deficitSum) break;
+        }
+    }
+
+    auto p = dbStr(game.playerStr()," :: ");
+
+    DE_DEBUG(p,"Has bank ",bank.str())
+    DE_DEBUG(p,"Has cost ",cost.str())
+    DE_DEBUG(p,"Has final ",final.str())
+
+    if (bankableA > 0) { DE_DEBUG(p,"Can bank ",ratio.A,":1 for ",bankableA," A") }
+    if (bankableB > 0) { DE_DEBUG(p,"Can bank ",ratio.B,":1 for ",bankableB," B") }
+    if (bankableC > 0) { DE_DEBUG(p,"Can bank ",ratio.C,":1 for ",bankableC," C") }
+    if (bankableD > 0) { DE_DEBUG(p,"Can bank ",ratio.D,":1 for ",bankableD," D") }
+    if (bankableE > 0) { DE_DEBUG(p,"Can bank ",ratio.E,":1 for ",bankableE," E") }
+
+}
+*/
+
+void CPU_doRoundN( H3_Game & game )
+{
+    H3_Player& player = game.getCurrentPlayer();
     if (player.typ != H3_PlayerType::CPU)
     {
-        DE_ERROR("No cpu player ", player.id)
+        DE_ERROR("No CPU player ", player.id)
     }
 
     if (game.m_bDebugLogic)
     {
         DE_DEBUG("CPU[",player.id,"] ",player.name)
     }
+
     game.doDice();
+
+    // What todo?
+    // Should we build a road?
+    // Should we build a farm?
+    // Should we build a city?
+    // Should we buy an eventcard?
+    // Should we play an eventcard?
+
+    u32 numRoads = player.state.roads.size();
+    u32 numFarms = player.state.farms.size();
+    u32 numCitys = player.state.citys.size();
+
+    std::vector<u32> roadPlaces = H3_computeVisibleEdges(game, player.id);
+    std::vector<u32> farmPlaces = H3_computeVisibleCorners(game, player.id);
+
+    DE_DEBUG(game.playerStr()," :: "
+            "numR(",numRoads,"), "
+            "numF(",numFarms,"), "
+            "numC(",numCitys,"), "
+            "roadPlaces(",roadPlaces.size(),"), "
+            "farmPlaces(",farmPlaces.size(),")")
+
+    bool canBuyR = player.state.bank.canBuyRoad();
+    bool canBuyF = player.state.bank.canBuyFarm();
+    bool canBuyC = player.state.bank.canBuyCity();
+    bool canBuyE = player.state.bank.canBuyCard();
+
+    if (roadPlaces.empty())
+    {
+        DE_ERROR(game.playerStr(), "stuck!")
+    }
+
+    int prioR = farmPlaces.empty() ? 1 : 0;
+
+    DE_DEBUG(game.playerStr()," :: needR(",prioR,")")
+
+    if (prioR)
+    {
+        if (!player.state.bank.canBuyRoad())
+        {
+            H3_Bank opts = H3_computeBankings(player,H3_Bank::costOfRoad());
+
+        }
+    }
+
+/*
+    if ( player.state.bank.canBuyFarm() )
+    {
+        std::vector< FarmMatch >
+        farmMatches = CPU_findBestFarm( game, player.id );
+
+        for ( size_t i = 0; i < farmMatches.size(); ++i )
+        {
+            FarmMatch & match = farmMatches[ i ];
+            if ( match.corner )
+            {
+                // DEM_DEBUG("BuyFarm with Match ", match.toString() )
+                game.doBuyFarm();
+                H3_Corner & corner = H3_getCorner( game, __func__, match.corner );
+                game.finalizeBuyFarm( corner );
+
+                if ( game.m_state == H3_State::Idle )
+                {
+                    break;
+                }
+            }
+        }
+    }
+
+    if ( player.state.bank.canBuyRoad() &&
+        player.state.roads.size() < 2*player.state.farms.size() )
+    {
+        std::vector< RoadMatch >
+        roadMatches = CPU_findBestRoad( game, player.id );
+
+        for ( size_t i = 0; i < roadMatches.size(); ++i )
+        {
+            RoadMatch & match = roadMatches[ i ];
+            if ( match.edge )
+            {
+                // DEM_DEBUG("BuyRoad with Match ", match.toString() )
+                game.doBuyRoad();
+                H3_Edge & edge = H3_getEdge( game, __func__, match.edge );
+                game.finalizeBuyRoad( edge );
+
+                if ( game.m_state == H3_State::Idle )
+                {
+                    break;
+                }
+            }
+        }
+    }
+
+    if ( player.state.bank.canBuyCard())
+    {
+        int a = player.state.knightCards.size();
+        int b = player.state.pointCards.size();
+        int c = player.state.inventCards.size();
+        int d = player.state.monopolCards.size();
+        int e = player.state.farms.size();
+        int f = player.state.citys.size();
+        if (a + b + c + d < e + f)
+        {
+            game.doBuyCard();
+        }
+    }
+*/
+
     game.doEndTurn();
 }
+
 
 #if 0
 /*
@@ -285,8 +585,6 @@ void CPU_doRound3( H3_Game & game )
 
 }
 
-#endif
-
 std::vector< FarmMatch >
 CPU_findBestFarm( H3_Game & game, uint32_t playerId )
 {
@@ -389,90 +687,6 @@ CPU_findBestRoad( H3_Game & game, uint32_t playerId )
     return roadMatches;
 }
 
-void CPU_doRoundN( H3_Game & game )
-{
-    H3_Player& player = game.getCurrentPlayer();
-    if (player.typ != H3_PlayerType::CPU)
-    {
-        DE_ERROR("No CPU player ", player.id)
-    }
-
-    if (game.m_bDebugLogic)
-    {
-        DE_DEBUG("CPU[",player.id,"] ",player.name)
-    }
-
-    game.doDice();
-
-    std::vector<u32> roadPlaces = H3_computeVisibleEdges(game, player.id);
-    std::vector<u32> farmPlaces = H3_computeVisibleCorners(game, player.id);
-
-
-
-
-    if ( player.state.bank.canBuyFarm() )
-    {
-        std::vector< FarmMatch >
-        farmMatches = CPU_findBestFarm( game, player.id );
-
-        for ( size_t i = 0; i < farmMatches.size(); ++i )
-        {
-            FarmMatch & match = farmMatches[ i ];
-            if ( match.corner )
-            {
-                // DEM_DEBUG("BuyFarm with Match ", match.toString() )
-                game.doBuyFarm();
-                H3_Corner & corner = H3_getCorner( game, __func__, match.corner );
-                game.finalizeBuyFarm( corner );
-
-                if ( game.m_state == H3_State::Idle )
-                {
-                    break;
-                }
-            }
-        }
-    }
-
-    if ( player.state.bank.canBuyRoad() &&
-        player.state.roads.size() < 2*player.state.farms.size() )
-    {
-        std::vector< RoadMatch >
-        roadMatches = CPU_findBestRoad( game, player.id );
-
-        for ( size_t i = 0; i < roadMatches.size(); ++i )
-        {
-            RoadMatch & match = roadMatches[ i ];
-            if ( match.edge )
-            {
-                // DEM_DEBUG("BuyRoad with Match ", match.toString() )
-                game.doBuyRoad();
-                H3_Edge & edge = H3_getEdge( game, __func__, match.edge );
-                game.finalizeBuyRoad( edge );
-
-                if ( game.m_state == H3_State::Idle )
-                {
-                    break;
-                }
-            }
-        }
-    }
-
-    if ( player.state.bank.canBuyCard())
-    {
-        int a = player.state.knightCards.size();
-        int b = player.state.pointCards.size();
-        int c = player.state.inventCards.size();
-        int d = player.state.monopolCards.size();
-        int e = player.state.farms.size();
-        int f = player.state.citys.size();
-        if (a + b + c + d < e + f)
-        {
-            game.doBuyCard();
-        }
-    }
-
-    game.doEndTurn();
-}
 
 /*
 void CPU_work( H3_Game & game )
@@ -510,7 +724,7 @@ void CPU_work( H3_Game & game )
 
 
 
-#if 0
+
 void H3_updatePossibleEdges( H3_Game & game )
 {
     H3_hideEdges( game );

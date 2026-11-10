@@ -10,23 +10,27 @@ Button::Button( std::string text, Env* env, Widget* parent, u32 id, const Recti&
 // =====================================================================
     : Widget(env, parent, id, r)
     // --- Fill ---
-    , m_radius(0)
+    , m_radius(8)
     // --- Border ---
-    , m_borderWidth(0)
+    , m_borderWidth(1)
     // --- Text ---
     , m_text(text)
 {
     auto black = dbRGB(0,0,0);
     auto white = dbRGB(255,255,255);
-    setFillColor(white, eWS_Idle);
-    setFillColor(white, eWS_Hovered);
-    setFillColor(white, eWS_Pressed);
-    setFillColor(white, eWS_Released);
+    auto trans = dbRGB(255,255,255);
 
-    setBorderColor(white, eWS_Idle);
-    setBorderColor(white, eWS_Hovered);
-    setBorderColor(white, eWS_Pressed);
-    setBorderColor(white, eWS_Released);
+    setFillColors(white);
+    // setFillColor(white, eWS_Idle);
+    // setFillColor(white, eWS_Hovered);
+    // setFillColor(white, eWS_Pressed);
+    // setFillColor(white, eWS_Released);
+
+    setBorderColors(0);
+    // setBorderColors(trans, eWS_Idle);
+    // setBorderColor(white, eWS_Hovered);
+    // setBorderColor(trans, eWS_Pressed);
+    // setBorderColor(trans, eWS_Released);
 
     auto white2 = dbRGB(255,255,255,155);
     setTextColor(black, white2, eWS_Idle);
@@ -61,21 +65,21 @@ Button::draw()
     if (isHovered())
     {
         fillColor = m_fillColors[eWS_Hovered];
-        borderColor = m_fillColors[eWS_Hovered];
+        borderColor = m_borderColors[eWS_Hovered];
         textFgColor = m_textFgColors[eWS_Hovered];
         textBgColor = m_textBgColors[eWS_Hovered];
     }
     else if (isPressed())
     {
         fillColor = m_fillColors[eWS_Pressed];
-        borderColor = m_fillColors[eWS_Pressed];
+        borderColor = m_borderColors[eWS_Pressed];
         textFgColor = m_textFgColors[eWS_Pressed];
         textBgColor = m_textBgColors[eWS_Pressed];
     }
     else if (isReleased())
     {
         fillColor = m_fillColors[eWS_Released];
-        borderColor = m_fillColors[eWS_Released];
+        borderColor = m_borderColors[eWS_Released];
         textFgColor = m_textFgColors[eWS_Released];
         textBgColor = m_textBgColors[eWS_Released];
     }
@@ -83,24 +87,21 @@ Button::draw()
     const Recti pos = getAbsoluteRect();
     // DE_DEBUG("AbsolutePos(",pos.str(),")")
 
+    const auto r = glm::ivec2(m_radius,m_radius);
+
     // --- [Draw] Fill ---
     if (dbRGB_A(fillColor) > 0)
     {
-#if 0
-        auto r_screen = driver->getScreenQuadRenderer();
-        r_screen->draw2D( pos, m_tex, true );
-#else
-        auto r_screen = driver->getScreenRenderer();
         if ( m_radius < 1 )
         {
-            r_screen->draw2DRect( pos, fillColor, m_tex );
+            driver->getScreenRenderer()->
+                draw2DRect( pos, fillColor, m_tex );
         }
         else
         {
-            const auto r = glm::ivec2(m_radius,m_radius);
-            r_screen->draw2DRoundRect( pos, r, fillColor, m_tex, tesselation );
+            driver->getScreenRenderer()->
+                draw2DRoundRect( pos, r, fillColor, m_tex, tesselation );
         }
-#endif
     }
 
     // --- [Draw] Text ---
@@ -108,25 +109,30 @@ Button::draw()
     {
         const int cx = pos.centerX();
         const int cy = pos.centerY();
-        auto r_font = driver->getFontRenderer();
-        r_font->draw2DText( cx,cy, m_text, textFgColor,
-                            Align::Centered, m_font,
-                            textBgColor, 5 );
+        driver->getFontRenderer()->
+            draw2DText( cx,cy, m_text, textFgColor, Align::Centered,
+                        m_font, textBgColor, 5 );
     }
+
+    // DE_DEBUG("borderColor = ",dbStrColor(borderColor))
 
     // --- [Draw] Border ---
     if (dbRGB_A(borderColor) > 0 && m_borderWidth > 0)
     {
-        auto r_screen = driver->getScreenRenderer();
+        driver->getScreenRenderer()->
+            draw2DRectLine( pos, borderColor );
+/*
         if ( m_radius < 1 )
         {
-            r_screen->draw2DRectLine( pos, borderColor );
+            driver->getScreenRenderer()->
+                draw2DRectLine( pos, borderColor );
         }
         else
         {
-            const auto r = glm::ivec2(m_radius,m_radius);
-            r_screen->draw2DRoundRectLine( pos, r, borderColor, m_tex, tesselation );
+            driver->getScreenRenderer()->
+                draw2DRoundRectLine( pos, r, borderColor, m_tex, tesselation );
         }
+*/
     }
 
 
@@ -158,6 +164,7 @@ void Button::onEvent( const Event& event )
             setHovered( true );
             setPressed( false );
             setReleased( false );
+            // DE_DEBUG("ENTER, isHovered = ",isHovered())
         //}
     }
     else if (event.type == EventType::LEAVE)
@@ -168,6 +175,7 @@ void Button::onEvent( const Event& event )
             setHovered( false );
             setPressed( false );
             setReleased( false );
+            // DE_DEBUG("LEAVE, isHovered = ",isHovered())
         //}
     }
     else if (event.type == EventType::MOUSE_PRESS)

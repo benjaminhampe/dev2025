@@ -100,7 +100,7 @@ struct H3_State
         DonateCards,
         PlaceThief,
         StealRandomCard,
-        UseKnightCard,
+        RevealKnightCard,
         PlaceRoad,
         PlaceFarm,
         PlaceCity,
@@ -780,6 +780,9 @@ struct H3_Player
     void setBonusRoad(bool value);
     int getBankingRatio(int tt) const;
     H3_Bank getBankingRatios() const;
+    H3_Dice getDice() const;
+
+    bool isHuman() const { return typ == H3_PlayerType::HUMAN; }
 };
 
 /*

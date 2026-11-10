@@ -50,16 +50,16 @@ protected:
     // --- Fill ---
     int m_radius;
     gpu::TexRef m_tex;
-    std::array<u32,4> m_fillColors; // Idle,Hovered,Pressed,Released
+    std::array<u32,eWS_Count> m_fillColors; // Idle,Hovered,Pressed,Released
 
     // --- Border ---
     int m_borderWidth;
-    std::array<u32,4> m_borderColors; // Idle,Hovered,Pressed,Released
+    std::array<u32,eWS_Count> m_borderColors; // Idle,Hovered,Pressed,Released
 
     // --- Text ---
     std::string m_text;
-    std::array<u32,4> m_textFgColors;
-    std::array<u32,4> m_textBgColors;
+    std::array<u32,eWS_Count> m_textFgColors;
+    std::array<u32,eWS_Count> m_textBgColors;
 };
 
 } // end namespace gui.

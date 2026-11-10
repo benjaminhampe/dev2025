@@ -1,7 +1,6 @@
 #pragma once
 #include <H3/H3_Board.h>
-#include <H3/details/H3_AI_StartPlacement.h>
-#include <H3/details/H3_AI_Round2.h>
+#include <H3/details/H3_AI_Goals.h>
 
 struct AI_Data
 {
@@ -15,7 +14,8 @@ struct AI_Data
     int handicap; // Determines AI player stupidity
     int cheating; // Determines AI player advantages
 
-    std::vector<BestesStartPaar> bestePaare;
+    std::vector<std::unique_ptr<IGoal>> goals;
+    //std::vector<BestesStartPaar> bestePaare;
 
     AI_Data()
         : playerId{ 0 }
@@ -27,15 +27,7 @@ struct AI_Data
 };
 
 
-struct H3_Game;
-
-void CPU_doRound1( H3_Game & game );
-// void CPU_doRound2( H3_Game & game );
-// void CPU_doRound3( H3_Game & game );
-void CPU_doRoundN( H3_Game & game );
-
-
-
+/*
 struct FarmMatch
 {
     int corner; // cornerId
@@ -75,4 +67,4 @@ struct RoadMatch
 std::vector< RoadMatch >
 CPU_findBestRoad( H3_Game & game, uint32_t playerId );
 
-
+*/

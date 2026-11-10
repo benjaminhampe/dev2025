@@ -72,10 +72,12 @@ struct H3_Game
 
     void enterDonateCards(uint32_t playerId);  // Donate cards to robber
     void enterThiefPlacement();     // Place robber on new tile
-    void leaveThiefPlacement( H3_Tile& tile ); // Place robber on new tile
-    void leaveThiefOutro( H3_Corner& corner ); // Select player to steal card from
-    void leaveThiefOutro( H3_Edge& edge );     // Select player to steal card from
-    void enterUseKnightCard();
+    bool leaveThiefPlacement( u32 tileId ); // Place robber on new tile
+
+    void enterStealCard();
+    void leaveStealCard( H3_Corner& corner ); // Select player to steal card from
+    void leaveStealCard( H3_Edge& edge );     // Select player to steal card from
+
     void enterWinnerScreen();
 
     void enterBanking();
@@ -100,8 +102,9 @@ struct H3_Game
     void doBuyCard();
     void doBank();
     void doTrade();
-    void revealPointCard();
-    void revealKnightCard();
+    void enterRevealPointCard();
+    void enterRevealKnightCard();
+    void leaveRevealKnightCard();
     void revealInventCard();
     void revealMonopolCard();
 
@@ -159,7 +162,6 @@ struct H3_Game
     void UI_updateActions();
 
     std::string getExeDir() const { return dbFileDir(m_argv[0]); }
-
 
     int m_argc;
     char** m_argv;
@@ -289,7 +291,11 @@ struct H3_Game
     bool m_bUpdateDrawCall_Farms = true;
     bool m_bUpdateDrawCall_Citys = true;
 
-
+    // void pushState(const H3_State& state);
+    // void popState();
+    // void clearStates();
+    // std::stack<H3_State> m_stack;
+    H3_State m_lastState = H3_State::Idle;
 public:
     std::string playerStr() const;
 };

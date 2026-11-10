@@ -105,21 +105,21 @@ void Label::draw()
     if (isHovered())
     {
         fillColor = m_fillColors[eWS_Hovered];
-        borderColor = m_fillColors[eWS_Hovered];
+        borderColor = m_borderColors[eWS_Hovered];
         textFgColor = m_textFgColors[eWS_Hovered];
         textBgColor = m_textBgColors[eWS_Hovered];
     }
     else if (isPressed())
     {
         fillColor = m_fillColors[eWS_Pressed];
-        borderColor = m_fillColors[eWS_Pressed];
+        borderColor = m_borderColors[eWS_Pressed];
         textFgColor = m_textFgColors[eWS_Pressed];
         textBgColor = m_textBgColors[eWS_Pressed];
     }
     else if (isReleased())
     {
         fillColor = m_fillColors[eWS_Released];
-        borderColor = m_fillColors[eWS_Released];
+        borderColor = m_borderColors[eWS_Released];
         textFgColor = m_textFgColors[eWS_Released];
         textBgColor = m_textBgColors[eWS_Released];
     }

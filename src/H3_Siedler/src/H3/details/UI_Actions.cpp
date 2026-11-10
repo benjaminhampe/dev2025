@@ -7,16 +7,13 @@ de::gui::Button*
 createActionButton(H3_Game* game, H3_Tex::eID id, de::gui::Env* env, de::gui::Widget* parent)
 {
     auto btn = new de::gui::Button("", env, parent);
-    btn->setBorderColor(dbRGB(255,255,0),1);
-
     auto tex = game->getTex(id, dbStr("UI_Actions().texId",int(id)));
     btn->setTexture(tex);
 
     float zoom = env->getZoom();
     int r = zoom * 8;
     btn->setRadius(r);
-
-    btn->setBorderColor(dbRGB(255,255,255,225), de::gui::Widget::eWS_Hovered);
+    btn->setBorderColor(dbRGB(255,255,255), de::gui::Widget::eWS_Hovered);
     //btn->setFillColor(dbRGB(255,255,255), de::gui::Widget::eWS_Hovered);
     return btn;
 }
@@ -70,11 +67,11 @@ UI_Actions::UI_Actions( H3_Game* game, de::gui::Env* env, de::gui::Widget* paren
 
     // (20.) Reveal PointCard
     m_btnPointCard = createActionButton(game,H3_Tex::NicePointCard,env,this);
-    m_btnPointCard->onClicked = [&](){ m_game->revealPointCard(); };
+    m_btnPointCard->onClicked = [&](){ m_game->enterRevealPointCard(); };
 
     // (20.) Reveal KnightCard
     m_btnKnightCard = createActionButton(game,H3_Tex::NiceKnightCard,env,this);
-    m_btnKnightCard->onClicked = [&](){ m_game->revealKnightCard(); };
+    m_btnKnightCard->onClicked = [&](){ m_game->enterRevealKnightCard(); };
 
     // (20.) Reveal InventCard
     m_btnInventCard = createActionButton(game,H3_Tex::NiceInventCard,env,this);

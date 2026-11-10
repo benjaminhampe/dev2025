@@ -1,7 +1,10 @@
 #include "H3_Game.h"
 #include <de/os/CommonDialogs.h>
 #include <H3/details/H3_Topology.h>
-#include <H3/details/H3_AI.h>
+#include <H3/details/H3_AI_Data.h>
+#include <H3/details/H3_AI_Round1.h>
+#include <H3/details/H3_AI_Round2.h>
+#include <H3/details/H3_AI_RoundN.h>
 #include <H3/details/H3_AI_ThiefPlacement.h>
 #include <de_opengl.h>
 #include <de/gpu/GL_debug_layer.h>
@@ -15,10 +18,6 @@
 #include <H3/details/UI_DonateCards.h>
 #include <H3/details/UI_WinnerScreen.h>
 // #include <H3/details/UI_CpuPlayer.h>
-
-// #ifndef USE_BENNI_DEBUG_RESOURCES
-// #define USE_BENNI_DEBUG_RESOURCES
-// #endif
 
 // ===========================================================================
 H3_Game::H3_Game(int argc, char* argv[])
@@ -51,6 +50,45 @@ H3_Game::~H3_Game()
 {
     //m_audioEngine.stop();
 }
+/*
+void H3_Game::pushState(const H3_State& state)
+{
+    m_stack.push(m_state);
+    m_state = state;
+}
+
+void H3_Game::popState()
+{
+    if (m_stack.empty())
+    {
+        DE_ERROR("Stack empty, fallback to idle")
+        m_state = H3_State::Idle;
+    }
+    else
+    {
+        m_state = m_stack.top();
+        m_stack.pop();
+    }
+
+    if (m_state == H3_State::Idle)
+    {
+        enterIdle();
+    }
+}
+
+void H3_Game::clearStates()
+{
+    int n = 0;
+    while(!m_stack.empty())
+    {
+        m_stack.pop();
+        n++;
+    }
+
+    DE_TRACE("Popped stack ",n," times.")
+    enterIdle();
+}
+*/
 
 std::string H3_Game::playerStr() const
 {
@@ -764,12 +802,17 @@ void H3_Game::startGame()
 
         player.startGame();
 
+
+    #ifndef USE_BENNI_DEBUG_RESOURCES
+    #define USE_BENNI_DEBUG_RESOURCES
+    #endif
+
     #ifdef USE_BENNI_DEBUG_RESOURCES
-        player.state.bank.A = 3;
-        player.state.bank.B = 4;
-        player.state.bank.C = 5;
-        player.state.bank.D = 6;
-        player.state.bank.E = 7;
+        player.state.bank.A = 23;
+        player.state.bank.B = 24;
+        player.state.bank.C = 25;
+        player.state.bank.D = 26;
+        player.state.bank.E = 27;
     #endif
     }
 
@@ -1038,7 +1081,7 @@ void H3_Game::enterTurn()
     {
         if ( m_round == 1 )
         {
-            CPU_doRound1( *this );
+            AI_Round1( *this );
         }
         else if ( m_round == 2 )
         {
@@ -1102,14 +1145,10 @@ void H3_Game::enterIdle()
     DE_DEBUG(playerStr())
 
     m_state = H3_State::Idle;
+    //m_lastState = H3_State::Idle;
 
     H3_GuiState guiState;
-
-    if (getPlayer(m_playerId).typ == H3_PlayerType::HUMAN)
-    {
-        guiState.bActions = true;
-    }
-
+    guiState.bActions = getPlayer(m_playerId).isHuman();
     UI_setState( guiState );
 }
 
@@ -1152,6 +1191,8 @@ void H3_Game::doDice()
     if ( m_state != H3_State::Idle )
     {
         DE_ERROR(playerStr(),"bad state, ", m_state.str())
+        enterIdle();
+        return;
     }
 
     auto& player = getCurrentPlayer();
@@ -1159,6 +1200,7 @@ void H3_Game::doDice()
     if (player.state.dice.sum())
     {
         DE_ERROR(playerStr(),"did already dice(",player.state.dice.a," + ",player.state.dice.b,").")
+        enterIdle();
         return;
     }
 
@@ -1340,14 +1382,12 @@ void H3_Game::enterThiefPlacement()
 
     if (m_state != H3_State::Dice &&
         m_state != H3_State::DonateCards &&
-        m_state != H3_State::UseKnightCard )
+        m_state != H3_State::RevealKnightCard )
     {
         DE_ERROR(playerStr(),"bad state ", m_state.str())
-        //enterIdle();
-        //return;
+        enterIdle();
+        return;
     }
-
-    m_state = H3_State::PlaceThief;
 
     H3_Player & player = getCurrentPlayer();
 
@@ -1360,28 +1400,38 @@ void H3_Game::enterThiefPlacement()
 
     UI_updateActions();
 
-    if (player.typ != H3_PlayerType::HUMAN)
+    if (!player.isHuman())
     {
         AI_ThiefPlacement(*this, m_playerId);
         enterIdle();
+        return;
     }
+
+    m_state = H3_State::PlaceThief;
 }
 
-void H3_Game::leaveThiefPlacement( H3_Tile& tile )
+bool H3_Game::leaveThiefPlacement( u32 tileId )
 {
     DE_DEBUG(playerStr())
 
     if (m_state != H3_State::PlaceThief )
     {
-        DE_ERROR(playerStr(),"bad state ", m_state.str())
-        //m_state = H3_State::Idle;
-        //return;
+        DE_FATAL(playerStr(),"bad state ", m_state.str())
+        return true;
     }
+
+    if (tileId < 1)
+    {
+        DE_ERROR(playerStr(),"Invalid tileId ", tileId)
+        return false;
+    }
+
+    H3_Tile & tile = H3_getTile(*this, __func__, tileId);
 
     if (m_thief.occupiedTileId == tile.id)
     {
         DE_WARN(playerStr(),"thief must be placed on different tile ", tile.id)
-        return;
+        return false;
     }
 
     // Place Thief:
@@ -1411,15 +1461,42 @@ void H3_Game::leaveThiefPlacement( H3_Tile& tile )
     if (owners.empty())
     {
         DE_DEBUG("Nothing to steal")
-        enterIdle();
-        return;
+        if (m_lastState == H3_State::RevealKnightCard)
+        {
+            leaveRevealKnightCard();
+        }
+        else
+        {
+            enterIdle();
+        }
+        return true;
     }
     else if (owners.size() == 1)
     {
         DE_DEBUG("Auto steal from player ", getPlayer(owners[0]).name);
         stealRandomCard( owners[0], m_playerId );
-        enterIdle();
-        return;
+        if (m_lastState == H3_State::RevealKnightCard)
+        {
+            leaveRevealKnightCard();
+        }
+        else
+        {
+            enterIdle();
+        }
+        return true;
+    }
+
+    enterStealCard();
+    return true;
+}
+
+void H3_Game::enterStealCard()
+{
+    DE_DEBUG(playerStr())
+
+    if (m_state != H3_State::PlaceThief)
+    {
+        DE_ERROR(playerStr(),"bad state ",m_state.str())
     }
 
     // We have atleast 2 players on the Robber tile
@@ -1428,7 +1505,7 @@ void H3_Game::leaveThiefPlacement( H3_Tile& tile )
     marqueeH1(L"Select Player to steal a card...", 1500, 0xFFC0C0C0);
 }
 
-void H3_Game::leaveThiefOutro( H3_Corner& corner )
+void H3_Game::leaveStealCard( H3_Corner& corner )
 {
     DE_DEBUG(playerStr())
 
@@ -1441,16 +1518,11 @@ void H3_Game::leaveThiefOutro( H3_Corner& corner )
     const H3_Tile & tile = H3_getTile(*this, __func__, m_thief.occupiedTileId);
 
     // [1.] Find corner on Robber's tile:
-    auto itFound = std::find_if(
-        tile.corners.begin(),
-        tile.corners.end(),
-        [&] ( u32 cornerId )
-        {
-            return cornerId == corner.id;
-        });
+    auto foundCorner = std::find_if( tile.corners.begin(), tile.corners.end(),
+        [&] ( u32 cornerId ) { return cornerId == corner.id; });
 
     // [1.] Corner is NOT on Robber's tile
-    if (itFound == tile.corners.end())
+    if (foundCorner == tile.corners.end())
     {
         DE_WARN(playerStr(),"not a corner of Thief's tile")
         return;
@@ -1472,10 +1544,18 @@ void H3_Game::leaveThiefOutro( H3_Corner& corner )
 
     // [4.] Steal card and return to idle...
     stealRandomCard( corner.owner, m_playerId );
-    enterIdle();
+
+    if (m_lastState == H3_State::RevealKnightCard)
+    {
+        leaveRevealKnightCard();
+    }
+    else
+    {
+        enterIdle();
+    }
 }
 
-void H3_Game::leaveThiefOutro( H3_Edge& edge )
+void H3_Game::leaveStealCard( H3_Edge& edge )
 {
     DE_DEBUG(playerStr())
 
@@ -1499,7 +1579,7 @@ void H3_Game::leaveThiefOutro( H3_Edge& edge )
     // [1.] Corner is NOT on Robber's tile
     if (itFound == tileOfRobber.edges.end())
     {
-        DE_WARN(playerStr(),"not an edge of Robber's tile")
+        DE_ERROR(playerStr(),"not an edge of Robber's tile")
         return;
     }
 
@@ -1511,7 +1591,14 @@ void H3_Game::leaveThiefOutro( H3_Edge& edge )
     }
 
     // [3.] Reset state and update
-    enterIdle();
+    if (m_lastState == H3_State::RevealKnightCard)
+    {
+        leaveRevealKnightCard();
+    }
+    else
+    {
+        enterIdle();
+    }
 }
 
 void H3_Game::stealRandomCard( int playerFromId, int playerToId )
@@ -1541,19 +1628,6 @@ void H3_Game::stealRandomCard( int playerFromId, int playerToId )
 
     // Sub card from victim
     playerFrom.state.bank.subAmount( tt, 1 );
-}
-
-void H3_Game::enterUseKnightCard()
-{
-    DE_DEBUG(playerStr())
-
-    if (m_state != H3_State::Idle )
-    {
-        DE_ERROR(playerStr(),"bad state ", m_state.str())
-        return;
-    }
-
-    enterIdle();
 }
 
 void H3_Game::doPlaceCancel()
@@ -1912,7 +1986,7 @@ void H3_Game::doBuyCard()
 
     m_cards.emplace_back();
     auto& card = m_cards.back();
-    card.id = int( m_cards.size() );
+    card.id = H3_createId();
     card.owner = player.id;
 
     if (dbTimeInMilliseconds() % 3 == 2)
@@ -1956,21 +2030,38 @@ void H3_Game::doTrade()
     UI_updateActions();
 }
 
-void H3_Game::revealPointCard()
+void H3_Game::enterRevealPointCard()
 {
     DE_DEBUG(playerStr())
 
     if ( m_state != H3_State::Idle )
     {
         DE_ERROR(playerStr(),"bad state ",m_state.str())
+        // enterIdle();
         return;
     }
 
-    auto & player = getCurrentPlayer();
+    H3_Player& player = getPlayer(m_playerId);
+
+    if (player.state.pointCards.empty())
+    {
+        DE_FATAL("No pointCards!")
+        enterIdle();
+        return;
+    }
+
+    u32 cardId = player.state.pointCards.back();
+    player.state.pointCards.pop_back();
+    player.state.points.push_back(cardId);
+    player.state.updateVictoryPoints();
+
+    DE_DEBUG(playerStr(), " :: Revealed PointCard ",cardId)
+    // computeWinnerId();
 
     enterIdle();
 }
-void H3_Game::revealKnightCard()
+
+void H3_Game::enterRevealKnightCard()
 {
     DE_DEBUG(playerStr())
 
@@ -1980,12 +2071,44 @@ void H3_Game::revealKnightCard()
         return;
     }
 
-    auto & player = getCurrentPlayer();
+    m_state = H3_State::RevealKnightCard;
+    m_lastState = H3_State::RevealKnightCard;
 
     enterThiefPlacement();
+}
+
+void H3_Game::leaveRevealKnightCard()
+{
+    DE_DEBUG(playerStr())
+
+    if ( m_lastState != H3_State::RevealKnightCard )
+    {
+        DE_ERROR(playerStr(),"bad state ",m_state.str())
+        enterIdle();
+        return;
+    }
+
+    m_lastState = H3_State::Idle;
+
+    H3_Player& player = getPlayer(m_playerId);
+
+    if (player.state.knightCards.empty())
+    {
+        DE_FATAL("No knightCards!")
+        enterIdle();
+        return;
+    }
+
+    u32 cardId = player.state.knightCards.back();
+    player.state.knightCards.pop_back();
+    player.state.knights.push_back(cardId);
+
+    DE_DEBUG(playerStr(), " :: Revealed KnightCard ",cardId)
+    computeBonusArmy();
 
     enterIdle();
 }
+
 void H3_Game::revealInventCard()
 {
     DE_DEBUG(playerStr())
