@@ -808,11 +808,11 @@ void H3_Game::startGame()
     #endif
 
     #ifdef USE_BENNI_DEBUG_RESOURCES
-        player.state.bank.A = 23;
-        player.state.bank.B = 24;
-        player.state.bank.C = 25;
-        player.state.bank.D = 26;
-        player.state.bank.E = 27;
+        player.state.bank.A = 5;
+        player.state.bank.B = 0;
+        player.state.bank.C = 0;
+        player.state.bank.D = 0;
+        player.state.bank.E = 30;
     #endif
     }
 
@@ -1093,7 +1093,7 @@ void H3_Game::enterTurn()
         }
         else
         {
-            CPU_doRoundN( *this );
+            AI_RoundN( *this );
         }
     }
 }
@@ -1176,9 +1176,10 @@ void H3_Game::computeRanking()
     for ( size_t i = 0; i < m_ranking.size(); ++i )
     {
         auto & item = m_ranking[ i ];
-        const H3_Player & player = getPlayer(item.playerId);
+        H3_Player & player = getPlayer(item.playerId);
+        player.diceOrder = i;
 
-        DE_DEBUG(playerStr(),"Rank[",i,"] "
+        DE_DEBUG(playerStr(),"DiceOrderRank[",i,"] "
                 "Player(",player.id,"|",player.name,"), "
                 "Dice(", item.diceSum,")" )
     }
@@ -1258,73 +1259,81 @@ void H3_Game::doDice()
         for ( size_t i = 0; i < m_tiles.size(); ++i )
         {
             auto& tile = m_tiles[ i ];
-            if ( sum == tile.chipValue )
+
+            if ( !tile.tt.isResource() )
             {
-                // Skip tile with thief...
-                if (tile.id == m_thief.occupiedTileId)
+                continue; // No desert, ports or water...
+            }
+
+            if ( sum != tile.chipValue )
+            {
+                continue;
+            }
+
+            // Skip tile with thief...
+            if (tile.id == m_thief.occupiedTileId)
+            {
+                DE_DEBUG(playerStr(),"Tile[",tile.str(),"] has Thief")
+                continue;
+            }
+
+            //DE_DEBUG("Tile[",i,"] produces resource type ", PioTileType::getString( tile.tt ) )
+
+            for ( int cornerId : tile.corners )
+            {
+                auto& corner = H3_getCorner( *this, __func__, cornerId );
+                if ( corner.owner > 0 )
                 {
-                    DE_DEBUG(playerStr(),"Tile[",tile.str(),"] has Thief")
-                    continue;
-                }
+                    auto& player = getPlayer( corner.owner );
 
-                //DE_DEBUG("Tile[",i,"] produces resource type ", PioTileType::getString( tile.tt ) )
-
-                for ( int cornerId : tile.corners )
-                {
-                    auto& corner = H3_getCorner( *this, __func__, cornerId );
-                    if ( corner.owner > 0 )
-                    {
-                        auto& player = getPlayer( corner.owner );
-
-                        //DE_DEBUG("Player(",player.id,") ",player.name," has before bank = ", player.bank.toString() )
-                        //DE_DEBUG("Tile[",i,"] has owner ", corner.owner, " and state = ", corner.state )
-                        //DE_DEBUG("Player(",player.id,") ",player.name," has after bank = ", player.bank.toString() )
-                        player.state.bank.addAmount(
-                                tile.tt,
-                                corner.building_type );
+                    //DE_DEBUG("Player(",player.id,") ",player.name," has before bank = ", player.bank.toString() )
+                    //DE_DEBUG("Tile[",i,"] has owner ", corner.owner, " and state = ", corner.state )
+                    //DE_DEBUG("Player(",player.id,") ",player.name," has after bank = ", player.bank.toString() )
+                    player.state.bank.addAmount(
+                            tile.tt,
+                            corner.building_type );
 
 DE_DEBUG(playerStr()," got ",corner.building_type," ",tile.tt.str() )
 
-                // <Begin> Animations:
+            // <Begin> Animations:
 
-                        glm::vec3 worldPos = corner.trs.pos;
-                        glm::vec2 mousePos(0,0);
+                    glm::vec3 worldPos = corner.trs.pos;
+                    glm::vec2 mousePos(0,0);
 
-                        if (player.typ == H3_PlayerType::HUMAN)
-                        {
-                            mousePos.x = m_driver->getScreenWidth()/2;
-                            mousePos.y = m_driver->getScreenHeight()-1;
-                        }
-                        else
-                        {
-                            int e_found = -1;
-                            for (int e_index = 0; e_index < m_enemies.size(); ++e_index)
-                            {
-                                H3_Player* enemy = m_enemies[e_index];
-                                if (enemy->id == player.id)
-                                {
-                                    e_found = e_index;
-                                    break;
-                                }
-                            }
-
-                            if (e_found > -1)
-                            {
-                                int e_width = m_driver->getScreenWidth()/4;
-                                mousePos.x = e_found * e_width + e_width / 2;
-                                mousePos.y = 0;
-                            }
-                        }
-
-                        auto ani = new H3_CardAnimation(this,
-                            worldPos,
-                            mousePos,
-                            tile.tt);
-
-                        m_animations.addAnimation(ani);
-
-                // <End> Animations.
+                    if (player.typ == H3_PlayerType::HUMAN)
+                    {
+                        mousePos.x = m_driver->getScreenWidth()/2;
+                        mousePos.y = m_driver->getScreenHeight()-1;
                     }
+                    else
+                    {
+                        int e_found = -1;
+                        for (int e_index = 0; e_index < m_enemies.size(); ++e_index)
+                        {
+                            H3_Player* enemy = m_enemies[e_index];
+                            if (enemy->id == player.id)
+                            {
+                                e_found = e_index;
+                                break;
+                            }
+                        }
+
+                        if (e_found > -1)
+                        {
+                            int e_width = m_driver->getScreenWidth()/4;
+                            mousePos.x = e_found * e_width + e_width / 2;
+                            mousePos.y = 0;
+                        }
+                    }
+
+                    auto ani = new H3_CardAnimation(this,
+                        worldPos,
+                        mousePos,
+                        tile.tt);
+
+                    m_animations.addAnimation(ani);
+
+            // <End> Animations.
                 }
             }
         }
@@ -2005,6 +2014,7 @@ void H3_Game::doBuyCard()
     UI_updateActions();
 }
 
+/*
 void H3_Game::doBank()
 {
     DE_DEBUG(playerStr())
@@ -2029,6 +2039,7 @@ void H3_Game::doTrade()
 
     UI_updateActions();
 }
+*/
 
 void H3_Game::enterRevealPointCard()
 {

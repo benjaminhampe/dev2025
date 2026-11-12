@@ -984,26 +984,11 @@ bool H3_Bank::buyFarm() { return buy( costOfFarm() ); }
 bool H3_Bank::buyCity() { return buy( costOfCity() ); }
 bool H3_Bank::buyCard() { return buy( costOfCard() ); }
 
-// [<=]
-int32_t
-H3_Bank::getAmount( const H3_TileType tt ) const
-{
-    switch ( tt.value )
-    {
-        case H3_TileType::TileA: return A;
-        case H3_TileType::TileB: return B;
-        case H3_TileType::TileC: return C;
-        case H3_TileType::TileD: return D;
-        case H3_TileType::TileE: return E;
-        default: return 0;
-    }
-}
-
 // [=>]
 void
-H3_Bank::resetAmount( const H3_TileType tt, const int32_t value )
+H3_Bank::setAmount( const H3_TileType tt, const int value )
 {
-    switch ( tt.value )
+    switch ( tt )
     {
         case H3_TileType::TileA: A = std::clamp( value, 0, 16000 ); break;
         case H3_TileType::TileB: B = std::clamp( value, 0, 16000 ); break;
@@ -1014,41 +999,63 @@ H3_Bank::resetAmount( const H3_TileType tt, const int32_t value )
     }
 }
 
-// [+] Deposit to current amount...
-void
-H3_Bank::addAmount( const H3_TileType tt, const int value )
+// [<=]
+int32_t
+H3_Bank::getAmount( const H3_TileType tt ) const
 {
-    switch ( tt.value )
+    switch ( tt )
     {
-        case H3_TileType::TileA: A = std::clamp( A + value, 0, 16000 ); break;
-        case H3_TileType::TileB: B = std::clamp( B + value, 0, 16000 ); break;
-        case H3_TileType::TileC: C = std::clamp( C + value, 0, 16000 ); break;
-        case H3_TileType::TileD: D = std::clamp( D + value, 0, 16000 ); break;
-        case H3_TileType::TileE: E = std::clamp( E + value, 0, 16000 ); break;
-        default: break;
+        case H3_TileType::TileA: return A;
+        case H3_TileType::TileB: return B;
+        case H3_TileType::TileC: return C;
+        case H3_TileType::TileD: return D;
+        case H3_TileType::TileE: return E;
+        default: return 0;
     }
 }
 
+// [+] Deposit to current amount...
+bool
+H3_Bank::addAmount( const H3_TileType tt, const int value )
+{
+    if (value < 1)
+    {
+        DE_ERROR("Cannot add(",value,") of tt(",tt.str(),") to bank(", str(),")")
+        return false;
+    }
+
+    switch ( tt )
+    {
+        case H3_TileType::TileA: A += value; break;
+        case H3_TileType::TileB: B += value; break;
+        case H3_TileType::TileC: C += value; break;
+        case H3_TileType::TileD: D += value; break;
+        case H3_TileType::TileE: E += value; break;
+        default: break;
+    }
+
+    return true;
+}
+
 // [-] Withdraw from current amount...
-void
+bool
 H3_Bank::subAmount( const H3_TileType tt, const int value )
 {
     const int amount = getAmount( tt );
     if (value > amount)
     {
-        auto s = dbStr("Cannot subAmount(", tt.str(), ",", value, ") from bank ", str());
-        throw std::runtime_error(s);
+        DE_ERROR("Cannot sub(",value,") of tt(",tt.str(),") from bank(",str(),")")
+        return false;
     }
-    resetAmount( tt, amount - value );
+    setAmount( tt, amount - value );
+    return true;
 }
 
 std::string
 H3_Bank::str() const
 {
     std::stringstream o;
-    o << "sum:" << sum()
-      << "|A:" << A << "|B:" << B <<
-         "|C:" << C << "|D:" << D << "|E:" << E;
+    o << A << "|" << B << "|" << C << "|" << D << "|" << E << "| sum = " << sum();
     return o.str();
 }
 
@@ -1739,8 +1746,7 @@ H3_Player::H3_Player()
     , avatar{ 0 }       // (H3_Tex::eID) = PlayU....PlayF
     //, name{};
     , ai_data{ nullptr }
-    , rank_start{ 0 }   // Round 1
-    , rank_dice{ 0 }    // Round 2,3
+    , diceOrder{ 0 }
     // Current state
     , state{}
     // Statistics
@@ -1783,8 +1789,7 @@ void H3_Player::startGame()
 {
     history.clear();
     state.clear();
-    rank_start = 0;
-    rank_dice = 0;
+    diceOrder = 0;
 }
 
 void H3_Player::setBonusArmy(bool value)

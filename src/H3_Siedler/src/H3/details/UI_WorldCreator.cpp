@@ -1,8 +1,5 @@
 #include "UI_WorldCreator.h"
 #include <H3/H3_Game.h>
-// #include <H3/details/H3_Topology.h>
-#include <H3/details/H3_UI.h>
-// #include <de_opengl.h>
 #include <de/gui/Label.h>
 #include <de/gui/Button.h>
 #include <de/gui/IntField.h>

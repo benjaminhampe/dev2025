@@ -60,6 +60,20 @@ void ScreenRenderer::draw2DHexagon( const Recti& pos, const uint32_t color, cons
     m.destroy();
 }
 
+/*
+void ScreenRenderer::draw2DHexagon( const de::Recti& pos, const u32 color, const de::gpu::TexRef& tex, int num )
+{
+    draw2DHexagon( pos, color, tex );
+
+    if ( num > -1 )
+    {
+
+        draw2DText( pos.centerX(), pos.centerY(),
+            std::to_string(num), 0xFFFFFFFF, de::Align::Centered, font );
+    }
+}
+*/
+
 void ScreenRenderer::draw2DCircle( const Recti& pos, const uint32_t color, const TexRef& tex, int tess )
 {
     smesh::SMeshBuffer m( PrimitiveType::Triangles );

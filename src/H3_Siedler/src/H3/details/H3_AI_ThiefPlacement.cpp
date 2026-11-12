@@ -6,7 +6,7 @@
 
 void AI_donateCardsToRobber(H3_Game & game, u32 playerId)
 {
-    DE_DEBUG(game.playerStr())
+    // DE_DEBUG(game.playerStr())
 
     const int cardLimit = game.m_cfg.cardLimitNoSteal;
 
@@ -25,7 +25,7 @@ void AI_donateCardsToRobber(H3_Game & game, u32 playerId)
     bool bWantBuyCard = true;
     bool bWantBuyCity = true;
 
-    const int maxLose = player.state.bank.sum() - cardLimit;
+    const int maxLose = player.state.bank.sum() / 2;
     int numLose = maxLose;
     int A = 0;
     int B = 0;
@@ -73,16 +73,18 @@ void AI_donateCardsToRobber(H3_Game & game, u32 playerId)
     bank.D = D;
     bank.E = E;
 
-    DE_OK(game.playerStr(),"has to donate ", maxLose, " to robber.")
-    DE_OK(game.playerStr(),"before Bank = ", player.state.bank.str())
-    DE_OK(game.playerStr(),"donate Bank = ", bank.str())
+    // DE_OK(game.playerStr(),"before Bank = ", player.state.bank.str())
+    // DE_OK(game.playerStr(),"donate Bank = ", bank.str())
 
     if (!player.state.bank.buy( bank ))
     {
-        DE_ERROR(game.playerStr(),"Cannot buy")
+        DE_ERROR(game.playerStr(),"Cannot donate ", bank.str())
     }
-
-    DE_OK(game.playerStr(),"robbed Bank = ", player.state.bank.str())
+    else
+    {
+        DE_DEBUG(game.playerStr(),"donated ", bank.str(), " to thief.")
+    }
+    // DE_OK(game.playerStr(),"robbed Bank = ", player.state.bank.str())
 }
 
 void AI_ThiefPlacement(H3_Game& game, u32 playerId)

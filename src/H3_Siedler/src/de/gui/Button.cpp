@@ -114,11 +114,11 @@ Button::draw()
                         m_font, textBgColor, 5 );
     }
 
-    // DE_DEBUG("borderColor = ",dbStrColor(borderColor))
-
     // --- [Draw] Border ---
     if (dbRGB_A(borderColor) > 0 && m_borderWidth > 0)
     {
+        // DE_DEBUG("borderColor = ",dbStrColor(borderColor))
+
         driver->getScreenRenderer()->
             draw2DRectLine( pos, borderColor );
 /*

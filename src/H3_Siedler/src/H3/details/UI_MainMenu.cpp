@@ -104,10 +104,10 @@ UI_MainMenu::createButton(std::string txt)
     btn->setTextColor(dbRGB(0,0,0,255), dbRGB(255,255,255,200), eWS_Pressed);
     btn->setTextColor(dbRGB(0,0,0,255), dbRGB(255,255,255,200), eWS_Released);
 
-    btn->setBorderColor(dbRGB(0,0,0,255), eWS_Idle);
-    btn->setBorderColor(dbRGB(0,0,0,255), eWS_Hovered);
-    btn->setBorderColor(dbRGB(0,0,0,255), eWS_Pressed);
-    btn->setBorderColor(dbRGB(0,0,0,255), eWS_Released);
+    // btn->setBorderColor(dbRGB(0,0,0,255), eWS_Idle);
+    // btn->setBorderColor(dbRGB(0,0,0,255), eWS_Hovered);
+    // btn->setBorderColor(dbRGB(0,0,0,255), eWS_Pressed);
+    // btn->setBorderColor(dbRGB(0,0,0,255), eWS_Released);
 
 
     return btn;

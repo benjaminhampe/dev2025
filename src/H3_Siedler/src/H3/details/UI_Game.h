@@ -41,6 +41,14 @@ protected:
 
     void drawDice();
 
+    static void drawHumanPlayer( H3_Game & game );
+    static void drawCpuPlayer( H3_Game& game, uint32_t playerId, const de::Recti& r, bool bDebug = false);
+    static void drawRoundStats( H3_Game & game, int x, int y, de::Align::EAlign align = de::Align::TopLeft);
+    static void drawEngineStats( H3_Game & game, int x, int y, de::Align::EAlign align = de::Align::TopRight);
+
+    static void drawInfoPanel_Tile( H3_Game & game, de::Recti pos, const u32 tileId );
+    static void drawInfoPanel_Corner( H3_Game & game, de::Recti pos, const u32 cornerId );
+    static void drawInfoPanel_Edge( H3_Game & game, de::Recti pos, const u32 edgeId );
 private:
     H3_Game* m_game;
 

@@ -464,11 +464,11 @@ struct H3_Bank
     // [<=]
     int32_t getAmount( const H3_TileType tt ) const;
     // [=>]
-    void resetAmount( const H3_TileType tt, const int32_t value );
+    void setAmount( const H3_TileType tt, const int value );
     // [+] Deposit to current amount...
-    void addAmount( const H3_TileType tt, const int value );
+    bool addAmount( const H3_TileType tt, const int value );
     // [-] Withdraw from current amount...
-    void subAmount( const H3_TileType tt, const int value );
+    bool subAmount( const H3_TileType tt, const int value );
     std::string str() const;
     H3_Bank & add( const H3_Bank & o );
     H3_Bank & sub( const H3_Bank & o );
@@ -758,12 +758,13 @@ struct H3_Player
     H3_PlayerConnect connect;
     u32 color;
     u32 avatar; // (H3_Tex::eID) = PlayU....PlayF
+    int diceOrder;  // Determined order after first dice round
     std::string name;
-
+    de::Recti screenRect;
     void* ai_data;
 
-    int rank_start; // Round 1
-    int rank_dice;  // Round 2,3
+    //int rank_start; // Round 1
+
 
     // Current state
     H3_PlayerState state;

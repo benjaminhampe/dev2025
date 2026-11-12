@@ -100,8 +100,8 @@ struct H3_Game
     void doBuyCity();
     void finalizeBuyCity( u32 farmId );
     void doBuyCard();
-    void doBank();
-    void doTrade();
+    // void doBank();
+    // void doTrade();
     void enterRevealPointCard();
     void enterRevealKnightCard();
     void leaveRevealKnightCard();

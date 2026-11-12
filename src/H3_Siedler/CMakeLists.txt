@@ -9,10 +9,7 @@ else()
     set(APP_SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/src)
     file(GLOB_RECURSE APP_SOURCES_H ${APP_SOURCE_DIR}/*.h)
     file(GLOB_RECURSE APP_SOURCES_CPP ${APP_SOURCE_DIR}/*.cpp)
-    #file(GLOB_RECURSE APP_SOURCES_H3_H ${APP_SOURCE_DIR}/H3/*.h)
-    #file(GLOB_RECURSE APP_SOURCES_H3_CPP ${APP_SOURCE_DIR}/H3/*.cpp)
     set(APP_SOURCES ${APP_SOURCES_H} ${APP_SOURCES_CPP})
-    # ${APP_SOURCES_H3_H} ${APP_SOURCES_H3_CPP}
 
     if (WIN32)
         enable_language(RC)
@@ -42,13 +39,14 @@ else()
 
     if (MSVC)
     else()
-        # target_link_options(${APP_NAME} PRIVATE -mwindows)
+        if (CMAKE_BUILD_TYPE STREQUAL "Release")
+            target_link_options(${APP_NAME} PRIVATE -mwindows)
+        endif()
     endif()
 
     include(${CMAKE_SOURCE_DIR}/src/embed_static_runtime.cmake)
     target_link_libraries(${APP_NAME} PRIVATE DarkImage_2604)
     target_link_libraries(${APP_NAME} PRIVATE DarkGPU_2604)
-    # target_link_libraries(${APP_NAME} PRIVATE de_gui_2504)
 
     if (CMAKE_BUILD_TYPE STREQUAL "Release")
 
