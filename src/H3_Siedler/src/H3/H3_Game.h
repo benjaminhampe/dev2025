@@ -226,11 +226,10 @@ struct H3_Game
     std::vector<u32> m_visibleEdges;
 
     H3_Thief                m_thief;
-    std::vector< H3_Card >  m_cards;
     std::vector< H3_Road >  m_roads;
     std::vector< H3_Farm >  m_farms;
     std::vector< H3_City >  m_citys;
-
+    std::vector< H3_EventCard > m_eventcards;
     H3_Dice m_dice;     // current dice
 
     // Round 1. - Decide order by dice ranking
@@ -238,7 +237,8 @@ struct H3_Game
     // Round 3. - Place 2nd farm + road
     // Round 4. - Normal gameplay
     std::vector< H3_RankedPlayer > m_ranking;
-
+    std::vector< H3_EventCard > m_eventcardPool; // 25 cards
+    void populateCardPool();
     // =======================================================================
     // Mouse/Camera
     // =======================================================================

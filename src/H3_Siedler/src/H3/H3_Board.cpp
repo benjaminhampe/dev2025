@@ -101,6 +101,8 @@ std::string H3_GuiState::str() const
     "bActions(" << bActions << "), "
     "bDonateCards(" << bDonateCards << "), "
     "bBanking(" << bBanking << "), "
+    "bInventCard(" << bInventCard << "), "
+    "bMonopolCard(" << bMonopolCard << "), "
     "bWinnerScreen(" << bWinnerScreen << "), ";
     return o.str();
 }
@@ -123,8 +125,8 @@ H3_State::getString( eState state )
         case PlaceThief: return "PlaceThief";
         case StealRandomCard: return "StealRandomCard";
         case RevealKnightCard: return "RevealKnightCard";
-        //case UseMonopolyCard: return "UseMonopolyCard";
-        //case UseInventionCard: return "UseInventionCard";
+        case RevealMonopolCard: return "RevealMonopolCard";
+        case RevealInventCard: return "RevealInventCard";
         //case UseVictoryCard: return "UseVictoryCard";
         case PlaceRoad: return "PlaceRoad";
         case PlaceFarm: return "PlaceFarm";
@@ -1424,20 +1426,20 @@ std::string H3_Thief::str() const
 }
 
 // =====================================================================
-// struct H3_Card
+// struct H3_EventCard
 // =====================================================================
 // u32 id = 0; // cardId
 // u32 owner = 0; // playerId
 // u32 typ = 0; // 0 = Ritter, 1 = Invention, 2 = Monopol
 // de::TRSf trs;     // Gfx 3d model space transform
-H3_Card::H3_Card()
+H3_EventCard::H3_EventCard()
     : id{0}
     , owner{0}
     , typ{0} // 0 = Ritter, 1 = Invention, 2 = Monopol
 {
 }
 
-std::string H3_Card::str() const
+std::string H3_EventCard::str() const
 {
     std::stringstream o; o <<
     "id(" << id << "), "
@@ -1838,6 +1840,7 @@ H3_Dice H3_Player::getDice() const
     {
         if (history.empty())
         {
+            DE_WARN("No history yet")
             return {}; // No valid dice
         }
         return history.back().dice;

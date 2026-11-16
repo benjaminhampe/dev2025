@@ -73,7 +73,7 @@ H3_City& H3_getCity( H3_Game& game, const std::string& caller, const u32 cityId 
 // =======================================================================
 // Card
 // =======================================================================
-H3_Card& H3_getEventCard( H3_Game& game, const std::string& caller, const u32 cardId );
+H3_EventCard& H3_getEventCard( H3_Game& game, const std::string& caller, const u32 cardId );
 
 // ========================================================================
 // Topology

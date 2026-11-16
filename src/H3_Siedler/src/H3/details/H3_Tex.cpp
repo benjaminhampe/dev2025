@@ -512,6 +512,19 @@ H3_getPlayerTex(const H3_Game& game, int playerIndex0_F )
     return game.getTex( static_cast<H3_Tex::eID>(id), "H3_getPlayerTex");
 }
 
+de::gpu::TexRef
+H3_getEventCardTex(const H3_Game& game, const H3_EventCard::eType typ )
+{
+    switch ( typ )
+    {
+        case H3_EventCard::Knight: return game.getTex(H3_Tex::NiceKnightCard, __func__ );
+        case H3_EventCard::Point: return game.getTex(H3_Tex::NicePointCard, __func__ );
+        case H3_EventCard::Invent: return game.getTex(H3_Tex::NiceInventCard, __func__ );
+        case H3_EventCard::Monopol: return game.getTex(H3_Tex::NiceMonopolCard, __func__ );
+        //case H3_EventCard::TwoRoads: return game.getTex(H3_Tex::NiceKnightCard, __func__ );
+        default: return game.getTex(H3_Tex::Unknown, __func__ );
+    }
+}
 
 void drawTileBorder(de::Image& img, int i, u32 color, bool blend)
 {

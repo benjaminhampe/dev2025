@@ -358,9 +358,9 @@ H3_City& H3_getCity( H3_Game& game, const std::string& caller, const u32 id )
 // =======================================================================
 // Card
 // =======================================================================
-H3_Card& H3_getEventCard( H3_Game& game, const std::string& caller, const u32 id )
+H3_EventCard& H3_getEventCard( H3_Game& game, const std::string& caller, const u32 id )
 {
-    auto & g = game.m_cards;
+    auto & g = game.m_eventcards;
 
     auto it = std::find_if( g.begin(), g.end(),
         [=] (const auto& cached) { return cached.id == id; });
@@ -737,10 +737,10 @@ void H3_createTopology( H3_Game& game ) // Game road network topology
     // Real board objects
     game.m_corners.clear();
     game.m_edges.clear();
-    game.m_cards.clear();
     game.m_roads.clear();
     game.m_farms.clear();
     game.m_citys.clear();
+    game.m_eventcards.clear();
 
     H3_Topology_createCorners( game );
     H3_Topology_createEdges( game );

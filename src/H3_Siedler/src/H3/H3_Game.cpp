@@ -14,8 +14,10 @@
 #include <H3/details/UI_WorldCreator.h>
 #include <H3/details/UI_Marquee.h>
 #include <H3/details/UI_Actions.h>
-#include <H3/details/UI_Banking.h>
 #include <H3/details/UI_DonateCards.h>
+#include <H3/details/UI_Banking.h>
+#include <H3/details/UI_Invent.h>
+#include <H3/details/UI_Monopol.h>
 #include <H3/details/UI_WinnerScreen.h>
 // #include <H3/details/UI_CpuPlayer.h>
 
@@ -94,12 +96,12 @@ std::string H3_Game::playerStr() const
 {
     if (m_playerId < 1)
     {
-        return dbStr("R[",m_round,"].T[",m_turn,"].P[",m_playerId,"] ");
+        return dbStr("Round(",m_round,"), Turn(",m_turn,"/",m_players.size(),"), Player(",m_playerId,") ");
     }
     else
     {
         const H3_Player & player = getPlayer(m_playerId);
-        return dbStr("R[",m_round,"].T[",m_turn,"].P[",player.id,"|",player.name,"] ");
+        return dbStr("Round(",m_round,"), Turn(",m_turn,"/",m_players.size(),"), Player(",player.id,"|",player.name,") ");
     }
 }
 
@@ -529,6 +531,39 @@ void H3_Game::UI_resizeLayouts()
     if (m_uiGame) { m_uiGame->resize(0,0,w,h); }
 }
 
+void H3_Game::populateCardPool()
+{
+    m_eventcardPool.clear();
+    m_eventcardPool.reserve( 25 );
+    for (int i = 0; i < 14; ++i)
+    {
+        m_eventcardPool.emplace_back();
+        H3_EventCard& card = m_eventcardPool.back();
+        card.id = H3_createId();
+        card.typ = H3_EventCard::Knight;
+    }
+    for (int i = 0; i < 5; ++i)
+    {
+        m_eventcardPool.emplace_back();
+        H3_EventCard& card = m_eventcardPool.back();
+        card.id = H3_createId();
+        card.typ = H3_EventCard::Point;
+    }
+    for (int i = 0; i < 3; ++i)
+    {
+        m_eventcardPool.emplace_back();
+        H3_EventCard& card = m_eventcardPool.back();
+        card.id = H3_createId();
+        card.typ = H3_EventCard::Invent;
+    }
+    for (int i = 0; i < 3; ++i)
+    {
+        m_eventcardPool.emplace_back();
+        H3_EventCard& card = m_eventcardPool.back();
+        card.id = H3_createId();
+        card.typ = H3_EventCard::Monopol;
+    }
+}
 
 u32 H3_Game::computeWinnerId()
 {
@@ -803,9 +838,9 @@ void H3_Game::startGame()
         player.startGame();
 
 
-    #ifndef USE_BENNI_DEBUG_RESOURCES
-    #define USE_BENNI_DEBUG_RESOURCES
-    #endif
+    // #ifndef USE_BENNI_DEBUG_RESOURCES
+    // #define USE_BENNI_DEBUG_RESOURCES
+    // #endif
 
     #ifdef USE_BENNI_DEBUG_RESOURCES
         player.state.bank.A = 5;
@@ -907,27 +942,16 @@ void H3_Game::startGame()
     m_thief.trs.update();
 
     // startGame()
-
+    populateCardPool();
     m_state = H3_State::Idle;
     m_turn = 1;
-    m_ranking.clear();
-    m_ranking.reserve( m_players.size() );
-
-    for ( const auto& player : m_players )
-    {
-        H3_RankedPlayer item;
-        item.playerId = player.id;
-        item.diceSum = 0;
-        m_ranking.push_back( item );
-    }
+    m_round = 1;
 
     H3_GuiState guiState;
     UI_setState( guiState );
 
     if (m_cfg.skipFirstRound)
     {
-        m_round = 2;
-
         dbRandomize();
 
         for (H3_Player & player : m_players)
@@ -936,10 +960,10 @@ void H3_Game::startGame()
             m_dice.b = (rand()%6) + 1;
             player.state.dice = m_dice;
         }
-    }
-    else
-    {
-        m_round = 1;
+
+        m_turn = int(m_players.size()); // Trigger [EndRound]
+        m_playerId = m_players.front().id;
+        doEndTurn();
     }
 
     enterRound();
@@ -985,28 +1009,6 @@ void H3_Game::enterRound()
         DE_ERROR(playerStr(),"Invalid turn ",m_turn)
     }
 
-    // Check win condition
-    m_winnerId = computeWinnerId();
-
-    if (m_winnerId)
-    {
-        enterWinnerScreen();
-        return;
-    }
-
-    // Compute ranking from dice results.
-    // Must be before "player.pushState()" which resets dice values.
-    if ( m_round == 2 )
-    {
-        computeRanking();
-    }
-
-    // Prepare new round
-    for (H3_Player & player : m_players)
-    {
-        player.pushState();
-    }
-
     // Compute next player ...
     computeNextPlayer();
 
@@ -1018,37 +1020,36 @@ void H3_Game::enterRound()
     {
         // m_playerId = m_ranking.front().playerId;
 
-        marqueeH1( L"Round 1 - Ranking by Dice", 2000, 0xFF00CC10 );
-        marqueeH1( L"Runde 1 - Würfeln der Rangfolge", 3000, 0xFF00CC10 );
+        marqueeH1( L"Round 1 - Dice", 2000, 0xFF00CC10 );
 
         auto s1 = dbStrW(L"New Game with (", m_players.size(), L") Players" );
         marqueeH3( s1, 4000, 0xFF00CF00 );
         auto s2 = dbStrW(L"Neues Spiel mit (", m_players.size(), L") Spielern" );
         marqueeH3( s2, 4000, 0xFF00CF00 );
 
-        marqueeH3( L"Please dice to determine your start rank.", 4000, 0xFF00DC10 );
-        marqueeH3( L"Bitte würfeln um deinen Rang zu bestimmen.", 4000, 0xFF00DC10 );
+        marqueeH3( L"Please dice to determine your start rank.", 3000, 0xFF00DC10 );
+        marqueeH3( L"Bitte würfeln um deinen Rang zu bestimmen.", 3000, 0xFF00DC10 );
 
     }
     else if (m_round == 2)
     {
         // m_playerId = m_ranking.front().playerId;
 
-        marqueeH1( L"Round 2 - First farm and road.", 3000, 0xFF00CC10 );
-        marqueeH3( L"Place a farm and a road next to the farm.", 5000, dbRGB(255,128,0) );
+        marqueeH1( L"Round 2 - First farm and road.", 2000, 0xFF00CC10 );
+        marqueeH3( L"Place a farm and a road next to the farm.", 3000, dbRGB(255,128,0) );
     }
     else if (m_round == 3)
     {
         // m_playerId = m_ranking.back().playerId;
 
-        marqueeH1( L"Round 3 - Second farm adn road.", 3000, 0xFF00CC10 );
-        marqueeH3( L"Place another farm and road nearby.", 5000, dbRGB(255,128,0) );
+        marqueeH1( L"Round 3 - Second farm adn road.", 2000, 0xFF00CC10 );
+        marqueeH3( L"Place another farm and road nearby.", 3000, dbRGB(255,128,0) );
     }
     else
     {
         // m_playerId = m_ranking.front().playerId;
 
-        marqueeH1( dbStrW(L"Round ",m_round), 3000, 0xFF00CC10 );
+        marqueeH1( dbStrW(L"Round ",m_round), 2000, 0xFF00CC10 );
 
         auto & player = getCurrentPlayer();
         auto s = dbStr("Turn[",m_turn,"] of player ",player.name, " with id ",player.id);
@@ -1067,8 +1068,6 @@ void H3_Game::enterTurn()
     computeNextPlayer();
 
     H3_Player& player = getPlayer(m_playerId);
-
-    DE_DEBUG(playerStr()," dice(",player.state.dice.sum(),")" )
 
     if (player.typ == H3_PlayerType::HUMAN)
     {
@@ -1098,10 +1097,9 @@ void H3_Game::enterTurn()
     }
 }
 
-
 void H3_Game::doEndTurn()
 {
-    DE_DEBUG(playerStr())
+    // DE_DEBUG(playerStr())
 
     if ( m_state != H3_State::Idle )
     {
@@ -1109,34 +1107,48 @@ void H3_Game::doEndTurn()
         return;
     }
 
-    UI_logEndTurn( *this );
-
     const H3_Player& player = getCurrentPlayer();
 
-    DE_DEBUG(playerStr(),"[TurnEnd] "
-             "turn(",m_turn,"), "
-             "round(",m_round,"), "
-             "dice(",player.state.dice.sum(),")" )
-
-    m_turn++;
-
     // End of Round:
-    if ( m_turn > m_players.size() )
+    if ( m_turn >= m_players.size() )
     {
-        DE_DEBUG(playerStr(),"[RoundEnd] "
-             "turn(",m_turn,"), "
-             "round(",m_round,"), "
-             "dice(",player.state.dice.sum(),")" )
+        DE_DEBUG(playerStr(),"[RoundEnd] dice(",player.state.dice.sum(),")" )
 
-        m_turn = 1;   // Next turn
-        m_round++;    // Next round
+        // Prepare new round
+        for (H3_Player & player : m_players)
+        {
+            player.pushState();
+        }
 
-        enterRound();
+        // Compute diceRanking from first dice round, stored in first history item.
+        // Must happen after atleast one call to "player.pushState()"
+        if ( m_round == 1 )
+        {
+            computeRanking();
+        }
+
+        // Check win condition
+        m_winnerId = computeWinnerId();
+
+        if (m_winnerId)
+        {
+            enterWinnerScreen();
+            return;
+        }
+
+        m_turn = 1;     // First turn of new round.
+        m_round++;      // Next round
+        enterRound();   // Next round
     }
     // End of Turn:
     else
     {
-        enterTurn();
+        DE_DEBUG(playerStr(),"[TurnEnd] dice(",player.state.dice.sum(),")" )
+
+        UI_logEndTurn( *this );
+
+        m_turn++;       // Next turn
+        enterTurn();    // Next turn
     }
 }
 
@@ -1156,6 +1168,15 @@ void H3_Game::computeRanking()
 {
     DE_DEBUG(playerStr(),"DiceRanking after first round...")
 
+    for ( auto& player : m_players )
+    {
+        if (player.history.empty())
+        {
+            DE_FATAL(playerStr(),"History must have one item to determine rank")
+            return;
+        }
+    }
+
     m_ranking.clear();
     m_ranking.reserve( m_players.size() );
 
@@ -1163,7 +1184,7 @@ void H3_Game::computeRanking()
     {
         H3_RankedPlayer item;
         item.playerId = player.id;
-        item.diceSum = player.state.dice.sum();
+        item.diceSum = player.history.front().dice.sum();
         m_ranking.push_back( item );
     }
 
@@ -1637,6 +1658,19 @@ void H3_Game::stealRandomCard( int playerFromId, int playerToId )
 
     // Sub card from victim
     playerFrom.state.bank.subAmount( tt, 1 );
+
+    // [Animation]
+    int w1 = playerFrom.screenRect.w / 10;
+    int h1 = playerFrom.screenRect.h / 2;
+    int x1 = playerFrom.screenRect.x + w1 + 2*w1*(tt - H3_TileType::TileA);
+    int y1 = playerFrom.screenRect.y + h1;
+
+    int w2 = playerTo.screenRect.w / 10;
+    int h2 = playerTo.screenRect.h / 2;
+    int x2 = playerTo.screenRect.x + w2 + 2*w2*(tt - H3_TileType::TileA);
+    int y2 = playerTo.screenRect.y + h2;
+
+    m_animations.addAnimation( new  H3_Card2DAnimation(this, {x1,y1}, {x2,y2}, tt));
 }
 
 void H3_Game::doPlaceCancel()
@@ -1993,21 +2027,53 @@ void H3_Game::doBuyCard()
         return;
     }
 
-    m_cards.emplace_back();
-    auto& card = m_cards.back();
-    card.id = H3_createId();
+    if (m_eventcardPool.size() < 1)
+    {
+        populateCardPool();
+    }
+
+    int index = rand() % int(m_eventcardPool.size());
+
+    m_eventcards.emplace_back();
+    H3_EventCard& card = m_eventcards.back();
+    card.id = m_eventcardPool.at(index).id;
+    card.typ = m_eventcardPool.at(index).typ;
     card.owner = player.id;
 
-    if (dbTimeInMilliseconds() % 3 == 2)
+    if (card.typ == H3_EventCard::Knight)
     {
-        card.typ = H3_Tex::EventCardPoint;
+        player.state.knightCards.push_back( card.id );
+    }
+    else if (card.typ == H3_EventCard::Point)
+    {
         player.state.pointCards.push_back( card.id );
+    }
+    else if (card.typ == H3_EventCard::Invent)
+    {
+        player.state.inventCards.push_back( card.id );
+    }
+    else if (card.typ == H3_EventCard::Monopol)
+    {
+        player.state.monopolCards.push_back( card.id );
     }
     else
     {
-        card.typ = H3_Tex::EventCardKnight;
-        player.state.knightCards.push_back( card.id );
+        DE_ERROR("Unknown card type ", card.str())
     }
+
+    // Remove from pool, so rand() uses the rest of the cards.
+    // Feels more realistic when the stack of event cards shrinks
+    // and the chance to get one the expected remaining cards increases.
+    // Pool is refilled if num cards = 0.
+    m_eventcardPool.erase(
+        std::remove_if(
+            m_eventcardPool.begin(),
+            m_eventcardPool.end(),
+            [&](const H3_EventCard & cached)
+            {
+                return cached.id == card.id;
+            }),
+            m_eventcardPool.end());
 
     UI_logBuyCard( *this, int(card.typ) );
     //DE_DEBUG("DoBuyCard type:", card.typ ? "KnightCard" : "PointCard" )
@@ -2130,7 +2196,28 @@ void H3_Game::revealInventCard()
         return;
     }
 
-    enterIdle();
+    H3_Player & player = getPlayer(m_playerId);
+
+    if (player.state.inventCards.empty())
+    {
+        enterIdle();
+        return;
+    }
+
+    if (player.typ != H3_PlayerType::HUMAN)
+    {
+        DE_ERROR(playerStr(),"is not a Human.")
+        enterIdle();
+        return;
+    }
+
+    m_state = H3_State::RevealInventCard;
+
+    H3_GuiState guiState;
+    guiState.bInventCard = true;
+    m_uiGame->pushState( guiState );
+
+    m_uiGame->m_invent->startInvent( player.id );
 }
 void H3_Game::revealMonopolCard()
 {
@@ -2142,7 +2229,28 @@ void H3_Game::revealMonopolCard()
         return;
     }
 
-    enterIdle();
+    H3_Player & player = getPlayer(m_playerId);
+
+    if (player.state.monopolCards.empty())
+    {
+        enterIdle();
+        return;
+    }
+
+    if (player.typ != H3_PlayerType::HUMAN)
+    {
+        DE_ERROR(playerStr(),"is not a Human.")
+        enterIdle();
+        return;
+    }
+
+    m_state = H3_State::RevealMonopolCard;
+
+    H3_GuiState guiState;
+    guiState.bMonopolCard = true;
+    m_uiGame->pushState( guiState );
+
+    m_uiGame->m_monopol->startMonopol( player.id );
 }
 
 void H3_Game::pick()
@@ -2405,6 +2513,7 @@ void H3_Game::drawSun()
     trs.update();
 
     //m_driver->getLights().at(0).pos = pos - dir;
+    m_driver->getLights().at(0).pos = pos - dir; // Sun is point light for obj 3d
     m_driver->getLights().at(0).dir = dir; // Sun is directional
 
     m_driver->setModelMatrix(trs.modelMat);

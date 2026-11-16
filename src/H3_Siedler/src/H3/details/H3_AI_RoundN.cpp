@@ -320,11 +320,45 @@ void AI_RoundN( H3_Game & game )
         DE_DEBUG(game.playerStr(),"couldBuyCard(",couldBuyE.str(),")")
 
         // ===============================================
-        // Stuck
+        // Build a city
         // ===============================================
-        if (roadPlaces.empty())
+        bool needCity = !player.state.farms.empty();
+        if (needCity)
         {
-            DE_ERROR(game.playerStr(), "stuck!")
+            DE_DEBUG(game.playerStr()," needCity(",needCity,")")
+
+            if (!player.state.bank.canBuyCity())
+            {
+                if (couldBuyC.sum() > 0)
+                {
+                    DE_DEBUG(game.playerStr(),"Could buyCity, have(",have.str(),")")
+
+                    if (!H3_autoBanking(game, player.id, H3_Bank::costOfCity()))
+                    {
+                        DE_ERROR(game.playerStr(),"Autobanking buyCity, have(",have.str(),")")
+                    }
+                }
+                else
+                {
+                    DE_DEBUG(game.playerStr(),"Can't buyCity, have(",have.str(),")")
+                }
+            }
+
+            if (player.state.bank.canBuyCity())
+            {
+                game.doBuyCity();
+
+                int bestFarm = rand() % int(player.state.farms.size());
+
+                u32 farmId = player.state.farms.at( bestFarm );
+
+                H3_Farm & farm = H3_getFarm(game, __func__, farmId);
+
+                game.finalizeBuyCity( farm.id );
+
+                roadPlaces = H3_computeVisibleEdges(game, player.id);
+                farmPlaces = H3_computeVisibleCorners(game, player.id);
+            }
         }
 
         // ===============================================
@@ -366,7 +400,6 @@ void AI_RoundN( H3_Game & game )
 
                 roadPlaces = H3_computeVisibleEdges(game, player.id);
                 farmPlaces = H3_computeVisibleCorners(game, player.id);
-
             }
         }
 
@@ -374,7 +407,7 @@ void AI_RoundN( H3_Game & game )
         // Build a road
         // ===============================================
         bool needRoad = farmPlaces.empty();
-        if (needRoad)
+        if (needRoad && !roadPlaces.empty())
         {
             DE_DEBUG(game.playerStr(),"needRoad(",needRoad,")")
 
@@ -405,48 +438,6 @@ void AI_RoundN( H3_Game & game )
                 H3_Edge & edge = H3_getEdge(game, __func__, edgeId);
 
                 game.finalizeBuyRoad( edge );
-
-                roadPlaces = H3_computeVisibleEdges(game, player.id);
-                farmPlaces = H3_computeVisibleCorners(game, player.id);
-            }
-        }
-
-        // ===============================================
-        // Build a city
-        // ===============================================
-        bool needCity = !player.state.farms.empty();
-        if (needCity)
-        {
-            DE_DEBUG(game.playerStr()," needCity(",needCity,")")
-
-            if (!player.state.bank.canBuyCity())
-            {
-                if (couldBuyC.sum() > 0)
-                {
-                    DE_DEBUG(game.playerStr(),"Could buyCity, have(",have.str(),")")
-
-                    if (!H3_autoBanking(game, player.id, H3_Bank::costOfCity()))
-                    {
-                        DE_ERROR(game.playerStr(),"Autobanking buyCity, have(",have.str(),")")
-                    }
-                }
-                else
-                {
-                    DE_DEBUG(game.playerStr(),"Can't buyCity, have(",have.str(),")")
-                }
-            }
-
-            if (player.state.bank.canBuyCity())
-            {
-                game.doBuyCity();
-
-                int bestFarm = rand() % int(player.state.farms.size());
-
-                u32 farmId = player.state.farms.at( bestFarm );
-
-                H3_Farm & farm = H3_getFarm(game, __func__, farmId);
-
-                game.finalizeBuyCity( farm.id );
 
                 roadPlaces = H3_computeVisibleEdges(game, player.id);
                 farmPlaces = H3_computeVisibleCorners(game, player.id);

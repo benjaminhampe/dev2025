@@ -6,10 +6,12 @@
 // param[in] cost <optional>. Initial cost that will be substracted before the computation.
 // return[out] Each resource type will contain the max number of possible bankings.
 // The bank.sum() is total number of new resource cards poss. through banking.
-H3_Bank H3_computeBankings( const H3_Player& player, const H3_Bank& cost = {} );
+H3_Bank
+H3_computeBankings( const H3_Player& player, const H3_Bank& cost = {} );
 
 // Compute how many resource cards are missing to buy the cost
-H3_Bank H3_computeMissingCards( const H3_Player& player, const H3_Bank& cost );
+H3_Bank
+H3_computeMissingCards( const H3_Player& player, const H3_Bank& cost );
 
 // Compute possible bank after banking resource cards to cover the cost
 // A non empty bank indicates it is possible to buy the cost with banking.
@@ -24,15 +26,18 @@ H3_Bank H3_computeMissingCards( const H3_Player& player, const H3_Bank& cost );
 // options|0|0|0|0|2 -> sum() == 2 -> We can buy after banking E 3:1 for D
 //--------+-+-+-+-+-------------------------
 // banking|1|1|3|1|3 -> After banking
-H3_Bank H3_couldBuy(const H3_Game & game, u32 playerId, const H3_Bank& cost);
+H3_Bank
+H3_couldBuy(const H3_Game & game, u32 playerId, const H3_Bank& cost);
 
 // Single wishType card is exchanged for enough giveType cards.
 // Amount of giveType cards are automatically computed and substracted.
 // A successful transaction returns true, triggers game animations and similar.
-bool H3_exchangeCardWithBank( H3_Game & game, u32 playerId, H3_TileType giveType, H3_TileType wishType );
+bool
+H3_exchangeCardWithBank( H3_Game & game, u32 playerId, H3_TileType giveType, H3_TileType wishType );
 
 // Automatic banking to reach a possible way to pay the given cost.
-bool H3_autoBanking(H3_Game & game, u32 playerId, const H3_Bank& cost);
+bool
+H3_autoBanking(H3_Game & game, u32 playerId, const H3_Bank& cost);
 
 
 // Determine if player could buy something

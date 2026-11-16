@@ -164,3 +164,6 @@ H3_getChipTex(const H3_Game& game, const int diceValue, const H3_TileType tt );
 
 de::gpu::TexRef
 H3_getPlayerTex(const H3_Game& game, int playerIndex0_F );
+
+de::gpu::TexRef
+H3_getEventCardTex(const H3_Game& game, const H3_EventCard::eType typ );

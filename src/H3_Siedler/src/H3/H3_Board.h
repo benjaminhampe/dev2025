@@ -29,7 +29,7 @@ struct H3_Tile;
 struct H3_Corner;
 struct H3_Edge;
 struct H3_Thief;
-struct H3_Card;
+struct H3_EventCard;
 struct H3_Road;
 struct H3_Farm;
 struct H3_City;
@@ -82,6 +82,8 @@ struct H3_GuiState // Actually just H3_UIGameState
     bool bActions = false;
     bool bDonateCards = false;
     bool bBanking = false;
+    bool bInventCard = false;
+    bool bMonopolCard = false;
     bool bWinnerScreen = false;
 
     std::string str() const;
@@ -101,6 +103,8 @@ struct H3_State
         PlaceThief,
         StealRandomCard,
         RevealKnightCard,
+        RevealInventCard,
+        RevealMonopolCard,
         PlaceRoad,
         PlaceFarm,
         PlaceCity,
@@ -621,15 +625,33 @@ struct H3_Thief
     std::string str() const;
 };
 
+// Pool von 25 Ereigniskarten:
+// 1. Ritterkarten (14 Stück)
+// 2. Fortschrittskarten (6 Stück)
+//     2x Straßenbau: Du darfst sofort 2 Straßen kostenlos bauen
+//     2x Erfindung: Du darfst dir 2 beliebige Rohstoffkarten direkt vom Vorrat nehmen.
+//     2x Monopol: Du wählst einen Rohstoff. Alle Mitspieler müssen dir alle Handkarten dieser Sorte geben, die sie aktuell besitzen.
+// 3. Siegpunktekarten (5 Stück)
+//     Kathedrale, Universität, Parlament, Markt und Bibliothek.
+
 // =====================================================================
-struct H3_Card
+struct H3_EventCard
 // =====================================================================
 {
-    u32 id; // cardId
-    u32 owner; // playerId
-    u32 typ; // 0 = Ritter, 1 = Invention, 2 = Monopol
-    de::TRSf trs;     // Gfx 3d model space transform
-    H3_Card();
+    enum eType
+    {
+        Knight = 0,
+        Point,
+        Invent,
+        Monopol,
+        Roads
+    };
+
+    u32 id;     // cardId
+    u32 owner;  // playerId
+    u32 typ;    // 0=Knight, 1=point, 2=invention, 3=monopol, 4=roads
+    de::TRSf trs;
+    H3_EventCard();
     std::string str() const;
 };
 

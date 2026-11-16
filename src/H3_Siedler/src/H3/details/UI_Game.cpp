@@ -6,6 +6,8 @@
 #include <H3/details/UI_Actions.h>
 #include <H3/details/UI_Banking.h>
 #include <H3/details/UI_DonateCards.h>
+#include <H3/details/UI_Monopol.h>
+#include <H3/details/UI_Invent.h>
 #include <H3/details/UI_WinnerScreen.h>
 
 // =====================================================================
@@ -18,6 +20,8 @@ UI_Game::UI_Game( H3_Game* game, de::gui::Env* env, de::gui::Widget* parent, u32
     , m_winnerScreen(nullptr)
     , m_actions(nullptr)
     , m_donateCards(nullptr)
+    , m_monopol(nullptr)
+    , m_invent(nullptr)
     , m_banking(nullptr)
     , m_bDebug(false)
 {
@@ -28,21 +32,82 @@ UI_Game::UI_Game( H3_Game* game, de::gui::Env* env, de::gui::Widget* parent, u32
     m_marquee = new UI_Marquee( game, env, this, 2, r );
     m_actions = new UI_Actions( game, env, this, 3, r );
     m_donateCards = new UI_DonateCards( game, env, this, 4, r );
-    m_winnerScreen = new UI_WinnerScreen( game, env, this, 5, r );
     m_banking = new UI_Banking( game, env, this, 6, r );
+    m_monopol = new UI_Monopol( game, env, this, 7, r );
+    m_invent = new UI_Invent( game, env, this, 8, r );
+    m_winnerScreen = new UI_WinnerScreen( game, env, this, 5, r );
 
     m_worldCreator->setVisible(false);
     m_marquee->setVisible(false);
     m_actions->setVisible(false);
     m_donateCards->setVisible(false);
-    m_winnerScreen->setVisible(false);
     m_banking->setVisible(false);
+    m_invent->setVisible(false);
+    m_monopol->setVisible(false);
+    m_winnerScreen->setVisible(false);
 }
 
 UI_Game::~UI_Game()
 {
 
 }
+
+void UI_Game::pushState(const H3_GuiState& guiState)
+{
+    m_stack.push(getState());
+    setState(guiState);
+}
+
+void UI_Game::popState()
+{
+    setState(m_stack.top());
+    m_stack.pop();
+}
+
+H3_GuiState UI_Game::getState() const
+{
+    H3_GuiState guiState;
+    guiState.bWorldCreator = m_worldCreator->isVisible();
+    guiState.bMarquee = m_marquee->isVisible();
+    guiState.bActions = m_actions->isVisible();
+    guiState.bDonateCards = m_donateCards->isVisible();
+    guiState.bBanking = m_banking->isVisible();
+    guiState.bInventCard = m_invent->isVisible();
+    guiState.bMonopolCard = m_monopol->isVisible();
+    guiState.bWinnerScreen = m_winnerScreen->isVisible();
+    return guiState;
+}
+
+void UI_Game::setState(const H3_GuiState& guiState)
+{
+    if (m_worldCreator){
+        m_worldCreator->setVisible(guiState.bWorldCreator);
+    }
+    if (m_actions){
+        m_actions->setVisible(guiState.bActions);
+    }
+    if (m_marquee){
+        m_marquee->setVisible(guiState.bMarquee);
+    }
+    if (m_donateCards){
+        m_donateCards->setVisible(guiState.bDonateCards);
+    }
+    if (m_banking){
+        m_banking->setVisible(guiState.bBanking);
+    }
+    if (m_monopol){
+        m_monopol->setVisible(guiState.bMonopolCard);
+    }
+    if (m_invent){
+        m_invent->setVisible(guiState.bInventCard);
+    }
+    if (m_winnerScreen){
+        m_winnerScreen->setVisible(guiState.bWinnerScreen);
+    }
+
+    updateLayouts();
+}
+
 
 void UI_Game::forceResize()
 {
@@ -246,6 +311,26 @@ void UI_Game::updateLayouts()
         int panel_y = (h - panel_h)/2;
         m_banking->resize(panel_x, panel_y, panel_w, panel_h);
     }
+    if (m_invent)
+    {
+        // ::::: Panel body ::::
+        int dim = 8 * std::min(w,h) / 10;
+        int panel_w = dim;
+        int panel_h = dim;
+        int panel_x = (w - panel_w)/2;
+        int panel_y = (h - panel_h)/2;
+        m_invent->resize(panel_x, panel_y, panel_w, panel_h);
+    }
+    if (m_monopol)
+    {
+        // ::::: Panel body ::::
+        int dim = 8 * std::min(w,h) / 10;
+        int panel_w = dim;
+        int panel_h = dim;
+        int panel_x = (w - panel_w)/2;
+        int panel_y = (h - panel_h)/2;
+        m_monopol->resize(panel_x, panel_y, panel_w, panel_h);
+    }
     if (m_winnerScreen)
     {
         int panel_w = w - 200;
@@ -255,58 +340,6 @@ void UI_Game::updateLayouts()
         m_winnerScreen->resize(panel_x, panel_y, panel_w, panel_h);
     }
 }
-
-void UI_Game::pushState(const H3_GuiState& guiState)
-{
-    m_stack.push(getState());
-    setState(guiState);
-}
-
-void UI_Game::popState()
-{
-    setState(m_stack.top());
-    m_stack.pop();
-}
-
-H3_GuiState UI_Game::getState() const
-{
-    H3_GuiState guiState;
-    guiState.bWorldCreator = m_worldCreator->isVisible();
-    guiState.bMarquee = m_marquee->isVisible();
-    guiState.bActions = m_actions->isVisible();
-    guiState.bDonateCards = m_donateCards->isVisible();
-    guiState.bBanking = m_banking->isVisible();
-    guiState.bWinnerScreen = m_winnerScreen->isVisible();
-    return guiState;
-}
-
-void UI_Game::setState(const H3_GuiState& guiState)
-{
-    if (m_worldCreator){
-        m_worldCreator->setVisible(guiState.bWorldCreator);
-    }
-    if (m_actions){
-        m_actions->setVisible(guiState.bActions);
-    }
-    if (m_marquee){
-        m_marquee->setVisible(guiState.bMarquee);
-    }
-    if (m_donateCards){
-        m_donateCards->setVisible(guiState.bDonateCards);
-    }
-    if (m_banking){
-        m_banking->setVisible(guiState.bBanking);
-    }
-    if (m_winnerScreen){
-        m_winnerScreen->setVisible(guiState.bWinnerScreen);
-    }
-
-    updateLayouts();
-}
-
-
-
-
 
 void UI_Game::drawHumanPlayer(H3_Game & game)
 {

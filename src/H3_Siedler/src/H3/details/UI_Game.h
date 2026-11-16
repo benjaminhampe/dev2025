@@ -11,6 +11,8 @@ class UI_WinnerScreen;
 class UI_Actions;
 class UI_DonateCards;
 class UI_Banking;
+class UI_Monopol;
+class UI_Invent;
 
 // =====================================================================
 class UI_Game : public de::gui::Widget
@@ -55,9 +57,7 @@ private:
     bool m_forceResize;
 
 public:
-
     std::stack<H3_GuiState> m_stack;
-
 
     UI_WorldCreator* m_worldCreator;
 
@@ -67,7 +67,8 @@ public:
     UI_Actions* m_actions;
     UI_DonateCards* m_donateCards;
     UI_Banking* m_banking;
-
+    UI_Monopol* m_monopol;
+    UI_Invent* m_invent;
 
     UI_ActionLogger m_actionLogger;
 
