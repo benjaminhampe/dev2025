@@ -1,10 +1,12 @@
 #pragma once
-#include <de/gpu/VideoDriver.h>
-#include <de/gpu/Uniform.h>
-#include <de/gpu/Tex2DArray.h>
+#include <de/gpu/Texture.h>
+#include <de/gpu/Shader.h>
+#include <de/smesh/SMesh.h>
 
 namespace de {
 namespace gpu {
+
+class VideoDriver;
 
 // ===========================================================================
 struct AnimatedTexRenderer
@@ -20,26 +22,22 @@ struct AnimatedTexRenderer
         double timeNow = 0.0;
         double duration = 3.0;
         double layer = 0.0;
-        Tex2DArray tex;
-
-        void setImages(const std::vector<const Image*>& images);
+        Texture* tex = nullptr;
 
         std::string str() const;
 
         void startAnimation();
         void tickAnimation();
 
-        void destroy()
-        {
-            tex.destroy();
-        }
+        // void destroy()
+        // {
+        //     tex.destroy();
+        // }
     };
 
     de::gpu::VideoDriver* m_driver;
-    std::unordered_map< std::string, gpu::Shader* > m_shaders;
-    std::unordered_map< std::string, Uniforms> m_uniforms;
-
-    Material m_explosion02;
+    Material m_material;
+    //Material m_explosion02;
 
     // int m_loc_pvMat; // ViewProjectionMatrix
     // int m_loc_modelMat; // ModelMatrix
@@ -65,24 +63,13 @@ struct AnimatedTexRenderer
     ~AnimatedTexRenderer();
 
     void init(VideoDriver* driver);
-
+    void createMaterialBubbles();
     void destroy();
-
     void draw3D( const smesh::SMeshBuffer& mesh );
-
     void draw3D( const smesh::SMeshBuffer& mesh, const Material& material );
 
-    // void render( smesh::SMeshBuffer& mesh, Camera& camera );
-
 private:
-
-
-    Shader*
-    getShader(const Material& material);
-
-    bool
-    setMaterial(const Material& material);
-
+    bool setMaterial(const Material& material);
     static std::string createShaderName(const Material& material);
     static std::string createVS(const Material& material);
     static std::string createFS(const Material& material);

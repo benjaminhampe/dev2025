@@ -1,5 +1,5 @@
 #pragma once
-#include <de/gpu/GPU.h>
+#include <de/gpu/Texture.h>
 
 namespace de {
 namespace gpu {
@@ -21,7 +21,7 @@ struct PostFx_Vertex // FVF_POSITION_XYZ | FVF_COLOR_RGBA
     {}
 
     PostFx_Vertex( float x, float y, float z, uint8_t r, uint8_t g, uint8_t b, uint8_t a, float u, float v )
-        : pos( x,y,z ), color( glRGBA(r,g,b,a) ), tex( u,v )
+        : pos( x,y,z ), color( dbRGB(r,g,b,a) ), tex( u,v )
     {}
 
     PostFx_Vertex( float x, float y, float z, uint32_t a_color = 0xFFFFFFFF, float u = 0.f, float v = 0.f )

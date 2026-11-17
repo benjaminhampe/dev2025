@@ -43,7 +43,7 @@ void H3_Tile2DRenderer::init( H3_Game& game )
 
     if (!m_driver) { DE_ERROR("No driver") return; }
 
-    m_tileTexture = &game.m_tex.m_tileTexture;
+    m_tileTexture = game.m_tex.m_tileTexture;
     initVAO(game);
     initShader(game);
 }
@@ -230,9 +230,9 @@ void H3_Tile2DRenderer::render(const glm::vec4& posTransform, const de::Recti& s
     glUniform4fv(m_u_posTransform, 1, glm::value_ptr(posTransform));
 
     // [Uniform] u_tex2DArray
-    // int unit = m_driver->useTexture(m_tileTexture);
-    glBindTextureUnit(0, m_tileTexture->id);
-    glUniform1i(m_u_tex2DArray, 0);
+    //glBindTextureUnit(0, m_tileTexture->id);
+    int unit = m_driver->useTexture(m_tileTexture);
+    glUniform1i(m_u_tex2DArray, unit);
 
     // [VAO]:
     glBindVertexArray(m_vao);

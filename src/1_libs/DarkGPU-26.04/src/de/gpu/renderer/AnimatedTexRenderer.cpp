@@ -1,5 +1,5 @@
-#include <de/gpu/AnimatedTexRenderer.h>
-#include <de_opengl.h>
+#include <de/gpu/renderer/AnimatedTexRenderer.h>
+#include <de/gpu/VideoDriver.h>
 // #include <de/gpu/GL_debug_layer.h>
 
 namespace de {
@@ -102,33 +102,12 @@ void loadExplosionImages(std::vector<Image> & images)
     }
 }
 
-void AnimatedTexRenderer::Material::setImages(const std::vector<const Image*>& images)
-{
-    de::gpu::SO so;
-    so.setAF( 1.0f );
-    so.setMin( de::gpu::SO::Minify::LinearMipmapLinear );
-    so.setMag( de::gpu::SO::Magnify::Linear );
-    so.setWrapR( de::gpu::SO::Wrap::Repeat );
-    so.setWrapS( de::gpu::SO::Wrap::Repeat );
-    so.setWrapT( de::gpu::SO::Wrap::Repeat );
-
-    if (!tex.create("AniExplosion02",images,so))
-    {
-        DE_ERROR("Tex2DArray failed.")
-    }
-
-    bGhost = false;
-    bAlphaBlend = true;
-    bCulling = false;
-    bLooping = true;
-}
-
 std::string AnimatedTexRenderer::Material::str() const
 {
     std::ostringstream o; o <<
     "bGhost(" << bGhost << "), "
     "duration(" << duration << "), "
-    "tex(" << tex.str() << ")";
+    "tex(" << (tex ? tex->str() : "0") << ")";
     return o.str();
 }
 
@@ -151,7 +130,7 @@ void AnimatedTexRenderer::Material::tickAnimation()
         timeNow = std::clamp(timeNow, 0.0, duration);
     }
 
-    layer = double(tex.layers) * (timeNow / duration);
+    layer = double(tex->layers()) * (timeNow / duration);
 
     // DE_DEBUG("layer = ",layer)
 }
@@ -178,8 +157,11 @@ void AnimatedTexRenderer::init(VideoDriver* driver)
 
     if (!m_driver) { DE_ERROR("No driver") return; }
 
-    // auto tex = m_driver->createTexture2D( "H3_WaterTileRendTex", *img, so);
+    createMaterialBubbles();
+}
 
+void AnimatedTexRenderer::createMaterialBubbles()
+{
     //=========================================
     // Create default material
     //=========================================
@@ -188,28 +170,46 @@ void AnimatedTexRenderer::init(VideoDriver* driver)
     // loadExplosionImages(images);
     createBubbleAnimation(images);
 
-    std::vector<const Image*> imagePtrs;
-    imagePtrs.reserve(images.size());
+    std::vector<const Image*> pointers;
+    pointers.reserve(images.size());
 
     for (const auto& img : images)
     {
-        imagePtrs.emplace_back(&img);
+        pointers.emplace_back(&img);
     }
 
-    m_explosion02.setImages(imagePtrs);
 
-    m_explosion02.startAnimation();
+    de::gpu::SO so;
+    so.setAF( 1.0f );
+    so.setMin( de::gpu::SO::Minify::LinearMipmapLinear );
+    so.setMag( de::gpu::SO::Magnify::Linear );
+    so.setWrapR( de::gpu::SO::Wrap::Repeat );
+    so.setWrapS( de::gpu::SO::Wrap::Repeat );
+    so.setWrapT( de::gpu::SO::Wrap::Repeat );
+
+    auto tex2DArray = m_driver->createTex2DArray("AniBubbles",pointers,so);
+    if (!tex2DArray)
+    {
+        DE_ERROR("Tex2DArray failed.")
+    }
+
+    m_material.tex = tex2DArray;
+    m_material.bGhost = false;
+    m_material.bAlphaBlend = true;
+    m_material.bCulling = false;
+    m_material.bLooping = true;
+    m_material.startAnimation();
 }
 
 void AnimatedTexRenderer::destroy()
 {
-    m_explosion02.destroy();
+
 }
 
 void AnimatedTexRenderer::draw3D( const smesh::SMeshBuffer& mesh )
 {
-    m_explosion02.tickAnimation();
-    draw3D(mesh, m_explosion02);
+    m_material.tickAnimation();
+    draw3D(mesh, m_material);
 }
 
 void AnimatedTexRenderer::draw3D( const smesh::SMeshBuffer& mesh, const Material& material )
@@ -229,12 +229,35 @@ void AnimatedTexRenderer::draw3D( const smesh::SMeshBuffer& mesh, const Material
 bool AnimatedTexRenderer::setMaterial( const Material& material )
 {
     if (!m_driver) { DE_ERROR("No driver") return false; }
+    if (!material.tex) { DE_ERROR("No tex2DArray") return false; }
 
     // [UseProgram]
-    gpu::Shader* shader = getShader( material );
-    if ( !shader )
+    // gpu::Shader* shader = getShader( material );
+    // if ( !shader )
+    // {
+    //     DE_ERROR("No shader for material(",material.str(),")")
+    //     return false;
+    // }
+
+    //uint32_t id = createShaderId( material );
+    const std::string name = createShaderName( material );
+
+    Shader* shader = m_driver->getShader(name);
+    if (!shader)
     {
-        DE_ERROR("No shader in use for material(",material.str(),")")
+        shader = m_driver->createShader( name, createVS( material ), createFS( material ) );
+
+        if ( !shader )
+        {
+            DE_ERROR("No shader built(",name,")")
+            return false;
+        }
+    }
+
+    // [UseProgram]
+    if ( !m_driver->useShader( shader ) )
+    {
+        DE_ERROR("No active shader(",name,")")
         return false;
     }
 
@@ -254,15 +277,15 @@ bool AnimatedTexRenderer::setMaterial( const Material& material )
     shader->setMat4f( "u_modelMat", m_driver->getModelMatrix() );
 
     const auto& tex = material.tex;
-    // int unit = m_driver->useTexture(tex, 0);
-    glBindTextureUnit(0, tex.id);
-    shader->setInt("u_tex",0);
+    int unit = m_driver->useTexture(tex, 0);
+    // glBindTextureUnit(0, tex->id());
+    shader->setInt("u_tex",unit);
     shader->setFloat("u_texLayer",material.layer);
     //shader->setVec4f( "u_texTransform",  );
     //shader->setVec2f( "u_texRepeat", diffuseMap.repeat );
 
     State state;
-    if (!material.bCulling)
+    if ( !material.bCulling )
     {
         state.culling = gpu::Culling::disabled();
     }
@@ -345,62 +368,6 @@ std::string AnimatedTexRenderer::createFS(const Material & material)
     )";
 
     return fs.str();
-}
-
-Shader* AnimatedTexRenderer::getShader(const Material & material)
-{
-    gpu::Shader* shader = nullptr;
-
-    if ( !m_driver ) { DE_ERROR("No driver.") return shader; }
-
-    //uint32_t id = createShaderId( material );
-    const std::string name = createShaderName( material );
-
-    auto it = m_shaders.find( name );
-    if ( it != m_shaders.end() )
-    {
-        shader = (*it).second;
-    }
-    else
-    {
-        shader = m_driver->getShader( name );
-        if ( !shader )
-        {
-            shader = m_driver->createShader( name, createVS( material ), createFS( material ) );
-        }
-
-        if ( !shader )
-        {
-            DE_ERROR("No shader built(",name,")")
-            return nullptr;
-        }
-
-        m_shaders[ name ] = shader; // Store new and valid shader
-        m_uniforms[ name ] = enumerateUniforms(shader->id);
-
-        // m_loc_pvMat = glGetUniformLocation(m_shader->id, "u_projViewMat");
-        // m_loc_modelMat = glGetUniformLocation(m_shader->id, "u_modelMat");
-        // m_loc_tex2DArray = glGetUniformLocation(m_shader->id, "u_tex2DArray");
-        // m_loc_timeInSec = glGetUniformLocation(m_shader->id, "u_timeInSec");
-        // m_loc_gradientMap = glGetUniformLocation(m_shader->id, "u_gradientMap");
-        // m_loc_dudvMap = glGetUniformLocation(m_shader->id, "u_dudvMap");
-
-    }
-
-    if ( !shader )
-    {
-        DE_ERROR("No shader ",name);
-        return nullptr;
-    }
-
-    // [UseProgram]
-    if ( !m_driver->useShader( shader ) )
-    {
-        DE_ERROR("No active shader(",name,")")
-        return nullptr;
-    }
-
-    return shader;
 }
 
 } // end namespace gpu.

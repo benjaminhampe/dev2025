@@ -1,5 +1,5 @@
 #pragma once
-#include <de/gpu/GPU.h>
+#include <de/gpu/State.h>
 
 namespace de {
 namespace gpu {

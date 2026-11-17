@@ -342,8 +342,9 @@ void H3_Chip3DRenderer::render( const H3_Chip3DMeshBuffer & drawcall )
     glUniformMatrix4fv(m_locViewProjMat, 1, GL_FALSE, glm::value_ptr( projViewMat ));
 
     // ==== Shader: u_tex  ====
-    glBindTextureUnit(0, m_chipTexture->id);
-    glUniform1i(m_locTex, 0);
+    int unit = m_driver->useTexture(m_chipTexture);
+    //glBindTextureUnit(0, m_chipTexture->id());
+    glUniform1i(m_locTex, unit);
 
     // ==== RenderStates  ====
     de::gpu::State state;
@@ -361,7 +362,7 @@ void
 H3_Chip3DRenderer::init( H3_Game & game )
 {
     m_driver = game.getDriver();
-    m_chipTexture = &game.m_tex.m_chipTexture;
+    m_chipTexture = game.m_tex.m_chipTexture;
     initShader();
 }
 

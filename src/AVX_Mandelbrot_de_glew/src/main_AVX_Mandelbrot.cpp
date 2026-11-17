@@ -70,7 +70,7 @@ int main( int argc, char* argv[] )
     // //params.isDoubleBuffered = false;
     // //params.vsync = 1;
 
-
+    auto m_driver = m_window->m_driver;
 
     // shaderArt_000.init( &shaderManager );
     //std::string s_GL_EXTENSIONS = (char const*)glGetString(GL_EXTENSIONS);
@@ -88,31 +88,30 @@ int main( int argc, char* argv[] )
 
     while (m_window->run())
     {
-        // m_timeNow = de::HighResolutionClock::GetTimeInSeconds();
+        m_timeNow = de::HighResolutionClock::GetTimeInSeconds();
 
-        /*
         // render
         // -----
         double dtRenderUpdate = m_timeNow - m_timeLastRenderUpdate;
-        if ( dtRenderUpdate >= (1.0 / double( m_controlFps )) ) // 1.0 / 61.0
+        if ( dtRenderUpdate >= (1.0 / double( m_window->m_controlFps )) ) // 1.0 / 61.0
         {
             m_timeLastRenderUpdate = m_timeNow;
 
             // ======== Resize image before working on it, if needed =========
-            w = m_driver->getScreenWidth();
-            h = m_driver->getScreenHeight();
-            if ( g_mandelbrotImg.w() != w || g_mandelbrotImg.h() != h )
+            int w = m_driver->getScreenWidth();
+            int h = m_driver->getScreenHeight();
+            if ( m_window->m_mandelbrotImg.w() != w || m_window->m_mandelbrotImg.h() != h )
             {
-                g_mandelbrotImg.resize( w,h );
+                m_window->m_mandelbrotImg.resize( w,h );
             }
 
             // ======== Now draw image with CPU (using ThreadPool and many tasks) =========
             mandelbrotImage_ThreadPoolWithTasks(
-                g_mandelbrotImg,
-                g_mandelbrotImg.rect(),
-                z_center,
-                z_range,
-                max_iterations );
+                m_window->m_mandelbrotImg,
+                m_window->m_mandelbrotImg.rect(),
+                m_window->m_z_center,
+                m_window->m_z_range,
+                m_window->m_max_iterations );
 
             // ======== Now upload image to GPU ================
             //m_mandelbrotTex.unbind();
@@ -126,7 +125,7 @@ int main( int argc, char* argv[] )
 
             m_window->makeCurrent();
 
-            if (!m_driver->uploadTexture2D(m_mandelbrotTex,g_mandelbrotImg))
+            if (!m_driver->uploadTexture2D(m_window->m_mandelbrotTex,m_window->m_mandelbrotImg))
             {
                 DE_ERROR("TexUpload failed")
                 break;
@@ -135,16 +134,20 @@ int main( int argc, char* argv[] )
             // ======== Now start rendering with GPU ================
             m_driver->beginRender( glm::vec4(0.1f,0.1f,0.1f,1.0f) );
 
-            m_driver->getScreenQuadRenderer()->draw2D(de::Rectf(0,0,1,1),
-            m_mandelbrotTex, false);
+            m_driver->getScreenQuadRenderer()->draw2DRect( de::Recti(0,0,w,h),
+                m_window->m_mandelbrotTex, false);
 
             // m_quadRenderer.render( 0 );
 
             // RENDER help overlay:
             if ( m_window->m_showHelpOverlay )
             {
-                de::Font5x8 font( m_fontSize, m_fontSize, 0,0,
-                m_fontSize / 2 + 1, m_fontSize / 2 + 1 );
+                de::Font5x8 font(m_window->m_fontSize,
+                                 m_window->m_fontSize,
+                                 0,
+                                 0,
+                                 m_window->m_fontSize / 2 + 1,
+                                 m_window->m_fontSize / 2 + 1 );
 
                 int x = 20;
                 int y = 20;
@@ -155,7 +158,7 @@ int main( int argc, char* argv[] )
                 o.str(""); o << "FPS = " << m_driver->getFPS();
                 m_driver->draw2DText( x,y, o.str(), 0xFF9030FF, align, font ); y += l;
 
-                o.str(""); o << "FPS Limit = " << m_controlFps;
+                o.str(""); o << "FPS Limit = " << m_window->m_controlFps;
                 m_driver->draw2DText( x,y, o.str(), 0xFF9030DF, align, font ); y += l;
 
                 o.str(""); o << "Runtime = " << m_driver->getTime();
@@ -200,7 +203,7 @@ int main( int argc, char* argv[] )
                 o.str(""); o << "FrameBufferSize(" << clientW << "," << clientH << ")";
                 m_driver->draw2DText( x,y, o.str(), 0xFF30D0FF, align, font ); y += l;
 
-                o.str(""); o << "ImageSize(" << g_mandelbrotImg.w() << "," << g_mandelbrotImg.h() << ")";
+                o.str(""); o << "ImageSize(" << m_window->m_mandelbrotImg.w() << "," << m_window->m_mandelbrotImg.h() << ")";
                 m_driver->draw2DText( x,y, o.str(), 0xFF30D0FF, align, font ); y += l;
 
 
@@ -211,13 +214,13 @@ int main( int argc, char* argv[] )
                 o.str(""); o << "Press SPACE to toggle text overlay.";
                 m_driver->draw2DText( x,y, o.str(), 0xFF30B0FF, align, font ); y -= l;
 
-                o.str(""); o << "Zoom Center = " << z_center;
+                o.str(""); o << "Zoom Center = " << m_window->m_z_center;
                 m_driver->draw2DText( x,y, o.str(), 0xFF30D0FF, align, font ); y -= l;
 
-                o.str(""); o << "Zoom Range = " << z_range;
+                o.str(""); o << "Zoom Range = " << m_window->m_z_range;
                 m_driver->draw2DText( x,y, o.str(), 0xFF2080EF, align, font ); y -= l;
 
-                o.str(""); o << "Max Iterations = " << max_iterations;
+                o.str(""); o << "Max Iterations = " << m_window->m_max_iterations;
                 m_driver->draw2DText( x,y, o.str(), 0xFF20A0CF, align, font ); y -= l;
 
                 x = w - 20;
@@ -263,7 +266,7 @@ int main( int argc, char* argv[] )
         {
             m_window->yield(); // Save power
         }
-        */
+
 
         // update window title 2-3x per second
         double dtWindowTitleUpdate = m_timeNow - m_timeLastWindowTitleUpdate;

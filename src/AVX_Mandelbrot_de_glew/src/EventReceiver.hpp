@@ -36,10 +36,10 @@ struct MandelbrotWindow : public de::Window_WGL
     int m_fontSize = 2;
     int m_controlFps = 60; // controls FPS
     // static de::Image g_mandelbrotImg; // Threadpool renders on this memory
-    glm::dvec2 z_center; // world coords
-    glm::dvec2 z_range; // world coords
-    int max_iterations = 128;
-    int g_max_iterations_limit = 64*1024;
+    glm::dvec2 m_z_center; // world coords
+    glm::dvec2 m_z_range; // world coords
+    int m_max_iterations = 128;
+    int m_max_iterations_limit = 64*1024;
 
     void recalculateRangeX()
     {
@@ -52,7 +52,7 @@ struct MandelbrotWindow : public de::Window_WGL
             if (h < 1) h = 1;
         }
         double aspect = double(w) / double(h);
-        z_range.x = aspect * z_range.y;
+        m_z_range.x = aspect * m_z_range.y;
     }
 
     //   int m_dummy;
@@ -90,9 +90,9 @@ struct MandelbrotWindow : public de::Window_WGL
         int h = m_driver->getScreenHeight();
         DE_DEBUG("Screen(",w,",",h,")")
 
-        z_center.x = -1.67376;
-        z_center.y = 0.000526575;
-        z_range.y = 2.84;
+        m_z_center.x = -1.67376;
+        m_z_center.y = 0.000526575;
+        m_z_range.y = 2.84;
         recalculateRangeX();
 
         // Just for finding out if rendering an image got flipped, and it was so.
@@ -158,9 +158,8 @@ struct MandelbrotWindow : public de::Window_WGL
         updateWindowTitle();
     }
 
-
-   void paintEvent( de::PaintEvent const & event ) override
-   {
+    void paintEvent( de::PaintEvent const & event ) override
+    {
         if (!m_driver)
         {
             DE_ERROR("No driver")
@@ -182,9 +181,9 @@ struct MandelbrotWindow : public de::Window_WGL
         mandelbrotImage_ThreadPoolWithTasks(
             m_mandelbrotImg,
             m_mandelbrotImg.rect(),
-            z_center,
-            z_range,
-            max_iterations );
+            m_z_center,
+            m_z_range,
+            m_max_iterations );
 
         // ======== Now upload image to GPU ================
         //m_mandelbrotTex.unbind();
@@ -280,13 +279,13 @@ struct MandelbrotWindow : public de::Window_WGL
             o.str(""); o << "Press SPACE to toggle text overlay.";
             m_driver->draw2DText( x,y, o.str(), 0xFF30B0FF, align, font ); y -= l;
 
-            o.str(""); o << "Zoom Center = " << z_center;
+            o.str(""); o << "Zoom Center = " << m_z_center;
             m_driver->draw2DText( x,y, o.str(), 0xFF30D0FF, align, font ); y -= l;
 
-            o.str(""); o << "Zoom Range = " << z_range;
+            o.str(""); o << "Zoom Range = " << m_z_range;
             m_driver->draw2DText( x,y, o.str(), 0xFF2080EF, align, font ); y -= l;
 
-            o.str(""); o << "Max Iterations = " << max_iterations;
+            o.str(""); o << "Max Iterations = " << m_max_iterations;
             m_driver->draw2DText( x,y, o.str(), 0xFF20A0CF, align, font ); y -= l;
 
             x = w - 20;
@@ -387,8 +386,8 @@ struct MandelbrotWindow : public de::Window_WGL
     void pinchZoomEvent( float zoomFactor, float centerX, float centerY ) override
     {
         DE_DEBUG("zoom(", zoomFactor,"), center(",centerX,",",centerY,")")
-        auto ry = z_range.y;
-        z_range.y = ry / zoomFactor;
+        auto ry = m_z_range.y;
+        m_z_range.y = ry / zoomFactor;
         recalculateRangeX();
     }
 
@@ -405,81 +404,81 @@ struct MandelbrotWindow : public de::Window_WGL
         // 'R' - divide max iterations in half ( restore speed )
         if (event.key == de::KEY_R)
         {
-            max_iterations /= 2;
-            if ( max_iterations < 64 ) max_iterations = 64;
+            m_max_iterations /= 2;
+            if ( m_max_iterations < 64 ) m_max_iterations = 64;
         }
 
         // 'T' - double max iterations
         if (event.key == de::KEY_T)
         {
-            max_iterations *= 2;
-            if ( max_iterations >= g_max_iterations_limit )
+            m_max_iterations *= 2;
+            if ( m_max_iterations >= m_max_iterations_limit )
             {
-                max_iterations = g_max_iterations_limit;
+                m_max_iterations = m_max_iterations_limit;
             }
         }
 
         // Left arrow key - Decrease max iterations
         if (event.key == de::KEY_LEFT)
         {
-            max_iterations -= 64;
-            if ( max_iterations < 64 ) max_iterations = 64;
+            m_max_iterations -= 64;
+            if ( m_max_iterations < 64 ) m_max_iterations = 64;
         }
 
         // Right arrow key - Increase max iterations
         if (event.key == de::KEY_RIGHT)
         {
-            max_iterations += 64;
-            if ( max_iterations >= g_max_iterations_limit )
+            m_max_iterations += 64;
+            if ( m_max_iterations >= m_max_iterations_limit )
             {
-                max_iterations = g_max_iterations_limit;
+                m_max_iterations = m_max_iterations_limit;
             }
         }
 
         // Zoom window - move up/north
         if (event.key == de::KEY_W)
         {
-            double cy = z_center.y;
-            double ry = z_range.y;
-            z_center.y = cy - 0.1 * ry;
+            double cy = m_z_center.y;
+            double ry = m_z_range.y;
+            m_z_center.y = cy - 0.1 * ry;
         }
         // Zoom window - move down/south
         if (event.key == de::KEY_S)
         {
-            double cy = z_center.y;
-            double ry = z_range.y;
-            z_center.y = cy + 0.1 * ry;
+            double cy = m_z_center.y;
+            double ry = m_z_range.y;
+            m_z_center.y = cy + 0.1 * ry;
         }
         // Zoom window - move left/west
         if (event.key == de::KEY_A)
         {
-            double cx = z_center.x;
-            double rx = z_range.x;
-            z_center.x = cx - 0.1 * rx;
+            double cx = m_z_center.x;
+            double rx = m_z_range.x;
+            m_z_center.x = cx - 0.1 * rx;
         }
         // Zoom window - move right/east
         if (event.key == de::KEY_D)
         {
-            double cx = z_center.x;
-            double rx = z_range.x;
-            z_center.x = cx + 0.1 * rx;
+            double cx = m_z_center.x;
+            double rx = m_z_range.x;
+            m_z_center.x = cx + 0.1 * rx;
         }
         // Zoom out
         if (event.key == de::KEY_Q)
         {
             //auto rx = z_range.x;
-            auto ry = z_range.y;
+            auto ry = m_z_range.y;
             //z_range.x = rx / 0.9;
-            z_range.y = ry / 0.9;
+            m_z_range.y = ry / 0.9;
             recalculateRangeX();
         }
         // Zoom in
         if ( event.key == de::KEY_E )
         {
             //auto rx = z_range.x;
-            auto ry = z_range.y;
+            auto ry = m_z_range.y;
             //z_range.x = rx * 0.9;
-            z_range.y = ry * 0.9;
+            m_z_range.y = ry * 0.9;
             recalculateRangeX();
         }
         /*
@@ -593,27 +592,27 @@ struct MandelbrotWindow : public de::Window_WGL
             m_dragStartX = m_mouseX; // Reset drag start pos to current pos
             m_dragStartY = m_mouseY; // ensures correct scroll behaviour
 
-            z_center.x += 0.005 * deltaX * z_range.x; // Using z_range as factor ensures
-            z_center.y += 0.005 * deltaY * z_range.y; // smaller moves when zoomed in.
+            m_z_center.x += 0.005 * deltaX * m_z_range.x; // Using z_range as factor ensures
+            m_z_center.y += 0.005 * deltaY * m_z_range.y; // smaller moves when zoomed in.
         }
     }
 
     void mouseWheelEvent( de::MouseWheelEvent const & event ) override
     {
-        DE_TRACE("MouseWheelEvent(", event.str(),")" )
+        // DE_TRACE("MouseWheelEvent(", event.str(),")" )
 
-        auto rx = z_range.x;
-        auto ry = z_range.y;
+        auto rx = m_z_range.x;
+        auto ry = m_z_range.y;
 
         if ( event.y > 0.5f )
         {
-            z_range.x = rx * 0.9;
-            z_range.y = ry * 0.9;
+            m_z_range.x = rx * 0.9;
+            m_z_range.y = ry * 0.9;
         }
         else if ( event.y < 0.5f )
         {
-            z_range.x = rx / 0.9;
-            z_range.y = ry / 0.9;
+            m_z_range.x = rx / 0.9;
+            m_z_range.y = ry / 0.9;
         }
     }
 

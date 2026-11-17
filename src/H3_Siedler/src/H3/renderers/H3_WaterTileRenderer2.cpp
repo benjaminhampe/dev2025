@@ -112,9 +112,10 @@ void H3_WaterTileRenderer2::collectInstances(const H3_Game& game)
 }
 
 
-void H3_WaterTileRenderer2::render(de::gpu::Tex2DArray& tex2DArray, float duration)
+void H3_WaterTileRenderer2::render(de::gpu::Tex2DArray* tex2DArray, float duration)
 {
     if (!m_driver) { DE_ERROR("No driver") return; }
+    if (!tex2DArray) { DE_ERROR("No tex2DArray") return; }
 
     if (!m_vao || m_instanceMat.empty())
     {
@@ -132,16 +133,16 @@ void H3_WaterTileRenderer2::render(de::gpu::Tex2DArray& tex2DArray, float durati
     // [Uniform] time + duration
     glUniform1f(m_u_timePosition, m_driver->getTime());
     glUniform1f(m_u_timeDuration, duration);
-    glUniform1f(m_u_animationFrames, tex2DArray.layers);
+    glUniform1f(m_u_animationFrames, tex2DArray->layers());
 
     // [Uniform] sampler2DArray
-    //m_driver->useTexture( m_tex.tex, 0);
-    glBindTextureUnit(0,tex2DArray.id);
-    de::gpu::applySamplerOptions(tex2DArray.so);
+    int unit = m_driver->useTexture( tex2DArray );
+    //glBindTextureUnit(0,tex2DArray.id);
+    //de::gpu::applySamplerOptions(tex2DArray.so);
     //glActiveTexture(GL_TEXTURE0);
     //glBindTexture(GL_TEXTURE_2D_ARRAY, m_tex2DArray.id); // Binde die native GL-id deines Arrays
     //glBindTextureUnit(0, m_tex2DArray.id);
-    glUniform1i(m_u_tex2DArray, 0);
+    glUniform1i(m_u_tex2DArray, unit);
 
     // [RenderStates]
     de::gpu::State state;

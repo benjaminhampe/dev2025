@@ -5,7 +5,6 @@
     #include <de/os/win32/win32_PromptString.h>
 #endif
 #include <de/gpu/VideoDriver.h>
-#include <de/gpu/Tex2DArray.h>
 #include <de/gui/Env.h>
 #include <de/gui/Panel.h>
 #include <de/gui/Label.h>

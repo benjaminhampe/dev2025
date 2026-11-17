@@ -1,5 +1,4 @@
 #include <de/gpu/State.h>
-#include <de/gpu/GPU.h>
 #include <de_opengl.h>
 #include <de/gpu/GL_debug_layer.h>
 

@@ -140,5 +140,17 @@ enumerateUniforms(uint32_t programID)
     return uniforms;
 }
 
+void dumpUniforms( const Uniforms& uniforms )
+{
+    DE_DEBUG("uniforms.size() = ", uniforms.size())
+
+    int i=0;
+    for (const auto & paar : uniforms)
+    {
+        DE_DEBUG("uniform[",i,"] ", paar.first, ", ", paar.second.str())
+        i++;
+    }
+}
+
 } // end namespace gpu.
 } // end namespace de.

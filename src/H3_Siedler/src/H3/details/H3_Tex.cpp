@@ -13,10 +13,10 @@ H3_Tex::~H3_Tex()
 
 void H3_Tex::destroy()
 {
-    m_tileTexture.destroy();
-    m_chipTexture.destroy();
-    m_AnimatedWaterTex128.destroy();
-    m_AnimatedWaterTex342.destroy();
+    // m_tileTexture.destroy();
+    // m_chipTexture.destroy();
+    // m_AnimatedWaterTex128.destroy();
+    // m_AnimatedWaterTex342.destroy();
 
     // for (de::gpu::Texture* tex : m_textures)
     // {
@@ -689,7 +689,8 @@ void H3_Tex::createTileTexture( H3_Game& game )
         &imgA, &imgB, &imgC, &imgD, &imgE
     };
 
-    if (!m_tileTexture.create("hextileAtlas512", imgPointers, so))
+    m_tileTexture = m_driver->createTex2DArray("hextileAtlas512", imgPointers, so);
+    if (!m_tileTexture)
     {
         DE_ERROR("Failed.")
     }
@@ -776,8 +777,8 @@ void H3_Tex::createChipTexture( H3_Game & game )
         de::gpu::SO::Magnify::Linear,
         de::gpu::SO::Wrap::ClampToEdge,
         de::gpu::SO::Wrap::ClampToEdge);
-    bool ok = m_chipTexture.create("chips_tex2darr", pointers, so );
-    if (!ok)
+    m_chipTexture = m_driver->createTex2DArray("chips_tex2darr", pointers, so );
+    if (!m_chipTexture)
     {
         DE_ERROR("Failed.")
     }
@@ -802,8 +803,8 @@ void H3_Tex::createAnimatedWaterTex128(H3_Game & game)
         de::gpu::SO::Wrap::ClampToEdge,
         de::gpu::SO::Wrap::ClampToEdge);
 
-    bool ok = m_AnimatedWaterTex128.create("h2o_128_128_40_webp", pointers, so );
-    if (!ok)
+    m_AnimatedWaterTex128 = m_driver->createTex2DArray("h2o_128_128_40_webp", pointers, so );
+    if (!m_AnimatedWaterTex128)
     {
         DE_ERROR("Failed.")
     }
@@ -827,8 +828,8 @@ void H3_Tex::createAnimatedWaterTex342(H3_Game & game)
         de::gpu::SO::Wrap::ClampToEdge,
         de::gpu::SO::Wrap::ClampToEdge);
 
-    bool ok = m_AnimatedWaterTex342.create("h2o_342_180_21_webp", pointers, so );
-    if (!ok)
+    m_AnimatedWaterTex342 = m_driver->createTex2DArray("h2o_342_180_21_webp", pointers, so );
+    if (!m_AnimatedWaterTex342)
     {
         DE_ERROR("Failed.")
     }

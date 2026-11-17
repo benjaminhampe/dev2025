@@ -32,7 +32,7 @@ struct H3_WaterTileRenderer2
     void init(H3_Game& game);
     void initShader();
     void initVAO();
-    void render(de::gpu::Tex2DArray& tex2DArray, float duration = 2.0f);
+    void render(de::gpu::Tex2DArray* tex2DArray, float duration = 2.0f);
 
     void collectInstances(const H3_Game& game);
     void uploadInstances();

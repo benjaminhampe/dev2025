@@ -42,7 +42,7 @@ void H3_Chip2DRenderer::init( H3_Game& game)
     m_driver = game.getDriver();
     if (!m_driver) { DE_ERROR("No driver") return; }
 
-    m_chipTexture = &game.m_tex.m_chipTexture;
+    m_chipTexture = game.m_tex.m_chipTexture;
 
     initVAO(game);
     initShader(game);
@@ -227,9 +227,9 @@ void H3_Chip2DRenderer::render(const glm::vec4& posTransform, const de::Recti& s
     glUniform4fv(m_u_posTransform, 1, glm::value_ptr(posTransform));
 
     // [Shader-Uniform] u_tex2DArray
-    // int unit = m_driver->useTexture( diffuseMap.tex, 0 );
-    glBindTextureUnit(0, m_chipTexture->id);
-    glUniform1i(m_u_tex2DArray, 0);
+    //glBindTextureUnit(0, m_chipTexture->id());
+    int unit = m_driver->useTexture( m_chipTexture );
+    glUniform1i(m_u_tex2DArray, unit);
 
     // [VAO] Quads:
     glBindVertexArray(m_vao);

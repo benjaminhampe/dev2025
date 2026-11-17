@@ -1,5 +1,6 @@
 #pragma once
-#include <de/gpu/GPU.h>
+#include <de/gpu/State.h>
+#include <de/gpu/Texture.h>
 #include <tinyxml2/tinyxml2.h>
 
 namespace de {

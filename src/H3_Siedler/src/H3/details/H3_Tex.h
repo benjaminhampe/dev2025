@@ -91,10 +91,10 @@ struct H3_Tex
 
     std::unordered_map<eID, de::gpu::TexRef> m_refs;
 
-    de::gpu::Tex2DArray m_tileTexture;
-    de::gpu::Tex2DArray m_chipTexture;
-    de::gpu::Tex2DArray m_AnimatedWaterTex128;
-    de::gpu::Tex2DArray m_AnimatedWaterTex342;
+    de::gpu::Tex2DArray* m_tileTexture;
+    de::gpu::Tex2DArray* m_chipTexture;
+    de::gpu::Tex2DArray* m_AnimatedWaterTex128;
+    de::gpu::Tex2DArray* m_AnimatedWaterTex342;
 
     void createTileTexture( H3_Game& game );
 

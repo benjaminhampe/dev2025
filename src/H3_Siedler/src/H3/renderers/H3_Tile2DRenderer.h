@@ -1,6 +1,5 @@
 #pragma once
 #include <H3/H3_Board.h>
-#include <de/gpu/Tex2DArray.h>
 struct H3_Game;
 
 // ===========================================================================

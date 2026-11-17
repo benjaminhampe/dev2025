@@ -1,5 +1,5 @@
 #pragma once
-#include <de/gpu/VideoDriver.h>
+#include <de/gpu/State.h>
 
 namespace de {
 namespace gpu {
@@ -22,6 +22,8 @@ typedef std::unordered_map<std::string, Uniform> Uniforms;
 
 Uniforms
 enumerateUniforms(uint32_t programID);
+
+void dumpUniforms( const Uniforms& uniforms );
 
 } // end namespace gpu.
 } // end namespace de.

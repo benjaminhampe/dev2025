@@ -1,12 +1,12 @@
 #pragma once
-#include <de/gpu/GPU.h>
+#include <de/gpu/State.h>
 
 namespace de {
 namespace gpu {
-	
-	struct VideoDriver;
-	struct Shader;
-	
+
+    struct VideoDriver;
+    struct Shader;
+
 // ===========================================================================
 // ===========================================================================
 // ===========================================================================
@@ -29,7 +29,7 @@ struct Line3D_Vertex // FVF_POSITION_XYZ | FVF_COLOR_RGBA
     Line3D_Vertex( float x, float y, float z, uint8_t r, uint8_t g, uint8_t b, uint8_t a = 255 )
         : pos( x,y,z )
         //, normal( nx,ny,nz )
-        , color( glRGBA(r,g,b,a) )
+        , color( dbRGB(r,g,b,a) )
     //, tex( u,v )
     {}
 

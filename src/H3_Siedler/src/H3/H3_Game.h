@@ -19,7 +19,6 @@
 #include <H3/renderers/H3_DiceRenderer.h>
 #include <H3/renderers/H3_TerrainTileRenderer.h>
 #include <de/os/Window_WGL.h>
-#include <de/gpu/AnimatedTexRenderer.h>
 
 #include <H3/animations/H3_Animations.h>
 

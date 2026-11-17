@@ -1,6 +1,6 @@
 #pragma once
 #include <de/os/Events.h>
-#include <de/gpu/GPU.h>
+#include <de/gpu/VideoDriver.h>
 #include <de/image/font/Font.h>
 
 namespace de {
